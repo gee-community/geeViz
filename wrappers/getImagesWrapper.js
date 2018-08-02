@@ -144,9 +144,7 @@ if(applyCloudScore){
   ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
   
 }
-var f = ee.Image(ls.first());
-print(f)
-Map.addLayer(f,getImageLib.vizParamsFalse)
+
 if(applyFmaskCloudMask){
   print('Applying Fmask cloud mask');
   ls = ls.map(function(img){return getImageLib.cFmask(img,'cloud')});
