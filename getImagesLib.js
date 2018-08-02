@@ -641,6 +641,95 @@ function listToString(list,space){
   return out;
 }
 ////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////
+// A function to mask out pixels that did not have observations for MODIS.
+var maskEmptyPixels = function(image) {
+  // Find pixels that had observations.
+  var withObs = image.select('num_observations_1km').gt(0);
+  return image.mask(image.mask().and(withObs));
+};
+//////////////////////////////////////////////////////////////////////////
+/*
+ * A function that returns an image containing just the specified QA bits.
+ *
+ * Args:
+ *   image - The QA Image to get bits from.
+ *   start - The first bit position, 0-based.
+ *   end   - The last bit position, inclusive.
+ *   name  - A name for the output image.
+ */
+var getQABits = function(image, start, end, newName) {
+    // Compute the bits we need to extract.
+    var pattern = 0;
+    for (var i = start; i <= end; i++) {
+       pattern += Math.pow(2, i);
+    }
+    // Return a single band image of the extracted QA bits, giving the band
+    // a new name.
+    return image.select([0], [newName])
+                  .bitwiseAnd(pattern)
+                  .rightShift(start);
+};
+/////////////////////////////////////////////////////////////////
+// A function to mask out cloudy pixels.
+var maskCloudsWQA = function(image) {
+  // Select the QA band.
+  var QA = image.select('state_1km');
+  // Get the internal_cloud_algorithm_flag bit.
+  var internalCloud = getQABits(QA, 10, 10, 'internal_cloud_algorithm_flag');
+  // Return an image masking out cloudy areas.
+  return image.mask(image.mask().and(internalCloud.eq(0)));
+};
+/////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//Source: code.earthengine.google.com
+// Compute a cloud score.  This expects the input image to have the common
+// band names: ["red", "blue", etc], so it can work across sensors.
+function modisCloudScore(img) {
+  
+  // A helper to apply an expression and linearly rescale the output.
+  var rescale = function(img, exp, thresholds) {
+    return img.expression(exp, {img: img})
+        .subtract(thresholds[0]).divide(thresholds[1] - thresholds[0]);
+  };
+
+  // Compute several indicators of cloudyness and take the minimum of them.
+  var score = ee.Image(1.0);
+  
+  // Clouds are reasonably bright in the blue band.
+  score = score.min(rescale(img, 'img.blue', [0.1, 0.3]));
+  
+  // Clouds are reasonably bright in all visible bands.
+  var vizSum = rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8]);
+  score = score.min(vizSum);
+  
+  // Clouds are reasonably bright in all infrared bands.
+  var irSum =rescale(img, 'img.nir + img.swir1 + img.swir2', [0.3, 0.8]);
+  score = score.min(
+      irSum);
+  
+  
+  
+  // However, clouds are not snow.
+  var ndsi = img.normalizedDifference(['green', 'swir1']);
+  var snowScore = rescale(ndsi, 'img', [0.8, 0.6]);
+  score =score.min(snowScore);
+  
+  //For MODIS, provide the option of not using thermal since it introduces
+  //a precomputed mask that may or may not be wanted
+  if(useTempInCloudMask === true){
+    // Clouds are reasonably cool in temperature.
+    var tempScore = rescale(img, 'img.temp', [305, 300]);
+    score = score.min(tempScore);
+  }
+  
+  score = score.multiply(100);
+  score = score.clamp(0,100);
+  return score;
+}
+
+//////////////////////////////////////////////////////////////////
+
 // Function to export composite collection
 function exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
 collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
