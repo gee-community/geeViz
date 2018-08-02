@@ -169,17 +169,17 @@ Map.addLayer(ls.median(),getImageLib.vizParamsFalse,'Median');
 // Add common indices- can use addIndices for comprehensive indices 
 //or simpleAddIndices for only common indices
 ls = ls.map(getImageLib.simpleAddIndices);
-print(ls.first())
-// // Add zenith and azimuth
-// if (correctIllumination){
-//   ls = ls.map(function(img){
-//     return addZenithAzimuth(img,toaOrSR);
-//   });
-// }
 
-// // Create composite time series
-// var ts = compositeTimeSeries(startYear,endYear,timebuffer,weights);
+// Add zenith and azimuth
+if (correctIllumination){
+  ls = ls.map(function(img){
+    return addZenithAzimuth(img,toaOrSR);
+  });
+}
 
+// Create composite time series
+var ts = compositeTimeSeries(startYear,endYear,timebuffer,weights);
+print(ts)
 // // Correct illumination
 // if (correctIllumination){
 //   ts = ts.map(illuminationCondition)
