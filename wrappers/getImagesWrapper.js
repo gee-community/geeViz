@@ -1,5 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var geometry = /* color: #d63000 */ee.Geometry.Point([-109.67857360839844, 43.263206254453095]);
+var geometry = /* color: #98ff00 */ee.Geometry.Polygon(
+        [[[-114.71923828125, 39.75787999202175],
+          [-111.15966796875, 39.92658842190944],
+          [-112.12646484375, 41.261291493919884],
+          [-114.41162109375, 41.1951898294896]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 ///////////////////////////////////////////////////////////////////////////////
 // Define user parameters:
@@ -201,16 +205,14 @@ ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBa
 
 
 // ////////////////////////////////////////////////////////////////////////////////
-// // Load the study region, with a blue outline.
-// // Create an empty image into which to paint the features, cast to byte.
-// // Paint all the polygon edges with the same number and width, display.
-// var empty = ee.Image().byte();
-// var outline = empty.paint({
-//   featureCollection: studyArea,
-//   color: 1,
-//   width: 3
-// });
-// Map.addLayer(outline, {palette: '0000FF'}, "Study Area", false);
-// // Map.centerObject(studyArea, 6);
-var i = ee.Image('users/ianhousman/test/Medoid-LandsatSR_medoid_2016_2018_190_250')
-Map.addLayer(i.divide(10000),getImageLib.vizParamsFalse)
+// Load the study region, with a blue outline.
+// Create an empty image into which to paint the features, cast to byte.
+// Paint all the polygon edges with the same number and width, display.
+var empty = ee.Image().byte();
+var outline = empty.paint({
+  featureCollection: studyArea,
+  color: 1,
+  width: 3
+});
+Map.addLayer(outline, {palette: '0000FF'}, "Study Area", false);
+// Map.centerObject(studyArea, 6);
