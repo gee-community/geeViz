@@ -225,8 +225,18 @@ getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,s
 ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
               applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
 
+/////////////////////////////////////////////////////////////////////////////////////////////
 
-var modis = getImageLib.getModisData(startYear,endYear,startJulian,endJulian);
+//MODIS Params- params if sensorProgram is modis
+var daily = false;//Whether to use daily MODIS (true) or 8 day composites (false)
+var maskWQA = false;//Whether to use QA bits for cloud masking
+var zenithThresh  = 90;//If daily == true, Zenith threshold for daily acquisitions for including observations
+var applyCloudScore = true;//Whether to apply the Google cloudScore algorithm
+var useTempInCloudMask = true;//Whether to use the temperature band in cloud masking- necessary to use temp in bright arid areas
+var despikeMODIS = false;//Whether to despike MODIS collection
+var modisSpikeThresh = 0.05;//Threshold for identifying spikes.  Any pair of images that increases and decreases (positive spike) or decreases and increases (negative spike) in a three image series by more than this number will be masked out
+///////////////////////////////////////
+var modis = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zenithThresh,applyCloudScore,useTempInCloudMask,despikeMODIS,modisSpikeThresh);
 print(modis)
 // ////////////////////////////////////////////////////////////////////////////////
 // Load the study region, with a blue outline.
