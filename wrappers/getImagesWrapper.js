@@ -167,7 +167,7 @@ if(applyFmaskSnowMask){
 Map.addLayer(ls.median(),getImageLib.vizParamsFalse,'Median')
 
 // Add common indices
-ls = ls.map(getImageLib.addIndices);
+ls = ls.map(getImageLib.simpleAddIndices);
 print(ls.first())
 // // Add zenith and azimuth
 // if (correctIllumination){
