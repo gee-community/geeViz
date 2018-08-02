@@ -195,7 +195,7 @@ var f = ee.Image(ts.first());
 Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated');
 // Export composite collection
 var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
-getImageLib.exportCollection(exportPathRoot,outputName,ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
+getImageLib.exportCollection(exportPathRoot,outputName,studyArea,ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
               applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7);
 
 
