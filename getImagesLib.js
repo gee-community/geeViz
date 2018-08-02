@@ -269,6 +269,7 @@ function addIndices(img){
   
   return img;
 }
+//Function for only adding common indices
 function simpleAddIndices(in_image){
     in_image = in_image.addBands(in_image.normalizedDifference(['nir', 'red']).select([0],['NDVI']));
     in_image = in_image.addBands(in_image.normalizedDifference(['nir', 'swir2']).select([0],['NBR']));
@@ -556,3 +557,5 @@ exports.landsatCloudScore = landsatCloudScore;
 exports.applyCloudScoreAlgorithm = applyCloudScoreAlgorithm;
 exports.cFmask = cFmask;
 exports.simpleTDOM2 = simpleTDOM2;
+exports.addIndices = addIndices;
+exports.simpleAddIndices = simpleAddIndices;
