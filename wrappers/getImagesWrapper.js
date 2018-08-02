@@ -61,7 +61,7 @@ var includeSLCOffL7 = false;
 // 10. Choose cloud/cloud shadow masking method
 // Choices are fmask, cloudScoreTDOM, or hybrid to run cloudScore, fmask cloud 
 // mask, TDOM, and then fmask cloud shadow 
-var cloudcloudShadowMaskingMethod = 'fmask';
+var cloudcloudShadowMaskingMethod = 'cloudScoreTDOM';
 
 var applyFmaskSnowMask = false;
 // 11. Cloud and cloud shadow masking parameters.
