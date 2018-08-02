@@ -59,6 +59,7 @@ var compositingMethod = 'medoid';
 
 // 8. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
 // Specify TOA or SR
+// Current implementation does not support Fmask for TOA
 var toaOrSR = 'TOA';
 
 // 9. Choose whether to include Landat 7
