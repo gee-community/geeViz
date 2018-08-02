@@ -135,8 +135,8 @@ if (cloudcloudShadowMaskingMethod.toLowerCase() === 'cloudscoretdom' ||
   toaOrSR.toLowerCase() === 'toa') {
   print('Running cloudScore');
 
-
-   ls = getImageLib.applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels) 
+    var landsatCloudScore = getImageLib.landsatCloudScore
+   ls = getImageLib.applyCloudScoreAlgorithm(ls,landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels) 
   }
   // Map.addLayer(ls.median(),getImageLib.vizParamsFalse)
 
