@@ -608,7 +608,7 @@ function exportCollection(collection,startYear,endYear,startJulian,endJulian,com
       'applyFmaskCloudMask' :applyFmaskCloudMask,
       'applyTDOM' :applyTDOM,
       'applyFmaskCloudShadowMask' :applyFmaskCloudShadowMask,
-      'applyFmaskSnowMask = false;
+      'applyFmaskSnowMask' applyFmaskSnowMask
       'compositingMethod': compositingMethod,
       'cloudcloudShadowMaskingMethod': cloudcloudShadowMaskingMethod,
       'includeSLCOffL7': includeSLCOffL7.toString()
