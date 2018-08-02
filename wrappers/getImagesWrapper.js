@@ -183,12 +183,12 @@ var ts = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJul
 // Correct illumination
 if (correctIllumination){
   print('Correcting illumination');
-  ts = ts.map(illuminationCondition)
+  ts = ts.map(getImageLib.illuminationCondition)
     .map(function(img){
-      return illuminationCorrection(img, correctScale);
+      return getImageLib.illuminationCorrection(img, correctScale,studyArea);
     });
 }
-
+var f = ee.Image(ts.first());
 // // Export composite collection
 // var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
 // exportCollection(ts,startYear,endYear,timebuffer,exportBands);
