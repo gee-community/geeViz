@@ -642,3 +642,5 @@ exports.compositeTimeSeries = compositeTimeSeries;
 exports.addZenithAzimuth = addZenithAzimuth;
 exports.illuminationCorrection = illuminationCorrection;
 exports.illuminationCondition = illuminationCondition;
+exports.addTCAngles = addTCAngles;
+exports.simpleAddTCAngles = simpleAddTCAngles;
