@@ -608,8 +608,7 @@ function exportCollection(collection,startYear,endYear,startJulian,endJulian,com
       'applyFmaskCloudMask' :applyFmaskCloudMask,
       'applyTDOM' :applyTDOM,
       'applyFmaskCloudShadowMask' :applyFmaskCloudShadowMask,
-
-var applyFmaskSnowMask = false;
+      'applyFmaskSnowMask = false;
       'compositingMethod': compositingMethod,
       'cloudcloudShadowMaskingMethod': cloudcloudShadowMaskingMethod,
       'includeSLCOffL7': includeSLCOffL7.toString()
