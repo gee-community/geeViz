@@ -617,7 +617,7 @@ applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFm
     // Export the composite 
     // Set up export name and path
     var exportName = outputName  + toaOrSR + '_' + compositingMethod + 
-      '_' + cloudcloudShadowMaskingMethod+'_' + startYearT + '_' + endYearT+'_' + 
+      '_'  + startYearT + '_' + endYearT+'_' + 
       startJulian + '_' + endJulian ;
    
     
