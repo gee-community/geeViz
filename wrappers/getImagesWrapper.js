@@ -67,11 +67,11 @@ var defringeL5 = false;
 //always have a high cloudScore to reduce comission errors- this takes some time
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
-var applyCloudScore = true;
-var applyFmaskCloudMask = false;
+var applyCloudScore = false;
+var applyFmaskCloudMask = true;
 
-var applyTDOM = true;
-var applyFmaskCloudShadowMask = false;
+var applyTDOM = false;
+var applyFmaskCloudShadowMask = true;
 
 var applyFmaskSnowMask = false;
 
