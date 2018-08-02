@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-//Script for getting Landsat, Sentinel 2 and MODIS images/composites
+//Module for getting Landsat, Sentinel 2 and MODIS images/composites
 // Define visualization parameters
 var vizParamsFalse = {
   'min': 0.1, 
