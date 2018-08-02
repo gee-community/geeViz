@@ -173,7 +173,7 @@ ls = ls.map(getImageLib.simpleAddIndices);
 // Add zenith and azimuth
 if (correctIllumination){
   ls = ls.map(function(img){
-    return addZenithAzimuth(img,toaOrSR);
+    return getImageLib.addZenithAzimuth(img,toaOrSR);
   });
 }
 
