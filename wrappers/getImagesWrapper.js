@@ -178,7 +178,7 @@ if (correctIllumination){
 }
 
 // Create composite time series
-var ts = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights);
+var ts = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
 print(ts)
 // // Correct illumination
 // if (correctIllumination){
