@@ -190,12 +190,12 @@ if (correctIllumination){
 }
 
 var f = ee.Image(ts.first());
-Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated');
+Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated',false);
 // Export composite collection
 var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
 getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
 ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
-              applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7);
+              applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
 
 
 // ////////////////////////////////////////////////////////////////////////////////
@@ -210,4 +210,5 @@ ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBa
 // });
 // Map.addLayer(outline, {palette: '0000FF'}, "Study Area", false);
 // // Map.centerObject(studyArea, 6);
-  
+var i = ee.Image('users/ianhousman/test/Medoid-LandsatSR_medoid_2016_2018_190_250')
+Map.addLayer(i.divide(10000),getImageLib.vizParamsFalse)
