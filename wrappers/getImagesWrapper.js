@@ -148,9 +148,12 @@ if(applyFmaskCloudMask){
   ls = ls.map(function(img){return getImageLib.cFmask(img,'cloud')});
 }
 
-if(applyTDOM){}
-if(applyFmaskCloudShadowMask){}
-if(applyFmaskSnowMask = false){}
+if(applyTDOM){
+  //Find and mask out dark outliers
+  ls = getImageLib.simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
+}
+// if(applyFmaskCloudShadowMask){}
+// if(applyFmaskSnowMask){}
 
 
 // if ((cloudcloudShadowMaskingMethod.toLowerCase() === 'fmask' || 
