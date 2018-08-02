@@ -769,6 +769,74 @@ function sentinelCloudScore(img) {
   return score;
 }
 ///////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//MODIS processing
+//////////////////////////////////////////////////
+//Some globals to deal with multi-spectral MODIS
+var wTempSelectOrder = [2,3,0,1,4,6,5];//Band order to select to be Landsat 5-like if thermal is included
+var wTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','temp','swir2'];
+
+var woTempSelectOrder = [2,3,0,1,4,5];//Band order to select to be Landsat 5-like if thermal is excluded
+var woTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','swir2'];
+
+//Band names from different MODIS resolutions
+//Try to take the highest spatial res for a given band
+var modis250SelectBands = ['sur_refl_b01','sur_refl_b02'];
+var modis250BandNames = ['red','nir'];
+
+var modis500SelectBands = ['sur_refl_b03','sur_refl_b04','sur_refl_b06','sur_refl_b07'];
+var modis500BandNames = ['blue','green','swir1','swir2'];
+
+var combinedModisBandNames = ['red','nir','blue','green','swir1','swir2'];
+
+
+//Dictionary of MODIS collections
+var modisCDict = {
+  'eightDayNDVIA' : 'MODIS/006/MYD13Q1',
+  'eightDayNDVIT' : 'MODIS/006/MOD13Q1',
+  
+  
+  'eightDaySR250A' : 'MODIS/006/MYD09Q1',
+  'eightDaySR250T' : 'MODIS/006/MOD09Q1',
+  
+  'eightDaySR500A' : 'MODIS/006/MYD09A1',
+  'eightDaySR500T' : 'MODIS/006/MOD09A1',
+  
+  'eightDayLST1000A' : 'MODIS/006/MYD11A2',
+  'eightDayLST1000T' : 'MODIS/006/MOD11A2',
+  
+  // 'dailyNDVIA' : 'MODIS/MYD09GA_NDVI',
+  // 'dailyNDVIT' : 'MODIS/MOD09GA_NDVI',
+  
+  
+  'dailySR250A' : 'MODIS/006/MYD09GQ',
+  'dailySR250T' : 'MODIS/006/MOD09GQ',
+  
+  'dailySR500A' : 'MODIS/006/MYD09GA',
+  'dailySR500T' : 'MODIS/006/MOD09GA',
+  
+  'dailyLST1000A' : 'MODIS/006/MYD11A1',
+  'dailyLST1000T' : 'MODIS/006/MOD11A1'
+};
+/////////////////////////////////////////////////
+//Helper function to join two collections- Source: code.earthengine.google.com
+    function joinCollections(c1,c2){
+      var MergeBands = function(element) {
+        // A function to merge the bands together.
+        // After a join, results are in 'primary' and 'secondary' properties.
+        return ee.Image.cat(element.get('primary'), element.get('secondary'));
+      };
+
+      var join = ee.Join.inner();
+      var filter = ee.Filter.equals('system:time_start', null, 'system:time_start');
+      var joined = ee.ImageCollection(join.apply(c1, c2, filter));
+     
+      joined = ee.ImageCollection(joined.map(MergeBands));
+      joined = joined.map(function(img){return img.mask(img.mask().and(img.reduce(ee.Reducer.min()).neq(0)))});
+      return joined;
+    }
+//////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 
 // Function to export composite collection
