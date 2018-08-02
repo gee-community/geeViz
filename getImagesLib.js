@@ -560,3 +560,4 @@ exports.simpleTDOM2 = simpleTDOM2;
 exports.addIndices = addIndices;
 exports.simpleAddIndices = simpleAddIndices;
 exports.compositeTimeSeries = compositeTimeSeries;
+exports.addZenithAzimuth = addZenithAzimuth;
