@@ -642,3 +642,4 @@ exports.illuminationCorrection = illuminationCorrection;
 exports.illuminationCondition = illuminationCondition;
 exports.addTCAngles = addTCAngles;
 exports.simpleAddTCAngles = simpleAddTCAngles;
+exports.exportCollection = exportCollection;
