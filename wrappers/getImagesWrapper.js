@@ -164,7 +164,7 @@ if(applyFmaskSnowMask){
   ls = ls.map(function(img){return getImageLib.cFmask(img,'snow')});
 }
 
-Map.addLayer(ls.median(),getImageLib.vizParamsFalse,'Median')
+Map.addLayer(ls.median(),getImageLib.vizParamsFalse,'Median');
 
 // Add common indices- can use addIndices for comprehensive indices 
 //or simpleAddIndices for only common indices
