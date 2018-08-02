@@ -1,3 +1,10 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-109.8193359375, 43.205175817237304],
+          [-109.775390625, 43.03677585761058],
+          [-109.566650390625, 43.000629854450004],
+          [-109.4677734375, 43.23319741022135]]]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
 ///////////////////////////////////////////////////////////////////////////////
 // Define user parameters:
 
@@ -7,7 +14,7 @@
 var rio = ee.FeatureCollection('users/ianhousman/RIO/Rio_Grande_NF_Boundary_10kBuffer_albers_diss');
 var fnf = ee.FeatureCollection('projects/USFS/LCMS-NFS/R1/FNF/FNF_GNP_Merge_Admin_BND_1k');
 var bt = ee.FeatureCollection('projects/USFS/LCMS-NFS/R4/BT/BT_LCMS_ProjectArea_5km');
-var studyArea = bt.geometry();//fnf.geometry();
+var studyArea = geometry;//bt.geometry();//fnf.geometry();
 
 // 2. Update the startJulian and endJulian variables to indicate your seasonal 
 // constraints. This supports wrapping for tropics and southern hemisphere.
@@ -118,7 +125,100 @@ print('Start and end dates:', startDate, endDate);
 toaOrSR = toaOrSR.toUpperCase();
 ////////////////////////////////////////////////////////////////////////////////
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
-var images  = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
+// Get Landsat image collection
+var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
   toaOrSR,includeSLCOffL7);
-  print(images)
+
+// Apply relevant cloud masking methods
+if (cloudcloudShadowMaskingMethod.toLowerCase() === 'cloudscoretdom' || 
+  cloudcloudShadowMaskingMethod.toLowerCase() === 'hybrid' || 
+  toaOrSR.toLowerCase() === 'toa') {
+  print('Running cloudScore');
+function applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels){
+  // Add cloudScore
+  var ls = ls.map(function(img){
+    var cs = getImageLib.landsatCloudScore(img).rename(['cloudScore']);
+    return img.addBands(cs);
+  });
+  // Find low cloud score pctl for each pixel to avoid comission errors
+  var minCloudScore = ls.select(['cloudScore'])
+    .reduce(ee.Reducer.percentile([cloudScorePctl]));
+  Map.addLayer(minCloudScore,{'min':0,'max':30},'minCloudScore')
+  // Apply cloudScore
+  var ls = ls.map(function(img){
+    var cloudMask = img.select(['cloudScore']).subtract(minCloudScore)
+      .lt(cloudScoreThresh)
+      .focal_max(contractPixels).focal_min(dilatePixels).rename('cloudMask');
+    return img.updateMask(cloudMask);
+  });
+}
+
+    
+  }
+
+// if ((cloudcloudShadowMaskingMethod.toLowerCase() === 'fmask' || 
+//   cloudcloudShadowMaskingMethod.toLowerCase() === 'hybrid') && 
+//   toaOrSR.toLowerCase() != 'toa') {
+//   print('Extracting cFmask cloud masks');
+//   ls = ls.map(cFmaskCloud);
+// }
+
+// if ( applyFmaskSnowMask == true){
+//   print('Applying Fmask snowmask');
+//   ls = ls.map(function(img){return cFmask(img,'snow')});
+// }
+
+// if (cloudcloudShadowMaskingMethod.toLowerCase() === 'cloudscoretdom' || 
+//   cloudcloudShadowMaskingMethod.toLowerCase() === 'hybrid' || 
+//   toaOrSR.toLowerCase() === 'toa') {
+//   print('Running TDOM');
+//   // Find and mask out dark outliers
+//   ls = simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
+// }
+
+// if ((cloudcloudShadowMaskingMethod.toLowerCase() === 'fmask' || 
+//   cloudcloudShadowMaskingMethod.toLowerCase() === 'hybrid') && 
+//   toaOrSR.toLowerCase() != 'toa') {
+//   print('Extracting cFmask cloud shadow masks');
+//   ls = ls.map(cFmaskCloudShadow);
+// }
+
+// // Add common indices
+// // ls = ls.map(addIndices);
+
+// // Add zenith and azimuth
+// if (correctIllumination){
+//   ls = ls.map(function(img){
+//     return addZenithAzimuth(img,toaOrSR);
+//   });
+// }
+
+// // Create composite time series
+// var ts = compositeTimeSeries(startYear,endYear,timebuffer,weights);
+
+// // Correct illumination
+// if (correctIllumination){
+//   ts = ts.map(illuminationCondition)
+//     .map(function(img){
+//       return illuminationCorrection(img, correctScale);
+//     });
+// }
+
+// // Export composite collection
+// var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
+// exportCollection(ts,startYear,endYear,timebuffer,exportBands);
+// // print(ee.Image(ts.first()));
+
+// ////////////////////////////////////////////////////////////////////////////////
+// // Load the study region, with a blue outline.
+// // Create an empty image into which to paint the features, cast to byte.
+// // Paint all the polygon edges with the same number and width, display.
+// var empty = ee.Image().byte();
+// var outline = empty.paint({
+//   featureCollection: studyArea,
+//   color: 1,
+//   width: 3
+// });
+// Map.addLayer(outline, {palette: '0000FF'}, "Study Area", false);
+// // Map.centerObject(studyArea, 6);
   
