@@ -482,3 +482,4 @@ function exportCollection(collection,startYear,endYear,timebuffer,exportBands){
 exports.getImageCollection = getImageCollection;
 exports.vizParamsFalse = vizParamsFalse;
 exports.vizParamsTrue = vizParamsTrue;
+exports.applyCloudScoreAlgorithm = applyCloudScoreAlgorithm;
