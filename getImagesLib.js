@@ -837,6 +837,232 @@ var modisCDict = {
       return joined;
     }
 //////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
+//Method for removing spikes in time series
+function despikeCollection(c,absoluteSpike,bandNo){
+  c = c.toList(10000,0);
+  
+  //Get book ends for adding back at the end
+  var first = c.slice(0,1);
+  var last = c.slice(-1,null);
+  
+  //Slice the left, center, and right for the moving window
+  var left = c.slice(0,-2);
+  var center = c.slice(1,-1);
+  var right = c.slice(2,null);
+  
+  //Find how many images there are to compare
+  var seq = ee.List.sequence(0,left.length().subtract(1));
+  
+  //Compare the center to the left and right images
+  var outCollection = seq.map(function(i){
+    var lt = ee.Image(left.get(i));
+    var rt = ee.Image(right.get(i));
+    
+    var ct = ee.Image(center.get(i));
+    var time_start = ct.get('system:time_start');
+    var time_end = ct.get('system:time_end');
+    var si = ct.get('system:index');
+   
+    
+    
+    var diff1 = ct.select([bandNo]).add(1).subtract(lt.select([bandNo]).add(1));
+    var diff2 = ct.select([bandNo]).add(1).subtract(rt.select([bandNo]).add(1));
+    
+    var highSpike = diff1.gt(absoluteSpike).and(diff2.gt(absoluteSpike));
+    var lowSpike = diff1.lt(- absoluteSpike).and(diff2.lt(- absoluteSpike));
+    var BinarySpike = highSpike.or(lowSpike);
+    
+    //var originalMask = ct.mask();
+    ct = ct.mask(BinarySpike.eq(0));
+    
+    var doNotMask = lt.mask().not().or(rt.mask().not());
+    return ct.mask(doNotMask.not().and(ct.mask()))
+    .set('system:index',si).set('system:time_start', time_start).set('system:time_end', time_end);
+    
+    
+  });
+  //Add the bookends back on
+  outCollection =  ee.List([first,outCollection,last]).flatten();
+   
+  return ee.ImageCollection.fromImages(outCollection);
+  
+}
+///////////////////////////////////////////////////////////
+//Function to get MODIS data from various collections
+//Will pull from daily or 8-day composite collections based on the boolean variable "daily"
+function getModisIndicesPhase2(startYear,endYear,startJulian,endJulian){
+    var a250C;var t250C;var a500C;var t500C;var a1000C;var t1000C;
+    var a250CV6;var t250CV6;var a500CV6;var t500CV6;var a1000CV6;var t1000CV6;
+      //Find which collections to pull from based on daily or 8-day
+      if(daily === false){
+        a250C = modisCDict.eightDaySR250A;
+        t250C = modisCDict.eightDaySR250T;
+        a500C = modisCDict.eightDaySR500A;
+        t500C = modisCDict.eightDaySR500T;
+        a1000C = modisCDict.eightDayLST1000A;
+        t1000C = modisCDict.eightDayLST1000T;
+        
+      
+      }
+     else{
+        a250C = modisCDict.dailySR250A;
+        t250C = modisCDict.dailySR250T;
+        a500C = modisCDict.dailySR500A;
+        t500C = modisCDict.dailySR500T;
+        a1000C = modisCDict.dailyLST1000A;
+        t1000C = modisCDict.dailyLST1000T;
+        
+        
+      }
+      
+    //Pull images from each of the collections  
+    var a250 = ee.ImageCollection(a250C)
+              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
+              .filter(ee.Filter.calendarRange(startJulian,endJulian))
+              .select(modis250SelectBands,modis250BandNames);
+    
+            
+    var t250 = ee.ImageCollection(t250C)
+              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
+              .filter(ee.Filter.calendarRange(startJulian,endJulian))
+              .select(modis250SelectBands,modis250BandNames);
+    
+    
+    function get500(c){
+       var images = ee.ImageCollection(c)
+              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
+              .filter(ee.Filter.calendarRange(startJulian,endJulian));
+              
+              //Mask pixels above a certain zenith
+              if(daily === true){
+                images = images
+              .map(function(img){
+                img = img.mask(img.mask().and(img.select(['SensorZenith']).lt(zenithThresh*100)));
+                if(maskWQA === true){
+                  img = maskCloudsWQA (img);
+                }
+                return img;
+              });
+              }
+              images = images
+              .select(modis500SelectBands,modis500BandNames);
+              return images;
+    }         
+    var a500 = get500(a500C);
+    var t500 = get500(t500C);
+    
+    
+    //If thermal collection is wanted, pull it as well
+    if(useTempInCloudMask === true){
+       var t1000 = ee.ImageCollection(t1000C)
+              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
+              .filter(ee.Filter.calendarRange(startJulian,endJulian))
+              .select([0]);
+            
+      var a1000 = ee.ImageCollection(a1000C)
+              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
+              .filter(ee.Filter.calendarRange(startJulian,endJulian))
+              .select([0]);        
+    }
+    
+    //Now all collections are pulled, start joining them
+    //First join the 250 and 500 m Aqua
+      var a;var t;var tSelectOrder;var tStdNames;
+      a = joinCollections(a250,a500);
+      
+      //Then Terra
+      t = joinCollections(t250,t500);
+      
+      //If temp was pulled, join that in as well
+      //Also select the bands in an L5-like order and give descriptive names
+      if(useTempInCloudMask === true){
+        a = joinCollections(a,a1000);
+        t = joinCollections(t,t1000);
+        tSelectOrder = wTempSelectOrder;
+        tStdNames = wTempStdNames;
+      }
+      //If no thermal was pulled, leave that out
+      else{
+        tSelectOrder = woTempSelectOrder;
+        tStdNames = woTempStdNames;
+      }
+      
+      //Join Terra and Aqua 
+      var joined = ee.ImageCollection(a.merge(t)).select(tSelectOrder,tStdNames);
+     
+      //Divide by 10000 to make it work with cloud masking algorithm out of the box
+      joined = joined.map(function(img){return img.divide(10000).float()
+        .copyProperties(img,['system:time_start','system:time_end']);
+        
+      });
+      // print('Collection',joined);
+      //Since MODIS thermal is divided by 0.02, multiply it by that and 10000 if it was included
+      if(useTempInCloudMask === true){
+      joined = joined.map(function(img){
+        var t = img.select(['temp']).multiply(0.02*10000);
+        return img.select(['blue','green','red','nir','swir1','swir2'])
+        .addBands(t).select([0,1,2,3,4,6,5]);
+      
+      });
+      }
+    
+    //Get some descriptive names for displaying layers
+    var name = 'surRefl';
+    if(daily === true){
+      name = name + '_daily';
+    }
+    else{name = name + '8DayComposite'}
+    if(maskWQA === true){
+      name = name + '_WQAMask';
+    }
+    
+   //Add first image as well as median for visualization
+    // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageBeforeMasking',false);
+    // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeBeforeMasking',false);
+    
+    if(applyCloudScore === true){
+   //Compute cloud score and mask cloudy pixels
+      print('Applying Google cloudScore algorithm');
+      // var joined = joined.map(function(img,useTempInCloudMask){
+      //   var cs = modisCloudScore(img);
+      //   return img.mask(img.mask().and(cs.lt(cloudThresh)))//.addBands(cs.select([0],['cloudScore']))
+        
+      // });
+    //Add first image as well as median for visualization
+    // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMasking',false);
+    // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMasking',false);
+    joined = joined.map(function(img){return getCloudMask(img,modisCloudScore)});
+      
+    }
+    
+  //   //If cloud shadow masking is chosen, run it
+  //   if(runTDOM === true){
+  //     print('Running TDOM');
+  //     joined = simpleTDOM(joined,zShadowThresh,zCloudThresh,maskAllDarkPixels)
+    
+  //   //Add first image as well as median for visualization after TDOM
+  // // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMaskingWTDOM',false);
+  // // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMaskingWTDOM',false);
+  
+      
+  //   };
+  
+  
+  // //Add indices and select them
+  // joined = joined.map(addIndices);
+  joined = joined.map(addIndices);
+  indicesAdded = true;
+  if(despikeMODIS){
+    print('Despiking MODIS');
+    joined = despikeCollection(joined,modisSpikeThresh,indexName);
+  }
+  
+  return ee.ImageCollection(joined);
+    
+  }
+  
+////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 
 // Function to export composite collection
