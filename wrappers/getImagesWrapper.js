@@ -180,7 +180,8 @@ if (correctIllumination){
 // Create composite time series
 var ts = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
 var f = ee.Image(ts.first());
-Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated')
+Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
+
 // Correct illumination
 if (correctIllumination){
   print('Correcting illumination');
@@ -189,12 +190,13 @@ if (correctIllumination){
       return getImageLib.illuminationCorrection(img, correctScale,studyArea);
     });
 }
+
 var f = ee.Image(ts.first());
-Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated')
-// // Export composite collection
-// var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
-// exportCollection(ts,startYear,endYear,timebuffer,exportBands);
-// // print(ee.Image(ts.first()));
+Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated');
+// Export composite collection
+var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
+getImageLib.exportCollection(ts,startYear,endYear,timebuffer,exportBands);
+
 
 // ////////////////////////////////////////////////////////////////////////////////
 // // Load the study region, with a blue outline.
