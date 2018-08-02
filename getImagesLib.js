@@ -889,7 +889,7 @@ function despikeCollection(c,absoluteSpike,bandNo){
   
 }
 ///////////////////////////////////////////////////
-function getCloudMask(img,cloudScoreFunction,useTempInCloudMask,contractPixels,dilatePixels){
+function getCloudMask(img,cloudScoreFunction,cloudThresh,useTempInCloudMask,contractPixels,dilatePixels){
   var cs = cloudScoreFunction(img,useTempInCloudMask);
   var cm =  cs.gte(cloudThresh).focal_min(contractPixels).focal_max(dilatePixels).rename('cloudMask');
   
