@@ -487,3 +487,4 @@ exports.vizParamsFalse = vizParamsFalse;
 exports.vizParamsTrue = vizParamsTrue;
 exports.landsatCloudScore = landsatCloudScore;
 exports.applyCloudScoreAlgorithm = applyCloudScoreAlgorithm;
+exports.cFmask = cFmask;
