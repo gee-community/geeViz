@@ -195,7 +195,7 @@ var f = ee.Image(ts.first());
 Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated');
 // Export composite collection
 var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
-getImageLib.exportCollection(ts,startYear,endYear,timebuffer,exportBands);
+getImageLib.exportCollection(ts,startYear,endYear,timebuffer,exportBands,toaOrSR,weights);
 
 
 // ////////////////////////////////////////////////////////////////////////////////
