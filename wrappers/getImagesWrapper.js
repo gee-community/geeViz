@@ -226,6 +226,8 @@ ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBa
               applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
 
 
+var modis = getImageLib.getModisData(startYear,endYear,startJulian,endJulian);
+print(modis)
 // ////////////////////////////////////////////////////////////////////////////////
 // Load the study region, with a blue outline.
 // Create an empty image into which to paint the features, cast to byte.
