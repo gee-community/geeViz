@@ -414,13 +414,13 @@ function medoidMosaicMSD(inCollection,medoidIncludeBands) {
 ////////////////////////////////////////////////////////////////////////////////
 // Function to export a provided image to an EE asset
 function exportToAssetWrapper(imageForExport,assetName,assetPath,
-  pyramidingPolicy,roi,region,scale,crs,transform){
+  pyramidingPolicy,roi,scale,crs,transform){
   //Make sure image is clipped to roi in case it's a multi-part polygon
   imageForExport = imageForExport.clip(roi);
   assetName = assetName.replace(/\s+/g,'-');//Get rid of any spaces
   
   Export.image.toAsset(imageForExport, assetName, assetPath, 
-    {'.default': pyramidingPolicy}, null, region, scale, crs, transform, 1e13);
+    {'.default': pyramidingPolicy}, null, roi, scale, crs, transform, 1e13);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -625,7 +625,7 @@ applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFm
     // print('Write down the Asset ID:', exportPath);
   
     exportToAssetWrapper(composite,exportName,exportPath,'mean',
-      studyArea,region,null,crs,transform);
+      studyArea,null,crs,transform);
     });
 }
 
