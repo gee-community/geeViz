@@ -29,8 +29,8 @@ var endJulian = 250;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 1989;
-var endYear = 2010;
+var startYear = 2010;
+var endYear = 2018;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -221,9 +221,9 @@ if (correctIllumination){
 
 // Export composite collection
 var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
-getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
-ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
-              applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
+// getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
+// ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
+//               applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -231,13 +231,16 @@ ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBa
 var daily = false;//Whether to use daily MODIS (true) or 8 day composites (false)
 var maskWQA = false;//Whether to use QA bits for cloud masking
 var zenithThresh  = 90;//If daily == true, Zenith threshold for daily acquisitions for including observations
-var applyCloudScore = true;//Whether to apply the Google cloudScore algorithm
+var applyCloudScore = false;//Whether to apply the Google cloudScore algorithm
 var useTempInCloudMask = true;//Whether to use the temperature band in cloud masking- necessary to use temp in bright arid areas
 var despikeMODIS = false;//Whether to despike MODIS collection
 var modisSpikeThresh = 0.05;//Threshold for identifying spikes.  Any pair of images that increases and decreases (positive spike) or decreases and increases (negative spike) in a three image series by more than this number will be masked out
 ///////////////////////////////////////
 var modis = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zenithThresh,applyCloudScore,cloudScoreThresh,contractPixels,dilatePixels,useTempInCloudMask,despikeMODIS,modisSpikeThresh);
-print(modis)
+// Create composite time series
+var mts = getImageLib.compositeTimeSeries(modis,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
+var first = ee.Image(mts.first());
+Map.addLayer(first,getImageLib.vizParamsFalse,'modis')
 // ////////////////////////////////////////////////////////////////////////////////
 // Load the study region, with a blue outline.
 // Create an empty image into which to paint the features, cast to byte.
