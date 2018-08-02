@@ -387,19 +387,19 @@ function getExistingChangeData(changeThresh,showLayers){
   
   var conusChange = ee.ImageCollection('projects/glri-phase3/science-team-outputs/conus-lcms-2018')
     .filter(ee.Filter.calendarRange(startYear,endYear,'year'));
-  var conusChangeOut = conusChange
+  var conusChangeOut = conusChange;
   conusChangeOut = conusChangeOut.map(function(img){
     var m = img.mask();
-    var out = img.mask(ee.Image(1))
-    out = out.where(m.not(),0)
-    return out})
+    var out = img.mask(ee.Image(1));
+    out = out.where(m.not(),0);
+    return out});
 
   conusChange = conusChange.map(function(img){
-    var yr = ee.Date(img.get('system:time_start')).get('year')
+    var yr = ee.Date(img.get('system:time_start')).get('year');
     var change = img.gt(changeThresh);
-    var conusChangeYr = ee.Image(yr).updateMask(change).rename(['change']).int16()
+    var conusChangeYr = ee.Image(yr).updateMask(change).rename(['change']).int16();
     return img.mask(ee.Image(1)).addBands(conusChangeYr);
-  })  
+  });
   if(showLayers){
   Map.addLayer(conusChange.select(['change']).max(),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'CONUS LCMS',true);
   Map.addLayer(conusChange.select(['probability']).max(),{'min':0,'max':50,'palette':'888,008'},'LCMSC',false);
@@ -417,7 +417,7 @@ function getExistingChangeData(changeThresh,showLayers){
   if(showLayers){
   Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Hansen',false);
   }
-  return conusChangeOut
+  return conusChangeOut;
 }
 ////////////////////////////////////////////////////////
 exports.getExistingChangeData =  getExistingChangeData;
