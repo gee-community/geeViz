@@ -1,9 +1,5 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-109.53369140625, 43.237199443653076],
-          [-109.66552734375, 43.30119623257967],
-          [-109.775390625, 43.333169392817325],
-          [-109.808349609375, 43.15710884095329]]]);
+var geometry = /* color: #d63000 */ee.Geometry.Point([-109.67857360839844, 43.263206254453095]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 ///////////////////////////////////////////////////////////////////////////////
 // Define user parameters:
@@ -58,7 +54,7 @@ var includeSLCOffL7 = false;
 //10. Whether to defringe L5
 //Landsat 5 data has fringes on the edges that can introduce anomalies into 
 //the analysis.  This method removes them, but is somewhat computationally expensive
-var defringeL5 = true;
+var defringeL5 = false;
 
 // 10. Choose cloud/cloud shadow masking method
 // Choices are a series of booleans for cloudScore, TDOM, and elements of Fmask
