@@ -561,3 +561,4 @@ exports.addIndices = addIndices;
 exports.simpleAddIndices = simpleAddIndices;
 exports.compositeTimeSeries = compositeTimeSeries;
 exports.addZenithAzimuth = addZenithAzimuth;
+exports.illuminationCorrection = illuminationCorrection;
