@@ -14,19 +14,7 @@ var vizParamsTrue = {
   'bands': 'red,green,blue', 
 };
 
-// Prep client-side region for exporting
-// var studyAreaBounds = studyArea.bounds();
-// var region = studyArea.bounds(1000).getInfo().coordinates[0];
 
-// Prepare dates
-if (startJulian > endJulian) {
-  endJulian = endJulian + 365;
-}
-var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
-var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1,'day');
-print('Start and end dates:', startDate, endDate);
-
-toaOrSR = toaOrSR.toUpperCase();
 
 ////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
