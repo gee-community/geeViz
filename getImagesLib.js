@@ -569,7 +569,7 @@ function listToString(list,space){
 }
 ////////////////////////////////////////////////////////////////////////////////
 // Function to export composite collection
-function exportCollection(collection,startYear,endYear,timebuffer,exportBands,toaOrSR,weights){
+function exportCollection(collection,startYear,endYear,startJulian,endJulian,timebuffer,exportBands,toaOrSR,weights){
   collection = collection.select(exportBands);
   var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
