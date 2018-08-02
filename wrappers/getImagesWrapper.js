@@ -59,11 +59,19 @@ var toaOrSR = 'SR';
 var includeSLCOffL7 = false;
 
 // 10. Choose cloud/cloud shadow masking method
-// Choices are fmask, cloudScoreTDOM, or hybrid to run cloudScore, fmask cloud 
-// mask, TDOM, and then fmask cloud shadow 
-var cloudcloudShadowMaskingMethod = 'cloudScoreTDOM';
+// Choices are a series of booleans for cloudScore, TDOM, and elements of Fmask
+//Fmask masking options will run fastest since they're precomputed
+//CloudScore runs pretty quickly, but does look at the time series to find areas that 
+//always have a high cloudScore to reduce comission errors- this takes some time
+//and needs a longer time series (>5 years or so)
+//TDOM also looks at the time series and will need a longer time series
+var applyCloudScore = true;
+var applyFmaskCloudMask = true;
 
+var applyTDOM = true;
+var applyFmaskCloudShadowMask = true;
 var applyFmaskSnowMask = false;
+
 // 11. Cloud and cloud shadow masking parameters.
 // If cloudScoreTDOM is chosen
 // cloudScoreThresh: If using the cloudScoreTDOMShift method-Threshold for cloud 
@@ -75,7 +83,7 @@ var cloudScoreThresh = 20;
 // the cloud score over time for a given pixel. Reduces comission errors over 
 // cool bright surfaces. Generally between 5 and 10 works well. 0 generally is a
 // bit noisy
-var cloudScorePctl = 5; 
+var cloudScorePctl = 100; 
 
 // zScoreThresh: Threshold for cloud shadow masking- lower number masks out 
 //    less. Between -0.8 and -1.2 generally works well
@@ -138,7 +146,7 @@ if (cloudcloudShadowMaskingMethod.toLowerCase() === 'cloudscoretdom' ||
     // var landsatCloudScore = getImageLib.landsatCloudScore
    ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels) 
   }
-  // Map.addLayer(ls.median(),getImageLib.vizParamsFalse)
+  Map.addLayer(ls.median(),getImageLib.vizParamsFalse)
 
 // if ((cloudcloudShadowMaskingMethod.toLowerCase() === 'fmask' || 
 //   cloudcloudShadowMaskingMethod.toLowerCase() === 'hybrid') && 
