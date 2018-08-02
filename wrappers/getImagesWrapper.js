@@ -137,6 +137,20 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
   toaOrSR,includeSLCOffL7);
 
+
+if(applyCloudScore){
+  print('Running cloudScore');
+  ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
+  
+}
+if(applyFmaskCloudMask){
+  print('Applying Fmask cloudmask');
+  ls = ls.map(function(img){return getImageLib.cFmask(img,'cloud')});
+}
+
+if(applyTDOM){}
+if(applyFmaskCloudShadowMask){}
+if(applyFmaskSnowMask = false){}
 // Apply relevant cloud masking methods
 if (cloudcloudShadowMaskingMethod.toLowerCase() === 'cloudscoretdom' || 
   cloudcloudShadowMaskingMethod.toLowerCase() === 'hybrid' || 
