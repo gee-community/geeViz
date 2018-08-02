@@ -601,20 +601,19 @@ applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFm
     // Add metadata, cast to integer, and export composite
     composite = composite.set({
       'system:time_start': ee.Date.fromYMD(year,6,1).millis(),
-      'date': ee.Date.fromYMD(year,6,1),
       'source': toaOrSR,
       'yearBuffer':timebuffer,
       'yearWeights': listToString(weights),
       'startJulian': startJulian,
       'endJulian': endJulian,
-      'applyCloudScore':applyCloudScore,
-      'applyFmaskCloudMask' :applyFmaskCloudMask,
-      'applyTDOM' :applyTDOM,
-      'applyFmaskCloudShadowMask' :applyFmaskCloudShadowMask,
-      'applyFmaskSnowMask': applyFmaskSnowMask,
+      'applyCloudScore':applyCloudScore.toString(),
+      'applyFmaskCloudMask' :applyFmaskCloudMask.toString(),
+      'applyTDOM' :applyTDOM.toString(),
+      'applyFmaskCloudShadowMask' :applyFmaskCloudShadowMask.toString(),
+      'applyFmaskSnowMask': applyFmaskSnowMask.toString(),
       'compositingMethod': compositingMethod,
       'includeSLCOffL7': includeSLCOffL7.toString(),
-      'correctIllumination':correctIllumination
+      'correctIllumination':correctIllumination.toString()
     });
   
     // Export the composite 
