@@ -140,7 +140,7 @@ toaOrSR = toaOrSR.toUpperCase();
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 // Get Landsat image collection
 var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
-  toaOrSR,includeSLCOffL7);
+  toaOrSR,includeSLCOffL7,defringeL5);
 
 // Apply relevant cloud masking methods
 if(applyCloudScore){
