@@ -88,7 +88,8 @@ function defringeLandsat(img){
 function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
   toaOrSR,includeSLCOffL7,defringeL5){
   
-  if(defringeL5 == null or defringeL5 == undefined){defringeL5 = false};
+  if(defringeL5 === null || defringeL5 === undefined){defringeL5 = false}
+  
   // Set up bands and corresponding band names
   var sensorBandDict = {
     'L8TOA': ee.List([1,2,3,4,5,9,6,'BQA']),
