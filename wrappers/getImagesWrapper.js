@@ -113,9 +113,10 @@ var dilatePixels = 2.5;
 var correctIllumination = false;
 var correctScale = 250;
 
-
+//13. Export params
 var crs = 'EPSG:5070';
 var transform = [30,0,-2361915.0,0,-30,3177735.0];
+///////////////////////////////////////////////////////////////////////
 // End user parameters
 
 // Prep client-side region for exporting
@@ -153,7 +154,7 @@ if(applyTDOM){
   //Find and mask out dark outliers
   ls = getImageLib.simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
 }
-// if(applyFmaskCloudShadowMask){}
+if(applyFmaskCloudShadowMask){}
 // if(applyFmaskSnowMask){}
 
 
