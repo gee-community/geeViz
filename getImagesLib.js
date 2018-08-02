@@ -607,7 +607,7 @@ function exportCollection(collection,startYear,endYear,startJulian,endJulian,com
       'applyCloudScore':applyCloudScore,
       'applyFmaskCloudMask' :applyFmaskCloudMask,
       'applyTDOM' :applyTDOM,
-var applyFmaskCloudShadowMask = false;
+      'applyFmaskCloudShadowMask' :applyFmaskCloudShadowMask,
 
 var applyFmaskSnowMask = false;
       'compositingMethod': compositingMethod,
