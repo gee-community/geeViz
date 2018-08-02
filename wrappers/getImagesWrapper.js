@@ -11,10 +11,10 @@ var geometry = /* color: #98ff00 */ee.Geometry.Polygon(
 // 1. Specify study area: Study area
 // Can specify a country, provide a fusion table  or asset table (must add 
 // .geometry() after it), or draw a polygon and make studyArea = drawnPolygon
-var rio = ee.FeatureCollection('users/ianhousman/RIO/Rio_Grande_NF_Boundary_10kBuffer_albers_diss');
-var fnf = ee.FeatureCollection('projects/USFS/LCMS-NFS/R1/FNF/FNF_GNP_Merge_Admin_BND_1k');
-var bt = ee.FeatureCollection('projects/USFS/LCMS-NFS/R4/BT/BT_LCMS_ProjectArea_5km');
-var studyArea = geometry;//bt.geometry();//fnf.geometry();
+var rio = ee.FeatureCollection('users/ianhousman/RIO/Rio_Grande_NF_Boundary_10kBuffer_albers_diss').geometry();
+var fnf = ee.FeatureCollection('projects/USFS/LCMS-NFS/R1/FNF/FNF_GNP_Merge_Admin_BND_1k').geometry();
+var bt = ee.FeatureCollection('projects/USFS/LCMS-NFS/R4/BT/BT_LCMS_ProjectArea_5km').geometry();
+var studyArea = geometry;
 
 // 2. Update the startJulian and endJulian variables to indicate your seasonal 
 // constraints. This supports wrapping for tropics and southern hemisphere.
@@ -28,23 +28,33 @@ var endJulian = 250;
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
 var startYear = 1989;
-var endYear = 1991;
+var endYear = 2010;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
 // in a 3 year moving window
 var timebuffer = 1;
+
+// 5. Specify the weights to be used for the moving window created by timeBuffer
+//For example- if timeBuffer is 1, that is a 3 year moving window
+//If the center year is 2000, then the years are 1999,2000, and 2001
+//In order to overweight the center year, you could specify the weights as
+//[1,5,1] which would duplicate the center year 5 times and increase its weight for
+//the compositing method
 var weights = [1,5,1];
-// 5. Set up Names for the export
+
+
+// 6. Set up Names for the export
 var outputName = 'Medoid-Landsat';
 
-// 6. Provide location composites will be exported to
+// 7. Provide location composites will be exported to
+//This should be an asset folder, or more ideally, an asset imageCollection
 var exportPathRoot = 'users/ianhousman/test';
 
-// 7. Choose medoid or median compositing method. 
+// 8. Choose medoid or median compositing method. 
 // Median tends to be smoother, while medoid retains 
 // single date of observation across all bands
-// Specify compositing method (median or medoid)
+// If not exporting indices with composites to save space, medoid should be used
 var compositingMethod = 'medoid';
 
 // 8. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
