@@ -604,6 +604,12 @@ function exportCollection(collection,startYear,endYear,startJulian,endJulian,com
       'yearWeights': listToString(weights),
       'startJulian': startJulian,
       'endJulian': endJulian,
+      'applyCloudScore':applyCloudScore,
+      'applyFmaskCloudMask' :applyFmaskCloudMask,
+      'applyTDOM' :applyTDOM,
+var applyFmaskCloudShadowMask = false;
+
+var applyFmaskSnowMask = false;
       'compositingMethod': compositingMethod,
       'cloudcloudShadowMaskingMethod': cloudcloudShadowMaskingMethod,
       'includeSLCOffL7': includeSLCOffL7.toString()
