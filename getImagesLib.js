@@ -143,7 +143,7 @@ function landsatCloudScore(img) {
 function applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels){
   // Add cloudScore
   var ls = ls.map(function(img){
-    var cs = getImageLib.landsatCloudScore(img).rename(['cloudScore']);
+    var cs = cloudScoreFunction(img).rename(['cloudScore']);
     return img.addBands(cs);
   });
   // Find low cloud score pctl for each pixel to avoid comission errors
