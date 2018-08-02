@@ -269,6 +269,7 @@ function addIndices(img){
   
   return img;
 }
+/////////////////////////////////////////////////////////////////
 //Function for only adding common indices
 function simpleAddIndices(in_image){
     in_image = in_image.addBands(in_image.normalizedDifference(['nir', 'red']).select([0],['NDVI']));
@@ -278,7 +279,7 @@ function simpleAddIndices(in_image){
   
     return in_image;
 }
-/////////////////////////////////////////////////////////////////
+
 /////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 // Function to compute the Tasseled Cap transformation and return an image
