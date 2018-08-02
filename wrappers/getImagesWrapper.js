@@ -36,14 +36,11 @@ var endYear = 2018;
 var timebuffer = 1;
 var weights = [1,5,1];
 // 5. Set up Names for the export
-var outputName = 'Medoid';//'Medoid_Corrected';//
+var outputName = 'Medoid-Landsat';
 
 // 6. Provide location composites will be exported to
-// var exportPathRoot = 'projects/USFS/LCMS-NFS/RIO-Test/'+ outputName;
+var exportPathRoot = 'users/ianhousman/test';
 
-// var exportPathRoot = 'projects/USFS/LCMS-NFS/R1/FNF/FNF-Collection';
-// var exportPathRoot = 'projects/USFS/LCMS-NFS/R1/FNF/Composites/FNF-Composite-Collection';
-var exportPathRoot = 'projects/USFS/LCMS-NFS/R4/BT/Composites/BT-Composite-Collection';
 // 7. Choose medoid or median compositing method. 
 // Median tends to be smoother, while medoid retains 
 // single date of observation across all bands
