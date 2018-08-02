@@ -134,27 +134,11 @@ if (cloudcloudShadowMaskingMethod.toLowerCase() === 'cloudscoretdom' ||
   cloudcloudShadowMaskingMethod.toLowerCase() === 'hybrid' || 
   toaOrSR.toLowerCase() === 'toa') {
   print('Running cloudScore');
-function applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels){
-  // Add cloudScore
-  var ls = ls.map(function(img){
-    var cs = getImageLib.landsatCloudScore(img).rename(['cloudScore']);
-    return img.addBands(cs);
-  });
-  // Find low cloud score pctl for each pixel to avoid comission errors
-  var minCloudScore = ls.select(['cloudScore'])
-    .reduce(ee.Reducer.percentile([cloudScorePctl]));
-  Map.addLayer(minCloudScore,{'min':0,'max':30},'minCloudScore')
-  // Apply cloudScore
-  var ls = ls.map(function(img){
-    var cloudMask = img.select(['cloudScore']).subtract(minCloudScore)
-      .lt(cloudScoreThresh)
-      .focal_max(contractPixels).focal_min(dilatePixels).rename('cloudMask');
-    return img.updateMask(cloudMask);
-  });
-}
 
-    
+
+   ls = getImageLib.applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels) 
   }
+  Map.addLayer(ls.median(),getImageLib.vizParamsFalse)
 
 // if ((cloudcloudShadowMaskingMethod.toLowerCase() === 'fmask' || 
 //   cloudcloudShadowMaskingMethod.toLowerCase() === 'hybrid') && 
