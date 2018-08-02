@@ -138,7 +138,27 @@ function landsatCloudScore(img) {
   score = score.clamp(0,100);
   return score;
 }
-
+////////////////////////////////////////////////////////////////////////////////
+//Wrapper for applying cloudScore function
+function applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels){
+  // Add cloudScore
+  var ls = ls.map(function(img){
+    var cs = getImageLib.landsatCloudScore(img).rename(['cloudScore']);
+    return img.addBands(cs);
+  });
+  // Find low cloud score pctl for each pixel to avoid comission errors
+  var minCloudScore = ls.select(['cloudScore'])
+    .reduce(ee.Reducer.percentile([cloudScorePctl]));
+  Map.addLayer(minCloudScore,{'min':0,'max':30},'minCloudScore')
+  // Apply cloudScore
+  var ls = ls.map(function(img){
+    var cloudMask = img.select(['cloudScore']).subtract(minCloudScore)
+      .lt(cloudScoreThresh)
+      .focal_max(contractPixels).focal_min(dilatePixels).rename('cloudMask');
+    return img.updateMask(cloudMask);
+  });
+  return ls
+}
 ////////////////////////////////////////////////////////////////////////////////
 // Functions for applying fmask to SR data
 var fmaskBitDict = {'cloud' : 32, 'shadow': 8,'snow':16};
