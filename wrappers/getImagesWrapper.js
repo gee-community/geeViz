@@ -141,7 +141,7 @@ var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,
 
 // Apply relevant cloud masking methods
 if(applyCloudScore){
-  print('Running cloudScore');
+  print('Applying cloudScore');
   ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
   
 }
