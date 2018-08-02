@@ -1062,7 +1062,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
   // //Add indices and select them
   // joined = joined.map(addIndices);
   joined = joined.map(addIndices);
-  indicesAdded = true;
+  var indicesAdded = true;
   if(despikeMODIS){
     print('Despiking MODIS');
     joined = despikeCollection(joined,modisSpikeThresh,indexName);
