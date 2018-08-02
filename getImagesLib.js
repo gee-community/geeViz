@@ -569,7 +569,8 @@ function listToString(list,space){
 }
 ////////////////////////////////////////////////////////////////////////////////
 // Function to export composite collection
-function exportCollection(exportPathRoot,outputName,studyArea, collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
+function exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
+collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
 applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7){
   collection = collection.select(exportBands);
   var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
