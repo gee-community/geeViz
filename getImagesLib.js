@@ -488,3 +488,4 @@ exports.vizParamsTrue = vizParamsTrue;
 exports.landsatCloudScore = landsatCloudScore;
 exports.applyCloudScoreAlgorithm = applyCloudScoreAlgorithm;
 exports.cFmask = cFmask;
+exports.simpleTDOM2 = simpleTDOM2;
