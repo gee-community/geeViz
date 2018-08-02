@@ -1041,7 +1041,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     //Add first image as well as median for visualization
     // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMasking',false);
     // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMasking',false);
-    joined = joined.map(function(img){return getCloudMask(img,modisCloudScore)});
+    joined = joined.map(function(img){return getCloudMask(img,cloudScoreFunction,contractPixels,dilatePixels)});
       
     }
     
