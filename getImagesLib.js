@@ -572,7 +572,7 @@ function listToString(list,space){
 // Function to export composite collection
 function exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
 collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
-applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7){
+applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination){
   collection = collection.select(exportBands);
   var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
@@ -613,7 +613,8 @@ applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFm
       'applyFmaskCloudShadowMask' :applyFmaskCloudShadowMask,
       'applyFmaskSnowMask': applyFmaskSnowMask,
       'compositingMethod': compositingMethod,
-      'includeSLCOffL7': includeSLCOffL7.toString()
+      'includeSLCOffL7': includeSLCOffL7.toString(),
+      'correctIllumination':correctIllumination
     });
   
     // Export the composite 
