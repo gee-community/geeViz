@@ -145,7 +145,7 @@ if(applyCloudScore){
   
 }
 if(applyFmaskCloudMask){
-  print('Applying Fmask cloudmask');
+  print('Applying Fmask cloud mask');
   ls = ls.map(function(img){return getImageLib.cFmask(img,'cloud')});
 }
 
@@ -155,10 +155,13 @@ if(applyTDOM){
   ls = getImageLib.simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
 }
 if(applyFmaskCloudShadowMask){
-  print('Applying Fmask shadow');
+  print('Applying Fmask shadow mask');
   ls = ls.map(function(img){return getImageLib.cFmask(img,'shadow')});
 }
-// if(applyFmaskSnowMask){}
+if(applyFmaskSnowMask){
+  print('Applying Fmask snow mask');
+  ls = ls.map(function(img){return getImageLib.cFmask(img,'snow')});
+}
 
 
 // if ((cloudcloudShadowMaskingMethod.toLowerCase() === 'fmask' || 
