@@ -5,6 +5,8 @@ var geometry = /* color: #98ff00 */ee.Geometry.Polygon(
           [-105.360767292844, 39.25236887854654],
           [-107.57914696634225, 39.18649132261251]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
+//Module imports
+var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 ///////////////////////////////////////////////////////////////////////////////
 // Define user parameters:
 
@@ -133,10 +135,12 @@ var transform = [30,0,-2361915.0,0,-30,3177735.0];//Specify transform if scale i
 var scale = null;//Specify scale if transform is null
 ///////////////////////////////////////////////////////////////////////
 // End user parameters
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
 //Start function calls
-
-
 // Prepare dates
+//Wrap the dates if needed
 if (startJulian > endJulian) {
   endJulian = endJulian + 365;
 }
@@ -154,7 +158,6 @@ if(toaOrSR === 'TOA'){
     applyFmaskSnowMask = false;
   }
 ////////////////////////////////////////////////////////////////////////////////
-var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 // Get Landsat image collection
 var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
   toaOrSR,includeSLCOffL7,defringeL5);
@@ -187,16 +190,16 @@ if(applyFmaskSnowMask){
 
 
 
-// Add common indices- can use addIndices for comprehensive indices 
-//or simpleAddIndices for only common indices
-ls = ls.map(getImageLib.simpleAddIndices);
-
 // Add zenith and azimuth
 if (correctIllumination){
   ls = ls.map(function(img){
     return getImageLib.addZenithAzimuth(img,toaOrSR);
   });
 }
+
+// Add common indices- can use addIndices for comprehensive indices 
+//or simpleAddIndices for only common indices
+ls = ls.map(getImageLib.simpleAddIndices);
 
 // Create composite time series
 var ts = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
