@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-
+//Script for getting Landsat, Sentinel 2 and MODIS images/composites
 // Define visualization parameters
 var vizParamsFalse = {
   'min': 0.1, 
@@ -363,16 +363,16 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
     var z = yearsT.zip(weights);
     var yearsTT = z.map(function(i){
       i = ee.List(i);
-      return ee.List.repeat(i.get(0),i.get(1))
+      return ee.List.repeat(i.get(0),i.get(1));
     }).flatten();
-    print('Weighted composite years for year:',year,yearsTT)
+    print('Weighted composite years for year:',year,yearsTT);
     var images = yearsTT.map(function(yr){
       
       // Filter images for given date range
       var lsT = ls.filter(ee.Filter.calendarRange(yr,yr,'year'))
-                .filter(ee.Filter.calendarRange(startJulian,endJulian))//.toList(10000,0);
+                .filter(ee.Filter.calendarRange(startJulian,endJulian));//.toList(10000,0);
     return lsT;
-    })
+    });
     var lsT = ee.ImageCollection(ee.FeatureCollection(images).flatten())
    
     // Compute median or medoid
