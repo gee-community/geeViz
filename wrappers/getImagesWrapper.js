@@ -118,7 +118,7 @@ var crs = 'EPSG:5070';
 var transform = [30,0,-2361915.0,0,-30,3177735.0];
 ///////////////////////////////////////////////////////////////////////
 // End user parameters
-
+//Start function calls
 // Prep client-side region for exporting
 // var studyAreaBounds = studyArea.bounds();
 // var region = studyArea.bounds(1000).getInfo().coordinates[0];
