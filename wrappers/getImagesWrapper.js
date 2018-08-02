@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-109.8193359375, 43.205175817237304],
-          [-109.775390625, 43.03677585761058],
-          [-109.566650390625, 43.000629854450004],
-          [-109.4677734375, 43.23319741022135]]]);
+        [[[-109.53369140625, 43.237199443653076],
+          [-109.66552734375, 43.30119623257967],
+          [-109.775390625, 43.333169392817325],
+          [-109.808349609375, 43.15710884095329]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 ///////////////////////////////////////////////////////////////////////////////
 // Define user parameters:
@@ -166,9 +166,9 @@ if(applyFmaskSnowMask){
 
 Map.addLayer(ls.median(),getImageLib.vizParamsFalse,'Median')
 
-// // Add common indices
-// // ls = ls.map(addIndices);
-
+// Add common indices
+ls = ls.map(getImageLib.addIndices);
+print(ls.first())
 // // Add zenith and azimuth
 // if (correctIllumination){
 //   ls = ls.map(function(img){
