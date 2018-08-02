@@ -460,3 +460,5 @@ function exportCollection(collection,startYear,endYear,timebuffer,exportBands){
 // END FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
 exports.getImageCollection = getImageCollection;
+exports.vizParamsFalse = vizParamsFalse;
+exports.vizParamsTrue = vizParamsTrue;
