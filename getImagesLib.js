@@ -143,12 +143,13 @@ function landsatCloudScore(img) {
 function applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels){
   print('Applying cloudScore');
   var t = cloudScoreFunction(ee.Image(collection.first()));
-  print('yay')
+  
   // Add cloudScore
   var ls = ls.map(function(img){
     var cs = cloudScoreFunction(img).rename(['cloudScore']);
     return img.addBands(cs);
   });
+  print('yay')
   // Find low cloud score pctl for each pixel to avoid comission errors
   var minCloudScore = ls.select(['cloudScore'])
     .reduce(ee.Reducer.percentile([cloudScorePctl]));
