@@ -203,6 +203,7 @@ ls = ls.map(getImageLib.simpleAddIndices);
 
 // Create composite time series
 var ts = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
+
 var f = ee.Image(ts.first());
 Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
 
@@ -213,10 +214,11 @@ if (correctIllumination){
     .map(function(img){
       return getImageLib.illuminationCorrection(img, correctScale,studyArea);
     });
+  var f = ee.Image(ts.first());
+  Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated',false);
 }
 
-var f = ee.Image(ts.first());
-Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated',false);
+
 // Export composite collection
 var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
 getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
