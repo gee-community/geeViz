@@ -122,7 +122,7 @@ var transform = [30,0,-2361915.0,0,-30,3177735.0];
 //Start function calls
 // Prep client-side region for exporting
 // var studyAreaBounds = studyArea.bounds();
-// var region = studyArea.bounds(1000).getInfo().coordinates[0];
+// 
 
 // Prepare dates
 if (startJulian > endJulian) {
@@ -195,7 +195,8 @@ var f = ee.Image(ts.first());
 Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated');
 // Export composite collection
 var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
-getImageLib.exportCollection(exportPathRoot,outputName,studyArea,ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
+getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale
+ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
               applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7);
 
 
