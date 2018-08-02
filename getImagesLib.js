@@ -611,7 +611,6 @@ applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFm
       'applyFmaskCloudShadowMask' :applyFmaskCloudShadowMask,
       'applyFmaskSnowMask': applyFmaskSnowMask,
       'compositingMethod': compositingMethod,
-      'cloudcloudShadowMaskingMethod': cloudcloudShadowMaskingMethod,
       'includeSLCOffL7': includeSLCOffL7.toString()
     });
   
