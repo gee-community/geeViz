@@ -138,7 +138,7 @@ if (cloudcloudShadowMaskingMethod.toLowerCase() === 'cloudscoretdom' ||
 
    ls = getImageLib.applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels) 
   }
-  Map.addLayer(ls.median(),getImageLib.vizParamsFalse)
+  // Map.addLayer(ls.median(),getImageLib.vizParamsFalse)
 
 // if ((cloudcloudShadowMaskingMethod.toLowerCase() === 'fmask' || 
 //   cloudcloudShadowMaskingMethod.toLowerCase() === 'hybrid') && 
