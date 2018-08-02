@@ -135,7 +135,15 @@ var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
 var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1,'day');
 print('Start and end dates:', startDate, endDate);
 
+//Do some error checking
 toaOrSR = toaOrSR.toUpperCase();
+if(toaOrSR === 'TOA'){
+    applyFmaskCloudMask = false;
+
+    applyFmaskCloudShadowMask = false;
+
+    applyFmaskSnowMask = false;
+  }
 ////////////////////////////////////////////////////////////////////////////////
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 // Get Landsat image collection
