@@ -90,13 +90,7 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
   
   if(defringeL5 === null || defringeL5 === undefined){defringeL5 = false}
   
-  if(toaOrSR === 'TOA'){
-    applyFmaskCloudMask = false;
-
-    applyFmaskCloudShadowMask = false;
-
-    applyFmaskSnowMask = false;
-  }
+  
   // Set up bands and corresponding band names
   var sensorBandDict = {
     'L8TOA': ee.List([1,2,3,4,5,9,6,'BQA']),
