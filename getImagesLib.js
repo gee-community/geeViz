@@ -346,7 +346,7 @@ function exportToAssetWrapper(imageForExport,assetName,assetPath,
 
 ////////////////////////////////////////////////////////////////////////////////
 // Create composites for each year within startYear and endYear range
-function compositeTimeSeries(ls,startYear,endYear,timebuffer,weights){
+function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights){
   var ts = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
     // Set up dates
