@@ -130,6 +130,7 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     .select(sensorBandDict['L5'+ toaOrSR],sensorBandNameDict[toaOrSR]);
     
   if(defringeL5){
+    print('Defringing L5');
     l5s = l5s.map(defringeLandsat);
   }
   var l8s = ee.ImageCollection(collectionDict['L8'+ toaOrSR])
