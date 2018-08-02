@@ -23,8 +23,8 @@ var endJulian = 250;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2015;
-var endYear = 2018;
+var startYear = 1989;
+var endYear = 1991;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -144,6 +144,9 @@ if(applyCloudScore){
   ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
   
 }
+var f = ee.Image(ls.first());
+print(f)
+Map.addLayer(f,getImageLib.vizParamsFalse)
 if(applyFmaskCloudMask){
   print('Applying Fmask cloud mask');
   ls = ls.map(function(img){return getImageLib.cFmask(img,'cloud')});
