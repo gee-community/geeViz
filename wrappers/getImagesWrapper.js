@@ -57,21 +57,21 @@ var exportPathRoot = 'users/ianhousman/test';
 // If not exporting indices with composites to save space, medoid should be used
 var compositingMethod = 'medoid';
 
-// 8. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
+// 9. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
 // Specify TOA or SR
 // Current implementation does not support Fmask for TOA
 var toaOrSR = 'TOA';
 
-// 9. Choose whether to include Landat 7
+// 10. Choose whether to include Landat 7
 // Generally only included when data are limited
 var includeSLCOffL7 = false;
 
-//10. Whether to defringe L5
+//11. Whether to defringe L5
 //Landsat 5 data has fringes on the edges that can introduce anomalies into 
 //the analysis.  This method removes them, but is somewhat computationally expensive
 var defringeL5 = false;
 
-// 10. Choose cloud/cloud shadow masking method
+// 12. Choose cloud/cloud shadow masking method
 // Choices are a series of booleans for cloudScore, TDOM, and elements of Fmask
 //Fmask masking options will run fastest since they're precomputed
 //CloudScore runs pretty quickly, but does look at the time series to find areas that 
@@ -86,7 +86,7 @@ var applyFmaskCloudShadowMask = false;
 
 var applyFmaskSnowMask = false;
 
-// 11. Cloud and cloud shadow masking parameters.
+// 13. Cloud and cloud shadow masking parameters.
 // If cloudScoreTDOM is chosen
 // cloudScoreThresh: If using the cloudScoreTDOMShift method-Threshold for cloud 
 //    masking (lower number masks more clouds.  Between 10 and 30 generally 
@@ -121,22 +121,20 @@ var contractPixels = 1.5;
 // (2.5 or 3.5 generally is sufficient)
 var dilatePixels = 2.5;
 
-// 12. correctIllumination: Choose if you want to correct the illumination using
+// 14. correctIllumination: Choose if you want to correct the illumination using
 // Sun-Canopy-Sensor+C correction. Additionally, choose the scale at which the
 // correction is calculated in meters.
 var correctIllumination = false;
 var correctScale = 250;
 
-//13. Export params
+//15. Export params
 var crs = 'EPSG:5070';
 var transform = [30,0,-2361915.0,0,-30,3177735.0];//Specify transform if scale is null and snapping to known grid is needed
 var scale = null;//Specify scale if transform is null
 ///////////////////////////////////////////////////////////////////////
 // End user parameters
 //Start function calls
-// Prep client-side region for exporting
-// var studyAreaBounds = studyArea.bounds();
-// 
+
 
 // Prepare dates
 if (startJulian > endJulian) {
