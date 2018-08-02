@@ -204,13 +204,80 @@ function simpleTDOM2(collection,zScoreThresh,shadowSumThresh,contractPixels,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Function for adding common indices
+// Function to add common (and less common) spectral indices to an image.
+// Includes the Normalized Difference Spectral Vector from (Angiuli and Trianni, 2014)
 function addIndices(img){
-  img = img.addBands(img.normalizedDifference(['nir', 'red']).rename('NDVI'));
-  img = img.addBands(img.normalizedDifference(['nir', 'swir2']).rename('NBR'));
+  // Add Normalized Difference Spectral Vector (NDSV)
+  img = img.addBands(img.normalizedDifference(['blue','green']).rename('ND_blue_green'));
+  img = img.addBands(img.normalizedDifference(['blue','red']).rename('ND_blue_red'));
+  img = img.addBands(img.normalizedDifference(['blue','nir']).rename('ND_blue_nir'));
+  img = img.addBands(img.normalizedDifference(['blue','swir1']).rename('ND_blue_swir1'));
+  img = img.addBands(img.normalizedDifference(['blue','swir2']).rename('ND_blue_swir2'));
+
+  img = img.addBands(img.normalizedDifference(['green','red']).rename('ND_green_red'));
+  img = img.addBands(img.normalizedDifference(['green','nir']).rename('ND_green_nir')); //NDWBI
+  img = img.addBands(img.normalizedDifference(['green','swir1']).rename('ND_green_swir1')); //NDSI, MNDWI
+  img = img.addBands(img.normalizedDifference(['green','swir2']).rename('ND_green_swir2'));
+
+  img = img.addBands(img.normalizedDifference(['red','swir1']).rename('ND_red_swir1'));
+  img = img.addBands(img.normalizedDifference(['red','swir2']).rename('ND_red_swir2'));
+
+  img = img.addBands(img.normalizedDifference(['nir','red']).rename('ND_nir_red')); //NDVI
+  img = img.addBands(img.normalizedDifference(['nir','swir1']).rename('ND_nir_swir1')); //NDWI, LSWI, -NDBI
+  img = img.addBands(img.normalizedDifference(['nir','swir2']).rename('ND_nir_swir2')); //NBR, MNDVI
+
+  img = img.addBands(img.normalizedDifference(['swir1','swir2']).rename('ND_swir1_swir2'));
+  
+  // Add ratios
+  img = img.addBands(img.select('swir1').divide(img.select('nir')).rename('R_swir1_nir')); //ratio 5/4
+  img = img.addBands(img.select('red').divide(img.select('swir1')).rename('R_red_swir1')); // ratio 3/5
+
+  // Add Enhanced Vegetation Index (EVI)
+  var evi = img.expression(
+    '2.5 * ((NIR - RED) / (NIR + 6 * RED - 7.5 * BLUE + 1))', {
+      'NIR': img.select('nir'),
+      'RED': img.select('red'),
+      'BLUE': img.select('blue')
+  }).float();
+  img = img.addBands(evi.rename('EVI'));
+  
+  // Add Soil Adjust Vegetation Index (SAVI)
+  // using L = 0.5;
+  var savi = img.expression(
+    '(NIR - RED) * (1 + 0.5)/(NIR + RED + 0.5)', {
+      'NIR': img.select('nir'),
+      'RED': img.select('red')
+  }).float();
+  img = img.addBands(savi.rename('SAVI'));
+  
+  // Add Index-Based Built-Up Index (IBI)
+  var ibi_a = img.expression(
+    '2*SWIR1/(SWIR1 + NIR)', {
+      'SWIR1': img.select('swir1'),
+      'NIR': img.select('nir')
+    }).rename('IBI_A');
+  var ibi_b = img.expression(
+    '(NIR/(NIR + RED)) + (GREEN/(GREEN + SWIR1))', {
+      'NIR': img.select('nir'),
+      'RED': img.select('red'),
+      'GREEN': img.select('green'),
+      'SWIR1': img.select('swir1')
+    }).rename('IBI_B');
+  ibi_a = ibi_a.addBands(ibi_b);
+  var ibi = ibi_a.normalizedDifference(['IBI_A','IBI_B']);
+  img = img.addBands(ibi.rename('IBI'));
+  
   return img;
 }
-
+function simpleAddIndices(in_image){
+    in_image = in_image.addBands(in_image.normalizedDifference(['nir', 'red']).select([0],['NDVI']));
+    in_image = in_image.addBands(in_image.normalizedDifference(['nir', 'swir2']).select([0],['NBR']));
+    in_image = in_image.addBands(in_image.normalizedDifference(['nir', 'swir1']).select([0],['NDMI']));
+    in_image = in_image.addBands(in_image.normalizedDifference(['green', 'swir1']).select([0],['NDSI']));
+  
+    return in_image;
+}
+/////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 // Function to add solar zenith and azimuth in radians as bands to image
 function addZenithAzimuth(img,toaOrSR){
