@@ -70,7 +70,7 @@ var  medoidMosaicMSD = function(inCollection,medoidIncludeBands) {
     .select(bandNumbers,bandNames);
 
   return medoid;
-}
+};
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -94,17 +94,17 @@ function compositeTimeSeries(ls,startYear,endYear,timebuffer,weights,compositing
     var z = yearsT.zip(weights);
     var yearsTT = z.map(function(i){
       i = ee.List(i);
-      return ee.List.repeat(i.get(0),i.get(1))
+      return ee.List.repeat(i.get(0),i.get(1));
     }).flatten();
     // print(yearsTT)
     var images = yearsTT.map(function(yr){
       
       // Filter images for given date range
-      var lsT = ls.filter(ee.Filter.calendarRange(yr,yr,'year'))
+      var lsT = ls.filter(ee.Filter.calendarRange(yr,yr,'year'));
                 // .filter(ee.Filter.calendarRange(startJulian,endJulian))//.toList(10000,0);
     return lsT;
-    })
-    var lsT = ee.ImageCollection(ee.FeatureCollection(images).flatten())
+    });
+    var lsT = ee.ImageCollection(ee.FeatureCollection(images).flatten());
    
     // Compute median or medoid
     var composite;
@@ -116,7 +116,7 @@ function compositeTimeSeries(ls,startYear,endYear,timebuffer,weights,compositing
       // print('Computing medoid');
       composite = medoidMosaicMSD(lsT,['blue','green','red','nir','swir1','swir2']);
     }
-    composite = rescaleBands(composite)
+    composite = rescaleBands(composite);
     // Map.addLayer(composite,{'min':0.1,'max':0.35,'bands':'swir1,nir,red'},year.toString(),false);
     return composite.set('system:time_start',ee.Date.fromYMD(year,6,1).millis());
   });
@@ -295,7 +295,7 @@ function simpleAddTCAngles(image){
   // var tcDistBG = brightness.hypot(greenness).rename('tcDistBG');
   // var tcDistGW = greenness.hypot(wetness).rename('tcDistGW');
   // var tcDistBW = brightness.hypot(wetness).rename('tcDistBW');
-  image = image.addBands(tcAngleBG)
+  image = image.addBands(tcAngleBG);
   // .addBands(tcAngleGW)
   //   .addBands(tcAngleBW).addBands(tcDistBG).addBands(tcDistGW)
   //   .addBands(tcDistBW);
@@ -332,7 +332,7 @@ function exportToAssetWrapper(imageForExport,assetName,assetPath,
   //Make sure image is clipped to roi in case it's a multi-part polygon
   imageForExport = imageForExport.clip(roi);
   assetName = assetName.replace(/\s+/g,'-');//Get rid of any spaces
-  var region = roi.bounds().getInfo().coordinates[0]
+  var region = roi.bounds().getInfo().coordinates[0];
   Export.image.toAsset(imageForExport, assetName, assetPath, 
     {'.default': pyramidingPolicy}, null, region, scale, crs, transform, 1e13);
 }
