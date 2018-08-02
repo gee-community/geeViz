@@ -903,6 +903,7 @@ function getCloudMask(img,cloudScoreFunction,contractPixels,dilatePixels){
 function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zenithThresh,applyCloudScore,contractPixels,dilatePixels,useTempInCloudMask,despikeMODIS,modisSpikeThresh){
     var a250C;var t250C;var a500C;var t500C;var a1000C;var t1000C;
     var a250CV6;var t250CV6;var a500CV6;var t500CV6;var a1000CV6;var t1000CV6;
+    useTempInCloudMask = true;
       //Find which collections to pull from based on daily or 8-day
       if(daily === false){
         a250C = modisCDict.eightDaySR250A;
