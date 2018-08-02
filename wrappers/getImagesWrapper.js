@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #98ff00 */ee.Geometry.Polygon(
-        [[[-114.71923828125, 39.75787999202175],
-          [-111.15966796875, 39.92658842190944],
-          [-112.12646484375, 41.261291493919884],
-          [-114.41162109375, 41.1951898294896]]]);
+        [[[-107.88010335430403, 37.74944967250176],
+          [-104.41965417436563, 37.91850622749146],
+          [-105.360767292844, 39.25236887854654],
+          [-107.57914696634225, 39.18649132261251]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 ///////////////////////////////////////////////////////////////////////////////
 // Define user parameters:
@@ -67,11 +67,11 @@ var defringeL5 = false;
 //always have a high cloudScore to reduce comission errors- this takes some time
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
-var applyCloudScore = false;
-var applyFmaskCloudMask = true;
+var applyCloudScore = true;
+var applyFmaskCloudMask = false;
 
-var applyTDOM = false;
-var applyFmaskCloudShadowMask = true;
+var applyTDOM = true;
+var applyFmaskCloudShadowMask = false;
 
 var applyFmaskSnowMask = false;
 
