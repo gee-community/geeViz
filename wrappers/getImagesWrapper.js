@@ -179,14 +179,15 @@ if (correctIllumination){
 
 // Create composite time series
 var ts = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
-print(ts)
-// // Correct illumination
-// if (correctIllumination){
-//   ts = ts.map(illuminationCondition)
-//     .map(function(img){
-//       return illuminationCorrection(img, correctScale);
-//     });
-// }
+
+// Correct illumination
+if (correctIllumination){
+  print('Correcting illumination');
+  ts = ts.map(illuminationCondition)
+    .map(function(img){
+      return illuminationCorrection(img, correctScale);
+    });
+}
 
 // // Export composite collection
 // var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
