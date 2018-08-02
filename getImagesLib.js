@@ -611,12 +611,10 @@ function exportCollection(collection,startYear,endYear,timebuffer,exportBands){
   
     // Export the composite 
     // Set up export name and path
-    // var exportName = outputName + '_Landsat_' + toaOrSR + '_' + compositingMethod + 
-    //   '_' + cloudcloudShadowMaskingMethod+'_' + startYearT + '_' + endYearT+'_' + 
-    //   startJulian + '_' + endJulian ;
-    var exportName = 'Landsat_' + toaOrSR + '_' + compositingMethod + 
+    var exportName = outputName  + toaOrSR + '_' + compositingMethod + 
       '_' + cloudcloudShadowMaskingMethod+'_' + startYearT + '_' + endYearT+'_' + 
       startJulian + '_' + endJulian ;
+   
     
     var exportPath = exportPathRoot + '/' + exportName;
     // print('Write down the Asset ID:', exportPath);
