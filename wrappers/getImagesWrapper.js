@@ -116,7 +116,8 @@ var correctScale = 250;
 
 //13. Export params
 var crs = 'EPSG:5070';
-var transform = [30,0,-2361915.0,0,-30,3177735.0];
+var transform = [30,0,-2361915.0,0,-30,3177735.0];//Specify transform if scale is null and snapping to known grid is needed
+var scale = null;//Specify scale if transform is null
 ///////////////////////////////////////////////////////////////////////
 // End user parameters
 //Start function calls
