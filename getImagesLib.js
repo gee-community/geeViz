@@ -435,7 +435,7 @@ function illuminationCondition(img){
 // Function to apply the Sun-Canopy-Sensor + C (SCSc) correction method to each 
 // image. Function by Patrick Burns (pb463@nau.edu) and Matt Macander 
 // (mmacander@abrinc.com)
-function illuminationCorrection(img, scale){
+function illuminationCorrection(img, scale,studyArea){
   var props = img.toDictionary();
   var st = img.get('system:time_start');
   var img_plus_ic = img;
