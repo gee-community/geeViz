@@ -279,6 +279,85 @@ function simpleAddIndices(in_image){
     return in_image;
 }
 /////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+// Function to compute the Tasseled Cap transformation and return an image
+// with the following bands added: ['brightness', 'greenness', 'wetness', 
+// 'fourth', 'fifth', 'sixth']
+function getTasseledCap(image) {
+ 
+  var bands = ee.List(['blue','green','red','nir','swir1','swir2']);
+  // // Kauth-Thomas coefficients for Thematic Mapper data
+  // var coefficients = ee.Array([
+  //   [0.3037, 0.2793, 0.4743, 0.5585, 0.5082, 0.1863],
+  //   [-0.2848, -0.2435, -0.5436, 0.7243, 0.0840, -0.1800],
+  //   [0.1509, 0.1973, 0.3279, 0.3406, -0.7112, -0.4572],
+  //   [-0.8242, 0.0849, 0.4392, -0.0580, 0.2012, -0.2768],
+  //   [-0.3280, 0.0549, 0.1075, 0.1855, -0.4357, 0.8085],
+  //   [0.1084, -0.9022, 0.4120, 0.0573, -0.0251, 0.0238]
+  // ]);
+  
+  //Crist 1985 coeffs - TOA refl (http://www.gis.usu.edu/~doug/RS5750/assign/OLD/RSE(17)-301.pdf)
+  var coefficients = ee.Array([[0.2043, 0.4158, 0.5524, 0.5741, 0.3124, 0.2303],
+                    [-0.1603, -0.2819, -0.4934, 0.7940, -0.0002, -0.1446],
+                    [0.0315, 0.2021, 0.3102, 0.1594, -0.6806, -0.6109],
+                    [-0.2117, -0.0284, 0.1302, -0.1007, 0.6529, -0.7078],
+                    [-0.8669, -0.1835, 0.3856, 0.0408, -0.1132, 0.2272],
+                   [0.3677, -0.8200, 0.4354, 0.0518, -0.0066, -0.0104]]);
+  // Make an Array Image, with a 1-D Array per pixel.
+  var arrayImage1D = image.select(bands).toArray();
+  
+  // Make an Array Image with a 2-D Array per pixel, 6x1.
+  var arrayImage2D = arrayImage1D.toArray(1);
+  
+  var componentsImage = ee.Image(coefficients)
+    .matrixMultiply(arrayImage2D)
+    // Get rid of the extra dimensions.
+    .arrayProject([0])
+    // Get a multi-band image with TC-named bands.
+    .arrayFlatten(
+      [['brightness', 'greenness', 'wetness', 'fourth', 'fifth', 'sixth']])
+    .float();
+  
+  return image.addBands(componentsImage);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Function to add Tasseled Cap angles and distances to an image.
+// Assumes image has bands: 'brightness', 'greenness', and 'wetness'.
+function addTCAngles(image){
+  // Select brightness, greenness, and wetness bands
+  var brightness = image.select(['brightness']);
+  var greenness = image.select(['greenness']);
+  var wetness = image.select(['wetness']);
+  
+  // Calculate Tasseled Cap angles and distances
+  var tcAngleBG = brightness.atan2(greenness).divide(Math.PI).rename('tcAngleBG');
+  var tcAngleGW = greenness.atan2(wetness).divide(Math.PI).rename('tcAngleGW');
+  var tcAngleBW = brightness.atan2(wetness).divide(Math.PI).rename('tcAngleBW');
+  var tcDistBG = brightness.hypot(greenness).rename('tcDistBG');
+  var tcDistGW = greenness.hypot(wetness).rename('tcDistGW');
+  var tcDistBW = brightness.hypot(wetness).rename('tcDistBW');
+  image = image.addBands(tcAngleBG).addBands(tcAngleGW)
+    .addBands(tcAngleBW).addBands(tcDistBG).addBands(tcDistGW)
+    .addBands(tcDistBW);
+  return image;
+}
+////////////////////////////////////////////////////
+//Only adds tc bg angle as in Powell et al 2009
+//https://www.sciencedirect.com/science/article/pii/S0034425709003745?via%3Dihub
+function simpleAddTCAngles(image){
+  // Select brightness, greenness, and wetness bands
+  var brightness = image.select(['brightness']);
+  var greenness = image.select(['greenness']);
+  var wetness = image.select(['wetness']);
+  
+  // Calculate Tasseled Cap angles and distances
+  var tcAngleBG = brightness.atan2(greenness).divide(Math.PI).rename('tcAngleBG');
+  
+  return image.addBands(tcAngleBG);
+}
+///////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 // Function to add solar zenith and azimuth in radians as bands to image
 function addZenithAzimuth(img,toaOrSR){
