@@ -142,6 +142,8 @@ function landsatCloudScore(img) {
 //Wrapper for applying cloudScore function
 function applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels){
   print('Applying cloudScore');
+  var t = cloudScoreFunction(ee.Image(collection.first()));
+  print('yay')
   // Add cloudScore
   var ls = ls.map(function(img){
     var cs = cloudScoreFunction(img).rename(['cloudScore']);
