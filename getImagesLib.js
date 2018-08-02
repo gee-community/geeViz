@@ -889,8 +889,8 @@ function despikeCollection(c,absoluteSpike,bandNo){
   
 }
 ///////////////////////////////////////////////////
-function getCloudMask(img,cloudScoreFunction,contractPixels,dilatePixels){
-  var cs = cloudScoreFunction(img);
+function getCloudMask(img,cloudScoreFunction,useTempInCloudMask,contractPixels,dilatePixels){
+  var cs = cloudScoreFunction(img,useTempInCloudMask);
   var cm =  cs.gte(cloudThresh).focal_min(contractPixels).focal_max(dilatePixels).rename('cloudMask');
   
   img = img.updateMask(cm.not());
@@ -1042,7 +1042,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     //Add first image as well as median for visualization
     // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMasking',false);
     // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMasking',false);
-    joined = joined.map(function(img){return getCloudMask(img,modisCloudScore,contractPixels,dilatePixels)});
+    joined = joined.map(function(img){return getCloudMask(img,modisCloudScore,useTempInCloudMask,contractPixels,dilatePixels)});
       
     }
     
