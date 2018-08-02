@@ -149,6 +149,7 @@ if(applyFmaskCloudMask){
 }
 
 if(applyTDOM){
+  print('Applying TDOM');
   //Find and mask out dark outliers
   ls = getImageLib.simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
 }
