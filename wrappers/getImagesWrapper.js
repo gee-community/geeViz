@@ -66,10 +66,10 @@ var includeSLCOffL7 = false;
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
 var applyCloudScore = true;
-var applyFmaskCloudMask = true;
+var applyFmaskCloudMask = false;
 
 var applyTDOM = true;
-var applyFmaskCloudShadowMask = true;
+var applyFmaskCloudShadowMask = false;
 var applyFmaskSnowMask = false;
 
 // 11. Cloud and cloud shadow masking parameters.
@@ -83,7 +83,7 @@ var cloudScoreThresh = 20;
 // the cloud score over time for a given pixel. Reduces comission errors over 
 // cool bright surfaces. Generally between 5 and 10 works well. 0 generally is a
 // bit noisy
-var cloudScorePctl = 100; 
+var cloudScorePctl = 10; 
 
 // zScoreThresh: Threshold for cloud shadow masking- lower number masks out 
 //    less. Between -0.8 and -1.2 generally works well
@@ -163,33 +163,7 @@ if(applyFmaskSnowMask){
   ls = ls.map(function(img){return getImageLib.cFmask(img,'snow')});
 }
 
-
-// if ((cloudcloudShadowMaskingMethod.toLowerCase() === 'fmask' || 
-//   cloudcloudShadowMaskingMethod.toLowerCase() === 'hybrid') && 
-//   toaOrSR.toLowerCase() != 'toa') {
-//   print('Extracting cFmask cloud masks');
-//   ls = ls.map(cFmaskCloud);
-// }
-
-// if ( applyFmaskSnowMask == true){
-//   print('Applying Fmask snowmask');
-//   ls = ls.map(function(img){return cFmask(img,'snow')});
-// }
-
-// if (cloudcloudShadowMaskingMethod.toLowerCase() === 'cloudscoretdom' || 
-//   cloudcloudShadowMaskingMethod.toLowerCase() === 'hybrid' || 
-//   toaOrSR.toLowerCase() === 'toa') {
-//   print('Running TDOM');
-//   // Find and mask out dark outliers
-//   ls = simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
-// }
-
-// if ((cloudcloudShadowMaskingMethod.toLowerCase() === 'fmask' || 
-//   cloudcloudShadowMaskingMethod.toLowerCase() === 'hybrid') && 
-//   toaOrSR.toLowerCase() != 'toa') {
-//   print('Extracting cFmask cloud shadow masks');
-//   ls = ls.map(cFmaskCloudShadow);
-// }
+Map.addLayer(ls.median(),getImageLib.vizParamsFalse,'Median')
 
 // // Add common indices
 // // ls = ls.map(addIndices);
