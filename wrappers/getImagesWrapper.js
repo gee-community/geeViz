@@ -137,7 +137,7 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
   toaOrSR,includeSLCOffL7);
 
-
+// Apply relevant cloud masking methods
 if(applyCloudScore){
   print('Running cloudScore');
   ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
@@ -151,16 +151,7 @@ if(applyFmaskCloudMask){
 if(applyTDOM){}
 if(applyFmaskCloudShadowMask){}
 if(applyFmaskSnowMask = false){}
-// Apply relevant cloud masking methods
-if (cloudcloudShadowMaskingMethod.toLowerCase() === 'cloudscoretdom' || 
-  cloudcloudShadowMaskingMethod.toLowerCase() === 'hybrid' || 
-  toaOrSR.toLowerCase() === 'toa') {
-  print('Running cloudScore');
 
-    // var landsatCloudScore = getImageLib.landsatCloudScore
-   ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels) 
-  }
-  Map.addLayer(ls.median(),getImageLib.vizParamsFalse)
 
 // if ((cloudcloudShadowMaskingMethod.toLowerCase() === 'fmask' || 
 //   cloudcloudShadowMaskingMethod.toLowerCase() === 'hybrid') && 
