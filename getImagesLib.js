@@ -15,8 +15,8 @@ var vizParamsTrue = {
 };
 
 // Prep client-side region for exporting
-var studyAreaBounds = studyArea.bounds();
-var region = studyArea.bounds(1000).getInfo().coordinates[0];
+// var studyAreaBounds = studyArea.bounds();
+// var region = studyArea.bounds(1000).getInfo().coordinates[0];
 
 // Prepare dates
 if (startJulian > endJulian) {
