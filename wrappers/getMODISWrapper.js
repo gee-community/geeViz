@@ -64,7 +64,7 @@ var compositingMethod = 'medoid';
 //Daily images provide complete control of cloud/cloud shadow masking as well as compositing
 //Daily images have a shorter lag time as well (~2-4 days) vs pre-computed
 //8-day composites (~7 days)
-var daily = true;
+var daily = false;
 
 //If using daily, the following parameters apply
 var zenithThresh  = 90;//If daily == true, Zenith threshold for daily acquisitions for including observations
