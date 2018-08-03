@@ -72,7 +72,6 @@ var zenithThresh  = 90;//If daily == true, Zenith threshold for daily acquisitio
 var despikeMODIS = false;//Whether to despike MODIS collection
 var modisSpikeThresh = 0.05;//Threshold for identifying spikes.  Any pair of images that increases and decreases (positive spike) or decreases and increases (negative spike) in a three image series by more than this number will be masked out
 
-if(applyCloudScore){var useTempInCloudMask = true}else{var useTempInCloudMask = true};//Whether to use the temperature band in cloud masking- necessary to use temp in bright arid areas
 
 
 // 12. Choose cloud/cloud shadow masking method
@@ -143,26 +142,29 @@ var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
 var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1,'day');
 print('Start and end dates:', startDate, endDate);
 
+if(applyCloudScore){var useTempInCloudMask = true}else{var useTempInCloudMask = true};//Whether to use the temperature band in cloud masking- necessary to use temp in bright arid areas
 
 ////////////////////////////////////////////////////////////////////////////////
 // Get Landsat image collection
 var modisImages = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,applyQACloudMask,zenithThresh,applyCloudScore,cloudScoreThresh,contractPixels,dilatePixels,useTempInCloudMask,despikeMODIS,modisSpikeThresh);
-Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'before',false)
+// Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'before',false)
 // Apply relevant cloud masking methods
 if(applyCloudScore){
   print('Applying cloudScore');
   modisImages = getImageLib.applyCloudScoreAlgorithm(modisImages,getImageLib.modisCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
- Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'after',false) 
+// Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'after',false) 
 }
 
 
-Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'beforetdom') 
+// Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'beforetdom') 
 
 if(applyTDOM){
   print('Applying TDOM');
   // Find and mask out dark outliers
   modisImages = getImageLib.simpleTDOM2(modisImages,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
-Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'aftertdom') 
+// Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'aftertdom') 
+Map.addLayer(modisImages.select(['nir']),{},'beforedespiking',false); 
+
 if(despikeMODIS){
     print('Despiking MODIS');
     modisImages = getImageLib.despikeCollection(modisImages,modisSpikeThresh,indexName);
