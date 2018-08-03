@@ -939,11 +939,12 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
               
               //Mask pixels above a certain zenith
               if(daily === true){
+                print('Masking with QA band:',c);
                 images = images
               .map(function(img){
                 img = img.mask(img.mask().and(img.select(['SensorZenith']).lt(zenithThresh*100)));
                 if(maskWQA === true){
-                  print('Masking with QA band:',c);
+                  
                   img = maskCloudsWQA (img);
                 }
                 return img;
