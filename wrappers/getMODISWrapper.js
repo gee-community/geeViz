@@ -80,11 +80,11 @@ var modisSpikeThresh = 0.1;//Threshold for identifying spikes.  Any pair of imag
 //always have a high cloudScore to reduce comission errors- this takes some time
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
-var applyCloudScore = false;
+var applyCloudScore = true;
 var applyQACloudMask = false;//Whether to use QA bits for cloud masking
 
 
-var applyTDOM = false;
+var applyTDOM = true;
 
 
 // 13. Cloud and cloud shadow masking parameters.
