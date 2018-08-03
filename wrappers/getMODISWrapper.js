@@ -143,7 +143,7 @@ print('Start and end dates:', startDate, endDate);
 ////////////////////////////////////////////////////////////////////////////////
 // Get Landsat image collection
 var modisImages = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zenithThresh,applyCloudScore,cloudScoreThresh,contractPixels,dilatePixels,useTempInCloudMask,despikeMODIS,modisSpikeThresh);
-print(modisImages.first())
+Map.addLayer(ee.Image(modisImages.first()))
 // // Apply relevant cloud masking methods
 // if(applyCloudScore){
 //   print('Applying cloudScore');
