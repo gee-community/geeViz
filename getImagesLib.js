@@ -1155,4 +1155,4 @@ exports.exportCollection = exportCollection;
 
 exports.getModisData = getModisData;
 exports.modisCloudScore = modisCloudScore;
-exports.despikeMODIS = despikeMODIS;
+exports.despikeCollection = despikeCollection;
