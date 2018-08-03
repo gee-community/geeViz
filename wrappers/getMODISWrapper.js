@@ -22,8 +22,8 @@ var studyArea = geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 190;
-var endJulian = 220; 
+var startJulian = 100;
+var endJulian = 300; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
@@ -67,7 +67,6 @@ var compositingMethod = 'medoid';
 var daily = true;
 
 //If using daily, the following parameters apply
-var maskWQA = true;//Whether to use QA bits for cloud masking
 var zenithThresh  = 90;//If daily == true, Zenith threshold for daily acquisitions for including observations
 
 var despikeMODIS = false;//Whether to despike MODIS collection
@@ -84,7 +83,8 @@ if(applyCloudScore){var useTempInCloudMask = true}else{var useTempInCloudMask = 
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
 var applyCloudScore = true;
-var applyQACloudMask = false;
+var applyQACloudMask = false;//Whether to use QA bits for cloud masking
+
 
 var applyTDOM = true;
 
@@ -147,7 +147,7 @@ print('Start and end dates:', startDate, endDate);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Get Landsat image collection
-var modisImages = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zenithThresh,applyCloudScore,cloudScoreThresh,contractPixels,dilatePixels,useTempInCloudMask,despikeMODIS,modisSpikeThresh);
+var modisImages = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,applyQACloudMask,zenithThresh,applyCloudScore,cloudScoreThresh,contractPixels,dilatePixels,useTempInCloudMask,despikeMODIS,modisSpikeThresh);
 Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'before',false)
 // Apply relevant cloud masking methods
 if(applyCloudScore){
@@ -166,7 +166,7 @@ if(applyTDOM){
 Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'aftertdom') 
 if(despikeMODIS){
     print('Despiking MODIS');
-    modisImages = despikeCollection(modisImages,modisSpikeThresh,indexName);
+    modisImages = getImageLib.despikeCollection(modisImages,modisSpikeThresh,indexName);
   }
   
   
