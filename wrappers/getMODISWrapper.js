@@ -168,7 +168,10 @@ Map.addLayer(modisImages.select(['nir']),{},'beforedespiking',false);
 if(despikeMODIS){
     print('Despiking MODIS');
     modisImages = getImageLib.despikeCollection(modisImages,modisSpikeThresh,indexName);
-  }
+    Map.addLayer(modisImages.select(['nir']),{},'afterdespiking',false); 
+
+  
+}
   
   
 }
