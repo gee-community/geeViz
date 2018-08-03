@@ -142,8 +142,7 @@ print('Start and end dates:', startDate, endDate);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Get Landsat image collection
-var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
-  toaOrSR,includeSLCOffL7,defringeL5);
+var modisImages = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zenithThresh,applyCloudScore,cloudScoreThresh,contractPixels,dilatePixels,useTempInCloudMask,despikeMODIS,modisSpikeThresh);
 
 // Apply relevant cloud masking methods
 if(applyCloudScore){
@@ -211,7 +210,6 @@ var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////
-var modis = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zenithThresh,applyCloudScore,cloudScoreThresh,contractPixels,dilatePixels,useTempInCloudMask,despikeMODIS,modisSpikeThresh);
 // Create composite time series
 var mts = getImageLib.compositeTimeSeries(modis,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
 var first = ee.Image(mts.first());
