@@ -23,7 +23,7 @@ var studyArea = geometry;
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
 var startJulian = 190;
-var endJulian = 250; 
+var endJulian = 220; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
@@ -151,16 +151,17 @@ if(applyCloudScore){
  Map.addLayer(modisImages.max(),getImageLib.vizParamsFalse,'after') 
 }
 
-// if(applyFmaskCloudMask){
-//   print('Applying Fmask cloud mask');
-//   ls = ls.map(function(img){return getImageLib.cFmask(img,'cloud')});
-// }
 
-// if(applyTDOM){
-//   print('Applying TDOM');
-//   //Find and mask out dark outliers
-//   ls = getImageLib.simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
-// }
+Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'beforetdom') 
+
+if(applyTDOM){
+  print('Applying TDOM');
+  // Find and mask out dark outliers
+  modisImages = getImageLib.simpleTDOM2(modisImages,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
+Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'aftertdom') 
+
+  
+}
 // if(applyFmaskCloudShadowMask){
 //   print('Applying Fmask shadow mask');
 //   ls = ls.map(function(img){return getImageLib.cFmask(img,'shadow')});
