@@ -1159,3 +1159,4 @@ exports.exportCollection = exportCollection;
 
 
 exports.getModisData = getModisData;
+exports.modisCloudScore = modisCloudScore;
