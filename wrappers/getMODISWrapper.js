@@ -23,7 +23,7 @@ var studyArea = geometry;
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
 var startJulian = 100;
-var endJulian = 300; 
+var endJulian = 150; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
@@ -80,11 +80,11 @@ var modisSpikeThresh = 0.05;//Threshold for identifying spikes.  Any pair of ima
 //always have a high cloudScore to reduce comission errors- this takes some time
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
-var applyCloudScore = true;
+var applyCloudScore = false;
 var applyQACloudMask = false;//Whether to use QA bits for cloud masking
 
 
-var applyTDOM = true;
+var applyTDOM = false;
 
 
 // 13. Cloud and cloud shadow masking parameters.
@@ -167,7 +167,7 @@ Map.addLayer(modisImages.select(['nir']),{},'beforedespiking',false);
 
 if(despikeMODIS){
     print('Despiking MODIS');
-    modisImages = getImageLib.despikeCollection(modisImages,modisSpikeThresh,indexName);
+    modisImages = getImageLib.despikeCollection(modisImages,modisSpikeThresh,'nir');
     Map.addLayer(modisImages.select(['nir']),{},'afterdespiking',false); 
 
   
