@@ -143,86 +143,86 @@ print('Start and end dates:', startDate, endDate);
 ////////////////////////////////////////////////////////////////////////////////
 // Get Landsat image collection
 var modisImages = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zenithThresh,applyCloudScore,cloudScoreThresh,contractPixels,dilatePixels,useTempInCloudMask,despikeMODIS,modisSpikeThresh);
-
-// Apply relevant cloud masking methods
-if(applyCloudScore){
-  print('Applying cloudScore');
-  ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
+print(modisImages.first())
+// // Apply relevant cloud masking methods
+// if(applyCloudScore){
+//   print('Applying cloudScore');
+//   ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
   
-}
+// }
 
-if(applyFmaskCloudMask){
-  print('Applying Fmask cloud mask');
-  ls = ls.map(function(img){return getImageLib.cFmask(img,'cloud')});
-}
+// if(applyFmaskCloudMask){
+//   print('Applying Fmask cloud mask');
+//   ls = ls.map(function(img){return getImageLib.cFmask(img,'cloud')});
+// }
 
-if(applyTDOM){
-  print('Applying TDOM');
-  //Find and mask out dark outliers
-  ls = getImageLib.simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
-}
-if(applyFmaskCloudShadowMask){
-  print('Applying Fmask shadow mask');
-  ls = ls.map(function(img){return getImageLib.cFmask(img,'shadow')});
-}
-if(applyFmaskSnowMask){
-  print('Applying Fmask snow mask');
-  ls = ls.map(function(img){return getImageLib.cFmask(img,'snow')});
-}
-
-
-
-// Add zenith and azimuth
-if (correctIllumination){
-  ls = ls.map(function(img){
-    return getImageLib.addZenithAzimuth(img,toaOrSR);
-  });
-}
-
-// Add common indices- can use addIndices for comprehensive indices 
-//or simpleAddIndices for only common indices
-ls = ls.map(getImageLib.simpleAddIndices);
-
-// Create composite time series
-var ts = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
-
-var f = ee.Image(ts.first());
-Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
-
-// Correct illumination
-if (correctIllumination){
-  print('Correcting illumination');
-  ts = ts.map(getImageLib.illuminationCondition)
-    .map(function(img){
-      return getImageLib.illuminationCorrection(img, correctScale,studyArea);
-    });
-  var f = ee.Image(ts.first());
-  Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated',false);
-}
+// if(applyTDOM){
+//   print('Applying TDOM');
+//   //Find and mask out dark outliers
+//   ls = getImageLib.simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
+// }
+// if(applyFmaskCloudShadowMask){
+//   print('Applying Fmask shadow mask');
+//   ls = ls.map(function(img){return getImageLib.cFmask(img,'shadow')});
+// }
+// if(applyFmaskSnowMask){
+//   print('Applying Fmask snow mask');
+//   ls = ls.map(function(img){return getImageLib.cFmask(img,'snow')});
+// }
 
 
-// Export composite collection
-var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
-// getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
-// ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
-//               applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
 
-/////////////////////////////////////////////////////////////////////////////////////////////
+// // Add zenith and azimuth
+// if (correctIllumination){
+//   ls = ls.map(function(img){
+//     return getImageLib.addZenithAzimuth(img,toaOrSR);
+//   });
+// }
 
-///////////////////////////////////////
-// Create composite time series
-var mts = getImageLib.compositeTimeSeries(modis,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
-var first = ee.Image(mts.first());
-Map.addLayer(first,getImageLib.vizParamsFalse,'modis')
-// ////////////////////////////////////////////////////////////////////////////////
-// Load the study region, with a blue outline.
-// Create an empty image into which to paint the features, cast to byte.
-// Paint all the polygon edges with the same number and width, display.
-var empty = ee.Image().byte();
-var outline = empty.paint({
-  featureCollection: studyArea,
-  color: 1,
-  width: 3
-});
-Map.addLayer(outline, {palette: '0000FF'}, "Study Area", false);
-// Map.centerObject(studyArea, 6);
+// // Add common indices- can use addIndices for comprehensive indices 
+// //or simpleAddIndices for only common indices
+// ls = ls.map(getImageLib.simpleAddIndices);
+
+// // Create composite time series
+// var ts = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
+
+// var f = ee.Image(ts.first());
+// Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
+
+// // Correct illumination
+// if (correctIllumination){
+//   print('Correcting illumination');
+//   ts = ts.map(getImageLib.illuminationCondition)
+//     .map(function(img){
+//       return getImageLib.illuminationCorrection(img, correctScale,studyArea);
+//     });
+//   var f = ee.Image(ts.first());
+//   Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated',false);
+// }
+
+
+// // Export composite collection
+// var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
+// // getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
+// // ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
+// //               applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
+
+// /////////////////////////////////////////////////////////////////////////////////////////////
+
+// ///////////////////////////////////////
+// // Create composite time series
+// var mts = getImageLib.compositeTimeSeries(modis,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
+// var first = ee.Image(mts.first());
+// Map.addLayer(first,getImageLib.vizParamsFalse,'modis')
+// // ////////////////////////////////////////////////////////////////////////////////
+// // Load the study region, with a blue outline.
+// // Create an empty image into which to paint the features, cast to byte.
+// // Paint all the polygon edges with the same number and width, display.
+// var empty = ee.Image().byte();
+// var outline = empty.paint({
+//   featureCollection: studyArea,
+//   color: 1,
+//   width: 3
+// });
+// Map.addLayer(outline, {palette: '0000FF'}, "Study Area", false);
+// // Map.centerObject(studyArea, 6);
