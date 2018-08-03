@@ -30,7 +30,7 @@ var endJulian = 220;
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
 var startYear = 2015;
-var endYear = 2018;
+var endYear = 2015;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -60,7 +60,7 @@ var exportPathRoot = 'users/ianhousman/test';
 var compositingMethod = 'medoid';
 
 //MODIS Params- params if sensorProgram is modis
-var daily = false;//Whether to use daily MODIS (true) or 8 day composites (false)
+var daily = true;//Whether to use daily MODIS (true) or 8 day composites (false)
 
 var maskWQA = false;//Whether to use QA bits for cloud masking
 var zenithThresh  = 90;//If daily == true, Zenith threshold for daily acquisitions for including observations
@@ -143,12 +143,12 @@ print('Start and end dates:', startDate, endDate);
 ////////////////////////////////////////////////////////////////////////////////
 // Get Landsat image collection
 var modisImages = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zenithThresh,applyCloudScore,cloudScoreThresh,contractPixels,dilatePixels,useTempInCloudMask,despikeMODIS,modisSpikeThresh);
-Map.addLayer(modisImages.max(),getImageLib.vizParamsFalse,'before')
+Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'before',false)
 // Apply relevant cloud masking methods
 if(applyCloudScore){
   print('Applying cloudScore');
   modisImages = getImageLib.applyCloudScoreAlgorithm(modisImages,getImageLib.modisCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
- Map.addLayer(modisImages.max(),getImageLib.vizParamsFalse,'after') 
+ Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'after',false) 
 }
 
 
