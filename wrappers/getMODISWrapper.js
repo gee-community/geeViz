@@ -60,15 +60,20 @@ var exportPathRoot = 'users/ianhousman/test';
 var compositingMethod = 'medoid';
 
 //MODIS Params- params if sensorProgram is modis
-var daily = true;//Whether to use daily MODIS (true) or 8 day composites (false)
+//Whether to use daily MODIS (true) or 8 day composites (false)
+//Daily images provide complete control of cloud/cloud shadow masking as well as compositing
+//Daily images have a shorter lag time as well (~2-4 days) vs pre-computed
+//8-day composites (~7 days)
+var daily = true;
 
-var maskWQA = false;//Whether to use QA bits for cloud masking
+//If using daily, the following parameters apply
+var maskWQA = true;//Whether to use QA bits for cloud masking
 var zenithThresh  = 90;//If daily == true, Zenith threshold for daily acquisitions for including observations
-var applyCloudScore = false;//Whether to apply the Google cloudScore algorithm
-var useTempInCloudMask = true;//Whether to use the temperature band in cloud masking- necessary to use temp in bright arid areas
+
 var despikeMODIS = false;//Whether to despike MODIS collection
 var modisSpikeThresh = 0.05;//Threshold for identifying spikes.  Any pair of images that increases and decreases (positive spike) or decreases and increases (negative spike) in a three image series by more than this number will be masked out
 
+if(applyCloudScore){var useTempInCloudMask = true}else{var useTempInCloudMask = true};//Whether to use the temperature band in cloud masking- necessary to use temp in bright arid areas
 
 
 // 12. Choose cloud/cloud shadow masking method
@@ -159,7 +164,11 @@ if(applyTDOM){
   // Find and mask out dark outliers
   modisImages = getImageLib.simpleTDOM2(modisImages,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
 Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'aftertdom') 
-
+if(despikeMODIS){
+    print('Despiking MODIS');
+    modisImages = despikeCollection(modisImages,modisSpikeThresh,indexName);
+  }
+  
   
 }
 // if(applyFmaskCloudShadowMask){
