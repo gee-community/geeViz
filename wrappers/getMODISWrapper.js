@@ -22,8 +22,8 @@ var studyArea = geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 100;
-var endJulian = 115; 
+var startJulian = 90;
+var endJulian = 300; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
@@ -167,24 +167,14 @@ if(applyTDOM){
   modisImages = getImageLib.simpleTDOM2(modisImages,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
 // Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'aftertdom') 
 }
-Map.addLayer(modisImages.select(['nir']),{},'beforedespiking',false); 
 
 if(despikeMODIS){
     print('Despiking MODIS');
     modisImages = getImageLib.despikeCollection(modisImages,modisSpikeThresh,'nir');
-    Map.addLayer(modisImages.select(['nir']),{},'afterdespiking',false); 
-
+   
   
 }
 
-// if(applyFmaskCloudShadowMask){
-//   print('Applying Fmask shadow mask');
-//   ls = ls.map(function(img){return getImageLib.cFmask(img,'shadow')});
-// }
-// if(applyFmaskSnowMask){
-//   print('Applying Fmask snow mask');
-//   ls = ls.map(function(img){return getImageLib.cFmask(img,'snow')});
-// }
 
 
 
@@ -195,12 +185,12 @@ if(despikeMODIS){
 //   });
 // }
 
-// // Add common indices- can use addIndices for comprehensive indices 
-// //or simpleAddIndices for only common indices
-// ls = ls.map(getImageLib.simpleAddIndices);
+// Add common indices- can use addIndices for comprehensive indices 
+//or simpleAddIndices for only common indices
+modisImages = modisImages.map(getImageLib.simpleAddIndices);
 
-// // Create composite time series
-// var ts = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
+// Create composite time series
+var modisImages = getImageLib.compositeTimeSeries(modisImages,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
 
 // var f = ee.Image(ts.first());
 // Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
