@@ -69,7 +69,7 @@ var daily = true;
 //If using daily, the following parameters apply
 var zenithThresh  = 90;//If daily == true, Zenith threshold for daily acquisitions for including observations
 
-var despikeMODIS = false;//Whether to despike MODIS collection
+var despikeMODIS = true;//Whether to despike MODIS collection
 var modisSpikeThresh = 0.05;//Threshold for identifying spikes.  Any pair of images that increases and decreases (positive spike) or decreases and increases (negative spike) in a three image series by more than this number will be masked out
 
 
