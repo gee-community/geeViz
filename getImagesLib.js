@@ -943,6 +943,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
               .map(function(img){
                 img = img.mask(img.mask().and(img.select(['SensorZenith']).lt(zenithThresh*100)));
                 if(maskWQA === true){
+                  print('Masking with QA band');
                   img = maskCloudsWQA (img);
                 }
                 return img;
