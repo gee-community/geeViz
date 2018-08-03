@@ -76,8 +76,7 @@ if(applyCloudScore){var useTempInCloudMask = true}else{var useTempInCloudMask = 
 
 
 // 12. Choose cloud/cloud shadow masking method
-// Choices are a series of booleans for cloudScore, TDOM, and elements of Fmask
-//Fmask masking options will run fastest since they're precomputed
+// Choices are a series of booleans for cloudScore, TDOM, and QA (if using daily images)
 //CloudScore runs pretty quickly, but does look at the time series to find areas that 
 //always have a high cloudScore to reduce comission errors- this takes some time
 //and needs a longer time series (>5 years or so)
