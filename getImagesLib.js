@@ -1017,56 +1017,56 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
       });
       }
     
-    //Get some descriptive names for displaying layers
-    var name = 'surRefl';
-    if(daily === true){
-      name = name + '_daily';
-    }
-    else{name = name + '8DayComposite'}
-    if(maskWQA === true){
-      name = name + '_WQAMask';
-    }
+  //   //Get some descriptive names for displaying layers
+  //   var name = 'surRefl';
+  //   if(daily === true){
+  //     name = name + '_daily';
+  //   }
+  //   else{name = name + '8DayComposite'}
+  //   if(maskWQA === true){
+  //     name = name + '_WQAMask';
+  //   }
     
-   //Add first image as well as median for visualization
-    // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageBeforeMasking',false);
-    // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeBeforeMasking',false);
+  // //Add first image as well as median for visualization
+  //   // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageBeforeMasking',false);
+  //   // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeBeforeMasking',false);
     
-    if(applyCloudScore === true){
-   //Compute cloud score and mask cloudy pixels
-      print('Applying Google cloudScore algorithm');
-      // var joined = joined.map(function(img,useTempInCloudMask){
-      //   var cs = modisCloudScore(img);
-      //   return img.mask(img.mask().and(cs.lt(cloudThresh)))//.addBands(cs.select([0],['cloudScore']))
+  //   if(applyCloudScore === true){
+  // //Compute cloud score and mask cloudy pixels
+  //     print('Applying Google cloudScore algorithm');
+  //     // var joined = joined.map(function(img,useTempInCloudMask){
+  //     //   var cs = modisCloudScore(img);
+  //     //   return img.mask(img.mask().and(cs.lt(cloudThresh)))//.addBands(cs.select([0],['cloudScore']))
         
-      // });
-    //Add first image as well as median for visualization
-    // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMasking',false);
-    // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMasking',false);
-    joined = joined.map(function(img){return getCloudMask(img,modisCloudScore,cloudThresh,useTempInCloudMask,contractPixels,dilatePixels)});
+  //     // });
+  //   //Add first image as well as median for visualization
+  //   // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMasking',false);
+  //   // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMasking',false);
+  //   joined = joined.map(function(img){return getCloudMask(img,modisCloudScore,cloudThresh,useTempInCloudMask,contractPixels,dilatePixels)});
       
-    }
+  //   }
     
-  //   //If cloud shadow masking is chosen, run it
-  //   if(runTDOM === true){
-  //     print('Running TDOM');
-  //     joined = simpleTDOM(joined,zShadowThresh,zCloudThresh,maskAllDarkPixels)
+  // //   //If cloud shadow masking is chosen, run it
+  // //   if(runTDOM === true){
+  // //     print('Running TDOM');
+  // //     joined = simpleTDOM(joined,zShadowThresh,zCloudThresh,maskAllDarkPixels)
     
-  //   //Add first image as well as median for visualization after TDOM
-  // // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMaskingWTDOM',false);
-  // // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMaskingWTDOM',false);
+  // //   //Add first image as well as median for visualization after TDOM
+  // // // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMaskingWTDOM',false);
+  // // // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMaskingWTDOM',false);
   
       
-  //   };
+  // //   };
   
   
-  // //Add indices and select them
+  // // //Add indices and select them
+  // // joined = joined.map(addIndices);
   // joined = joined.map(addIndices);
-  joined = joined.map(addIndices);
-  var indicesAdded = true;
-  if(despikeMODIS){
-    print('Despiking MODIS');
-    joined = despikeCollection(joined,modisSpikeThresh,indexName);
-  }
+  // var indicesAdded = true;
+  // if(despikeMODIS){
+  //   print('Despiking MODIS');
+  //   joined = despikeCollection(joined,modisSpikeThresh,indexName);
+  // }
   
   return ee.ImageCollection(joined);
     
