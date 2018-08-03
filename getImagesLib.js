@@ -874,11 +874,13 @@ function despikeCollection(c,absoluteSpike,bandNo){
     var BinarySpike = highSpike.or(lowSpike);
     
     //var originalMask = ct.mask();
-    ct = ct.mask(BinarySpike.eq(0));
+    // ct = ct.mask(BinarySpike.eq(0));
     
     var doNotMask = lt.mask().not().or(rt.mask().not());
-    return ct.mask(doNotMask.not().and(ct.mask()))
-    .set('system:index',si).set('system:time_start', time_start).set('system:time_end', time_end);
+    var lrMean = lt.add(rt).divide(2)
+    // var out = ct.mask(doNotMask.not().and(ct.mask()))
+    var out = ct.where(BinarySpike.eq(1),lrMean)
+    return out.set('system:index',si).set('system:time_start', time_start).set('system:time_end', time_end);
     
     
   });
