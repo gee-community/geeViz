@@ -880,7 +880,7 @@ function despikeCollection(c,absoluteSpike,bandNo){
     var lrMean = lt.add(rt)
     lrMean = lrMean.divide(2)
     // var out = ct.mask(doNotMask.not().and(ct.mask()))
-    var out = ct.where(BinarySpike.eq(1),lrMean)
+    var out = ct.where(BinarySpike.eq(1).and(doNotMask.not()),lrMean)
     return out.set('system:index',si).set('system:time_start', time_start).set('system:time_end', time_end);
     
     
