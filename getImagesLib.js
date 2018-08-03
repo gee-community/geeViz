@@ -879,7 +879,7 @@ function despikeCollection(c,absoluteSpike,bandNo){
     var doNotMask = lt.mask().not().or(rt.mask().not());
     var lrMean = lt.addBands(rt).reduce(ee.Reducer.mean());
     // var out = ct.mask(doNotMask.not().and(ct.mask()))
-    var out = lrMean.rename(['nir']);//ct.where(BinarySpike.eq(1),lrMean)
+    var out = ct;//lrMean.rename(['nir']);//ct.where(BinarySpike.eq(1),lrMean)
     return out.set('system:index',si).set('system:time_start', time_start).set('system:time_end', time_end);
     
     
