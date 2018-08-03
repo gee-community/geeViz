@@ -192,8 +192,8 @@ modisImages = modisImages.map(getImageLib.simpleAddIndices);
 // Create composite time series
 var modisImages = getImageLib.compositeTimeSeries(modisImages,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
 
-// var f = ee.Image(ts.first());
-// Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
+var f = ee.Image(modisImages.first());
+Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
 
 // // Correct illumination
 // if (correctIllumination){
