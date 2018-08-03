@@ -23,7 +23,7 @@ var studyArea = geometry;
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
 var startJulian = 100;
-var endJulian = 150; 
+var endJulian = 115; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
@@ -70,7 +70,7 @@ var daily = true;
 var zenithThresh  = 90;//If daily == true, Zenith threshold for daily acquisitions for including observations
 
 var despikeMODIS = true;//Whether to despike MODIS collection
-var modisSpikeThresh = 0.05;//Threshold for identifying spikes.  Any pair of images that increases and decreases (positive spike) or decreases and increases (negative spike) in a three image series by more than this number will be masked out
+var modisSpikeThresh = 0.1;//Threshold for identifying spikes.  Any pair of images that increases and decreases (positive spike) or decreases and increases (negative spike) in a three image series by more than this number will be masked out
 
 
 
@@ -147,6 +147,9 @@ if(applyCloudScore){var useTempInCloudMask = true}else{var useTempInCloudMask = 
 ////////////////////////////////////////////////////////////////////////////////
 // Get Landsat image collection
 var modisImages = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,applyQACloudMask,zenithThresh,useTempInCloudMask);
+Map.addLayer(modisImages.select(['nir']),{},'original',false); 
+
+  
 // Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'before',false)
 // Apply relevant cloud masking methods
 if(applyCloudScore){
