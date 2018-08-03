@@ -888,15 +888,8 @@ function despikeCollection(c,absoluteSpike,bandNo){
   return ee.ImageCollection.fromImages(outCollection);
   
 }
-///////////////////////////////////////////////////
-function getCloudMask(img,cloudScoreFunction,cloudThresh,useTempInCloudMask,contractPixels,dilatePixels){
-  var cs = cloudScoreFunction(img,useTempInCloudMask);
-  var cm =  cs.gte(cloudThresh).focal_min(contractPixels).focal_max(dilatePixels).rename('cloudMask');
-  
-  img = img.updateMask(cm.not());
-  return img;
-  
-}
+
+
 ///////////////////////////////////////////////////////////
 //Function to get MODIS data from various collections
 //Will pull from daily or 8-day composite collections based on the boolean variable "daily"
