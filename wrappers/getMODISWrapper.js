@@ -29,7 +29,7 @@ var endJulian = 250;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2010;
+var startYear = 2015;
 var endYear = 2018;
 
 // 4. Specify an annual buffer to include imagery from the same season 
@@ -143,13 +143,13 @@ print('Start and end dates:', startDate, endDate);
 ////////////////////////////////////////////////////////////////////////////////
 // Get Landsat image collection
 var modisImages = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zenithThresh,applyCloudScore,cloudScoreThresh,contractPixels,dilatePixels,useTempInCloudMask,despikeMODIS,modisSpikeThresh);
-Map.addLayer(ee.Image(modisImages.first()))
-// // Apply relevant cloud masking methods
-// if(applyCloudScore){
-//   print('Applying cloudScore');
-//   ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
-  
-// }
+Map.addLayer(modisImages.max(),getImageLib.vizParamsFalse,'before')
+// Apply relevant cloud masking methods
+if(applyCloudScore){
+  print('Applying cloudScore');
+  modisImages = getImageLib.applyCloudScoreAlgorithm(modisImages,getImageLib.modisCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
+ Map.addLayer(modisImages.max(),getImageLib.vizParamsFalse,'after') 
+}
 
 // if(applyFmaskCloudMask){
 //   print('Applying Fmask cloud mask');
