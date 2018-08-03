@@ -163,6 +163,7 @@ if(applyTDOM){
   // Find and mask out dark outliers
   modisImages = getImageLib.simpleTDOM2(modisImages,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
 // Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'aftertdom') 
+}
 Map.addLayer(modisImages.select(['nir']),{},'beforedespiking',false); 
 
 if(despikeMODIS){
@@ -172,9 +173,7 @@ if(despikeMODIS){
 
   
 }
-  
-  
-}
+
 // if(applyFmaskCloudShadowMask){
 //   print('Applying Fmask shadow mask');
 //   ls = ls.map(function(img){return getImageLib.cFmask(img,'shadow')});
