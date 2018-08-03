@@ -866,8 +866,8 @@ function despikeCollection(c,absoluteSpike,bandNo){
    
     
     
-    var diff1 = ct.select([bandNo]).add(1).subtract(lt.select([bandNo]).add(1));
-    var diff2 = ct.select([bandNo]).add(1).subtract(rt.select([bandNo]).add(1));
+    var diff1 = ct.select([bandNo]).subtract(lt.select([bandNo]));
+    var diff2 = ct.select([bandNo]).subtract(rt.select([bandNo]));
     
     var highSpike = diff1.gt(absoluteSpike).and(diff2.gt(absoluteSpike));
     var lowSpike = diff1.lt(- absoluteSpike).and(diff2.lt(- absoluteSpike));
