@@ -221,27 +221,11 @@ if (correctIllumination){
 
 // Export composite collection
 var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
-// getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
-// ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
-//               applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
+getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
+ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
+              applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
 
-/////////////////////////////////////////////////////////////////////////////////////////////
-
-//MODIS Params- params if sensorProgram is modis
-var daily = false;//Whether to use daily MODIS (true) or 8 day composites (false)
-var maskWQA = false;//Whether to use QA bits for cloud masking
-var zenithThresh  = 90;//If daily == true, Zenith threshold for daily acquisitions for including observations
-var applyCloudScore = false;//Whether to apply the Google cloudScore algorithm
-var useTempInCloudMask = true;//Whether to use the temperature band in cloud masking- necessary to use temp in bright arid areas
-var despikeMODIS = false;//Whether to despike MODIS collection
-var modisSpikeThresh = 0.05;//Threshold for identifying spikes.  Any pair of images that increases and decreases (positive spike) or decreases and increases (negative spike) in a three image series by more than this number will be masked out
-///////////////////////////////////////
-var modis = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zenithThresh,applyCloudScore,cloudScoreThresh,contractPixels,dilatePixels,useTempInCloudMask,despikeMODIS,modisSpikeThresh);
-// Create composite time series
-var mts = getImageLib.compositeTimeSeries(modis,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
-var first = ee.Image(mts.first());
-Map.addLayer(first,getImageLib.vizParamsFalse,'modis')
-// ////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 // Load the study region, with a blue outline.
 // Create an empty image into which to paint the features, cast to byte.
 // Paint all the polygon edges with the same number and width, display.
