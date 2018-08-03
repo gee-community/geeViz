@@ -685,8 +685,8 @@ var maskCloudsWQA = function(image) {
 //Source: code.earthengine.google.com
 // Compute a cloud score.  This expects the input image to have the common
 // band names: ["red", "blue", etc], so it can work across sensors.
-function modisCloudScore(img,useTempInCloudMask) {
-  
+function modisCloudScore(img) {
+  var useTempInCloudMask = true;
   // A helper to apply an expression and linearly rescale the output.
   var rescale = function(img, exp, thresholds) {
     return img.expression(exp, {img: img})
