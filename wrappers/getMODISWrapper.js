@@ -47,7 +47,7 @@ var weights = [1,5,1];
 
 
 // 6. Set up Names for the export
-var outputName = 'Medoid-Landsat';
+var outputName = 'Medoid-MODIS';
 
 // 7. Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
@@ -64,14 +64,7 @@ var compositingMethod = 'medoid';
 // Current implementation does not support Fmask for TOA
 var toaOrSR = 'TOA';
 
-// 10. Choose whether to include Landat 7
-// Generally only included when data are limited
-var includeSLCOffL7 = false;
 
-//11. Whether to defringe L5
-//Landsat 5 data has fringes on the edges that can introduce anomalies into 
-//the analysis.  This method removes them, but is somewhat computationally expensive
-var defringeL5 = false;
 
 // 12. Choose cloud/cloud shadow masking method
 // Choices are a series of booleans for cloudScore, TDOM, and elements of Fmask
@@ -81,12 +74,10 @@ var defringeL5 = false;
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
 var applyCloudScore = true;
-var applyFmaskCloudMask = false;
+var applyQACloudMask = false;
 
 var applyTDOM = true;
-var applyFmaskCloudShadowMask = false;
 
-var applyFmaskSnowMask = false;
 
 // 13. Cloud and cloud shadow masking parameters.
 // If cloudScoreTDOM is chosen
@@ -123,15 +114,10 @@ var contractPixels = 1.5;
 // (2.5 or 3.5 generally is sufficient)
 var dilatePixels = 2.5;
 
-// 14. correctIllumination: Choose if you want to correct the illumination using
-// Sun-Canopy-Sensor+C correction. Additionally, choose the scale at which the
-// correction is calculated in meters.
-var correctIllumination = false;
-var correctScale = 250;
 
 //15. Export params
 var crs = 'EPSG:5070';
-var transform = [30,0,-2361915.0,0,-30,3177735.0];//Specify transform if scale is null and snapping to known grid is needed
+var transform = [250,0,-2361915.0,0,-250,3177735.0];//Specify transform if scale is null and snapping to known grid is needed
 var scale = null;//Specify scale if transform is null
 ///////////////////////////////////////////////////////////////////////
 // End user parameters
