@@ -72,13 +72,13 @@ function defringeLandsat(img){
   var m = img.mask().reduce(ee.Reducer.min());
   
   //Apply kernel
-  var sum = m.reduceNeighborhood(ee.Reducer.sum(), k, 'kernel')
+  var sum = m.reduceNeighborhood(ee.Reducer.sum(), k, 'kernel');
   // Map.addLayer(img,vizParams,'with fringes')
   // Map.addLayer(sum,{'min':20,'max':241},'sum41',false)
   
   //Mask pixels w/o sufficient obs
-  sum = sum.gte(fringeCountThreshold)
-  img = img.mask(sum)
+  sum = sum.gte(fringeCountThreshold);
+  img = img.mask(sum);
   // Map.addLayer(img,vizParams,'defringed')
   return img;
 }
