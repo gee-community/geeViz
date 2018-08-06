@@ -219,15 +219,15 @@ var filter_params  = {treeLoss1 :treeLoss1,
 var distDir = -1; // define the sign of spectral delta for vegetation loss for the segmentation index - 
                   // NBR delta is negetive for vegetation loss, so -1 for NBR, 1 for band 5, -1 for NDVI, etc
 
-var indexName = 'NBR'
+var indexName = 'NBR';
 
 function landtrendrWrapper(indexName,distDir,run_params,filter_params){
   //----- RUN LANDTRENDR -----
   var ltCollection = processedComposites.select([indexName]).map(function(img){
-    var out = img.multiply(-1000);
+    var out = img.multiply(distDir*1000);
     out  = out.copyProperties(img,['system:time_start']);
-    return out
-  })
+    return out;
+  });
   Map.addLayer(ltCollection,{},'ltCollection',false);
   run_params.timeSeries = ltCollection;               // add LT collection to the segmentation run parameter object
   var lt = ee.Algorithms.TemporalSegmentation.LandTrendr(run_params); // run LandTrendr spectral temporal segmentation algorithm
@@ -293,7 +293,7 @@ function landtrendrWrapper(indexName,distDir,run_params,filter_params){
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //Verdet
-var verdet = ee.Algorithms.TemporalSegmentation.Verdet({ts: tsIndex,
+// var verdet = ee.Algorithms.TemporalSegmentation.Verdet({ts: tsIndex,
 //                                         tolerance: 0.0001,
 //                                         alpha:  0.03333333333333333})
 // verdet = verdet.arraySlice(0,1,null)
