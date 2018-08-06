@@ -204,11 +204,12 @@ ls = ls.map(getImageLib.simpleAddIndices);
 // Create composite time series
 var ts = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
 
-var f = ee.Image(ts.first());
-Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
 
 // Correct illumination
 if (correctIllumination){
+  var f = ee.Image(ts.first());
+  Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
+
   print('Correcting illumination');
   ts = ts.map(getImageLib.illuminationCondition)
     .map(function(img){
