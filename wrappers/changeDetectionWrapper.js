@@ -223,7 +223,7 @@ var distDir = -1; // define the sign of spectral delta for vegetation loss for t
 var indexName = 'NBR';
 
 
-var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
+// var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
 // Map.addLayer(ltOutputs[0])
 // Map.addLayer(ltOutputs[1])
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -231,8 +231,18 @@ var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //Verdet
-// var verdet = ee.Algorithms.TemporalSegmentation.Verdet({ts: tsIndex,
-//                                         tolerance: 0.0001,
-//                                         alpha:  0.03333333333333333})
-// verdet = verdet.arraySlice(0,1,null)
+var verdetTs = processedComposites.select([indexName])
+var verdet = ee.Algorithms.TemporalSegmentation.Verdet({ts: verdetTs,
+                                        tolerance: 0.0001,
+                                        alpha:  0.03333333333333333})
+verdet = verdet.arraySlice(0,1,null);
+ts = ts
+  .map(getData.rescaleBands)
+  .map(getData.simpleAddIndices)
+  .map(getData.addDateBand)
+// var ts = getData.compositeTimeSeries(ls,startYear,endYear,timeBuffer,weights,compositingMethod)
+var tsIndex = ts.select([indexName]);
+var tsYear = ts.select(['year']).toArray().arrayProject([0]);
+Map.addLayer(tsIndex,{},'ts'+indexName,false)
+
 // tsYear = tsYear.arraySlice(0,1,null)
