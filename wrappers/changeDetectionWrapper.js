@@ -160,7 +160,8 @@ getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
-  correctIllumination,correctScale,exportComposites)
+  correctIllumination,correctScale,
+  exportComposites,outputName,exportPathRoot,crs,transform,scale)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the study region, with a blue outline.
