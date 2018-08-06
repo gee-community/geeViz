@@ -1143,7 +1143,7 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
   correctIllumination,correctScale,
-  exportComposites){
+  exportComposites,outputName,exportPathRoot,crs,transform,scale){
   
   // Prepare dates
   //Wrap the dates if needed
