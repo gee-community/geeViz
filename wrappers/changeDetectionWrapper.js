@@ -1,3 +1,10 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-110.2752685546875, 40.649843297218105],
+          [-110.291748046875, 40.98242510401252],
+          [-110.9674072265625, 40.92849403916825],
+          [-110.906982421875, 40.558091126256194]]]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 ///////////////////////////////////////////////////////////////////////////////
@@ -73,13 +80,13 @@ var defringeL5 = false;
 //always have a high cloudScore to reduce comission errors- this takes some time
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
-var applyCloudScore = true;
-var applyFmaskCloudMask = false;
+var applyCloudScore = false;
+var applyFmaskCloudMask = true;
 
-var applyTDOM = true;
-var applyFmaskCloudShadowMask = false;
+var applyTDOM = false;
+var applyFmaskCloudShadowMask = true;
 
-var applyFmaskSnowMask = false;
+var applyFmaskSnowMask = true;
 
 // 13. Cloud and cloud shadow masking parameters.
 // If cloudScoreTDOM is chosen
