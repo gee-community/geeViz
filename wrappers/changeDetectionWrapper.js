@@ -232,10 +232,10 @@ var indexName = 'NBR';
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //Verdet
 var verdetTsIndex = processedComposites.select([indexName]);
-var verdetTs = verdetTsIndex.map(getImageLib.addDateBand)
+var verdetTs = verdetTsIndex.map(getImageLib.addDateBand);
 var verdet = ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: verdetTsIndex,
                                         tolerance: 0.0001,
-                                        alpha:  0.03333333333333333})
+                                        alpha:  0.03333333333333333});
 // verdet = verdet.arraySlice(0,1,null);
 
 
