@@ -169,6 +169,26 @@ var processedComposites = lsAndTs[1];
 
 //////////////////////////////////////////////////
 //Start of change detection code
+var run_params = { 
+  maxSegments:            6,
+  spikeThreshold:         0.9,
+  vertexCountOvershoot:   3,
+  preventOneYearRecovery: true,
+  recoveryThreshold:      0.25,
+  pvalThreshold:          0.05,
+  bestModelProportion:    0.75,
+  minObservationsNeeded:  6
+};
+// define disturbance mapping filter parameters 
+var treeLoss1  = 175;      // delta filter for 1 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
+var treeLoss20 = 200;      // delta filter for 20 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
+var preVal     = 400;      // pre-disturbance value threshold - values below the provided threshold will exclude disturbance for those pixels - units are in units of segIndex defined in the following function definition
+var mmu        = 15;       // minimum mapping unit for disturbance patches - units of pixels
+// define the segmentation parameters:
+// reference: Kennedy, R. E., Yang, Z., & Cohen, W. B. (2010). Detecting trends in forest disturbance and recovery using yearly Landsat time series: 1. LandTrendr—Temporal segmentation algorithms. Remote Sensing of Environment, 114(12), 2897-2910.
+//            https://github.com/eMapR/LT-GEE
+var distDir = -1; // define the sign of spectral delta for vegetation loss for the segmentation index - 
+                  // NBR delta is negetive for vegetation loss, so -1 for NBR, 1 for band 5, -1 for NDVI, etc
 
 //----- RUN LANDTRENDR -----
 var ltCollection = processedComposites.select(['NBR']).map(function(img){
