@@ -218,10 +218,6 @@ Map.addLayer(ltCollection,{},'ltCollection',false);
 run_params.timeSeries = ltCollection;               // add LT collection to the segmentation run parameter object
 var lt = ee.Algorithms.TemporalSegmentation.LandTrendr(run_params); // run LandTrendr spectral temporal segmentation algorithm
 
-
-
-
-
 //########################################################################################################
 //##### RUN THE GREATEST DISTURBANCE EXTRACT FUCTION #####
 //########################################################################################################
@@ -245,8 +241,7 @@ var distImg = dLib.extractDisturbance(lt.select('LandTrendr'), distDir, distPara
 //########################################################################################################
 
 // ----- set visualization dictionaries -----
-var startYear = 1985;
-var endYear = 2017;
+
 var yodVizParms = {
   min: startYear+1,
   max: endYear,
@@ -274,9 +269,9 @@ var preValVizParms = {
 
 // ----- display the disturbance attribute maps ----- 
                                                 // clip the data to the geometry
-Map.addLayer(distImg.select(['preval']), preValVizParms, 'Pre-dist Value',false); // add pre-disturbacne spectral index value to map
-Map.addLayer(distImg.select(['dur']), durVizParms, 'Duration',false);             // add disturbance duration to map
-Map.addLayer(distImg.select(['mag']), magVizParms, 'Magnitude',false);            // add magnitude to map
-Map.addLayer(distImg.select(['yod']), yodVizParms, 'Year of Detection',false);    // add disturbance year of detection to map
+Map.addLayer(distImg.select(['preval']), preValVizParms, 'LT-Pre-dist Value',false); // add pre-disturbacne spectral index value to map
+Map.addLayer(distImg.select(['dur']), durVizParms, 'LT-Duration',false);             // add disturbance duration to map
+Map.addLayer(distImg.select(['mag']), magVizParms, 'LT-Magnitude',false);            // add magnitude to map
+Map.addLayer(distImg.select(['yod']), yodVizParms, 'LT-Year of Detection',false);    // add disturbance year of detection to map
 
 /////////////////////////////////////////////////////////////////
