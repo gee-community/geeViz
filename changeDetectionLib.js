@@ -216,4 +216,7 @@ function landtrendrWrapper(indexName,distDir,run_params,distParams){
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 exports.extractDisturbance = extractDisturbance;
+exports.landtrendrWrapper = landtrendrWrapper;
+
+
 exports.getExistingChangeData = getExistingChangeData;
