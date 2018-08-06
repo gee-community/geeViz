@@ -10,7 +10,7 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 var dLib = require('users/USFS_GTAC/modules:changeDetectionLib.js');
 ///////////////////////////////////////////////////////////////////////////////
 // Define user parameters:
-dLib.getExistingChangeData()
+dLib.getExistingChangeData();
 // 1. Specify study area: Study area
 // Can specify a country, provide a fusion table  or asset table (must add 
 // .geometry() after it), or draw a polygon and make studyArea = drawnPolygon
@@ -168,7 +168,11 @@ var lsAndTs = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJul
 var processedScenes = lsAndTs[0];
 var processedComposites = lsAndTs[1];
 
-//////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//Landtrendr
 //From: http://www.mdpi.com/2072-4292/10/5/691
 // Table 1. LandTrendr parameters used for IDL and GEE runs in all study areas. The NBR spectral metric was used for segmentation. For descriptions of the parameters, see [3]).
 // Parameter	IDL	GEE	Comments
@@ -208,8 +212,10 @@ var mmu        = 15;       // minimum mapping unit for disturbance patches - uni
 var distDir = -1; // define the sign of spectral delta for vegetation loss for the segmentation index - 
                   // NBR delta is negetive for vegetation loss, so -1 for NBR, 1 for band 5, -1 for NDVI, etc
 
+var indexName = 'NBR'
+
 //----- RUN LANDTRENDR -----
-var ltCollection = processedComposites.select(['NBR']).map(function(img){
+var ltCollection = processedComposites.select([indexName]).map(function(img){
   var out = img.multiply(-1000);
   out  = out.copyProperties(img,['system:time_start']);
   return out
@@ -274,4 +280,13 @@ Map.addLayer(distImg.select(['dur']), durVizParms, 'LT-Duration',false);        
 Map.addLayer(distImg.select(['mag']), magVizParms, 'LT-Magnitude',false);            // add magnitude to map
 Map.addLayer(distImg.select(['yod']), yodVizParms, 'LT-Year of Detection',false);    // add disturbance year of detection to map
 
-/////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//Verdet
+var verdet = ee.Algorithms.TemporalSegmentation.Verdet({ts: tsIndex,
+//                                         tolerance: 0.0001,
+//                                         alpha:  0.03333333333333333})
+// verdet = verdet.arraySlice(0,1,null)
+// tsYear = tsYear.arraySlice(0,1,null)
