@@ -151,6 +151,9 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
 //////////////////////////////////////////////////////////////////////////
 //Function to wrap landtrendr processing
 function landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu){
+  var startYear = ee.Date(ee.Image(processedComposites.first()).get('system:time_start')).get('year');
+  var endYear = ee.Date(ee.Image(processedComposites.sort('system:time_start',false).first()).get('system:time_start')).get('year');
+  
   //----- RUN LANDTRENDR -----
   var ltCollection = processedComposites.select([indexName]).map(function(img){
     var out = img.multiply(distDir*1000);
