@@ -221,73 +221,73 @@ var distDir = -1; // define the sign of spectral delta for vegetation loss for t
 
 var indexName = 'NBR'
 
-function landtrendrWrapper(run_params,filter_params,)
-//----- RUN LANDTRENDR -----
-var ltCollection = processedComposites.select([indexName]).map(function(img){
-  var out = img.multiply(-1000);
-  out  = out.copyProperties(img,['system:time_start']);
-  return out
-})
-Map.addLayer(ltCollection,{},'ltCollection',false);
-run_params.timeSeries = ltCollection;               // add LT collection to the segmentation run parameter object
-var lt = ee.Algorithms.TemporalSegmentation.LandTrendr(run_params); // run LandTrendr spectral temporal segmentation algorithm
-
-//########################################################################################################
-//##### RUN THE GREATEST DISTURBANCE EXTRACT FUCTION #####
-//########################################################################################################
-
-//assemble the disturbance extraction parameters
-var distParams = {
-  tree_loss1: treeLoss1,
-  tree_loss20: treeLoss20,  
-  pre_val: preVal           
-};
-
-// run the dist extract function
-var distImg = dLib.extractDisturbance(lt.select('LandTrendr'), distDir, distParams);
-
-
-
-
-
-//########################################################################################################
-//##### DISTURBANCE MAP DISPLAY #####
-//########################################################################################################
-
-// ----- set visualization dictionaries -----
-
-var yodVizParms = {
-  min: startYear+1,
-  max: endYear,
-  palette: ['#9400D3', '#4B0082', '#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000']
-};
-
-var magVizParms = {
-  min: distParams.tree_loss1,
-  max: 1000,
-  palette: ['#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000']
-};
-
-var durVizParms = {
-  min: 1,
-  max: endYear-startYear,
-  palette: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF']
-};
-
-var preValVizParms = {
-  min: preVal,
-  max: 800,
-  palette: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF']
-};
-
-
-// ----- display the disturbance attribute maps ----- 
-                                                // clip the data to the geometry
-Map.addLayer(distImg.select(['preval']), preValVizParms, 'LT-Pre-dist Value',false); // add pre-disturbacne spectral index value to map
-Map.addLayer(distImg.select(['dur']), durVizParms, 'LT-Duration',false);             // add disturbance duration to map
-Map.addLayer(distImg.select(['mag']), magVizParms, 'LT-Magnitude',false);            // add magnitude to map
-Map.addLayer(distImg.select(['yod']), yodVizParms, 'LT-Year of Detection',false);    // add disturbance year of detection to map
-
+function landtrendrWrapper(indexName,distDir,run_params,filter_params){
+  //----- RUN LANDTRENDR -----
+  var ltCollection = processedComposites.select([indexName]).map(function(img){
+    var out = img.multiply(-1000);
+    out  = out.copyProperties(img,['system:time_start']);
+    return out
+  })
+  Map.addLayer(ltCollection,{},'ltCollection',false);
+  run_params.timeSeries = ltCollection;               // add LT collection to the segmentation run parameter object
+  var lt = ee.Algorithms.TemporalSegmentation.LandTrendr(run_params); // run LandTrendr spectral temporal segmentation algorithm
+  
+  //########################################################################################################
+  //##### RUN THE GREATEST DISTURBANCE EXTRACT FUCTION #####
+  //########################################################################################################
+  
+  //assemble the disturbance extraction parameters
+  var distParams = {
+    tree_loss1: treeLoss1,
+    tree_loss20: treeLoss20,  
+    pre_val: preVal           
+  };
+  
+  // run the dist extract function
+  var distImg = dLib.extractDisturbance(lt.select('LandTrendr'), distDir, distParams);
+  
+  
+  
+  
+  
+  //########################################################################################################
+  //##### DISTURBANCE MAP DISPLAY #####
+  //########################################################################################################
+  
+  // ----- set visualization dictionaries -----
+  
+  var yodVizParms = {
+    min: startYear+1,
+    max: endYear,
+    palette: ['#9400D3', '#4B0082', '#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000']
+  };
+  
+  var magVizParms = {
+    min: distParams.tree_loss1,
+    max: 1000,
+    palette: ['#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000']
+  };
+  
+  var durVizParms = {
+    min: 1,
+    max: endYear-startYear,
+    palette: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF']
+  };
+  
+  var preValVizParms = {
+    min: preVal,
+    max: 800,
+    palette: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF']
+  };
+  
+  
+  // ----- display the disturbance attribute maps ----- 
+                                                  // clip the data to the geometry
+  Map.addLayer(distImg.select(['preval']), preValVizParms, 'LT-Pre-dist Value',false); // add pre-disturbacne spectral index value to map
+  Map.addLayer(distImg.select(['dur']), durVizParms, 'LT-Duration',false);             // add disturbance duration to map
+  Map.addLayer(distImg.select(['mag']), magVizParms, 'LT-Magnitude',false);            // add magnitude to map
+  Map.addLayer(distImg.select(['yod']), yodVizParms, 'LT-Year of Detection',false);    // add disturbance year of detection to map
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
