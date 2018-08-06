@@ -150,7 +150,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
 };
 //////////////////////////////////////////////////////////////////////////
 //Helper to multiply image
-function multBands(img,by){
+function multBands(img,distDir,by){
     var out = img.multiply(distDir*by);
     out  = out.copyProperties(img,['system:time_start']);
     return out;
