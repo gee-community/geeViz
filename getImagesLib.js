@@ -1138,7 +1138,7 @@ applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFm
 /////////////////////////////////////////////////////////////////////
 //Wrapper function for getting Landsat imagery
 function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
-  timebuffer,weights,
+  timebuffer,weights,compositingMethod,
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
