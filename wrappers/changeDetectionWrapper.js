@@ -206,6 +206,13 @@ var treeLoss1  = 150;      // delta filter for 1 year duration disturbance, <= w
 var treeLoss20 = 200;      // delta filter for 20 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
 var preVal     = 200;      // pre-disturbance value threshold - values below the provided threshold will exclude disturbance for those pixels - units are in units of segIndex defined in the following function definition
 var mmu        = 15;       // minimum mapping unit for disturbance patches - units of pixels
+
+var filter_params  = {treeLoss1 :treeLoss1,    
+                      treeLoss20 : treeLoss20,
+                      preVal: preVal,     
+                      mmu: mmu}     
+
+
 // define the segmentation parameters:
 // reference: Kennedy, R. E., Yang, Z., & Cohen, W. B. (2010). Detecting trends in forest disturbance and recovery using yearly Landsat time series: 1. LandTrendr—Temporal segmentation algorithms. Remote Sensing of Environment, 114(12), 2897-2910.
 //            https://github.com/eMapR/LT-GEE
@@ -214,6 +221,7 @@ var distDir = -1; // define the sign of spectral delta for vegetation loss for t
 
 var indexName = 'NBR'
 
+function landtrendrWrapper(run_params,filter_params,)
 //----- RUN LANDTRENDR -----
 var ltCollection = processedComposites.select([indexName]).map(function(img){
   var out = img.multiply(-1000);
