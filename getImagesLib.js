@@ -18,6 +18,16 @@ var vizParamsTrue = {
 
 ////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
+/////////////////////////////////////////////////////////////////////////////////
+//Function to handle empty collections that will cause subsequent processes to fail
+//If the collection is empty, will fill it with an empty image
+function fillEmptyCollections(inCollection,dummyImage){                       
+  var dummyCollection = ee.ImageCollection([dummyImage.mask(ee.Image(0))]);
+  var imageCount = inCollection.toList(1).length();
+  return ee.ImageCollection(ee.Algorithms.If(imageCount.gt(0),inCollection,dummyCollection));
+
+}
+//////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 var fringeCountThreshold = 279;//Define number of non null observations for pixel to not be classified as a fringe
 ///////////////////////////////////////////////////
@@ -499,6 +509,7 @@ function exportToAssetWrapper(imageForExport,assetName,assetPath,
 ////////////////////////////////////////////////////////////////////////////////
 // Create composites for each year within startYear and endYear range
 function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod){
+  var dummy = ee.Image(ls.first());
   var ts = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
     // Set up dates
@@ -509,6 +520,9 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
   
     // Filter images for given date range
     var lsT = ls.filterDate(startDateT,endDateT);
+    
+    //Fill empty collections
+    lsT = fillEmptyCollections(lsT,dummyImage);
     
     var yearsT = ee.List.sequence(startYearT,endYearT);
     
