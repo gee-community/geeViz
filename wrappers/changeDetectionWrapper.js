@@ -264,6 +264,6 @@ verdet = verdetRight.arrayCat(yearsRight,1)
 
 Map.addLayer(verdetTsIndex,{},'VERDET-ts'+indexName,false);
 Map.addLayer(verdet,{},'VERDET-'+indexName,false);
-Map.addLayer(right)
+Map.addLayer(yearsRight)
 
 // tsYear = tsYear.arraySlice(0,1,null)
