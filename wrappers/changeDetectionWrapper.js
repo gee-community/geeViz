@@ -120,7 +120,7 @@ var dilatePixels = 2.5;
 // 12. correctIllumination: Choose if you want to correct the illumination using
 // Sun-Canopy-Sensor+C correction. Additionally, choose the scale at which the
 // correction is calculated in meters.
-var correctIllumination = false;
+var correctIllumination = true;
 var correctScale = 250;
 
 //13. Export params
@@ -160,7 +160,7 @@ getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
-  correctIllumination,exportComposites)
+  correctIllumination,correctScale,exportComposites)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the study region, with a blue outline.
