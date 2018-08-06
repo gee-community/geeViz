@@ -163,6 +163,7 @@ var lsAndTs = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJul
   correctIllumination,correctScale,
   exportComposites,outputName,exportPathRoot,crs,transform,scale);
 
+//Separate into scenes and composites for subsequent analysis
 var processedScenes = lsAndTs[0];
 var processedComposites = lsAndTs[1];
 
