@@ -203,7 +203,7 @@ function landtrendrWrapper(processedComposites,indexName,distDir,run_params,dist
   };
   
   var preValVizParms = {
-    min: preVal,
+    min: distParams.pre_val,
     max: 800,
     palette: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF']
   };
