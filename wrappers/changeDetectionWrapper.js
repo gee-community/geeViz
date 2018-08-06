@@ -268,6 +268,6 @@ var changeMag = verdetDiff
 // Map.addLayer(verdetTsIndex,{},'VERDET-ts'+indexName,false);
 // Map.addLayer(verdet,{},'VERDET-'+indexName,false);
 Map.addLayer(changeYear);
-Map.addLayer(changeMag)
+Map.addLayer(changeMag,{'min':0,'max':0.2})
 
 // tsYear = tsYear.arraySlice(0,1,null)
