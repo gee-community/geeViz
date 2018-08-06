@@ -236,9 +236,31 @@ var verdetTs = verdetTsIndex.map(getImageLib.addDateBand);
 var verdet =   ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: verdetTsIndex,
                                         tolerance: 0.0001,
                                         alpha: 1/3.0})
-// verdet = verdet.arraySlice(0,1,null);
+verdet = verdet.arraySlice(0,1,null)
+var tsYear = verdetTs.select([1]).toArray().arraySlice(0,1,null)
 
+Map.addLayer(verdet.arrayCat(tsYear,1))
+// var verdetLeft = verdet.arraySlice(0,0,-1)
+// var verdetRight = verdet.arraySlice(0,1,null);
+// var verdetDiff = verdetRight.subtract(verdetLeft)
+// var yearsLeft = tsYear.arraySlice(0,0,-1)
+// var yearsRight = tsYear.arraySlice(0,1,null)
+// var isVertex = verdetDiff.gt(0.00000001).or(verdetDiff.lt(-0.00000001))
 
+// verdetLeft = verdetLeft.arrayMask(isVertex);
+// verdetRight = verdetRight.arrayMask(isVertex);
+// verdetDiff = verdetDiff.arrayMask(isVertex);
+// yearsLeft = yearsLeft.arrayMask(isVertex)
+// yearsRight = yearsRight.arrayMask(isVertex)
+// verdet = verdetRight.arrayCat(yearsRight,1)
+// // verdet = verdetDiff.arrayCat(isVertex,1)//.arrayCat(verdetDiff,1)
+// // var verdetValues = verdet.reduceRegion(ee.Reducer.first(),geometry, 30, 'EPSG:5070', null,true, 1,1).get('score')
+
+// // var verdetGraph = ui.Chart.array.values(verdetValues, 0);
+// // verdetGraph = verdetGraph.setChartType('ScatterChart')
+// // print(verdetGraph)
+// // Map.addLayer(tsIndex,{},'tsIndex',false);
+// Map.addLayer(verdet)
 
 var verdetTsYear = verdetTs.select(['year']).toArray().arrayProject([0]);
 Map.addLayer(verdetTsIndex,{},'VERDET-ts'+indexName,false);
