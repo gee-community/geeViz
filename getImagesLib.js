@@ -28,6 +28,17 @@ function fillEmptyCollections(inCollection,dummyImage){
 
 }
 //////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+//Adds the float year with julian proportion to image
+function addDateBand(img){
+  var d = ee.Date(img.get('system:time_start'));
+  var y = d.get('year');
+  d = y.add(d.getFraction('year'));
+  var db = ee.Image.constant(d).rename(['year']).float();
+  db = db.updateMask(img.select([0]).mask())
+  return img.addBands(db);
+}
+////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 var fringeCountThreshold = 279;//Define number of non null observations for pixel to not be classified as a fringe
 ///////////////////////////////////////////////////
@@ -1252,6 +1263,7 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
 ////////////////////////////////////////////////////////////////////////////////
 // END FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
+exports.addDateBand = addDateBand;
 exports.getImageCollection = getImageCollection;
 exports.vizParamsFalse = vizParamsFalse;
 exports.vizParamsTrue = vizParamsTrue;
