@@ -158,73 +158,79 @@ if(toaOrSR === 'TOA'){
     applyFmaskSnowMask = false;
   }
 ////////////////////////////////////////////////////////////////////////////////
+//Wrapper function for getting Landsat imagery
 function getLandsatWrapper(studyArea,startDate,endDate,startJulian,endJulian,
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
-  correctIllumination)
-// Get Landsat image collection
-var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
-  toaOrSR,includeSLCOffL7,defringeL5);
-
-// Apply relevant cloud masking methods
-if(applyCloudScore){
-  print('Applying cloudScore');
-  ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
+  correctIllumination){
+    
+  // Get Landsat image collection
+  var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
+    toaOrSR,includeSLCOffL7,defringeL5);
   
-}
-
-if(applyFmaskCloudMask){
-  print('Applying Fmask cloud mask');
-  ls = ls.map(function(img){return getImageLib.cFmask(img,'cloud')});
-}
-
-if(applyTDOM){
-  print('Applying TDOM');
-  //Find and mask out dark outliers
-  ls = getImageLib.simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
-}
-if(applyFmaskCloudShadowMask){
-  print('Applying Fmask shadow mask');
-  ls = ls.map(function(img){return getImageLib.cFmask(img,'shadow')});
-}
-if(applyFmaskSnowMask){
-  print('Applying Fmask snow mask');
-  ls = ls.map(function(img){return getImageLib.cFmask(img,'snow')});
-}
-
-
-
-// Add zenith and azimuth
-if (correctIllumination){
-  ls = ls.map(function(img){
-    return getImageLib.addZenithAzimuth(img,toaOrSR);
-  });
-}
-
-// Add common indices- can use addIndices for comprehensive indices 
-//or simpleAddIndices for only common indices
-ls = ls.map(getImageLib.simpleAddIndices);
-
-// Create composite time series
-var ts = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
-
-
-// Correct illumination
-if (correctIllumination){
-  var f = ee.Image(ts.first());
-  Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
-
-  print('Correcting illumination');
-  ts = ts.map(getImageLib.illuminationCondition)
-    .map(function(img){
-      return getImageLib.illuminationCorrection(img, correctScale,studyArea);
+  // Apply relevant cloud masking methods
+  if(applyCloudScore){
+    print('Applying cloudScore');
+    ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
+    
+  }
+  
+  if(applyFmaskCloudMask){
+    print('Applying Fmask cloud mask');
+    ls = ls.map(function(img){return getImageLib.cFmask(img,'cloud')});
+  }
+  
+  if(applyTDOM){
+    print('Applying TDOM');
+    //Find and mask out dark outliers
+    ls = getImageLib.simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
+  }
+  if(applyFmaskCloudShadowMask){
+    print('Applying Fmask shadow mask');
+    ls = ls.map(function(img){return getImageLib.cFmask(img,'shadow')});
+  }
+  if(applyFmaskSnowMask){
+    print('Applying Fmask snow mask');
+    ls = ls.map(function(img){return getImageLib.cFmask(img,'snow')});
+  }
+  
+  
+  
+  // Add zenith and azimuth
+  if (correctIllumination){
+    ls = ls.map(function(img){
+      return getImageLib.addZenithAzimuth(img,toaOrSR);
     });
-  var f = ee.Image(ts.first());
-  Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated',false);
+  }
+  
+  // Add common indices- can use addIndices for comprehensive indices 
+  //or simpleAddIndices for only common indices
+  ls = ls.map(getImageLib.simpleAddIndices);
+  
+  // Create composite time series
+  var ts = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
+  
+  
+  // Correct illumination
+  if (correctIllumination){
+    var f = ee.Image(ts.first());
+    Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
+  
+    print('Correcting illumination');
+    ts = ts.map(getImageLib.illuminationCondition)
+      .map(function(img){
+        return getImageLib.illuminationCorrection(img, correctScale,studyArea);
+      });
+    var f = ee.Image(ts.first());
+    Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated',false);
+  }
 }
-
-
+getLandsatWrapper(studyArea,startDate,endDate,startJulian,endJulian,
+  toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
+  applyFmaskCloudShadowMask,applyFmaskSnowMask,
+  cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
+  correctIllumination)
 // Export composite collection
 // var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
 // getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
