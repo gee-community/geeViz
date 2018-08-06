@@ -207,11 +207,11 @@ var treeLoss20 = 200;      // delta filter for 20 year duration disturbance, <= 
 var preVal     = 200;      // pre-disturbance value threshold - values below the provided threshold will exclude disturbance for those pixels - units are in units of segIndex defined in the following function definition
 var mmu        = 15;       // minimum mapping unit for disturbance patches - units of pixels
 
-var filter_params  = {treeLoss1 :treeLoss1,    
-                      treeLoss20 : treeLoss20,
-                      preVal: preVal,     
-                      mmu: mmu}     
-
+var distParams = {
+    tree_loss1: treeLoss1,
+    tree_loss20: treeLoss20,  
+    pre_val: preVal           
+  };
 
 // define the segmentation parameters:
 // reference: Kennedy, R. E., Yang, Z., & Cohen, W. B. (2010). Detecting trends in forest disturbance and recovery using yearly Landsat time series: 1. LandTrendr—Temporal segmentation algorithms. Remote Sensing of Environment, 114(12), 2897-2910.
@@ -221,7 +221,7 @@ var distDir = -1; // define the sign of spectral delta for vegetation loss for t
 
 var indexName = 'NBR';
 
-function landtrendrWrapper(indexName,distDir,run_params,filter_params){
+function landtrendrWrapper(indexName,distDir,run_params,distParams){
   //----- RUN LANDTRENDR -----
   var ltCollection = processedComposites.select([indexName]).map(function(img){
     var out = img.multiply(distDir*1000);
@@ -237,11 +237,7 @@ function landtrendrWrapper(indexName,distDir,run_params,filter_params){
   //########################################################################################################
   
   //assemble the disturbance extraction parameters
-  var distParams = {
-    tree_loss1: treeLoss1,
-    tree_loss20: treeLoss20,  
-    pre_val: preVal           
-  };
+  
   
   // run the dist extract function
   var distImg = dLib.extractDisturbance(lt.select('LandTrendr'), distDir, distParams);
@@ -288,6 +284,7 @@ function landtrendrWrapper(indexName,distDir,run_params,filter_params){
   Map.addLayer(distImg.select(['mag']), magVizParms, 'LT-Magnitude',false);            // add magnitude to map
   Map.addLayer(distImg.select(['yod']), yodVizParms, 'LT-Year of Detection',false);    // add disturbance year of detection to map
 }
+landtrendrWrapper(indexName,distDir,run_params,filter_params);
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
