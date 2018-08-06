@@ -232,7 +232,7 @@ var indexName = 'NBR';
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //Verdet
 var verdetTs = processedComposites.select([indexName]).map(getImageLib.addDateBand)
-var verdet = ee.Algorithms.TemporalSegmentation.Verdet({ts: verdetTs.select([0]),
+var verdet = ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: verdetTs.select([0]),
                                         tolerance: 0.0001,
                                         alpha:  0.03333333333333333})
 verdet = verdet.arraySlice(0,1,null);
@@ -241,6 +241,6 @@ verdet = verdet.arraySlice(0,1,null);
 // var ts = getData.compositeTimeSeries(ls,startYear,endYear,timeBuffer,weights,compositingMethod)
 var verdetTsIndex = verdetTs.select([indexName]);
 var verdetTsYear = verdetTs.select(['year']).toArray().arrayProject([0]);
-Map.addLayer(tsIndex,{},'VERDET-ts'+indexName,false)
+Map.addLayer(verdetTsIndex,{},'VERDET-ts'+indexName,false)
 
 // tsYear = tsYear.arraySlice(0,1,null)
