@@ -124,6 +124,9 @@ var correctIllumination = false;
 var correctScale = 250;
 
 //13. Export params
+//Whether to export composites
+var exportComposites = true;
+
 //Set up Names for the export
 var outputName = 'Medoid-Landsat';
 
@@ -131,8 +134,7 @@ var outputName = 'Medoid-Landsat';
 //This should be an asset folder, or more ideally, an asset imageCollection
 var exportPathRoot = 'users/ianhousman/test';
 
-//Whether to export composites
-var exportComposites = true;
+
 
 //CRS- must be provided.  
 //Common crs codes: Web mercator is EPSG:4326, USGS Albers is EPSG:5070, 
