@@ -169,6 +169,23 @@ var processedScenes = lsAndTs[0];
 var processedComposites = lsAndTs[1];
 
 //////////////////////////////////////////////////
+//From: http://www.mdpi.com/2072-4292/10/5/691
+// Table 1. LandTrendr parameters used for IDL and GEE runs in all study areas. The NBR spectral metric was used for segmentation. For descriptions of the parameters, see [3]).
+// Parameter	IDL	GEE	Comments
+// maxSegments	6	6	
+// spikeThreshold	0.9	0.9	Renamed from “desawtooth val”
+// vertexCountOvershoot	3	3	
+// recoveryThreshold	0.25	0.25	
+// pvalThreshold	0.05	0.05	
+// bestModelProportion	0.75	0.75	
+// minObservationsNeeded	6	6	Renamed from “minneeded”
+// Background_val	0	NA	GEE uses a mask logic to avoid missing values caused by clouds, shadows, and missing imagery.
+// Divisor	−1	NA	Ensures that vegetation loss disturbance results in negative change in value when NBR is used as a spectral metric. In GEE, this must be handled outside of the segmentation algorithm.
+// Kernelsize	1	Dropped	Originally used together with skipfactor to save computational burden; no longer necessary.
+// Skipfactor	1	Dropped
+// Distweightfactor	2	Dropped	Inadvertently hardwired in the IDL code, this parameter was hardwired in the GEE code to the value of 2.
+// Fix_doy_effect	1	Dropped	Although correcting day-of-year trends was considered theoretically useful in the original LT implementation, in practice it has been found to distort time series values when change occurs and thus was eliminated.
+
 //Start of change detection code
 var run_params = { 
   maxSegments:            6,
@@ -181,9 +198,9 @@ var run_params = {
   minObservationsNeeded:  6
 };
 // define disturbance mapping filter parameters 
-var treeLoss1  = 175;      // delta filter for 1 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
+var treeLoss1  = 150;      // delta filter for 1 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
 var treeLoss20 = 200;      // delta filter for 20 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
-var preVal     = 400;      // pre-disturbance value threshold - values below the provided threshold will exclude disturbance for those pixels - units are in units of segIndex defined in the following function definition
+var preVal     = 200;      // pre-disturbance value threshold - values below the provided threshold will exclude disturbance for those pixels - units are in units of segIndex defined in the following function definition
 var mmu        = 15;       // minimum mapping unit for disturbance patches - units of pixels
 // define the segmentation parameters:
 // reference: Kennedy, R. E., Yang, Z., & Cohen, W. B. (2010). Detecting trends in forest disturbance and recovery using yearly Landsat time series: 1. LandTrendr—Temporal segmentation algorithms. Remote Sensing of Environment, 114(12), 2897-2910.
