@@ -46,34 +46,28 @@ var timebuffer = 1;
 var weights = [1,5,1];
 
 
-// 6. Set up Names for the export
-var outputName = 'Medoid-Landsat';
 
-// 7. Provide location composites will be exported to
-//This should be an asset folder, or more ideally, an asset imageCollection
-var exportPathRoot = 'users/ianhousman/test';
-
-// 8. Choose medoid or median compositing method. 
+// 6. Choose medoid or median compositing method. 
 // Median tends to be smoother, while medoid retains 
 // single date of observation across all bands
 // If not exporting indices with composites to save space, medoid should be used
 var compositingMethod = 'medoid';
 
-// 9. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
+// 7. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
 // Specify TOA or SR
 // Current implementation does not support Fmask for TOA
 var toaOrSR = 'SR';
 
-// 10. Choose whether to include Landat 7
+// 8. Choose whether to include Landat 7
 // Generally only included when data are limited
 var includeSLCOffL7 = false;
 
-//11. Whether to defringe L5
+//9. Whether to defringe L5
 //Landsat 5 data has fringes on the edges that can introduce anomalies into 
 //the analysis.  This method removes them, but is somewhat computationally expensive
 var defringeL5 = false;
 
-// 12. Choose cloud/cloud shadow masking method
+// 10. Choose cloud/cloud shadow masking method
 // Choices are a series of booleans for cloudScore, TDOM, and elements of Fmask
 //Fmask masking options will run fastest since they're precomputed
 //CloudScore runs pretty quickly, but does look at the time series to find areas that 
@@ -88,7 +82,7 @@ var applyFmaskCloudShadowMask = true;
 
 var applyFmaskSnowMask = true;
 
-// 13. Cloud and cloud shadow masking parameters.
+// 11. Cloud and cloud shadow masking parameters.
 // If cloudScoreTDOM is chosen
 // cloudScoreThresh: If using the cloudScoreTDOMShift method-Threshold for cloud 
 //    masking (lower number masks more clouds.  Between 10 and 30 generally 
@@ -123,17 +117,33 @@ var contractPixels = 1.5;
 // (2.5 or 3.5 generally is sufficient)
 var dilatePixels = 2.5;
 
-// 14. correctIllumination: Choose if you want to correct the illumination using
+// 12. correctIllumination: Choose if you want to correct the illumination using
 // Sun-Canopy-Sensor+C correction. Additionally, choose the scale at which the
 // correction is calculated in meters.
 var correctIllumination = false;
 var correctScale = 250;
 
-//15. Export params
-var exportComposites = true;//Whether to export composites
+//13. Export params
+//Set up Names for the export
+var outputName = 'Medoid-Landsat';
+
+//Provide location composites will be exported to
+//This should be an asset folder, or more ideally, an asset imageCollection
+var exportPathRoot = 'users/ianhousman/test';
+
+//Whether to export composites
+var exportComposites = true;
+
+//CRS- must be provided.  
+//Common crs codes: Web mercator is EPSG:4326, USGS Albers is EPSG:5070, 
+//WGS84 UTM N hemisphere is EPSG:326+ zone number (zone 12 N would be EPSG:32612) and S hemisphere is EPSG:327+ zone number
 var crs = 'EPSG:5070';
-var transform = [30,0,-2361915.0,0,-30,3177735.0];//Specify transform if scale is null and snapping to known grid is needed
-var scale = null;//Specify scale if transform is null
+
+//Specify transform if scale is null and snapping to known grid is needed
+var transform = [30,0,-2361915.0,0,-30,3177735.0];
+
+//Specify scale if transform is null
+var scale = null;
 ///////////////////////////////////////////////////////////////////////
 // End user parameters
 ///////////////////////////////////////////////////////////////////////
