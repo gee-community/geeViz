@@ -231,7 +231,7 @@ var indexName = 'NBR';
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //Verdet
-var verdetTsIndex = verdetTs.select([indexName]);
+var verdetTsIndex = processedComposites.select([indexName]);
 var verdetTs = verdetTsIndex.map(getImageLib.addDateBand)
 var verdet = ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: verdetTsIndex,
                                         tolerance: 0.0001,
