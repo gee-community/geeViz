@@ -169,7 +169,7 @@ function landtrendrWrapper(processedComposites,indexName,distDir,run_params,dist
   
   
   // run the dist extract function
-  var distImg = dLib.extractDisturbance(lt.select('LandTrendr'), distDir, distParams,mmu);
+  var distImg = extractDisturbance(lt.select('LandTrendr'), distDir, distParams,mmu);
   
   
   
