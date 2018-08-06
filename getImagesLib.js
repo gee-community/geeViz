@@ -537,7 +537,8 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
       // Filter images for given date range
       var lsT = ls.filter(ee.Filter.calendarRange(yr,yr,'year'))
                 .filter(ee.Filter.calendarRange(startJulian,endJulian));//.toList(10000,0);
-    return lsT;
+      lsT = fillEmptyCollections(lsT,dummyImage);
+      return lsT;
     });
     lsT = ee.ImageCollection(ee.FeatureCollection(images).flatten());
    
