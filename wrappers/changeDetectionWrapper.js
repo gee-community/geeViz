@@ -250,7 +250,7 @@ var isEndVertex = verdetDiff.gt(0.00000001)
 verdetLeft = verdetLeft.arrayMask(isVertex);
 verdetRight = verdetRight.arrayMask(isVertex);
 verdetDiff = verdetDiff.arrayMask(isVertex);
-yearsLeft = yearsLeft.arrayMask(isVertex)
+yearsLeft = yearsLeft.arrayMask(isEndVertex)
 yearsRight = yearsRight.arrayMask(isEndVertex)
 verdet = verdetRight.arrayCat(yearsRight,1)
 // verdet = verdetDiff.arrayCat(isVertex,1)//.arrayCat(verdetDiff,1)
@@ -262,9 +262,8 @@ verdet = verdetRight.arrayCat(yearsRight,1)
 // // Map.addLayer(tsIndex,{},'tsIndex',false);
 // Map.addLayer(verdet)
 
-var verdetTsYear = verdetTs.select(['year']).toArray().arrayProject([0]);
 Map.addLayer(verdetTsIndex,{},'VERDET-ts'+indexName,false);
 Map.addLayer(verdet,{},'VERDET-'+indexName,false);
-Map.addLayer(yearsRight)
+Map.addLayer(yearsLeft)
 
 // tsYear = tsYear.arraySlice(0,1,null)
