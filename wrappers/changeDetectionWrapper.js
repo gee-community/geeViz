@@ -241,7 +241,7 @@ var verdet = ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: verdetTsInde
 
 
 var verdetTsYear = verdetTs.select(['year']).toArray().arrayProject([0]);
-Map.addLayer(verdetTsIndex,{},'VERDET-ts'+indexName,false)
-Map.addLayer(verdet,{},'VERDET-'+indexName,false)
+Map.addLayer(verdetTsIndex,{},'VERDET-ts'+indexName,false);
+Map.addLayer(verdet,{},'VERDET-'+indexName,false);
 
 // tsYear = tsYear.arraySlice(0,1,null)
