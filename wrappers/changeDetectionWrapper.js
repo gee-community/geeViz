@@ -154,14 +154,17 @@ var scale = null;
 //Start function calls
 
 ////////////////////////////////////////////////////////////////////////////////
-
-getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
+//Call on master wrapper function to get Landat scenes and composites
+var lsAndTs = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
   timebuffer,weights,compositingMethod,
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
   correctIllumination,correctScale,
   exportComposites,outputName,exportPathRoot,crs,transform,scale);
+
+var processedScenes = lsAndTs[0];
+var processedComposites = lsAndTs[1];
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the study region, with a blue outline.
