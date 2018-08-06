@@ -227,6 +227,6 @@ function landtrendrWrapper(processedComposites,indexName,distDir,run_params,dist
 //////////////////////////////////////////////////////////////////////////
 exports.extractDisturbance = extractDisturbance;
 exports.landtrendrWrapper = landtrendrWrapper;
-
+exports.multBands = multBands;
 
 exports.getExistingChangeData = getExistingChangeData;
