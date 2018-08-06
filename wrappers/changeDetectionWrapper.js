@@ -130,6 +130,7 @@ var correctIllumination = false;
 var correctScale = 250;
 
 //15. Export params
+var exportComposites = true;//Whether to export composites
 var crs = 'EPSG:5070';
 var transform = [30,0,-2361915.0,0,-30,3177735.0];//Specify transform if scale is null and snapping to known grid is needed
 var scale = null;//Specify scale if transform is null
@@ -196,7 +197,6 @@ function getLandsatWrapper(studyArea,startDate,endDate,startJulian,endJulian,
   }
   
   
-  
   // Add zenith and azimuth
   if (correctIllumination){
     ls = ls.map(function(img){
@@ -225,17 +225,20 @@ function getLandsatWrapper(studyArea,startDate,endDate,startJulian,endJulian,
     var f = ee.Image(ts.first());
     Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated',false);
   }
+  
+  //Export composites
+  if(exportComposites){// Export composite collection
+    var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
+    getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
+    ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
+                  applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
+  }
 }
 getLandsatWrapper(studyArea,startDate,endDate,startJulian,endJulian,
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
-  correctIllumination)
-// Export composite collection
-// var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
-// getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
-// ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
-//               applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
+  correctIllumination,exportComposites)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the study region, with a blue outline.
