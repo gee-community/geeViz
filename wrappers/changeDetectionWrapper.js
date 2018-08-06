@@ -7,6 +7,7 @@ var geometry = /* color: #d63000 */ee.Geometry.Polygon(
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
+var dLib = require('users/USFS_GTAC/modules:changeDetectionLib.js');
 ///////////////////////////////////////////////////////////////////////////////
 // Define user parameters:
 
@@ -216,7 +217,7 @@ var distParams = {
 };
 
 // run the dist extract function
-var distImg = extractDisturbance(lt.select('LandTrendr'), distDir, distParams);
+var distImg = dLib.extractDisturbance(lt.select('LandTrendr'), distDir, distParams);
 
 
 
