@@ -249,10 +249,13 @@ var isVertex = verdetDiff.gt(0.00000001).or(verdetDiff.lt(-0.00000001))
 var isEndVertex = verdetDiff.gt(0.00000001)
 verdetLeft = verdetLeft.arrayMask(isVertex);
 verdetRight = verdetRight.arrayMask(isVertex);
-verdetDiff = verdetDiff.arrayMask(isVertex);
+verdetDiff = verdetDiff.arrayMask(isEndVertex);
 yearsLeft = yearsLeft.arrayMask(isEndVertex)
 yearsRight = yearsRight.arrayMask(isEndVertex)
 verdet = verdetRight.arrayCat(yearsRight,1)
+
+var changeYear = yearsRight;
+var changeMag = verdetDiff
 // verdet = verdetDiff.arrayCat(isVertex,1)//.arrayCat(verdetDiff,1)
 // var verdetValues = verdet.reduceRegion(ee.Reducer.first(),geometry, 30, 'EPSG:5070', null,true, 1,1).get('score')
 
@@ -262,8 +265,9 @@ verdet = verdetRight.arrayCat(yearsRight,1)
 // // Map.addLayer(tsIndex,{},'tsIndex',false);
 // Map.addLayer(verdet)
 
-Map.addLayer(verdetTsIndex,{},'VERDET-ts'+indexName,false);
-Map.addLayer(verdet,{},'VERDET-'+indexName,false);
-Map.addLayer(yearsRight)
+// Map.addLayer(verdetTsIndex,{},'VERDET-ts'+indexName,false);
+// Map.addLayer(verdet,{},'VERDET-'+indexName,false);
+Map.addLayer(changeYear);
+Map.addLayer(changeMag)
 
 // tsYear = tsYear.arraySlice(0,1,null)
