@@ -158,6 +158,11 @@ if(toaOrSR === 'TOA'){
     applyFmaskSnowMask = false;
   }
 ////////////////////////////////////////////////////////////////////////////////
+function getLandsatWrapper(studyArea,startDate,endDate,startJulian,endJulian,
+  toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
+  applyFmaskCloudShadowMask,applyFmaskSnowMask,
+  cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
+  correctIllumination)
 // Get Landsat image collection
 var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
   toaOrSR,includeSLCOffL7,defringeL5);
@@ -238,3 +243,6 @@ var outline = empty.paint({
 });
 Map.addLayer(outline, {palette: '0000FF'}, "Study Area", false);
 // Map.centerObject(studyArea, 6);
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
