@@ -121,7 +121,7 @@ var dilatePixels = 2.5;
 // Sun-Canopy-Sensor+C correction. Additionally, choose the scale at which the
 // correction is calculated in meters.
 var correctIllumination = false;
-var correctScale = 250;
+var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 
 //13. Export params
 //Whether to export composites
