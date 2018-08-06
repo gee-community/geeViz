@@ -150,7 +150,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
 };
 //////////////////////////////////////////////////////////////////////////
 //Function to wrap landtrendr processing
-function landtrendrWrapper(indexName,distDir,run_params,distParams){
+function landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams){
   //----- RUN LANDTRENDR -----
   var ltCollection = processedComposites.select([indexName]).map(function(img){
     var out = img.multiply(distDir*1000);
