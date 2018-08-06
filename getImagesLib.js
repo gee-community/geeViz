@@ -1231,7 +1231,7 @@ exports.illuminationCondition = illuminationCondition;
 exports.addTCAngles = addTCAngles;
 exports.simpleAddTCAngles = simpleAddTCAngles;
 exports.exportCollection = exportCollection;
-
+exports.getLandsatWrapper = getLandsatWrapper;
 
 exports.getModisData = getModisData;
 exports.modisCloudScore = modisCloudScore;
