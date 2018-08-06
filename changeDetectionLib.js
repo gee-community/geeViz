@@ -148,6 +148,11 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   
   return finalDistImg; // return the filtered greatest disturbance attribute image
 };
+function multBands(img,by){
+    var out = img.multiply(distDir*by);
+    out  = out.copyProperties(img,['system:time_start']);
+    return out;
+  }
 //////////////////////////////////////////////////////////////////////////
 //Function to wrap landtrendr processing
 function landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu){
@@ -156,9 +161,7 @@ function landtrendrWrapper(processedComposites,indexName,distDir,run_params,dist
   
   //----- RUN LANDTRENDR -----
   var ltCollection = processedComposites.select([indexName]).map(function(img){
-    var out = img.multiply(distDir*1000);
-    out  = out.copyProperties(img,['system:time_start']);
-    return out;
+     return multBands(img,1000);
   });
   Map.addLayer(ltCollection,{},'ltCollection',false);
   run_params.timeSeries = ltCollection;               // add LT collection to the segmentation run parameter object
