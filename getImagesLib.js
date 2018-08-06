@@ -1144,23 +1144,23 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
   correctIllumination){
   
   // Prepare dates
-//Wrap the dates if needed
-if (startJulian > endJulian) {
-  endJulian = endJulian + 365;
-}
-var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
-var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1,'day');
-print('Start and end dates:', startDate, endDate);
-
-//Do some error checking
-toaOrSR = toaOrSR.toUpperCase();
-if(toaOrSR === 'TOA'){
-    applyFmaskCloudMask = false;
-
-    applyFmaskCloudShadowMask = false;
-
-    applyFmaskSnowMask = false;
+  //Wrap the dates if needed
+  if (startJulian > endJulian) {
+    endJulian = endJulian + 365;
   }
+  var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
+  var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1,'day');
+  print('Start and end dates:', startDate, endDate);
+
+  //Do some error checking
+  toaOrSR = toaOrSR.toUpperCase();
+  if(toaOrSR === 'TOA'){
+      applyFmaskCloudMask = false;
+  
+      applyFmaskCloudShadowMask = false;
+  
+      applyFmaskSnowMask = false;
+    }
   // Get Landsat image collection
   var ls = getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     toaOrSR,includeSLCOffL7,defringeL5);
