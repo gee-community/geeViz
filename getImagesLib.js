@@ -1230,6 +1230,8 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
     ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
                   applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
   }
+  
+  return [ls,ts];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
