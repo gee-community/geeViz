@@ -46,49 +46,43 @@ var timebuffer = 1;
 var weights = [1,5,1];
 
 
-// 6. Set up Names for the export
-var outputName = 'Medoid-Landsat';
 
-// 7. Provide location composites will be exported to
-//This should be an asset folder, or more ideally, an asset imageCollection
-var exportPathRoot = 'users/ianhousman/test';
-
-// 8. Choose medoid or median compositing method. 
+// 6. Choose medoid or median compositing method. 
 // Median tends to be smoother, while medoid retains 
 // single date of observation across all bands
 // If not exporting indices with composites to save space, medoid should be used
 var compositingMethod = 'medoid';
 
-// 9. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
+// 7. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
 // Specify TOA or SR
 // Current implementation does not support Fmask for TOA
-var toaOrSR = 'TOA';
+var toaOrSR = 'SR';
 
-// 10. Choose whether to include Landat 7
+// 8. Choose whether to include Landat 7
 // Generally only included when data are limited
 var includeSLCOffL7 = false;
 
-//11. Whether to defringe L5
+//9. Whether to defringe L5
 //Landsat 5 data has fringes on the edges that can introduce anomalies into 
 //the analysis.  This method removes them, but is somewhat computationally expensive
 var defringeL5 = false;
 
-// 12. Choose cloud/cloud shadow masking method
+// 10. Choose cloud/cloud shadow masking method
 // Choices are a series of booleans for cloudScore, TDOM, and elements of Fmask
 //Fmask masking options will run fastest since they're precomputed
 //CloudScore runs pretty quickly, but does look at the time series to find areas that 
 //always have a high cloudScore to reduce comission errors- this takes some time
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
-var applyCloudScore = true;
-var applyFmaskCloudMask = false;
+var applyCloudScore = false;
+var applyFmaskCloudMask = true;
 
-var applyTDOM = true;
-var applyFmaskCloudShadowMask = false;
+var applyTDOM = false;
+var applyFmaskCloudShadowMask = true;
 
-var applyFmaskSnowMask = false;
+var applyFmaskSnowMask = true;
 
-// 13. Cloud and cloud shadow masking parameters.
+// 11. Cloud and cloud shadow masking parameters.
 // If cloudScoreTDOM is chosen
 // cloudScoreThresh: If using the cloudScoreTDOMShift method-Threshold for cloud 
 //    masking (lower number masks more clouds.  Between 10 and 30 generally 
@@ -123,107 +117,55 @@ var contractPixels = 1.5;
 // (2.5 or 3.5 generally is sufficient)
 var dilatePixels = 2.5;
 
-// 14. correctIllumination: Choose if you want to correct the illumination using
+// 12. correctIllumination: Choose if you want to correct the illumination using
 // Sun-Canopy-Sensor+C correction. Additionally, choose the scale at which the
 // correction is calculated in meters.
 var correctIllumination = false;
-var correctScale = 250;
+var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 
-//15. Export params
+//13. Export params
+//Whether to export composites
+var exportComposites = true;
+
+//Set up Names for the export
+var outputName = 'Medoid-Landsat';
+
+//Provide location composites will be exported to
+//This should be an asset folder, or more ideally, an asset imageCollection
+var exportPathRoot = 'users/ianhousman/test';
+
+
+
+//CRS- must be provided.  
+//Common crs codes: Web mercator is EPSG:4326, USGS Albers is EPSG:5070, 
+//WGS84 UTM N hemisphere is EPSG:326+ zone number (zone 12 N would be EPSG:32612) and S hemisphere is EPSG:327+ zone number
 var crs = 'EPSG:5070';
-var transform = [30,0,-2361915.0,0,-30,3177735.0];//Specify transform if scale is null and snapping to known grid is needed
-var scale = null;//Specify scale if transform is null
+
+//Specify transform if scale is null and snapping to known grid is needed
+var transform = [30,0,-2361915.0,0,-30,3177735.0];
+
+//Specify scale if transform is null
+var scale = null;
 ///////////////////////////////////////////////////////////////////////
 // End user parameters
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 //Start function calls
-// Prepare dates
-//Wrap the dates if needed
-if (startJulian > endJulian) {
-  endJulian = endJulian + 365;
-}
-var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
-var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1,'day');
-print('Start and end dates:', startDate, endDate);
 
-//Do some error checking
-toaOrSR = toaOrSR.toUpperCase();
-if(toaOrSR === 'TOA'){
-    applyFmaskCloudMask = false;
-
-    applyFmaskCloudShadowMask = false;
-
-    applyFmaskSnowMask = false;
-  }
 ////////////////////////////////////////////////////////////////////////////////
-// Get Landsat image collection
-var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
-  toaOrSR,includeSLCOffL7,defringeL5);
+//Call on master wrapper function to get Landat scenes and composites
+var lsAndTs = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
+  timebuffer,weights,compositingMethod,
+  toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
+  applyFmaskCloudShadowMask,applyFmaskSnowMask,
+  cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
+  correctIllumination,correctScale,
+  exportComposites,outputName,exportPathRoot,crs,transform,scale);
 
-// Apply relevant cloud masking methods
-if(applyCloudScore){
-  print('Applying cloudScore');
-  ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
-  
-}
-
-if(applyFmaskCloudMask){
-  print('Applying Fmask cloud mask');
-  ls = ls.map(function(img){return getImageLib.cFmask(img,'cloud')});
-}
-
-if(applyTDOM){
-  print('Applying TDOM');
-  //Find and mask out dark outliers
-  ls = getImageLib.simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
-}
-if(applyFmaskCloudShadowMask){
-  print('Applying Fmask shadow mask');
-  ls = ls.map(function(img){return getImageLib.cFmask(img,'shadow')});
-}
-if(applyFmaskSnowMask){
-  print('Applying Fmask snow mask');
-  ls = ls.map(function(img){return getImageLib.cFmask(img,'snow')});
-}
-
-
-
-// Add zenith and azimuth
-if (correctIllumination){
-  ls = ls.map(function(img){
-    return getImageLib.addZenithAzimuth(img,toaOrSR);
-  });
-}
-
-// Add common indices- can use addIndices for comprehensive indices 
-//or simpleAddIndices for only common indices
-ls = ls.map(getImageLib.simpleAddIndices);
-
-// Create composite time series
-var ts = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
-
-var f = ee.Image(ts.first());
-Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
-
-// Correct illumination
-if (correctIllumination){
-  print('Correcting illumination');
-  ts = ts.map(getImageLib.illuminationCondition)
-    .map(function(img){
-      return getImageLib.illuminationCorrection(img, correctScale,studyArea);
-    });
-  var f = ee.Image(ts.first());
-  Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated',false);
-}
-
-
-// Export composite collection
-var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
-getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
-ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
-              applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
+//Separate into scenes and composites for subsequent analysis
+var processedScenes = lsAndTs[0];
+var processedComposites = lsAndTs[1];
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the study region, with a blue outline.
@@ -237,3 +179,6 @@ var outline = empty.paint({
 });
 Map.addLayer(outline, {palette: '0000FF'}, "Study Area", false);
 // Map.centerObject(studyArea, 6);
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
