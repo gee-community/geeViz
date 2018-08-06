@@ -152,27 +152,11 @@ var scale = null;
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 //Start function calls
-// Prepare dates
-//Wrap the dates if needed
-if (startJulian > endJulian) {
-  endJulian = endJulian + 365;
-}
-var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
-var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1,'day');
-print('Start and end dates:', startDate, endDate);
 
-//Do some error checking
-toaOrSR = toaOrSR.toUpperCase();
-if(toaOrSR === 'TOA'){
-    applyFmaskCloudMask = false;
-
-    applyFmaskCloudShadowMask = false;
-
-    applyFmaskSnowMask = false;
-  }
 ////////////////////////////////////////////////////////////////////////////////
 
-getImageLib.getLandsatWrapper(studyArea,startDate,endDate,startJulian,endJulian,
+getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
+  timebuffer,weights
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
