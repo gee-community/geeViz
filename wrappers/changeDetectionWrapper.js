@@ -156,7 +156,7 @@ var scale = null;
 ////////////////////////////////////////////////////////////////////////////////
 
 getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
-  timebuffer,weights,
+  timebuffer,weights,compositingMethod,
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
