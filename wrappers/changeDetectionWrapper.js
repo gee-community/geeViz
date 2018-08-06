@@ -37,7 +37,7 @@ var endYear = 2017;
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
 // in a 3 year moving window
-var timebuffer = 0;
+var timebuffer = 1;
 
 // 5. Specify the weights to be used for the moving window created by timeBuffer
 //For example- if timeBuffer is 1, that is a 3 year moving window
@@ -45,7 +45,7 @@ var timebuffer = 0;
 //In order to overweight the center year, you could specify the weights as
 //[1,5,1] which would duplicate the center year 5 times and increase its weight for
 //the compositing method
-var weights = [1];
+var weights = [1,3,1];
 
 
 
@@ -231,11 +231,11 @@ var indexName = 'NBR';
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //Verdet
-var verdetTsIndex = processedComposites.select([indexName]).map(function(img){return dLib.multBands(img,1,1000)});
+var verdetTsIndex = processedComposites.select([indexName])//.map(function(img){return dLib.multBands(img,1,10000)});
 var verdetTs = verdetTsIndex.map(getImageLib.addDateBand);
-var verdet = ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: verdetTsIndex,
+var verdet =   ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: verdetTsIndex,
                                         tolerance: 0.0001,
-                                        alpha:  0.03333333333333333});
+                                        alpha: 1/3.0})
 // verdet = verdet.arraySlice(0,1,null);
 
 
