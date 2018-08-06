@@ -236,10 +236,7 @@ var verdet = ee.Algorithms.TemporalSegmentation.Verdet({ts: verdetTs,
                                         tolerance: 0.0001,
                                         alpha:  0.03333333333333333})
 verdet = verdet.arraySlice(0,1,null);
-ts = ts
-  .map(getData.rescaleBands)
-  .map(getData.simpleAddIndices)
-  .map(getData.addDateBand)
+verdetTs = verdetTs.map(getImageLib.addDateBand)
 // var ts = getData.compositeTimeSeries(ls,startYear,endYear,timeBuffer,weights,compositingMethod)
 var tsIndex = ts.select([indexName]);
 var tsYear = ts.select(['year']).toArray().arrayProject([0]);
