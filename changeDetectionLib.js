@@ -148,12 +148,14 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   
   return finalDistImg; // return the filtered greatest disturbance attribute image
 };
+//////////////////////////////////////////////////////////////////////////
+//Helper to multiply image
 function multBands(img,by){
     var out = img.multiply(distDir*by);
     out  = out.copyProperties(img,['system:time_start']);
     return out;
   }
-//////////////////////////////////////////////////////////////////////////
+
 //Function to wrap landtrendr processing
 function landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu){
   var startYear = 1984;//ee.Date(ee.Image(processedComposites.first()).get('system:time_start')).get('year').getInfo();
