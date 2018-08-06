@@ -1,8 +1,57 @@
 ///////////////////////////////////////////////
 
-// var tcc = ee.Image('USGS/NLCD/NLCD2011').select([0])
-// Map.addLayer(tcc,{},'tcc')
+function getExistingChangeData(changeThresh,showLayers){
+  if(showLayers === undefined || showLayers === null){
+    showLayers = true;
+  }
+  if(changeThresh === undefined || changeThresh === null){
+    changeThresh = 50;
+  }
+  var startYear = 1985;
+  var endYear = 2016;
+  
+  
+  
+  var glriEnsemble = ee.Image('projects/glri-phase3/changeMaps/ensembleOutputs/NBR_NDVI_TCBGAngle_swir1_swir2_median_LT_Ensemble');
+  
+  
+  
+  
+  
+  var conusChange = ee.ImageCollection('projects/glri-phase3/science-team-outputs/conus-lcms-2018')
+    .filter(ee.Filter.calendarRange(startYear,endYear,'year'));
+  var conusChangeOut = conusChange
+  conusChangeOut = conusChangeOut.map(function(img){
+    var m = img.mask();
+    var out = img.mask(ee.Image(1))
+    out = out.where(m.not(),0)
+    return out})
 
+  conusChange = conusChange.map(function(img){
+    var yr = ee.Date(img.get('system:time_start')).get('year')
+    var change = img.gt(changeThresh);
+    var conusChangeYr = ee.Image(yr).updateMask(change).rename(['change']).int16()
+    return img.mask(ee.Image(1)).addBands(conusChangeYr);
+  })  
+  if(showLayers){
+  Map.addLayer(conusChange.select(['change']).max(),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'CONUS LCMS',true);
+  Map.addLayer(conusChange.select(['probability']).max(),{'min':0,'max':50,'palette':'888,008'},'LCMSC',false);
+  }
+  var glri_lcms = glriEnsemble.updateMask(glriEnsemble.select([0])).select([1]);
+  glri_lcms = glri_lcms.updateMask(glri_lcms.gte(startYear).and(glri_lcms.lte(endYear)));
+  if(showLayers){
+  // Map.addLayer(glri_lcms,{'min':startYear,'max':endYear,'palette':'FF0,F00'},'GLRI LCMS',false);
+  }
+  
+  
+  
+  var hansen = ee.Image('UMD/hansen/global_forest_change_2016_v1_4').select(['lossyear']).add(2000).int16();
+  hansen = hansen.updateMask(hansen.neq(2000).and(hansen.gte(startYear)).and(hansen.lte(endYear)));
+  if(showLayers){
+  Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Hansen',false);
+  }
+  return conusChangeOut
+}
 //########################################################################################################
 
 //########################################################################################################
