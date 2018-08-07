@@ -230,8 +230,7 @@ var rawLT = ltOutputs[0].select([0]);
 
 var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer);
 Map.addLayer(ltAnnualSlope);
-// var verdetRight = verdet.arraySlice(0,1,null);
-Map.addLayer(rawSlope);
+
 // Map.addLayer(ltOutputs[0])
 // Map.addLayer(ltOutputs[1])
 ////////////////////////////////////////////////////////////////////////////////////////////////////
