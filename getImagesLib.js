@@ -1098,9 +1098,11 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
   
 ////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
+function exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
+collection
 
 // Function to export composite collection
-function exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
+function exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
 collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
 applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination){
   collection = collection.select(exportBands);
