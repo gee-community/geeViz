@@ -227,8 +227,12 @@ var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run
 var rawLT = ltOutputs[0].select([0]);
 var rawLeft = rawLT.arraySlice(0,0,-1);
 var rawRight = rawLT.arraySlice(0,1,null);
+var rawLeftFit = rawLeft.arraySlice(1,-1,null);
+var rawRightFit = rawRight.arraySlice(1,-1,null);
+var rawRightYears = rawRight.arraySlice(1,0,1);
+var rawFitDiff = rawRightFit.subtract(rawLeftFit);
 // var verdetRight = verdet.arraySlice(0,1,null);
-Map.addLayer(rawLeft)
+Map.addLayer(rawFitDiff)
 // Map.addLayer(ltOutputs[0])
 // Map.addLayer(ltOutputs[1])
 ////////////////////////////////////////////////////////////////////////////////////////////////////
