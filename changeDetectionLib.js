@@ -223,10 +223,45 @@ function landtrendrWrapper(processedComposites,indexName,distDir,run_params,dist
   return [lt,distImg];
   
 }
+//Function for converting fitted Landtrendr output to annual slope al la Verdet
+function landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer){
+  //Extract relevant values
+  var rawLeft = rawLT.arraySlice(1,0,-1);
+  var rawRight = rawLT.arraySlice(1,1,null);
+  
+  var rawLeftFit = rawLeft.arraySlice(0,2,3);
+  var rawRightFit = rawRight.arraySlice(0,2,3);
+  
+  var rawLeftYears = rawLeft.arraySlice(0,0,1);
+  var rawRightYears = rawRight.arraySlice(0,0,1);
+  
+  //Get pairwise differences
+  var rawFitDiff = rawRightFit.subtract(rawLeftFit);
+  var rawYearDiff = rawRightYears.subtract(rawLeftYears);
+  
+  //Get pairwise slopes
+  var rawSlope = rawFitDiff.divide(rawYearDiff).arrayProject([1]);
+  
+  //Find possible years to convert back to collection with
+  var possibleYears = ee.List.sequence(startYear+1+timebuffer,endYear-timebuffer);
+  
+  //Ierate across years to find the slope for a given year
+  var ltSlopeYr = possibleYears.map(function(yr){
+    yr = ee.Number(yr);
+    var yrMask = rawRightYears.arrayProject([1]).eq(yr);
+   
+    var masked = rawSlope.arrayMask(yrMask).arrayFlatten([['yr']])
+                  .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
+    return masked;
+    
+  });
+  ltSlopeYr = ee.ImageCollection(ltSlopeYr);
+  return ltSlopeYr;
+}
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 exports.extractDisturbance = extractDisturbance;
 exports.landtrendrWrapper = landtrendrWrapper;
 exports.multBands = multBands;
-
+exports.landtrendrToAnnualSlope = landtrendrToAnnualSlope;
 exports.getExistingChangeData = getExistingChangeData;
