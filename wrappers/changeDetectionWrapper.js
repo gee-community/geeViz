@@ -203,10 +203,10 @@ var run_params = {
   minObservationsNeeded:  6
 };
 // define disturbance mapping filter parameters 
-var treeLoss1  = 150;      // delta filter for 1 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
-var treeLoss20 = 200;      // delta filter for 20 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
-var preVal     = 200;      // pre-disturbance value threshold - values below the provided threshold will exclude disturbance for those pixels - units are in units of segIndex defined in the following function definition
-var mmu        = 15;       // minimum mapping unit for disturbance patches - units of pixels
+var treeLoss1  = 1;      //150 delta filter for 1 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
+var treeLoss20 = 200;      //200 delta filter for 20 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
+var preVal     = 1;      //200 pre-disturbance value threshold - values below the provided threshold will exclude disturbance for those pixels - units are in units of segIndex defined in the following function definition
+var mmu        = 15;       //15 minimum mapping unit for disturbance patches - units of pixels
 
 var distParams = {
     tree_loss1: treeLoss1,
@@ -220,12 +220,12 @@ var distParams = {
 var distDir = -1; // define the sign of spectral delta for vegetation loss for the segmentation index - 
                   // NBR delta is negetive for vegetation loss, so -1 for NBR, 1 for band 5, -1 for NDVI, etc
 
-var indexName = 'NBR';
+var indexName = 'nbr';
 
 
 var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
-// Map.addLayer(ltOutputs[0])
-// Map.addLayer(ltOutputs[1])
+Map.addLayer(ltOutputs[0])
+Map.addLayer(ltOutputs[1])
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
