@@ -225,14 +225,22 @@ var indexName = 'NBR';
 
 var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
 var rawLT = ltOutputs[0].select([0]);
-var rawLeft = rawLT.arraySlice(0,0,-1);
-var rawRight = rawLT.arraySlice(0,1,null);
-var rawLeftFit = rawLeft.arraySlice(1,-1,null);
-var rawRightFit = rawRight.arraySlice(1,-1,null);
-var rawRightYears = rawRight.arraySlice(1,0,1);
+
+var rawLeft = rawLT.arraySlice(1,0,-1);
+var rawRight = rawLT.arraySlice(1,1,null);
+
+var rawLeftFit = rawLeft.arraySlice(0,2,3);
+var rawRightFit = rawRight.arraySlice(0,2,3);
+
+var rawLeftYears = rawLeft.arraySlice(0,0,1);
+var rawRightYears = rawRight.arraySlice(0,0,1);
+
 var rawFitDiff = rawRightFit.subtract(rawLeftFit);
+var rawYearDiff = rawRightYears.subtract(rawLeftYears);
+
+var rawSlope = rawFitDiff.divide(rawYearDiff)
 // var verdetRight = verdet.arraySlice(0,1,null);
-Map.addLayer(rawFitDiff)
+Map.addLayer(rawSlope)
 // Map.addLayer(ltOutputs[0])
 // Map.addLayer(ltOutputs[1])
 ////////////////////////////////////////////////////////////////////////////////////////////////////
