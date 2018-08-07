@@ -1099,7 +1099,9 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
 ////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 function exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
-collection
+collection){
+  
+}
 
 // Function to export composite collection
 function exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
