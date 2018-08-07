@@ -225,8 +225,8 @@ var indexName = 'NBR';
 
 var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
 var rawLT = ltOutputs[0].select([0]);
-var rawLeft = verdet.arraySlice(0,0,-1)
-var rawRight = verdet.arraySlice(0,0,-1)
+var rawLeft = verdet.arraySlice(0,0,-1);
+var rawRight = verdet.arraySlice(0,1,null);
 // var verdetRight = verdet.arraySlice(0,1,null);
 Map.addLayer(rawLT)
 // Map.addLayer(ltOutputs[0])
