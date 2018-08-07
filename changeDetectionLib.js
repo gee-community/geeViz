@@ -163,7 +163,7 @@ function landtrendrWrapper(processedComposites,indexName,distDir,run_params,dist
   
   //----- RUN LANDTRENDR -----
   var ltCollection = processedComposites.select([indexName]).map(function(img){
-     return multBands(img,multBands,1000);
+     return multBands(img,distDir,1000);
   });
   Map.addLayer(ltCollection,{},'ltCollection',false);
   run_params.timeSeries = ltCollection;               // add LT collection to the segmentation run parameter object
