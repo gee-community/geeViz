@@ -238,15 +238,15 @@ Map.addLayer(ltAnnualSlope);
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //Verdet
-// var verdetTsIndex = processedComposites.select([indexName])
-// var verdetTs = verdetTsIndex.map(getImageLib.addDateBand);
-// var verdet =   ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: verdetTsIndex,
+var verdetTsIndex = processedComposites.select([indexName])
+var verdetTs = verdetTsIndex.map(getImageLib.addDateBand);
+var verdet =   ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: verdetTsIndex,
 //                                         tolerance: 0.0001,
 //                                         alpha: 1/3.0})
-// verdet = verdet.arraySlice(0,1,null)
+verdet = verdet.arraySlice(0,1,null)
 // var tsYear = verdetTs.select([1]).toArray().arraySlice(0,0,-1).arrayProject([0])
 
-// Map.addLayer(verdet.arrayCat(tsYear,1))
+Map.addLayer(verdet.arrayCat(tsYear,1))
 // var verdetLeft = verdet.arraySlice(0,0,-1)
 // var verdetRight = verdet.arraySlice(0,1,null);
 // var verdetDiff = verdetRight.subtract(verdetLeft)
