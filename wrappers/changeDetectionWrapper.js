@@ -239,7 +239,7 @@ var rawFitDiff = rawRightFit.subtract(rawLeftFit);
 var rawYearDiff = rawRightYears.subtract(rawLeftYears);
 var rawSlope = rawFitDiff.divide(rawYearDiff).arrayProject([1])
 // var rawSlope = rawRightYears.arrayCat(rawSlope,0).arrayTranspose()
-var possibleYears = [2008,2009];//ee.List.sequence(startYear+1+timebuffer,endYear-timebuffer).getInfo();
+var possibleYears = ee.List.sequence(startYear+1+timebuffer,endYear-timebuffer).getInfo();
 var ltSlopeYr = possibleYears.map(function(yr){
   print(yr);
   var yrMask = rawRightYears.arrayProject([1]).eq(yr);
