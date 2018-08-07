@@ -237,16 +237,21 @@ var rawRightYears = rawRight.arraySlice(0,0,1);
 
 var rawFitDiff = rawRightFit.subtract(rawLeftFit);
 var rawYearDiff = rawRightYears.subtract(rawLeftYears);
-var rawSlope = rawFitDiff.divide(rawYearDiff)//.arrayProject([1])
-var rawSlope = rawRightYears.arrayCat(rawSlope,0).arrayTranspose()
+var rawSlope = rawFitDiff.divide(rawYearDiff).arrayProject([1])
+// var rawSlope = rawRightYears.arrayCat(rawSlope,0).arrayTranspose()
 var possibleYears = [2008,2009];//ee.List.sequence(startYear+1+timebuffer,endYear-timebuffer).getInfo();
-possibleYears.map(function(yr){
+var ltSlopeYr = possibleYears.map(function(yr){
   print(yr);
   var yrMask = rawRightYears.arrayProject([1]).eq(yr);
-  var masked = rawSlope.arrayMask(yrMask);
-  Map.addLayer(masked,{},yr.toString(),false);
+  // yrMask = yrMask.arrayCat(yrMask,0)
+  var masked = rawSlope.arrayMask(yrMask).arrayFlatten([['yr']])
+                .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
+  // Map.addLayer(masked,{},yr.toString(),false);
+  return masked
   
 })
+ltSlopeYr = ee.ImageCollection(ltSlopeYr)
+Map.addLayer(ltSlopeYr)
 // var verdetRight = verdet.arraySlice(0,1,null);
 Map.addLayer(rawSlope)
 // Map.addLayer(ltOutputs[0])
