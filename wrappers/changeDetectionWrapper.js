@@ -259,9 +259,11 @@ function landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer){
     
   });
   ltSlopeYr = ee.ImageCollection(ltSlopeYr);
+  return ltSlopeYr;
 }
 
-Map.addLayer(ltSlopeYr);
+var ltAnnualSlope = landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer);
+Map.addLayer(ltAnnualSlope);
 // var verdetRight = verdet.arraySlice(0,1,null);
 Map.addLayer(rawSlope);
 // Map.addLayer(ltOutputs[0])
