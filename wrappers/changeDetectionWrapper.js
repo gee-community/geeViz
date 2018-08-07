@@ -237,10 +237,12 @@ var rawRightYears = rawRight.arraySlice(0,0,1);
 
 var rawFitDiff = rawRightFit.subtract(rawLeftFit);
 var rawYearDiff = rawRightYears.subtract(rawLeftYears);
-
-var bandNames = ee.List.sequence(startYear+1+timebuffer,endYear-timebuffer).map(function(n){return ee.String(ee.Number(n))});
-print(bandNames)
 var rawSlope = rawFitDiff.divide(rawYearDiff).arrayProject([1]).arrayFlatten([bandNames])
+var rawSlope = rawRightYears.arrayCat(rawSlope,0)
+var possibleYears = ee.List.sequence(startYear+1+timebuffer,endYear-timebuffer).getInfo();
+possibleYears.map(function(yr){
+  print(yr)
+})
 // var verdetRight = verdet.arraySlice(0,1,null);
 Map.addLayer(rawSlope)
 // Map.addLayer(ltOutputs[0])
