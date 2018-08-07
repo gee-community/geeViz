@@ -242,6 +242,9 @@ var rawSlope = rawRightYears.arrayCat(rawSlope,0).arrayTranspose()
 var possibleYears = [2008,2009];//ee.List.sequence(startYear+1+timebuffer,endYear-timebuffer).getInfo();
 possibleYears.map(function(yr){
   print(yr);
+  var yrMask = rawRightYears.eq(yr);
+  var masked = rawSlope.arrayMask(yrMask);
+  Map.addLayer(masked,{},yr.toString(),false);
   
 })
 // var verdetRight = verdet.arraySlice(0,1,null);
