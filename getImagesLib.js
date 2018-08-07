@@ -1254,7 +1254,7 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
   //Export composites
   if(exportComposites){// Export composite collection
     var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
-    exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
+    exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
     ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
                   applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
   }
@@ -1281,7 +1281,7 @@ exports.illuminationCorrection = illuminationCorrection;
 exports.illuminationCondition = illuminationCondition;
 exports.addTCAngles = addTCAngles;
 exports.simpleAddTCAngles = simpleAddTCAngles;
-exports.exportCollection = exportCollection;
+exports.exportCompositeCollection = exportCompositeCollection;
 exports.getLandsatWrapper = getLandsatWrapper;
 
 exports.getModisData = getModisData;
