@@ -258,12 +258,12 @@ function landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer){
     return masked;
     
   });
-  ltSlopeYr = ee.ImageCollection(ltSlopeYr)
+  ltSlopeYr = ee.ImageCollection(ltSlopeYr);
 }
 
-Map.addLayer(ltSlopeYr)
+Map.addLayer(ltSlopeYr);
 // var verdetRight = verdet.arraySlice(0,1,null);
-Map.addLayer(rawSlope)
+Map.addLayer(rawSlope);
 // Map.addLayer(ltOutputs[0])
 // Map.addLayer(ltOutputs[1])
 ////////////////////////////////////////////////////////////////////////////////////////////////////
