@@ -257,7 +257,7 @@ function landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer){
   });
   ltSlopeYr = ee.ImageCollection(ltSlopeYr);
   return ltSlopeYr;
-}
+} 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 exports.extractDisturbance = extractDisturbance;
