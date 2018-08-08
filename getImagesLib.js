@@ -19,6 +19,15 @@ var vizParamsTrue = {
 ////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
 /////////////////////////////////////////////////////////////////////////////////
+//Function to create a multiband image from a collection
+function newCollectionToImage(collection){
+  var stack = ee.Image(collection.iterate(function(img, prev) {
+    return ee.Image(prev).addBands(img);
+  }, ee.Image(1)));
+
+  stack = stack.select(ee.List.sequence(1, stack.bandNames().size().subtract(1)));
+  return stack;
+} 
 //Function to handle empty collections that will cause subsequent processes to fail
 //If the collection is empty, will fill it with an empty image
 function fillEmptyCollections(inCollection,dummyImage){                       
