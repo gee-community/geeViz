@@ -20,7 +20,7 @@ var vizParamsTrue = {
 // FUNCTIONS
 /////////////////////////////////////////////////////////////////////////////////
 //Function to create a multiband image from a collection
-function newCollectionToImage(collection){
+function collectionToImage(collection){
   var stack = ee.Image(collection.iterate(function(img, prev) {
     return ee.Image(prev).addBands(img);
   }, ee.Image(1)));
@@ -1277,7 +1277,7 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
 // END FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
 exports.addDateBand = addDateBand;
-exports.newCollectionToImage = newCollectionToImage;
+exports.collectionToImage = collectionToImage;
 exports.getImageCollection = getImageCollection;
 exports.vizParamsFalse = vizParamsFalse;
 exports.vizParamsTrue = vizParamsTrue;
