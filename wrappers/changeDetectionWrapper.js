@@ -297,6 +297,7 @@ var lsYear = allScenes.map(getImageLib.addDateBand).select(['year']).toArray().a
 Map.addLayer(lsIndex,{},'ls'+indexName,false);
 Map.addLayer(lsYear,{},'ls'+indexName,false);
 
+//Wrapper for applying EWMACD slightly more simply
 function getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
   if(ewmacdTrainingYears === null || ewmacdTrainingYears === undefined){ewmacdTrainingYears = 5}
   if(harmonicCount === null || harmonicCount === undefined){harmonicCount = 2}
@@ -310,30 +311,33 @@ function getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
     harmonicCount: 2
   });
   
-  
+  //Extract the ewmac values
   var ewma = ewmacd.select(['ewma']);
-  return ewma
+  return ewma;
 }
 
-function runEWMACD(lsIndex,startYear,ewmacdTrainingYears, harmonicCount)
+function runEWMACD(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
   
+  var ewma = getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount);
  
-var years = ee.List.sequence(startYear,endYear);
-
-var annualEWMA = years.map(function(yr){
-  yr = ee.Number(yr)
-  var yrMask = lsYear.int16().eq(yr);
-  var ewmacdYr = ewma.arrayMask(yrMask);
-  var ewmacdYearYr = lsYear.arrayMask(yrMask);
-  var ewmacdYrSorted = ewmacdYr.arraySort(ewmacdYr);
-  var ewmacdYearYrSorted= ewmacdYearYr.arraySort(ewmacdYr);
+  var years = ee.List.sequence(startYear,endYear);
   
-  var yrData = ewmacdYrSorted.arrayCat(ewmacdYearYrSorted,1);
-  var yrReduced = ewmacdYrSorted.arrayReduce(ee.Reducer.min(),[0])
-  var out = yrReduced.arrayFlatten([['ewma']])
-          .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis()).int16()
-//   // Map.addLayer(out,{},yr.toString(),false)
-  return out
-})
-annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
-Map.addLayer(annualEWMA,{},'annualewma',false)
+  var annualEWMA = years.map(function(yr){
+    yr = ee.Number(yr)
+    var yrMask = lsYear.int16().eq(yr);
+    var ewmacdYr = ewma.arrayMask(yrMask);
+    var ewmacdYearYr = lsYear.arrayMask(yrMask);
+    var ewmacdYrSorted = ewmacdYr.arraySort(ewmacdYr);
+    var ewmacdYearYrSorted= ewmacdYearYr.arraySort(ewmacdYr);
+    
+    var yrData = ewmacdYrSorted.arrayCat(ewmacdYearYrSorted,1);
+    var yrReduced = ewmacdYrSorted.arrayReduce(ee.Reducer.min(),[0])
+    var out = yrReduced.arrayFlatten([['ewma']])
+            .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis()).int16()
+  //   // Map.addLayer(out,{},yr.toString(),false)
+    return out
+  })
+  annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
+  Map.addLayer(annualEWMA,{},'annualewma',false)
+
+}
