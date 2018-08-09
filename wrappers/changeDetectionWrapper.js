@@ -336,8 +336,8 @@ function annualizeEWMA(ewma,startYear,endYear,annualReducer,remove2012){
     
     var yrData = ewmacdYrSorted.arrayCat(ewmacdYearYrSorted,1);
     var yrReduced = ewmacdYrSorted.arrayReduce(annualReducer,[0])
-                  .arrayCat(ee.Image(1).toArray(),1);
-    var out = yrReduced//.arrayFlatten([['ewma']])
+                  
+    var out = yrReduced.arrayFlatten([['ewma']])
             .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis()).int16();
  
     return out;
