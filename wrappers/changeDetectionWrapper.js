@@ -301,7 +301,7 @@ function getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
   if(ewmacdTrainingYears === null || ewmacdTrainingYears === undefined){ewmacdTrainingYears = 5}
   if(harmonicCount === null || harmonicCount === undefined){harmonicCount = 2}
   
-  //Run EWMACD using 1985 to 1987 as training period
+  //Run EWMACD 
   var ewmacd = ee.Algorithms.TemporalSegmentation.Ewmacd({
     timeSeries: lsIndex, 
     vegetationThreshold: -1, 
@@ -312,6 +312,7 @@ function getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
   
   
   var ewma = ewmacd.select(['ewma']);
+  return ewma
 }
 
 function runEWMACD(lsIndex,startYear,ewmacdTrainingYears, harmonicCount)
