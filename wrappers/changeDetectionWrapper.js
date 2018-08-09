@@ -316,7 +316,8 @@ function getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
   return ewma;
 }
 
-function runEWMACD(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
+
+function runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears, harmonicCount){
   
   var ewma = getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount);
  
