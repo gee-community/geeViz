@@ -316,15 +316,12 @@ function getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
   return ewma;
 }
 
-
-function runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears, harmonicCount){
+function annualizeEWMA(ewma,startYear,endYear,annualReducer){
   
-  var ewma = getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount);
- 
   var years = ee.List.sequence(startYear,endYear);
   
   var annualEWMA = years.map(function(yr){
-    yr = ee.Number(yr)
+    yr = ee.Number(yr);
     var yrMask = lsYear.int16().eq(yr);
     var ewmacdYr = ewma.arrayMask(yrMask);
     var ewmacdYearYr = lsYear.arrayMask(yrMask);
@@ -332,7 +329,7 @@ function runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears, harmonicCount)
     var ewmacdYearYrSorted= ewmacdYearYr.arraySort(ewmacdYr);
     
     var yrData = ewmacdYrSorted.arrayCat(ewmacdYearYrSorted,1);
-    var yrReduced = ewmacdYrSorted.arrayReduce(ee.Reducer.min(),[0])
+    var yrReduced = ewmacdYrSorted.arrayReduce(annualReducer,[0])
     var out = yrReduced.arrayFlatten([['ewma']])
             .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis()).int16()
   //   // Map.addLayer(out,{},yr.toString(),false)
@@ -341,4 +338,11 @@ function runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears, harmonicCount)
   annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
   Map.addLayer(annualEWMA,{},'annualewma',false)
 
+}
+
+function runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears, harmonicCount){
+  
+  var ewma = getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount);
+  
+  
 }
