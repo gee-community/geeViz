@@ -322,7 +322,10 @@ function annualizeEWMA(ewma,startYear,endYear,annualReducer,remove2012){
   if(remove2012 === null || remove2012 === undefined){remove2012 = true}
   
   var years = ee.List.sequence(startYear,endYear);
+  if(remove2012){years = years.removeAll([2012])}
+  print(years)
   
+
   var annualEWMA = years.map(function(yr){
     yr = ee.Number(yr);
     var yrMask = lsYear.int16().eq(yr);
