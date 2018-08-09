@@ -347,7 +347,6 @@ function annualizeEWMA(ewma,startYear,endYear,annualReducer,remove2012){
     return out;
   });
   annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
-  Map.addLayer(annualEWMA,{},'annualewma',false);
   return annualEWMA;
 }
 
@@ -356,7 +355,10 @@ function runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears, harmonicCount,
   var ewma = getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount);
   var annualEWMA = annualizeEWMA(ewma,startYear,endYear,annualReducer,remove2012);
   
-  return [ewma,annualEWMA]
+  return [ewma,annualEWMA];
 }
 
-runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears,2,ee.Reducer.percentile([10]),!includeSLCOffL7)
+var ewmaOutputs = runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears,2,ee.Reducer.percentile([10]),!includeSLCOffL7);
+var annualEWMA = ewmaOutputs[1]
+Map.addLayer(annualEWMA,{},'annualewma',false);
+  
