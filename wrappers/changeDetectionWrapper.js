@@ -221,15 +221,15 @@ var distDir = -1; // define the sign of spectral delta for vegetation loss for t
                   // NBR delta is negetive for vegetation loss, so -1 for NBR, 1 for band 5, -1 for NDVI, etc
 
 var indexName = 'NBR';
+/////////////////////////////////////////////////////////////
+
+// var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
+// var rawLT = ltOutputs[0].select([0]);
 
 
-var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
-var rawLT = ltOutputs[0].select([0]);
 
-
-
-var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer);
-Map.addLayer(ltAnnualSlope);
+// var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer);
+// Map.addLayer(ltAnnualSlope,{},'Annual LT Slope',false);
 
 // Map.addLayer(ltOutputs[0])
 // Map.addLayer(ltOutputs[1])
@@ -278,3 +278,53 @@ Map.addLayer(ltAnnualSlope);
 // Map.addLayer(changeMag,{'min':0,'max':0.2})
 
 // // tsYear = tsYear.arraySlice(0,1,null)
+///////////////////////////////////////////////////////////////////////////////
+//EWMACD
+var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,1,365,
+  timebuffer,weights,compositingMethod,
+  toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
+  applyFmaskCloudShadowMask,true,
+  cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
+  correctIllumination,correctScale,
+  false,outputName,exportPathRoot,crs,transform,scale);
+
+//Separate into scenes and composites for subsequent analysis
+var allScenes = lsAndTsAll[0];
+var tsIndex = allScenes.select([indexName]);
+var tsYear = ts.select(['year']).toArray().arrayProject([0]);
+Map.addLayer(tsIndex,{},'ts'+indexName,false)
+
+// //Run EWMACD using 1985 to 1987 as training period
+// var ewmacd = ee.Algorithms.TemporalSegmentation.Ewmacd({
+//   timeSeries: lsIndex, 
+//   vegetationThreshold: -1, 
+//   trainingStartYear: startYear, 
+//   trainingEndYear: startYear + ewmacdTrainingYears, 
+//   harmonicCount: 2
+// })
+
+// var nEwma = 100        
+// var ewmaNames = ee.List.sequence(1,nEwma).getInfo().map(function(s){return s.toString()})         
+
+// var ewma = ewmacd.select(['ewma'])
+//             // .arrayCat(ewmacdYear,1)
+            
+// var years = ee.List.sequence(startYear,endYear);
+
+// var annualEWMA = years.map(function(yr){
+//   yr = ee.Number(yr)
+//   var yrMask = ewmacdYear.int16().eq(yr);
+//   var ewmacdYr = ewma.arrayMask(yrMask);
+//   var ewmacdYearYr = ewmacdYear.arrayMask(yrMask);
+//   var ewmacdYrSorted = ewmacdYr.arraySort(ewmacdYr);
+//   var ewmacdYearYrSorted= ewmacdYearYr.arraySort(ewmacdYr);
+  
+//   var yrData = ewmacdYrSorted.arrayCat(ewmacdYearYrSorted,1);
+//   var yrReduced = ewmacdYrSorted.arrayReduce(ee.Reducer.min(),[0])
+//   var out = yrReduced.arrayFlatten([['ewma']])
+//           .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis()).int16()
+//   // Map.addLayer(out,{},yr.toString(),false)
+//   return out
+// })
+// annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
+// Map.addLayer(annualEWMA,{},'annualewma',false)
