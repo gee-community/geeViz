@@ -268,9 +268,7 @@ function getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
   if(ewmacdTrainingYears === null || ewmacdTrainingYears === undefined){ewmacdTrainingYears = 5}
   if(harmonicCount === null || harmonicCount === undefined){harmonicCount = 2}
   
-  //Get dates for later reference
-  var lsYear = lsIndex.map(getImageLib.addDateBand).select(['year']).toArray().arrayProject([0]);
-
+  
   //Run EWMACD 
   var ewmacd = ee.Algorithms.TemporalSegmentation.Ewmacd({
     timeSeries: lsIndex, 
@@ -282,7 +280,7 @@ function getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
   
   //Extract the ewmac values
   var ewma = ewmacd.select(['ewma']);
-  return [ewma.arrayCat(lsYear,1),lsYear];
+  return ewma.arrayCat(lsYear,1);
 }
 
 //Function for converting EWMA values to annual collection
