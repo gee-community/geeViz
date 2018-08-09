@@ -62,7 +62,7 @@ var toaOrSR = 'SR';
 
 // 8. Choose whether to include Landat 7
 // Generally only included when data are limited
-var includeSLCOffL7 = true;
+var includeSLCOffL7 = false;
 
 //9. Whether to defringe L5
 //Landsat 5 data has fringes on the edges that can introduce anomalies into 
@@ -297,6 +297,7 @@ var lsYear = allScenes.map(getImageLib.addDateBand).select(['year']).toArray().a
 Map.addLayer(lsIndex,{},'ls'+indexName,false);
 Map.addLayer(lsYear,{},'ls'+indexName,false);
 
+function runEWMACD(lsIndex,startYear,ewmacdTrainingYears, harmonicCount)
 //Run EWMACD using 1985 to 1987 as training period
 var ewmacd = ee.Algorithms.TemporalSegmentation.Ewmacd({
   timeSeries: lsIndex, 
@@ -306,12 +307,9 @@ var ewmacd = ee.Algorithms.TemporalSegmentation.Ewmacd({
   harmonicCount: 2
 });
 
-var nEwma = 100        
-var ewmaNames = ee.List.sequence(1,nEwma).getInfo().map(function(s){return s.toString()})         
 
-var ewma = ewmacd.select(['ewma'])
-            // .arrayCat(lsYear,1)
-Map.addLayer(ewma)  
+var ewma = ewmacd.select(['ewma']);
+ 
 var years = ee.List.sequence(startYear,endYear);
 
 var annualEWMA = years.map(function(yr){
