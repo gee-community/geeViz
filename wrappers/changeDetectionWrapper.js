@@ -327,9 +327,9 @@ function annualizeEWMA(ewma,startYear,endYear,annualReducer,remove2012){
   
   //Remove 2012 if in list and set to true
   if(remove2012){years = years.removeAll([2012])}
-  print(years)
-  
 
+  
+  //Annualize
   var annualEWMA = years.map(function(yr){
     yr = ee.Number(yr);
     var yrMask = lsYear.int16().eq(yr);
@@ -354,9 +354,9 @@ function annualizeEWMA(ewma,startYear,endYear,annualReducer,remove2012){
 function runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears, harmonicCount,annualReducer,remove2012){
   
   var ewma = getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount);
-  var annualEwma = annualizeEWMA(ewma,startYear,endYear,annualReducer,remove2012);
+  var annualEWMA = annualizeEWMA(ewma,startYear,endYear,annualReducer,remove2012);
   
-  
+  return [ewma,annualEWMA]
 }
 
 runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears,2,ee.Reducer.percentile([10]),!includeSLCOffL7)
