@@ -327,7 +327,7 @@ function runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears, harmonicCount,
   
   var annualEWMA = annualizeEWMA(ewma,startYear,endYear,annualReducer,remove2012);
   
-  // return [ewma,annualEWMA];
+  return [ewma,annualEWMA];
 }
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
