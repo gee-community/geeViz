@@ -1299,3 +1299,4 @@ exports.getLandsatWrapper = getLandsatWrapper;
 exports.getModisData = getModisData;
 exports.modisCloudScore = modisCloudScore;
 exports.despikeCollection = despikeCollection;
+exports.exportToAssetWrapper = exportToAssetWrapper;
