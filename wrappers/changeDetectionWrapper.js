@@ -62,7 +62,7 @@ var toaOrSR = 'SR';
 
 // 8. Choose whether to include Landat 7
 // Generally only included when data are limited
-var includeSLCOffL7 = false;
+var includeSLCOffL7 = true;
 
 //9. Whether to defringe L5
 //Landsat 5 data has fringes on the edges that can introduce anomalies into 
@@ -280,6 +280,8 @@ var indexName = 'NBR';
 // // tsYear = tsYear.arraySlice(0,1,null)
 ///////////////////////////////////////////////////////////////////////////////
 //EWMACD
+var ewmacdTrainingYears = 5;
+
 var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,1,365,
   timebuffer,weights,compositingMethod,
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
@@ -292,40 +294,40 @@ var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,1,365
 var allScenes = lsAndTsAll[0];
 var lsIndex = allScenes.select([indexName]);
 var lsYear = allScenes.map(getImageLib.addDateBand).select(['year']).toArray().arrayProject([0]);
-Map.addLayer(lsIndex,{},'ts'+indexName,false);
-Map.addLayer(lsYear,{},'ts'+indexName,false);
+Map.addLayer(lsIndex,{},'ls'+indexName,false);
+Map.addLayer(lsYear,{},'ls'+indexName,false);
 
-// //Run EWMACD using 1985 to 1987 as training period
-// var ewmacd = ee.Algorithms.TemporalSegmentation.Ewmacd({
-//   timeSeries: lsIndex, 
-//   vegetationThreshold: -1, 
-//   trainingStartYear: startYear, 
-//   trainingEndYear: startYear + ewmacdTrainingYears, 
-//   harmonicCount: 2
-// });
+//Run EWMACD using 1985 to 1987 as training period
+var ewmacd = ee.Algorithms.TemporalSegmentation.Ewmacd({
+  timeSeries: lsIndex, 
+  vegetationThreshold: -1, 
+  trainingStartYear: startYear, 
+  trainingEndYear: startYear + ewmacdTrainingYears, 
+  harmonicCount: 2
+});
 
-// var nEwma = 100        
-// var ewmaNames = ee.List.sequence(1,nEwma).getInfo().map(function(s){return s.toString()})         
+var nEwma = 100        
+var ewmaNames = ee.List.sequence(1,nEwma).getInfo().map(function(s){return s.toString()})         
 
-// var ewma = ewmacd.select(['ewma'])
-//             // .arrayCat(ewmacdYear,1)
-            
-// var years = ee.List.sequence(startYear,endYear);
+var ewma = ewmacd.select(['ewma'])
+            // .arrayCat(lsYear,1)
+Map.addLayer(ewma)  
+var years = ee.List.sequence(startYear,endYear);
 
-// var annualEWMA = years.map(function(yr){
-//   yr = ee.Number(yr)
-//   var yrMask = ewmacdYear.int16().eq(yr);
-//   var ewmacdYr = ewma.arrayMask(yrMask);
-//   var ewmacdYearYr = ewmacdYear.arrayMask(yrMask);
-//   var ewmacdYrSorted = ewmacdYr.arraySort(ewmacdYr);
-//   var ewmacdYearYrSorted= ewmacdYearYr.arraySort(ewmacdYr);
+var annualEWMA = years.map(function(yr){
+  yr = ee.Number(yr)
+  var yrMask = lsYear.int16().eq(yr);
+  var ewmacdYr = ewma.arrayMask(yrMask);
+  var ewmacdYearYr = lsYear.arrayMask(yrMask);
+  var ewmacdYrSorted = ewmacdYr.arraySort(ewmacdYr);
+  var ewmacdYearYrSorted= ewmacdYearYr.arraySort(ewmacdYr);
   
-//   var yrData = ewmacdYrSorted.arrayCat(ewmacdYearYrSorted,1);
-//   var yrReduced = ewmacdYrSorted.arrayReduce(ee.Reducer.min(),[0])
-//   var out = yrReduced.arrayFlatten([['ewma']])
-//           .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis()).int16()
+  var yrData = ewmacdYrSorted.arrayCat(ewmacdYearYrSorted,1);
+  var yrReduced = ewmacdYrSorted.arrayReduce(ee.Reducer.min(),[0])
+  var out = yrReduced.arrayFlatten([['ewma']])
+          .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis()).int16()
 //   // Map.addLayer(out,{},yr.toString(),false)
-//   return out
-// })
-// annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
-// Map.addLayer(annualEWMA,{},'annualewma',false)
+  return out
+})
+annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
+Map.addLayer(annualEWMA,{},'annualewma',false)
