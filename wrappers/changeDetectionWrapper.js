@@ -297,18 +297,25 @@ var lsYear = allScenes.map(getImageLib.addDateBand).select(['year']).toArray().a
 Map.addLayer(lsIndex,{},'ls'+indexName,false);
 Map.addLayer(lsYear,{},'ls'+indexName,false);
 
+function getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
+  if(ewmacdTrainingYears === null || ewmacdTrainingYears === undefined){ewmacdTrainingYears = 5}
+  if(harmonicCount === null || harmonicCount === undefined){harmonicCount = 2}
+  
+  //Run EWMACD using 1985 to 1987 as training period
+  var ewmacd = ee.Algorithms.TemporalSegmentation.Ewmacd({
+    timeSeries: lsIndex, 
+    vegetationThreshold: -1, 
+    trainingStartYear: startYear, 
+    trainingEndYear: startYear + ewmacdTrainingYears, 
+    harmonicCount: 2
+  });
+  
+  
+  var ewma = ewmacd.select(['ewma']);
+}
+
 function runEWMACD(lsIndex,startYear,ewmacdTrainingYears, harmonicCount)
-//Run EWMACD using 1985 to 1987 as training period
-var ewmacd = ee.Algorithms.TemporalSegmentation.Ewmacd({
-  timeSeries: lsIndex, 
-  vegetationThreshold: -1, 
-  trainingStartYear: startYear, 
-  trainingEndYear: startYear + ewmacdTrainingYears, 
-  harmonicCount: 2
-});
-
-
-var ewma = ewmacd.select(['ewma']);
+  
  
 var years = ee.List.sequence(startYear,endYear);
 
