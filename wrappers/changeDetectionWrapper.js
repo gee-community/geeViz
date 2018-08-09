@@ -293,9 +293,8 @@ var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,1,365
 //Separate into scenes and composites for subsequent analysis
 var allScenes = lsAndTsAll[0];
 var lsIndex = allScenes.select([indexName]);
-var lsYear = allScenes.map(getImageLib.addDateBand).select(['year']).toArray().arrayProject([0]);
 Map.addLayer(lsIndex,{},'ls'+indexName,false);
-Map.addLayer(lsYear,{},'ls'+indexName,false);
+
 
 
 
