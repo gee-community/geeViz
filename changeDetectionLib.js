@@ -313,7 +313,8 @@ function annualizeEWMA(ewma,startYear,endYear,annualReducer,remove2012){
 }
 
 function runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears, harmonicCount,annualReducer,remove2012){
-  
+  var lsYear = lsIndex.map(getImageLib.addDateBand).select(['year']).toArray().arrayProject([0]);
+
   var ewma = getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount);
   var annualEWMA = annualizeEWMA(ewma,startYear,endYear,annualReducer,remove2012);
   
