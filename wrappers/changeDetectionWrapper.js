@@ -316,6 +316,7 @@ function getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
   return ewma;
 }
 
+//Function for converting EWMA values to annual collection
 function annualizeEWMA(ewma,startYear,endYear,annualReducer){
   
   var years = ee.List.sequence(startYear,endYear);
@@ -329,20 +330,21 @@ function annualizeEWMA(ewma,startYear,endYear,annualReducer){
     var ewmacdYearYrSorted= ewmacdYearYr.arraySort(ewmacdYr);
     
     var yrData = ewmacdYrSorted.arrayCat(ewmacdYearYrSorted,1);
-    var yrReduced = ewmacdYrSorted.arrayReduce(annualReducer,[0])
+    var yrReduced = ewmacdYrSorted.arrayReduce(annualReducer,[0]);
     var out = yrReduced.arrayFlatten([['ewma']])
-            .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis()).int16()
-  //   // Map.addLayer(out,{},yr.toString(),false)
-    return out
-  })
+            .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis()).int16();
+ 
+    return out;
+  });
   annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
-  Map.addLayer(annualEWMA,{},'annualewma',false)
+  Map.addLayer(annualEWMA,{},'annualewma',false);
 
 }
 
-function runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears, harmonicCount){
+function runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears, harmonicCount,annualReducer){
   
   var ewma = getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount);
+  var annualEwma = annualizeEWMA(ewma,startYear,endYear,annualReducer);
   
   
 }
