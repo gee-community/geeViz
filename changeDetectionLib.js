@@ -329,3 +329,4 @@ exports.getExistingChangeData = getExistingChangeData;
 
 exports.annualizeEWMA = annualizeEWMA;
 exports.getEWMA = getEWMA;
+exports.runEWMACD = runEWMACD;
