@@ -299,7 +299,7 @@ Map.addLayer(lsIndex,{},'ls'+indexName,false);
 
 
 var ewmaOutputs = dLib.runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears,2,ee.Reducer.percentile([10]),!includeSLCOffL7);
-var annualEWMA = ewmaOutputs[1];
-var joinedEWMA = getImageLib.joinCollections(processedComposites.select(['NBR','NDVI']),annualEWMA)
+var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
+var joinedEWMA = getImageLib.joinCollections(processedComposites.select(['NBR']),annualEWMA)
 Map.addLayer(joinedEWMA,{},'annualewma',false);
   
