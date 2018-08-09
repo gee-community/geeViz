@@ -326,3 +326,6 @@ exports.landtrendrWrapper = landtrendrWrapper;
 exports.multBands = multBands;
 exports.landtrendrToAnnualSlope = landtrendrToAnnualSlope;
 exports.getExistingChangeData = getExistingChangeData;
+
+exports.annualizeEWMA = annualizeEWMA;
+exports.getEWMA = getEWMA;
