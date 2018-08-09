@@ -300,6 +300,6 @@ Map.addLayer(lsIndex,{},'ls'+indexName,false);
 
 var ewmaOutputs = dLib.runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears,2,ee.Reducer.percentile([10]),!includeSLCOffL7);
 var annualEWMA = ewmaOutputs[1];
-var joinedEWMA = joinCollections(processedComposites.select(['NBR','NDVI']),annualEWMA)
+var joinedEWMA = getImagesLib.joinCollections(processedComposites.select(['NBR','NDVI']),annualEWMA)
 Map.addLayer(joinedEWMA,{},'annualewma',false);
   
