@@ -280,7 +280,7 @@ function getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
   
   //Extract the ewmac values
   var ewma = ewmacd.select(['ewma']);
-  return ewma.arrayCat(lsYear,1);
+  return ewma;
 }
 
 //Function for converting EWMA values to annual collection
