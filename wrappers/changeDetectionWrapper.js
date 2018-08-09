@@ -317,8 +317,9 @@ function getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
 }
 
 //Function for converting EWMA values to annual collection
-function annualizeEWMA(ewma,startYear,endYear,annualReducer){
+function annualizeEWMA(ewma,startYear,endYear,annualReducer,remove2012){
   if(annualReducer === null || annualReducer === undefined){annualReducer = ee.Reducer.min()}
+  if(remove2012 === null || remove2012 === undefined){remove2012 = true}
   
   var years = ee.List.sequence(startYear,endYear);
   
