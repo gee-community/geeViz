@@ -279,7 +279,9 @@ indexDirList.map(function(indexDir){
   var verdet =   ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: tsIndex,
                                         tolerance: 0.0001,
                                         alpha: 1/3.0})
-  Map.addLayer(verdet)
+                                        
+  var tsYear = verdetTsIndex.map(getImageLib.addDateBand).select([1]).toArray().arraySlice(0,0,-1).arrayProject([0]);
+  Map.addLayer(tsYear)
 })
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
