@@ -314,6 +314,8 @@ indexDirList.map(function(indexDir){
   var annualEWMASlope = pairwiseSlope(annualEWMA);
   
   changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndex);
+  changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndexSlope);
+  changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
   
   Map.addLayer(changeOutputs,{},'changeOutputs',false);
   Map.addLayer(annualEWMA,{},'annualEWMA',false);
