@@ -280,6 +280,9 @@ indexDirList.map(function(indexDir){
   
   function pairwiseSlope(c){
     c = c.sort('system:time_start');
+    
+    var bandNames = ee.Image(c.first()).bandNames();
+  
     var years = c.toList(10000).map(function(i){i = ee.Image(i);return ee.Date(i.get('system:time_start')).get('year')});
     
     var yearsLeft = years.slice(0,-1);
@@ -294,7 +297,8 @@ indexDirList.map(function(indexDir){
       var l = ee.Image(c.filter(ee.Filter.calendarRange(yl,yl,'year')).first());
       var r = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
       
-      var slope = (r.subtract(l)).divide(yd);
+      var slope = (r.subtract(l)).divide(yd).rename(bandNames);
+      slope = 
       
       
     })
