@@ -312,11 +312,11 @@ indexDirList.map(function(indexDir){
   var forPairwiseSlope = getImageLib.joinCollections(tsIndex,annualEWMA);
   var forPairwiseSlope = pairwiseSlope(forPairwiseSlope);
   changeOutputs = getImageLib.joinCollections(changeOutputs,forPairwiseSlope);
+  changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndex);
   
   Map.addLayer(changeOutputs,{},'changeOutputs',false);
   Map.addLayer(annualEWMA,{},'annualEWMA',false);
-  Map.addLayer(annualEWMASlope,{},'annualEWMASlope',false);
- 
+  
   Map.addLayer(ltAnnualSlope,{},'ltAnnualSlope',false);
   Map.addLayer(verdetOutputs,{},'verdetOutputs',false);
   
