@@ -291,18 +291,18 @@ indexDirList.map(function(indexDir){
     
     var slopeCollection = yearPairs.map(function(yp){
       yp = ee.List(yp);
-      print(yp)
+      
       var yl = ee.Number(yp.get(0));
       var yr = ee.Number(yp.get(1));
       var yd = yr.subtract(yl);
       var l = ee.Image(c.filter(ee.Filter.calendarRange(yl,yl,'year')).first());
       var r = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
-      
+      print(l,r)
       var slope = (r.subtract(l)).divide(yd).rename(bandNames);
       slope = slope.set('system:time_start',ee.Date.fromYMD(yr,6,1));
       return slope;
     });
-    return ee.ImageCollection.fromImages(slopeCollection);
+    return ee.ImageCollection(slopeCollection);
   }
   //Apply EWMACD
   var ewmaOutputs = dLib.runEWMACD(lsIndex,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
