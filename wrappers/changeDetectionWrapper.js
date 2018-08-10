@@ -169,6 +169,18 @@ var lsAndTs = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJul
 var processedScenes = lsAndTs[0];
 var processedComposites = lsAndTs[1];
 
+//Get all images from the entire year for EWMACD 
+var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,1,365,
+  timebuffer,weights,compositingMethod,
+  toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
+  applyFmaskCloudShadowMask,true,
+  cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
+  correctIllumination,correctScale,
+  false,outputName,exportPathRoot,crs,transform,scale);
+
+//Separate into scenes and composites for subsequent analysis
+var allScenes = lsAndTsAll[0];
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -282,16 +294,7 @@ var indexName = 'NBR';
 //EWMACD
 var ewmacdTrainingYears = 5;
 
-var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,1,365,
-  timebuffer,weights,compositingMethod,
-  toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
-  applyFmaskCloudShadowMask,true,
-  cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
-  correctIllumination,correctScale,
-  false,outputName,exportPathRoot,crs,transform,scale);
 
-//Separate into scenes and composites for subsequent analysis
-var allScenes = lsAndTsAll[0];
 var lsIndex = allScenes.select([indexName]);
 Map.addLayer(lsIndex,{},'ls'+indexName,false);
 
