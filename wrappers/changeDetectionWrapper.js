@@ -305,7 +305,7 @@ var collections =indexDirList.map(function(indexDir){
   
 });
 collections = ee.List(collections)
-combined = getImageLib.joinCollections(collections.get(0),collections.get(1))
+var combined = getImageLib.joinCollections(collections.get(0),collections.get(1))
 print(combined.first())
 
 // var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
