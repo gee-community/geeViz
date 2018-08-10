@@ -1242,7 +1242,8 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
   
   // Add common indices- can use addIndices for comprehensive indices 
   //or simpleAddIndices for only common indices
-  ls = ls.map(simpleAddIndices);
+  ls = ls.map(simpleAddIndices)
+          .map(simpleAddTCAngles);
   
   // Create composite time series
   var ts = compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
