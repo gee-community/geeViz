@@ -276,7 +276,10 @@ indexDirList.map(function(indexDir){
   var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer);
   
   //Apply VERDET
-  var verdet = dLib.verdetAnnualSlope(tsIndex,startYear,endYear,timebuffer)
+  var verdet = dLib.verdetAnnualSlope(tsIndex,startYear,endYear,timebuffer);
+  
+  print(verdet)
+  
 })
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
