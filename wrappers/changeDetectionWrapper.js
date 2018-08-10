@@ -276,9 +276,14 @@ indexDirList.map(function(indexDir){
   var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer);
   
   //Apply VERDET
-  var verdet = dLib.verdetAnnualSlope(tsIndex,startYear,endYear,timebuffer);
+  var verdetOutputs = dLib.verdetAnnualSlope(tsIndex,startYear,endYear,timebuffer);
   
-  print(verdet)
+  //Apply EWMACD
+  var ewmaOutputs = dLib.runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
+  var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
+// var joinedEWMA = getImageLib.joinCollections(processedComposites.select(['NBR']),annualEWMA)
+// Map.addLayer(joinedEWMA,{},'annualewma',false);
+  
   
 })
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
