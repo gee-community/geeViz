@@ -303,8 +303,14 @@ indexDirList.map(function(indexDir){
   
   var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
   possibleYears.map(function(yr){
-    var changeOutput = changeOutputs.filter(ee.Filter.calendarRange(yr,yr,'year'))
+    var changeOutput = changeOutputs.filter(ee.Filter.calendarRange(yr,yr,'year'));
     changeOutput = ee.Image(changeOutput.first());
+    changeOutput = changeOutput.set({
+      'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
+      'indexName':indexName,
+      'startYear':startYear,
+      'endYear':endYear,
+    })
     print(changeOutput)
   })
   
