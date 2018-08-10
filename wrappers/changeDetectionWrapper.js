@@ -273,10 +273,10 @@ indexDirList.map(function(indexDir){
   //Apply LANDTRENDR
   var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
   var rawLT = ltOutputs[0].select([0]);
-  var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer);
+  var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,indexName,startYear,endYear,timebuffer);
   
   //Apply VERDET
-  var verdetOutputs = dLib.verdetAnnualSlope(tsIndex,startYear,endYear,timebuffer);
+  var verdetOutputs = dLib.verdetAnnualSlope(tsIndex,indexName,startYear,endYear,timebuffer);
   
   
   //Apply EWMACD
