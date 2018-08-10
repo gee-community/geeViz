@@ -307,18 +307,18 @@ var collections =indexDirList.map(function(indexDir){
 collections = ee.List(collections)
 var combined = getImageLib.joinCollections(collections.get(0),collections.get(1))
 
-
+var indexListString = getImageLib.listToString(indexList,'_');
 var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
   possibleYears.map(function(yr){
     var changeOutput = combined.filter(ee.Filter.calendarRange(yr,yr,'year'));
     changeOutput = ee.Image(changeOutput.first()).float();
     changeOutput = changeOutput.set({
       'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
-      'indexList':getImageLib.listToString(indexList),
+      'indexList':indexListString,
       'startYear':startYear,
       'endYear':endYear,
     })
-    var exportName = outputName + '_'+indexName + '_' + yr.toString()
+    var exportName = outputName + '_'+indexListString + '_' + yr.toString()
     var exportPath = exportPathRoot + '/' + exportName;
     getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
       studyArea,null,crs,transform);
