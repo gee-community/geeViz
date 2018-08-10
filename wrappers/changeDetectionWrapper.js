@@ -284,6 +284,7 @@ indexDirList.map(function(indexDir){
   
   
   var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs)
+  changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA)
   Map.addLayer(changeOutputs,{},'changeOutputs',false);
   
   
