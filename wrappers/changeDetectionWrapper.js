@@ -278,6 +278,10 @@ indexDirList.map(function(indexDir){
   //Apply VERDET
   var verdetOutputs = dLib.verdetAnnualSlope(tsIndex,startYear,endYear,timebuffer);
   
+  function pairwiseSlope(c){
+    var years = c.map(function(i){return ee.Date(i.get('system:time_start')).get('year')});
+    print(years)
+  }
   //Apply EWMACD
   var ewmaOutputs = dLib.runEWMACD(lsIndex,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
   var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
