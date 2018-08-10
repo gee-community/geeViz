@@ -366,6 +366,7 @@ exports.multBands = multBands;
 exports.landtrendrToAnnualSlope = landtrendrToAnnualSlope;
 exports.getExistingChangeData = getExistingChangeData;
 
+exports.verdetAnnualSlope  = verdetAnnualSlope;
 exports.annualizeEWMA = annualizeEWMA;
 exports.getEWMA = getEWMA;
 exports.runEWMACD = runEWMACD;
