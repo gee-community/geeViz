@@ -261,7 +261,7 @@ var indexList = ee.List(['nir','swir1']);//ee.List(['nir','swir1','swir2','NBR',
 var ltDirection = ee.List([-1,    1]);//ee.List([-1,    1,      1,    -1,    -1,   -1,           -1,        1,          -1]);
 var indexDirList = indexList.zip(ltDirection).getInfo();
 
-indexDirList.map(function(indexDir){
+var collections =indexDirList.map(function(indexDir){
   print(indexDir);
   var indexName = indexDir[0];
   var distDir = indexDir[1];
@@ -301,24 +301,26 @@ indexDirList.map(function(indexDir){
   // Map.addLayer(ltAnnualSlope,{},'ltAnnualSlope',false);
   // Map.addLayer(verdetOutputs,{},'verdetOutputs',false);
   
-  var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
-  possibleYears.map(function(yr){
-    var changeOutput = changeOutputs.filter(ee.Filter.calendarRange(yr,yr,'year'));
-    changeOutput = ee.Image(changeOutput.first());
-    changeOutput = changeOutput.set({
-      'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
-      'indexName':indexName,
-      'startYear':startYear,
-      'endYear':endYear,
-    })
-    var exportName = outputName + '_'+indexName + '_' + yr.toString()
-    var exportPath = exportPathRoot + '/' + exportName;
-    getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
-      studyArea,null,crs,transform);
-    
-  })
+ return changeOutputs
   
 });
+print(collections)
+// var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
+//   possibleYears.map(function(yr){
+//     var changeOutput = changeOutputs.filter(ee.Filter.calendarRange(yr,yr,'year'));
+//     changeOutput = ee.Image(changeOutput.first());
+//     changeOutput = changeOutput.set({
+//       'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
+//       'indexName':indexName,
+//       'startYear':startYear,
+//       'endYear':endYear,
+//     })
+//     var exportName = outputName + '_'+indexName + '_' + yr.toString()
+//     var exportPath = exportPathRoot + '/' + exportName;
+//     getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
+//       studyArea,null,crs,transform);
+    
+//   })
 
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
