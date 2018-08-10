@@ -130,11 +130,11 @@ var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 var exportComposites = false;
 
 //Set up Names for the export
-var outputName = 'Medoid-Landsat';
+var outputName = 'Base-learners';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
-var exportPathRoot = 'users/ianhousman/test';
+var exportPathRoot = 'users/iwhousman/test/ChangeCollection';
 
 
 
@@ -301,8 +301,8 @@ indexDirList.map(function(indexDir){
   // Map.addLayer(ltAnnualSlope,{},'ltAnnualSlope',false);
   // Map.addLayer(verdetOutputs,{},'verdetOutputs',false);
   
-  var possibleYears = ee.List.sequence(startYear-timebuffer-1,endYear-timebuffer).getInfo();
-  print(possibleYears)
+  var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
+  
   
 });
 
