@@ -288,7 +288,7 @@ function verdetAnnualSlope(tsIndex,startYear,endYear,timebuffer){
     
   });
   verdetYr = ee.ImageCollection(verdetYr);
-  Map.addLayer(verdetYr,{},'VERDET Slope Collection',false);
+  // Map.addLayer(verdetYr,{},'VERDET Slope Collection',false);
   return verdetYr;
 }
 //////////////////////////////////////////////////////////////////////////
