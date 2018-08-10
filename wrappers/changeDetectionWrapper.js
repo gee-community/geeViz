@@ -304,10 +304,12 @@ var collections =indexDirList.map(function(indexDir){
  return changeOutputs
   
 });
-collections = ee.List(collections)
-var combined = getImageLib.joinCollections(collections.get(0),collections.get(1))
 
-var indexListString = getImageLib.listToString(indexList,'_');
+collections = ee.List(collections);
+var combined = getImageLib.joinCollections(collections.get(0),collections.get(1));
+
+var indexListString = 'nsdfsfsd'//getImageLib.listToString(indexList,'_');
+print(indexListString)
 var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
   possibleYears.map(function(yr){
     var changeOutput = combined.filter(ee.Filter.calendarRange(yr,yr,'year'));
