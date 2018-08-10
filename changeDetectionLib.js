@@ -357,16 +357,16 @@ function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,rem
   return annualEWMA;
 }
 //
-function runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears, harmonicCount,annualReducer,remove2012){
+function runEWMACD(lsIndex,indexName,startYear,endYear,ewmacdTrainingYears, harmonicCount,annualReducer,remove2012){
   // var bandName = ee.String(ee.Image(lsIndex.first()).bandNames().get(0));
-  var bandName = 'foo';
+ 
   var ewma = getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount);
   
   //Get dates for later reference
   var lsYear = lsIndex.map(getImageLib.addDateBand).select(['year']).toArray().arrayProject([0]);
 
   
-  var annualEWMA = annualizeEWMA(ewma,bandName,lsYear,startYear,endYear,annualReducer,remove2012);
+  var annualEWMA = annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,remove2012);
   
   return [ewma,annualEWMA];
 }
