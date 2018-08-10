@@ -287,22 +287,21 @@ indexDirList.map(function(indexDir){
     
     var yearsLeft = years.slice(0,-1);
     var yearsRight = years.slice(1,null);
-    var yearPairs = yearsLeft.zip(yearsRight).getInfo();
+    var yearPairs = yearsLeft.zip(yearsRight);
     
     var slopeCollection = yearPairs.map(function(yp){
       yp = ee.List(yp);
-      
       var yl = ee.Number(yp.get(0));
       var yr = ee.Number(yp.get(1));
       var yd = yr.subtract(yl);
       var l = ee.Image(c.filter(ee.Filter.calendarRange(yl,yl,'year')).first());
       var r = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
       
-      var slope = (r.subtract(l)).rename(bandNames);
-      slope = slope.set('system:time_start',ee.Date.fromYMD(yr,6,1));
-      return l;
+      var slope = (r.subtract(l)).divide(yd).rename(bandNames);
+      slope = slope.set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
+      return slope;
     });
-    return ee.ImageCollection(slopeCollection);
+    return ee.ImageCollection.fromImages(slopeCollection);
   }
   //Apply EWMACD
   var ewmaOutputs = dLib.runEWMACD(lsIndex,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
