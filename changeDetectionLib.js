@@ -345,14 +345,13 @@ function annualizeEWMA(ewma,lsYear,startYear,endYear,annualReducer,remove2012){
   annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
   
   if(remove2012){
-    var value2011 = ee.Image(annualEWMA.filter(ee.Filter.calendarRange(2011,2011,'year')).first())
-    var value2013 = ee.Image(annualEWMA.filter(ee.Filter.calendarRange(2013,2013,'year')).first())
+    var value2011 = ee.Image(annualEWMA.filter(ee.Filter.calendarRange(2011,2011,'year')).first());
+    var value2013 = ee.Image(annualEWMA.filter(ee.Filter.calendarRange(2013,2013,'year')).first());
     var value2012 = value2013.add(value2011);
-    value2012 = value2012.divide(2);
-    var dummy2012 = ee.Image(0).updateMask(ee.Image(0)).rename(['ewma'])
-      .set('system:time_start',ee.Date.fromYMD(2012,6,1).millis()).int16();
+    value2012 = value2012.divide(2).rename(['ewma'])
+    .set('system:time_start',ee.Date.fromYMD(2012,6,1).millis()).int16();
     
-    annualEWMA = ee.ImageCollection(ee.FeatureCollection([annualEWMA,ee.ImageCollection([dummy2012])]).flatten()).sort('system:time_start');
+    annualEWMA = ee.ImageCollection(ee.FeatureCollection([annualEWMA,ee.ImageCollection([value2012])]).flatten()).sort('system:time_start');
   }
   return annualEWMA;
 }
