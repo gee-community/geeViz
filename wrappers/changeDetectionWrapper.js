@@ -261,7 +261,7 @@ var indexList = ee.List(['nir','swir1']);//ee.List(['nir','swir1','swir2','NBR',
 var ltDirection = ee.List([-1,    1]);//ee.List([-1,    1,      1,    -1,    -1,   -1,           -1,        1,          -1]);
 var indexDirList = indexList.zip(ltDirection).getInfo();
 
-var collections = indexDirList.map(function(indexDir){
+indexDirList.map(function(indexDir){
   print(indexDir);
   var indexName = indexDir[0];
   var distDir = indexDir[1];
@@ -300,11 +300,13 @@ var collections = indexDirList.map(function(indexDir){
   
   // Map.addLayer(ltAnnualSlope,{},'ltAnnualSlope',false);
   // Map.addLayer(verdetOutputs,{},'verdetOutputs',false);
-  return changeOutputs;
+  
+  var possibleYears = ee.List.sequence(startYear-timebuffer-1,endYear-timebuffer).getInfo();
+  print(possibleYears)
   
 });
 
-print(collections);
+
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
