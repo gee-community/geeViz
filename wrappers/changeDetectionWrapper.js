@@ -286,11 +286,11 @@ indexDirList.map(function(indexDir){
   
   //Find possible years to convert back to collection with
   var possibleYears = ee.List.sequence(startYear+timebuffer,endYear-timebuffer);
-  
+  print(possibleYears)
   //Ierate across years to find the slope for a given year
   var verdetYr = possibleYears.map(function(yr){
     yr = ee.Number(yr);
-    var yrMask = tsYear.eq(yr);
+    var yrMask = tsYear.int16().eq(yr);
    
     var masked = verdet.arrayMask(yrMask).arrayFlatten([['verdetSlope']])
                   .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
