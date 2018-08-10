@@ -313,7 +313,7 @@ function getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
 }
 
 //Function for converting EWMA values to annual collection
-function annualizeEWMA(ewma,lsYear,startYear,endYear,annualReducer,remove2012){
+function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,remove2012){
   //Fill null parameters
   if(annualReducer === null || annualReducer === undefined){annualReducer = ee.Reducer.min()}
   if(remove2012 === null || remove2012 === undefined){remove2012 = true}
@@ -338,7 +338,7 @@ function annualizeEWMA(ewma,lsYear,startYear,endYear,annualReducer,remove2012){
     var yrData = ewmacdYrSorted.arrayCat(ewmacdYearYrSorted,1);
     var yrReduced = ewmacdYrSorted.arrayReduce(annualReducer,[0]);
                   
-    var out = yrReduced.arrayFlatten([['ewma']])
+    var out = yrReduced.arrayFlatten([['ewma_'+indexName]])
             .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis()).int16();
  
     return out;
