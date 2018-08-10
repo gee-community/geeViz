@@ -281,6 +281,7 @@ indexDirList.map(function(indexDir){
   function pairwiseSlope(c){
     var years = c.map(function(i){return ee.Date(i.get('system:time_start')).get('year')});
     print(years)
+    return years
   }
   //Apply EWMACD
   var ewmaOutputs = dLib.runEWMACD(lsIndex,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
