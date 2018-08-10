@@ -289,11 +289,12 @@ indexDirList.map(function(indexDir){
     yearPairs.map(function(yp){
       yp = ee.List(yp);
       var yl = ee.Number(yp.get(0));
-      var yr = ee.Number(yp.get(1))
+      var yr = ee.Number(yp.get(1));
+      var yd = yr.subtract(yl);
       var l = ee.Image(c.filter(ee.Filter.calendarRange(yl,yl,'year')).first());
       var r = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
       
-      var slope = (r.subtract(l))
+      var slope = (r.subtract(l)).divide()
       
       
     })
