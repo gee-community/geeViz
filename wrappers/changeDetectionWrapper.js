@@ -306,11 +306,11 @@ var collections =indexDirList.map(function(indexDir){
 });
 collections = ee.List(collections)
 var combined = getImageLib.joinCollections(collections.get(0),collections.get(1))
-print(combined.first())
 
-// var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
-//   possibleYears.map(function(yr){
-//     var changeOutput = changeOutputs.filter(ee.Filter.calendarRange(yr,yr,'year'));
+
+var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
+  possibleYears.map(function(yr){
+    var changeOutput = combined.filter(ee.Filter.calendarRange(yr,yr,'year'));
 //     changeOutput = ee.Image(changeOutput.first());
 //     changeOutput = changeOutput.set({
 //       'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
