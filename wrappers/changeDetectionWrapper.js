@@ -294,7 +294,7 @@ indexDirList.map(function(indexDir){
       var yl = ee.Number(yp.get(0));
       var yr = ee.Number(yp.get(1));
       var yd = yr.subtract(yl);
-      var l = ee.Image(c.filter(ee.Filter.calendarRange(yl,yl,'year')).first());
+      var l = ee.Image(c.filter(ee.Filter.calendarRange(yl,yl,'year')).first()).add(0.00001);
       var r = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
       
       var slope = (r.subtract(l)).rename(bandNames);
@@ -308,12 +308,12 @@ indexDirList.map(function(indexDir){
   var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
   
   var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs);
-  var changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
+  // var changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
   
   var tsIndexSlope = pairwiseSlope(tsIndex);
   var annualEWMASlope = pairwiseSlope(annualEWMA);
   
-  changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndex);
+  // changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndex);
   changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndexSlope);
   changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
   
