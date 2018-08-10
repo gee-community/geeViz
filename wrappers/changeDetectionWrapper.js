@@ -298,7 +298,8 @@ indexDirList.map(function(indexDir){
       var r = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
       
       var slope = (r.subtract(l)).divide(yd).rename(bandNames);
-      slope = 
+      slope = slope.set('system:time_start',ee.Date.fromYMD(yr,6,1))
+      return slope
       
       
     })
