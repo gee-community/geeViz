@@ -284,6 +284,7 @@ indexDirList.map(function(indexDir){
     var yearsLeft = years.slice(0,-1);
     var yearsRight = years.slice(1,null);
     var yearPairs = yearsLeft.zip(yearsRight);
+    print(yearPairs)
     return years
   }
   //Apply EWMACD
