@@ -270,10 +270,11 @@ indexDirList.map(function(indexDir){
   var lsIndex = allScenes.select(indexName);
  
  
+  //Apply LANDTRENDR
   var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
   var rawLT = ltOutputs[0].select([0]);
   var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer);
-  print(ltAnnualSlope)
+  
 })
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
