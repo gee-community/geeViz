@@ -338,7 +338,7 @@ function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,rem
     var yrData = ewmacdYrSorted.arrayCat(ewmacdYearYrSorted,1);
     var yrReduced = ewmacdYrSorted.arrayReduce(annualReducer,[0]);
                   
-    var out = yrReduced.arrayFlatten([['ewma_'+indexName]])
+    var out = yrReduced.arrayFlatten([['EWMA_'+indexName]])
             .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis()).int16();
  
     return out;
