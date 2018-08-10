@@ -228,7 +228,7 @@ function landtrendrWrapper(processedComposites,indexName,distDir,run_params,dist
   
 }
 //Function for converting fitted Landtrendr output to annual slope al la Verdet
-function landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer){
+function landtrendrToAnnualSlope(rawLT,indexName,startYear,endYear,timebuffer){
   //Extract relevant values
   var rawLeft = rawLT.arraySlice(1,0,-1);
   var rawRight = rawLT.arraySlice(1,1,null);
@@ -254,7 +254,7 @@ function landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer){
     yr = ee.Number(yr);
     var yrMask = rawRightYears.arrayProject([1]).eq(yr);
    
-    var masked = rawSlope.arrayMask(yrMask).arrayFlatten([['ltSlope']]).divide(100)
+    var masked = rawSlope.arrayMask(yrMask).arrayFlatten([['ltSlope_'+indexName]]).divide(100)
                   .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
     return masked;
     
@@ -265,7 +265,7 @@ function landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer){
 //////////////////////////////////////////////////////////////////////////
 //Wrapper for applying VERDET slightly more simply
 //Returns annual collection of verdet slope
-function verdetAnnualSlope(tsIndex,startYear,endYear,timebuffer){
+function verdetAnnualSlope(tsIndex,indexName,startYear,endYear,timebuffer){
   //Apply VERDET
   var verdet =   ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: tsIndex,
                                         tolerance: 0.0001,
@@ -282,7 +282,7 @@ function verdetAnnualSlope(tsIndex,startYear,endYear,timebuffer){
     yr = ee.Number(yr);
     var yrMask = tsYear.int16().eq(yr);
    
-    var masked = verdet.arrayMask(yrMask).arrayFlatten([['verdetSlope']])
+    var masked = verdet.arrayMask(yrMask).arrayFlatten([['verdetSlope_'+indexName]])
                   .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
     return masked;
     
