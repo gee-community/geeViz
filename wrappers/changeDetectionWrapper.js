@@ -279,6 +279,7 @@ indexDirList.map(function(indexDir){
   var verdetOutputs = dLib.verdetAnnualSlope(tsIndex,startYear,endYear,timebuffer);
   
   function pairwiseSlope(c){
+    c = c.sort('system:time_start');
     var years = c.toList(10000).map(function(i){i = ee.Image(i);return ee.Date(i.get('system:time_start')).get('year')});
     
     var yearsLeft = years.slice(0,-1);
