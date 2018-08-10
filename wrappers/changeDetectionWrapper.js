@@ -299,7 +299,7 @@ indexDirList.map(function(indexDir){
       
       var slope = (r.subtract(l)).rename(bandNames);
       slope = slope.set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
-      return r;
+      return slope;
     });
     return ee.ImageCollection.fromImages(slopeCollection);
   }
