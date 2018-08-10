@@ -289,7 +289,9 @@ indexDirList.map(function(indexDir){
     yearPairs.map(function(yp){
       yp = ee.List(yp);
       var yl = ee.Number(yp.get(0));
-      var yr = ee.Number(yp.get(1));
+      var yr = ee.Number(yp.get(1))
+      var l = c.filter(ee.Filter.calendarRange(;
+      var r = c.filter(ee.Filter.calendarRange(ee.Number(yp.get(1));
       
       
     })
