@@ -289,7 +289,7 @@ indexDirList.map(function(indexDir){
     var yearsRight = years.slice(1,null);
     var yearPairs = yearsLeft.zip(yearsRight);
     
-    yearPairs.map(function(yp){
+    var slopeCollection = yearPairs.map(function(yp){
       yp = ee.List(yp);
       var yl = ee.Number(yp.get(0));
       var yr = ee.Number(yp.get(1));
@@ -301,6 +301,7 @@ indexDirList.map(function(indexDir){
       slope = slope.set('system:time_start',ee.Date.fromYMD(yr,6,1));
       return slope;
     });
+    return ee.ImageCollection.fromImages(slopeCollection);
   }
   //Apply EWMACD
   var ewmaOutputs = dLib.runEWMACD(lsIndex,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
