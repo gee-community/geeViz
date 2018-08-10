@@ -279,8 +279,11 @@ indexDirList.map(function(indexDir){
   var verdetOutputs = dLib.verdetAnnualSlope(tsIndex,startYear,endYear,timebuffer);
   
   function pairwiseSlope(c){
-    var years = c.map(function(i){return ee.Date(i.get('system:time_start')).get('year')});
-    print(years)
+    var years = c.toList(10000).map(function(i){i = ee.Image(i);return ee.Date(i.get('system:time_start')).get('year')});
+    
+    var yearsLeft = years.slice(0,-1);
+    var yearsRight = years.slice(1,null);
+    var yearPairs = yearsLeft.zip(yearsRight);
     return years
   }
   //Apply EWMACD
