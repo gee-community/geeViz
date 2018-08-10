@@ -370,6 +370,34 @@ function runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears, harmonicCount,
   return [ewma,annualEWMA];
 }
 //////////////////////////////////////////////////////////////////////////
+//Function to find the pairwise difference of a time series
+//Assumes one image per year
+function pairwiseSlope(c){
+    c = c.sort('system:time_start');
+    
+    var bandNames = ee.Image(c.first()).bandNames();
+    bandNames = bandNames.map(function(bn){return ee.String(bn).cat('Slope')});
+    
+    var years = c.toList(10000).map(function(i){i = ee.Image(i);return ee.Date(i.get('system:time_start')).get('year')});
+    
+    var yearsLeft = years.slice(0,-1);
+    var yearsRight = years.slice(1,null);
+    var yearPairs = yearsLeft.zip(yearsRight);
+    
+    var slopeCollection = yearPairs.map(function(yp){
+      yp = ee.List(yp);
+      var yl = ee.Number(yp.get(0));
+      var yr = ee.Number(yp.get(1));
+      var yd = yr.subtract(yl);
+      var l = ee.Image(c.filter(ee.Filter.calendarRange(yl,yl,'year')).first()).add(0.000001);
+      var r = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
+      
+      var slope = (r.subtract(l)).rename(bandNames);
+      slope = slope.set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
+      return slope;
+    });
+    return ee.ImageCollection.fromImages(slopeCollection);
+  }
 //////////////////////////////////////////////////////////////////////////
 exports.extractDisturbance = extractDisturbance;
 exports.landtrendrWrapper = landtrendrWrapper;
