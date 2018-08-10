@@ -308,6 +308,7 @@ indexDirList.map(function(indexDir){
   var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
   
   var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs);
+  var changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
   
   var forPairwiseSlope = getImageLib.joinCollections(tsIndex,annualEWMA);
   var forPairwiseSlope = pairwiseSlope(forPairwiseSlope);
