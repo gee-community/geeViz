@@ -358,7 +358,7 @@ function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,rem
 }
 
 function runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears, harmonicCount,annualReducer,remove2012){
-  
+  var bandName = ee.String(ee.Image(lsIndex.first()).bandNames().first());
   var ewma = getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount);
   
   //Get dates for later reference
