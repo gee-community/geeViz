@@ -290,8 +290,8 @@ indexDirList.map(function(indexDir){
       yp = ee.List(yp);
       var yl = ee.Number(yp.get(0));
       var yr = ee.Number(yp.get(1))
-      var l = c.filter(ee.Filter.calendarRange(yl,yl,'year');
-      var r = c.filter(ee.Filter.calendarRange(yr,yr,'year');
+      var l = c.filter(ee.Filter.calendarRange(yl,yl,'year'));
+      var r = c.filter(ee.Filter.calendarRange(yr,yr,'year'));
       
       
     })
