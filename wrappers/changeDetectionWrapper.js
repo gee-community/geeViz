@@ -245,7 +245,7 @@ var processedScenes = lsAndTs[0];
 var processedComposites = lsAndTs[1];
 
 //Get all images from the entire year for EWMACD 
-var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,1,365,
+var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear+timebuffer,endYear-timebuffer,1,365,
   timebuffer,weights,compositingMethod,
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,true,
