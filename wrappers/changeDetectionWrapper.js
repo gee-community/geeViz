@@ -278,31 +278,7 @@ indexDirList.map(function(indexDir){
   //Apply VERDET
   var verdetOutputs = dLib.verdetAnnualSlope(tsIndex,startYear,endYear,timebuffer);
   
-  function pairwiseSlope(c){
-    c = c.sort('system:time_start');
-    
-    var bandNames = ee.Image(c.first()).bandNames();
-    bandNames = bandNames.map(function(bn){return ee.String(bn).cat('Slope')})
-    var years = c.toList(10000).map(function(i){i = ee.Image(i);return ee.Date(i.get('system:time_start')).get('year')});
-    
-    var yearsLeft = years.slice(0,-1);
-    var yearsRight = years.slice(1,null);
-    var yearPairs = yearsLeft.zip(yearsRight);
-    
-    var slopeCollection = yearPairs.map(function(yp){
-      yp = ee.List(yp);
-      var yl = ee.Number(yp.get(0));
-      var yr = ee.Number(yp.get(1));
-      var yd = yr.subtract(yl);
-      var l = ee.Image(c.filter(ee.Filter.calendarRange(yl,yl,'year')).first()).add(0.00001);
-      var r = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
-      
-      var slope = (r.subtract(l)).rename(bandNames);
-      slope = slope.set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
-      return slope;
-    });
-    return ee.ImageCollection.fromImages(slopeCollection);
-  }
+  
   //Apply EWMACD
   var ewmaOutputs = dLib.runEWMACD(lsIndex,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
   var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
@@ -310,8 +286,8 @@ indexDirList.map(function(indexDir){
   var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs);
   // var changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
   
-  var tsIndexSlope = pairwiseSlope(tsIndex);
-  var annualEWMASlope = pairwiseSlope(annualEWMA);
+  var tsIndexSlope = dLib.pairwiseSlope(tsIndex);
+  var annualEWMASlope = dLib.pairwiseSlope(annualEWMA);
   
   // changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndex);
   changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndexSlope);
