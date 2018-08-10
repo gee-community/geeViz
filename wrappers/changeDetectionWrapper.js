@@ -298,12 +298,9 @@ indexDirList.map(function(indexDir){
       var r = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
       
       var slope = (r.subtract(l)).divide(yd).rename(bandNames);
-      slope = slope.set('system:time_start',ee.Date.fromYMD(yr,6,1))
-      return slope
-      
-      
-    })
-    
+      slope = slope.set('system:time_start',ee.Date.fromYMD(yr,6,1));
+      return slope;
+    });
   }
   //Apply EWMACD
   var ewmaOutputs = dLib.runEWMACD(lsIndex,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
