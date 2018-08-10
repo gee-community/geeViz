@@ -181,128 +181,131 @@ var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,1,365
 //Separate into scenes and composites for subsequent analysis
 var allScenes = lsAndTsAll[0];
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//Landtrendr
-//From: http://www.mdpi.com/2072-4292/10/5/691
-// Table 1. LandTrendr parameters used for IDL and GEE runs in all study areas. The NBR spectral metric was used for segmentation. For descriptions of the parameters, see [3]).
-// Parameter	IDL	GEE	Comments
-// maxSegments	6	6	
-// spikeThreshold	0.9	0.9	Renamed from “desawtooth val”
-// vertexCountOvershoot	3	3	
-// recoveryThreshold	0.25	0.25	
-// pvalThreshold	0.05	0.05	
-// bestModelProportion	0.75	0.75	
-// minObservationsNeeded	6	6	Renamed from “minneeded”
-// Background_val	0	NA	GEE uses a mask logic to avoid missing values caused by clouds, shadows, and missing imagery.
-// Divisor	−1	NA	Ensures that vegetation loss disturbance results in negative change in value when NBR is used as a spectral metric. In GEE, this must be handled outside of the segmentation algorithm.
-// Kernelsize	1	Dropped	Originally used together with skipfactor to save computational burden; no longer necessary.
-// Skipfactor	1	Dropped
-// Distweightfactor	2	Dropped	Inadvertently hardwired in the IDL code, this parameter was hardwired in the GEE code to the value of 2.
-// Fix_doy_effect	1	Dropped	Although correcting day-of-year trends was considered theoretically useful in the original LT implementation, in practice it has been found to distort time series values when change occurs and thus was eliminated.
 
-//Start of change detection code
-var run_params = { 
-  maxSegments:            6,
-  spikeThreshold:         0.9,
-  vertexCountOvershoot:   3,
-  preventOneYearRecovery: true,
-  recoveryThreshold:      0.25,
-  pvalThreshold:          0.05,
-  bestModelProportion:    0.75,
-  minObservationsNeeded:  6
-};
-// define disturbance mapping filter parameters 
-var treeLoss1  = 1;      //150 delta filter for 1 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
-var treeLoss20 = 200;      //200 delta filter for 20 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
-var preVal     = 1;      //200 pre-disturbance value threshold - values below the provided threshold will exclude disturbance for those pixels - units are in units of segIndex defined in the following function definition
-var mmu        = 15;       //15 minimum mapping unit for disturbance patches - units of pixels
+var indexList = ['nir','swir1','swir2','NBR','NDVI','Wetness','Greenness','Brightness','Angle']
 
-var distParams = {
-    tree_loss1: treeLoss1,
-    tree_loss20: treeLoss20,  
-    pre_val: preVal           
-  };
+// ////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////
+// //Landtrendr
+// //From: http://www.mdpi.com/2072-4292/10/5/691
+// // Table 1. LandTrendr parameters used for IDL and GEE runs in all study areas. The NBR spectral metric was used for segmentation. For descriptions of the parameters, see [3]).
+// // Parameter	IDL	GEE	Comments
+// // maxSegments	6	6	
+// // spikeThreshold	0.9	0.9	Renamed from “desawtooth val”
+// // vertexCountOvershoot	3	3	
+// // recoveryThreshold	0.25	0.25	
+// // pvalThreshold	0.05	0.05	
+// // bestModelProportion	0.75	0.75	
+// // minObservationsNeeded	6	6	Renamed from “minneeded”
+// // Background_val	0	NA	GEE uses a mask logic to avoid missing values caused by clouds, shadows, and missing imagery.
+// // Divisor	−1	NA	Ensures that vegetation loss disturbance results in negative change in value when NBR is used as a spectral metric. In GEE, this must be handled outside of the segmentation algorithm.
+// // Kernelsize	1	Dropped	Originally used together with skipfactor to save computational burden; no longer necessary.
+// // Skipfactor	1	Dropped
+// // Distweightfactor	2	Dropped	Inadvertently hardwired in the IDL code, this parameter was hardwired in the GEE code to the value of 2.
+// // Fix_doy_effect	1	Dropped	Although correcting day-of-year trends was considered theoretically useful in the original LT implementation, in practice it has been found to distort time series values when change occurs and thus was eliminated.
 
-// define the segmentation parameters:
-// reference: Kennedy, R. E., Yang, Z., & Cohen, W. B. (2010). Detecting trends in forest disturbance and recovery using yearly Landsat time series: 1. LandTrendr—Temporal segmentation algorithms. Remote Sensing of Environment, 114(12), 2897-2910.
-//            https://github.com/eMapR/LT-GEE
-var distDir = -1; // define the sign of spectral delta for vegetation loss for the segmentation index - 
-                  // NBR delta is negetive for vegetation loss, so -1 for NBR, 1 for band 5, -1 for NDVI, etc
+// //Start of change detection code
+// var run_params = { 
+//   maxSegments:            6,
+//   spikeThreshold:         0.9,
+//   vertexCountOvershoot:   3,
+//   preventOneYearRecovery: true,
+//   recoveryThreshold:      0.25,
+//   pvalThreshold:          0.05,
+//   bestModelProportion:    0.75,
+//   minObservationsNeeded:  6
+// };
+// // define disturbance mapping filter parameters 
+// var treeLoss1  = 1;      //150 delta filter for 1 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
+// var treeLoss20 = 200;      //200 delta filter for 20 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
+// var preVal     = 1;      //200 pre-disturbance value threshold - values below the provided threshold will exclude disturbance for those pixels - units are in units of segIndex defined in the following function definition
+// var mmu        = 15;       //15 minimum mapping unit for disturbance patches - units of pixels
 
-var indexName = 'NBR';
-/////////////////////////////////////////////////////////////
+// var distParams = {
+//     tree_loss1: treeLoss1,
+//     tree_loss20: treeLoss20,  
+//     pre_val: preVal           
+//   };
 
-// var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
-// var rawLT = ltOutputs[0].select([0]);
+// // define the segmentation parameters:
+// // reference: Kennedy, R. E., Yang, Z., & Cohen, W. B. (2010). Detecting trends in forest disturbance and recovery using yearly Landsat time series: 1. LandTrendr—Temporal segmentation algorithms. Remote Sensing of Environment, 114(12), 2897-2910.
+// //            https://github.com/eMapR/LT-GEE
+// var distDir = -1; // define the sign of spectral delta for vegetation loss for the segmentation index - 
+//                   // NBR delta is negetive for vegetation loss, so -1 for NBR, 1 for band 5, -1 for NDVI, etc
 
+// var indexName = 'NBR';
+// /////////////////////////////////////////////////////////////
 
-
-// var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer);
-// Map.addLayer(ltAnnualSlope,{},'Annual LT Slope',false);
-
-// Map.addLayer(ltOutputs[0])
-// Map.addLayer(ltOutputs[1])
-////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//Verdet
-// var verdetTsIndex = processedComposites.select([indexName])
-// var verdetTs = verdetTsIndex.map(getImageLib.addDateBand);
-// var verdet =   ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: verdetTsIndex,
-// //                                         tolerance: 0.0001,
-// //                                         alpha: 1/3.0})
-// verdet = verdet.arraySlice(0,1,null)
-// // var tsYear = verdetTs.select([1]).toArray().arraySlice(0,0,-1).arrayProject([0])
-
-// Map.addLayer(verdet.arrayCat(tsYear,1))
-// var verdetLeft = verdet.arraySlice(0,0,-1)
-// var verdetRight = verdet.arraySlice(0,1,null);
-// var verdetDiff = verdetRight.subtract(verdetLeft)
-// var yearsLeft = tsYear.arraySlice(0,0,-1)
-// var yearsRight = tsYear.arraySlice(0,1,null)
-// var isVertex = verdetDiff.gt(0.00000001).or(verdetDiff.lt(-0.00000001))
-// var isEndVertex = verdetDiff.gt(0.00000001)
-// verdetLeft = verdetLeft.arrayMask(isVertex);
-// verdetRight = verdetRight.arrayMask(isVertex);
-// verdetDiff = verdetDiff.arrayMask(isEndVertex);
-// yearsLeft = yearsLeft.arrayMask(isEndVertex)
-// yearsRight = yearsRight.arrayMask(isEndVertex)
-// verdet = verdetRight.arrayCat(yearsRight,1)
-
-// var changeYear = yearsRight;
-// var changeMag = verdetDiff
-// // verdet = verdetDiff.arrayCat(isVertex,1)//.arrayCat(verdetDiff,1)
-// // var verdetValues = verdet.reduceRegion(ee.Reducer.first(),geometry, 30, 'EPSG:5070', null,true, 1,1).get('score')
-
-// // // var verdetGraph = ui.Chart.array.values(verdetValues, 0);
-// // // verdetGraph = verdetGraph.setChartType('ScatterChart')
-// // // print(verdetGraph)
-// // // Map.addLayer(tsIndex,{},'tsIndex',false);
-// // Map.addLayer(verdet)
-
-// // Map.addLayer(verdetTsIndex,{},'VERDET-ts'+indexName,false);
-// // Map.addLayer(verdet,{},'VERDET-'+indexName,false);
-// Map.addLayer(changeYear);
-// Map.addLayer(changeMag,{'min':0,'max':0.2})
-
-// // tsYear = tsYear.arraySlice(0,1,null)
-///////////////////////////////////////////////////////////////////////////////
-//EWMACD
-var ewmacdTrainingYears = 5;
-
-
-var lsIndex = allScenes.select([indexName]);
-Map.addLayer(lsIndex,{},'ls'+indexName,false);
+// // var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
+// // var rawLT = ltOutputs[0].select([0]);
 
 
 
+// // var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer);
+// // Map.addLayer(ltAnnualSlope,{},'Annual LT Slope',false);
 
-var ewmaOutputs = dLib.runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears,2,ee.Reducer.percentile([10]),!includeSLCOffL7);
-var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
-var joinedEWMA = getImageLib.joinCollections(processedComposites.select(['NBR']),annualEWMA)
-Map.addLayer(joinedEWMA,{},'annualewma',false);
+// // Map.addLayer(ltOutputs[0])
+// // Map.addLayer(ltOutputs[1])
+// ////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////////////
+// //Verdet
+// // var verdetTsIndex = processedComposites.select([indexName])
+// // var verdetTs = verdetTsIndex.map(getImageLib.addDateBand);
+// // var verdet =   ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: verdetTsIndex,
+// // //                                         tolerance: 0.0001,
+// // //                                         alpha: 1/3.0})
+// // verdet = verdet.arraySlice(0,1,null)
+// // // var tsYear = verdetTs.select([1]).toArray().arraySlice(0,0,-1).arrayProject([0])
+
+// // Map.addLayer(verdet.arrayCat(tsYear,1))
+// // var verdetLeft = verdet.arraySlice(0,0,-1)
+// // var verdetRight = verdet.arraySlice(0,1,null);
+// // var verdetDiff = verdetRight.subtract(verdetLeft)
+// // var yearsLeft = tsYear.arraySlice(0,0,-1)
+// // var yearsRight = tsYear.arraySlice(0,1,null)
+// // var isVertex = verdetDiff.gt(0.00000001).or(verdetDiff.lt(-0.00000001))
+// // var isEndVertex = verdetDiff.gt(0.00000001)
+// // verdetLeft = verdetLeft.arrayMask(isVertex);
+// // verdetRight = verdetRight.arrayMask(isVertex);
+// // verdetDiff = verdetDiff.arrayMask(isEndVertex);
+// // yearsLeft = yearsLeft.arrayMask(isEndVertex)
+// // yearsRight = yearsRight.arrayMask(isEndVertex)
+// // verdet = verdetRight.arrayCat(yearsRight,1)
+
+// // var changeYear = yearsRight;
+// // var changeMag = verdetDiff
+// // // verdet = verdetDiff.arrayCat(isVertex,1)//.arrayCat(verdetDiff,1)
+// // // var verdetValues = verdet.reduceRegion(ee.Reducer.first(),geometry, 30, 'EPSG:5070', null,true, 1,1).get('score')
+
+// // // // var verdetGraph = ui.Chart.array.values(verdetValues, 0);
+// // // // verdetGraph = verdetGraph.setChartType('ScatterChart')
+// // // // print(verdetGraph)
+// // // // Map.addLayer(tsIndex,{},'tsIndex',false);
+// // // Map.addLayer(verdet)
+
+// // // Map.addLayer(verdetTsIndex,{},'VERDET-ts'+indexName,false);
+// // // Map.addLayer(verdet,{},'VERDET-'+indexName,false);
+// // Map.addLayer(changeYear);
+// // Map.addLayer(changeMag,{'min':0,'max':0.2})
+
+// // // tsYear = tsYear.arraySlice(0,1,null)
+// ///////////////////////////////////////////////////////////////////////////////
+// //EWMACD
+// var ewmacdTrainingYears = 5;
+
+
+// var lsIndex = allScenes.select([indexName]);
+// Map.addLayer(lsIndex,{},'ls'+indexName,false);
+
+
+
+
+// var ewmaOutputs = dLib.runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears,2,ee.Reducer.percentile([10]),!includeSLCOffL7);
+// var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
+// var joinedEWMA = getImageLib.joinCollections(processedComposites.select(['NBR']),annualEWMA)
+// Map.addLayer(joinedEWMA,{},'annualewma',false);
   
