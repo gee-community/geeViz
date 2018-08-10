@@ -343,6 +343,13 @@ function annualizeEWMA(ewma,lsYear,startYear,endYear,annualReducer,remove2012){
     return out;
   });
   annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
+  
+  if(remove2012){
+    var dummy2012 = ee.Image(0).updateMask(ee.Image(0)).rename(['ewma'])
+      .set('system:time_start',ee.Date.fromYMD(2012,6,1).millis()).int16();
+    
+    annualEWMA = ee.ImageCollection(ee.FeatureCollection([annualEWMA,ee.ImageCollection([dummy2012])]).flatten());
+
   return annualEWMA;
 }
 
