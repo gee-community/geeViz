@@ -311,7 +311,9 @@ indexDirList.map(function(indexDir){
       'startYear':startYear,
       'endYear':endYear,
     })
-    getImageLib.exportToAssetWrapper(composite,exportName,exportPath,'mean',
+    var exportName = outputName + '_'+indexName + '_' + yr.toString()
+    var exportPath = exportPathRoot + '/' + exportName;
+    getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
       studyArea,null,crs,transform);
     })
   })
