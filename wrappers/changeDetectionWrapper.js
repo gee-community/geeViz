@@ -262,7 +262,10 @@ var ltDirection = ee.List([-1,    1,      1,    -1,    -1,   -1,           -1,  
 var indexDirList = indexList.zip(ltDirection).getInfo();
 
 indexDirList.map(function(indexDir){
-  print(indexDir)
+  print(indexDir);
+  var indexName = indexDir[0];
+  var dir = indexDir[1];
+  print(indexName)
 })
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
