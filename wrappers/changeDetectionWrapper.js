@@ -305,6 +305,7 @@ indexDirList.map(function(indexDir){
   possibleYears.map(function(yr){
     var changeOutput = changeOutputs.filter(ee.Filter.calendarRange(yr,yr,'year'))
     changeOutput = ee.Image(changeOutput.first());
+    print(changeOutput)
   })
   
 });
