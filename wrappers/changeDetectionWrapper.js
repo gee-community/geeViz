@@ -294,7 +294,7 @@ indexDirList.map(function(indexDir){
       var l = ee.Image(c.filter(ee.Filter.calendarRange(yl,yl,'year')).first());
       var r = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
       
-      var slope = (r.subtract(l)).divide(yd)
+      var slope = (r.subtract(l)).divide(yd);
       
       
     })
