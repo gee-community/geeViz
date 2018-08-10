@@ -284,7 +284,6 @@ indexDirList.map(function(indexDir){
   var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
   
   var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs);
-  // var changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
   
   var tsIndexSlope = dLib.pairwiseSlope(tsIndex);
   var annualEWMASlope = dLib.pairwiseSlope(annualEWMA);
@@ -292,6 +291,7 @@ indexDirList.map(function(indexDir){
   // changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndex);
   changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndexSlope);
   changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
+  changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
   
   Map.addLayer(changeOutputs,{},'changeOutputs',false);
   Map.addLayer(annualEWMA,{},'annualEWMA',false);
