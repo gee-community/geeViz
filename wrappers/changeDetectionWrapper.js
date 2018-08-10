@@ -182,8 +182,9 @@ var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,1,365
 var allScenes = lsAndTsAll[0];
 
 
-var indexList = ['nir','swir1','swir2','NBR','NDVI','wetness','greenness','brightness','tcAngleBG']
-
+var indexList = ee.List(['nir','swir1','swir2','NBR','NDVI','wetness','greenness','brightness','tcAngleBG']);
+var ltDirection = ee.List([-1,    1,      1,    -1,    -1,   -1,           -1,        1,          -1]);
+print(indexList.zip(ltDirection))
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
