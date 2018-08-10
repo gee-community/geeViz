@@ -283,12 +283,15 @@ indexDirList.map(function(indexDir){
   var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
   
   
-  var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs)
-  changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA)
+  var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs);
+  changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
   Map.addLayer(changeOutputs,{},'changeOutputs',false);
+  Map.addLayer(annualEWMA,{},'annualEWMA',false);
+  Map.addLayer(ltAnnualSlope,{},'ltAnnualSlope',false);
+  Map.addLayer(verdetOutputs,{},'verdetOutputs',false);
   
   
-})
+});
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
