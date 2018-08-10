@@ -264,6 +264,7 @@ function landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer){
 } 
 //////////////////////////////////////////////////////////////////////////
 //Wrapper for applying VERDET slightly more simply
+//Returns annual collection of verdet slope
 function verdetAnnualSlope(tsIndex,startYear,endYear,timebuffer){
   //Apply VERDET
   var verdet =   ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: tsIndex,
