@@ -285,7 +285,7 @@ indexDirList.map(function(indexDir){
     var yearsRight = years.slice(1,null);
     var yearPairs = yearsLeft.zip(yearsRight);
     print(yearPairs)
-    return years
+    
   }
   //Apply EWMACD
   var ewmaOutputs = dLib.runEWMACD(lsIndex,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
