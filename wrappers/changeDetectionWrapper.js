@@ -306,10 +306,13 @@ indexDirList.map(function(indexDir){
   //Apply EWMACD
   var ewmaOutputs = dLib.runEWMACD(lsIndex,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
   var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
-  var annualEWMASlope = pairwiseSlope(annualEWMA)
   
   var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs);
-  changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
+  
+  var forPairwiseSlope = getImageLib.joinCollections(tsIndex,annualEWMA);
+  var forPairwiseSlope = pairwiseSlope(forPairwiseSlope);
+  changeOutputs = getImageLib.joinCollections(changeOutputs,forPairwiseSlope);
+  
   Map.addLayer(changeOutputs,{},'changeOutputs',false);
   Map.addLayer(annualEWMA,{},'annualEWMA',false);
   Map.addLayer(annualEWMASlope,{},'annualEWMASlope',false);
