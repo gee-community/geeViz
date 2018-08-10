@@ -287,10 +287,11 @@ indexDirList.map(function(indexDir){
     
     var yearsLeft = years.slice(0,-1);
     var yearsRight = years.slice(1,null);
-    var yearPairs = yearsLeft.zip(yearsRight);
+    var yearPairs = yearsLeft.zip(yearsRight).getInfo();
     
     var slopeCollection = yearPairs.map(function(yp){
       yp = ee.List(yp);
+      print(yp)
       var yl = ee.Number(yp.get(0));
       var yr = ee.Number(yp.get(1));
       var yd = yr.subtract(yl);
