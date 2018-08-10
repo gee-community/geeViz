@@ -254,7 +254,7 @@ function landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer){
     yr = ee.Number(yr);
     var yrMask = rawRightYears.arrayProject([1]).eq(yr);
    
-    var masked = rawSlope.arrayMask(yrMask).arrayFlatten([['yr']])
+    var masked = rawSlope.arrayMask(yrMask).arrayFlatten([['ltSlope']])
                   .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
     return masked;
     
