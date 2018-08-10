@@ -302,7 +302,10 @@ indexDirList.map(function(indexDir){
   // Map.addLayer(verdetOutputs,{},'verdetOutputs',false);
   
   var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
-  
+  possibleYears.map(function(yr){
+    var changeOutput = changeOutputs.filter(ee.Filter.calendarRange(yr,yr,'year'))
+    changeOutput = ee.Image(changeOutput.first());
+  })
   
 });
 
