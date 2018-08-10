@@ -285,7 +285,14 @@ indexDirList.map(function(indexDir){
     var yearsLeft = years.slice(0,-1);
     var yearsRight = years.slice(1,null);
     var yearPairs = yearsLeft.zip(yearsRight);
-    print(yearPairs)
+    
+    yearPairs.map(function(yp){
+      yp = ee.List(yp);
+      var yl = ee.Number(yp.get(0));
+      var yr = ee.Number(yp.get(1));
+      
+      
+    })
     
   }
   //Apply EWMACD
