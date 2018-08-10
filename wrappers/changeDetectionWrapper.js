@@ -261,7 +261,7 @@ var indexList = ee.List(['nir','swir1']);//ee.List(['nir','swir1','swir2','NBR',
 var ltDirection = ee.List([-1,    1]);//ee.List([-1,    1,      1,    -1,    -1,   -1,           -1,        1,          -1]);
 var indexDirList = indexList.zip(ltDirection).getInfo();
 
-indexDirList.map(function(indexDir){
+var collections = indexDirList.map(function(indexDir){
   print(indexDir);
   var indexName = indexDir[0];
   var distDir = indexDir[1];
@@ -293,14 +293,14 @@ indexDirList.map(function(indexDir){
   changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
   changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
   
-  Map.addLayer(changeOutputs,{},'changeOutputs',false);
-  Map.addLayer(annualEWMA,{},'annualEWMA',false);
-  Map.addLayer(annualEWMASlope,{},'annualEWMASlope',false);
-  Map.addLayer(tsIndexSlope,{},'tsIndexSlope',false);
+  Map.addLayer(changeOutputs,{},'changeOutputs-'+indexName,false);
+  // Map.addLayer(annualEWMA,{},'annualEWMA',false);
+  // Map.addLayer(annualEWMASlope,{},'annualEWMASlope',false);
+  // Map.addLayer(tsIndexSlope,{},'tsIndexSlope',false);
   
-  Map.addLayer(ltAnnualSlope,{},'ltAnnualSlope',false);
-  Map.addLayer(verdetOutputs,{},'verdetOutputs',false);
-  
+  // Map.addLayer(ltAnnualSlope,{},'ltAnnualSlope',false);
+  // Map.addLayer(verdetOutputs,{},'verdetOutputs',false);
+  return changeOutputs;
   
 });
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
