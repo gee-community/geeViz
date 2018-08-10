@@ -257,8 +257,8 @@ var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,1,365
 var allScenes = lsAndTsAll[0];
 
 
-var indexList = ee.List(['nir','swir1','swir2','NBR','NDVI','wetness','greenness','brightness','tcAngleBG']);
-var ltDirection = ee.List([-1,    1,      1,    -1,    -1,   -1,           -1,        1,          -1]);
+var indexList = ee.List(['nir','swir1']);//ee.List(['nir','swir1','swir2','NBR','NDVI','wetness','greenness','brightness','tcAngleBG']);
+var ltDirection = ee.List([-1,    1]);//ee.List([-1,    1,      1,    -1,    -1,   -1,           -1,        1,          -1]);
 var indexDirList = indexList.zip(ltDirection).getInfo();
 
 indexDirList.map(function(indexDir){
@@ -268,7 +268,12 @@ indexDirList.map(function(indexDir){
   
   var tsIndex = processedComposites.select(indexName);
   var lsIndex = allScenes.select(indexName);
-  print(lsIndex.size(),tsIndex.size())
+ 
+ 
+  var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
+  var rawLT = ltOutputs[0].select([0]);
+  var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer);
+  print(ltAnnualSlope)
 })
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
