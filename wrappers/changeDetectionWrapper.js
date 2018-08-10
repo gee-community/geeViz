@@ -264,7 +264,7 @@ var indexDirList = indexList.zip(ltDirection).getInfo();
 indexDirList.map(function(indexDir){
   print(indexDir);
   var indexName = indexDir[0];
-  var dir = indexDir[1];
+  var distDir = indexDir[1];
   
   var tsIndex = processedComposites.select(indexName);
   var lsIndex = allScenes.select(indexName);
@@ -275,6 +275,11 @@ indexDirList.map(function(indexDir){
   var rawLT = ltOutputs[0].select([0]);
   var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer);
   
+  //Apply VERDET
+  var verdet =   ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: tsIndex,
+                                        tolerance: 0.0001,
+                                        alpha: 1/3.0})
+  Map.addLayer(verdet)
 })
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -283,16 +288,7 @@ indexDirList.map(function(indexDir){
 
 // /////////////////////////////////////////////////////////////
 
-// // var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
-// // var rawLT = ltOutputs[0].select([0]);
 
-
-
-// // var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer);
-// // Map.addLayer(ltAnnualSlope,{},'Annual LT Slope',false);
-
-// // Map.addLayer(ltOutputs[0])
-// // Map.addLayer(ltOutputs[1])
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
