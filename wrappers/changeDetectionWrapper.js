@@ -276,32 +276,7 @@ indexDirList.map(function(indexDir){
   var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,startYear,endYear,timebuffer);
   
   
-function verdetAnnualSlope(tsIndex,startYear,endYear,timebuffer){
-  //Apply VERDET
-  var verdet =   ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: tsIndex,
-                                        tolerance: 0.0001,
-                                        alpha: 1/3.0}).arraySlice(0,1,null);
-                                        
-  var tsYear = tsIndex.map(getImageLib.addDateBand).select([1]).toArray().arraySlice(0,1,null).arrayProject([0]);
-  
-  
-  //Find possible years to convert back to collection with
-  var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer);
-  
-  //Ierate across years to find the slope for a given year
-  var verdetYr = possibleYears.map(function(yr){
-    yr = ee.Number(yr);
-    var yrMask = tsYear.int16().eq(yr);
-   
-    var masked = verdet.arrayMask(yrMask).arrayFlatten([['verdetSlope']])
-                  .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
-    return masked;
-    
-  });
-  verdetYr = ee.ImageCollection(verdetYr);
-  Map.addLayer(verdetYr)
-  return verdetYr
-}
+
 })
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
 // ////////////////////////////////////////////////////////////////////////////////////////////////////
