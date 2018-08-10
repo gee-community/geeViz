@@ -254,7 +254,7 @@ function landtrendrToAnnualSlope(rawLT,indexName,startYear,endYear,timebuffer){
     yr = ee.Number(yr);
     var yrMask = rawRightYears.arrayProject([1]).eq(yr);
    
-    var masked = rawSlope.arrayMask(yrMask).arrayFlatten([['ltSlope_'+indexName]]).divide(100)
+    var masked = rawSlope.arrayMask(yrMask).arrayFlatten([['LT_'+indexName+ '_slope']]).divide(100)
                   .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
     return masked;
     
@@ -282,7 +282,7 @@ function verdetAnnualSlope(tsIndex,indexName,startYear,endYear,timebuffer){
     yr = ee.Number(yr);
     var yrMask = tsYear.int16().eq(yr);
    
-    var masked = verdet.arrayMask(yrMask).arrayFlatten([['verdetSlope_'+indexName]])
+    var masked = verdet.arrayMask(yrMask).arrayFlatten([['VERDET_'+indexName+'_slope']])
                   .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
     return masked;
     
