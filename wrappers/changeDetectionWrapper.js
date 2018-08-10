@@ -315,7 +315,7 @@ indexDirList.map(function(indexDir){
     var exportPath = exportPathRoot + '/' + exportName;
     getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
       studyArea,null,crs,transform);
-    })
+    
   })
   
 });
