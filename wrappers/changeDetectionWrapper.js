@@ -312,6 +312,8 @@ indexDirList.map(function(indexDir){
   changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
   Map.addLayer(changeOutputs,{},'changeOutputs',false);
   Map.addLayer(annualEWMA,{},'annualEWMA',false);
+  Map.addLayer(annualEWMASlope,{},'annualEWMASlope',false);
+ 
   Map.addLayer(ltAnnualSlope,{},'ltAnnualSlope',false);
   Map.addLayer(verdetOutputs,{},'verdetOutputs',false);
   
