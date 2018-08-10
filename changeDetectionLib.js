@@ -409,3 +409,5 @@ exports.verdetAnnualSlope  = verdetAnnualSlope;
 exports.annualizeEWMA = annualizeEWMA;
 exports.getEWMA = getEWMA;
 exports.runEWMACD = runEWMACD;
+
+exports.pairwiseSlope = pairwiseSlope;
