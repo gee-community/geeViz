@@ -346,6 +346,7 @@ function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,rem
   annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
   
   if(remove2012 && replace2012 === 1){
+    print('Replacing 2012 with mean of 2011 and 2013')
     var value2011 = ee.Image(annualEWMA.filter(ee.Filter.calendarRange(2011,2011,'year')).first());
     var value2013 = ee.Image(annualEWMA.filter(ee.Filter.calendarRange(2013,2013,'year')).first());
     var value2012 = value2013.add(value2011);
