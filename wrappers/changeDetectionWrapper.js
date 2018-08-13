@@ -294,7 +294,7 @@ var collections =indexDirList.map(function(indexDir){
   var tsIndexSlope = dLib.pairwiseSlope(tsIndex);
   var annualEWMASlope = dLib.pairwiseSlope(annualEWMA);
   
-  // var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs);
+  var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs);
   // changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndex);
   // changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndexSlope);
   // changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
@@ -302,31 +302,14 @@ var collections =indexDirList.map(function(indexDir){
   
   // Map.addLayer(changeOutputs,{},'changeOutputs-'+indexName,false);
   
-// return changeOutputs;
-  function basicCombiner(collections,startYear,endYear){
-    print('yay')
-    var years = ee.List.sequence(startYear,endYear).getInfo();
-    var out = years.map(function(yr){
-      yr = ee.Number(yr);
-      var t = ee.Image();
-      collections.map(function(c){
-        c = ee.ImageCollection(c);
-        var i = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
-        t = t.addBands(i);
-      })
-      return t
-      
-    })
-    print(out)
-  }
-  basicCombiner([tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope],startYear+timebuffer+1,endYear-timebuffer)
-  // return [tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope];
+return changeOutputs;
+ // return [tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope];
 });
 
-// collections = ee.List(collections);
+collections = ee.List(collections);
 // print(collections)
-// // var combined = getImageLib.joinCollections(collections.get(0),collections.get(1));
-
+var combined = getImageLib.joinCollections(collections.get(0),collections.get(1));
+print(combined)
 // var indexListString = 'nsdfsfsd';//getImageLib.listToString(indexList,'_');
 // print(indexListString);
 // var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
