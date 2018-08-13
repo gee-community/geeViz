@@ -311,6 +311,11 @@ return changeOutputs;
 // print(collections)
 var combined;
 ee.List.sequence(0,indexList.length().subtract(1)).getInfo().map(function(i){
+  if(combined === undefined){
+    combined = collections[i];
+  }else{
+    combined = getImageLib.joinCollections(combined,combined[1],false)
+  }
   print(i,combined)
 })
 // var combined = getImageLib.joinCollections(collections.get(0),collections.get(1),false);
