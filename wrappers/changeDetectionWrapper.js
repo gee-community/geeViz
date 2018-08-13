@@ -294,8 +294,8 @@ var collections =indexDirList.map(function(indexDir){
   var tsIndexSlope = dLib.pairwiseSlope(tsIndex);
   var annualEWMASlope = dLib.pairwiseSlope(annualEWMA);
   
-  // var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs);
-  var changeOutputs = getImageLib.joinCollections(tsIndexSlope,ltAnnualSlope,false);
+  var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs,false);
+  // var changeOutputs = getImageLib.joinCollections(tsIndexSlope,ltAnnualSlope,false);
   // changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndex);
   // changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndexSlope);
   // changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
