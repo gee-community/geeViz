@@ -230,8 +230,8 @@ function landtrendrWrapper(processedComposites,indexName,distDir,run_params,dist
 //Function for converting fitted Landtrendr output to annual slope al la Verdet
 function landtrendrToAnnualFit(rawLT,indexName,startYear,endYear){
   //Extract relevant values
-  var fit = rawLT.arraySlice(0,2,3);
-  var years = rawLT.arraySlice(0,0,1);
+  var fit = rawLT.arraySlice(0,2,3).arrayProject([1]);
+  var years = rawLT.arraySlice(0,0,1).arrayProject([1]);
   Map.addLayer(fit,{},'fit-'+indexName)
   Map.addLayer(years,{},'years-'+indexName)
   // var rawLeft = rawLT.arraySlice(1,0,-1);
