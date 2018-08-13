@@ -345,7 +345,7 @@ function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,rem
   });
   annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
   print(remove2012,replace2012)
-  // if(remove2012 === true && replace2012 === 1){
+  if(remove2012 === true & replace2012 === 1){
     print('Replacing EWMA 2012 with mean of 2011 and 2013')
     var value2011 = ee.Image(annualEWMA.filter(ee.Filter.calendarRange(2011,2011,'year')).first());
     var value2013 = ee.Image(annualEWMA.filter(ee.Filter.calendarRange(2013,2013,'year')).first());
@@ -354,7 +354,7 @@ function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,rem
     .set('system:time_start',ee.Date.fromYMD(2012,6,1).millis()).int16();
     
     annualEWMA = ee.ImageCollection(ee.FeatureCollection([annualEWMA,ee.ImageCollection([value2012])]).flatten()).sort('system:time_start');
-  // }
+  }
   return annualEWMA;
 }
 //
