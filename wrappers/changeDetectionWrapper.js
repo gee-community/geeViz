@@ -316,6 +316,7 @@ var collections =indexDirList.map(function(indexDir){
       return t
       
     })
+    print(out)
   }
   basicCombiner([tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope],startYear+timebuffer+1,endYear-timebuffer)
   // return [tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope];
