@@ -76,12 +76,12 @@ var defringeL5 = false;
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
 var applyCloudScore = false;
-var applyFmaskCloudMask = true;
+var applyFmaskCloudMask = false;
 
 var applyTDOM = false;
-var applyFmaskCloudShadowMask = true;
+var applyFmaskCloudShadowMask = false;
 
-var applyFmaskSnowMask = true;
+var applyFmaskSnowMask = false;
 
 // 11. Cloud and cloud shadow masking parameters.
 // If cloudScoreTDOM is chosen
@@ -290,42 +290,43 @@ var collections =indexDirList.map(function(indexDir){
   var ewmaOutputs = dLib.runEWMACD(lsIndex,indexName,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
   var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
   
-  var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs);
   
   var tsIndexSlope = dLib.pairwiseSlope(tsIndex);
   var annualEWMASlope = dLib.pairwiseSlope(annualEWMA);
   
+  // var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs);
   // changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndex);
-  changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndexSlope);
-  changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
-  changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
+  // changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndexSlope);
+  // changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
+  // changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
   
-  Map.addLayer(changeOutputs,{},'changeOutputs-'+indexName,false);
+  // Map.addLayer(changeOutputs,{},'changeOutputs-'+indexName,false);
   
-return changeOutputs;
-  
+// return changeOutputs;
+  return [tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope]
 });
 
 collections = ee.List(collections);
-var combined = getImageLib.joinCollections(collections.get(0),collections.get(1));
+print(collections)
+// var combined = getImageLib.joinCollections(collections.get(0),collections.get(1));
 
-var indexListString = 'nsdfsfsd';//getImageLib.listToString(indexList,'_');
-print(indexListString);
-var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
-  possibleYears.map(function(yr){
-    var changeOutput = combined.filter(ee.Filter.calendarRange(yr,yr,'year'));
-    changeOutput = ee.Image(changeOutput.first()).float();
-    changeOutput = changeOutput.set({
-      'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
-      'indexList':indexListString,
-      'startYear':startYear,
-      'endYear':endYear,
-    });
-    var exportName = outputName + '_'+indexListString + '_' + yr.toString();
-    var exportPath = exportPathRoot + '/' + exportName;
-    getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
-      studyArea,null,crs,transform);
+// var indexListString = 'nsdfsfsd';//getImageLib.listToString(indexList,'_');
+// print(indexListString);
+// var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
+//   possibleYears.map(function(yr){
+//     var changeOutput = combined.filter(ee.Filter.calendarRange(yr,yr,'year'));
+//     changeOutput = ee.Image(changeOutput.first()).float();
+//     changeOutput = changeOutput.set({
+//       'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
+//       'indexList':indexListString,
+//       'startYear':startYear,
+//       'endYear':endYear,
+//     });
+//     var exportName = outputName + '_'+indexListString + '_' + yr.toString();
+//     var exportPath = exportPathRoot + '/' + exportName;
+//     getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
+//       studyArea,null,crs,transform);
     
-  });
+//   });
 
 
