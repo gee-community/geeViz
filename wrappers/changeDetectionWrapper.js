@@ -314,7 +314,7 @@ ee.List.sequence(0,indexList.length().subtract(1)).getInfo().map(function(i){
   if(combined === undefined){
     combined = ee.ImageCollection(collections[i]);
   }else{
-    combined =  ee.ImageCollection(getImageLib.joinCollections(combined,combined[1],false));
+    combined =  ee.ImageCollection(getImageLib.joinCollections(combined,collections[1],false));
   }
   print(i,combined)
 })
