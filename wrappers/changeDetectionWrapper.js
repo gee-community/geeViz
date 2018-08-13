@@ -310,6 +310,7 @@ var collections =indexDirList.map(function(indexDir){
       yr = ee.Number(yr);
       var t = ee.Image();
       collections.map(function(c){
+        c = ee.ImageCollection(c);
         var i = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
         t = t.addBands(i);
       })
