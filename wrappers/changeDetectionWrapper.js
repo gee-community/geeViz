@@ -310,10 +310,18 @@ collections = ee.List(collections);
 print(collections)
 // var combined = getImageLib.joinCollections(collections.get(0),collections.get(1));
 
-// var indexListString = 'nsdfsfsd';//getImageLib.listToString(indexList,'_');
-// print(indexListString);
-// var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
-//   possibleYears.map(function(yr){
+var indexListString = 'nsdfsfsd';//getImageLib.listToString(indexList,'_');
+print(indexListString);
+var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
+  possibleYears.map(function(yr){
+    var out=  ee.Image();
+    collections.map(function(c){
+      print(c)
+      // c = ee.ImageCollection(c)
+      // c.map(function(cc){
+      //   print(cc)
+      // })
+    })
 //     var changeOutput = combined.filter(ee.Filter.calendarRange(yr,yr,'year'));
 //     changeOutput = ee.Image(changeOutput.first()).float();
 //     changeOutput = changeOutput.set({
@@ -327,6 +335,6 @@ print(collections)
 //     getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
 //       studyArea,null,crs,transform);
     
-//   });
+  });
 
 
