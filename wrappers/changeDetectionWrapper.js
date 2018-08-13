@@ -309,8 +309,9 @@ return changeOutputs;
 
 // collections = ee.List(collections);
 // print(collections)
+var combined;
 ee.List.sequence(0,indexList.length().subtract(1)).getInfo().map(function(i){
-  print(i)
+  print(i,combined)
 })
 // var combined = getImageLib.joinCollections(collections.get(0),collections.get(1),false);
 // print(combined)
