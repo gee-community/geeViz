@@ -317,8 +317,8 @@ ee.List.sequence(0,indexList.length().subtract(1)).getInfo().map(function(i){
   }
 });
 
-var indexListString = 'nsdfsfsd';//getImageLib.listToString(indexList,'_');
-print(indexListString);
+var indexListString = getImageLib.listToString(indexList.getInfo(),'_');
+
 var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
   possibleYears.map(function(yr){
 
