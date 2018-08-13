@@ -294,14 +294,8 @@ var collections =indexDirList.map(function(indexDir){
   changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
   
   Map.addLayer(changeOutputs,{},'changeOutputs-'+indexName,false);
-  // Map.addLayer(annualEWMA,{},'annualEWMA',false);
-  // Map.addLayer(annualEWMASlope,{},'annualEWMASlope',false);
-  // Map.addLayer(tsIndexSlope,{},'tsIndexSlope',false);
   
-  // Map.addLayer(ltAnnualSlope,{},'ltAnnualSlope',false);
-  // Map.addLayer(verdetOutputs,{},'verdetOutputs',false);
-  
- return changeOutputs
+ return changeOutputs;
   
 });
 
@@ -328,69 +322,3 @@ var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).
   })
 
 
-// ////////////////////////////////////////////////////////////////////////////////////////////////////
-// ////////////////////////////////////////////////////////////////////////////////////////////////////
-// ////////////////////////////////////////////////////////////////////////////////////////////////////
-// ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// /////////////////////////////////////////////////////////////
-
-
-// ////////////////////////////////////////////////////////////////////////////////////////////////////
-// ////////////////////////////////////////////////////////////////////////////////////////////////////
-// ////////////////////////////////////////////////////////////////////////////////////////////////////
-// ////////////////////////////////////////////////////////////////////////////////////////////////////
-// //Verdet
-// // var verdetTsIndex = processedComposites.select([indexName])
-// // var verdetTs = verdetTsIndex.map(getImageLib.addDateBand);
-// // var verdet =   ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: verdetTsIndex,
-// // //                                         tolerance: 0.0001,
-// // //                                         alpha: 1/3.0})
-// // verdet = verdet.arraySlice(0,1,null)
-// // // var tsYear = verdetTs.select([1]).toArray().arraySlice(0,0,-1).arrayProject([0])
-
-// // Map.addLayer(verdet.arrayCat(tsYear,1))
-// // var verdetLeft = verdet.arraySlice(0,0,-1)
-// // var verdetRight = verdet.arraySlice(0,1,null);
-// // var verdetDiff = verdetRight.subtract(verdetLeft)
-// // var yearsLeft = tsYear.arraySlice(0,0,-1)
-// // var yearsRight = tsYear.arraySlice(0,1,null)
-// // var isVertex = verdetDiff.gt(0.00000001).or(verdetDiff.lt(-0.00000001))
-// // var isEndVertex = verdetDiff.gt(0.00000001)
-// // verdetLeft = verdetLeft.arrayMask(isVertex);
-// // verdetRight = verdetRight.arrayMask(isVertex);
-// // verdetDiff = verdetDiff.arrayMask(isEndVertex);
-// // yearsLeft = yearsLeft.arrayMask(isEndVertex)
-// // yearsRight = yearsRight.arrayMask(isEndVertex)
-// // verdet = verdetRight.arrayCat(yearsRight,1)
-
-// // var changeYear = yearsRight;
-// // var changeMag = verdetDiff
-// // // verdet = verdetDiff.arrayCat(isVertex,1)//.arrayCat(verdetDiff,1)
-// // // var verdetValues = verdet.reduceRegion(ee.Reducer.first(),geometry, 30, 'EPSG:5070', null,true, 1,1).get('score')
-
-// // // // var verdetGraph = ui.Chart.array.values(verdetValues, 0);
-// // // // verdetGraph = verdetGraph.setChartType('ScatterChart')
-// // // // print(verdetGraph)
-// // // // Map.addLayer(tsIndex,{},'tsIndex',false);
-// // // Map.addLayer(verdet)
-
-// // // Map.addLayer(verdetTsIndex,{},'VERDET-ts'+indexName,false);
-// // // Map.addLayer(verdet,{},'VERDET-'+indexName,false);
-// // Map.addLayer(changeYear);
-// // Map.addLayer(changeMag,{'min':0,'max':0.2})
-
-// // // tsYear = tsYear.arraySlice(0,1,null)
-// ///////////////////////////////////////////////////////////////////////////////
-
-// var lsIndex = allScenes.select([indexName]);
-// Map.addLayer(lsIndex,{},'ls'+indexName,false);
-
-
-
-
-// var ewmaOutputs = dLib.runEWMACD(lsIndex,startYear,endYear,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
-// var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
-// var joinedEWMA = getImageLib.joinCollections(processedComposites.select(['NBR']),annualEWMA)
-// Map.addLayer(joinedEWMA,{},'annualewma',false);
-  
