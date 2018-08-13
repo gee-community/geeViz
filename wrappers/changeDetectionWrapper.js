@@ -313,6 +313,7 @@ var collections =indexDirList.map(function(indexDir){
         var i = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
         t = t.addBands(i);
       })
+      return t
       
     })
   }
