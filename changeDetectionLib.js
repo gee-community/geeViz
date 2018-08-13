@@ -325,7 +325,7 @@ function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,rem
   if(remove2012){years = years.removeAll([2012])}
   
   //Find if 2012 needs replaced
-  var replace2012 = ee.Number(ee.List([years.indexOf(2011),years.indexOf(2012),years.indexOf(2013)]).reduce(ee.Reducer.min())).eq(-1)
+  var replace2012 = ee.Number(ee.List([years.indexOf(2011),years.indexOf(2012),years.indexOf(2013)]).reduce(ee.Reducer.min())).eq(-1).getInfo();
   print('2012 needs replaced:',replace2012)
   
   
@@ -348,7 +348,7 @@ function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,rem
     return out;
   });
   annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
-  print(remove2012,replace2012 )
+  print(remove2012,replace2012 ==1)
   if(remove2012 ){
     print('Replacing EWMA 2012 with mean of 2011 and 2013')
     var value2011 = ee.Image(annualEWMA.filter(ee.Filter.calendarRange(2011,2011,'year')).first());
