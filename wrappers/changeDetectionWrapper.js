@@ -251,7 +251,7 @@ var processedScenes = lsAndTs[0];
 var processedComposites = lsAndTs[1];
 
 //Get all images from the entire year for EWMACD 
-var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear+timebuffer,endYear,1,365,
+var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear+timebuffer,endYear+timebuffer,1,365,
   timebuffer,weights,compositingMethod,
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,true,
@@ -283,7 +283,7 @@ var collections =indexDirList.map(function(indexDir){
   var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,indexName,startYear,endYear,timebuffer);
   
   //Apply VERDET
-  var verdetOutputs = dLib.verdetAnnualSlope(tsIndex,indexName,startYear,endYear,timebuffer);
+  var verdetOutputs = dLib.verdetAnnualSlope(tsIndex,indexName,startYear+timebuffer,endYear-timebuffer);
   
   
   //Apply EWMACD
