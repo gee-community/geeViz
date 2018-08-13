@@ -251,7 +251,7 @@ function landtrendrToAnnualFit(rawLT,indexName,startYear,endYear){
   // var rawSlope = rawFitDiff.divide(rawYearDiff).arrayProject([1]);
   
   //Find possible years to convert back to collection with
-  var possibleYears = ee.List.sequence(startYear,endYear);
+  var possibleYears = ee.List.sequence(startYear+1,endYear);
   
   //Ierate across years to find the slope for a given year
   var ltYr = possibleYears.map(function(yr){
