@@ -76,12 +76,12 @@ var defringeL5 = false;
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
 var applyCloudScore = false;
-var applyFmaskCloudMask = false;
+var applyFmaskCloudMask = true;
 
 var applyTDOM = false;
-var applyFmaskCloudShadowMask = false;
+var applyFmaskCloudShadowMask = true;
 
-var applyFmaskSnowMask = false;
+var applyFmaskSnowMask = true;
 
 // 11. Cloud and cloud shadow masking parameters.
 // If cloudScoreTDOM is chosen
