@@ -305,6 +305,16 @@ var collections =indexDirList.map(function(indexDir){
 // return changeOutputs;
   function basicCombiner(collections,startYear,endYear){
     print('yay')
+    var years = ee.List.sequence(startYear,endYear).getInfo();
+    var out = years.map(function(yr){
+      yr = ee.Number(yr);
+      var t = ee.Image();
+      collections.map(function(c){
+        var i = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
+        t = t.addBands(i);
+      })
+      
+    })
   }
   basicCombiner([tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope],startYear+timebuffer+1,endYear-timebuffer)
   // return [tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope];
