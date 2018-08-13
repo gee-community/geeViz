@@ -317,10 +317,11 @@ var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).
     var out=  ee.Image();
     collections.getInfo().map(function(c){
       print(c)
-      // c = ee.ImageCollection(c)
-      // c.map(function(cc){
-      //   print(cc)
-      // })
+      c = ee.ImageCollection(c)
+      c.map(function(cc){
+        cc = ee.ImageCollection(cc)
+        print(cc.size())
+      })
     })
 //     var changeOutput = combined.filter(ee.Filter.calendarRange(yr,yr,'year'));
 //     changeOutput = ee.Image(changeOutput.first()).float();
