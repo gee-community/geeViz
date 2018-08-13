@@ -303,9 +303,7 @@ var collections =indexDirList.map(function(indexDir){
   // Map.addLayer(changeOutputs,{},'changeOutputs-'+indexName,false);
   
 // return changeOutputs;
-print(tsIndex.size(),tsIndexSlope.size(),
-ltAnnualSlope.size(),verdetOutputs.size(),
-annualEWMA.size(),annualEWMASlope.size())
+
   return [tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope];
 });
 
