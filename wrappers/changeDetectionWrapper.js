@@ -299,9 +299,7 @@ var collections =indexDirList.map(function(indexDir){
   // changeOutputs = getImageLib.joinCollections(changeOutputs,verdetOutputs,false);
   // changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA,false);
   // changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
-  // changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndexSlope);
-  // changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
-  // changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
+ 
   
   // Map.addLayer(changeOutputs,{},'changeOutputs-'+indexName,false);
   
