@@ -308,7 +308,7 @@ var collections =indexDirList.map(function(indexDir){
 });
 
 // collections = ee.List(collections);
-// print(collections)
+print(collections)
 // // var combined = getImageLib.joinCollections(collections.get(0),collections.get(1));
 
 // var indexListString = 'nsdfsfsd';//getImageLib.listToString(indexList,'_');
