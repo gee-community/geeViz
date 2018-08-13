@@ -318,7 +318,7 @@ var collections =indexDirList.map(function(indexDir){
     })
     print(out)
   }
-  basicCombiner([tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope],startYear+timebuffer+1,endYear-timebuffer)
+  basicCombiner(ee.List([tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope]),startYear+timebuffer+1,endYear-timebuffer)
   // return [tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope];
 });
 
