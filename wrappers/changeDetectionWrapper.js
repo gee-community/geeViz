@@ -307,9 +307,9 @@ return changeOutputs;
  // return [tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope];
 });
 
-collections = ee.List(collections);
+// collections = ee.List(collections);
 // print(collections)
-var combined = getImageLib.joinCollections(collections.get(0),collections.get(1));
+var combined = getImageLib.joinCollections(collections.get(0),collections.get(1),false);
 print(combined)
 var indexListString = 'nsdfsfsd';//getImageLib.listToString(indexList,'_');
 print(indexListString);
