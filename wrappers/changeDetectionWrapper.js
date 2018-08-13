@@ -303,12 +303,15 @@ var collections =indexDirList.map(function(indexDir){
   // Map.addLayer(changeOutputs,{},'changeOutputs-'+indexName,false);
   
 // return changeOutputs;
-
-  return [tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope];
+  function basicCombiner(collections,startYear,endYear){
+    
+  }
+  basicCombiner([tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope],startYear+timebuffer+1,endYear-timebuffer)
+  // return [tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope];
 });
 
 // collections = ee.List(collections);
-print(collections)
+// print(collections)
 // // var combined = getImageLib.joinCollections(collections.get(0),collections.get(1));
 
 // var indexListString = 'nsdfsfsd';//getImageLib.listToString(indexList,'_');
