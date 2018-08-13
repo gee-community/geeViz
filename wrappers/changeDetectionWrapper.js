@@ -295,10 +295,10 @@ var collections =indexDirList.map(function(indexDir){
   var annualEWMASlope = dLib.pairwiseSlope(annualEWMA);
   
   var changeOutputs = getImageLib.joinCollections(tsIndex,tsIndexSlope,false);
-  changeOutputs = getImageLib.joinCollections(changeOutputs,ltAnnualSlope,false);
-  changeOutputs = getImageLib.joinCollections(changeOutputs,verdetOutputs,false);
-  changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA,false);
-  changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
+  // changeOutputs = getImageLib.joinCollections(changeOutputs,ltAnnualSlope,false);
+  // changeOutputs = getImageLib.joinCollections(changeOutputs,verdetOutputs,false);
+  // changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA,false);
+  // changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
   // changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndexSlope);
   // changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
   // changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
