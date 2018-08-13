@@ -77,12 +77,12 @@ var defringeL5 = false;
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
 var applyCloudScore = false;
-var applyFmaskCloudMask = true;
+var applyFmaskCloudMask = false;
 
 var applyTDOM = false;
-var applyFmaskCloudShadowMask = true;
+var applyFmaskCloudShadowMask = false;
 
-var applyFmaskSnowMask = true;
+var applyFmaskSnowMask = false;
 
 // 11. Cloud and cloud shadow masking parameters.
 // If cloudScoreTDOM is chosen
@@ -256,6 +256,8 @@ var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear+timebuffer,en
 //Separate into scenes and composites for subsequent analysis
 var allScenes = lsAndTsAll[0];
 
+Map.addLayer(allScenes.select(['NBR']))
+Map.addLayer(processedComposites.select(['NBR']))
 
 // var indexList = ee.List(['nir','swir1']);//ee.List(['nir','swir1','swir2','NBR','NDVI','wetness','greenness','brightness','tcAngleBG']);
 // var ltDirection = ee.List([-1,    1]);//ee.List([-1,    1,      1,    -1,    -1,   -1,           -1,        1,          -1]);
