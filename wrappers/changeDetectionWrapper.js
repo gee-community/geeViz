@@ -256,71 +256,71 @@ var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear+timebuffer,en
 //Separate into scenes and composites for subsequent analysis
 var allScenes = lsAndTsAll[0];
 
-Map.addLayer(allScenes.select(['NBR']))
-Map.addLayer(processedComposites.select(['NBR']))
+// Map.addLayer(allScenes.select(['NBR']))
+// Map.addLayer(processedComposites.select(['NBR']))
 
-// var indexList = ee.List(['nir','swir1']);//ee.List(['nir','swir1','swir2','NBR','NDVI','wetness','greenness','brightness','tcAngleBG']);
-// var ltDirection = ee.List([-1,    1]);//ee.List([-1,    1,      1,    -1,    -1,   -1,           -1,        1,          -1]);
-// var indexDirList = indexList.zip(ltDirection).getInfo();
+var indexList = ee.List(['nir','swir1']);//ee.List(['nir','swir1','swir2','NBR','NDVI','wetness','greenness','brightness','tcAngleBG']);
+var ltDirection = ee.List([-1,    1]);//ee.List([-1,    1,      1,    -1,    -1,   -1,           -1,        1,          -1]);
+var indexDirList = indexList.zip(ltDirection).getInfo();
 
-// var collections =indexDirList.map(function(indexDir){
-//   print(indexDir);
-//   var indexName = indexDir[0];
-//   var distDir = indexDir[1];
+var collections =indexDirList.map(function(indexDir){
+  print(indexDir);
+  var indexName = indexDir[0];
+  var distDir = indexDir[1];
   
-//   var tsIndex = processedComposites.select(indexName);
-//   var lsIndex = allScenes.select(indexName);
+  var tsIndex = processedComposites.select(indexName);
+  var lsIndex = allScenes.select(indexName);
  
  
-//   //Apply LANDTRENDR
-//   var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
-//   var rawLT = ltOutputs[0].select([0]);
-//   var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,indexName,startYear,endYear,timebuffer);
+  //Apply LANDTRENDR
+  var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
+  var rawLT = ltOutputs[0].select([0]);
+  var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,indexName,startYear,endYear,timebuffer);
   
-//   //Apply VERDET
-//   var verdetOutputs = dLib.verdetAnnualSlope(tsIndex,indexName,startYear,endYear,timebuffer);
+  //Apply VERDET
+  var verdetOutputs = dLib.verdetAnnualSlope(tsIndex,indexName,startYear,endYear,timebuffer);
   
   
-//   //Apply EWMACD
-//   var ewmaOutputs = dLib.runEWMACD(lsIndex,indexName,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
-//   var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
+  //Apply EWMACD
+  var ewmaOutputs = dLib.runEWMACD(lsIndex,indexName,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
+  var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
   
-//   var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs);
+  var changeOutputs = getImageLib.joinCollections(ltAnnualSlope,verdetOutputs);
   
-//   var tsIndexSlope = dLib.pairwiseSlope(tsIndex);
-//   var annualEWMASlope = dLib.pairwiseSlope(annualEWMA);
+  var tsIndexSlope = dLib.pairwiseSlope(tsIndex);
+  var annualEWMASlope = dLib.pairwiseSlope(annualEWMA);
   
-//   // changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndex);
-//   changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndexSlope);
-//   changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
-//   changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
+  // changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndex);
+  changeOutputs = getImageLib.joinCollections(changeOutputs,tsIndexSlope);
+  changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
+  changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA);
   
-//   Map.addLayer(changeOutputs,{},'changeOutputs-'+indexName,false);
+  Map.addLayer(changeOutputs,{},'changeOutputs-'+indexName,false);
   
-// return changeOutputs;
+return changeOutputs;
   
-// });
+});
 
-// collections = ee.List(collections);
-// var combined = getImageLib.joinCollections(collections.get(0),collections.get(1));
+collections = ee.List(collections);
+var combined = getImageLib.joinCollections(collections.get(0),collections.get(1));
 
-// var indexListString = 'nsdfsfsd';//getImageLib.listToString(indexList,'_');
-// print(indexListString);
-// var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
-//   possibleYears.map(function(yr){
-//     var changeOutput = combined.filter(ee.Filter.calendarRange(yr,yr,'year'));
-//     changeOutput = ee.Image(changeOutput.first()).float();
-//     changeOutput = changeOutput.set({
-//       'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
-//       'indexList':indexListString,
-//       'startYear':startYear,
-//       'endYear':endYear,
-//     });
-//     var exportName = outputName + '_'+indexListString + '_' + yr.toString();
-//     var exportPath = exportPathRoot + '/' + exportName;
-//     getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
-//       studyArea,null,crs,transform);
+var indexListString = 'nsdfsfsd';//getImageLib.listToString(indexList,'_');
+print(indexListString);
+var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
+  possibleYears.map(function(yr){
+    var changeOutput = combined.filter(ee.Filter.calendarRange(yr,yr,'year'));
+    changeOutput = ee.Image(changeOutput.first()).float();
+    changeOutput = changeOutput.set({
+      'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
+      'indexList':indexListString,
+      'startYear':startYear,
+      'endYear':endYear,
+    });
+    var exportName = outputName + '_'+indexListString + '_' + yr.toString();
+    var exportPath = exportPathRoot + '/' + exportName;
+    getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
+      studyArea,null,crs,transform);
     
-//   });
+  });
 
 
