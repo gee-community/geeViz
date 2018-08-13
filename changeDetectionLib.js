@@ -256,7 +256,7 @@ function landtrendrToAnnualFit(rawLT,indexName,startYear,endYear){
   //Ierate across years to find the slope for a given year
   var ltYr = possibleYears.map(function(yr){
     yr = ee.Number(yr);
-    var yrMask = fit.arrayProject([1]).eq(yr);
+    var yrMask = fit.eq(yr);
    
     var masked = fit.arrayMask(yrMask).arrayFlatten([['LT_'+indexName]]).divide(1000)
                   .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
