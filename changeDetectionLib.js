@@ -230,37 +230,39 @@ function landtrendrWrapper(processedComposites,indexName,distDir,run_params,dist
 //Function for converting fitted Landtrendr output to annual slope al la Verdet
 function landtrendrToAnnualFit(rawLT,indexName,startYear,endYear){
   //Extract relevant values
-  var rawLeft = rawLT.arraySlice(1,0,-1);
-  var rawRight = rawLT.arraySlice(1,1,null);
+  var fit = rawLT.arraySlice(0,2,3);
+  var years = rawLT.arraySlice(0,0,1);
+  // var rawLeft = rawLT.arraySlice(1,0,-1);
+  // var rawRight = rawLT.arraySlice(1,1,null);
   
-  var rawLeftFit = rawLeft.arraySlice(0,2,3);
-  var rawRightFit = rawRight.arraySlice(0,2,3);
+  // var rawLeftFit = rawLeft.arraySlice(0,2,3);
+  // var rawRightFit = rawRight.arraySlice(0,2,3);
   
-  var rawLeftYears = rawLeft.arraySlice(0,0,1);
-  var rawRightYears = rawRight.arraySlice(0,0,1);
+  // var rawLeftYears = rawLeft.arraySlice(0,0,1);
+  // var rawRightYears = rawRight.arraySlice(0,0,1);
   
-  //Get pairwise differences
-  var rawFitDiff = rawRightFit.subtract(rawLeftFit);
-  var rawYearDiff = rawRightYears.subtract(rawLeftYears);
+  // //Get pairwise differences
+  // var rawFitDiff = rawRightFit.subtract(rawLeftFit);
+  // var rawYearDiff = rawRightYears.subtract(rawLeftYears);
   
-  //Get pairwise slopes
-  var rawSlope = rawFitDiff.divide(rawYearDiff).arrayProject([1]);
+  // //Get pairwise slopes
+  // var rawSlope = rawFitDiff.divide(rawYearDiff).arrayProject([1]);
   
   //Find possible years to convert back to collection with
   var possibleYears = ee.List.sequence(startYear,endYear);
   
   //Ierate across years to find the slope for a given year
-  var ltSlopeYr = possibleYears.map(function(yr){
+  var ltYr = possibleYears.map(function(yr){
     yr = ee.Number(yr);
-    var yrMask = rawRightYears.arrayProject([1]).eq(yr);
+    var yrMask = fit.arrayProject([1]).eq(yr);
    
-    var masked = rawSlope.arrayMask(yrMask).arrayFlatten([['LT_'+indexName+ '_slope']]).divide(100)
+    var masked = fit.arrayMask(yrMask).arrayFlatten([['LT_'+indexName]]).divide(1000)
                   .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
     return masked;
     
   });
-  ltSlopeYr = ee.ImageCollection(ltSlopeYr);
-  return ltSlopeYr;
+  ltYr = ee.ImageCollection(ltYr);
+  return ltYr;
 } 
 //////////////////////////////////////////////////////////////////////////
 //Wrapper for applying VERDET slightly more simply
