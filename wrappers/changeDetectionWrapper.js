@@ -310,32 +310,24 @@ collections = ee.List(collections);
 // print(collections)
 var combined = getImageLib.joinCollections(collections.get(0),collections.get(1));
 print(combined)
-// var indexListString = 'nsdfsfsd';//getImageLib.listToString(indexList,'_');
-// print(indexListString);
-// var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
-//   possibleYears.map(function(yr){
-//     var out=  ee.Image();
-//     collections.getInfo().map(function(c){
-//       print(c)
-//       c = ee.ImageCollection(c)
-//       c.map(function(cc){
-//         cc = ee.ImageCollection(cc)
-//         print(cc.size())
-//       })
-//     })
-// //     var changeOutput = combined.filter(ee.Filter.calendarRange(yr,yr,'year'));
-// //     changeOutput = ee.Image(changeOutput.first()).float();
-// //     changeOutput = changeOutput.set({
-// //       'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
-// //       'indexList':indexListString,
-// //       'startYear':startYear,
-// //       'endYear':endYear,
-// //     });
-// //     var exportName = outputName + '_'+indexListString + '_' + yr.toString();
-// //     var exportPath = exportPathRoot + '/' + exportName;
-// //     getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
-// //       studyArea,null,crs,transform);
+var indexListString = 'nsdfsfsd';//getImageLib.listToString(indexList,'_');
+print(indexListString);
+var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
+  possibleYears.map(function(yr){
+
+    var changeOutput = combined.filter(ee.Filter.calendarRange(yr,yr,'year'));
+    changeOutput = ee.Image(changeOutput.first()).float();
+    changeOutput = changeOutput.set({
+      'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
+      'indexList':indexListString,
+      'startYear':startYear,
+      'endYear':endYear,
+    });
+    var exportName = outputName + '_'+indexListString + '_' + yr.toString();
+    var exportPath = exportPathRoot + '/' + exportName;
+    getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
+      studyArea,null,crs,transform);
     
-//   });
+  });
 
 
