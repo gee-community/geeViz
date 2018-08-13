@@ -312,7 +312,7 @@ return changeOutputs;
 var combined;
 ee.List.sequence(0,indexList.length().subtract(1)).getInfo().map(function(i){
   if(combined === undefined){
-    combined = collections[i];
+    combined = ee.ImageCollection(collections[i]);
   }else{
     combined = getImageLib.joinCollections(combined,combined[1],false)
   }
