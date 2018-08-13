@@ -228,43 +228,39 @@ function landtrendrWrapper(processedComposites,indexName,distDir,run_params,dist
   
 }
 //Function for converting fitted Landtrendr output to annual slope al la Verdet
-function landtrendrToAnnualFit(rawLT,indexName,startYear,endYear){
+function landtrendrToAnnualSlope(rawLT,indexName,startYear,endYear){
   //Extract relevant values
-  var fit = rawLT.arraySlice(0,2,3).arrayProject([1]);
-  var years = rawLT.arraySlice(0,0,1).arrayProject([1]);
-  // Map.addLayer(fit,{},'fit-'+indexName)
-  // Map.addLayer(years,{},'years-'+indexName)
-  // var rawLeft = rawLT.arraySlice(1,0,-1);
-  // var rawRight = rawLT.arraySlice(1,1,null);
+  var rawLeft = rawLT.arraySlice(1,0,-1);
+  var rawRight = rawLT.arraySlice(1,1,null);
   
-  // var rawLeftFit = rawLeft.arraySlice(0,2,3);
-  // var rawRightFit = rawRight.arraySlice(0,2,3);
+  var rawLeftFit = rawLeft.arraySlice(0,2,3);
+  var rawRightFit = rawRight.arraySlice(0,2,3);
   
-  // var rawLeftYears = rawLeft.arraySlice(0,0,1);
-  // var rawRightYears = rawRight.arraySlice(0,0,1);
+  var rawLeftYears = rawLeft.arraySlice(0,0,1);
+  var rawRightYears = rawRight.arraySlice(0,0,1);
   
-  // //Get pairwise differences
-  // var rawFitDiff = rawRightFit.subtract(rawLeftFit);
-  // var rawYearDiff = rawRightYears.subtract(rawLeftYears);
+  //Get pairwise differences
+  var rawFitDiff = rawRightFit.subtract(rawLeftFit);
+  var rawYearDiff = rawRightYears.subtract(rawLeftYears);
   
-  // //Get pairwise slopes
-  // var rawSlope = rawFitDiff.divide(rawYearDiff).arrayProject([1]);
+  //Get pairwise slopes
+  var rawSlope = rawFitDiff.divide(rawYearDiff).arrayProject([1]);
   
   //Find possible years to convert back to collection with
-  var possibleYears = ee.List.sequence(startYear,endYear);
+  var possibleYears = ee.List.sequence(startYear+1,endYear);
   
   //Ierate across years to find the slope for a given year
-  var ltYr = possibleYears.map(function(yr){
+  var ltSlopeYr = possibleYears.map(function(yr){
     yr = ee.Number(yr);
-    var yrMask = fit.eq(yr);
+    var yrMask = rawRightYears.arrayProject([1]).eq(yr);
    
-    var masked = fit.arrayMask(yrMask).arrayFlatten([['LT_'+indexName]]).divide(1000)
+    var masked = rawSlope.arrayMask(yrMask).arrayFlatten([['LT_'+indexName+ '_slope']]).divide(100)
                   .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
     return masked;
     
   });
-  ltYr = ee.ImageCollection(ltYr);
-  return ltYr;
+  ltSlopeYr = ee.ImageCollection(ltSlopeYr);
+  return ltSlopeYr;
 } 
 //////////////////////////////////////////////////////////////////////////
 //Wrapper for applying VERDET slightly more simply
@@ -412,7 +408,7 @@ function pairwiseSlope(c){
 exports.extractDisturbance = extractDisturbance;
 exports.landtrendrWrapper = landtrendrWrapper;
 exports.multBands = multBands;
-exports.landtrendrToAnnualFit = landtrendrToAnnualFit;
+exports.landtrendrToAnnualSlope = landtrendrToAnnualSlope;
 exports.getExistingChangeData = getExistingChangeData;
 
 exports.verdetAnnualSlope  = verdetAnnualSlope;
