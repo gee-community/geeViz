@@ -1,10 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-110.379638671875, 43.124651636825526],
-          [-109.76303100585938, 43.02333341039862],
-          [-109.88937377929688, 43.26281560929387],
-          [-110.52932739257812, 43.32878344623762],
-          [-110.51010131835938, 43.210790549591735]]]);
+        [[[-110.29346466064453, 43.31127942956961],
+          [-110.28213500976562, 43.24904376593257],
+          [-110.12420654296875, 43.2472932490061],
+          [-110.15029907226562, 43.30803175313663]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -45,7 +44,7 @@ var timebuffer = 1;
 //In order to overweight the center year, you could specify the weights as
 //[1,5,1] which would duplicate the center year 5 times and increase its weight for
 //the compositing method
-var weights = [1,3,1];
+var weights = [1,5,1];
 
 
 
@@ -77,12 +76,12 @@ var defringeL5 = false;
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
 var applyCloudScore = false;
-var applyFmaskCloudMask = false;
+var applyFmaskCloudMask = true;
 
 var applyTDOM = false;
-var applyFmaskCloudShadowMask = false;
+var applyFmaskCloudShadowMask = true;
 
-var applyFmaskSnowMask = false;
+var applyFmaskSnowMask = true;
 
 // 11. Cloud and cloud shadow masking parameters.
 // If cloudScoreTDOM is chosen
