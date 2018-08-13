@@ -301,7 +301,7 @@ var collections =indexDirList.map(function(indexDir){
   changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
  
   
-  // Map.addLayer(changeOutputs,{},'changeOutputs-'+indexName,false);
+  Map.addLayer(changeOutputs,{},'changeOutputs-'+indexName,false);
   
 return changeOutputs;
  // return [tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope];
