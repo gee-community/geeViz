@@ -410,7 +410,7 @@ function pairwiseSlope(c){
 exports.extractDisturbance = extractDisturbance;
 exports.landtrendrWrapper = landtrendrWrapper;
 exports.multBands = multBands;
-exports.landtrendrToAnnualSlope = landtrendrToAnnualSlope;
+exports.landtrendrToAnnualFit = landtrendrToAnnualFit;
 exports.getExistingChangeData = getExistingChangeData;
 
 exports.verdetAnnualSlope  = verdetAnnualSlope;
