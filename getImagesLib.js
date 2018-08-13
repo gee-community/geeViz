@@ -869,7 +869,8 @@ var modisCDict = {
 };
 /////////////////////////////////////////////////
 //Helper function to join two collections- Source: code.earthengine.google.com
-    function joinCollections(c1,c2){
+    function joinCollections(c1,c2, maskAnyNullValues){
+      if(maskAnyNullValues === undefined || maskAnyNullValues === null){maskAnyNullValues = true}
       var MergeBands = function(element) {
         // A function to merge the bands together.
         // After a join, results are in 'primary' and 'secondary' properties.
@@ -881,7 +882,9 @@ var modisCDict = {
       var joined = ee.ImageCollection(join.apply(c1, c2, filter));
      
       joined = ee.ImageCollection(joined.map(MergeBands));
-      joined = joined.map(function(img){return img.mask(img.mask().and(img.reduce(ee.Reducer.min()).neq(0)))});
+      if(maskAnyNullValues){
+        joined = joined.map(function(img){return img.mask(img.mask().and(img.reduce(ee.Reducer.min()).neq(0)))});
+      }
       return joined;
     }
 //////////////////////////////////////////////////////
