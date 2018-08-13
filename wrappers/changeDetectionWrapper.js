@@ -315,7 +315,7 @@ print(indexListString);
 var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
   possibleYears.map(function(yr){
     var out=  ee.Image();
-    collections.map(function(c){
+    collections.getInfo().map(function(c){
       print(c)
       // c = ee.ImageCollection(c)
       // c.map(function(cc){
