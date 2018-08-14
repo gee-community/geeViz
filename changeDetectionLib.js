@@ -259,7 +259,7 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   Map.addLayer(distImg.select(['yod']), yodVizParms, 'LT-Year of Detection',false);    // add disturbance year of detection to map
   
   Map.addLayer(lt,{},'lt')
-  var rawLT = lt[0].select([0]);
+  var rawLT = lt.select([0]);
   var ltYear = rawLT.arraySlice(0,0,1).arrayProject([1]);
   var ltFitted = rawLT.arraySlice(0,2,3).arrayProject([1]);
   var ca = arrayToTimeSeries(ltFitted,ltYear,ee.List.sequence(startYear,endYear),'LT-Collection');
