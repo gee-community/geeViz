@@ -1302,6 +1302,7 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
 ////////////////////////////////////////////////////////////////////////////////
 // END FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
+exports.addYearBand = addYearBand;
 exports.addDateBand = addDateBand;
 exports.collectionToImage = collectionToImage;
 exports.getImageCollection = getImageCollection;
