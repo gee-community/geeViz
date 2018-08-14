@@ -283,8 +283,6 @@ var collections =indexDirList.map(function(indexDir){
   var ltAnnualFittedSlope = dLib.pairwiseSlope(ltAnnualFitted);
   Map.addLayer(ltAnnualFitted,{},'lt annual fitted',false);
   Map.addLayer(ltAnnualFittedSlope,{},'lt annual fitted slope',false);
-  // var rawLT = ltOutputs[0].select([0]);
-  // var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,indexName,startYear+timebuffer,endYear-timebuffer);
   
   // //Apply VERDET
   // var verdetOutputs = dLib.verdetAnnualSlope(tsIndex,indexName,startYear+timebuffer,endYear-timebuffer);
