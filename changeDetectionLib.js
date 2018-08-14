@@ -257,6 +257,9 @@ function landtrendrWrapper(processedComposites,indexName,distDir,run_params,dist
   Map.addLayer(distImg.select(['dur']), durVizParms, 'LT-Duration',false);             // add disturbance duration to map
   Map.addLayer(distImg.select(['mag']), magVizParms, 'LT-Magnitude',false);            // add magnitude to map
   Map.addLayer(distImg.select(['yod']), yodVizParms, 'LT-Year of Detection',false);    // add disturbance year of detection to map
+  
+  Map.addLayer(lt,{},'lt')
+  // arrayToTimeSeries(tsArray,yearsArray,possibleYears,bandName)
   return [lt,distImg];
   
 }
