@@ -259,6 +259,9 @@ function landtrendrWrapper(processedComposites,indexName,distDir,run_params,dist
   Map.addLayer(distImg.select(['yod']), yodVizParms, 'LT-Year of Detection',false);    // add disturbance year of detection to map
   
   Map.addLayer(lt,{},'lt')
+  var rawLT = ltOutputs[0].select([0]);
+  // var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,indexName,startYear+timebuffer,endYear-timebuffer);
+  
   // arrayToTimeSeries(tsArray,yearsArray,possibleYears,bandName)
   return [lt,distImg];
   
