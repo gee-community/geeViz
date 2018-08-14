@@ -287,7 +287,7 @@ function verdetAnnualSlope(tsIndex,indexName,startYear,endYear){
   var verdetC = arrayToTimeSeries(verdet,tsYear,possibleYears,'VERDET_Slope_'+indexName);
  
   
-  return verdetYr;
+  return verdetC;
 }
 //////////////////////////////////////////////////////////////////////////
 //Wrapper for applying EWMACD slightly more simply
