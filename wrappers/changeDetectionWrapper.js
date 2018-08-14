@@ -17,7 +17,7 @@ dLib.getExistingChangeData();
 var rio = ee.FeatureCollection('users/ianhousman/RIO/Rio_Grande_NF_Boundary_10kBuffer_albers_diss').geometry();
 var fnf = ee.FeatureCollection('projects/USFS/LCMS-NFS/R1/FNF/FNF_GNP_Merge_Admin_BND_1k').geometry();
 var bt = ee.FeatureCollection('projects/USFS/LCMS-NFS/R4/BT/BT_LCMS_ProjectArea_5km').geometry();
-var studyArea = geometry;
+var studyArea = fnf;
 
 // 2. Update the startJulian and endJulian variables to indicate your seasonal 
 // constraints. This supports wrapping for tropics and southern hemisphere.
@@ -31,7 +31,7 @@ var endJulian = 250;
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
 var startYear = 1984;
-var endYear = 2017;
+var endYear = 2018;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -133,9 +133,9 @@ var outputName = 'Base-learners';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
-var exportPathRoot = 'users/iwhousman/test/ChangeCollection';
+// var exportPathRoot = 'users/iwhousman/test/ChangeCollection';
 
-
+var exportPathRoot = 'projects/USFS/LCMS-NFS/R1/FNF/Base-Learners/Base-Learners-Collection';
 
 //CRS- must be provided.  
 //Common crs codes: Web mercator is EPSG:4326, USGS Albers is EPSG:5070, 
@@ -200,10 +200,12 @@ var distParams = {
 //Typically a list of spectral bands or computed indices
 //Can include: 'blue','green','red','nir','swir1','swir2'
 //'NBR','NDVI','wetness','greenness','brightness','tcAngleBG'
-var indexList = ee.List(['nir','swir1']);//ee.List(['nir','swir1','swir2','NBR','NDVI','wetness','greenness','brightness','tcAngleBG']);
+// var indexList = ee.List(['nir','swir1']);
+var indexList = ee.List(['nir','swir1','swir2','NBR','NDVI','wetness','greenness','brightness','tcAngleBG']);
 
 //The corresponding direction of forest loss for the given band/index specified above in indexList
-var ltDirection = ee.List([-1,    1]);//ee.List([-1,    1,      1,    -1,    -1,   -1,           -1,        1,          -1]);
+// var ltDirection = ee.List([-1,    1]);
+var ltDirection =ee.List([-1,    1,      1,    -1,    -1,   -1,           -1,        1,          -1]);
 
 // var distDir = -1; // define the sign of spectral delta for vegetation loss for the segmentation index - 
 //                   // NBR delta is negetive for vegetation loss, so -1 for NBR, 1 for band 5, -1 for NDVI, etc
