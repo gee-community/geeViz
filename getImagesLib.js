@@ -1320,5 +1320,5 @@ exports.despikeCollection = despikeCollection;
 exports.exportToAssetWrapper = exportToAssetWrapper;
 exports.joinCollections = joinCollections;
 exports.listToString = listToString;
-exports.harmonizationRoy = harmonizationRoy
+exports.harmonizationRoy = harmonizationRoy;
 exports.fillEmptyCollections = fillEmptyCollections;
