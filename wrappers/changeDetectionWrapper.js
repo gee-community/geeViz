@@ -280,7 +280,9 @@ var collections =indexDirList.map(function(indexDir){
   //Apply LANDTRENDR
   var ltOutputs = dLib.landtrendrWrapper(processedComposites,startYear+timebuffer,endYear-timebuffer,indexName,distDir,run_params,distParams,mmu);
   var ltAnnualFitted = ltOutputs[2];
+  var ltAnnualFittedSlope = dLib.pairwiseSlope(ltAnnualFitted);
   Map.addLayer(ltAnnualFitted,{},'lt annual fitted',false);
+  Map.addLayer(ltAnnualFittedSlope,{},'lt annual fitted',false);
   // var rawLT = ltOutputs[0].select([0]);
   // var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,indexName,startYear+timebuffer,endYear-timebuffer);
   
