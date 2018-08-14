@@ -184,7 +184,7 @@ function arrayToTimeSeries(tsArray,yearsArray,possibleYears,bandName){
     masked = masked.where(l.eq(0),dummyImage).arrayGet([-1]);
     
     //Remask nulls
-    masked = masked.updateMask(masked.neq(noDateValue))        
+    masked = masked.updateMask(masked.neq(noDateValue)).rename([bandName])      
       .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
       
     return masked;
