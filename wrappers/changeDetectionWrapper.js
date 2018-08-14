@@ -293,7 +293,7 @@ var collections =indexDirList.map(function(indexDir){
   // var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
   
   
-  // var tsIndexSlope = dLib.pairwiseSlope(tsIndex);
+  var tsIndexSlope = dLib.pairwiseSlope(tsIndex);
   // var annualEWMASlope = dLib.pairwiseSlope(annualEWMA);
   
   var changeOutputs = getImageLib.joinCollections(tsIndex,tsIndexSlope,false);
