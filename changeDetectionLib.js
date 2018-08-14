@@ -284,7 +284,7 @@ function verdetAnnualSlope(tsIndex,indexName,startYear,endYear){
   
   //Find possible years to convert back to collection with
   var possibleYears = ee.List.sequence(startYear+1,endYear);
-  var verdetC = arrayToTimeSeries(verdet,tsYear,possibleYears,'VERDET_Fitted_Slope_'+indexName);
+  var verdetC = arrayToTimeSeries(verdet,tsYear,possibleYears,'VERDET_fitted_'+indexName+'_slope');
  
   
   return verdetC;
