@@ -258,7 +258,7 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   Map.addLayer(distImg.select(['mag']), magVizParms, 'LT-Magnitude',false);            // add magnitude to map
   Map.addLayer(distImg.select(['yod']), yodVizParms, 'LT-Year of Detection',false);    // add disturbance year of detection to map
   
-  
+  //Convert to collection
   var rawLT = lt.select([0]);
   var ltYear = rawLT.arraySlice(0,0,1).arrayProject([1]);
   var ltFitted = rawLT.arraySlice(0,2,3).arrayProject([1]);
