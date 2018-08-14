@@ -163,7 +163,7 @@ function multBands(img,distDir,by){
 //Function to convert an image array object to collection
 function arrayToTimeSeries(tsArray,yearsArray,possibleYears,bandName){
     //Set up dummy image for handling null values
-    var noDateValue = -32768
+    var noDateValue = -32768;
     var dummyImage = ee.Image(noDateValue).toArray();
     
     //Ierate across years
