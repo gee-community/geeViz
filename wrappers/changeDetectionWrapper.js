@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-110.29346466064453, 43.31127942956961],
-          [-110.28213500976562, 43.24904376593257],
-          [-110.12420654296875, 43.2472932490061],
-          [-110.15029907226562, 43.30803175313663]]]);
+        [[[-109.412841796875, 44.95702412512118],
+          [-111.02783203125, 45.22461173085719],
+          [-111.4508056640625, 44.05995928349327],
+          [-109.775390625, 43.846412964702395]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -30,7 +30,7 @@ var endJulian = 250;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2000;
+var startYear = 1984;
 var endYear = 2017;
 
 // 4. Specify an annual buffer to include imagery from the same season 
