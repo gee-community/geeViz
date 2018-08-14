@@ -17,7 +17,7 @@ dLib.getExistingChangeData();
 var rio = ee.FeatureCollection('users/ianhousman/RIO/Rio_Grande_NF_Boundary_10kBuffer_albers_diss').geometry();
 var fnf = ee.FeatureCollection('projects/USFS/LCMS-NFS/R1/FNF/FNF_GNP_Merge_Admin_BND_1k').geometry();
 var bt = ee.FeatureCollection('projects/USFS/LCMS-NFS/R4/BT/BT_LCMS_ProjectArea_5km').geometry();
-var studyArea = fnf;
+var studyArea = bt;
 
 // 2. Update the startJulian and endJulian variables to indicate your seasonal 
 // constraints. This supports wrapping for tropics and southern hemisphere.
@@ -135,8 +135,8 @@ var outputName = 'Base-learners';
 //This should be an asset folder, or more ideally, an asset imageCollection
 // var exportPathRoot = 'users/iwhousman/test/ChangeCollection';
 
-var exportPathRoot = 'projects/USFS/LCMS-NFS/R1/FNF/Base-Learners/Base-Learners-Collection';
-
+// var exportPathRoot = 'projects/USFS/LCMS-NFS/R1/FNF/Base-Learners/Base-Learners-Collection';
+var exportPathRoot = 'projects/USFS/LCMS-NFS/R4/BT/Base-Learners/Base-Learners-Collection';
 //CRS- must be provided.  
 //Common crs codes: Web mercator is EPSG:4326, USGS Albers is EPSG:5070, 
 //WGS84 UTM N hemisphere is EPSG:326+ zone number (zone 12 N would be EPSG:32612) and S hemisphere is EPSG:327+ zone number
