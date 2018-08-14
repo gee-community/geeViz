@@ -279,62 +279,62 @@ var collections =indexDirList.map(function(indexDir){
  
   //Apply LANDTRENDR
   var ltOutputs = dLib.landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu);
-  var rawLT = ltOutputs[0].select([0]);
-  var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,indexName,startYear+timebuffer,endYear-timebuffer);
+  // var rawLT = ltOutputs[0].select([0]);
+  // var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,indexName,startYear+timebuffer,endYear-timebuffer);
   
-  //Apply VERDET
-  var verdetOutputs = dLib.verdetAnnualSlope(tsIndex,indexName,startYear+timebuffer,endYear-timebuffer);
-  
-  
-  //Apply EWMACD
-  var ewmaOutputs = dLib.runEWMACD(lsIndex,indexName,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
-  var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
+  // //Apply VERDET
+  // var verdetOutputs = dLib.verdetAnnualSlope(tsIndex,indexName,startYear+timebuffer,endYear-timebuffer);
   
   
-  var tsIndexSlope = dLib.pairwiseSlope(tsIndex);
-  var annualEWMASlope = dLib.pairwiseSlope(annualEWMA);
+  // //Apply EWMACD
+  // var ewmaOutputs = dLib.runEWMACD(lsIndex,indexName,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
+  // var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
   
-  var changeOutputs = getImageLib.joinCollections(tsIndex,tsIndexSlope,false);
-  changeOutputs = getImageLib.joinCollections(changeOutputs,ltAnnualSlope,false);
-  changeOutputs = getImageLib.joinCollections(changeOutputs,verdetOutputs,false);
-  changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA,false);
-  changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
+  
+  // var tsIndexSlope = dLib.pairwiseSlope(tsIndex);
+  // var annualEWMASlope = dLib.pairwiseSlope(annualEWMA);
+  
+  // var changeOutputs = getImageLib.joinCollections(tsIndex,tsIndexSlope,false);
+  // changeOutputs = getImageLib.joinCollections(changeOutputs,ltAnnualSlope,false);
+  // changeOutputs = getImageLib.joinCollections(changeOutputs,verdetOutputs,false);
+  // changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMA,false);
+  // changeOutputs = getImageLib.joinCollections(changeOutputs,annualEWMASlope);
  
   
-  Map.addLayer(changeOutputs,{},'changeOutputs-'+indexName,false);
+  // Map.addLayer(changeOutputs,{},'changeOutputs-'+indexName,false);
   
 return changeOutputs;
  // return [tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope];
 });
 
 
-var combined;
-ee.List.sequence(0,indexList.length().subtract(1)).getInfo().map(function(i){
-  if(combined === undefined){
-    combined = ee.ImageCollection(collections[i]);
-  }else{
-    combined =  ee.ImageCollection(getImageLib.joinCollections(combined,collections[i],false));
-  }
-});
+// var combined;
+// ee.List.sequence(0,indexList.length().subtract(1)).getInfo().map(function(i){
+//   if(combined === undefined){
+//     combined = ee.ImageCollection(collections[i]);
+//   }else{
+//     combined =  ee.ImageCollection(getImageLib.joinCollections(combined,collections[i],false));
+//   }
+// });
 
-var indexListString = getImageLib.listToString(indexList.getInfo(),'_');
+// var indexListString = getImageLib.listToString(indexList.getInfo(),'_');
 
-var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
-  possibleYears.map(function(yr){
+// var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
+//   possibleYears.map(function(yr){
 
-    var changeOutput = combined.filter(ee.Filter.calendarRange(yr,yr,'year'));
-    changeOutput = ee.Image(changeOutput.first()).float();
-    changeOutput = changeOutput.set({
-      'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
-      'indexList':indexListString,
-      'startYear':startYear,
-      'endYear':endYear,
-    });
-    var exportName = outputName + '_'+indexListString + '_' + yr.toString();
-    var exportPath = exportPathRoot + '/' + exportName;
-    getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
-      studyArea,null,crs,transform);
+//     var changeOutput = combined.filter(ee.Filter.calendarRange(yr,yr,'year'));
+//     changeOutput = ee.Image(changeOutput.first()).float();
+//     changeOutput = changeOutput.set({
+//       'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
+//       'indexList':indexListString,
+//       'startYear':startYear,
+//       'endYear':endYear,
+//     });
+//     var exportName = outputName + '_'+indexListString + '_' + yr.toString();
+//     var exportPath = exportPathRoot + '/' + exportName;
+//     getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
+//       studyArea,null,crs,transform);
     
-  });
+//   });
 
 
