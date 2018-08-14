@@ -329,6 +329,11 @@ function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,rem
   
   
   //Annualize
+  //Set up dummy image for handling null values
+  var noDateValue = -32768;
+  var dummyImage = ee.Image(noDateValue).toArray();
+    
+  
   var annualEWMA = years.map(function(yr){
     yr = ee.Number(yr);
     var yrMask = lsYear.int16().eq(yr);
@@ -340,10 +345,25 @@ function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,rem
     var yrData = ewmacdYrSorted.arrayCat(ewmacdYearYrSorted,1);
     var yrReduced = ewmacdYrSorted.arrayReduce(annualReducer,[0]);
                   
-    var out = yrReduced.arrayFlatten([['EWMA_'+indexName]])
-            .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis()).int16();
- 
-    return out;
+    
+    
+    
+    
+  
+    
+    
+    //Find null pixels
+    var l = yrReduced.arrayLength(0);
+    
+    //Fill null values and convert to regular image
+    yrReduced = yrReduced.where(l.eq(0),dummyImage).arrayGet([-1]);
+    
+    //Remask nulls
+    yrReduced = yrReduced.updateMask(yrReduced.neq(noDateValue)).rename(['EWMA_'+indexName])      
+      .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis()).int16();
+      
+   
+    return yrReduced;
   });
   annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
   // print(remove2012,replace2012 ==1)
