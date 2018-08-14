@@ -265,10 +265,8 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   var ca = arrayToTimeSeries(ltFitted,ltYear,ee.List.sequence(startYear,endYear),'LT-Collection');
   Map.addLayer(ca,{},'Fitted LT Collection',false);
 
-  // var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,indexName,startYear+timebuffer,endYear-timebuffer);
   
-  // arrayToTimeSeries(tsArray,yearsArray,possibleYears,bandName)
-  return [lt,distImg];
+  return [lt,distImg,ca];
   
 }
 //Function for converting fitted Landtrendr output to annual slope al la Verdet
