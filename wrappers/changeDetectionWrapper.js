@@ -290,9 +290,9 @@ var collections =indexDirList.map(function(indexDir){
   Map.addLayer(verdetAnnualFittedSlope,{},'VERDET annual fitted',false);
   
   
-  // //Apply EWMACD
-  // var ewmaOutputs = dLib.runEWMACD(lsIndex,indexName,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
-  // var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
+  //Apply EWMACD
+  var ewmaOutputs = dLib.runEWMACD(lsIndex,indexName,startYear+timebuffer,endYear-timebuffer,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
+  var annualEWMA = ewmaOutputs[1].map(function(img){return dLib.multBands(img,1,0.01)});
   
   
   var tsIndexSlope = dLib.pairwiseSlope(tsIndex);
