@@ -262,7 +262,7 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   var rawLT = lt.select([0]);
   var ltYear = rawLT.arraySlice(0,0,1).arrayProject([1]);
   var ltFitted = rawLT.arraySlice(0,2,3).arrayProject([1]);
-  var ca = arrayToTimeSeries(ltFitted,ltYear,ee.List.sequence(startYear,endYear),'LT-fitted-'+indexName);
+  var ca = arrayToTimeSeries(ltFitted,ltYear,ee.List.sequence(startYear,endYear),'LT_fitted_'+indexName);
  
 
   
@@ -284,7 +284,8 @@ function verdetAnnualSlope(tsIndex,indexName,startYear,endYear){
   
   //Find possible years to convert back to collection with
   var possibleYears = ee.List.sequence(startYear+1,endYear);
-  
+  var verdetC = arrayToTimeSeries(verdet,tsYear,possibleYears,'VERDET_Slope_'+indexName);
+ 
   
   return verdetYr;
 }
