@@ -60,6 +60,14 @@ function addDateBand(img){
   db = db.updateMask(img.select([0]).mask())
   return img.addBands(db);
 }
+function addYearBand(img){
+  var d = ee.Date(img.get('system:time_start'));
+  var y = d.get('year');
+  
+  var db = ee.Image.constant(y).rename(['year']).float();
+  db = db.updateMask(img.select([0]).mask())
+  return img.addBands(db);
+}
 ////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 var fringeCountThreshold = 279;//Define number of non null observations for pixel to not be classified as a fringe
