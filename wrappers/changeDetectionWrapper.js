@@ -286,7 +286,8 @@ var collections =indexDirList.map(function(indexDir){
   Map.addLayer(ltAnnualFittedSlope,{},'lt annual fitted slope',false);
   
   //Apply VERDET
-  // var verdetOutputs = dLib.verdetAnnualSlope(tsIndex,indexName,startYear+timebuffer,endYear-timebuffer);
+  var verdetAnnualFittedSlope = dLib.verdetAnnualSlope(tsIndex,indexName,startYear+timebuffer,endYear-timebuffer);
+  Map.addLayer(verdetAnnualFittedSlope,{},'VERDET annual fitted',false);
   
   
   // //Apply EWMACD
