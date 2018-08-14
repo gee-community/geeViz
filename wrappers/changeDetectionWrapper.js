@@ -249,7 +249,8 @@ var lsAndTs = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJul
 //Separate into scenes and composites for subsequent analysis
 var processedScenes = lsAndTs[0];
 var processedComposites = lsAndTs[1];
-Map.addLayer(processedComposites.select([0]).count(),{'min':0,'max':endYear-startYear-(timebuffer*2)},'obs count',false);
+var first = ee.Image(processedComposites.first())
+Map.addLayer(first,getImageLib.vizParamsFalse,'First Composite',false);
 //Get all images from the entire year for EWMACD 
 var lsAndTsAll = getImageLib.getLandsatWrapper(studyArea,startYear+timebuffer,endYear+timebuffer,1,365,
   timebuffer,weights,compositingMethod,
