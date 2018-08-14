@@ -159,7 +159,40 @@ function multBands(img,distDir,by){
     out  = out.copyProperties(img,['system:time_start']);
     return out;
   }
-
+///////////////////////////////////////////////////////////////
+//Function to convert an image array object to collection
+function arrayToTimeSeries(tsArray,yearsArray,possibleYears,bandName){
+    //Set up dummy image for handling null values
+    var noDateValue = -32768
+    var dummyImage = ee.Image(noDateValue).toArray();
+    
+    //Ierate across years
+    var tsC = possibleYears.map(function(yr){
+    yr = ee.Number(yr);
+    
+    //Pull out given year
+    var yrMask = yearsArray.eq(yr);
+  
+    //Mask array for that given year
+    var masked = tsArray.arrayMask(yrMask);
+    
+    
+    //Find null pixels
+    var l = masked.arrayLength(0);
+    
+    //Fill null values and convert to regular image
+    masked = masked.where(l.eq(0),dummyImage).arrayGet([-1]);
+    
+    //Remask nulls
+    masked = masked.updateMask(masked.neq(noDateValue))        
+      .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
+      
+    return masked;
+    
+    
+  });
+  return ee.ImageCollection(tsC);
+  }
 //Function to wrap landtrendr processing
 function landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu){
   var startYear = 1984;//ee.Date(ee.Image(processedComposites.first()).get('system:time_start')).get('year').getInfo();
