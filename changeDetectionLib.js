@@ -260,6 +260,10 @@ function landtrendrWrapper(processedComposites,indexName,distDir,run_params,dist
   
   Map.addLayer(lt,{},'lt')
   var rawLT = ltOutputs[0].select([0]);
+  var ltYear = rawLT.arraySlice(0,0,1).arrayProject([1]);
+  var ltFitted = rawLT.arraySlice(0,2,3).arrayProject([1]);
+  
+
   // var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,indexName,startYear+timebuffer,endYear-timebuffer);
   
   // arrayToTimeSeries(tsArray,yearsArray,possibleYears,bandName)
