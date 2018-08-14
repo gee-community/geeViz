@@ -314,7 +314,7 @@ function verdetAnnualSlope(tsIndex,indexName,startYear,endYear){
                                         tolerance: 0.0001,
                                         alpha: 1/3.0}).arraySlice(0,1,null);
                                         
-  var tsYear = tsIndex.map(getImageLib.addDateBand).select([1]).toArray().arraySlice(0,1,null).arrayProject([0]);
+  var tsYear = tsIndex.map(getImageLib.addYearBand).select([1]).toArray().arraySlice(0,1,null).arrayProject([0]);
   
   
   //Find possible years to convert back to collection with
