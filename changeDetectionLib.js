@@ -249,6 +249,7 @@ function landtrendrToAnnualSlope(rawLT,indexName,startYear,endYear){
   //Find possible years to convert back to collection with
   var possibleYears = ee.List.sequence(startYear+1,endYear);
   
+  
   //Ierate across years to find the slope for a given year
   var ltSlopeYr = possibleYears.map(function(yr){
     yr = ee.Number(yr);
