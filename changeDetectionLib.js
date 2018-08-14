@@ -195,8 +195,8 @@ function arrayToTimeSeries(tsArray,yearsArray,possibleYears,bandName){
   }
 //Function to wrap landtrendr processing
 function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,run_params,distParams,mmu){
-  var startYear = 1984;//ee.Date(ee.Image(processedComposites.first()).get('system:time_start')).get('year').getInfo();
-  var endYear = 2017;//ee.Date(ee.Image(processedComposites.sort('system:time_start',false).first()).get('system:time_start')).get('year').getInfo();
+  // var startYear = 1984;//ee.Date(ee.Image(processedComposites.first()).get('system:time_start')).get('year').getInfo();
+  // var endYear = 2017;//ee.Date(ee.Image(processedComposites.sort('system:time_start',false).first()).get('system:time_start')).get('year').getInfo();
   
   //----- RUN LANDTRENDR -----
   var ltCollection = processedComposites.select([indexName]).map(function(img){
