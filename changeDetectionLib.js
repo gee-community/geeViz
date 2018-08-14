@@ -194,7 +194,7 @@ function arrayToTimeSeries(tsArray,yearsArray,possibleYears,bandName){
   return ee.ImageCollection(tsC);
   }
 //Function to wrap landtrendr processing
-function landtrendrWrapper(processedComposites,indexName,distDir,run_params,distParams,mmu){
+function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,run_params,distParams,mmu){
   var startYear = 1984;//ee.Date(ee.Image(processedComposites.first()).get('system:time_start')).get('year').getInfo();
   var endYear = 2017;//ee.Date(ee.Image(processedComposites.sort('system:time_start',false).first()).get('system:time_start')).get('year').getInfo();
   
@@ -262,7 +262,8 @@ function landtrendrWrapper(processedComposites,indexName,distDir,run_params,dist
   var rawLT = ltOutputs[0].select([0]);
   var ltYear = rawLT.arraySlice(0,0,1).arrayProject([1]);
   var ltFitted = rawLT.arraySlice(0,2,3).arrayProject([1]);
-  
+  var ca = arrayToTimeSeries(ltFitted,ltYear,years,'LT-Collection');
+Map.addLayer(ca,{},'Fitted LT Collection',false);
 
   // var ltAnnualSlope = dLib.landtrendrToAnnualSlope(rawLT,indexName,startYear+timebuffer,endYear-timebuffer);
   
