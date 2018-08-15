@@ -201,11 +201,11 @@ var distParams = {
 //Can include: 'blue','green','red','nir','swir1','swir2'
 //'NBR','NDVI','wetness','greenness','brightness','tcAngleBG'
 // var indexList = ee.List(['nir','swir1']);
-var indexList = ee.List(['NBR']);//ee.List(['nir','swir1','swir2','NBR','NDVI','wetness','greenness','brightness','tcAngleBG']);
+var indexList = ee.List(['nir','swir1','swir2','NDVI','wetness','greenness','brightness','tcAngleBG']);
 
 //The corresponding direction of forest loss for the given band/index specified above in indexList
 // var ltDirection = ee.List([-1,    1]);
-var ltDirection =ee.List([-1,    1,      1,    -1,    -1,   -1,           -1,        1,          -1]);
+var ltDirection =ee.List([-1,    1,      1,        -1,   -1,           -1,        1,          -1]);
 
 // var distDir = -1; // define the sign of spectral delta for vegetation loss for the segmentation index - 
 //                   // NBR delta is negetive for vegetation loss, so -1 for NBR, 1 for band 5, -1 for NDVI, etc
