@@ -1315,6 +1315,7 @@ exports.simpleTDOM2 = simpleTDOM2;
 exports.addIndices = addIndices;
 exports.simpleAddIndices = simpleAddIndices;
 exports.getTasseledCap = getTasseledCap;
+exports.simpleAddTCAngles = simpleAddTCAngles;
 exports.compositeTimeSeries = compositeTimeSeries;
 exports.addZenithAzimuth = addZenithAzimuth;
 exports.illuminationCorrection = illuminationCorrection;
