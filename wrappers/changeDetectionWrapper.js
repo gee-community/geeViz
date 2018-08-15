@@ -201,7 +201,7 @@ var distParams = {
 //Can include: 'blue','green','red','nir','swir1','swir2'
 //'NBR','NDVI','wetness','greenness','brightness','tcAngleBG'
 // var indexList = ee.List(['nir','swir1']);
-var indexList = ee.List(['nir','swir1','swir2','NBR','NDVI','wetness','greenness','brightness','tcAngleBG']);
+var indexList = ee.List(['NBR']);//ee.List(['nir','swir1','swir2','NBR','NDVI','wetness','greenness','brightness','tcAngleBG']);
 
 //The corresponding direction of forest loss for the given band/index specified above in indexList
 // var ltDirection = ee.List([-1,    1]);
