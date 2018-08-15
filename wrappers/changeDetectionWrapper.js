@@ -312,38 +312,57 @@ var collections =indexDirList.map(function(indexDir){
   
   Map.addLayer(changeOutputs,{},'changeOutputs-'+indexName,false);
   
-  return changeOutputs;
- // return [tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope];
-});
+  // var indexListString = getImageLib.listToString(indexList.getInfo(),'_');
 
-
-var combined;
-ee.List.sequence(0,indexList.length().subtract(1)).getInfo().map(function(i){
-  if(combined === undefined){
-    combined = ee.ImageCollection(collections[i]);
-  }else{
-    combined =  ee.ImageCollection(getImageLib.joinCollections(combined,collections[i],false));
-  }
-});
-
-var indexListString = getImageLib.listToString(indexList.getInfo(),'_');
-
-var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
+  var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
   possibleYears.map(function(yr){
 
-    var changeOutput = combined.filter(ee.Filter.calendarRange(yr,yr,'year'));
+    var changeOutput = changeOutputs.filter(ee.Filter.calendarRange(yr,yr,'year'));
     changeOutput = ee.Image(changeOutput.first()).float();
     changeOutput = changeOutput.set({
       'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
-      'indexList':indexListString,
+      'indexName':indexName,
       'startYear':startYear,
       'endYear':endYear,
     });
-    var exportName = outputName + '_'+indexListString + '_' + yr.toString();
+    var exportName = outputName + '_'+indexName + '_' + yr.toString();
     var exportPath = exportPathRoot + '/' + exportName;
     getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
       studyArea,null,crs,transform);
     
   });
+  return changeOutputs;
+ // return [tsIndex,tsIndexSlope,ltAnnualSlope,verdetOutputs,annualEWMA,annualEWMASlope];
+});
+
+
+// var combined;
+// ee.List.sequence(0,indexList.length().subtract(1)).getInfo().map(function(i){
+//   if(combined === undefined){
+//     combined = ee.ImageCollection(collections[i]);
+//   }else{
+//     combined =  ee.ImageCollection(getImageLib.joinCollections(combined,collections[i],false));
+//   }
+// });
+
+// var indexListString = getImageLib.listToString(indexList.getInfo(),'_');
+
+// var possibleYears = ee.List.sequence(startYear+timebuffer+1,endYear-timebuffer).getInfo();
+//   possibleYears.map(function(yr){
+
+//     var changeOutput = combined.filter(ee.Filter.calendarRange(yr,yr,'year'));
+//     changeOutput = ee.Image(changeOutput.first()).float();
+//     changeOutput = changeOutput.set({
+//       'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
+//       'indexList':indexListString,
+//       'startYear':startYear,
+//       'endYear':endYear,
+//     });
+//     var exportName = outputName + '_'+indexListString + '_' + yr.toString();
+//     var exportPath = exportPathRoot + '/' + exportName;
+//     getImageLib.exportToAssetWrapper(changeOutput,exportName,exportPath,'mean',
+//       studyArea,null,crs,transform);
+    
+//   });
 
 
