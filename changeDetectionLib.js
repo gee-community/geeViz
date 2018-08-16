@@ -238,29 +238,29 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   
   // ----- set visualization dictionaries -----
   
-  var yodVizParms = {
-    min: startYear+1,
-    max: endYear,
-    palette: ['#9400D3', '#4B0082', '#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000']
-  };
+  // var yodVizParms = {
+  //   min: startYear+1,
+  //   max: endYear,
+  //   palette: ['#9400D3', '#4B0082', '#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000']
+  // };
   
-  var magVizParms = {
-    min: distParams.tree_loss1,
-    max: 1000,
-    palette: ['#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000']
-  };
+  // var magVizParms = {
+  //   min: distParams.tree_loss1,
+  //   max: 1000,
+  //   palette: ['#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000']
+  // };
   
-  var durVizParms = {
-    min: 1,
-    max: endYear-startYear,
-    palette: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF']
-  };
+  // var durVizParms = {
+  //   min: 1,
+  //   max: endYear-startYear,
+  //   palette: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF']
+  // };
   
-  var preValVizParms = {
-    min: distParams.pre_val,
-    max: 800,
-    palette: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF']
-  };
+  // var preValVizParms = {
+  //   min: distParams.pre_val,
+  //   max: 800,
+  //   palette: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF']
+  // };
   
   
   // ----- display the disturbance attribute maps ----- 
@@ -277,8 +277,9 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   var ca = arrayToTimeSeries(ltFitted,ltYear,ee.List.sequence(startYear,endYear),'LT_Fitted_'+indexName);
  
 
-  
-  return [lt,distImg,ca];
+  //Convert to single image
+  var vertStack = getLTvertStack(rawLT)
+  return [lt,distImg,ca,vertStack];
   
 }
 
