@@ -273,7 +273,11 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   //Convert to collection
   var rawLT = lt.select([0]);
   var ltYear = rawLT.arraySlice(0,0,1).arrayProject([1]);
-  var ltFitted = rawLT.arraySlice(0,2,3).arrayProject([1]).multiply(-1);
+  var ltFitted = rawLT.arraySlice(0,2,3).arrayProject([1]);
+  if(distDir === -1){
+    ltFitted = ltFitted.multiply(-1);
+  }
+  
   var ca = arrayToTimeSeries(ltFitted,ltYear,ee.List.sequence(startYear,endYear),'LT_Fitted_'+indexName);
  
 
