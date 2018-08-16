@@ -3,6 +3,15 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 ///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////
+function thresholdChange(changeCollection,changeThresh){
+  var change = changeCollection.map(function(img){
+    var yr = ee.Date(img.get('system:time_start')).get('year');
+    var changeYr = img.gt(changeThresh);
+    changeYr = ee.Image(yr).updateMask(changeYr).rename(['change']).int16();
+    return img.mask(ee.Image(1)).addBands(changeYr);
+  });
+  return change;
+}
 
 function getExistingChangeData(changeThresh,showLayers){
   if(showLayers === undefined || showLayers === null){
@@ -435,3 +444,4 @@ exports.getEWMA = getEWMA;
 exports.runEWMACD = runEWMACD;
 
 exports.pairwiseSlope = pairwiseSlope;
+exports.thresholdChange = thresholdChange;
