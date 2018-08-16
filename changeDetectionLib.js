@@ -4,11 +4,13 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 
 ///////////////////////////////////////////////
 function thresholdChange(changeCollection,changeThresh){
+  var bandNames = ee.Image(changeCollection.first()).bandNames();
+  bandNames = bandNames.map(function(bn){return ee.String(bn).cat('_change')})
   var change = changeCollection.map(function(img){
     var yr = ee.Date(img.get('system:time_start')).get('year');
     var changeYr = img.gt(changeThresh);
     var yrImage = img.where(img.mask(),yr)
-    changeYr = yrImage.updateMask(changeYr).rename(['change']).int16();
+    changeYr = yrImage.updateMask(changeYr).rename(bandNames).int16();
     return img.mask(ee.Image(1)).addBands(changeYr);
   });
   return change;
