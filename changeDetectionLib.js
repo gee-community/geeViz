@@ -7,7 +7,8 @@ function thresholdChange(changeCollection,changeThresh){
   var change = changeCollection.map(function(img){
     var yr = ee.Date(img.get('system:time_start')).get('year');
     var changeYr = img.gt(changeThresh);
-    changeYr = ee.Image(yr).updateMask(changeYr).rename(['change']).int16();
+    var yrImage = img.where(img.mask(),yr)
+    changeYr = yrImage.updateMask(changeYr).rename(['change']).int16();
     return img.mask(ee.Image(1)).addBands(changeYr);
   });
   return change;
