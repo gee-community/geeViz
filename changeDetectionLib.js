@@ -361,13 +361,7 @@ function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,rem
     
     var yrData = ewmacdYrSorted.arrayCat(ewmacdYearYrSorted,1);
     var yrReduced = ewmacdYrSorted.arrayReduce(annualReducer,[0]);
-                  
-    
-    
-    
-    
-  
-    
+   
     
     //Find null pixels
     var l = yrReduced.arrayLength(0);
@@ -389,7 +383,7 @@ function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,rem
     var value2011 = ee.Image(annualEWMA.filter(ee.Filter.calendarRange(2011,2011,'year')).first());
     var value2013 = ee.Image(annualEWMA.filter(ee.Filter.calendarRange(2013,2013,'year')).first());
     var value2012 = value2013.add(value2011);
-    value2012 = value2012.divide(2).rename(['ewma'])
+    value2012 = value2012.divide(2).rename(['EWMA_'+indexName])
     .set('system:time_start',ee.Date.fromYMD(2012,6,1).millis()).int16();
     
     annualEWMA = ee.ImageCollection(ee.FeatureCollection([annualEWMA,ee.ImageCollection([value2012])]).flatten()).sort('system:time_start');
