@@ -214,7 +214,7 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   var ltCollection = processedComposites.select([indexName]).map(function(img){
      return multBands(img,distDir,1);
   });
-  Map.addLayer(ltCollection,{},'ltCollection',false);
+  // Map.addLayer(ltCollection,{},'ltCollection',false);
   run_params.timeSeries = ltCollection;               // add LT collection to the segmentation run parameter object
   var lt = ee.Algorithms.TemporalSegmentation.LandTrendr(run_params); // run LandTrendr spectral temporal segmentation algorithm
   
