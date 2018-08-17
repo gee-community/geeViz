@@ -5,19 +5,19 @@ function classificationWrapper(predictors, referenceData, referenceDataType, res
     //create if statement that identifies if reference data is numeric and doesn't apply remap
   var refValType = referenceData.getInfo().columns[responseField];
   print('refValType:', refValType);
-  
+  var classPropertyName= responseField; 
   if (refValType === 'String'){
+    classPropertyName = classPropertyName+'_number'
     //remap values to numbers
     referenceData = namesToNumbers(referenceData, responseField, responseField+'_number');
     }
-  print('referenceData', referenceData);  
+   
   var trainingData;
   // get predictors with reference data
   if(referenceDataType ==='points'){
     trainingData = predictors.sampleRegions({
       collection: referenceData, properties: null, scale: scale, projection: crs, tileScale: 1});
-      print('trainingData', trainingData);
-  }else{
+    }else{
     trainingData = predictors.reduceRegions({
       collection: referenceData, reducer: reducers, scale: scale, crs: crs, tileScale: 1});
     }
@@ -26,12 +26,6 @@ function classificationWrapper(predictors, referenceData, referenceDataType, res
     applyOutPolygons = predictors.reduceRegions({
       collection: applyPolygons.limit(500), reducer: reducers, scale: scale, crs: projection, tileScale: 1});
     }else{}
-  
-  // get column names as a property for the training data
-  var referenceColumns = referenceData.getInfo().columns;
-  print('referenceColumns', referenceColumns)
-  trainingData = trainingData.set('columns', referenceColumns);
-  print('trainingData2:', trainingData)
   
   // get a list of the predictor bands
   var inputProperties = ee.Feature(trainingData.first()).propertyNames();
@@ -43,7 +37,7 @@ function classificationWrapper(predictors, referenceData, referenceDataType, res
   
   var model = classifier(classifierParameters).setOutputMode(mode).train({
     features: trainingData,
-    classProperty: responseField+'_number',
+    classProperty: classPropertyName,
     inputProperties: inputProperties, 
     subsampling: 1,
     subsamplingSeed: 0});
