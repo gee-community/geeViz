@@ -14,10 +14,10 @@ function classificationWrapper(predictors, referenceData, referenceDataType, res
   // get predictors with reference data
   if(referenceDataType ==='points'){
     trainingData = predictors.sampleRegions({
-      collection: referenceData, properties: null, scale: scale, projection: projection, tileScale: 1});
+      collection: referenceData, properties: null, scale: scale, projection: crs, tileScale: 1});
   }else{
     trainingData = predictors.reduceRegions({
-      collection: referenceData, reducer: reducers, scale: scale, crs: projection, tileScale: 1});
+      collection: referenceData, reducer: reducers, scale: scale, crs: crs, tileScale: 1});
     }
   var applyOutPolygons;
   if(referenceDataType === 'polygons'){
