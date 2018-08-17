@@ -19,6 +19,26 @@ var vizParamsTrue = {
 ////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
 /////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////
+//Function to set null value for export or conversion to arrays
+function setNoData(image,noDataValue){
+  var m = image.mask();
+  image = image.mask(ee.Image(1));
+  image = image.where(m.not(),noDataValue);
+  return image;
+}
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+//Functions to perform basic clump and elim
+function sieve(image,mmu){
+  var connected = image.connectedPixelCount(mmu+2);
+  var elim = connected.gt(mmu);
+  var mode = image.focal_mode(mmu/2,'circle');
+  mode = mode.mask(image.mask());
+  var filled = image.where(elim.not(),mode);
+  return filled;
+}
+
 //Written by Yang Z.
 //------ L8 to L7 HARMONIZATION FUNCTION -----
 // slope and intercept citation: Roy, D.P., Kovalskyy, V., Zhang, H.K., Vermote, E.F., Yan, L., Kumar, S.S, Egorov, A., 2016, Characterization of Landsat-7 to Landsat-8 reflective wavelength and normalized difference vegetation index continuity, Remote Sensing of Environment, 185, 57-70.(http://dx.doi.org/10.1016/j.rse.2015.12.024); Table 2 - reduced major axis (RMA) regression coefficients
@@ -1369,6 +1389,8 @@ function getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJu
 ////////////////////////////////////////////////////////////////////////////////
 // END FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
+exports.sieve = sieve;
+exports.setNoDate = setNoData;
 exports.addYearBand = addYearBand;
 exports.addDateBand = addDateBand;
 exports.collectionToImage = collectionToImage;
