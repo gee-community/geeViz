@@ -9,6 +9,7 @@ function classificationWrapper(predictors, referenceData, referenceDataType, res
   if (refValType === 'String'){
     //remap values to numbers
     referenceData = namesToNumbers(referenceData, responseField, responseField+'_number');
+    print('referenceData', referenceData)
   }
   var trainingData;
   // get predictors with reference data
