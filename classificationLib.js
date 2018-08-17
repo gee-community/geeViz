@@ -27,7 +27,7 @@ function classificationWrapper(predictors, referenceData, referenceDataType, res
     }else{}
   
   // get column names as a property for the training data
-  referenceColumns = referenceData.get('columns');
+  var referenceColumns = referenceData.get('columns');
   print('referenceColumns', referenceColumns)
   trainingData = trainingData.set('columns', referenceColumns);
   
