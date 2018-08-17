@@ -1,12 +1,16 @@
+//  get the classification library
 var classificationLib = require('users/USFS_GTAC/modules:classificationLib.js')
 
 // get predictor rasters as multi-band image
-var predictors = image.addBands(image2);
+var predictors = X;
 
 // get reference data
 var referenceData = INPUT_REFERENCE_DATA;
 
-// choose whether to use points or polygons
+// choose whether to use 'points' or 'polygons'.
+//If the referece data are points than the classification will result in a raster output.
+// If the referece data are points than the classification reqires the polygons to be split into training and
+//apply datasets. The result will be classified polygons. Computations will time out with too many polygons. 
 var referenceDataType = 'points';
 
 // get column name of reference field as a string
