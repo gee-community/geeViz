@@ -1,4 +1,4 @@
-
+var classificationLib = require()
 // get predictor rasters as multi-band image
 var predictors = image.addBands(image2);
 
