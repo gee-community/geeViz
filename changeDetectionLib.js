@@ -309,7 +309,6 @@ function verdetAnnualSlope(tsIndex,indexName,startYear,endYear){
 //////////////////////////////////////////////////////////////////////////
 //Wrapper for applying EWMACD slightly more simply
 function getEWMA(lsIndex,trainingStartYear,trainingEndYear, harmonicCount){
-  if(ewmacdTrainingYears === null || ewmacdTrainingYears === undefined){ewmacdTrainingYears = 5}
   if(harmonicCount === null || harmonicCount === undefined){harmonicCount = 2}
   
   
