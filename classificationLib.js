@@ -26,6 +26,11 @@ function classificationWrapper(predictors, referenceData, referenceDataType, res
       collection: applyPolygons.limit(500), reducer: reducers, scale: scale, crs: projection, tileScale: 1});
     }else{}
   
+  // get column names as a property for the training data
+  referenceColumns = referenceData.get('columns');
+  print('referenceColumns', referenceColumns)
+  trainingData = trainingData.set('columns', referenceColumns);
+  
   // get a list of the predictor bands
   var inputProperties = ee.Feature(trainingData.first()).propertyNames();
   var refDataProperties = ee.Feature(referenceData.first()).propertyNames();
