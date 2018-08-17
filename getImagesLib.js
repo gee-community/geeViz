@@ -1396,7 +1396,7 @@ exports.addTCAngles = addTCAngles;
 exports.simpleAddTCAngles = simpleAddTCAngles;
 exports.exportCompositeCollection = exportCompositeCollection;
 exports.getLandsatWrapper = getLandsatWrapper;
-
+exports.getProcessedLandsatScenes = getProcessedLandsatScenes;
 exports.getModisData = getModisData;
 exports.modisCloudScore = modisCloudScore;
 exports.despikeCollection = despikeCollection;
