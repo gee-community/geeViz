@@ -30,6 +30,7 @@ function classificationWrapper(predictors, referenceData, referenceDataType, res
   var referenceColumns = referenceData.getInfo().columns;
   print('referenceColumns', referenceColumns)
   trainingData = trainingData.set('columns', referenceColumns);
+  print('trainingData2:', trainingData)
   
   // get a list of the predictor bands
   var inputProperties = ee.Feature(trainingData.first()).propertyNames();
