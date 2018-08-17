@@ -404,7 +404,7 @@ function runEWMACD(lsIndex,indexName,startYear,endYear,ewmacdTrainingYears, harm
   
   var annualEWMA = annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,remove2012);
   
-  return [ewma,annualEWMA];
+  return [ewma.arrayCat(lsYear,1),annualEWMA];
 }
 //////////////////////////////////////////////////////////////////////////
 //Function to find the pairwise difference of a time series
