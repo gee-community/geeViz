@@ -1,8 +1,8 @@
 //  get the classification library
-var classificationLib = require('users/USFS_GTAC/modules:classificationLib.js')
+var classificationLib = require('users/USFS_GTAC/modules:classificationLib.js');
 
 // define a study area
-sa = DEFINE
+sa = DEFINE;
 
 // get predictor rasters as multi-band image
 var predictors = X;
@@ -38,7 +38,7 @@ var crs = 'EPSG:26912';
 var scale = 30;
 
 // choose export name
-var exportName = 'NAME'
+var exportName = 'NAME';
 
 // polygon reducers
 var reducers = ee.Reducer.mean().combine({
