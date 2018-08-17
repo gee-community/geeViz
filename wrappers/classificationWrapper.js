@@ -1,4 +1,5 @@
-var classificationLib = require()
+var classificationLib = require('users/USFS_GTAC/modules:classificationLib.js')
+
 // get predictor rasters as multi-band image
 var predictors = image.addBands(image2);
 
@@ -35,7 +36,7 @@ var reducers = ee.Reducer.mean().combine({
   sharedInputs: true
 });
 
-var out = classificationWrapper(predictors, referenceData, referenceDataType, responseField, classifier, classifierParameters, mode, reducers, projection, null, scale);
+var out = classificationLib.classificationWrapper(predictors, referenceData, referenceDataType, responseField, classifier, classifierParameters, mode, reducers, projection, null, scale);
 print('out', out);
 Export.table.toDrive({collection: out[1], description: 'ADD DESCRIPTION',fileFormat: 'KML'});
 Map.addLayer(out[1], {}, 'out');
