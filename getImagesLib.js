@@ -1302,7 +1302,7 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
 function getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
-  cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
+  cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels
   ){
   
   // Prepare dates
