@@ -1354,12 +1354,7 @@ function getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJu
   }
   
   
-  // Add zenith and azimuth
-  if (correctIllumination){
-    ls = ls.map(function(img){
-      return addZenithAzimuth(img,toaOrSR);
-    });
-  }
+  
   
   // Add common indices- can use addIndices for comprehensive indices 
   //or simpleAddIndices for only common indices
