@@ -15,6 +15,7 @@ function classificationWrapper(predictors, referenceData, referenceDataType, res
   if(referenceDataType ==='points'){
     trainingData = predictors.sampleRegions({
       collection: referenceData, properties: null, scale: scale, projection: crs, tileScale: 1});
+      print('trainingData', trainingData);
   }else{
     trainingData = predictors.reduceRegions({
       collection: referenceData, reducer: reducers, scale: scale, crs: crs, tileScale: 1});
