@@ -45,15 +45,14 @@ function classificationWrapper(predictors, referenceData, referenceDataType, res
   if(referenceDataType === 'points'){ 
     ApplyModel = predictors.classify(model);
     Map.addLayer(ApplyModel, {}, 'Classified Raster');
-    return [model, ApplyModel];
+    
     
   }else if(referenceDataType === 'polygons'){
     ApplyModel = applyOutPolygons.classify(model);
-    //print('polygonsApplyModel', polygonsApplyModel);
-    return [model, ApplyModel];
-      
-  }
+   }
+return [model, ApplyModel];
 }
+
 ///////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////
