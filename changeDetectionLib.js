@@ -340,7 +340,7 @@ function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,rem
   if(remove2012){years = years.removeAll([2012])}
   
   //Find if 2012 needs replaced
-  var replace2012 = ee.Number(ee.List([years.indexOf(2011),years.indexOf(2012),years.indexOf(2013)]).reduce(ee.Reducer.min())).eq(-1).getInfo();
+  var replace2012 = ee.Number(ee.List([years.indexOf(2011),years.indexOf(2012),years.indexOf(2013)]).reduce(ee.Reducer.min())).neq(-1).getInfo();
   print('2012 needs replaced:',replace2012)
   
   
