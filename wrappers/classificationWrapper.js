@@ -1,6 +1,9 @@
 //  get the classification library
 var classificationLib = require('users/USFS_GTAC/modules:classificationLib.js')
 
+// define a study area
+sa = DEFINE
+
 // get predictor rasters as multi-band image
 var predictors = X;
 
@@ -29,10 +32,13 @@ var classifierParameters = {};
 var mode = 'CLASSIFICATION'
 
 // choose projection
-var projection = 'EPSG:26912';
+var crs = 'EPSG:26912';
 
 // choose resolution
 var scale = 30;
+
+// choose export name
+var exportName = 'NAME'
 
 // polygon reducers
 var reducers = ee.Reducer.mean().combine({
@@ -40,7 +46,8 @@ var reducers = ee.Reducer.mean().combine({
   sharedInputs: true
 });
 
-var out = classificationLib.classificationWrapper(predictors, referenceData, referenceDataType, responseField, classifier, classifierParameters, mode, reducers, projection, null, scale);
+var out = classificationLib.classificationWrapper(predictors, referenceData, referenceDataType, responseField, classifier, classifierParameters, mode, reducers, crs, null, scale);
 print('out', out);
-Export.table.toDrive({collection: out[1], description: 'ADD DESCRIPTION',fileFormat: 'KML'});
+//Export.table.toDrive({collection: out[1], description: 'ADD DESCRIPTION',fileFormat: 'KML'});
+Export.image.toDrive({image: out[1], description: exportName, region: sa, scale: scale, crs: crs, maxPixels: 1e13})
 Map.addLayer(out[1], {}, 'out');
