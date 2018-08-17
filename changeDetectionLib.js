@@ -308,7 +308,7 @@ function verdetAnnualSlope(tsIndex,indexName,startYear,endYear){
 }
 //////////////////////////////////////////////////////////////////////////
 //Wrapper for applying EWMACD slightly more simply
-function getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
+function getEWMA(lsIndex,trainingStartYear,trainingEndYear, harmonicCount){
   if(ewmacdTrainingYears === null || ewmacdTrainingYears === undefined){ewmacdTrainingYears = 5}
   if(harmonicCount === null || harmonicCount === undefined){harmonicCount = 2}
   
@@ -317,8 +317,8 @@ function getEWMA(lsIndex,startYear,ewmacdTrainingYears, harmonicCount){
   var ewmacd = ee.Algorithms.TemporalSegmentation.Ewmacd({
     timeSeries: lsIndex, 
     vegetationThreshold: -1, 
-    trainingStartYear: startYear, 
-    trainingEndYear: startYear + ewmacdTrainingYears, 
+    trainingStartYear: trainingStartYear, 
+    trainingEndYear: trainingEndYear, 
     harmonicCount: 2
   });
   
