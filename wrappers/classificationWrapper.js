@@ -53,7 +53,7 @@ print('out', out);
 if(referenceDataType === 'points'){
   Export.image.toDrive({image: out[1], description: exportName, region: sa, scale: scale, crs: crs, maxPixels: 1e13});
   } else {
-    Export.table.toDrive({collection: out[1], description: 'ADD DESCRIPTION',fileFormat: 'KML'});
+    Export.table.toDrive({collection: out[1], description: 'ADD DESCRIPTION', fileFormat: 'KML'});
   }
 
 // add the classified result to the map
