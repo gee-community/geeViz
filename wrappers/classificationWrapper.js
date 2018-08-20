@@ -29,7 +29,7 @@ var classifier = ee.Classifier.randomForest;
 var classifierParameters = {};
 
 // choose classifier output mode: CLASSIFICATION, REGRESSION, PROBABILITY
-var mode = 'CLASSIFICATION'
+var mode = 'CLASSIFICATION';
 
 // choose projection
 var crs = 'EPSG:26912';
@@ -48,6 +48,13 @@ var reducers = ee.Reducer.mean().combine({
 
 var out = classificationLib.classificationWrapper(predictors, referenceData, referenceDataType, responseField, classifier, classifierParameters, mode, reducers, crs, null, scale);
 print('out', out);
-//Export.table.toDrive({collection: out[1], description: 'ADD DESCRIPTION',fileFormat: 'KML'});
-Export.image.toDrive({image: out[1], description: exportName, region: sa, scale: scale, crs: crs, maxPixels: 1e13})
+
+// export the classified result
+if(referenceDataType === 'points'){
+  Export.image.toDrive({image: out[1], description: exportName, region: sa, scale: scale, crs: crs, maxPixels: 1e13});
+  } else {
+    Export.table.toDrive({collection: out[1], description: 'ADD DESCRIPTION',fileFormat: 'KML'});
+  }
+
+// add the classified result to the map
 Map.addLayer(out[1], {}, 'out');
