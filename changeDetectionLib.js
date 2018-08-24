@@ -412,7 +412,7 @@ function pairwiseSlope(c){
     c = c.sort('system:time_start');
     
     var bandNames = ee.Image(c.first()).bandNames();
-    bandNames = bandNames.map(function(bn){return ee.String(bn).cat('_slope')});
+    // bandNames = bandNames.map(function(bn){return ee.String(bn).cat('_slope')});
     
     var years = c.toList(10000).map(function(i){i = ee.Image(i);return ee.Date(i.get('system:time_start')).get('year')});
     
