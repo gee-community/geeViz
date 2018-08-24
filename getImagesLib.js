@@ -31,7 +31,7 @@ function setNoData(image,noDataValue){
 /////////////////////////////////////////////////////////////////////////////////
 //Functions to perform basic clump and elim
 function sieve(image,mmu){
-  var connected = image.connectedPixelCount(mmu+2);
+  var connected = image.connectedPixelCount(mmu+20);
   Map.addLayer(connected,{'min':1,'max':mmu},'connected')
   var elim = connected.gt(mmu);
   var mode = image.focal_mode(mmu/2,'circle');
