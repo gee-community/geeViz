@@ -567,7 +567,15 @@ function exportToAssetWrapper(imageForExport,assetName,assetPath,
   Export.image.toAsset(imageForExport, assetName, assetPath, 
     {'.default': pyramidingPolicy}, null, roi, scale, crs, transform, 1e13);
 }
-
+function exportToAssetWrapper2(imageForExport,assetName,assetPath,
+  pyramidingPolicyObject,roi,scale,crs,transform){
+  //Make sure image is clipped to roi in case it's a multi-part polygon
+  imageForExport = imageForExport.clip(roi);
+  assetName = assetName.replace(/\s+/g,'-');//Get rid of any spaces
+  
+  Export.image.toAsset(imageForExport, assetName, assetPath, 
+    pyramidingPolicyObject, null, roi, scale, crs, transform, 1e13);
+}
 ////////////////////////////////////////////////////////////////////////////////
 // Create composites for each year within startYear and endYear range
 function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod){
