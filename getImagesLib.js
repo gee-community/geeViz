@@ -1428,6 +1428,7 @@ exports.getModisData = getModisData;
 exports.modisCloudScore = modisCloudScore;
 exports.despikeCollection = despikeCollection;
 exports.exportToAssetWrapper = exportToAssetWrapper;
+exports.exportToAssetWrapper2 = exportToAssetWrapper2;
 exports.joinCollections = joinCollections;
 exports.listToString = listToString;
 exports.harmonizationRoy = harmonizationRoy;
