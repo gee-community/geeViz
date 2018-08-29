@@ -167,7 +167,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
 //////////////////////////////////////////////////////////////////////////
 //Helper to multiply image
 function multBands(img,distDir,by){
-    var out = img.multiply(distDir*by);
+    var out = img.multiply(ee.Image(distDir*by));
     out  = out.copyProperties(img,['system:time_start']);
     return out;
   }
