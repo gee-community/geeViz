@@ -331,7 +331,7 @@ function getPhaseAmplitude(coeffs){
     })
     //Convert to an image
     phaseAmplitude = ee.ImageCollection.fromImages(phaseAmplitude);
-    return collectionToImage(phaseAmplitude)
+    return phaseAmplitude;//collectionToImage(phaseAmplitude)
 
 
 }
