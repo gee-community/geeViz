@@ -437,8 +437,8 @@ function harmonicRegression(allImages,indexNames,whichHarmonics){
   
   //Add independent predictors (harmonics)
   var withHarmonics = getHarmonics2(allIndices,'year',whichHarmonics)
-  var withHarmonicsBns = ee.Image(withHarmonics.first()).bandNames().slice(2,null);
-  
+  var withHarmonicsBns = ee.Image(withHarmonics.first()).bandNames().slice(allIndices.length+1,null);
+  print('bns',ee.Image(withHarmonics.first()).bandNames(),withHarmonicsBns)
   //Optionally chart the collection with harmonics
   var g = Chart.image.series(withHarmonics.select(withHarmonicsBns),plotPoint,ee.Reducer.mean(),30);
   print(g);
