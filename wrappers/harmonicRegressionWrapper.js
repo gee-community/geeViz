@@ -333,10 +333,10 @@ function newPredict(coeffs,harmonics){
       
       var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(2,null));
       var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename(['amplitude']);
-      var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
-      
+      // var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
+      var phase = regCoeffs.select([0]).atan2(regCoeffs.select([1])).rename(['phase']);
       predicted = predictorBands.multiply(others).reduce(ee.Reducer.sum()).add(intercept).float();
-      return predicted.float().addBands(amplitude).addBands(amplitude2)
+      return predicted.float().addBands(amplitude).addBands(phase)
     
     })
     //Convert to an image
