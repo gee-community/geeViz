@@ -156,4 +156,10 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 
 ////////////////////////////////////////////////////////////
 
-print(allScenes)
+ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).slice(0,1).getInfo().map(function(yr){
+  var startYearT = yr-timebuffer;
+  var endYearT = yr+timebuffer;
+  var allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT,endYearT,'year'));
+  
+  
+})
