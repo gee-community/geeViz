@@ -171,17 +171,17 @@ function getHarmonicList(yearDateImg,transformBandName,harmonicList){
       return ee.String('cos_').cat(ht.toString()).cat('_').cat(transformBandName)
     })
     
-    var sinCosNames = harmonicList.map(function(h){
-      var ht =h*100
-      return ee.String('sin_x_cos_').cat(ht.toString()).cat('_').cat(transformBandName)
-    })
+    // var sinCosNames = harmonicList.map(function(h){
+    //   var ht =h*100
+    //   return ee.String('sin_x_cos_').cat(ht.toString()).cat('_').cat(transformBandName)
+    // })
     
     var multipliers = ee.Image(harmonicList).multiply(ee.Number(Math.PI).float()) 
     var sinInd = (t.multiply(ee.Image(multipliers))).sin().select(selectBands,sinNames).float()
     var cosInd = (t.multiply(ee.Image(multipliers))).cos().select(selectBands,cosNames).float()
-    var sinCosInd = sinInd.multiply(cosInd).select(selectBands,sinCosNames);
+    // var sinCosInd = sinInd.multiply(cosInd).select(selectBands,sinCosNames);
     
-    return yearDateImg.addBands(sinInd.addBands(cosInd)).addBands(sinCosInd)
+    return yearDateImg.addBands(sinInd.addBands(cosInd))//.addBands(sinCosInd)
   }
 //////////////////////////////////////////////////////
 //Takes a dependent and independent variable and returns the dependent, 
@@ -309,7 +309,7 @@ function newPredict(coeffs,harmonics){
   var depBandNames = ee.List(harmonics.get('depBandNames'));
   var predictedBandNames = depBandNames.map(function(depbnms){return ee.String(depbnms).cat('_predicted')})
   var predictedBandNumbers = ee.List.sequence(0,predictedBandNames.length().subtract(1));
-  print('ind',indBandNames)
+
   var models = ee.List.sequence(0,noDependents.subtract(1));
   var parsedModel =models.map(function(mn){
     mn = ee.Number(mn);
@@ -332,9 +332,10 @@ function newPredict(coeffs,harmonics){
       var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
       
       var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(2,null));
+      var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename(['amplitude']);
       
       predicted = predictorBands.multiply(others).reduce(ee.Reducer.sum()).add(intercept).float();
-      return predicted.float().addBands(regCoeffs)
+      return predicted.float().addBands(amplitude)
     
     })
     //Convert to an image
