@@ -305,6 +305,7 @@ function newPredict(coeffs,harmonics){
   var timeBand = ee.List(harmonics.get('indBandNames')).get(0);
   var actualBands = harmonics.get('depBandNumbers');
   var indBands = harmonics.get('indBandNumbers');
+  
   var indBandNames = ee.List(harmonics.get('indBandNames'));
   var depBandNames = ee.List(harmonics.get('depBandNames'));
   var predictedBandNames = depBandNames.map(function(depbnms){return ee.String(depbnms).cat('_predicted')})
@@ -322,7 +323,7 @@ function newPredict(coeffs,harmonics){
     var time = img.select(timeBand);
     var actual = img.select(actualBands).float();
     var predictorBands = img.select(indBandNames);
-    
+    print(predictorBands)
     //Iterate across each model for each dependent variable
     var predictedList =parsedModel.map(function(pm){
       pm = ee.List(pm);
@@ -416,7 +417,9 @@ function harmonicRegression(allImages,indexNames,whichHarmonics){
   //Fit a linear regression model
   var coeffs = newRobustMultipleLinear2(withHarmonics)
   
-  print(coeffs.bandNames())
+  var bns = coeffs.bandNames();
+  print(bns)
+  
   Map.addLayer(coeffs,{},'Harmonic Regression Coefficients',false);
   Map.addLayer(coeffs,{},'Coeffs')
   
