@@ -4,7 +4,7 @@ var geometry = /* color: #d63000 */ee.Geometry.Polygon(
           [-113.89038477233822, 47.88875235194944],
           [-113.77502832702572, 48.07260311206661],
           [-114.13757715515072, 48.05424749726343]]]),
-    plotPoint = /* color: #98ff00 */ee.Geometry.Point([-113.93762414378898, 47.979560658521216]);
+    plotPoint = /* color: #98ff00 */ee.Geometry.Point([-113.81677453441398, 48.014481292873974]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -35,7 +35,7 @@ var endYear = 2018;
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
 // in a 3 year moving window
-var timebuffer = 1;
+var timebuffer = 3;
 
 // 5. Specify the weights to be used for the moving window created by timeBuffer
 //For example- if timeBuffer is 1, that is a 3 year moving window
