@@ -273,17 +273,12 @@ function setNoData(image,noDataValue){
 //Assumes a single-band image in the collection
 //Derives its own band names
 function collectionToImage(collection){
-  collection = ee.ImageCollection(collection);
-  var i = collection.toArray();
-  var bns2 = ee.Image(collection.first()).bandNames();
-  var il = ee.List(collection.toList(100000));
-  var bns1 = ee.List.sequence(1,il.length())
-  .map(function(bn){return ee.String(ee.Number(bn).int16())});
-  
-  var o = i
-  // .arrayProject([0])
-  .arrayFlatten([bns1,bns2]);
-  return o
+  var stack = ee.Image(collection.iterate(function(img, prev) {
+    return ee.Image(prev).addBands(img);
+  }, ee.Image(1)));
+
+  stack = stack.select(ee.List.sequence(1, stack.bandNames().size().subtract(1)));
+  return stack;
 }
 
 function addDateBand(img){
@@ -331,7 +326,7 @@ function getPhaseAmplitude(coeffs){
     })
     //Convert to an image
     phaseAmplitude = ee.ImageCollection.fromImages(phaseAmplitude);
-    return phaseAmplitude;//collectionToImage(phaseAmplitude)
+    return collectionToImage(phaseAmplitude)
 
 
 }
