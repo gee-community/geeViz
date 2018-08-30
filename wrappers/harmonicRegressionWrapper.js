@@ -428,27 +428,18 @@ function getDateStack(startYear,endYear,startJulian,endJulian,frequency){
 
 ////////////////////////////////////////////////////////////////////
 function harmonicRegression(allImages,indexNames,whichHarmonics){
-  //Set up metadata table
-  // var metaData = ee.Feature(ee.Image(allImages.first()).geometry());
-  // metaData = metaData.set('Training_Image_Count',allImages.size());
-  // // metaData = metaData.set('Start_Date',startDate);
-  // // metaData = metaData.set('End_Date',endDate);
-  // metaData = metaData.set('Start_Julian',startJulian);
-  // metaData = metaData.set('End_Julian',endJulian);
-  // // metaData = metaData.set('Run_TDOM',runTDOM);
-  // metaData = metaData.set('Run_Defringe',runDefringe);
-  // metaData = metaData.set('Which_Harmonics',whichHarmonics);
-  // metaData = metaData.set('Which_Bands',indexNames);
-  // metaData = metaData.set('Include L7',includeL7);
+  
   //Select desired bands
   var allIndices = allImages.select(indexNames);
+  
+  //Add date band
   allIndices = allIndices.map(addDateBand);
   
   //Add independent predictors (harmonics)
   var withHarmonics = getHarmonics2(allIndices,'year',whichHarmonics)
   var withHarmonicsBns = ee.Image(withHarmonics.first()).bandNames().slice(2,null);
   
-  // Map.addLayer(withHarmonics.select(withHarmonicsBns),{},'Fit Apply Image Set',false)
+  //Optionally chart the collection with harmonics
   var g = Chart.image.series(withHarmonics.select(withHarmonicsBns),plotPoint,ee.Reducer.mean(),30);
   print(g);
   //Fit a linear regression model
