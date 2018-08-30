@@ -314,7 +314,8 @@ function getPhaseAmplitude(coeffs){
       var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
       
       var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(2,null));
-      var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename([outName.cat('_amplitude')]);
+      var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename([outName.cat('_amplitude')])
+                      .multiply(5);
       // var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
       var phase = regCoeffs.select([0]).atan2(regCoeffs.select([1]))
       .unitScale(-Math.PI, Math.PI)
@@ -455,12 +456,9 @@ function harmonicRegression(allImages,indexNames,whichHarmonics){
   
   var pa = getPhaseAmplitude(coeffs);
   
-  var magnitude = cos.hypot(sin).multiply(5);
-  var phase = sin.atan2(cos).unitScale(-Math.PI, Math.PI);
-  var val = harmonicLandsat.select('NDVI').reduce('mean');
 
   // Turn the HSV data into an RGB image and add it to the map.
-  var seasonality = pa.select([1,0]).addBands(allIndices.select(['NDVI'])).hsvToRgb();
+  var seasonality = pa.select([1,0]).addBands(allIndices.select(['NDVI']).mean()).hsvToRgb();
  
   Map.addLayer(seasonality, {}, 'Seasonality');
   var bns = coeffs.bandNames();
