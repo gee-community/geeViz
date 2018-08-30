@@ -305,7 +305,6 @@ function newPredict(coeffs,harmonics){
   var timeBand = ee.List(harmonics.get('indBandNames')).get(0);
   var actualBands = harmonics.get('depBandNumbers');
   var indBands = harmonics.get('indBandNumbers');
-  
   var indBandNames = ee.List(harmonics.get('indBandNames'));
   var depBandNames = ee.List(harmonics.get('depBandNames'));
   var predictedBandNames = depBandNames.map(function(depbnms){return ee.String(depbnms).cat('_predicted')})
@@ -317,7 +316,7 @@ function newPredict(coeffs,harmonics){
     return bandNames.slice(mn.multiply(modelLength),mn.multiply(modelLength).add(modelLength))
   });
   print('Parsed harmonic regression model',parsedModel,predictedBandNames);
-  print(indBandNames)
+
   //Apply parsed model
   var predicted =harmonics.map(function(img){
     var time = img.select(timeBand);
@@ -342,12 +341,17 @@ function newPredict(coeffs,harmonics){
     
     //Set some metadata
     var out = actual.addBands(predictedImage.float())
+    // var out = predictedImage.float()
     .copyProperties(img,['system:time_start','system:time_end'])
     return out
     
   })
 predicted = ee.ImageCollection(predicted)
 var g = Chart.image.series(predicted,plotPoint,ee.Reducer.mean(),90);
+print(g);
+var g = Chart.image.series(predicted.select([0]),plotPoint,ee.Reducer.mean(),90);
+print(g);
+var g = Chart.image.series(predicted.select([1]),plotPoint,ee.Reducer.mean(),90);
 print(g);
 Map.addLayer(predicted,{},'predicted',false)
 
