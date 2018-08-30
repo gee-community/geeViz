@@ -416,6 +416,7 @@ function harmonicRegression(allImages,indexNames,whichHarmonics){
   //Fit a linear regression model
   var coeffs = newRobustMultipleLinear2(withHarmonics)
   
+  print(coeffs.bandNames())
   Map.addLayer(coeffs,{},'Harmonic Regression Coefficients',false);
   Map.addLayer(coeffs,{},'Coeffs')
   
