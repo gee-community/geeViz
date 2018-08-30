@@ -314,17 +314,17 @@ function getPhaseAmplitude(coeffs){
   var phaseAmplitude =parsedModel.map(function(pm){
       pm = ee.List(pm);
       var modelCoeffs = coeffs.select(pm);
-      var outName = ee.String(pm.get(1)).split('_').get(0)
+      var outName = ee.String(ee.String(pm.get(1)).split('_').get(0));
       var intercept = modelCoeffs.select(modelCoeffs.bandNames().slice(0,1));
       var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
       
       var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(2,null));
-      var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename(['amplitude']);
+      var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename([outName.cat('_amplitude')]);
       // var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
       var phase = regCoeffs.select([0]).atan2(regCoeffs.select([1]))
       .unitScale(-Math.PI, Math.PI)
       // .divide(2).multiply(365).multiply(0.01)
-      .rename([outName]);
+      .rename([outName.cat('_phase')]);
       
       return amplitude.addBands(phase)
     
