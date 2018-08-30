@@ -1,10 +1,6 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-111.49321423216657, 40.434485832913715],
-          [-111.51793347044782, 40.86791426940303],
-          [-111.86949597044782, 40.85752835366246],
-          [-111.83104382201032, 40.434485832913715]]]),
-    plotPoint = /* color: #98ff00 */ee.Geometry.Point([-111.66127072020367, 40.638917787647635]);
+var geometry = /* color: #d63000 */ee.Geometry.MultiPoint(),
+    plotPoint = /* color: #98ff00 */ee.Geometry.MultiPoint();
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -315,7 +311,7 @@ function getPhaseAmplitude(coeffs){
       
       var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(2,null));
       var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename([outName.cat('_amplitude')])
-                      .multiply(5);
+                      .multiply(2);
       // var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
       var phase = regCoeffs.select([0]).atan2(regCoeffs.select([1]))
       .unitScale(-Math.PI, Math.PI)
