@@ -454,20 +454,19 @@ function harmonicRegression(allImages,indexNames,whichHarmonics){
   //Fit a linear regression model
   var coeffs = newRobustMultipleLinear2(withHarmonics)
   
+  if(whichHarmonics === [2]){
+    
+  }
   var pa = getPhaseAmplitude(coeffs);
-  
-
   // Turn the HSV data into an RGB image and add it to the map.
   var seasonality = pa.select([1,0]).addBands(allIndices.select(['NDVI']).mean()).hsvToRgb();
- 
   Map.addLayer(seasonality, {}, 'Seasonality');
-  var bns = coeffs.bandNames();
-  print(bns)
+  
   
   Map.addLayer(coeffs,{},'Harmonic Regression Coefficients',false);
-  Map.addLayer(coeffs,{},'Coeffs')
+
   
-newPredict(coeffs,withHarmonics)
+  newPredict(coeffs,withHarmonics)
   
 //   var dateStack = getDateStack(startDate.get('year'),endDate.get('year'),startDate.getFraction('year').multiply(365),endDate.getFraction('year').multiply(365),syntheticFrequency);
 //   var synthHarmonics = getHarmonics2(dateStack,'year',whichHarmonics)
