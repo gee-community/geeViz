@@ -349,6 +349,7 @@ function newPredict(coeffs,harmonics){
     
   })
 predicted = ee.ImageCollection(predicted)
+print(predicted.first())
 var g = Chart.image.series(predicted,plotPoint,ee.Reducer.mean(),90);
 print(g);
 // var g = Chart.image.series(predicted.select([0]),plotPoint,ee.Reducer.mean(),90);
