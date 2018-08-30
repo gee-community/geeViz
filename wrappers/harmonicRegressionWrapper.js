@@ -451,7 +451,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).slice(0,1).getInfo()
   var startYearT = yr-timebuffer;
   var endYearT = yr+timebuffer;
   var allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT,endYearT,'year'));
-  var syntheticStack =harmonicRegression(allScenesT,['NBR'],[2])
+  var syntheticStack =harmonicRegression(allScenesT,['NDVI'],[2])
 
   Map.addLayer(allScenesT.median(),{'min':0.1,'max':0.3,'bands':'swir1,nir,red'})
 })
