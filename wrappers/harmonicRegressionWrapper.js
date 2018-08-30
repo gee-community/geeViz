@@ -3,7 +3,8 @@ var geometry = /* color: #d63000 */ee.Geometry.Polygon(
         [[[-114.07715235046322, 47.851903617480765],
           [-113.89038477233822, 47.88875235194944],
           [-113.77502832702572, 48.07260311206661],
-          [-114.13757715515072, 48.05424749726343]]]);
+          [-114.13757715515072, 48.05424749726343]]]),
+    plotPoint = /* color: #98ff00 */ee.Geometry.Point([-113.93762414378898, 47.979560658521216]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -284,7 +285,14 @@ function collectionToImage(collection){
   return o
 }
 
-
+function addDateBand(img){
+  var d = ee.Date(img.get('system:time_start'));
+  var y = d.get('year');
+  d = y.add(d.getFraction('year'));
+  var db = ee.Image.constant(d).rename(['year']).float();
+  db = db.updateMask(img.select([0]).mask())
+  return img.addBands(db);
+}
 /////////////////////////////////////////////////////
 //Function for applying harmonic regression model to set of predictor sets
 function newPredict(coeffs,harmonics){
@@ -408,7 +416,7 @@ function harmonicRegression(allImages,indexNames,whichHarmonics){
   //Fit a linear regression model
   var coeffs = newRobustMultipleLinear2(withHarmonics)
   
-  Map.addLayer(coeffs,vizParamsCoeffs,'Harmonic Regression Coefficients',false);
+  Map.addLayer(coeffs,{},'Harmonic Regression Coefficients',false);
   Map.addLayer(coeffs,{},'Coeffs')
   
 // newPredict(coeffs,withHarmonics)
