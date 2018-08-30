@@ -258,47 +258,7 @@ function newRobustMultipleLinear2(dependentsIndependents){//,dependentBands,inde
   
   return reducerOut
 }
-///////////////////////////////////////////////
-function getPhaseAmplitude(coeffs){
-  //Parse the model
-  var bandNames = coeffs.bandNames();
-  var bandNumber = bandNames.length();
-  var noDependents = ee.Number(coeffs.get('noDependents'));
-  var modelLength = ee.Number(coeffs.get('modelLength'));
-  var interceptBands = ee.List.sequence(0,bandNumber.subtract(1),modelLength);
-  
-  var models = ee.List.sequence(0,noDependents.subtract(1));
-  var parsedModel =models.map(function(mn){
-    mn = ee.Number(mn);
-    return bandNames.slice(mn.multiply(modelLength),mn.multiply(modelLength).add(modelLength))
-  });
-  print('Parsed harmonic regression model',parsedModel);
 
-  
-  var phaseAmplitude =parsedModel.map(function(pm){
-      pm = ee.List(pm);
-      var modelCoeffs = coeffs.select(pm);
-      var outName = ee.String(pm.get(1)).cat('_predicted')
-      var intercept = modelCoeffs.select(modelCoeffs.bandNames().slice(0,1));
-      var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
-      
-      var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(2,null));
-      var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename(['amplitude']);
-      // var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
-      var phase = regCoeffs.select([0]).atan2(regCoeffs.select([1]))
-      .unitScale(-Math.PI, Math.PI)
-      // .divide(2).multiply(365).multiply(0.01)
-      .rename(['phase']);
-      
-      return amplitude.addBands(phase)
-    
-    })
-    //Convert to an image
-    phaseAmplitude = ee.ImageCollection.fromImages(phaseAmplitude);
-    return phaseAmplitude
-
-
-}
 //////////////////////////////////////////////////
 //Function to set null value for export or conversion to arrays
 function setNoData(image,noDataValue){
@@ -333,6 +293,47 @@ function addDateBand(img){
   var db = ee.Image.constant(d).rename(['year']).float();
   db = db.updateMask(img.select([0]).mask())
   return img.addBands(db);
+}
+///////////////////////////////////////////////
+function getPhaseAmplitude(coeffs){
+  //Parse the model
+  var bandNames = coeffs.bandNames();
+  var bandNumber = bandNames.length();
+  var noDependents = ee.Number(coeffs.get('noDependents'));
+  var modelLength = ee.Number(coeffs.get('modelLength'));
+  var interceptBands = ee.List.sequence(0,bandNumber.subtract(1),modelLength);
+  
+  var models = ee.List.sequence(0,noDependents.subtract(1));
+  var parsedModel =models.map(function(mn){
+    mn = ee.Number(mn);
+    return bandNames.slice(mn.multiply(modelLength),mn.multiply(modelLength).add(modelLength))
+  });
+  print('Parsed harmonic regression model',parsedModel);
+
+  
+  var phaseAmplitude =parsedModel.map(function(pm){
+      pm = ee.List(pm);
+      var modelCoeffs = coeffs.select(pm);
+      var outName = ee.String(pm.get(1)).split('_').get(0)
+      var intercept = modelCoeffs.select(modelCoeffs.bandNames().slice(0,1));
+      var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
+      
+      var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(2,null));
+      var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename(['amplitude']);
+      // var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
+      var phase = regCoeffs.select([0]).atan2(regCoeffs.select([1]))
+      .unitScale(-Math.PI, Math.PI)
+      // .divide(2).multiply(365).multiply(0.01)
+      .rename([outName]);
+      
+      return amplitude.addBands(phase)
+    
+    })
+    //Convert to an image
+    phaseAmplitude = ee.ImageCollection.fromImages(phaseAmplitude);
+    return collectionToImage(phaseAmplitude)
+
+
 }
 /////////////////////////////////////////////////////
 //Function for applying harmonic regression model to set of predictor sets
@@ -457,6 +458,8 @@ function harmonicRegression(allImages,indexNames,whichHarmonics){
   //Fit a linear regression model
   var coeffs = newRobustMultipleLinear2(withHarmonics)
   
+  var pa = getPhaseAmplitude(coeffs);
+  print('pa',pa)
   var bns = coeffs.bandNames();
   print(bns)
   
@@ -495,7 +498,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).slice(0,1).getInfo()
   var startYearT = yr-timebuffer;
   var endYearT = yr+timebuffer;
   var allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT,endYearT,'year'));
-  var syntheticStack =harmonicRegression(allScenesT,['NDVI'],[2])
+  var syntheticStack =harmonicRegression(allScenesT,['NDVI','NBR'],[2])
 
   Map.addLayer(allScenesT.median(),{'min':0.1,'max':0.3,'bands':'swir1,nir,red'})
 })
