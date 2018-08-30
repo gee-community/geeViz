@@ -419,7 +419,7 @@ function harmonicRegression(allImages,indexNames,whichHarmonics){
   Map.addLayer(coeffs,{},'Harmonic Regression Coefficients',false);
   Map.addLayer(coeffs,{},'Coeffs')
   
-// newPredict(coeffs,withHarmonics)
+newPredict(coeffs,withHarmonics)
   
 //   var dateStack = getDateStack(startDate.get('year'),endDate.get('year'),startDate.getFraction('year').multiply(365),endDate.getFraction('year').multiply(365),syntheticFrequency);
 //   var synthHarmonics = getHarmonics2(dateStack,'year',whichHarmonics)
