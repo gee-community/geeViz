@@ -349,10 +349,10 @@ function newPredict(coeffs,harmonics){
 predicted = ee.ImageCollection(predicted)
 var g = Chart.image.series(predicted,plotPoint,ee.Reducer.mean(),90);
 print(g);
-var g = Chart.image.series(predicted.select([0]),plotPoint,ee.Reducer.mean(),90);
-print(g);
-var g = Chart.image.series(predicted.select([1]),plotPoint,ee.Reducer.mean(),90);
-print(g);
+// var g = Chart.image.series(predicted.select([0]),plotPoint,ee.Reducer.mean(),90);
+// print(g);
+// var g = Chart.image.series(predicted.select([1]),plotPoint,ee.Reducer.mean(),90);
+// print(g);
 Map.addLayer(predicted,{},'predicted',false)
 
 return predicted
