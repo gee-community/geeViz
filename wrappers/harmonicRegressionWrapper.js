@@ -438,13 +438,15 @@ function harmonicRegression(allImages,indexNames,whichHarmonics){
   //Add independent predictors (harmonics)
   var withHarmonics = getHarmonics2(allIndices,'year',whichHarmonics)
   var withHarmonicsBns = ee.Image(withHarmonics.first()).bandNames().slice(indexNames.length+1,null);
-  print('bns',ee.Image(withHarmonics.first()).bandNames(),withHarmonicsBns)
+  
   //Optionally chart the collection with harmonics
   var g = Chart.image.series(withHarmonics.select(withHarmonicsBns),plotPoint,ee.Reducer.mean(),30);
   print(g);
+  
   //Fit a linear regression model
   var coeffs = newRobustMultipleLinear2(withHarmonics)
   
+  //Can visualize the phase and amplitude if only the first ([2]) harmonic is chosen
   if(whichHarmonics == 2){
     var pa = getPhaseAmplitude(coeffs);
   // Turn the HSV data into an RGB image and add it to the map.
