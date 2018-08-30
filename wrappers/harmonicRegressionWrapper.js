@@ -1,10 +1,10 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-78.51688457474665, 37.01424484164281],
-          [-78.57902599320369, 37.006020245688354],
-          [-78.56529308304744, 36.97777569372612],
-          [-78.48838878617244, 36.97558150316421]]]),
-    plotPoint = /* color: #98ff00 */ee.Geometry.Point([-78.53164745316462, 36.99093950844145]);
+        [[[-111.49321423216657, 40.434485832913715],
+          [-111.51793347044782, 40.86791426940303],
+          [-111.86949597044782, 40.85752835366246],
+          [-111.83104382201032, 40.434485832913715]]]),
+    plotPoint = /* color: #98ff00 */ee.Geometry.Point([-111.66127072020367, 40.638917787647635]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -334,7 +334,10 @@ function newPredict(coeffs,harmonics){
       var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(2,null));
       var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename(['amplitude']);
       // var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
-      var phase = regCoeffs.select([0]).atan2(regCoeffs.select([1])).rename(['phase']);
+      var phase = regCoeffs.select([0]).atan2(regCoeffs.select([1]))
+      .unitScale(-Math.PI, Math.PI)
+      .divide(2).multiply(365).multiply(0.01)
+      .rename(['phase']);
       predicted = predictorBands.multiply(others).reduce(ee.Reducer.sum()).add(intercept).float();
       return predicted.float().addBands(amplitude).addBands(phase)
     
