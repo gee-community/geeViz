@@ -454,7 +454,15 @@ function harmonicRegression(allImages,indexNames,whichHarmonics){
   var coeffs = newRobustMultipleLinear2(withHarmonics)
   
   var pa = getPhaseAmplitude(coeffs);
-  print('pa',pa)
+  
+  var magnitude = cos.hypot(sin).multiply(5);
+  var phase = sin.atan2(cos).unitScale(-Math.PI, Math.PI);
+  var val = harmonicLandsat.select('NDVI').reduce('mean');
+
+  // Turn the HSV data into an RGB image and add it to the map.
+  var seasonality = pa.select([1,0]).addBands(allIndices.select(['NDVI'])).hsvToRgb();
+ 
+  Map.addLayer(seasonality, {}, 'Seasonality');
   var bns = coeffs.bandNames();
   print(bns)
   
