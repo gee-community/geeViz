@@ -1,10 +1,10 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-114.07715235046322, 47.851903617480765],
-          [-113.89038477233822, 47.88875235194944],
-          [-113.77502832702572, 48.07260311206661],
-          [-114.13757715515072, 48.05424749726343]]]),
-    plotPoint = /* color: #98ff00 */ee.Geometry.Point([-113.81677453441398, 48.014481292873974]);
+        [[[-78.51688457474665, 37.01424484164281],
+          [-78.57902599320369, 37.006020245688354],
+          [-78.56529308304744, 36.97777569372612],
+          [-78.48838878617244, 36.97558150316421]]]),
+    plotPoint = /* color: #98ff00 */ee.Geometry.Point([-78.53164745316462, 36.99093950844145]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -80,7 +80,7 @@ var applyFmaskCloudMask = true;
 var applyTDOM = false;
 var applyFmaskCloudShadowMask = true;
 
-var applyFmaskSnowMask = false;
+var applyFmaskSnowMask = true;
 
 // 11. Cloud and cloud shadow masking parameters.
 // If cloudScoreTDOM is chosen
