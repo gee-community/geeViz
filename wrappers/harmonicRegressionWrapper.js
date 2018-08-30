@@ -309,7 +309,7 @@ function newPredict(coeffs,harmonics){
   var depBandNames = ee.List(harmonics.get('depBandNames'));
   var predictedBandNames = depBandNames.map(function(depbnms){return ee.String(depbnms).cat('_predicted')})
   var predictedBandNumbers = ee.List.sequence(0,predictedBandNames.length().subtract(1));
-
+  print('ind',indBandNames)
   var models = ee.List.sequence(0,noDependents.subtract(1));
   var parsedModel =models.map(function(mn){
     mn = ee.Number(mn);
@@ -330,14 +330,16 @@ function newPredict(coeffs,harmonics){
       var outName = ee.String(pm.get(1)).cat('_predicted')
       var intercept = modelCoeffs.select(modelCoeffs.bandNames().slice(0,1));
       var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
-    
+      
+      var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(2,null));
+      
       predicted = predictorBands.multiply(others).reduce(ee.Reducer.sum()).add(intercept).float();
-      return predicted.float()
+      return predicted.float().addBands(regCoeffs)
     
     })
     //Convert to an image
     predictedList = ee.ImageCollection.fromImages(predictedList);
-    var predictedImage = collectionToImage(predictedList).select(predictedBandNumbers,predictedBandNames);
+    var predictedImage = collectionToImage(predictedList);//.select(predictedBandNumbers,predictedBandNames);
     
     //Set some metadata
     var out = actual.addBands(predictedImage.float())
