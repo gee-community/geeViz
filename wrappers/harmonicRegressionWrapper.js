@@ -317,13 +317,13 @@ function newPredict(coeffs,harmonics){
     return bandNames.slice(mn.multiply(modelLength),mn.multiply(modelLength).add(modelLength))
   });
   print('Parsed harmonic regression model',parsedModel,predictedBandNames);
-  
+  print(indBandNames)
   //Apply parsed model
   var predicted =harmonics.map(function(img){
     var time = img.select(timeBand);
     var actual = img.select(actualBands).float();
     var predictorBands = img.select(indBandNames);
-    print(predictorBands)
+   
     //Iterate across each model for each dependent variable
     var predictedList =parsedModel.map(function(pm){
       pm = ee.List(pm);
