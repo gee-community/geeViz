@@ -258,6 +258,47 @@ function newRobustMultipleLinear2(dependentsIndependents){//,dependentBands,inde
   
   return reducerOut
 }
+///////////////////////////////////////////////
+function getPhaseAmplitude(coeffs){
+  //Parse the model
+  var bandNames = coeffs.bandNames();
+  var bandNumber = bandNames.length();
+  var noDependents = ee.Number(coeffs.get('noDependents'));
+  var modelLength = ee.Number(coeffs.get('modelLength'));
+  var interceptBands = ee.List.sequence(0,bandNumber.subtract(1),modelLength);
+  
+  var models = ee.List.sequence(0,noDependents.subtract(1));
+  var parsedModel =models.map(function(mn){
+    mn = ee.Number(mn);
+    return bandNames.slice(mn.multiply(modelLength),mn.multiply(modelLength).add(modelLength))
+  });
+  print('Parsed harmonic regression model',parsedModel);
+
+  
+  var phaseAmplitude =parsedModel.map(function(pm){
+      pm = ee.List(pm);
+      var modelCoeffs = coeffs.select(pm);
+      var outName = ee.String(pm.get(1)).cat('_predicted')
+      var intercept = modelCoeffs.select(modelCoeffs.bandNames().slice(0,1));
+      var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
+      
+      var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(2,null));
+      var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename(['amplitude']);
+      // var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
+      var phase = regCoeffs.select([0]).atan2(regCoeffs.select([1]))
+      .unitScale(-Math.PI, Math.PI)
+      // .divide(2).multiply(365).multiply(0.01)
+      .rename(['phase']);
+      
+      return amplitude.addBands(phase)
+    
+    })
+    //Convert to an image
+    phaseAmplitude = ee.ImageCollection.fromImages(phaseAmplitude);
+    return phaseAmplitude
+
+
+}
 //////////////////////////////////////////////////
 //Function to set null value for export or conversion to arrays
 function setNoData(image,noDataValue){
@@ -316,13 +357,13 @@ function newPredict(coeffs,harmonics){
     return bandNames.slice(mn.multiply(modelLength),mn.multiply(modelLength).add(modelLength))
   });
   print('Parsed harmonic regression model',parsedModel,predictedBandNames);
-
+  
   //Apply parsed model
   var predicted =harmonics.map(function(img){
     var time = img.select(timeBand);
     var actual = img.select(actualBands).float();
     var predictorBands = img.select(indBandNames);
-   
+    
     //Iterate across each model for each dependent variable
     var predictedList =parsedModel.map(function(pm){
       pm = ee.List(pm);
@@ -330,37 +371,24 @@ function newPredict(coeffs,harmonics){
       var outName = ee.String(pm.get(1)).cat('_predicted')
       var intercept = modelCoeffs.select(modelCoeffs.bandNames().slice(0,1));
       var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
-      
-      var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(2,null));
-      var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename(['amplitude']);
-      // var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
-      var phase = regCoeffs.select([0]).atan2(regCoeffs.select([1]))
-      .unitScale(-Math.PI, Math.PI)
-      .divide(2).multiply(365).multiply(0.01)
-      .rename(['phase']);
+    
       predicted = predictorBands.multiply(others).reduce(ee.Reducer.sum()).add(intercept).float();
-      return predicted.float().addBands(amplitude).addBands(phase)
+      return predicted.float()
     
     })
     //Convert to an image
     predictedList = ee.ImageCollection.fromImages(predictedList);
-    var predictedImage = collectionToImage(predictedList);//.select(predictedBandNumbers,predictedBandNames);
+    var predictedImage = collectionToImage(predictedList).select(predictedBandNumbers,predictedBandNames);
     
     //Set some metadata
     var out = actual.addBands(predictedImage.float())
-    // var out = predictedImage.float()
     .copyProperties(img,['system:time_start','system:time_end'])
     return out
     
   })
 predicted = ee.ImageCollection(predicted)
-print(predicted.first())
 var g = Chart.image.series(predicted,plotPoint,ee.Reducer.mean(),90);
 print(g);
-// var g = Chart.image.series(predicted.select([0]),plotPoint,ee.Reducer.mean(),90);
-// print(g);
-// var g = Chart.image.series(predicted.select([1]),plotPoint,ee.Reducer.mean(),90);
-// print(g);
 Map.addLayer(predicted,{},'predicted',false)
 
 return predicted
