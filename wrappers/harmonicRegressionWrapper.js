@@ -172,8 +172,6 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
   );
 
 ////////////////////////////////////////////////////////////
-
-
 ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).slice(0,1).getInfo().map(function(yr){
   var startYearT = yr-timebuffer;
   var endYearT = yr+timebuffer;
