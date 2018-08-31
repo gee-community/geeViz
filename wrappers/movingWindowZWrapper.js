@@ -16,14 +16,14 @@ var studyArea = ee.FeatureCollection('projects/USFS/LCMS-NFS/R1/FNF/FNF_GNP_Merg
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 250;
-var endJulian = 290; 
+var startJulian = 200;
+var endJulian = 300; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2012;
+var startYear = 2000;
 var endYear = 2017;
 
 
@@ -170,7 +170,7 @@ ee.List.sequence(startYear+baselineLength,endYear,1).getInfo().map(function(yr){
       return img.subtract(blMean).divide(blStd);
     }).reduce(zReducer);
     var outName = blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
-    Map.addLayer(analysisImagesZ,{'min':-20,'max':20,'palette':'F00,888,0F0'},'z '+outName,false);
+    // Map.addLayer(analysisImagesZ,{'min':-20,'max':20,'palette':'F00,888,0F0'},'z '+outName,false);
     var out = analysisImages.reduce(zReducer).addBands(analysisImagesZ)
           .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis(),
                 'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis()})
