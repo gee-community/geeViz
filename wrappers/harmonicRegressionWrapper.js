@@ -1,5 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var geometry = /* color: #d63000 */ee.Geometry.MultiPoint(),
+var geometry = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-113.802110070818, 48.31180331809498],
+          [-114.00261055909925, 48.182859332491994],
+          [-113.88862740480238, 48.055426046147986],
+          [-113.66066109620863, 48.28896461867863]]]),
     plotPoint = /* color: #98ff00 */ee.Geometry.Point([-113.93618740088061, 48.20724979387412]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for running harmonic regression across a moving window of years
@@ -14,7 +18,7 @@ var dLib = require('users/USFS_GTAC/modules:changeDetectionLib.js');
 // 1. Specify study area: Study area
 // Can specify a country, provide a fusion table  or asset table (must add 
 // .geometry() after it), or draw a polygon and make studyArea = drawnPolygon
-var studyArea = ee.FeatureCollection('projects/USFS/LCMS-NFS/R1/FNF/FNF_GNP_Merge_Admin_BND_1k').geometry();//paramDict[studyAreaName][3];
+var studyArea = geometry;
 
 // 2. Update the startJulian and endJulian variables to indicate your seasonal 
 // constraints. This supports wrapping for tropics and southern hemisphere.
@@ -111,11 +115,11 @@ var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 var exportComposites = false;
 
 //Set up Names for the export
-var outputName = 'FNF_Harmonic_Coefficients_';
+var outputName = 'Harmonic_Coefficients_';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
-var exportPathRoot = 'projects/USFS/LCMS-NFS/R1/FNF/Base-Learners/Harmonic-Coefficients';
+var exportPathRoot = 'users/iwhousman/test/ChangeCollection';
 
 // var exportPathRoot = 'projects/USFS/LCMS-NFS/R4/BT/Base-Learners/Base-Learners-Collection';
 //CRS- must be provided.  
@@ -187,5 +191,5 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   
 });
 
-coeffCollection = ee.ImageCollection(coeffCollection);
+// coeffCollection = ee.ImageCollection(coeffCollection);
 // Map.addLayer(coeffCollection);
