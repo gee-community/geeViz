@@ -262,36 +262,8 @@ function newRobustMultipleLinear2(dependentsIndependents){//,dependentBands,inde
   return reducerOut;
 };
 
-//////////////////////////////////////////////////
-//Function to set null value for export or conversion to arrays
-function setNoData(image,noDataValue){
-  var m = image.mask();
-  image = image.mask(ee.Image(1));
-  image = image.where(m.not(),noDataValue);
-  return image;
-}
+
 /////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////
-//Function to convert collection to a multi-band image
-//Assumes a single-band image in the collection
-//Derives its own band names
-function collectionToImage(collection){
-  var stack = ee.Image(collection.iterate(function(img, prev) {
-    return ee.Image(prev).addBands(img);
-  }, ee.Image(1)));
-
-  stack = stack.select(ee.List.sequence(1, stack.bandNames().size().subtract(1)));
-  return stack;
-}
-
-function addDateBand(img){
-  var d = ee.Date(img.get('system:time_start'));
-  var y = d.get('year');
-  d = y.add(d.getFraction('year'));
-  var db = ee.Image.constant(d).rename(['year']).float();
-  db = db.updateMask(img.select([0]).mask());
-  return img.addBands(db);
-}
 ///////////////////////////////////////////////
 function getPhaseAmplitude(coeffs){
   //Parse the model
@@ -386,12 +358,12 @@ function newPredict(coeffs,harmonics){
     return out;
     
   });
-predicted = ee.ImageCollection(predicted);
-var g = Chart.image.series(predicted,plotPoint,ee.Reducer.mean(),90);
-print(g);
-Map.addLayer(predicted,{},'predicted',false);
-
-return predicted;
+  predicted = ee.ImageCollection(predicted);
+  var g = Chart.image.series(predicted,plotPoint,ee.Reducer.mean(),90);
+  print(g);
+  Map.addLayer(predicted,{},'predicted',false);
+  
+  return predicted;
 }
 //////////////////////////////////////////////////////
 //Function to get a dummy image stack for synthetic time series
@@ -408,7 +380,7 @@ function getDateStack(startYear,endYear,startJulian,endJulian,frequency){
   var l = range(1,indexNames.length+1);
   l = l.map(function(i){return i%i});
   var c = ee.Image(l).rename(indexNames);
-  var c = c.divide(c)
+  c = c.divide(c);
  
   dateSets = dateSets.flatten();
   var stack = dateSets.map(function(dt){
