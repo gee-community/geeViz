@@ -128,7 +128,7 @@ var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 var exportComposites = false;
 
 //Set up Names for the export
-var outputName = 'EWMA';
+var outputName = 'Harmonic_Coefficients_';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
@@ -171,5 +171,9 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).slice(0,1).getInfo()
   var coeffs = coeffsPredicted[0];
   var predicted = coeffsPredicted[1];
   
+  var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
+  var outPath = exportPathRoot + '/' + outName
+  exportToAssetWrapper(coeffs,outName,assetPath,
+  pyramidingPolicy,roi,scale,crs,transform)
   Map.addLayer(allScenesT.median(),{'min':0.1,'max':0.3,'bands':'swir1,nir,red'},yr.toString(),false);
 })
