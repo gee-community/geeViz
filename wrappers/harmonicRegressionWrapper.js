@@ -1,9 +1,5 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-113.8425214439518, 48.15760867770853],
-          [-113.8809735923893, 48.28113317304339],
-          [-114.11855293809242, 48.28661623348177],
-          [-114.10893990098305, 48.19423960182066]]]),
+var geometry = /* color: #d63000 */ee.Geometry.MultiPoint(),
     plotPoint = /* color: #98ff00 */ee.Geometry.Point([-113.93618740088061, 48.20724979387412]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for running harmonic regression across a moving window of years
@@ -159,7 +155,7 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
   );
 
 ////////////////////////////////////////////////////////////
-ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).slice(0,3).getInfo().map(function(yr){
+ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo().map(function(yr){
   var startYearT = yr-timebuffer;
   var endYearT = yr+timebuffer;
   var allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT,endYearT,'year'));
