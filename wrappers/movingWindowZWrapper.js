@@ -149,10 +149,10 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo().map(function(yr){
   var blStartYear = yr-baselineLength;
   var blEndYear = yr-1;
-  print(yr,blStartYear,blEndYear)
+  print(yr,blStartYear,blEndYear);
   ee.List.sequence(startJulian,endJulian-nDays,nDays).getInfo().map(function(jd){
     var jdStart = jd;
-    var jdEnd = jd+nDays
+    var jdEnd = jd+nDays;
     
     var blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear,blEndYear,'year'))
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd));
@@ -164,9 +164,11 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
     var blStd = blImages.reduce(ee.Reducer.stdDev());
     
     var analysisImagesZ = analysisImages.map(function(img){
-      return img.subtract(blMean).divide(stdDev)
-    })
-  })
+      return img.subtract(blMean).divide(blStd);
+    });
+    
+    Map.addLayer(analysiImagesZ.mean(),{'min':-1,'max':1,'palette':'F00,888,0F0'},'z '+blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString())
+  });
   //Set up dates
   // var startYearT = yr-timebuffer;
   // var endYearT = yr+timebuffer;
