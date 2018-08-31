@@ -168,7 +168,8 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).slice(0,1).getInfo()
             .set({'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
             'timebuffer':timebuffer,
             'startYearT':startYearT,
-            ''
+            'endYearT':endYearT,
+            
             });
   var predicted = coeffsPredicted[1];
   
