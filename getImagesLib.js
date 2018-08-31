@@ -1565,7 +1565,7 @@ function newPredict(coeffs,harmonics){
     mn = ee.Number(mn);
     return bandNames.slice(mn.multiply(modelLength),mn.multiply(modelLength).add(modelLength));
   });
-  print('Parsed harmonic regression model',parsedModel,predictedBandNames);
+  // print('Parsed harmonic regression model',parsedModel,predictedBandNames);
   
   //Apply parsed model
   var predicted =harmonics.map(function(img){
@@ -1598,7 +1598,7 @@ function newPredict(coeffs,harmonics){
   predicted = ee.ImageCollection(predicted);
   // var g = Chart.image.series(predicted,plotPoint,ee.Reducer.mean(),90);
   // print(g);
-  Map.addLayer(predicted,{},'predicted',false);
+  // Map.addLayer(predicted,{},'predicted',false);
   
   return predicted;
 }
