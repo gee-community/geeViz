@@ -23,8 +23,8 @@ var endJulian = 290;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 1984;
-var endYear = 1990;
+var startYear = 2012;
+var endYear = 2017;
 
 
 
@@ -126,7 +126,7 @@ var scale = null;
 //Moving window z parameters
 
 var nDays = 32;
-var baselineLength = 3;
+var baselineLength = 5;
 
 
 var zReducer = ee.Reducer.mean();
@@ -152,6 +152,7 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
   var blEndYear = yr-1;
   // print(yr,blStartYear,blEndYear);
   var zJds =ee.List.sequence(startJulian,endJulian-nDays,nDays).getInfo().map(function(jd){
+    print(jd)
     var jdStart = jd;
     var jdEnd = jd+nDays;
     
@@ -168,12 +169,12 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
       return img.subtract(blMean).divide(blStd);
     }).reduce(zReducer);
     var outName = blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
-    // Map.addLayer(analysisImagesZ,{'min':-2,'max':2,'palette':'F00,888,0F0'},'z '+outName,false);
+    Map.addLayer(analysisImagesZ,{'min':-2,'max':2,'palette':'F00,888,0F0'},'z '+outName,false);
     return analysisImages.mean().addBands(analysisImagesZ)
           .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis(),
                 'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis()})
   });
-  return ee.FeatureCollection(zJds)
+  // return ee.FeatureCollection(zJds)
   //Set up dates
   // var startYearT = yr-timebuffer;
   // var endYearT = yr+timebuffer;
@@ -203,6 +204,6 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
   // return coeffs;
   
 });
-zCollection = ee.ImageCollection(ee.FeatureCollection(zCollection).flatten())
-Map.addLayer(zCollection,{},'z collection',false)
-Map.addLayer(allScenes,{},'all scenes',false)
+// zCollection = ee.ImageCollection(ee.FeatureCollection(zCollection).flatten())
+// Map.addLayer(zCollection,{},'z collection',false)
+// Map.addLayer(allScenes,{},'all scenes',false)
