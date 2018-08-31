@@ -6,6 +6,8 @@ var geometry = /* color: #d63000 */ee.Geometry.Polygon(
           [-113.32026165610284, 48.56127767629989]]]),
     plotPoint = /* color: #98ff00 */ee.Geometry.Point([-113.93618740088061, 48.20724979387412]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
+//Wrapper for running harmonic regression across a moving window of years
+
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 var dLib = require('users/USFS_GTAC/modules:changeDetectionLib.js');
@@ -37,21 +39,6 @@ var endYear = 1990;
 // in a 3 year moving window
 var timebuffer = 3;
 
-// 5. Specify the weights to be used for the moving window created by timeBuffer
-//For example- if timeBuffer is 1, that is a 3 year moving window
-//If the center year is 2000, then the years are 1999,2000, and 2001
-//In order to overweight the center year, you could specify the weights as
-//[1,5,1] which would duplicate the center year 5 times and increase its weight for
-//the compositing method
-var weights = [1,5,1];
-
-
-
-// 6. Choose medoid or median compositing method. 
-// Median tends to be smoother, while medoid retains 
-// single date of observation across all bands
-// If not exporting indices with composites to save space, medoid should be used
-var compositingMethod = 'medoid';
 
 // 7. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
 // Specify TOA or SR
