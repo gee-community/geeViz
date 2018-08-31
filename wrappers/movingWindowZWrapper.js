@@ -202,4 +202,5 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
   // return coeffs;
   
 });
+zCollection = ee.ImageCollection(ee.FeatureCollection(zCollection).flatten())
 print(zCollection)
