@@ -24,12 +24,8 @@ var endJulian = 300;
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
 var startYear = 1984;
-var endYear = 2019;
+var endYear = 1990;
 
-// 4. Specify an annual buffer to include imagery from the same season 
-// timeframe from the prior and following year. timeBuffer = 1 will result 
-// in a 3 year moving window
-var timebuffer = 1;
 
 
 // 7. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
@@ -130,6 +126,7 @@ var scale = null;
 //Moving window z parameters
 
 var nDays = 32;
+var baselineLength = 3;
 
 
 //Which harmonics to include
@@ -155,36 +152,35 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and fit harmonic regression model
-var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo().map(function(yr){
-  //Set up dates
-  var startYearT = yr-timebuffer;
-  var endYearT = yr+timebuffer;
+var zCollection = ee.List.sequence(startYear+baselineLength,endYear-timebuffer,1).getInfo().map(function(yr){
+  print(yr)
+  // //Set up dates
+  // var startYearT = yr-timebuffer;
+  // var endYearT = yr+timebuffer;
   
-  //Get scenes for those dates
-  var allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT,endYearT,'year'));
+  // //Get scenes for those dates
+  // var allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT,endYearT,'year'));
   
-  //Fit harmonic model
-  var coeffsPredicted =getImageLib.getHarmonicCoefficientsAndFit(allScenesT,indexNames,whichHarmonics);
+  // //Fit harmonic model
+  // var coeffsPredicted =getImageLib.getHarmonicCoefficientsAndFit(allScenesT,indexNames,whichHarmonics);
   
-  //Set some properties
-  var coeffs = coeffsPredicted[0]
-            .set({'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
-            'timebuffer':timebuffer,
-            'startYearT':startYearT,
-            'endYearT':endYearT,
-            }).float();
+  // //Set some properties
+  // var coeffs = coeffsPredicted[0]
+  //           .set({'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
+  //           'timebuffer':timebuffer,
+  //           'startYearT':startYearT,
+  //           'endYearT':endYearT,
+  //           }).float();
             
-  var predicted = coeffsPredicted[1];
+  // var predicted = coeffsPredicted[1];
   
-  //Export image
-  var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
-  var outPath = exportPathRoot + '/' + outName;
-  getImageLib.exportToAssetWrapper(coeffs,outName,outPath,
-  'mean',studyArea,scale,crs,transform);
-  // Map.addLayer(allScenesT.median(),{'min':0.1,'max':0.3,'bands':'swir1,nir,red'},yr.toString(),false);
-  return coeffs;
+  // //Export image
+  // var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
+  // var outPath = exportPathRoot + '/' + outName;
+  // getImageLib.exportToAssetWrapper(coeffs,outName,outPath,
+  // 'mean',studyArea,scale,crs,transform);
+  // // Map.addLayer(allScenesT.median(),{'min':0.1,'max':0.3,'bands':'swir1,nir,red'},yr.toString(),false);
+  // return coeffs;
   
 });
 
-coeffCollection = ee.ImageCollection(coeffCollection);
-// Map.addLayer(coeffCollection);
