@@ -75,12 +75,12 @@ var defringeL5 = false;
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
 var applyCloudScore = false;
-var applyFmaskCloudMask = false;
+var applyFmaskCloudMask = true;
 
 var applyTDOM = false;
-var applyFmaskCloudShadowMask = false;
+var applyFmaskCloudShadowMask = true;
 
-var applyFmaskSnowMask = false;
+var applyFmaskSnowMask = true;
 
 // 11. Cloud and cloud shadow masking parameters.
 // If cloudScoreTDOM is chosen
@@ -371,15 +371,14 @@ function newPredict(coeffs,harmonics){
       var outName = ee.String(pm.get(1)).cat('_predicted')
       var intercept = modelCoeffs.select(modelCoeffs.bandNames().slice(0,1));
       var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
-      var trend = modelCoeffs.select(modelCoeffs.bandNames().slice(1,2));
+    
       predicted = predictorBands.multiply(others).reduce(ee.Reducer.sum()).add(intercept).float();
-      var detrended = predictorBands.select([0]).multiply(trend).add(intercept).float().rename(['trend']);
-      return predicted.addBands(detrended).float()
+      return predicted.float()
     
     })
     //Convert to an image
     predictedList = ee.ImageCollection.fromImages(predictedList);
-    var predictedImage = collectionToImage(predictedList)//.select(predictedBandNumbers,predictedBandNames);
+    var predictedImage = collectionToImage(predictedList).select(predictedBandNumbers,predictedBandNames);
     
     //Set some metadata
     var out = actual.addBands(predictedImage.float())
@@ -463,7 +462,7 @@ function harmonicRegression(allImages,indexNames,whichHarmonics){
   Map.addLayer(coeffs,{},'Harmonic Regression Coefficients',false);
 
   
-  newPredict(coeffs,withHarmonics)
+  // newPredict(coeffs,withHarmonics)
   
 //   var dateStack = getDateStack(startDate.get('year'),endDate.get('year'),startDate.getFraction('year').multiply(365),endDate.getFraction('year').multiply(365),syntheticFrequency);
 //   var synthHarmonics = getHarmonics2(dateStack,'year',whichHarmonics)
@@ -495,7 +494,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).slice(0,1).getInfo()
   var startYearT = yr-timebuffer;
   var endYearT = yr+timebuffer;
   var allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT,endYearT,'year'));
-  var syntheticStack =harmonicRegression(allScenesT,['nir','NDVI','NBR'],[2])
+  var syntheticStack =harmonicRegression(allScenesT,indexNames,[2])
 
   Map.addLayer(allScenesT.median(),{'min':0.1,'max':0.3,'bands':'swir1,nir,red'},yr.toString(),false);
 })
