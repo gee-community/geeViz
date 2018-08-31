@@ -146,11 +146,23 @@ var transform = [30,0,-2361915.0,0,-30,3177735.0];
 //Specify scale if transform is null
 var scale = null;
 
-var indexNames = ['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 
+////////////////////////////////////////////////
+//Harmonic regression parameters
+
+//Which harmonics to include
+//Is a list of numbers of the n PI per year
+//Typical assumption of 1 cycle/yr would be [2]
+//If trying to overfit, or expected bimodal phenology try adding a higher frequency as well
+//ex. [2,4]
+var whichHarmonics = [2];
+
+//Which bands/indices to run harmonic regression across
+var indexNames = ['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+//Get all images
 var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
   
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
@@ -162,18 +174,17 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 
 ///////////////////////////////////////////////////////
 //Function Calls
-
 ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).slice(0,1).getInfo().map(function(yr){
   var startYearT = yr-timebuffer;
   var endYearT = yr+timebuffer;
   var allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT,endYearT,'year'));
-  var coeffsPredicted =getImageLib.getHarmonicCoefficientsAndFit(allScenesT,indexNames,[2])
+  var coeffsPredicted =getImageLib.getHarmonicCoefficientsAndFit(allScenesT,indexNames,whichHarmonics);
   var coeffs = coeffsPredicted[0];
   var predicted = coeffsPredicted[1];
   
   var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
-  var outPath = exportPathRoot + '/' + outName
+  var outPath = exportPathRoot + '/' + outName;
   getImageLib.exportToAssetWrapper(coeffs,outName,outPath,
-  'mean',geometry,scale,crs,transform)
+  'mean',geometry,scale,crs,transform);
   Map.addLayer(allScenesT.median(),{'min':0.1,'max':0.3,'bands':'swir1,nir,red'},yr.toString(),false);
 })
