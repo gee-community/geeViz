@@ -147,7 +147,9 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and fit harmonic regression model
 var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo().map(function(yr){
-  var blStartYear = yr-bas
+  var blStartYear = yr-baselineLength;
+  var blEndYear = yr-1;
+  print(yr,blStartYear,blEndYear)
   // //Set up dates
   // var startYearT = yr-timebuffer;
   // var endYearT = yr+timebuffer;
