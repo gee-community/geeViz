@@ -169,7 +169,7 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
       return img.subtract(blMean).divide(blStd);
     }).reduce(zReducer);
     var outName = blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
-    Map.addLayer(analysisImagesZ,{'min':-2,'max':2,'palette':'F00,888,0F0'},'z '+outName,false);
+    Map.addLayer(analysisImagesZ,{'min':-20,'max':20,'palette':'F00,888,0F0'},'z '+outName,false);
     return analysisImages.mean().addBands(analysisImagesZ)
           .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis(),
                 'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis()})
