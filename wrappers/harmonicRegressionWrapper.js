@@ -185,4 +185,4 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).slice(0,1).getInfo()
   getImageLib.exportToAssetWrapper(coeffs,outName,outPath,
   'mean',geometry,scale,crs,transform);
   Map.addLayer(allScenesT.median(),{'min':0.1,'max':0.3,'bands':'swir1,nir,red'},yr.toString(),false);
-})
+});
