@@ -147,9 +147,10 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and fit harmonic regression model
 var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo().map(function(yr){
+  
   var blStartYear = yr-baselineLength;
   var blEndYear = yr-1;
-  print(yr,blStartYear,blEndYear);
+  // print(yr,blStartYear,blEndYear);
   var zJds =ee.List.sequence(startJulian,endJulian-nDays,nDays).getInfo().map(function(jd){
     var jdStart = jd;
     var jdEnd = jd+nDays;
@@ -169,8 +170,8 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
     var outName = blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
     // Map.addLayer(analysisImagesZ,{'min':-2,'max':2,'palette':'F00,888,0F0'},'z '+outName,false);
     return analysisImages.mean().addBands(analysisImagesZ)
-          .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day'),
-                'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day')})
+          .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis(),
+                'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis()})
   });
   return ee.FeatureCollection(zJds)
   //Set up dates
@@ -203,4 +204,5 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
   
 });
 zCollection = ee.ImageCollection(ee.FeatureCollection(zCollection).flatten())
-print(zCollection)
+Map.addLayer(zCollection)
+
