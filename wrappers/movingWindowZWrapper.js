@@ -181,7 +181,17 @@ ee.List.sequence(startYear+baselineLength,endYear,1).getInfo().map(function(yr){
     // Map.addLayer(analysisImagesZ,{'min':-20,'max':20,'palette':'F00,888,0F0'},'z '+outName,false);
     var out = analysisImages.reduce(zReducer).addBands(analysisImagesZ)
           .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis(),
-                'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis()})
+                'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis(),
+                'baselineYrs': baselineLength,
+                'year':yr,
+                
+          })
+     //Export image
+  // var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
+  // var outPath = exportPathRoot + '/' + outName;
+  // getImageLib.exportToAssetWrapper(coeffs,outName,outPath,
+  // 'mean',studyArea,scale,crs,transform);
+    
     zCollection.push(out)
     
   });
