@@ -430,7 +430,39 @@ function getDateStack(startYear,endYear,startJulian,endJulian,frequency){
 
 
 ////////////////////////////////////////////////////////////////////
-function harmonicRegression(allImages,indexNames,whichHarmonics){
+function getHarmonicCoefficients(allImages,indexNames,whichHarmonics){
+  
+  //Select desired bands
+  var allIndices = allImages.select(indexNames);
+  
+  //Add date band
+  allIndices = allIndices.map(addDateBand);
+  
+  //Add independent predictors (harmonics)
+  var withHarmonics = getHarmonics2(allIndices,'year',whichHarmonics)
+  var withHarmonicsBns = ee.Image(withHarmonics.first()).bandNames().slice(indexNames.length+1,null);
+  
+  //Optionally chart the collection with harmonics
+  var g = Chart.image.series(withHarmonics.select(withHarmonicsBns),plotPoint,ee.Reducer.mean(),30);
+  print(g);
+  
+  //Fit a linear regression model
+  var coeffs = newRobustMultipleLinear2(withHarmonics)
+  
+  //Can visualize the phase and amplitude if only the first ([2]) harmonic is chosen
+  if(whichHarmonics == 2){
+    var pa = getPhaseAmplitude(coeffs);
+  // Turn the HSV data into an RGB image and add it to the map.
+  var seasonality = pa.select([1,0]).addBands(allIndices.select([indexNames[0]]).mean()).hsvToRgb();
+  Map.addLayer(seasonality, {}, 'Seasonality');
+  }
+  
+  
+  
+  Map.addLayer(coeffs,{},'Harmonic Regression Coefficients',false);
+  return coeffs;
+}
+function getHarmonicFit(allImages,indexNames,whichHarmonics){
   
   //Select desired bands
   var allIndices = allImages.select(indexNames);
