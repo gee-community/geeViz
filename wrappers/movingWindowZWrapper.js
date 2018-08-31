@@ -162,6 +162,10 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
     
     var blMean = blImages.mean();
     var blStd = blImages.reduce(ee.Reducer.stdDev());
+    
+    var analysisImagesZ = analysisImages.map(function(img){
+      return img.subtract(blMean).divide(stdDev)
+    })
   })
   //Set up dates
   // var startYearT = yr-timebuffer;
