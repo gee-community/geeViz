@@ -146,12 +146,13 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and fit harmonic regression model
-var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo().map(function(yr){
+var zCollection = []
+ee.List.sequence(startYear+baselineLength,endYear,1).getInfo().map(function(yr){
   
   var blStartYear = yr-baselineLength;
   var blEndYear = yr-1;
   // print(yr,blStartYear,blEndYear);
-  var zJds =ee.List.sequence(startJulian,endJulian-nDays,nDays).getInfo().map(function(jd){
+  ee.List.sequence(startJulian,endJulian-nDays,nDays).getInfo().map(function(jd){
     print(jd)
     var jdStart = jd;
     var jdEnd = jd+nDays;
@@ -170,11 +171,13 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
     }).reduce(zReducer);
     var outName = blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
     Map.addLayer(analysisImagesZ,{'min':-20,'max':20,'palette':'F00,888,0F0'},'z '+outName,false);
-    return analysisImages.mean().addBands(analysisImagesZ)
+    var out = analysisImages.reduce(zReducer).addBands(analysisImagesZ)
           .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis(),
                 'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis()})
+    zCollection.push(out)
+    
   });
-  // return ee.FeatureCollection(zJds)
+  
   //Set up dates
   // var startYearT = yr-timebuffer;
   // var endYearT = yr+timebuffer;
@@ -204,6 +207,6 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
   // return coeffs;
   
 });
-// zCollection = ee.ImageCollection(ee.FeatureCollection(zCollection).flatten())
-// Map.addLayer(zCollection,{},'z collection',false)
+zCollection = ee.ImageCollection(zCollection)
+Map.addLayer(zCollection,{},'z collection',false)
 // Map.addLayer(allScenes,{},'all scenes',false)
