@@ -173,5 +173,5 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo().map(functi
   var outPath = exportPathRoot + '/' + outName;
   getImageLib.exportToAssetWrapper(coeffs,outName,outPath,
   'mean',studyArea,scale,crs,transform);
-  Map.addLayer(allScenesT.median(),{'min':0.1,'max':0.3,'bands':'swir1,nir,red'},yr.toString(),false);
+  // Map.addLayer(allScenesT.median(),{'min':0.1,'max':0.3,'bands':'swir1,nir,red'},yr.toString(),false);
 });
