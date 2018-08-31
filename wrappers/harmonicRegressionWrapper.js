@@ -162,6 +162,7 @@ var indexNames = ['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR'
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+//Function Calls
 //Get all images
 var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
   
@@ -172,8 +173,7 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 
 ////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////
-//Function Calls
+
 ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).slice(0,1).getInfo().map(function(yr){
   var startYearT = yr-timebuffer;
   var endYearT = yr+timebuffer;
