@@ -150,7 +150,7 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
   var blStartYear = yr-baselineLength;
   var blEndYear = yr-1;
   print(yr,blStartYear,blEndYear);
-  ee.List.sequence(startJulian,endJulian-nDays,nDays).getInfo().map(function(jd){
+  var zJds =ee.List.sequence(startJulian,endJulian-nDays,nDays).getInfo().map(function(jd){
     var jdStart = jd;
     var jdEnd = jd+nDays;
     
@@ -165,10 +165,14 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
     
     var analysisImagesZ = analysisImages.map(function(img){
       return img.subtract(blMean).divide(blStd);
-    });
+    }).mean();
     var outName = blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
-    Map.addLayer(analysisImagesZ.mean(),{'min':-1,'max':1,'palette':'F00,888,0F0'},'z '+outName,false);
+    // Map.addLayer(analysisImagesZ,{'min':-2,'max':2,'palette':'F00,888,0F0'},'z '+outName,false);
+    return analysisImages.mean().addBands(analysisImagesZ)
+          .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day'),
+                'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day')})
   });
+  return ee.FeatureCollection(zJds)
   //Set up dates
   // var startYearT = yr-timebuffer;
   // var endYearT = yr+timebuffer;
@@ -198,4 +202,4 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
   // return coeffs;
   
 });
-
+print(zCollection)
