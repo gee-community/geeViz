@@ -156,7 +156,12 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
     
     var blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear,blEndYear,'year'))
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd));
-                         
+    
+    var analysisImages = allScenes.filter(ee.Filter.calendarRange(yr,yr,'year'))
+                            .filter(ee.Filter.calendarRange(jdStart,jdEnd)); 
+    
+    var blMean = blImages.mean();
+    var blStd = blImages.reduce(ee.Reducer.stdDev());
   })
   //Set up dates
   // var startYearT = yr-timebuffer;
