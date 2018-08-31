@@ -166,8 +166,8 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
     var analysisImagesZ = analysisImages.map(function(img){
       return img.subtract(blMean).divide(blStd);
     });
-    
-    Map.addLayer(analysiImagesZ.mean(),{'min':-1,'max':1,'palette':'F00,888,0F0'},'z '+blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString())
+    var outName = blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString()) + '_'+jdStart.toString() + '_'+ jdEnd.toString()
+    Map.addLayer(analysisImagesZ.mean(),{'min':-1,'max':1,'palette':'F00,888,0F0'},'z '+
   });
   //Set up dates
   // var startYearT = yr-timebuffer;
