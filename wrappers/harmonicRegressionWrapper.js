@@ -115,11 +115,11 @@ var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 var exportComposites = false;
 
 //Set up Names for the export
-var outputName = 'Harmonic_Coefficients2_';
+var outputName = 'FNF_Harmonic_Coefficients_';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
-var exportPathRoot = 'users/iwhousman/test/ChangeCollection';
+var exportPathRoot = 'projects/USFS/LCMS-NFS/R1/FNF/Base-Learners/Harmonic-Coefficients';
 
 // var exportPathRoot = 'projects/USFS/LCMS-NFS/R4/BT/Base-Learners/Base-Learners-Collection';
 //CRS- must be provided.  
@@ -164,7 +164,12 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).slice(0,1).getInfo()
   var endYearT = yr+timebuffer;
   var allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT,endYearT,'year'));
   var coeffsPredicted =getImageLib.getHarmonicCoefficientsAndFit(allScenesT,indexNames,whichHarmonics);
-  var coeffs = coeffsPredicted[0];
+  var coeffs = coeffsPredicted[0]
+            .set({'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
+            'timebuffer':timebuffer,
+            'startYearT':startYearT,
+            ''
+            });
   var predicted = coeffsPredicted[1];
   
   var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
