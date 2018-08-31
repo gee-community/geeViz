@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-114.25409954672784, 48.31528741010335],
-          [-114.1414896834466, 47.94682677517587],
-          [-113.06208294516534, 48.19092995000801],
-          [-113.32026165610284, 48.56127767629989]]]),
+        [[[-113.8425214439518, 48.15760867770853],
+          [-113.8809735923893, 48.28113317304339],
+          [-114.11855293809242, 48.28661623348177],
+          [-114.10893990098305, 48.19423960182066]]]),
     plotPoint = /* color: #98ff00 */ee.Geometry.Point([-113.93618740088061, 48.20724979387412]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for running harmonic regression across a moving window of years
@@ -115,7 +115,7 @@ var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 var exportComposites = false;
 
 //Set up Names for the export
-var outputName = 'Harmonic_Coefficients_';
+var outputName = 'Harmonic_Coefficients2_';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
