@@ -28,7 +28,7 @@ var endJulian = 365;
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
 var startYear = 1983;
-var endYear = 2015;
+var endYear = 1985;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -172,6 +172,6 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo().map(functi
   var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
   var outPath = exportPathRoot + '/' + outName;
   getImageLib.exportToAssetWrapper(coeffs,outName,outPath,
-  'mean',geometry,scale,crs,transform);
+  'mean',studyArea,scale,crs,transform);
   Map.addLayer(allScenesT.median(),{'min':0.1,'max':0.3,'bands':'swir1,nir,red'},yr.toString(),false);
 });
