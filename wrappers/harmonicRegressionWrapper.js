@@ -32,12 +32,12 @@ var endJulian = 365;
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
 var startYear = 1984;
-var endYear = 1990;
+var endYear = 2019;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
 // in a 3 year moving window
-var timebuffer = 3;
+var timebuffer = 1;
 
 
 // 7. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
@@ -52,7 +52,7 @@ var includeSLCOffL7 = false;
 //9. Whether to defringe L5
 //Landsat 5 data has fringes on the edges that can introduce anomalies into 
 //the analysis.  This method removes them, but is somewhat computationally expensive
-var defringeL5 = false;
+var defringeL5 = true;
 
 // 10. Choose cloud/cloud shadow masking method
 // Choices are a series of booleans for cloudScore, TDOM, and elements of Fmask
