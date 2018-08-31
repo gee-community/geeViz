@@ -1,8 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-114.29239611819213, 48.78062866075987],
-          [-114.28415637209838, 48.450155837051724],
-          [-113.84195666506713, 48.47019090403133]]]);
+        [[[-114.47916369631713, 48.7444187437357],
+          [-114.42697863772338, 48.39000318609775],
+          [-113.31735949709838, 48.51205685707847],
+          [-113.28989367678588, 48.84935559144764]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for running harmonic regression across a moving window of years
 
@@ -11,6 +12,7 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 var dLib = require('users/USFS_GTAC/modules:changeDetectionLib.js');
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+dLib.getExistingChangeData();
 // Define user parameters:
 
 // 1. Specify study area: Study area
@@ -22,15 +24,15 @@ var studyArea = ee.FeatureCollection('projects/USFS/LCMS-NFS/R1/FNF/FNF_GNP_Merg
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 200;
+var startJulian = 150;
 var endJulian = 300; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2000;
-var endYear = 2017;
+var startYear = 1984;
+var endYear = 2018;
 
 
 
