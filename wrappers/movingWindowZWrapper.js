@@ -1,3 +1,9 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-114.29239611819213, 48.78062866075987],
+          [-114.28415637209838, 48.450155837051724],
+          [-113.84195666506713, 48.47019090403133]]]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for running harmonic regression across a moving window of years
 
 //Module imports
@@ -103,11 +109,11 @@ var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 var exportComposites = false;
 
 //Set up Names for the export
-var outputName = 'FNF_Harmonic_Coefficients_';
+var outputName = 'Test_Z_';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
-var exportPathRoot = 'projects/USFS/LCMS-NFS/R1/FNF/Base-Learners/Harmonic-Coefficients';
+var exportPathRoot = 'users/iwhousman/test/ChangeCollection';
 
 // var exportPathRoot = 'projects/USFS/LCMS-NFS/R4/BT/Base-Learners/Base-Learners-Collection';
 //CRS- must be provided.  
