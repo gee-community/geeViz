@@ -1663,12 +1663,12 @@ function getHarmonicCoefficientsAndFit(allImages,indexNames,whichHarmonics){
     var pa = getPhaseAmplitude(coeffs);
   // Turn the HSV data into an RGB image and add it to the map.
   var seasonality = pa.select([1,0]).addBands(allIndices.select([indexNames[0]]).mean()).hsvToRgb();
-  Map.addLayer(seasonality, {}, 'Seasonality');
+  // Map.addLayer(seasonality, {}, 'Seasonality');
   }
   
   
   
-  Map.addLayer(coeffs,{},'Harmonic Regression Coefficients',false);
+  // Map.addLayer(coeffs,{},'Harmonic Regression Coefficients',false);
   var predicted = newPredict(coeffs,withHarmonics);
   return [coeffs,predicted];
 }
