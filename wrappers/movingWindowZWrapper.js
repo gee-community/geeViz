@@ -129,14 +129,8 @@ var nDays = 32;
 var baselineLength = 3;
 
 
-//Which harmonics to include
-//Is a list of numbers of the n PI per year
-//Typical assumption of 1 cycle/yr would be [2]
-//If trying to overfit, or expected bimodal phenology try adding a higher frequency as well
-//ex. [2,4]
-var whichHarmonics = [2];
 
-//Which bands/indices to run harmonic regression across
+//Which bands/indices to run z score on
 var indexNames = ['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +147,7 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and fit harmonic regression model
 var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo().map(function(yr){
-  print(yr)
+  var blStartYear = yr-bas
   // //Set up dates
   // var startYearT = yr-timebuffer;
   // var endYearT = yr+timebuffer;
