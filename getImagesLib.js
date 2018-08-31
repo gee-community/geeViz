@@ -1659,12 +1659,12 @@ function getHarmonicCoefficientsAndFit(allImages,indexNames,whichHarmonics){
   var coeffs = newRobustMultipleLinear2(withHarmonics);
   
   //Can visualize the phase and amplitude if only the first ([2]) harmonic is chosen
-  if(whichHarmonics == 2){
-    var pa = getPhaseAmplitude(coeffs);
-  // Turn the HSV data into an RGB image and add it to the map.
-  var seasonality = pa.select([1,0]).addBands(allIndices.select([indexNames[0]]).mean()).hsvToRgb();
-  // Map.addLayer(seasonality, {}, 'Seasonality');
-  }
+  // if(whichHarmonics == 2){
+  //   var pa = getPhaseAmplitude(coeffs);
+  // // Turn the HSV data into an RGB image and add it to the map.
+  // var seasonality = pa.select([1,0]).addBands(allIndices.select([indexNames[0]]).mean()).hsvToRgb();
+  // // Map.addLayer(seasonality, {}, 'Seasonality');
+  // }
   
   
   
