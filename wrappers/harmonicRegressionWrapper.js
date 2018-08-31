@@ -145,7 +145,7 @@ var scale = null;
 var whichHarmonics = [2];
 
 //Which bands/indices to run harmonic regression across
-var indexNames = ['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
+var indexNames = ['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
