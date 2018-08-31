@@ -1597,8 +1597,8 @@ function newPredict(coeffs,harmonics){
     
   });
   predicted = ee.ImageCollection(predicted);
-  var g = Chart.image.series(predicted,plotPoint,ee.Reducer.mean(),90);
-  print(g);
+  // var g = Chart.image.series(predicted,plotPoint,ee.Reducer.mean(),90);
+  // print(g);
   Map.addLayer(predicted,{},'predicted',false);
   
   return predicted;
@@ -1653,8 +1653,8 @@ function getHarmonicCoefficientsAndFit(allImages,indexNames,whichHarmonics){
   var withHarmonicsBns = ee.Image(withHarmonics.first()).bandNames().slice(indexNames.length+1,null);
   
   //Optionally chart the collection with harmonics
-  var g = Chart.image.series(withHarmonics.select(withHarmonicsBns),plotPoint,ee.Reducer.mean(),30);
-  print(g);
+  // var g = Chart.image.series(withHarmonics.select(withHarmonicsBns),plotPoint,ee.Reducer.mean(),30);
+  // print(g);
   
   //Fit a linear regression model
   var coeffs = newRobustMultipleLinear2(withHarmonics);
