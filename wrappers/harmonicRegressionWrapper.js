@@ -14,7 +14,7 @@ var dLib = require('users/USFS_GTAC/modules:changeDetectionLib.js');
 // 1. Specify study area: Study area
 // Can specify a country, provide a fusion table  or asset table (must add 
 // .geometry() after it), or draw a polygon and make studyArea = drawnPolygon
-var studyArea = ee.FeatureCollection('projects/USFS/LCMS-NFS/R1/FNF/FNF_GNP_Merge_Admin_BND_1k');//paramDict[studyAreaName][3];
+var studyArea = ee.FeatureCollection('projects/USFS/LCMS-NFS/R1/FNF/FNF_GNP_Merge_Admin_BND_1k').geometry();//paramDict[studyAreaName][3];
 
 // 2. Update the startJulian and endJulian variables to indicate your seasonal 
 // constraints. This supports wrapping for tropics and southern hemisphere.
@@ -27,8 +27,8 @@ var endJulian = 365;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 1984;
-var endYear = 2019;
+var startYear = 1983;
+var endYear = 2015;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
