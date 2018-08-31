@@ -204,5 +204,5 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
   
 });
 zCollection = ee.ImageCollection(ee.FeatureCollection(zCollection).flatten())
-Map.addLayer(zCollection,{},'z collection')
+Map.addLayer(zCollection,{},'z collection',false)
 Map.addLayer(allScenes,{},'all scenes',false)
