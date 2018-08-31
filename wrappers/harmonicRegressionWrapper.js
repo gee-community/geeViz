@@ -155,20 +155,29 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
   );
 
 ////////////////////////////////////////////////////////////
+//Iterate across each time window and fit harmonic regression model
 ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo().map(function(yr){
+  //Set up dates
   var startYearT = yr-timebuffer;
   var endYearT = yr+timebuffer;
+  
+  //Get scenes for those dates
   var allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT,endYearT,'year'));
+  
+  //Fit harmonic model
   var coeffsPredicted =getImageLib.getHarmonicCoefficientsAndFit(allScenesT,indexNames,whichHarmonics);
+  
+  //Set some properties
   var coeffs = coeffsPredicted[0]
             .set({'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
             'timebuffer':timebuffer,
             'startYearT':startYearT,
             'endYearT':endYearT,
-            
             }).float();
+            
   var predicted = coeffsPredicted[1];
   
+  //Export image
   var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
   var outPath = exportPathRoot + '/' + outName;
   getImageLib.exportToAssetWrapper(coeffs,outName,outPath,
