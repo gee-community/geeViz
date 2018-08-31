@@ -177,7 +177,6 @@ ee.List.sequence(startYear+baselineLength,endYear,1).getInfo().map(function(yr){
     var analysisImagesZ = analysisImages.map(function(img){
       return img.subtract(blMean).divide(blStd);
     }).reduce(zReducer);
-    var outName = blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
     // Map.addLayer(analysisImagesZ,{'min':-20,'max':20,'palette':'F00,888,0F0'},'z '+outName,false);
     var out = analysisImages.reduce(zReducer).addBands(analysisImagesZ)
           .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis(),
@@ -186,11 +185,11 @@ ee.List.sequence(startYear+baselineLength,endYear,1).getInfo().map(function(yr){
                 'year':yr,
                 
           })
-     //Export image
-  // var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
-  // var outPath = exportPathRoot + '/' + outName;
-  // getImageLib.exportToAssetWrapper(coeffs,outName,outPath,
-  // 'mean',studyArea,scale,crs,transform);
+    // Export image
+    var outName = outputName + blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
+    var outPath = exportPathRoot + '/' + outName;
+  getImageLib.exportToAssetWrapper(out,outName,outPath,
+  'mean',studyArea,scale,crs,transform);
     
     zCollection.push(out)
     
