@@ -150,7 +150,15 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
   var blStartYear = yr-baselineLength;
   var blEndYear = yr-1;
   print(yr,blStartYear,blEndYear)
-  // //Set up dates
+  ee.List.sequence(startJulian,endJulian-nDays,nDays).getInfo().map(function(jd){
+    var jdStart = jd;
+    var jdEnd = jd+nDays
+    
+    var blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear,blEndYear,'year'))
+                            .filter(ee.Filter.calendarRange(jdStart,jdEnd));
+    print(blImages)                        
+  })
+  //Set up dates
   // var startYearT = yr-timebuffer;
   // var endYearT = yr+timebuffer;
   
