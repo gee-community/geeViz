@@ -1741,4 +1741,4 @@ exports.harmonizationRoy = harmonizationRoy;
 exports.fillEmptyCollections = fillEmptyCollections;
 
 exports.getHarmonicCoefficientsAndFit = getHarmonicCoefficientsAndFit;
-exports.getPhaseAmplitude = getPhaseAmplitude
+exports.getPhaseAmplitude = getPhaseAmplitude;
