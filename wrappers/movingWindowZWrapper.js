@@ -142,7 +142,7 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels
-  );
+  ).select(indexNames);
 
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and fit harmonic regression model
@@ -156,7 +156,7 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).getInfo()
     
     var blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear,blEndYear,'year'))
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd));
-    print(blImages)                        
+                         
   })
   //Set up dates
   // var startYearT = yr-timebuffer;
