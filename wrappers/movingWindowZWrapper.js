@@ -161,7 +161,7 @@ ee.List.sequence(startYear+baselineLength,endYear,1).getInfo().map(function(yr){
   var blEndYear = yr-1;
   // print(yr,blStartYear,blEndYear);
   ee.List.sequence(startJulian,endJulian-nDays,nDays).getInfo().map(function(jd){
-    print(jd)
+    print(jd);
     var jdStart = jd;
     var jdEnd = jd+nDays;
     
@@ -184,14 +184,14 @@ ee.List.sequence(startYear+baselineLength,endYear,1).getInfo().map(function(yr){
                 'baselineYrs': baselineLength,
                 'year':yr,
                 
-          })
+          });
     // Export image
     var outName = outputName + blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
     var outPath = exportPathRoot + '/' + outName;
-  getImageLib.exportToAssetWrapper(out,outName,outPath,
-  'mean',studyArea,scale,crs,transform);
+    getImageLib.exportToAssetWrapper(out,outName,outPath,
+      'mean',studyArea,scale,crs,transform);
     
-    zCollection.push(out)
+    zCollection.push(out);
     
   });
   
