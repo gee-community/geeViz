@@ -188,4 +188,4 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
 });
 
 coeffCollection = ee.ImageCollection(coeffCollection);
-Map.addLayer(coeffCollection)
+Map.addLayer(coeffCollection);
