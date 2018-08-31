@@ -156,7 +156,7 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and fit harmonic regression model
-ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo().map(function(yr){
+var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo().map(function(yr){
   //Set up dates
   var startYearT = yr-timebuffer;
   var endYearT = yr+timebuffer;
@@ -183,4 +183,8 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo().map(functi
   getImageLib.exportToAssetWrapper(coeffs,outName,outPath,
   'mean',studyArea,scale,crs,transform);
   // Map.addLayer(allScenesT.median(),{'min':0.1,'max':0.3,'bands':'swir1,nir,red'},yr.toString(),false);
+  return coeffs;
+  
 });
+
+coeffCollection = ee.ImageCollection(coeffCollection);
