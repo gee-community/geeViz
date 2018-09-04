@@ -31,8 +31,8 @@ var endJulian = 365;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 1984;
-var endYear = 2019;
+var startYear = 2015;
+var endYear = 2017;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
