@@ -146,7 +146,7 @@ var whichHarmonics = [2];
 //Which bands/indices to run harmonic regression across
 var indexNames = ['NDVI'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 
-var detrend = true;
+var detrend = false;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -184,7 +184,7 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   Map.addLayer(coeffs,{},'coeffs',false)
   Map.addLayer(predicted,{},'predicted',false);
   var pa = getImageLib.getPhaseAmplitude(coeffs);
-  Map.addLayer(pa.select(['NBR_phase','NBR_amplitude']))
+  Map.addLayer(pa)
   //Export image
   var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
   var outPath = exportPathRoot + '/' + outName;
