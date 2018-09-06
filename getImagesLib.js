@@ -1549,7 +1549,7 @@ function getPhaseAmplitude(coeffs){
                       // .multiply(5);
       // var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
       var phase = regCoeffs.select([0]).atan2(regCoeffs.select([1]))
-      .unitScale(-Math.PI, Math.PI)
+      
       // .divide(2).multiply(365).multiply(0.01)
       .rename([outName.cat('_phase')]);
       
