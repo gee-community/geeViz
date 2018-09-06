@@ -78,7 +78,7 @@ function addDateBand(img){
   d = y.add(d.getFraction('year'));
   var db = ee.Image.constant(d).rename(['year']).float();
   db = db.updateMask(img.select([0]).mask())
-  return img.addBands(ee.Image(1).rename(['year']).float());
+  return img.addBands(db);
 }
 function addYearBand(img){
   var d = ee.Date(img.get('system:time_start'));
