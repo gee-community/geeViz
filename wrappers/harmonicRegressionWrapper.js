@@ -187,7 +187,7 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   var pa = ee.Image(getImageLib.getPhaseAmplitude(coeffs));
  
   var amplitude = pa.select([0]).multiply(5);
-  var phase = pa.select([1]).unitScale(-Math.PI, Math.PI);
+  var phase = pa.select([1]);
   var val = coeffs.select([0]);
 
   // Turn the HSV data into an RGB image and add it to the map.
