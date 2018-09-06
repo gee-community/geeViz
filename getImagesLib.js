@@ -1450,8 +1450,12 @@ function getHarmonics2(collection,transformBandName,harmonicList,detrend){
     .copyProperties(img,['system:time_start','system:time_end']);
     return outT;
   });
-  var outBandNames = ee.Image(out.first()).bandNames().removeAll(['year'])
-  out = out.select(outBandNames)
+  
+  if(!detrend){
+    var outBandNames = ee.Image(out.first()).bandNames().removeAll(['year'])
+    out = out.select(outBandNames)
+  }
+  
   Map.addLayer(out)
   var indBandNames = ee.Image(out.first()).bandNames().removeAll(depBandNames);
   var indBandNumbers = indBandNames.map(function(ind){
