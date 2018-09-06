@@ -1437,7 +1437,9 @@ function getHarmonicList(yearDateImg,transformBandName,harmonicList){
 //Takes a dependent and independent variable and returns the dependent, 
 // sin of ind, and cos of ind
 //Intended for harmonic regression
-function getHarmonics2(collection,transformBandName,harmonicList){
+function getHarmonics2(collection,transformBandName,harmonicList,detrend){
+  if(detrend === undefined || detrend === null){detrend = false}
+  
   var depBandNames = ee.Image(collection.first()).bandNames().remove(transformBandName);
   var depBandNumbers = depBandNames.map(function(dbn){
     return depBandNames.indexOf(dbn);
@@ -1667,7 +1669,7 @@ function getHarmonicCoefficientsAndFit(allImages,indexNames,whichHarmonics,detre
   }
   
   //Add independent predictors (harmonics)
-  var withHarmonics = getHarmonics2(allIndices,'year',whichHarmonics);
+  var withHarmonics = getHarmonics2(allIndices,'year',whichHarmonics,detrend);
   var withHarmonicsBns = ee.Image(withHarmonics.first()).bandNames().slice(indexNames.length+1,null);
   
   //Optionally chart the collection with harmonics
