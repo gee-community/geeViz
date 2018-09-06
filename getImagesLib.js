@@ -1544,7 +1544,7 @@ function getPhaseAmplitude(coeffs){
       var intercept = modelCoeffs.select(modelCoeffs.bandNames().slice(0,1));
       // var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
       
-      var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(2,null));
+      var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
       var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename([outName.cat('_amplitude')])
                       // .multiply(5);
       // var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
