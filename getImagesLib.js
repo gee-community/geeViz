@@ -1715,6 +1715,7 @@ exports.landsatCloudScore = landsatCloudScore;
 exports.applyCloudScoreAlgorithm = applyCloudScoreAlgorithm;
 exports.cFmask = cFmask;
 exports.simpleTDOM2 = simpleTDOM2;
+exports.medoidMosaicMSD = medoidMosaicMSD;
 exports.addIndices = addIndices;
 exports.simpleAddIndices = simpleAddIndices;
 exports.getTasseledCap = getTasseledCap;
