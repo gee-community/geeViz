@@ -1422,7 +1422,7 @@ function getHarmonicList(yearDateImg,transformBandName,harmonicList){
     var cosInd = (t.multiply(ee.Image(multipliers))).cos().select(selectBands,cosNames).float();
     // var sinCosInd = sinInd.multiply(cosInd).select(selectBands,sinCosNames);
     
-    return yearDateImg.select([0,1]).addBands(sinInd.addBands(cosInd));//.addBands(sinCosInd)
+    return yearDateImg.addBands(sinInd.addBands(cosInd));//.addBands(sinCosInd)
   }
 //////////////////////////////////////////////////////
 //Takes a dependent and independent variable and returns the dependent, 
@@ -1439,7 +1439,8 @@ function getHarmonics2(collection,transformBandName,harmonicList){
     .copyProperties(img,['system:time_start','system:time_end']);
     return outT;
   });
- 
+  var outBandNames = ee.Image(out.first()).bandNames().removeAll(['year'])
+  out = out.select(outBandNames)
   Map.addLayer(out)
   var indBandNames = ee.Image(out.first()).bandNames().removeAll(depBandNames);
   var indBandNumbers = indBandNames.map(function(ind){
