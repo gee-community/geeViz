@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-121.13104899652785, 37.95804184694799],
-          [-121.12555583246535, 38.07056533312246],
-          [-121.29584391840285, 38.06840304921766],
-          [-121.28897746332473, 37.976446918327476]]]),
+        [[[-111.92360994001194, 40.5768524163976],
+          [-111.89202424665257, 40.421255796664454],
+          [-111.53908845563694, 40.466196562291096],
+          [-111.63796540876194, 40.592496508417256]]]),
     plotPoint = /* color: #98ff00 */ee.Geometry.Point([-113.81457071908915, 48.069298246118436]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for running harmonic regression across a moving window of years
