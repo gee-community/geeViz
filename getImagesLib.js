@@ -1539,7 +1539,8 @@ function getPhaseAmplitude(coeffs){
     });
     //Convert to an image
     phaseAmplitude = ee.ImageCollection.fromImages(phaseAmplitude);
-    return collectionToImage(phaseAmplitude);
+    return collectionToImage(phaseAmplitude)
+          .copyProperties(coeffs,['system:time_start']);
 
 
 }
