@@ -187,12 +187,12 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   var pa = getImageLib.getPhaseAmplitude(coeffs);
   var amplitude = pa.select(['NDVI_amplitude']).multiply(5);
   var phase = pa.select(['NDVI_phase']).unitScale(-Math.PI, Math.PI);
-  var val = harmonicLandsat.select('NDVI').reduce('mean');
+  var val = coeffs.select([0]);
 
-// Turn the HSV data into an RGB image and add it to the map.
-var seasonality = ee.Image.cat(phase, magnitude, val).hsvToRgb();
-// Map.centerObject(roi, 11);
-Map.addLayer(seasonality, {}, 'Seasonality');
+  // Turn the HSV data into an RGB image and add it to the map.
+  var seasonality = ee.Image.cat(phase, amplitude, val).hsvToRgb();
+  // Map.centerObject(roi, 11);
+  Map.addLayer(seasonality, {}, 'Seasonality');
   //Export image
   var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
   var outPath = exportPathRoot + '/' + outName;
