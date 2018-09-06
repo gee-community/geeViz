@@ -1421,7 +1421,7 @@ function getHarmonicList(yearDateImg,transformBandName,harmonicList){
     var cosInd = (t.multiply(ee.Image(multipliers))).cos().select(selectBands,cosNames).float();
     // var sinCosInd = sinInd.multiply(cosInd).select(selectBands,sinCosNames);
     
-    return yearDateImg.addBands(sinInd.addBands(cosInd));//.addBands(sinCosInd)
+    return sinInd.addBands(cosInd);//.addBands(sinCosInd)
   }
 //////////////////////////////////////////////////////
 //Takes a dependent and independent variable and returns the dependent, 
