@@ -1421,7 +1421,7 @@ function getHarmonicList(yearDateImg,transformBandName,harmonicList){
     var cosInd = (t.multiply(ee.Image(multipliers))).cos().select(selectBands,cosNames).float();
     // var sinCosInd = sinInd.multiply(cosInd).select(selectBands,sinCosNames);
     
-    return sinInd.addBands(cosInd);//.addBands(sinCosInd)
+    return yearDateImg.addBands(sinInd.addBands(cosInd));//.addBands(sinCosInd)
   }
 //////////////////////////////////////////////////////
 //Takes a dependent and independent variable and returns the dependent, 
@@ -1646,7 +1646,7 @@ function getHarmonicCoefficientsAndFit(allImages,indexNames,whichHarmonics){
   var allIndices = allImages.select(indexNames);
   
   //Add date band
-  allIndices = allIndices.map(addDateBand);
+  // allIndices = allIndices.map(addDateBand);
   
   //Add independent predictors (harmonics)
   var withHarmonics = getHarmonics2(allIndices,'year',whichHarmonics);
