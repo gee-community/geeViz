@@ -190,12 +190,12 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   var phase = pa.select([1]);
   var val = coeffs.select([0]);
   Map.addLayer(val,{'min':0,'max':0.3},'val',false);
-  var peak = phase.multiply(365);//(phase.add(1).add(phase)).divide(2).multiply(-1).add(1);//.multiply(365);
+  var peak = phase.unitScale(-Math.PI, Math.PI);//(phase.add(1).add(phase)).divide(2).multiply(-1).add(1);//.multiply(365);
   Map.addLayer(peak,{'min':0,'max':1},'peak',false);
   // Turn the HSV data into an RGB image and add it to the map.
   var seasonality = ee.Image.cat(phase.unitScale(-Math.PI, Math.PI), amplitude.unitScale(0.0, 0.5), val.unitScale(0.2, 0.8))//.hsvToRgb();
   // Map.centerObject(roi, 11);
-  Map.addLayer(seasonality, {}, 'Seasonality');
+  Map.addLayer(seasonality, {'min':0,'max':1}, 'Seasonality');
   //Export image
   var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
   var outPath = exportPathRoot + '/' + outName;
