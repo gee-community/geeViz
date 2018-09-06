@@ -1644,6 +1644,7 @@ function getDateStack(startYear,endYear,startJulian,endJulian,frequency){
 ////////////////////////////////////////////////////////////////////
 function getHarmonicCoefficientsAndFit(allImages,indexNames,whichHarmonics,detrend){
   if(detrend === undefined || detrend === null){detrend = false}
+  
   //Select desired bands
   var allIndices = allImages.select(indexNames);
   
