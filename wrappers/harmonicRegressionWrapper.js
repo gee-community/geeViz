@@ -169,7 +169,7 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   var allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT,endYearT,'year'));
   
   //Fit harmonic model
-  var coeffsPredicted =getImageLib.getHarmonicCoefficientsAndFit(allScenesT,indexNames,whichHarmonics,true);
+  var coeffsPredicted =getImageLib.getHarmonicCoefficientsAndFit(allScenesT,indexNames,whichHarmonics,false);
   
   //Set some properties
   var coeffs = coeffsPredicted[0]
