@@ -75,6 +75,15 @@ function fillEmptyCollections(inCollection,dummyImage){
 function addDateBand(img){
   var d = ee.Date(img.get('system:time_start'));
   var y = d.get('year');
+  d = y.add(d.getFraction('year'));
+  // d=d.getFraction('year')
+  var db = ee.Image.constant(d).rename(['year']).float();
+  db = db.updateMask(img.select([0]).mask())
+  return img.addBands(db);
+}
+function addYearFractionBand(img){
+  var d = ee.Date(img.get('system:time_start'));
+  var y = d.get('year');
   // d = y.add(d.getFraction('year'));
   d=d.getFraction('year')
   var db = ee.Image.constant(d).rename(['year']).float();
@@ -1645,6 +1654,7 @@ function getDateStack(startYear,endYear,startJulian,endJulian,frequency){
 function getHarmonicCoefficientsAndFit(allImages,indexNames,whichHarmonics,detrend){
   if(detrend === undefined || detrend === null){detrend = false}
   if(whichHarmonics === undefined || whichHarmonics === null){whichHarmonics = [2]}
+  
   //Select desired bands
   var allIndices = allImages.select(indexNames);
   
