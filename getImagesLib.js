@@ -1533,7 +1533,7 @@ function getPhaseAmplitude(coeffs){
     mn = ee.Number(mn);
     return bandNames.slice(mn.multiply(modelLength),mn.multiply(modelLength).add(modelLength));
   });
-  print(parsedModel)
+  
   // print('Parsed harmonic regression model',parsedModel);
 
   
@@ -1542,9 +1542,9 @@ function getPhaseAmplitude(coeffs){
       var modelCoeffs = coeffs.select(pm);
       var outName = ee.String(ee.String(pm.get(1)).split('_').get(0));
       var intercept = modelCoeffs.select(modelCoeffs.bandNames().slice(0,1));
-      var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
+      // var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
       
-      var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(2,null));
+      var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
       var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename([outName.cat('_amplitude')])
                       // .multiply(5);
       // var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
