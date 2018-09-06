@@ -78,7 +78,7 @@ function addDateBand(img){
   d = y.add(d.getFraction('year'));
   var db = ee.Image.constant(d).rename(['year']).float();
   db = db.updateMask(img.select([0]).mask())
-  return img.addBands(db);
+  return img.addBands(ee.Image(0));
 }
 function addYearBand(img){
   var d = ee.Date(img.get('system:time_start'));
@@ -1646,7 +1646,7 @@ function getHarmonicCoefficientsAndFit(allImages,indexNames,whichHarmonics){
   var allIndices = allImages.select(indexNames);
   
   //Add date band
-  // allIndices = allIndices.map(addDateBand);
+  allIndices = allIndices.map(addDateBand);
   
   //Add independent predictors (harmonics)
   var withHarmonics = getHarmonics2(allIndices,'year',whichHarmonics);
