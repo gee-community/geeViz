@@ -1,10 +1,10 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-82.39612562957223, 31.047366536408685],
-          [-82.33158095183785, 31.13321627998529],
-          [-82.5485609323066, 31.170824578675557],
-          [-82.56778700652535, 31.03324682899943]]]),
-    plotPoint = /* color: #98ff00 */ee.Geometry.Point([-82.50057899888469, 31.08252658207625]);
+        [[[-114.21883681500378, 48.348724563892944],
+          [-114.16939833844128, 47.3906843295816],
+          [-113.10372451031628, 47.293905575686914],
+          [-113.37288954937878, 48.39251449863742]]]),
+    plotPoint = /* color: #98ff00 */ee.Geometry.Point([-113.81457071908915, 48.069298246118436]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for running harmonic regression across a moving window of years
 
@@ -31,8 +31,8 @@ var endJulian = 365;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 1984;
-var endYear = 2019;
+var startYear = 2000;
+var endYear = 2002;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -145,7 +145,7 @@ var scale = null;
 var whichHarmonics = [2];
 
 //Which bands/indices to run harmonic regression across
-var indexNames = ['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
+var indexNames = ['NBR','NDVI'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -180,7 +180,10 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
             }).float();
             
   var predicted = coeffsPredicted[1];
-  
+  Map.addLayer(coeffs,{},'coeffs',false)
+  Map.addLayer(predicted,{},'predicted',false);
+  var pa = getImageLib.getPhaseAmplitude(coeffs);
+  Map.addLayer(pa.select(['NBR_phase','NBR_amplitude']))
   //Export image
   var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
   var outPath = exportPathRoot + '/' + outName;
