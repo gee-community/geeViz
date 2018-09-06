@@ -185,7 +185,7 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   Map.addLayer(coeffs,{},'coeffs',false)
   Map.addLayer(predicted,{},'predicted',false);
   var pa = getImageLib.getPhaseAmplitude(coeffs);
-  print('pa',pa)
+ 
   var amplitude = pa.select(['NDVI_amplitude']).multiply(5);
   var phase = pa.select(['NDVI_phase']).unitScale(-Math.PI, Math.PI);
   var val = coeffs.select([0]);
