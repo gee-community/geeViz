@@ -147,7 +147,7 @@ var whichHarmonics = [2];
 //Which bands/indices to run harmonic regression across
 var indexNames = ['NDVI'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 
-var detrend = true;
+var detrend = false;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -187,7 +187,7 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   var pa = getImageLib.getPhaseAmplitude(coeffs);
   var amplitude = pa.select(['NDVI_amplitude']).multiply(5);
   var phase = pa.select(['NDVI_phase']).unitScale(-Math.PI, Math.PI);
-var val = harmonicLandsat.select('NDVI').reduce('mean');
+  var val = harmonicLandsat.select('NDVI').reduce('mean');
 
 // Turn the HSV data into an RGB image and add it to the map.
 var seasonality = ee.Image.cat(phase, magnitude, val).hsvToRgb();
