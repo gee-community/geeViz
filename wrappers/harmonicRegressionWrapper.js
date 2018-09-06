@@ -1,8 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-78.93817790219089, 35.5022615769206],
-          [-78.94770510861179, 35.501737519250824],
-          [-78.95036585995456, 35.4933870724587]]]),
+        [[[-110.12237695296807, 44.153931718120774],
+          [-110.12649682601494, 44.29859253610246],
+          [-110.36682275374932, 44.2995754058377],
+          [-110.36407617171807, 44.16969435446807]]]),
     plotPoint = /* color: #98ff00 */ee.Geometry.Point([-113.81457071908915, 48.069298246118436]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for running harmonic regression across a moving window of years
@@ -30,8 +31,8 @@ var endJulian = 365;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2000;
-var endYear = 2002;
+var startYear = 1987;
+var endYear = 1989;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -146,7 +147,7 @@ var whichHarmonics = [2];
 //Which bands/indices to run harmonic regression across
 var indexNames = ['NDVI'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 
-var detrend = false;
+var detrend = true;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -183,7 +184,7 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   var predicted = coeffsPredicted[1];
   Map.addLayer(coeffs,{},'coeffs',false)
   Map.addLayer(predicted,{},'predicted',false);
-  var pa = getImageLib.getPhaseAmplitude(coeffs);
+  var pa = ee.Image(getImageLib.getPhaseAmplitude(coeffs));
   Map.addLayer(pa)
   //Export image
   var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
