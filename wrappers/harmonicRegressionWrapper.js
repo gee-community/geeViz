@@ -184,7 +184,7 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   var predicted = coeffsPredicted[1];
   Map.addLayer(coeffs,{},'coeffs',false)
   Map.addLayer(predicted,{},'predicted',false);
-  var pa = ee.Image(getImageLib.getPhaseAmplitude(coeffs));
+  var pa = getImageLib.getPhaseAmplitude(coeffs);
   Map.addLayer(pa)
   //Export image
   var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
