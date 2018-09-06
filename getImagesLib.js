@@ -1659,7 +1659,12 @@ function getHarmonicCoefficientsAndFit(allImages,indexNames,whichHarmonics,detre
   var allIndices = allImages.select(indexNames);
   
   //Add date band
-  allIndices = allIndices.map(addDateBand);
+  if(detrend){
+    allIndices = allIndices.map(addDateBand);
+  }
+  else{
+    allIndices = allIndices.map(addYearFractionBand);
+  }
   
   //Add independent predictors (harmonics)
   var withHarmonics = getHarmonics2(allIndices,'year',whichHarmonics);
