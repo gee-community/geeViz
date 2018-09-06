@@ -1440,7 +1440,7 @@ function getHarmonics2(collection,transformBandName,harmonicList){
     return outT;
   });
  
-
+  Map.addLayer(out)
   var indBandNames = ee.Image(out.first()).bandNames().removeAll(depBandNames);
   var indBandNumbers = indBandNames.map(function(ind){
     return ee.Image(out.first()).bandNames().indexOf(ind);
