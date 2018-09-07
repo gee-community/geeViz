@@ -95,7 +95,7 @@ function addYearBand(img){
   var y = d.get('year');
   
   var db = ee.Image.constant(y).rename(['year']).float();
-  db = db.updateMask(img.select([0]).mask())
+  db = db//.updateMask(img.select([0]).mask())
   return img.addBands(db);
 }
 ////////////////////////////////////////////////
