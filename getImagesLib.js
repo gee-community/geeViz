@@ -78,7 +78,7 @@ function addDateBand(img){
   d = y.add(d.getFraction('year'));
   // d=d.getFraction('year')
   var db = ee.Image.constant(d).rename(['year']).float();
-  db = db//.updateMask(img.select([0]).mask())
+  db = db.updateMask(img.select([0]).mask())
   return img.addBands(db);
 }
 function addYearFractionBand(img){
@@ -87,7 +87,7 @@ function addYearFractionBand(img){
   // d = y.add(d.getFraction('year'));
   d=d.getFraction('year')
   var db = ee.Image.constant(d).rename(['year']).float();
-  db = db//.updateMask(img.select([0]).mask())
+  db = db.updateMask(img.select([0]).mask())
   return img.addBands(db);
 }
 function addYearBand(img){
@@ -95,7 +95,7 @@ function addYearBand(img){
   var y = d.get('year');
   
   var db = ee.Image.constant(y).rename(['year']).float();
-  db = db//.updateMask(img.select([0]).mask())
+  db = db.updateMask(img.select([0]).mask())
   return img.addBands(db);
 }
 ////////////////////////////////////////////////
