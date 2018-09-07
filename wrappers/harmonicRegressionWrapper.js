@@ -31,8 +31,8 @@ var endJulian = 365;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 1987;
-var endYear = 1989;
+var startYear = 2015;
+var endYear = 2017;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -62,10 +62,10 @@ var defringeL5 = true;
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
 var applyCloudScore = false;
-var applyFmaskCloudMask = false;
+var applyFmaskCloudMask = true;
 
 var applyTDOM = false;
-var applyFmaskCloudShadowMask = false;
+var applyFmaskCloudShadowMask = true;
 
 var applyFmaskSnowMask = false;
 
