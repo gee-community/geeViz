@@ -62,10 +62,10 @@ var defringeL5 = true;
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
 var applyCloudScore = false;
-var applyFmaskCloudMask = true;
+var applyFmaskCloudMask = false;
 
 var applyTDOM = false;
-var applyFmaskCloudShadowMask = true;
+var applyFmaskCloudShadowMask = false;
 
 var applyFmaskSnowMask = false;
 
