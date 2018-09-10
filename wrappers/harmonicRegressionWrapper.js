@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-111.92360994001194, 40.5768524163976],
-          [-111.89202424665257, 40.421255796664454],
-          [-111.53908845563694, 40.466196562291096],
-          [-111.63796540876194, 40.592496508417256]]]),
+        [[[-114.35671423442705, 48.51876599564019],
+          [-114.36770056255205, 47.53424158299083],
+          [-113.32399939067705, 47.57872718018715],
+          [-113.55471228130205, 48.51876599564019]]]),
     plotPoint = /* color: #98ff00 */ee.Geometry.Point([-113.81457071908915, 48.069298246118436]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for running harmonic regression across a moving window of years
@@ -67,7 +67,7 @@ var applyFmaskCloudMask = true;
 var applyTDOM = false;
 var applyFmaskCloudShadowMask = true;
 
-var applyFmaskSnowMask = false;
+var applyFmaskSnowMask = true;
 
 // 11. Cloud and cloud shadow masking parameters.
 // If cloudScoreTDOM is chosen
@@ -145,7 +145,7 @@ var scale = null;
 var whichHarmonics = [2];
 
 //Which bands/indices to run harmonic regression across
-var indexNames = ['NDVI'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
+var indexNames = ['tcAngleBG'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 
 var detrend = false;
 ////////////////////////////////////////////////////////////////////////////////
@@ -184,9 +184,12 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   var sin = coeffs.select([1]);
   var cos = coeffs.select([2]);
   
-  var maxGreenDate = ((sin.divide(cos)).atan()).divide(2*Math.PI).abs().add(0.5);
- 
-  Map.addLayer(maxGreenDate,{'min':0.5,'max':0.8},'maxGreenDate',false)
+  var greenDate = ((sin.divide(cos)).atan()).divide(2*Math.PI);
+  var predicted1 = coeffs.select([0])
+                  .add(coeffs.select([1]).multiply(greenDate.multiply(2*Math.PI).sin()))
+                  .add(coeffs.select([2]).multiply(greenDate.multiply(2*Math.PI).cos()))
+  Map.addLayer(predicted1,{},'predicted1',false)
+  // Map.addLayer(maxGreenDate,{'min':0.5,'max':0.8},'maxGreenDate',false)
   // Map.addLayer(minGreenDate.add(0.5),{'min':0,'max':1},'maxGreenDate',false)
   
   var predicted = coeffsPredicted[1];
