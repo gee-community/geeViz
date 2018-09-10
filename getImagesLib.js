@@ -1577,10 +1577,11 @@ function getPhaseAmplitude(coeffs){
       // var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
       
       var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
-      var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename([outName.cat('_amplitude')]);
-                      // .multiply(5);
+      var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename([outName.cat('_amplitude')])
+                      .multiply(2);
       // var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
       var phase = regCoeffs.select([0]).atan2(regCoeffs.select([1]))
+      .unitScale(-Math.PI, Math.PI)
       .rename([outName.cat('_phase')]);
       
       var peakDate = getPeakDate(regCoeffs);
