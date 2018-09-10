@@ -180,7 +180,12 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
             'startYearT':startYearT,
             'endYearT':endYearT,
             }).float();
-            
+  
+  var sin = coeffs.select([0]);
+  var cos = coeffs.select([1]);
+  
+  var firstDeriv = ((sin.divide(cos)).atan()).divide(2*Math.PI);
+  Map.addLayer(firstDeriv,{},'firstDeriv')
   var predicted = coeffsPredicted[1];
   Map.addLayer(coeffs,{},'coeffs',false)
   Map.addLayer(predicted,{},'predicted',false);
