@@ -1584,7 +1584,9 @@ function getPhaseAmplitude(coeffs){
       .rename([outName.cat('_phase')]);
       
       var peakDate = getPeakDate(regCoeffs);
-      return amplitude.addBands(phase).addBands(peakDate);
+      var peakDateBandNames = peakDate.bandNames();
+      peakDateBandNames = peakDateBandNames.map(function(bn){return outName.cat(ee.String(bn))})
+      return amplitude.addBands(phase).addBands(peakDate.rename(peakDateBandNames));
     
     });
     //Convert to an image
