@@ -183,32 +183,32 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
             'endYearT':endYearT,
             }).float();
 function getPeakDate(coeffs){
-  
-}
   var sin = coeffs.select([1]);
   var cos = coeffs.select([2]);
   
+  //Find where in cycle slope is zero
   var greenDate = ((sin.divide(cos)).atan()).divide(2*Math.PI).rename(['greenDate']);
-  
+  var greenDateLater = greenDate.add(0.5);
+  //Check which d1 slope = 0 is the max by predicting out the value
   var predicted1 = coeffs.select([0])
                   .add(coeffs.select([1]).multiply(greenDate.multiply(2*Math.PI).sin()))
                   .add(coeffs.select([2]).multiply(greenDate.multiply(2*Math.PI).cos()))
                   .rename('predicted')
-                  .addBands(greenDate)
+                  .addBands(greenDate);
   var predicted2 = coeffs.select([0])
-                  .add(coeffs.select([1]).multiply(greenDate.add(0.5).multiply(2*Math.PI).sin()))
-                  .add(coeffs.select([2]).multiply(greenDate.add(0.5).multiply(2*Math.PI).cos()))
+                  .add(coeffs.select([1]).multiply(greenDateLater.multiply(2*Math.PI).sin()))
+                  .add(coeffs.select([2]).multiply(greenDateLater.multiply(2*Math.PI).cos()))
                   .rename('predicted')
-                  .addBands(greenDate.add(0.5))
+                  .addBands(greenDateLater);
   var finalGreenDate = ee.ImageCollection([predicted1,predicted2]).qualityMosaic('predicted').select(['greenDate']).rename(['julianDay']);
-  finalGreenDate = finalGreenDate.where(finalGreenDate.lt(0), greenDate.add(1)).multiply(365).int16()
-  // Map.addLayer(predicted1,{},'predicted1',false);
-  var greenMonth = finalGreenDate.remap(julianDay,monthRemap).rename(['month'])
-  var greenMonthDay = finalGreenDate.remap(julianDay,monthDayRemap).rename(['monthDay'])
-  var greenStack = finalGreenDate.addBands(greenMonth).addBands(greenMonthDay)
-  // Map.addLayer(finalGreenDate,{'min':160,'max':300},'maxGreenDate',false)
-  // Map.addLayer(greenMonth,{'min':1,'max':12},'greenMonth',false);
+  finalGreenDate = finalGreenDate.where(finalGreenDate.lt(0), greenDate.add(1)).multiply(365).int16();
+  
+  //Convert to month and day of month
+  var greenMonth = finalGreenDate.remap(julianDay,monthRemap).rename(['month']);
+  var greenMonthDay = finalGreenDate.remap(julianDay,monthDayRemap).rename(['monthDay']);
+  var greenStack = finalGreenDate.addBands(greenMonth).addBands(greenMonthDay);
   Map.addLayer(greenStack,{'min':1,'max':12},'greenMonth',false);
+}
   
   // Map.addLayer(minGreenDate.add(0.5),{'min':0,'max':1},'maxGreenDate',false)
   
