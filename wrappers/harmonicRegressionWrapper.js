@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-114.35671423442705, 48.51876599564019],
-          [-114.36770056255205, 47.53424158299083],
-          [-113.32399939067705, 47.57872718018715],
-          [-113.55471228130205, 48.51876599564019]]]),
+        [[[-122.18371141096156, 38.758565328727684],
+          [-121.98595750471156, 37.42709038583027],
+          [-119.73376023908656, 37.66228220070986],
+          [-120.49181687971156, 38.655686838738404]]]),
     plotPoint = /* color: #98ff00 */ee.Geometry.Point([-113.81457071908915, 48.069298246118436]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for running harmonic regression across a moving window of years
@@ -182,7 +182,9 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
             'startYearT':startYearT,
             'endYearT':endYearT,
             }).float();
+function getPeakDate(coeffs){
   
+}
   var sin = coeffs.select([1]);
   var cos = coeffs.select([2]);
   
