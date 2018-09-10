@@ -184,8 +184,9 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   var sin = coeffs.select([1]);
   var cos = coeffs.select([2]);
   
-  var minGreenDate = ((sin.divide(cos)).atan()).divide(2*Math.PI);
-  Map.addLayer(minGreenDate,{'min':-0.5,'max':0.5},'minGreenDate',false)
+  var greenDate = ((sin.divide(cos)).atan()).divide(2*Math.PI);
+  var maxGreenDate = greenDate.where(greenDate.lt(0),greenDate.add(0.5))
+  Map.addLayer(maxGreenDate,{'min':-0.5,'max':0.5},'maxGreenDate',false)
   // Map.addLayer(minGreenDate.add(0.5),{'min':0,'max':1},'maxGreenDate',false)
   
   var predicted = coeffsPredicted[1];
