@@ -145,7 +145,7 @@ var scale = null;
 var whichHarmonics = [2];
 
 //Which bands/indices to run harmonic regression across
-var indexNames = ['tcAngleBG'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
+var indexNames = ['NDVI'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 
 var detrend = false;
 ////////////////////////////////////////////////////////////////////////////////
@@ -187,6 +187,7 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   var cos = coeffs.select([2]);
   
   var greenDate = ((sin.divide(cos)).atan()).divide(2*Math.PI).rename(['greenDate']);
+  greenDate = greenDate.where(greenDate.lt(0), greenDate.add(1))
   var predicted1 = coeffs.select([0])
                   .add(coeffs.select([1]).multiply(greenDate.multiply(2*Math.PI).sin()))
                   .add(coeffs.select([2]).multiply(greenDate.multiply(2*Math.PI).cos()))
@@ -197,9 +198,11 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
                   .add(coeffs.select([2]).multiply(greenDate.add(0.5).multiply(2*Math.PI).cos()))
                   .rename('predicted')
                   .addBands(greenDate.add(0.5))
-  var finalGreenDate = ee.ImageCollection([predicted1,predicted2]).qualityMosaic('predicted').select(['greenDate']).multiply(365).int16();
+  var finalGreenDate = ee.ImageCollection([predicted1,predicted2]).qualityMosaic('predicted').select(['greenDate']).multiply(365).int16().rename(['julianDay']);
   Map.addLayer(predicted1,{},'predicted1',false);
-  var greenMonth = finalGreenDate.remap(julianDay,monthRemap)
+  var greenMonth = finalGreenDate.remap(julianDay,monthRemap).rename(['month'])
+  var greenMonthDay = finalGreenDate.remap(julianDay,monthDayRemap).rename(['monthDay'])
+  
   Map.addLayer(finalGreenDate,{'min':0.5,'max':0.8},'maxGreenDate',false)
   Map.addLayer(greenMonth,{'min':1,'max':12},'greenMonth',false);
   // Map.addLayer(minGreenDate.add(0.5),{'min':0,'max':1},'maxGreenDate',false)
