@@ -181,11 +181,12 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
             'endYearT':endYearT,
             }).float();
   
-  var sin = coeffs.select([0]);
-  var cos = coeffs.select([1]);
+  var sin = coeffs.select([1]);
+  var cos = coeffs.select([2]);
   
-  var firstDeriv = ((sin.divide(cos)).atan()).divide(2*Math.PI);
-  Map.addLayer(firstDeriv,{},'firstDeriv')
+  var minGreenDate = ((sin.divide(cos)).atan()).divide(2*Math.PI).abs();
+  Map.addLayer(minGreenDate,{'min':0,'max':1},'minGreenDate',false)
+  Map.addLayer(minGreenDate.add(0.5),{'min':0,'max':1},'maxGreenDate',false)
   var predicted = coeffsPredicted[1];
   Map.addLayer(coeffs,{},'coeffs',false)
   Map.addLayer(predicted,{},'predicted',false);
@@ -200,7 +201,7 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   // Turn the HSV data into an RGB image and add it to the map.
   var seasonality = ee.Image.cat(phase.unitScale(-Math.PI, Math.PI), amplitude.unitScale(0.0, 0.5), val.unitScale(0.2, 0.8))//.hsvToRgb();
   // Map.centerObject(roi, 11);
-  Map.addLayer(seasonality, {'min':0,'max':1}, 'Seasonality');
+  Map.addLayer(seasonality, {'min':0,'max':1}, 'Seasonality',false);
   //Export image
   var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
   var outPath = exportPathRoot + '/' + outName;
