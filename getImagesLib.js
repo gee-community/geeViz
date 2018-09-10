@@ -1531,13 +1531,13 @@ function getPeakDate(coeffs){
   var greenDateLater = greenDate.add(0.5);
   //Check which d1 slope = 0 is the max by predicting out the value
   var predicted1 = coeffs.select([0])
-                  .add(coeffs.select([1]).multiply(greenDate.multiply(2*Math.PI).sin()))
-                  .add(coeffs.select([2]).multiply(greenDate.multiply(2*Math.PI).cos()))
+                  .add(sin.multiply(greenDate.multiply(2*Math.PI).sin()))
+                  .add(cos.multiply(greenDate.multiply(2*Math.PI).cos()))
                   .rename('predicted')
                   .addBands(greenDate);
   var predicted2 = coeffs.select([0])
-                  .add(coeffs.select([1]).multiply(greenDateLater.multiply(2*Math.PI).sin()))
-                  .add(coeffs.select([2]).multiply(greenDateLater.multiply(2*Math.PI).cos()))
+                  .add(sin.multiply(greenDateLater.multiply(2*Math.PI).sin()))
+                  .add(cos.multiply(greenDateLater.multiply(2*Math.PI).cos()))
                   .rename('predicted')
                   .addBands(greenDateLater);
   var finalGreenDate = ee.ImageCollection([predicted1,predicted2]).qualityMosaic('predicted').select(['greenDate']).rename(['julianDay']);
