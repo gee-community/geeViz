@@ -1547,7 +1547,7 @@ function getPeakDate(coeffs){
   var greenMonth = finalGreenDate.remap(julianDay,monthRemap).rename(['month']);
   var greenMonthDay = finalGreenDate.remap(julianDay,monthDayRemap).rename(['monthDay']);
   var greenStack = finalGreenDate.addBands(greenMonth).addBands(greenMonthDay);
-  return greenStack
+  return greenStack;
   // Map.addLayer(greenStack,{'min':1,'max':12},'greenMonth',false);
 }
 ///////////////////////////////////////////////
