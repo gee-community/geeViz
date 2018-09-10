@@ -1527,7 +1527,7 @@ function getPeakDate(coeffs){
   var cos = coeffs.select([1]);
   
   //Find where in cycle slope is zero
-  var greenDate = ((sin.divide(cos)).atan()).divide(2*Math.PI).rename(['greenDate']);
+  var greenDate = ((sin.divide(cos)).atan()).divide(2*Math.PI).rename(['peakDate']);
   var greenDateLater = greenDate.add(0.5);
   //Check which d1 slope = 0 is the max by predicting out the value
   var predicted1 = coeffs.select([0])
@@ -1540,12 +1540,12 @@ function getPeakDate(coeffs){
                   .add(cos.multiply(greenDateLater.multiply(2*Math.PI).cos()))
                   .rename('predicted')
                   .addBands(greenDateLater);
-  var finalGreenDate = ee.ImageCollection([predicted1,predicted2]).qualityMosaic('predicted').select(['greenDate']).rename(['julianDay']);
+  var finalGreenDate = ee.ImageCollection([predicted1,predicted2]).qualityMosaic('predicted').select(['peakDate']).rename(['peakJulianDay']);
   finalGreenDate = finalGreenDate.where(finalGreenDate.lt(0), greenDate.add(1)).multiply(365).int16();
   
   //Convert to month and day of month
-  var greenMonth = finalGreenDate.remap(julianDay,monthRemap).rename(['month']);
-  var greenMonthDay = finalGreenDate.remap(julianDay,monthDayRemap).rename(['monthDay']);
+  var greenMonth = finalGreenDate.remap(julianDay,monthRemap).rename(['peakMonth']);
+  var greenMonthDay = finalGreenDate.remap(julianDay,monthDayRemap).rename(['peakDayOfMonth']);
   var greenStack = finalGreenDate.addBands(greenMonth).addBands(greenMonthDay);
   return greenStack;
   // Map.addLayer(greenStack,{'min':1,'max':12},'greenMonth',false);
