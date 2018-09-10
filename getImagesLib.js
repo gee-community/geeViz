@@ -1577,7 +1577,7 @@ function getPhaseAmplitude(coeffs){
       // var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
       
       var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
-      var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename([outName.cat('_amplitude')])
+      var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename([outName.cat('_amplitude')]);
                       // .multiply(5);
       // var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
       var phase = regCoeffs.select([0]).atan2(regCoeffs.select([1]))
@@ -1592,8 +1592,8 @@ function getPhaseAmplitude(coeffs){
     
     phaseAmplitude = ee.Image(collectionToImage(phaseAmplitude)).float()
           .copyProperties(coeffs,['system:time_start']);
-    print('pa',phaseAmplitude)      
-    return phaseAmplitude
+    print('pa',phaseAmplitude);
+    return phaseAmplitude;
 
 
 }
