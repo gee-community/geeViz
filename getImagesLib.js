@@ -1579,13 +1579,11 @@ function getPhaseAmplitude(coeffs){
       var modelCoeffs = coeffs.select(pm);
       
       var intercept = modelCoeffs.select('.*_intercept');
-      var harmCoeffs = modelCoeffs.select('.*_sin_200_year');
+      var harmCoeffs = modelCoeffs.select('.*_200_year');
       var outName = ee.String(ee.String(pm.get(1)).split('_').get(0));
       var sign = bandDirection.get(outName)
-      
-  //     var intercept = modelCoeffs.select(modelCoeffs.bandNames().slice(0,1));
-  //     // var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
-      
+      return harmCoeffs
+ 
   //     var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
   //     var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename([outName.cat('_amplitude')])
   //                     .multiply(2);
