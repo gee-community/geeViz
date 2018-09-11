@@ -186,11 +186,12 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   var predicted = coeffsPredicted[1];
   Map.addLayer(coeffs,{},'coeffs',false)
   Map.addLayer(predicted,{},'predicted',false);
-  var pa = ee.Image(getImageLib.getPhaseAmplitude(coeffs));
-  print(pa)
-  var peakJulians = pa.select(['.*peakMonth','.*peakDayOfMonth'])
-  Map.addLayer(pa,{},'pa')
-  Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians')
+  if(whichHarmonics.indexOf(2) > -1){
+    var pap = ee.Image(getImageLib.getPhaseAmplitudePeak(coeffs));
+    print(pap)
+    var peakJulians = pap.select(['.*peakMonth','.*peakDayOfMonth'])
+    Map.addLayer(pap,{},'pap')
+    Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians')
   // var amplitude = pa.select([0]);
   // var phase = pa.select([1]);
   // var val = coeffs.select([0]);
@@ -201,6 +202,9 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   // var seasonality = ee.Image.cat(phase.unitScale(-Math.PI, Math.PI), amplitude.unitScale(0.0, 0.5), val.unitScale(0.2, 0.8))//.hsvToRgb();
   // // Map.centerObject(roi, 11);
   // Map.addLayer(seasonality, {'min':0,'max':1}, 'Seasonality',false);
+    
+  };
+  
   // //Export image
   // var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
   // var outPath = exportPathRoot + '/' + outName;
