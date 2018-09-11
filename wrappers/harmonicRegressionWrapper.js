@@ -31,13 +31,13 @@ var endJulian = 365;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2014;
-var endYear = 2018;
+var startYear = 2015;
+var endYear = 2017;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
 // in a 3 year moving window
-var timebuffer = 2;
+var timebuffer = 1;
 
 
 // 7. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
@@ -184,14 +184,14 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   // Map.addLayer(minGreenDate.add(0.5),{'min':0,'max':1},'maxGreenDate',false)
   
   var predicted = coeffsPredicted[1];
-  Map.addLayer(coeffs,{},'coeffs',false)
+  Map.addLayer(coeffs,{},'coeffs',false);
   Map.addLayer(predicted,{},'predicted',false);
   if(whichHarmonics.indexOf(2) > -1){
     var pap = ee.Image(getImageLib.getPhaseAmplitudePeak(coeffs));
-    print(pap)
-    var peakJulians = pap.select(['.*peakMonth','.*peakDayOfMonth'])
-    Map.addLayer(pap,{},'pap')
-    Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians')
+    print(pap);
+    var peakJulians = pap.select(['.*peakMonth','.*peakDayOfMonth']);
+    Map.addLayer(pap,{},'pap');
+    Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians');
   // var amplitude = pa.select([0]);
   // var phase = pa.select([1]);
   // var val = coeffs.select([0]);
