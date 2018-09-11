@@ -154,14 +154,14 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and fit harmonic regression model
-var zCollection = []
-ee.List.sequence(startYear+baselineLength,endYear,1).getInfo().map(function(yr){
-  
-  var blStartYear = yr-baselineLength;
-  var blEndYear = yr-1;
+// var zCollection = []
+var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).map(function(yr){
+  yr = ee.Number(yr);
+  var blStartYear = yr.subtract(baselineLength);
+  var blEndYear = yr.subtract(1);
   // print(yr,blStartYear,blEndYear);
-  ee.List.sequence(startJulian,endJulian-nDays,nDays).getInfo().map(function(jd){
-    print(jd);
+  return ee.FeatureCollection(ee.List.sequence(startJulian,endJulian-nDays,nDays).map(function(jd){
+    // print(jd);
     var jdStart = jd;
     var jdEnd = jd+nDays;
     
@@ -186,14 +186,14 @@ ee.List.sequence(startYear+baselineLength,endYear,1).getInfo().map(function(yr){
                 
           });
     // Export image
-    var outName = outputName + blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
-    var outPath = exportPathRoot + '/' + outName;
-    getImageLib.exportToAssetWrapper(out,outName,outPath,
-      'mean',studyArea,scale,crs,transform);
+    // var outName = outputName + blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
+    // var outPath = exportPathRoot + '/' + outName;
+    // getImageLib.exportToAssetWrapper(out,outName,outPath,
+      // 'mean',studyArea,scale,crs,transform);
+    return out
+    // zCollection.push(out);
     
-    zCollection.push(out);
-    
-  });
+  }));
   
   //Set up dates
   // var startYearT = yr-timebuffer;
@@ -224,6 +224,6 @@ ee.List.sequence(startYear+baselineLength,endYear,1).getInfo().map(function(yr){
   // return coeffs;
   
 });
-zCollection = ee.ImageCollection(zCollection)
+zCollection = ee.ImageCollection(ee.FeatureCollection(zCollection).flatten())
 Map.addLayer(zCollection,{},'z collection',false)
 // Map.addLayer(allScenes,{},'all scenes',false)
