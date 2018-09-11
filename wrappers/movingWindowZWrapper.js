@@ -182,6 +182,9 @@ var zCollection = ee.List.sequence(startYear+baselineLength+baselineGap,endYear,
     var trendImages = allScenes.filter(ee.Filter.calendarRange(trendStartYear,yr,'year'))
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd));
     
+    var linearTrend = dLib.getLinearFit(trendImages);
+    var linearTrendModel = linearTrend[0]
+    
     var blMean = blImages.mean();
     var blStd = blImages.reduce(ee.Reducer.stdDev());
     
@@ -203,7 +206,7 @@ var zCollection = ee.List.sequence(startYear+baselineLength+baselineGap,endYear,
     // var outPath = exportPathRoot + '/' + outName;
     // getImageLib.exportToAssetWrapper(out,outName,outPath,
       // 'mean',studyArea,scale,crs,transform);
-    return out
+    return linearTrendModel;//out.addBands(linearTrendModel).float()
     // zCollection.push(out);
     
   }));
