@@ -31,8 +31,8 @@ var endJulian = 300;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 1984;
-var endYear = 2018;
+var startYear = 2000;
+var endYear = 2015;
 
 
 
@@ -156,6 +156,7 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels
   ).select(indexNames);
 
+var dummyScene = ee.Image(allScenes.first());
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and fit harmonic regression model
 // var zCollection = []
@@ -175,15 +176,18 @@ var zCollection = ee.List.sequence(startYear+baselineLength+baselineGap,endYear,
     
     var blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear,blEndYear,'year'))
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd));
+    blImages = getImageLib.fillEmptyCollections(blImages,dummyScene);
     
     var analysisImages = allScenes.filter(ee.Filter.calendarRange(yr,yr,'year'))
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd)); 
+    analysisImages = getImageLib.fillEmptyCollections(analysisImages,dummyScene);
     
     var trendImages = allScenes.filter(ee.Filter.calendarRange(trendStartYear,yr,'year'))
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd));
+    trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene);
     
-    var linearTrend = dLib.getLinearFit(trendImages);
-    var linearTrendModel = linearTrend[0]
+    var linearTrend = dLib.getLinearFit(trendImages,indexNames);
+    var linearTrendModel = ee.Image(linearTrend[0])
     
     var blMean = blImages.mean();
     var blStd = blImages.reduce(ee.Reducer.stdDev());
@@ -192,7 +196,7 @@ var zCollection = ee.List.sequence(startYear+baselineLength+baselineGap,endYear,
       return img.subtract(blMean).divide(blStd);
     }).reduce(zReducer).rename(outNames);
     // Map.addLayer(analysisImagesZ,{'min':-20,'max':20,'palette':'F00,888,0F0'},'z '+outName,false);
-    var out = analysisImages.reduce(zReducer).rename(indexNames).addBands(analysisImagesZ)
+    var out = analysisImages.reduce(zReducer).rename(indexNames).addBands(analysisImagesZ).addBands(linearTrendModel)
           .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis(),
                 'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis(),
                 'baselineYrs': baselineLength,
@@ -206,7 +210,7 @@ var zCollection = ee.List.sequence(startYear+baselineLength+baselineGap,endYear,
     // var outPath = exportPathRoot + '/' + outName;
     // getImageLib.exportToAssetWrapper(out,outName,outPath,
       // 'mean',studyArea,scale,crs,transform);
-    return linearTrendModel;//out.addBands(linearTrendModel).float()
+    return out//.float()
     // zCollection.push(out);
     
   }));
