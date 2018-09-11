@@ -142,7 +142,7 @@ var scale = null;
 //Typical assumption of 1 cycle/yr would be [2]
 //If trying to overfit, or expected bimodal phenology try adding a higher frequency as well
 //ex. [2,4]
-var whichHarmonics = [4];
+var whichHarmonics = [2,3,4];
 
 //Which bands/indices to run harmonic regression across
 var indexNames =['NDVI','NBR','NDMI','nir','swir1','swir2','tcAngleBG'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
@@ -189,7 +189,7 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   if(whichHarmonics.indexOf(2) > -1){
     var pap = ee.Image(getImageLib.getPhaseAmplitudePeak(coeffs));
     print(pap);
-    var peakJulians = pap.select(['.*peakMonth','.*peakDayOfMonth']);
+    var peakJulians = pap.select(['.*peakJulianDay']);
     Map.addLayer(pap,{},'pap');
     Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians');
   // var amplitude = pa.select([0]);
