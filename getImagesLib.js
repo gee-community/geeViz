@@ -1537,13 +1537,13 @@ function getPeakDate(coeffs,peakDirection){
                   .add(sin.multiply(greenDate.multiply(2*Math.PI).sin()))
                   .add(cos.multiply(greenDate.multiply(2*Math.PI).cos()))
                   .rename('predicted')
-                  .multiply(peakDirection)
+                  // .multiply(peakDirection)
                   .addBands(greenDate);
   var predicted2 = coeffs.select([0])
                   .add(sin.multiply(greenDateLater.multiply(2*Math.PI).sin()))
                   .add(cos.multiply(greenDateLater.multiply(2*Math.PI).cos()))
                   .rename('predicted')
-                  .multiply(peakDirection)
+                  // .multiply(peakDirection)
                   .addBands(greenDateLater);
   var finalGreenDate = ee.ImageCollection([predicted1,predicted2]).qualityMosaic('predicted').select(['peakDate']).rename(['peakJulianDay']);
   finalGreenDate = finalGreenDate.where(finalGreenDate.lt(0), greenDate.add(1)).multiply(365).int16();
