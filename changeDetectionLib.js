@@ -485,7 +485,7 @@ function getLinearFit(c,bandNames){
   model = model.arrayFlatten([['slope','intercept'],bandNames]);
   
   //Apply model
-  var predicted = predictModel(c,model);
+  var predicted = predictModel(c,model,bandNames);
   
   //Return both the model and predicted
   return [model,predicted];
