@@ -5,7 +5,7 @@ var geometry = /* color: #d63000 */ee.Geometry.Polygon(
           [-113.31735949709838, 48.51205685707847],
           [-113.28989367678588, 48.84935559144764]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
-//Wrapper for running harmonic regression across a moving window of years
+//Wrapper for running z-score and linear trend across a moving window of years
 
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
