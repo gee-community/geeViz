@@ -145,9 +145,9 @@ var scale = null;
 var whichHarmonics = [2];
 
 //Which bands/indices to run harmonic regression across
-var indexNames = ['brightness'];//['NDVI','NBR','NDMI','nir','swir1','swir2','tcAngleBG'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
+var indexNames =['NDVI','NBR','NDMI','nir','swir1','swir2','tcAngleBG'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 
-var detrend = false;
+var detrend = true;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -188,7 +188,7 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   Map.addLayer(predicted,{},'predicted',false);
   var pa = ee.Image(getImageLib.getPhaseAmplitude(coeffs));
   print(pa)
-  var peakJulians = pa.select('.*peakJulianDay')
+  var peakJulians = pa.select(['.*peakMonth','.*peakDayOfMonth'])
   Map.addLayer(pa,{},'pa')
   Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians')
   // var amplitude = pa.select([0]);
