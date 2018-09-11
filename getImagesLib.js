@@ -1577,7 +1577,7 @@ function getPhaseAmplitudePeak(coeffs){
     return bandNames.slice(mn.multiply(modelLength),mn.multiply(modelLength).add(modelLength));
   });
   
-  print('Parsed harmonic regression model',parsedModel);
+  // print('Parsed harmonic regression model',parsedModel);
 
   //Iterate across models to convert to phase, amplitude, and peak
   var phaseAmplitude =parsedModel.map(function(pm){
