@@ -24,15 +24,15 @@ var studyArea =geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 150;
-var endJulian = 300; 
+var startJulian = 160;
+var endJulian = 280; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2000;
-var endYear = 2015;
+var startYear = 1984;
+var endYear = 2018;
 
 
 
@@ -187,7 +187,7 @@ var zCollection = ee.List.sequence(startYear+baselineLength+baselineGap,endYear,
     trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene);
     
     var linearTrend = dLib.getLinearFit(trendImages,indexNames);
-    var linearTrendModel = ee.Image(linearTrend[0])
+    var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']).multiply(100)
     
     var blMean = blImages.mean();
     var blStd = blImages.reduce(ee.Reducer.stdDev());
