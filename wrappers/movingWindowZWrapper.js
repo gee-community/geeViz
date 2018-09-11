@@ -140,6 +140,7 @@ var baselineLength = 5;
 var zReducer = ee.Reducer.mean();
 //Which bands/indices to run z score on
 var indexNames = ['NBR'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
+var outNames = indexNames.map(function(bn){return ee.String(bn).cat('_Z')})
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -177,7 +178,7 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).map(funct
     
     var analysisImagesZ = analysisImages.map(function(img){
       return img.subtract(blMean).divide(blStd);
-    }).reduce(zReducer);
+    }).reduce(zReducer).rename(outNames);
     // Map.addLayer(analysisImagesZ,{'min':-20,'max':20,'palette':'F00,888,0F0'},'z '+outName,false);
     var out = analysisImages.reduce(zReducer).addBands(analysisImagesZ)
           .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis(),
