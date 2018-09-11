@@ -1527,7 +1527,8 @@ var julianDay = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 
 //Direction of photosynthetic vegetation- add any that are missing
 var bandDirection = ee.Dictionary({'green':1,'nir':1,'NDVI':1,'NDMI':1,'NDSI':1,'VIG':1,'NBR':1,'tcAngleBG':1,'greenness':1,'wetness':1,
                     'blue':-1,'red':-1,'swir1':-1,'swir2':-1,'brightness':-1})
-
+//Function for getting the date of the peak of veg vigor- can handle bands negatively correlated to veg in
+//bandDirection dictionary above
 function getPeakDate(coeffs,peakDirection){
   if(peakDirection === null || peakDirection === undefined){peakDirection = 1};
   
