@@ -180,7 +180,7 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
             'endYearT':endYearT,
             }).float();
 
-  //Predict values for visualization
+  //Get predicted values for visualization
   var predicted = coeffsPredicted[1];
   Map.addLayer(predicted,{},'predicted',false);
   
