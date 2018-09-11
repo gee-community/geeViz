@@ -482,13 +482,13 @@ function getLinearFit(c,bandNames){
   var model = c.select(selectOrder).reduce(ee.Reducer.linearRegression(2,bandNames.length())).select([0]);
   
   //Convert model to image
-  model = model.arrayFlatten([['intercept','slope'],bandNames]);
+  model = model.arrayTranspose().arrayFlatten([['slope','intercept'],bandNames]);
   
   //Apply model
   var predicted = predictModel(c,model);
   
   //Return both the model and predicted
-  return [model,predicted];
+  return [model]//,predicted];
 }
 //////////////////////////////////////////////////////////////////////////
 exports.extractDisturbance = extractDisturbance;
