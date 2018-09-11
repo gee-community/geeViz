@@ -1605,7 +1605,7 @@ function getPhaseAmplitude(coeffs){
   //   phaseAmplitude = ee.Image(collectionToImage(phaseAmplitude)).float()
   //         .copyProperties(coeffs,['system:time_start']);
   //   // print('pa',phaseAmplitude);
-  //   return phaseAmplitude;
+    return phaseAmplitude;
 
 
 }
