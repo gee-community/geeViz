@@ -193,14 +193,14 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
     var amplitudes = pap.select(['.*_amplitude']);
     var phases = pap.select(['.*_phase']);
     var peakJulians = pap.select(['.*peakJulianDay']);
-    Map.addLayer(pap,{},'pap');
-    Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians');
+    Map.addLayer(pap,{},'pap',false);
+    Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians',false);
   
     
     // Turn the HSV data into an RGB image and add it to the map.
     var seasonality = ee.Image.cat(phases.select([0]), 
-                                    amplitudes.select([0]).unitScale(0.0, 0.5), 
-                                    vals.select([0]).unitScale(0.2, 0.8)).hsvToRgb();
+                                    amplitudes.select([0]), 
+                                    vals.select([0])).hsvToRgb();
   
     Map.addLayer(seasonality, {'min':0,'max':1}, 'Seasonality',false);
     
