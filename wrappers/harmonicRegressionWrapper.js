@@ -188,6 +188,8 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   if(whichHarmonics.indexOf(2) > -1){
     var pap = ee.Image(getImageLib.getPhaseAmplitudePeak(coeffs));
     print(pap);
+    var amplitudes = pap.select(['.*_amplitude']);
+    var phases = pap.select(['.*_phase']);
     var peakJulians = pap.select(['.*peakJulianDay']);
     Map.addLayer(pap,{},'pap');
     Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians');
