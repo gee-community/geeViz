@@ -160,7 +160,7 @@ var dummyScene = ee.Image(allScenes.first());
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and fit harmonic regression model
 // var zCollection = []
-var zCollection = ee.List.sequence(startYear+baselineLength+baselineGap,endYear,1).map(function(yr){
+var zAndTrendCollection = ee.List.sequence(startYear+baselineLength+baselineGap,endYear,1).map(function(yr){
   yr = ee.Number(yr);
   var blStartYear = yr.subtract(baselineLength).subtract(baselineGap);
   var blEndYear = yr.subtract(1).subtract(baselineGap);
@@ -244,7 +244,7 @@ var zCollection = ee.List.sequence(startYear+baselineLength+baselineGap,endYear,
   // return coeffs;
   
 });
-zCollection = ee.ImageCollection(ee.FeatureCollection(zCollection).flatten())
-print(zCollection)
-Map.addLayer(zCollection,{},'z collection',false)
-// Map.addLayer(allScenes,{},'all scenes',false)
+zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten())
+print(zAndTrendCollection);
+Map.addLayer(zAndTrendCollection,{},'zAndTrendCollection',false);
+
