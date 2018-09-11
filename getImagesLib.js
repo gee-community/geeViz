@@ -1582,31 +1582,31 @@ function getPhaseAmplitude(coeffs){
       var harmCoeffs = modelCoeffs.select('.*_200_year');
       var outName = ee.String(ee.String(pm.get(1)).split('_').get(0));
       var sign = bandDirection.get(outName)
-      return harmCoeffs
+      
  
-  //     var regCoeffs = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
-  //     var amplitude = regCoeffs.pow(2).reduce(ee.Reducer.sum()).sqrt().rename([outName.cat('_amplitude')])
-  //                     .multiply(2);
-  //     // var amplitude2 = regCoeffs.select([1]).hypot(regCoeffs.select([0])).rename(['amplitude2']);
-  //     var phase = regCoeffs.select([0]).atan2(regCoeffs.select([1]))
-  //     // .unitScale(-Math.PI, Math.PI)
-  //     .rename([outName.cat('_phase')]);
+  
+      var amplitude = harmCoeffs.select([1]).hypot(harmCoeffs.select([0]))
+                    .multiply(2)
+                    .rename([outName.cat('_amplitude')]);
+      var phase = harmCoeffs.select([0]).atan2(harmCoeffs.select([1]))
+                    .unitScale(-Math.PI, Math.PI)
+                    .rename([outName.cat('_phase')]);
       
-  //     //Get peak date info
-  //     var peakDate = getPeakDate(regCoeffs);
-  //     var peakDateBandNames = peakDate.bandNames();
-  //     peakDateBandNames = peakDateBandNames.map(function(bn){return outName.cat(ee.String('_').cat(ee.String(bn)))});
+      //Get peak date info
+      var peakDate = getPeakDate(regCoeffs,sign);
+      var peakDateBandNames = peakDate.bandNames();
+      peakDateBandNames = peakDateBandNames.map(function(bn){return outName.cat(ee.String('_').cat(ee.String(bn)))});
       
       
-  //     return amplitude.addBands(phase).addBands(peakDate.rename(peakDateBandNames));
+      return amplitude.addBands(phase).addBands(peakDate.rename(peakDateBandNames));
     
     });
-  //   //Convert to an image
-  //   phaseAmplitude = ee.ImageCollection.fromImages(phaseAmplitude);
+    //Convert to an image
+    phaseAmplitude = ee.ImageCollection.fromImages(phaseAmplitude);
     
-  //   phaseAmplitude = ee.Image(collectionToImage(phaseAmplitude)).float()
-  //         .copyProperties(coeffs,['system:time_start']);
-  //   // print('pa',phaseAmplitude);
+    phaseAmplitude = ee.Image(collectionToImage(phaseAmplitude)).float()
+          .copyProperties(coeffs,['system:time_start']);
+    // print('pa',phaseAmplitude);
     return phaseAmplitude;
 
 
