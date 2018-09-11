@@ -1581,7 +1581,7 @@ function getPhaseAmplitude(coeffs){
       var intercept = modelCoeffs.select('.*_intercept');
       var harmCoeffs = modelCoeffs.select('.*_200_year');
       var outName = ee.String(ee.String(pm.get(1)).split('_').get(0));
-      var sign = bandDirection.get(outName)
+      var sign = bandDirection.get(outName);
       
  
   
@@ -1593,7 +1593,7 @@ function getPhaseAmplitude(coeffs){
                     .rename([outName.cat('_phase')]);
       
       //Get peak date info
-      var peakDate = getPeakDate(regCoeffs,sign);
+      var peakDate = getPeakDate(harmCoeffs,sign);
       var peakDateBandNames = peakDate.bandNames();
       peakDateBandNames = peakDateBandNames.map(function(bn){return outName.cat(ee.String('_').cat(ee.String(bn)))});
       
