@@ -135,7 +135,7 @@ var scale = null;
 
 var nDays = 32;
 var baselineLength = 5;
-
+var baselineGap = 2;
 
 var zReducer = ee.Reducer.mean();
 //Which bands/indices to run z score on
@@ -156,10 +156,10 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and fit harmonic regression model
 // var zCollection = []
-var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).map(function(yr){
+var zCollection = ee.List.sequence(startYear+baselineLength+baselineGap,endYear,1).map(function(yr){
   yr = ee.Number(yr);
-  var blStartYear = yr.subtract(baselineLength);
-  var blEndYear = yr.subtract(1);
+  var blStartYear = yr.subtract(baselineLength).subtract(baselineGap);
+  var blEndYear = yr.subtract(1).subtract(baselineGap);
   // print(yr,blStartYear,blEndYear);
   return ee.FeatureCollection(ee.List.sequence(startJulian,endJulian-nDays,nDays).map(function(jd){
     // print(jd);
@@ -184,6 +184,8 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).map(funct
           .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis(),
                 'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis(),
                 'baselineYrs': baselineLength,
+                'baselineStartYear':blStartYear,
+                'baselineEndYear':blEndYear,
                 'year':yr,
                 
           });
