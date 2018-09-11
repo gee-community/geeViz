@@ -138,6 +138,9 @@ var baselineLength = 5;
 var baselineGap = 2;
 
 var zReducer = ee.Reducer.mean();
+
+
+var epochLength = 5;
 //Which bands/indices to run z score on
 var indexNames = ['NBR','NDVI'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 var outNames = indexNames.map(function(bn){return ee.String(bn).cat('_Z')})
@@ -160,6 +163,9 @@ var zCollection = ee.List.sequence(startYear+baselineLength+baselineGap,endYear,
   yr = ee.Number(yr);
   var blStartYear = yr.subtract(baselineLength).subtract(baselineGap);
   var blEndYear = yr.subtract(1).subtract(baselineGap);
+  
+  var trendStartYear = yr.subtract(epochLength);
+  
   // print(yr,blStartYear,blEndYear);
   return ee.FeatureCollection(ee.List.sequence(startJulian,endJulian-nDays,nDays).map(function(jd){
     // print(jd);
@@ -172,6 +178,9 @@ var zCollection = ee.List.sequence(startYear+baselineLength+baselineGap,endYear,
     
     var analysisImages = allScenes.filter(ee.Filter.calendarRange(yr,yr,'year'))
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd)); 
+    
+    var trendImages = allScenes.filter(ee.Filter.calendarRange(trendStartYear,yr,'year'))
+                            .filter(ee.Filter.calendarRange(jdStart,jdEnd));
     
     var blMean = blImages.mean();
     var blStd = blImages.reduce(ee.Reducer.stdDev());
@@ -229,5 +238,6 @@ var zCollection = ee.List.sequence(startYear+baselineLength+baselineGap,endYear,
   
 });
 zCollection = ee.ImageCollection(ee.FeatureCollection(zCollection).flatten())
+print(zCollection)
 Map.addLayer(zCollection,{},'z collection',false)
 // Map.addLayer(allScenes,{},'all scenes',false)
