@@ -187,7 +187,9 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   Map.addLayer(coeffs,{},'coeffs',false)
   Map.addLayer(predicted,{},'predicted',false);
   var pa = ee.Image(getImageLib.getPhaseAmplitude(coeffs));
-  Map.addLayer(pa,{},'pa')
+  // var peakJulians = pa.select('.*peakJulianDay')
+  // Map.addLayer(pa,{},'pa')
+  // Map.addLayer(peakJulians,{},'peakJulians')
   // var amplitude = pa.select([0]);
   // var phase = pa.select([1]);
   // var val = coeffs.select([0]);
