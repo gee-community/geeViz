@@ -180,12 +180,11 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
             'endYearT':endYearT,
             }).float();
 
-  
-  // Map.addLayer(minGreenDate.add(0.5),{'min':0,'max':1},'maxGreenDate',false)
-  
+  //Predict values for visualization
   var predicted = coeffsPredicted[1];
-  Map.addLayer(coeffs,{},'coeffs',false);
   Map.addLayer(predicted,{},'predicted',false);
+  
+  //Optionally simplify coeffs to phase, amplitude, and date of peak
   if(whichHarmonics.indexOf(2) > -1){
     var pap = ee.Image(getImageLib.getPhaseAmplitudePeak(coeffs));
     print(pap);
