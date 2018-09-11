@@ -162,8 +162,9 @@ var zCollection = ee.List.sequence(startYear+baselineLength,endYear,1).map(funct
   // print(yr,blStartYear,blEndYear);
   return ee.FeatureCollection(ee.List.sequence(startJulian,endJulian-nDays,nDays).map(function(jd){
     // print(jd);
+    jd = ee.Number(jd)
     var jdStart = jd;
-    var jdEnd = jd+nDays;
+    var jdEnd = jd.add(nDays);
     
     var blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear,blEndYear,'year'))
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd));
