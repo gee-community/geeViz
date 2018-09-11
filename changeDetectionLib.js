@@ -434,6 +434,62 @@ function pairwiseSlope(c){
     });
     return ee.ImageCollection.fromImages(slopeCollection);
   }
+  
+//Function for applying linear fit model
+//Assumes the model has a intercept and slope band prefix to the bands in the model
+//Assumes that the c (collection) has the raw bands in it
+function predictModel(c,model,bandNames){
+  
+  //Parse model
+  var intercepts = model.select('intercept_.*');
+  var slopes = model.select('slope_.*');
+  
+  //Find band names for raw data if not provided
+  if(bandNames === null || bandNames === undefined){
+    bandNames = slopes.bandNames().map(function(bn){return ee.String(bn).split('_').get(1)});
+  }
+  
+  //Set up output band names
+  var predictedBandNames = bandNames.map(function(bn){return ee.String(bn).cat('_trend')});
+  
+  //Predict model
+  var predicted = c.map(function(img){
+    var cActual = img.select(bandNames);
+    var out = img.select(['year']).multiply(slopes).add(img.select(['constant']).multiply(intercepts)).rename(predictedBandNames);
+    return cActual.addBands(out).copyProperties(img,['system:time_start']);
+  });
+  
+  return predicted;
+}
+//////////////////////
+//Function for getting a linear fit of a time series and applying it
+function getLinearFit(c,bandNames){
+  //Find band names for raw data if not provided
+  if(bandNames === null || bandNames === undefined){
+    bandNames = ee.Image(c.first()).bandNames();
+  }
+  else{
+    bandNames = ee.List(bandNames);
+    c = c.select(bandNames);
+  }
+  
+  //Add date and constant independents
+  c = c.map(function(img){return img.addBands(ee.Image(1))});
+  c = c.map(getImageLib.addDateBand);
+  var selectOrder = ee.List([['constant','year'],bandNames]).flatten();
+  
+  //Fit model
+  var model = c.select(selectOrder).reduce(ee.Reducer.linearRegression(2,bandNames.length())).select([0]);
+  
+  //Convert model to image
+  model = model.arrayFlatten([['intercept','slope'],bandNames]);
+  
+  //Apply model
+  var predicted = predictModel(c,model);
+  
+  //Return both the model and predicted
+  return [model,predicted];
+}
 //////////////////////////////////////////////////////////////////////////
 exports.extractDisturbance = extractDisturbance;
 exports.landtrendrWrapper = landtrendrWrapper;
@@ -448,3 +504,6 @@ exports.runEWMACD = runEWMACD;
 
 exports.pairwiseSlope = pairwiseSlope;
 exports.thresholdChange = thresholdChange;
+
+exports.predictModel = predictModel;
+exports.getLinearFit = getLinearFit;
