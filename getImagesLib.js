@@ -1562,7 +1562,7 @@ function getPeakDate(coeffs,peakDirection){
   // Map.addLayer(greenStack,{'min':1,'max':12},'greenMonth',false);
 }
 ///////////////////////////////////////////////
-function getPhaseAmplitude(coeffs){
+function getPhaseAmplitudePeak(coeffs){
   //Parse the model
   var bandNames = coeffs.bandNames();
   var bandNumber = bandNames.length();
@@ -1822,4 +1822,4 @@ exports.harmonizationRoy = harmonizationRoy;
 exports.fillEmptyCollections = fillEmptyCollections;
 
 exports.getHarmonicCoefficientsAndFit = getHarmonicCoefficientsAndFit;
-exports.getPhaseAmplitude = getPhaseAmplitude;
+exports.getPhaseAmplitudePeak = getPhaseAmplitudePeak;
