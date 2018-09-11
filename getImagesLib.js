@@ -1569,10 +1569,13 @@ function getPhaseAmplitude(coeffs){
   
   print('Parsed harmonic regression model',parsedModel);
 
-  // //Iterate across models to convert to phase, amplitude, and peak
-  // var phaseAmplitude =parsedModel.map(function(pm){
-  //     pm = ee.List(pm);
-  //     var modelCoeffs = coeffs.select(pm);
+  //Iterate across models to convert to phase, amplitude, and peak
+  var phaseAmplitude =parsedModel.map(function(pm){
+      pm = ee.List(pm);
+      var modelCoeffs = coeffs.select(pm);
+      
+      var intercept = modelCoeffs.select('.*_intercept');
+      var harmCoeffs = modelCoeffs.select('.*_sin_200_year');
   //     var outName = ee.String(ee.String(pm.get(1)).split('_').get(0));
       
       
@@ -1595,7 +1598,7 @@ function getPhaseAmplitude(coeffs){
       
   //     return amplitude.addBands(phase).addBands(peakDate.rename(peakDateBandNames));
     
-  //   });
+    });
   //   //Convert to an image
   //   phaseAmplitude = ee.ImageCollection.fromImages(phaseAmplitude);
     
