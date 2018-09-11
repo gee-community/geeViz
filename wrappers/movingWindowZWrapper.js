@@ -245,6 +245,6 @@ var zAndTrendCollection = ee.List.sequence(startYear+baselineLength+baselineGap,
   
 });
 zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten())
-print(zAndTrendCollection);
+print(zAndTrendCollection)
 Map.addLayer(zAndTrendCollection,{},'zAndTrendCollection',false);
 
