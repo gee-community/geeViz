@@ -206,13 +206,12 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
     
   };
   
-  // //Export image
-  // var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
-  // var outPath = exportPathRoot + '/' + outName;
-  // getImageLib.exportToAssetWrapper(coeffs,outName,outPath,
-  // 'mean',studyArea,scale,crs,transform);
-  // // Map.addLayer(allScenesT.median(),{'min':0.1,'max':0.3,'bands':'swir1,nir,red'},yr.toString(),false);
-  // return coeffs;
+  //Export image
+  var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
+  var outPath = exportPathRoot + '/' + outName;
+  getImageLib.exportToAssetWrapper(coeffs,outName,outPath,
+  'mean',studyArea,scale,crs,transform);
+  return coeffs;
   
 });
 
