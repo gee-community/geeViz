@@ -282,5 +282,6 @@ var zAndTrendCollectionL = zAndTrendCollection.toList(100);
 zAndTrendCollection.size().evaluate(function(count){
   ee.List.sequence(0,count-1).getInfo().map(function(i){
     var image = ee.Image(zAndTrendCollectionL.get(i));
+    
   })
 });
