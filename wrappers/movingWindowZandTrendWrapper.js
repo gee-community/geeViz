@@ -283,6 +283,8 @@ zAndTrendCollection.size().evaluate(function(count){
     var blStartYear = image.get('baselineStartYear');
     var blEndYear = image.get('baselineEndYear');
     var yr = image.get('year');
+    var jdStart = image.get('startJulian');
+    var jdEnd = image.get('endJulian');
     print(image)
     // Export image
     var outName = outputName + '_b'+ blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
