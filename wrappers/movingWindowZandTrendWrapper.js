@@ -194,7 +194,7 @@ var zAndTrendCollection = ee.List.sequence(startYear+baselineLength+baselineGap,
     var blStd = blImages.reduce(ee.Reducer.stdDev());
     
     var analysisImagesZ = analysisImages.map(function(img){
-      return img.subtract(blMean).divide(blStd);
+      return (img.subtract(blMean)).divide(blStd);
     }).reduce(zReducer).rename(outNames);
     // Map.addLayer(analysisImagesZ,{'min':-20,'max':20,'palette':'F00,888,0F0'},'z '+outName,false);
     var out = analysisImages.reduce(zReducer).rename(indexNames).addBands(analysisImagesZ).addBands(linearTrendModel)
