@@ -187,10 +187,12 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and do a z-score and trend analysis
+
+//House-keeping
 var dummyScene = ee.Image(allScenes.first());
 var outNames = indexNames.map(function(bn){return ee.String(bn).cat('_Z')});
-var analysisStartYear = Math.max(startYear+baselineLength+baselineGap,startYear+epochLength-1)
-print(analysisStartYear)
+var analysisStartYear = Math.max(startYear+baselineLength+baselineGap,startYear+epochLength-1);
+
 var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(function(yr){
   yr = ee.Number(yr);
   var blStartYear = yr.subtract(baselineLength).subtract(baselineGap);
