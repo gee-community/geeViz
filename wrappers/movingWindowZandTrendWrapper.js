@@ -242,9 +242,9 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
     }).reduce(zReducer).rename(outNames);
     
     //Set up the output
-    var outName = ee.String('Z_and_Trend_b').cat(ee.String(blStartYear)).cat(ee.String('_'))
-                                .cat(ee.String(blEndYear)).cat(ee.String('_')).cat(ee.String(yr))
-                                .cat(ee.String(jdStart)).cat(ee.String('_')).cat(ee.String(jdEnd))
+    var outName = ee.String('Z_and_Trend_b').cat(ee.String(blStartYear.int16())).cat(ee.String('_'))
+                                .cat(ee.String(blEndYear.int16())).cat(ee.String('_epoch')).cat(ee.String(epochLength)).cat(ee.String('_y')).cat(ee.String(yr.int16())).cat(ee.String('_'))
+                                .cat(ee.String(jdStart.int16())).cat(ee.String('_')).cat(ee.String(jdEnd.int16()))
     
     var out = analysisImages.reduce(zReducer).rename(indexNames).addBands(analysisImagesZ).addBands(linearTrendModel)
           .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis(),
