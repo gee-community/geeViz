@@ -282,7 +282,7 @@ zAndTrendCollection.size().evaluate(function(count){
     var blEndYear = image.get('baselineEndYear');
     print(image)
     // Export image
-    // var outName = outputName + blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
+    // var outName = outputName + '_b'+ blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
     // var outPath = exportPathRoot + '/' + outName;
     // getImageLib.exportToAssetWrapper(out,outName,outPath,
       // 'mean',studyArea,scale,crs,transform);
