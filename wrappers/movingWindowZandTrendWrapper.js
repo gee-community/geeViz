@@ -251,9 +251,9 @@ zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollectio
 var zCollection = zAndTrendCollection.select('.*_Z');
 var trendCollection = zAndTrendCollection.select('.*_slope');
 
-var zChange = dLib.thresholdChange(zCollection,-5,-1);
+var zChange = dLib.thresholdChange(zCollection,5,-1).select('.*_change');
 print(zChange)
 print(zAndTrendCollection)
 Map.addLayer(zAndTrendCollection,{},'zAndTrendCollection',false);
-// Map.addLayer(zChange.max(),{},'zAndTrendCollection',false);
+Map.addLayer(zChange.max().reduce(ee.Reducer.max()),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'zChangeMax',false);
 
