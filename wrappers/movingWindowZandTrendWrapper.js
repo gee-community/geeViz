@@ -111,7 +111,7 @@ var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 var exportComposites = false;
 
 //Set up Names for the export
-var outputName = 'Test_Z_';
+// var outputName = 'Test_Z_';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
@@ -242,6 +242,10 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
     }).reduce(zReducer).rename(outNames);
     
     //Set up the output
+    var outName = ee.String('Z_and_Trend_b').cat(ee.String(blStartYear)).cat(ee.String('_'))
+                                .cat(ee.String(blEndYear)).cat(ee.String('_')).cat(ee.String(yr))
+                                .cat(ee.String(jdStart)).cat(ee.String('_')).cat(ee.String(jdEnd))
+    
     var out = analysisImages.reduce(zReducer).rename(indexNames).addBands(analysisImagesZ).addBands(linearTrendModel)
           .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis(),
                 'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis(),
@@ -252,8 +256,8 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
                 'trendStartYear':trendStartYear,
                 'year':yr,
                 'startJulian':jdStart,
-                'endJulian':jdEnd
-                
+                'endJulian':jdEnd,
+                'system:index':outName
           });
     
     return out;
@@ -276,21 +280,21 @@ function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh){
 zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten());
 thresholdZAndTrend(zAndTrendCollection,-5,-0.05)
 var zAndTrendCollectionL = zAndTrendCollection.toList(100);
-
-zAndTrendCollection.size().evaluate(function(count){
-  ee.List.sequence(0,count-1).getInfo().map(function(i){
-    var image = ee.Image(zAndTrendCollectionL.get(i));
-    var blStartYear = image.get('baselineStartYear').getInfo();
-    var blEndYear = image.get('baselineEndYear').getInfo();
-    var yr = image.get('year').getInfo();
-    var jdStart = image.get('startJulian').getInfo();
-    var jdEnd = image.get('endJulian').getInfo();
-    print(image)
-    // Export image
-    var outName = outputName + '_b'+ blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
-    print(outName)
-    // var outPath = exportPathRoot + '/' + outName;
-    // getImageLib.exportToAssetWrapper(out,outName,outPath,
-      // 'mean',studyArea,scale,crs,transform);
-  })
-});
+print(zAndTrendCollection)
+// zAndTrendCollection.size().evaluate(function(count){
+//   ee.List.sequence(0,count-1).getInfo().map(function(i){
+//     var image = ee.Image(zAndTrendCollectionL.get(i));
+//     var blStartYear = image.get('baselineStartYear').getInfo();
+//     var blEndYear = image.get('baselineEndYear').getInfo();
+//     var yr = image.get('year').getInfo();
+//     var jdStart = image.get('startJulian').getInfo();
+//     var jdEnd = image.get('endJulian').getInfo();
+//     print(image)
+//     // Export image
+//     var outName = outputName + '_b'+ blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
+//     print(outName)
+//     // var outPath = exportPathRoot + '/' + outName;
+//     // getImageLib.exportToAssetWrapper(out,outName,outPath,
+//       // 'mean',studyArea,scale,crs,transform);
+//   })
+// });
