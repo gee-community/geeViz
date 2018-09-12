@@ -280,9 +280,10 @@ zAndTrendCollection.size().evaluate(function(count){
     var image = ee.Image(zAndTrendCollectionL.get(i));
     var blStartYear = image.get('baselineStartYear');
     var blEndYear = image.get('baselineEndYear');
+    var yr = image.get('year');
     print(image)
     // Export image
-    // var outName = outputName + '_b'+ blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
+    var outName = outputName + '_b'+ blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
     // var outPath = exportPathRoot + '/' + outName;
     // getImageLib.exportToAssetWrapper(out,outName,outPath,
       // 'mean',studyArea,scale,crs,transform);
