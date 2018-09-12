@@ -166,12 +166,12 @@ var zAndTrendCollection = ee.List.sequence(startYear+baselineLength+baselineGap,
   var blStartYear = yr.subtract(baselineLength).subtract(baselineGap);
   var blEndYear = yr.subtract(1).subtract(baselineGap);
   
-  var trendStartYear = yr.subtract(epochLength);
+  var trendStartYear = yr.subtract(epochLength).add(1);
   
   // print(yr,blStartYear,blEndYear);
   return ee.FeatureCollection(ee.List.sequence(startJulian,endJulian-nDays,nDays).map(function(jd){
     // print(jd);
-    jd = ee.Number(jd)
+    jd = ee.Number(jd);
     var jdStart = jd;
     var jdEnd = jd.add(nDays);
     
@@ -188,7 +188,7 @@ var zAndTrendCollection = ee.List.sequence(startYear+baselineLength+baselineGap,
     trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene);
     
     var linearTrend = dLib.getLinearFit(trendImages,indexNames);
-    var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']).multiply(100);
+    var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']).multiply(epochLength);
     
     var blMean = blImages.mean();
     var blStd = blImages.reduce(ee.Reducer.stdDev());
