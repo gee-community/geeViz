@@ -286,10 +286,12 @@ zAndTrendCollection.size().evaluate(function(count){
   ee.List.sequence(0,count-1).getInfo().map(function(i){
    
     var image = ee.Image(zAndTrendCollectionL.get(i));
-    var id = image.id().getInfo()
+    image.id().evaluate(function(id){
+      var outPath = exportPathRoot + '/' + id;
+      getImageLib.exportToAssetWrapper(image,id,outPath,
+        'mean',studyArea,scale,crs,transform);
+    })
 
-    var outPath = exportPathRoot + '/' + id;
-    getImageLib.exportToAssetWrapper(image,id,outPath,
-      'mean',studyArea,scale,crs,transform);
+    
   })
 });
