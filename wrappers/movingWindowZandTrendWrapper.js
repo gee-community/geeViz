@@ -251,6 +251,8 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
                 'epochLength':epochLength,
                 'trendStartYear':trendStartYear,
                 'year':yr,
+                'startJulian':jdStart,
+                'endJulian':jdEnd
                 
           });
     
