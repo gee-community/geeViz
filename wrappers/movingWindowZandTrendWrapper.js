@@ -166,7 +166,9 @@ var zReducer = ee.Reducer.mean();
 ////////////////////////////////////
 //Moving window trend parameters
 
-//Number of years in a given trend analysis
+//Number of years in a given trend analysis inclusive of the analysis year
+//E.g. if the analysis year was 1990 and the epochLength was 5, 
+//the years included in the trend analysis would be 1986,1987,1988,1989, and 1990
 var epochLength = 5;
 
 
@@ -184,7 +186,7 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 
 
 ////////////////////////////////////////////////////////////
-//Iterate across each time window and fit harmonic regression model
+//Iterate across each time window and do a z-score and trend analysis
 var dummyScene = ee.Image(allScenes.first());
 var outNames = indexNames.map(function(bn){return ee.String(bn).cat('_Z')});
 var analysisStartYear = Math.max(startYear+baselineLength+baselineGap,startYear+epochLength-1)
