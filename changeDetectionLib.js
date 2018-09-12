@@ -5,11 +5,11 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 ///////////////////////////////////////////////
 function thresholdChange(changeCollection,changeThresh){
   var bandNames = ee.Image(changeCollection.first()).bandNames();
-  bandNames = bandNames.map(function(bn){return ee.String(bn).cat('_change')})
+  bandNames = bandNames.map(function(bn){return ee.String(bn).cat('_change')});
   var change = changeCollection.map(function(img){
     var yr = ee.Date(img.get('system:time_start')).get('year');
     var changeYr = img.gt(changeThresh);
-    var yrImage = img.where(img.mask(),yr)
+    var yrImage = img.where(img.mask(),yr);
     changeYr = yrImage.updateMask(changeYr).rename(bandNames).int16();
     return img.mask(ee.Image(1)).addBands(changeYr);
   });
@@ -66,7 +66,7 @@ function getExistingChangeData(changeThresh,showLayers){
   if(showLayers){
   Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Hansen Change Year',false);
   }
-  return conusChangeOut
+  return conusChangeOut;
 }
 //########################################################################################################
 
@@ -282,7 +282,7 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
  
 
   //Convert to single image
-  var vertStack = getLTvertStack(rawLT,run_params)
+  var vertStack = getLTvertStack(rawLT,run_params);
   return [lt,distImg,ca,vertStack];
   
 }
@@ -337,7 +337,7 @@ function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,rem
   
   //Find if 2012 needs replaced
   var replace2012 = ee.Number(ee.List([years.indexOf(2011),years.indexOf(2012),years.indexOf(2013)]).reduce(ee.Reducer.min())).neq(-1).getInfo();
-  print('2012 needs replaced:',replace2012)
+  print('2012 needs replaced:',replace2012);
   
   
   //Remove 2012 if in list and set to true
