@@ -133,11 +133,19 @@ var scale = null;
 ////////////////////////////////////////////////
 //Moving window parameters
 
-//Moving window z parameters
+//Parameters used for both z and trend analyses
+
 //Number of julian days for each analysis
 //Generally want it to be >= 32 or the output will be noisy
 //Should almost never be less than 16
 var nDays = 60;
+
+//Which bands/indices to run the analysis with
+var indexNames = ['NBR','NDVI'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
+
+
+////////////////////////////////////
+//Moving window z parameters
 
 //Number of years in baseline
 //Generally 5 years works best in the Western CONUS and 3 in the Eastern CONUS
@@ -154,12 +162,12 @@ var baselineGap = 2;
 //Generally use ee.Reducer.mean() or ee.Reducer.median()
 var zReducer = ee.Reducer.mean();
 
+////////////////////////////////////
 //Moving window trend parameters
 
 //Number of years in a given trend analysis
 var epochLength = 5;
-//Which bands/indices to run z score on
-var indexNames = ['NBR','NDVI'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
+
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
