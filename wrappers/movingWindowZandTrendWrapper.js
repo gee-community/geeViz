@@ -213,28 +213,35 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
     var jdStart = jd;
     var jdEnd = jd.add(nDays);
     
+    //Get the baseline images
     var blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear,blEndYear,'year'))
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd));
     blImages = getImageLib.fillEmptyCollections(blImages,dummyScene);
     
+    
+    //Get the z analysis images
     var analysisImages = allScenes.filter(ee.Filter.calendarRange(yr,yr,'year'))
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd)); 
     analysisImages = getImageLib.fillEmptyCollections(analysisImages,dummyScene);
     
+    //Get the images for the trend analysis
     var trendImages = allScenes.filter(ee.Filter.calendarRange(trendStartYear,yr,'year'))
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd));
     trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene);
     
+    //Perform the linear trend analysis
     var linearTrend = dLib.getLinearFit(trendImages,indexNames);
     var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']);
     
+    //Perform the z analysis
     var blMean = blImages.mean();
     var blStd = blImages.reduce(ee.Reducer.stdDev());
     
     var analysisImagesZ = analysisImages.map(function(img){
       return (img.subtract(blMean)).divide(blStd);
     }).reduce(zReducer).rename(outNames);
-    // Map.addLayer(analysisImagesZ,{'min':-20,'max':20,'palette':'F00,888,0F0'},'z '+outName,false);
+    
+    //Set up the output
     var out = analysisImages.reduce(zReducer).rename(indexNames).addBands(analysisImagesZ).addBands(linearTrendModel)
           .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis(),
                 'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis(),
