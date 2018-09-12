@@ -188,7 +188,7 @@ var zAndTrendCollection = ee.List.sequence(startYear+baselineLength+baselineGap,
     trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene);
     
     var linearTrend = dLib.getLinearFit(trendImages,indexNames);
-    var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']).multiply(epochLength);
+    var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']);
     
     var blMean = blImages.mean();
     var blStd = blImages.reduce(ee.Reducer.stdDev());
@@ -252,8 +252,10 @@ var zCollection = zAndTrendCollection.select('.*_Z');
 var trendCollection = zAndTrendCollection.select('.*_slope');
 
 var zChange = dLib.thresholdChange(zCollection,5,-1).select('.*_change');
+var trendChange = dLib.thresholdChange(trendCollection,0.05,-1).select('.*_change');
 print(zChange)
 print(zAndTrendCollection)
 Map.addLayer(zAndTrendCollection,{},'zAndTrendCollection',false);
-Map.addLayer(zChange.max().reduce(ee.Reducer.max()),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'zChangeMax',false);
+Map.addLayer(zChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'zChangeMax',false);
+Map.addLayer(trendChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'trendChangeMax',false);
 
