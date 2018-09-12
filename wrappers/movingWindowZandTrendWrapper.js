@@ -193,11 +193,15 @@ var dummyScene = ee.Image(allScenes.first());
 var outNames = indexNames.map(function(bn){return ee.String(bn).cat('_Z')});
 var analysisStartYear = Math.max(startYear+baselineLength+baselineGap,startYear+epochLength-1);
 
+//Iterate across each year and perform analysis
 var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(function(yr){
   yr = ee.Number(yr);
+  
+  //Set up the baseline years
   var blStartYear = yr.subtract(baselineLength).subtract(baselineGap);
   var blEndYear = yr.subtract(1).subtract(baselineGap);
   
+  //Set up the trend years
   var trendStartYear = yr.subtract(epochLength).add(1);
   
   // print(yr,blStartYear,blEndYear);
