@@ -258,39 +258,8 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
     // var outPath = exportPathRoot + '/' + outName;
     // getImageLib.exportToAssetWrapper(out,outName,outPath,
       // 'mean',studyArea,scale,crs,transform);
-    return out//.float()
-    // zCollection.push(out);
-    
+    return out;
   }));
-  
-  //Set up dates
-  // var startYearT = yr-timebuffer;
-  // var endYearT = yr+timebuffer;
-  
-  // //Get scenes for those dates
-  // var allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT,endYearT,'year'));
-  
-  // //Fit harmonic model
-  // var coeffsPredicted =getImageLib.getHarmonicCoefficientsAndFit(allScenesT,indexNames,whichHarmonics);
-  
-  // //Set some properties
-  // var coeffs = coeffsPredicted[0]
-  //           .set({'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
-  //           'timebuffer':timebuffer,
-  //           'startYearT':startYearT,
-  //           'endYearT':endYearT,
-  //           }).float();
-            
-  // var predicted = coeffsPredicted[1];
-  
-  // //Export image
-  // var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
-  // var outPath = exportPathRoot + '/' + outName;
-  // getImageLib.exportToAssetWrapper(coeffs,outName,outPath,
-  // 'mean',studyArea,scale,crs,transform);
-  // // Map.addLayer(allScenesT.median(),{'min':0.1,'max':0.3,'bands':'swir1,nir,red'},yr.toString(),false);
-  // return coeffs;
-  
 });
 zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten());
 
