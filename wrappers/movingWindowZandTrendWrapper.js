@@ -280,11 +280,11 @@ var zAndTrendCollectionL = zAndTrendCollection.toList(100);
 zAndTrendCollection.size().evaluate(function(count){
   ee.List.sequence(0,count-1).getInfo().map(function(i){
     var image = ee.Image(zAndTrendCollectionL.get(i));
-    var blStartYear = image.get('baselineStartYear');
-    var blEndYear = image.get('baselineEndYear');
-    var yr = image.get('year');
-    var jdStart = image.get('startJulian');
-    var jdEnd = image.get('endJulian');
+    var blStartYear = image.get('baselineStartYear').getInfo();
+    var blEndYear = image.get('baselineEndYear').getInfo();
+    var yr = image.get('year').getInfo();
+    var jdStart = image.get('startJulian').getInfo();
+    var jdEnd = image.get('endJulian').getInfo();
     print(image)
     // Export image
     var outName = outputName + '_b'+ blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
