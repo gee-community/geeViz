@@ -131,16 +131,31 @@ var scale = null;
 
 
 ////////////////////////////////////////////////
-//Moving window z parameters
+//Moving window parameters
 
+//Moving window z parameters
+//Number of julian days for each analysis
+//Generally want it to be >= 32 or the output will be noisy
+//Should almost never be less than 16
 var nDays = 60;
-var baselineLength = 3;
+
+//Number of years in baseline
+//Generally 5 years works best in the Western CONUS and 3 in the Eastern CONUS
+var baselineLength = 5;
+
+//Number of years between the analysis year and the last year of the baseline
+//This helps ensure the z-test is being performed data that are less likely to be 
+//temporally auto-correlated
+//E.g. if the analysis year is 1990, the last year of the baseline would be 1987
+//Set to 0 if the last year of the baseline needs to be the year just before the analysis year
 var baselineGap = 2;
 
+//Since there could be multiple z values for a given pixel on a given analysis period, how to summarize
+//Generally use ee.Reducer.mean() or ee.Reducer.median()
 var zReducer = ee.Reducer.mean();
 
 
-var epochLength = 2;
+var epochLength = 5;
 //Which bands/indices to run z score on
 var indexNames = ['NBR','NDVI'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 
