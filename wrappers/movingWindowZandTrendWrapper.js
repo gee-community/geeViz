@@ -204,10 +204,12 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
   //Set up the trend years
   var trendStartYear = yr.subtract(epochLength).add(1);
   
-  // print(yr,blStartYear,blEndYear);
+  //Iterate across the julian dates
   return ee.FeatureCollection(ee.List.sequence(startJulian,endJulian-nDays,nDays).map(function(jd){
-    // print(jd);
+    
     jd = ee.Number(jd);
+    
+    //Set up the julian date range
     var jdStart = jd;
     var jdEnd = jd.add(nDays);
     
