@@ -247,7 +247,13 @@ var zAndTrendCollection = ee.List.sequence(startYear+baselineLength+baselineGap,
   // return coeffs;
   
 });
-zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten())
+zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten());
+var zCollection = zAndTrendCollection.select('.*_Z');
+var trendCollection = zAndTrendCollection.select('.*_slope');
+
+var zChange = dLib.thresholdChange(zCollection,-5,-1);
+print(zChange)
 print(zAndTrendCollection)
 Map.addLayer(zAndTrendCollection,{},'zAndTrendCollection',false);
+// Map.addLayer(zChange.max(),{},'zAndTrendCollection',false);
 
