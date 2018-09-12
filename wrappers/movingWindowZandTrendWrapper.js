@@ -134,13 +134,13 @@ var scale = null;
 //Moving window z parameters
 
 var nDays = 60;
-var baselineLength = 5;
+var baselineLength = 3;
 var baselineGap = 2;
 
 var zReducer = ee.Reducer.mean();
 
 
-var epochLength = 5;
+var epochLength = 2;
 //Which bands/indices to run z score on
 var indexNames = ['NBR','NDVI'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 
@@ -161,7 +161,9 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 //Iterate across each time window and fit harmonic regression model
 var dummyScene = ee.Image(allScenes.first());
 var outNames = indexNames.map(function(bn){return ee.String(bn).cat('_Z')});
-var zAndTrendCollection = ee.List.sequence(startYear+baselineLength+baselineGap,endYear,1).map(function(yr){
+var analysisStartYear = Math.max(startYear+baselineLength+baselineGap,startYear+epochLength-1)
+print(analysisStartYear)
+var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(function(yr){
   yr = ee.Number(yr);
   var blStartYear = yr.subtract(baselineLength).subtract(baselineGap);
   var blEndYear = yr.subtract(1).subtract(baselineGap);
