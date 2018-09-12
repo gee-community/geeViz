@@ -24,8 +24,8 @@ var studyArea =geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 160;
-var endJulian = 280; 
+var startJulian = 190;
+var endJulian = 250
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
@@ -133,7 +133,7 @@ var scale = null;
 ////////////////////////////////////////////////
 //Moving window z parameters
 
-var nDays = 32;
+var nDays = 60;
 var baselineLength = 5;
 var baselineGap = 2;
 
@@ -143,7 +143,7 @@ var zReducer = ee.Reducer.mean();
 var epochLength = 5;
 //Which bands/indices to run z score on
 var indexNames = ['NBR','NDVI'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
-var outNames = indexNames.map(function(bn){return ee.String(bn).cat('_Z')})
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -156,10 +156,11 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels
   ).select(indexNames);
 
-var dummyScene = ee.Image(allScenes.first());
+
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and fit harmonic regression model
-// var zCollection = []
+var dummyScene = ee.Image(allScenes.first());
+var outNames = indexNames.map(function(bn){return ee.String(bn).cat('_Z')});
 var zAndTrendCollection = ee.List.sequence(startYear+baselineLength+baselineGap,endYear,1).map(function(yr){
   yr = ee.Number(yr);
   var blStartYear = yr.subtract(baselineLength).subtract(baselineGap);
@@ -187,7 +188,7 @@ var zAndTrendCollection = ee.List.sequence(startYear+baselineLength+baselineGap,
     trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene);
     
     var linearTrend = dLib.getLinearFit(trendImages,indexNames);
-    var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']).multiply(100)
+    var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']).multiply(100);
     
     var blMean = blImages.mean();
     var blStd = blImages.reduce(ee.Reducer.stdDev());
@@ -202,6 +203,8 @@ var zAndTrendCollection = ee.List.sequence(startYear+baselineLength+baselineGap,
                 'baselineYrs': baselineLength,
                 'baselineStartYear':blStartYear,
                 'baselineEndYear':blEndYear,
+                'epochLength':epochLength,
+                'trendStartYear':trendStartYear,
                 'year':yr,
                 
           });
