@@ -154,7 +154,9 @@ var baselineGap = 2;
 //Generally use ee.Reducer.mean() or ee.Reducer.median()
 var zReducer = ee.Reducer.mean();
 
+//Moving window trend parameters
 
+//Number of years in a given trend analysis
 var epochLength = 5;
 //Which bands/indices to run z score on
 var indexNames = ['NBR','NDVI'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
