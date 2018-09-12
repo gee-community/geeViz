@@ -253,11 +253,7 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
                 'year':yr,
                 
           });
-    // Export image
-    // var outName = outputName + blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
-    // var outPath = exportPathRoot + '/' + outName;
-    // getImageLib.exportToAssetWrapper(out,outName,outPath,
-      // 'mean',studyArea,scale,crs,transform);
+    
     return out;
   }));
 });
@@ -282,6 +278,13 @@ var zAndTrendCollectionL = zAndTrendCollection.toList(100);
 zAndTrendCollection.size().evaluate(function(count){
   ee.List.sequence(0,count-1).getInfo().map(function(i){
     var image = ee.Image(zAndTrendCollectionL.get(i));
-    
+    var blStartYear = image.get('baselineStartYear');
+    var blEndYear = image.get('baselineEndYear');
+    print(image)
+    // Export image
+    // var outName = outputName + blStartYear.toString() + '_' + blEndYear.toString() + '_'+yr.toString() + '_'+jdStart.toString() + '_'+ jdEnd.toString();
+    // var outPath = exportPathRoot + '/' + outName;
+    // getImageLib.exportToAssetWrapper(out,outName,outPath,
+      // 'mean',studyArea,scale,crs,transform);
   })
 });
