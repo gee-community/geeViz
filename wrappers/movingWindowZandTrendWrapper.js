@@ -274,7 +274,7 @@ function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh){
   Map.addLayer(zAndTrendCollection,{},'zAndTrendCollection',false);
   Map.addLayer(zChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'zChangeMax',false);
   Map.addLayer(trendChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'trendChangeMax',false);
-
+  
 }
 
 function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,transform){
