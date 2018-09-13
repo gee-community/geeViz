@@ -154,7 +154,6 @@ var scale = null;
 //'NBR','NDVI','wetness','greenness','brightness','tcAngleBG'
 // var indexList = ee.List(['nir','swir1']);
 var indexList = ['NBR','blue','green','red','nir','swir1','swir2','NDMI','NDVI','wetness','greenness','brightness','tcAngleBG'];
-var indexListString = getImageLib.listToString(indexList,'_');
 
 //The corresponding direction of forest loss for the given band/index specified above in indexList
 // var ltDirection = ee.List([-1,    1]);
@@ -204,6 +203,7 @@ var composites = lsAndTs[1];
 
 ////////////////////////////////////////////////////////////
 //Landtrendr code
+var indexListString = getImageLib.listToString(indexList,'_');
 var indexDirList = ee.List(indexList).zip(ee.List(ltDirection)).getInfo();
 
 //Iterate across index and direction list
