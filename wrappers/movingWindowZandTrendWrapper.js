@@ -283,7 +283,7 @@ function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,
   ee.List.sequence(0,count-1).getInfo().map(function(i){
    
     var image = ee.Image(zAndTrendCollectionL.get(i));
-    print(image.bandNames())
+  
     image.id().evaluate(function(id){
       var outPath = exportPathRoot + '/' + id;
       getImageLib.exportToAssetWrapper(image,id,outPath,
@@ -294,6 +294,6 @@ function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,
 }
 
 zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten());
-thresholdZAndTrend(zAndTrendCollection,-5,-0.05)
-exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,transform)
+thresholdZAndTrend(zAndTrendCollection,-5,-0.05);
+exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,transform);
 
