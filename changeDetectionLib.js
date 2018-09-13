@@ -621,3 +621,7 @@ exports.thresholdChange = thresholdChange;
 
 exports.predictModel = predictModel;
 exports.getLinearFit = getLinearFit;
+
+exports.zAndTrendChangeDetection = zAndTrendChangeDetection;
+exports.thresholdZAndTrend = thresholdZAndTrend;
+exports.exportZAndTrend = exportZAndTrend;
