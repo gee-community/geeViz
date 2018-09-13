@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-121.91160307462638, 40.663194047718676],
-          [-121.91434965665763, 40.4754220259598],
-          [-121.54768095548576, 40.48273411595946],
-          [-121.54630766447013, 40.66944403962391]]]);
+        [[[-121.6646587842406, 40.42996409556283],
+          [-121.5767681592406, 40.77196366286651],
+          [-122.7523052686156, 40.93815738938883],
+          [-122.8511822217406, 40.49683309199189]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for running z-score and linear trend across a moving window of years
 
