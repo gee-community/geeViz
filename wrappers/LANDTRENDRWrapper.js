@@ -131,7 +131,7 @@ var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 var exportComposites = false;
 
 //Set up Names for the export
-var outputName = 'Landtrendr_';
+var outputName = 'LT_';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
@@ -233,9 +233,9 @@ var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo();
     .set('bandsUsed',indexListString)
     .set('system:time_start',ee.Date.fromYMD(year,6,1).millis());
  
-  var exportName = 'LT-Fit_' + year.toString();
-    var exportPath = outputBaseFolder + '/LANDTRENDR-Collection/'+ exportName;
+  var exportName = outputName + year.toString();
+    var exportPath = exportPathRoot + '/'+ exportName;
     
-    getImageLib.exportToAssetWrapper(ltYr,exportName,exportPath,'mean',
-      studyArea,null,crs,transform);
+    // getImageLib.exportToAssetWrapper(ltYr,exportName,exportPath,'mean',
+      // studyArea,null,crs,transform);
   });
