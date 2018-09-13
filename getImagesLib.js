@@ -422,6 +422,7 @@ function addIndices(img){
   
   return img;
 }
+///////////////////////////////////////////
 //Function to  add SAVI and EVI
 function addSAVIandEVI(in_image){
   // Add Enhanced Vegetation Index (EVI)
