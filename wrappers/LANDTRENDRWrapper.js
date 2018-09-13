@@ -31,7 +31,7 @@ var endJulian = 250
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 1984;
+var startYear = 2000;
 var endYear = 2018;
 
 
@@ -157,8 +157,8 @@ var indexList = ['NBR','blue','green','red','nir','swir1','swir2','NDMI','NDVI',
 var indexListString = getImageLib.listToString(indexList,'_');
 
 //The corresponding direction of forest loss for the given band/index specified above in indexList
-// var ltDirection = [-1,    1];
-var ltDirection =[1,-1,1,-1,    1,      1,   -1, -1,    -1,   -1,           -1,        1,          -1];
+// var ltDirection = ee.List([-1,    1]);
+var ltDirection =[-1,1,-1,1,-1,    1,      1,   -1, -1,    -1,   -1,        1,          -1];
 
 
 //Define landtrendr params
@@ -212,7 +212,7 @@ var outputStack;
 indexDirList.map(function(indexDir){
   var indexName = indexDir[0];
   var distDir = indexDir[1];
-  print(indexName,distDir);
+  print(indexName,distDir)
   var tsIndex = composites.select([indexName]);
   
   //Run master LT wrapper
