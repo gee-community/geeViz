@@ -222,7 +222,7 @@ indexDirList.map(function(indexDir){
   var ltHeuristic = ltOutputs[1];
   print(ltHeuristic)
   var ltAnnualFitted = ltOutputs[2];
-  Map.addLayer(ltHeuristic,{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexName + ' LT Change Year',false);
+  Map.addLayer(ltHeuristic.select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexName + ' LT Change Year',false);
   
   
   if(outputCollection === undefined){
