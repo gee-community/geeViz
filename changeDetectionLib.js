@@ -228,8 +228,9 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   
   // run the dist extract function
   var distImg = extractDisturbance(lt.select('LandTrendr'), distDir, distParams,mmu);
-  
-  
+  var distImgBandNames = distImg.bandNames();
+  distImgBandNames = distImgBandNames.map(function(bn){return ee.String(indexName).cat('_').cat(bn)})
+  distImg = distImg.rename(distImgBandNames)
   
   
   
