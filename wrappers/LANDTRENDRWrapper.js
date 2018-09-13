@@ -153,12 +153,12 @@ var scale = null;
 //Can include: 'blue','green','red','nir','swir1','swir2'
 //'NBR','NDVI','wetness','greenness','brightness','tcAngleBG'
 // var indexList = ee.List(['nir','swir1']);
-var indexList = ee.List(['blue','green','red','nir','swir1','swir2','NDMI','NBR','NDVI','wetness','greenness','brightness','tcAngleBG']);
+var indexList = ['blue','green','red','nir','swir1','swir2','NDMI','NBR','NDVI','wetness','greenness','brightness','tcAngleBG'];
 var indexListString = getImageLib.listToString(indexList.getInfo(),'_');
 
 //The corresponding direction of forest loss for the given band/index specified above in indexList
 // var ltDirection = ee.List([-1,    1]);
-var ltDirection =ee.List([1,-1,1,-1,    1,      1,   -1, -1,    -1,   -1,           -1,        1,          -1]);
+var ltDirection =[1,-1,1,-1,    1,      1,   -1, -1,    -1,   -1,           -1,        1,          -1];
 
 
 //Define landtrendr params
@@ -204,7 +204,7 @@ var composites = lsAndTs[1];
 
 ////////////////////////////////////////////////////////////
 //Landtrendr code
-var indexDirList = indexList.zip(ltDirection).getInfo();
+var indexDirList = ee.List(indexList).zip(ee.List(ltDirection)).getInfo();
 
 //Iterate across index and direction list
 var outputCollection;
@@ -236,7 +236,7 @@ indexDirList.map(function(indexDir){
   
 });
 Map.addLayer(outputCollection,{},'LT Fitted IndexNames',false);
-Map.addLayer(outputStack.select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexNames[0] + ' LT Change Year',false);
+Map.addLayer(outputStack.select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexList[0] + ' LT Change Year',false);
   
 //Export each fitted year
 var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo();
