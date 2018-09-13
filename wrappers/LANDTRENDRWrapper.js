@@ -161,6 +161,33 @@ var indexListString = getImageLib.listToString(indexList.getInfo(),'_');
 var ltDirection =ee.List([1,-1,1,-1,    1,      1,   -1, -1,    -1,   -1,           -1,        1,          -1]);
 
 
+//Define landtrendr params
+var run_params = { 
+  maxSegments:            6,
+  spikeThreshold:         0.9,
+  vertexCountOvershoot:   3,
+  preventOneYearRecovery: true,
+  recoveryThreshold:      0.25,
+  pvalThreshold:          0.05,
+  bestModelProportion:    0.75,
+  minObservationsNeeded:  6
+};
+
+//Define disturbance mapping filter parameters 
+var treeLoss1  = 0.1;      //0.15 works well delta filter for 1 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
+var treeLoss20 = 0.2;      //0.2 works well delta filter for 20 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
+var preVal     = 0.01;      //0.2 works well. Set close to 0 if all pixels are wanted pre-disturbance value threshold - values below the provided threshold will exclude disturbance for those pixels - units are in units of segIndex defined in the following function definition
+var mmu        = 0;       // minimum mapping unit for disturbance patches - units of pixels
+
+var distParams = {
+    tree_loss1: treeLoss1,
+    tree_loss20: treeLoss20,  
+    pre_val: preVal           
+  };
+  
+
+//End params
+///////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 //Call on master wrapper function to get Landat scenes and composites
 var lsAndTs = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
@@ -179,31 +206,7 @@ var composites = lsAndTs[1];
 //Landtrendr code
 var indexDirList = indexList.zip(ltDirection).getInfo();
 
-//Define landtrendr params
-var run_params = { 
-  maxSegments:            6,
-  spikeThreshold:         0.9,
-  vertexCountOvershoot:   3,
-  preventOneYearRecovery: true,
-  recoveryThreshold:      0.25,
-  pvalThreshold:          0.05,
-  bestModelProportion:    0.75,
-  minObservationsNeeded:  6
-};
-
-//Define disturbance mapping filter parameters 
-var treeLoss1  = 0.1;      //0.15 works well delta filter for 1 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
-var treeLoss20 = 0.2;      //0.2 works well delta filter for 20 year duration disturbance, <= will not be included as disturbance - units are in units of segIndex defined in the following function definition
-var preVal     = 0.01;      //0.2 works well. Set close to 0 if all pixels are wanted pre-disturbance value threshold - values below the provided threshold will exclude disturbance for those pixels - units are in units of segIndex defined in the following function definition
-var mmu        = 15;       //15 minimum mapping unit for disturbance patches - units of pixels
-
-var distParams = {
-    tree_loss1: treeLoss1,
-    tree_loss20: treeLoss20,  
-    pre_val: preVal           
-  };
-  
-
+//Iterate across index and direction list
 var outputCollection;
 indexDirList.map(function(indexDir){
   var indexName = indexDir[0];
@@ -212,7 +215,8 @@ indexDirList.map(function(indexDir){
   var tsIndex = composites.select([indexName]);
 
   var ltOutputs = dLib.landtrendrWrapper(tsIndex,startYear+timebuffer,endYear-timebuffer,indexName,distDir,run_params,distParams,mmu);
-
+  
+  var ltHeuristic = ltOutputs[1];
   var ltAnnualFitted = ltOutputs[2];
   
   if(outputCollection === undefined){
