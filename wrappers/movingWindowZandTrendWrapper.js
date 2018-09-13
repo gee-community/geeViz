@@ -279,10 +279,11 @@ function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh){
 
 function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,transform){
  var zAndTrendCollectionL = zAndTrendCollection.toList(100);
-zAndTrendCollection.size().evaluate(function(count){
+  zAndTrendCollection.size().evaluate(function(count){
   ee.List.sequence(0,count-1).getInfo().map(function(i){
    
     var image = ee.Image(zAndTrendCollectionL.get(i));
+    print(image.bandNames())
     image.id().evaluate(function(id){
       var outPath = exportPathRoot + '/' + id;
       getImageLib.exportToAssetWrapper(image,id,outPath,
