@@ -1820,6 +1820,7 @@ exports.cFmask = cFmask;
 exports.simpleTDOM2 = simpleTDOM2;
 exports.medoidMosaicMSD = medoidMosaicMSD;
 exports.addIndices = addIndices;
+exports.addSAVIandEVI = addSAVIandEVI;
 exports.simpleAddIndices = simpleAddIndices;
 exports.getTasseledCap = getTasseledCap;
 exports.simpleAddTCAngles = simpleAddTCAngles;
