@@ -277,11 +277,8 @@ function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh){
 
 }
 
-
-zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten());
-thresholdZAndTrend(zAndTrendCollection,-5,-0.05)
-
-var zAndTrendCollectionL = zAndTrendCollection.toList(100);
+function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,transform){
+ var zAndTrendCollectionL = zAndTrendCollection.toList(100);
 zAndTrendCollection.size().evaluate(function(count){
   ee.List.sequence(0,count-1).getInfo().map(function(i){
    
@@ -290,8 +287,12 @@ zAndTrendCollection.size().evaluate(function(count){
       var outPath = exportPathRoot + '/' + id;
       getImageLib.exportToAssetWrapper(image,id,outPath,
         'mean',studyArea,scale,crs,transform);
-    })
+    });
+  });
+}); 
+}
 
-    
-  })
-});
+zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten());
+thresholdZAndTrend(zAndTrendCollection,-5,-0.05)
+exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,transform)
+
