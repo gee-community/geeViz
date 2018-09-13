@@ -213,12 +213,16 @@ indexDirList.map(function(indexDir){
   var distDir = indexDir[1];
   print(indexName,distDir)
   var tsIndex = composites.select([indexName]);
-
+  
+  //Run master LT wrapper
+  //Returns the raw, heuristic output, and fitted collection
   var ltOutputs = dLib.landtrendrWrapper(tsIndex,startYear+timebuffer,endYear-timebuffer,indexName,distDir,run_params,distParams,mmu);
   
+  var ltRaw = ltOutputs[0];
   var ltHeuristic = ltOutputs[1];
-  Map.addLayer(ltHeuristic.select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexName + ' LT Change Year',false);
   var ltAnnualFitted = ltOutputs[2];
+  Map.addLayer(ltHeuristic.select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexName + ' LT Change Year',false);
+  
   
   if(outputCollection === undefined){
     outputCollection = ltAnnualFitted;
