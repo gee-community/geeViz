@@ -228,7 +228,7 @@ indexDirList.map(function(indexDir){
   
 });
 
-Map.addLayer(outputCollection)
+Map.addLayer(outputCollection,{},'LT Fitted IndexNames',false);
 
 var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo();
 
