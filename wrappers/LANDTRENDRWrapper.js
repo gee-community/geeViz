@@ -157,7 +157,7 @@ var indexList = ['NBR','blue','green','red','nir','swir1','swir2','NDMI','NDVI',
 var indexListString = getImageLib.listToString(indexList,'_');
 
 //The corresponding direction of forest loss for the given band/index specified above in indexList
-// var ltDirection = ee.List([-1,    1]);
+// var ltDirection = [-1,    1];
 var ltDirection =[1,-1,1,-1,    1,      1,   -1, -1,    -1,   -1,           -1,        1,          -1];
 
 
@@ -212,7 +212,7 @@ var outputStack;
 indexDirList.map(function(indexDir){
   var indexName = indexDir[0];
   var distDir = indexDir[1];
-  print(indexName,distDir)
+  print(indexName,distDir);
   var tsIndex = composites.select([indexName]);
   
   //Run master LT wrapper
