@@ -217,6 +217,7 @@ indexDirList.map(function(indexDir){
   var ltOutputs = dLib.landtrendrWrapper(tsIndex,startYear+timebuffer,endYear-timebuffer,indexName,distDir,run_params,distParams,mmu);
   
   var ltHeuristic = ltOutputs[1];
+  Map.addLayer(ltHeuristic.select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexName + ' LT Change Year',false);
   var ltAnnualFitted = ltOutputs[2];
   
   if(outputCollection === undefined){
