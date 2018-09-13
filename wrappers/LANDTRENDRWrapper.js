@@ -222,7 +222,7 @@ indexDirList.map(function(indexDir){
   var ltRaw = ltOutputs[0];
   var ltHeuristic = ltOutputs[1];
   var ltAnnualFitted = ltOutputs[2];
-  Map.addLayer(ltHeuristic.select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexName + ' LT Change Year',false);
+  // Map.addLayer(ltHeuristic.select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexName + ' LT Change Year',false);
   
   
   if(outputCollection === undefined){
