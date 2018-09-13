@@ -492,6 +492,118 @@ function getLinearFit(c,bandNames){
   //Return both the model and predicted
   return [model,predicted];
 }
+//Iterate across each time window and do a z-score and trend analysis
+
+function zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJulian,endJulian,
+          baselineLength,baselineGap,epochLength,zReducer){
+  //House-keeping
+var dummyScene = ee.Image(allScenes.first());
+var outNames = indexNames.map(function(bn){return ee.String(bn).cat('_Z')});
+var analysisStartYear = Math.max(startYear+baselineLength+baselineGap,startYear+epochLength-1);
+
+//Iterate across each year and perform analysis
+var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(function(yr){
+  yr = ee.Number(yr);
+  
+  //Set up the baseline years
+  var blStartYear = yr.subtract(baselineLength).subtract(baselineGap);
+  var blEndYear = yr.subtract(1).subtract(baselineGap);
+  
+  //Set up the trend years
+  var trendStartYear = yr.subtract(epochLength).add(1);
+  
+  //Iterate across the julian dates
+  return ee.FeatureCollection(ee.List.sequence(startJulian,endJulian-nDays,nDays).map(function(jd){
+    
+    jd = ee.Number(jd);
+    
+    //Set up the julian date range
+    var jdStart = jd;
+    var jdEnd = jd.add(nDays);
+    
+    //Get the baseline images
+    var blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear,blEndYear,'year'))
+                            .filter(ee.Filter.calendarRange(jdStart,jdEnd));
+    blImages = getImageLib.fillEmptyCollections(blImages,dummyScene);
+    
+    
+    //Get the z analysis images
+    var analysisImages = allScenes.filter(ee.Filter.calendarRange(yr,yr,'year'))
+                            .filter(ee.Filter.calendarRange(jdStart,jdEnd)); 
+    analysisImages = getImageLib.fillEmptyCollections(analysisImages,dummyScene);
+    
+    //Get the images for the trend analysis
+    var trendImages = allScenes.filter(ee.Filter.calendarRange(trendStartYear,yr,'year'))
+                            .filter(ee.Filter.calendarRange(jdStart,jdEnd));
+    trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene);
+    
+    //Perform the linear trend analysis
+    var linearTrend = dLib.getLinearFit(trendImages,indexNames);
+    var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']);
+    
+    //Perform the z analysis
+    var blMean = blImages.mean();
+    var blStd = blImages.reduce(ee.Reducer.stdDev());
+    
+    var analysisImagesZ = analysisImages.map(function(img){
+      return (img.subtract(blMean)).divide(blStd);
+    }).reduce(zReducer).rename(outNames);
+    
+    //Set up the output
+    var outName = ee.String('Z_and_Trend_b').cat(ee.String(blStartYear.int16())).cat(ee.String('_'))
+                                .cat(ee.String(blEndYear.int16())).cat(ee.String('_epoch')).cat(ee.String(ee.Number(epochLength)))
+                                .cat(ee.String('_y')).cat(ee.String(yr.int16())).cat(ee.String('_jd'))
+                                .cat(ee.String(jdStart.int16())).cat(ee.String('_')).cat(ee.String(jdEnd.int16()))
+    
+    var out = analysisImages.reduce(zReducer).rename(indexNames).addBands(analysisImagesZ).addBands(linearTrendModel)
+          .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis(),
+                'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis(),
+                'baselineYrs': baselineLength,
+                'baselineStartYear':blStartYear,
+                'baselineEndYear':blEndYear,
+                'epochLength':epochLength,
+                'trendStartYear':trendStartYear,
+                'year':yr,
+                'startJulian':jdStart,
+                'endJulian':jdEnd,
+                'system:index':outName
+          });
+    
+    return out;
+    }));
+  });
+  zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten());
+  return zAndTrendCollection;
+}
+
+
+function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh){
+  var zCollection = zAndTrendCollection.select('.*_Z');
+  var trendCollection = zAndTrendCollection.select('.*_slope');
+  var zChange = dLib.thresholdChange(zCollection,-zThresh,-1).select('.*_change');
+  var trendChange = dLib.thresholdChange(trendCollection,-slopeThresh,-1).select('.*_change');
+  
+  Map.addLayer(zAndTrendCollection,{},'zAndTrendCollection',false);
+  Map.addLayer(zChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Z Most Recent Change Year',false);
+  Map.addLayer(trendChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Trend Most Recent Change Year',false);
+  
+}
+
+function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,transform){
+ var zAndTrendCollectionL = zAndTrendCollection.toList(100);
+  zAndTrendCollection.size().evaluate(function(count){
+  ee.List.sequence(0,count-1).getInfo().map(function(i){
+   
+    var image = ee.Image(zAndTrendCollectionL.get(i));
+  
+    image.id().evaluate(function(id){
+      var outPath = exportPathRoot + '/' + id;
+      getImageLib.exportToAssetWrapper(image,id,outPath,
+        'mean',studyArea,scale,crs,transform);
+    });
+  });
+}); 
+}
 //////////////////////////////////////////////////////////////////////////
 exports.extractDisturbance = extractDisturbance;
 exports.landtrendrWrapper = landtrendrWrapper;
