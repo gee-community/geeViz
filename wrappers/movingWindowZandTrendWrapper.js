@@ -298,7 +298,7 @@ function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,
 }); 
 }
 
-zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten());
+var zAndTrendCollection = zAndTrendChangeDetection(allScenes);
 thresholdZAndTrend(zAndTrendCollection,-5,-0.05);
 exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,transform);
 
