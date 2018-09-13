@@ -422,6 +422,27 @@ function addIndices(img){
   
   return img;
 }
+//Function to  add SAVI and EVI
+function addSAVIandEVI(in_image){
+  // Add Enhanced Vegetation Index (EVI)
+  var evi = img.expression(
+    '2.5 * ((NIR - RED) / (NIR + 6 * RED - 7.5 * BLUE + 1))', {
+      'NIR': img.select('nir'),
+      'RED': img.select('red'),
+      'BLUE': img.select('blue')
+  }).float();
+  img = img.addBands(evi.rename('EVI'));
+  
+  // Add Soil Adjust Vegetation Index (SAVI)
+  // using L = 0.5;
+  var savi = img.expression(
+    '(NIR - RED) * (1 + 0.5)/(NIR + RED + 0.5)', {
+      'NIR': img.select('nir'),
+      'RED': img.select('red')
+  }).float();
+  img = img.addBands(savi.rename('SAVI'));
+  
+}
 /////////////////////////////////////////////////////////////////
 //Function for only adding common indices
 function simpleAddIndices(in_image){
