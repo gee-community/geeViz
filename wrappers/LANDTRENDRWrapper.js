@@ -230,6 +230,7 @@ indexDirList.map(function(indexDir){
 
 Map.addLayer(outputCollection,{},'LT Fitted IndexNames',false);
 
+//Export each fitted year
 var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo();
 
   years.map(function(year){
