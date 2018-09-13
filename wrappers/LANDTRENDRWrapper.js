@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-123.63096342618888, 40.99052636103088],
-          [-123.25742826993888, 39.26017314679865],
-          [-120.56577787931388, 39.5996066031019],
-          [-121.06016264493888, 40.99052636103088]]]);
+        [[[-121.91160307462638, 40.663194047718676],
+          [-121.91434965665763, 40.4754220259598],
+          [-121.54768095548576, 40.48273411595946],
+          [-121.54630766447013, 40.66944403962391]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for running z-score and linear trend across a moving window of years
 
@@ -31,7 +31,7 @@ var endJulian = 250
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 1984;
+var startYear = 2000;
 var endYear = 2018;
 
 
