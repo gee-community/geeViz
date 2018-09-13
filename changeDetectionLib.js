@@ -538,7 +538,7 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
     trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene);
     
     //Perform the linear trend analysis
-    var linearTrend = dLib.getLinearFit(trendImages,indexNames);
+    var linearTrend = getLinearFit(trendImages,indexNames);
     var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']);
     
     //Perform the z analysis
@@ -580,8 +580,8 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
 function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh){
   var zCollection = zAndTrendCollection.select('.*_Z');
   var trendCollection = zAndTrendCollection.select('.*_slope');
-  var zChange = dLib.thresholdChange(zCollection,-zThresh,-1).select('.*_change');
-  var trendChange = dLib.thresholdChange(trendCollection,-slopeThresh,-1).select('.*_change');
+  var zChange = thresholdChange(zCollection,-zThresh,-1).select('.*_change');
+  var trendChange = thresholdChange(trendCollection,-slopeThresh,-1).select('.*_change');
   
   Map.addLayer(zAndTrendCollection,{},'zAndTrendCollection',false);
   Map.addLayer(zChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Z Most Recent Change Year',false);
