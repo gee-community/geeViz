@@ -222,9 +222,9 @@ indexDirList.map(function(indexDir){
   var ltRaw = ltOutputs[0];
   var ltHeuristic = ltOutputs[1];
   var ltAnnualFitted = ltOutputs[2];
-  // Map.addLayer(ltHeuristic.select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexName + ' LT Change Year',false);
   
-  
+  //Stack the heuristic output and stack each image
+  //in fitted collection using join
   if(outputCollection === undefined){
     outputCollection = ltAnnualFitted;
     outputStack = ltHeuristic;
@@ -235,9 +235,9 @@ indexDirList.map(function(indexDir){
   }
   
 });
-print(outputCollection,outputStack)
 Map.addLayer(outputCollection,{},'LT Fitted IndexNames',false);
-
+Map.addLayer(outputStack.select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexNames[0] + ' LT Change Year',false);
+  
 //Export each fitted year
 var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo();
 
