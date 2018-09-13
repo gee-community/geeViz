@@ -424,7 +424,7 @@ function addIndices(img){
 }
 ///////////////////////////////////////////
 //Function to  add SAVI and EVI
-function addSAVIandEVI(in_image){
+function addSAVIandEVI(img){
   // Add Enhanced Vegetation Index (EVI)
   var evi = img.expression(
     '2.5 * ((NIR - RED) / (NIR + 6 * RED - 7.5 * BLUE + 1))', {
