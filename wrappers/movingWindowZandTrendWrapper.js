@@ -188,7 +188,8 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and do a z-score and trend analysis
 
-//House-keeping
+function zAndTrendChangeDetection(allScenes){
+  //House-keeping
 var dummyScene = ee.Image(allScenes.first());
 var outNames = indexNames.map(function(bn){return ee.String(bn).cat('_Z')});
 var analysisStartYear = Math.max(startYear+baselineLength+baselineGap,startYear+epochLength-1);
@@ -262,8 +263,12 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
           });
     
     return out;
-  }));
-});
+    }));
+  });
+  zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten());
+  return zAndTrendCollection;
+}
+
 
 function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh){
   var zCollection = zAndTrendCollection.select('.*_Z');
