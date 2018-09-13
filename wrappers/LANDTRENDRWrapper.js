@@ -220,6 +220,7 @@ indexDirList.map(function(indexDir){
   
   var ltRaw = ltOutputs[0];
   var ltHeuristic = ltOutputs[1];
+  print(ltHeuristic)
   var ltAnnualFitted = ltOutputs[2];
   Map.addLayer(ltHeuristic,{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexName + ' LT Change Year',false);
   
