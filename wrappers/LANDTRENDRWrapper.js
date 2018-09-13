@@ -221,7 +221,7 @@ indexDirList.map(function(indexDir){
   var ltAnnualFitted = ltOutputs[2];
   
   if(outputCollection === undefined){
-    outputCollection = ltAnnualFitted
+    outputCollection = ltAnnualFitted;
   }else{
     outputCollection = getImageLib.joinCollections(outputCollection,ltAnnualFitted,false);
   }
