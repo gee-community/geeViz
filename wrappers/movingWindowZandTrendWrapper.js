@@ -188,7 +188,8 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and do a z-score and trend analysis
 
-function zAndTrendChangeDetection(allScenes){
+function zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJulian,endJulian,
+          baselineLength,baselineGap,epochLength,zReducer){
   //House-keeping
 var dummyScene = ee.Image(allScenes.first());
 var outNames = indexNames.map(function(bn){return ee.String(bn).cat('_Z')});
@@ -298,7 +299,8 @@ function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,
 }); 
 }
 
-var zAndTrendCollection = zAndTrendChangeDetection(allScenes);
+var zAndTrendCollection = zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJulian,endJulian,
+          baselineLength,baselineGap,epochLength,zReducer);
 thresholdZAndTrend(zAndTrendCollection,-5,-0.05);
 exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,transform);
 
