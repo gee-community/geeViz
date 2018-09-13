@@ -442,7 +442,7 @@ function addSAVIandEVI(img){
       'RED': img.select('red')
   }).float();
   img = img.addBands(savi.rename('SAVI'));
-  
+  return img;
 }
 /////////////////////////////////////////////////////////////////
 //Function for only adding common indices
