@@ -235,7 +235,7 @@ indexDirList.map(function(indexDir){
   }
   
 });
-
+print(outputCollection,outputStack)
 Map.addLayer(outputCollection,{},'LT Fitted IndexNames',false);
 
 //Export each fitted year
