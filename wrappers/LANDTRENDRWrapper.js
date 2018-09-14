@@ -257,3 +257,10 @@ var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo();
     getImageLib.exportToAssetWrapper(ltYr,exportName,exportPath,'mean',
       studyArea,null,crs,transform);
   });
+  
+//Export thresholded stack
+var exportName = outputName + 'LT_Stack';
+var exportPath = exportPathRoot + '/'+ exportName;
+    
+getImageLib.exportToAssetWrapper(outputStack,exportName,exportPath,'mean',
+      studyArea,null,crs,transform);
