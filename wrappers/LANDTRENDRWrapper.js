@@ -5,7 +5,10 @@ var geometry = /* color: #d63000 */ee.Geometry.Polygon(
           [-122.7523052686156, 40.93815738938883],
           [-122.8511822217406, 40.49683309199189]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
-//Wrapper for running z-score and linear trend across a moving window of years
+//Wrapper for LANDTRENDR across an annual time series
+//Supports multiple bands and/or indices
+//Returns the raw LANDTRENDR output, a fitted time series and
+//a thresholded year, magnitude, and duration of greatest disturbance
 
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
