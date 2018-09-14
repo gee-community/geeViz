@@ -170,7 +170,15 @@ var harmonicCount = 1;
 //this is the reducer that is applied.  Generally will want to pull from the 
 //bottom quadrant
 var annualReducer = ee.Reducer.percentile([10]);
-var indexNames = ['NBR','NDVI','EVI','SAVI'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG']
+
+//List of bands or indices to iterate across
+//Typically a list of spectral bands or computed indices
+//Can include: 'blue','green','red','nir','swir1','swir2'
+//'NBR','NDVI','wetness','greenness','brightness','tcAngleBG'
+// var indexList = ee.List(['nir','swir1']);
+var indexList = ['NBR','SAVI','EVI'];//['NBR','blue','green','red','nir','swir1','swir2','NDMI','NDVI','wetness','greenness','brightness','tcAngleBG'];
+
+//Year range to train harmonic regression model with
 var trainingStartYear = 1984;
 var trainingEndYear = 1989;
 
