@@ -311,7 +311,7 @@ function verdetAnnualSlope(tsIndex,indexName,startYear,endYear){
 //////////////////////////////////////////////////////////////////////////
 //Wrapper for applying EWMACD slightly more simply
 function getEWMA(lsIndex,trainingStartYear,trainingEndYear, harmonicCount){
-  if(harmonicCount === null || harmonicCount === undefined){harmonicCount = 2}
+  if(harmonicCount === null || harmonicCount === undefined){harmonicCount = 1}
   
   
   //Run EWMACD 
@@ -320,7 +320,7 @@ function getEWMA(lsIndex,trainingStartYear,trainingEndYear, harmonicCount){
     vegetationThreshold: -1, 
     trainingStartYear: trainingStartYear, 
     trainingEndYear: trainingEndYear, 
-    harmonicCount: 2
+    harmonicCount: harmonicCount
   });
   
   //Extract the ewmac values
