@@ -196,7 +196,7 @@ function addPrefixToImage(i,prefix){
 }
 
 
-var ewmacdTrainingYears = 5
+var ewmacdTrainingYears = 5;
 
 
 indexNames.map(function(indexName){
