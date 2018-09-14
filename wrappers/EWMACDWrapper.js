@@ -218,10 +218,8 @@ var years = ee.List.sequence(startYear,endYear).getInfo();
     var ewmaYr = ee.Image(outputCollection.filter(ee.Filter.calendarRange(year,year,'year')).first())
     .int16();
     
-
-
   var exportName = outputName+'_' + year.toString();
-    var exportPath = exportPathRoot + '/'+exportName
+    var exportPath = exportPathRoot + '/'+exportName;
     
     getImageLib.exportToAssetWrapper(ewmaYr,exportName,exportPath,'mean',
       studyArea,null,crs,transform);
