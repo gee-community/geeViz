@@ -191,8 +191,6 @@ var processedScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,
   
 
 
-
-
 var outputCollection;
 indexNames.map(function(indexName){
   var lsIndex = processedScenes.select(indexName);
@@ -201,17 +199,15 @@ indexNames.map(function(indexName){
   var ewmaOutputs = dLib.runEWMACD(lsIndex,indexName,startYear,endYear,trainingStartYear,trainingEndYear,harmonicCount,annualReducer,!includeSLCOffL7);
   var annualEWMA = ewmaOutputs[1];
   
-  var ewmaChange = dLib.thresholdChange(annualEWMA,3,-1).select('.*_change');
-  Map.addLayer(annualEWMA,{},indexName + ' ewma',false);
-  Map.addLayer(ewmaChange.min().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'EWMA Most Recent Change Year',false);
+  // var ewmaChange = dLib.thresholdChange(annualEWMA,3,-1).select('.*_change');
+  // Map.addLayer(annualEWMA,{},indexName + ' ewma',false);
+  // Map.addLayer(ewmaChange.min().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'EWMA Most Recent Change Year',false);
     
     if(outputCollection === undefined){
       outputCollection = annualEWMA;
     }else{
       outputCollection = getImageLib.joinCollections(outputCollection,annualEWMA,false);
     }
-    
-    
 
 });
 
