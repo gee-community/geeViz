@@ -183,19 +183,13 @@ var trainingEndYear = 1989;
 
 ////////////////////////////////////////////////////////////////////////////////
 //Call on master wrapper function to get Landat scenes and composites
-
 var processedScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
-  
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels
-  ).map(getImageLib.addSAVIandEVI)
+  ).map(getImageLib.addSAVIandEVI);
   
-function addPrefixToImage(i,prefix){
-  var bandNames = i.bandNames();
-	var outBandNames = bandNames.map(function(i){return ee.String(prefix).cat(i)});
-	return i.select(bandNames,outBandNames);
-}
+
 
 
 
@@ -219,7 +213,7 @@ indexNames.map(function(indexName){
     
     
 
-})
+});
 
 
 var years = ee.List.sequence(startYear,endYear).getInfo();
