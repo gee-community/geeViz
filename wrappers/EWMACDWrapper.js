@@ -164,7 +164,7 @@ var indexList = ['NBR','NDVI'];//['nir','swir1','swir2','NDMI',NBR','NDVI','wetn
 
 //Expected frequency of phenological cycles. 
 //harmonicCount is n pi so 1 cycle/yr is 2 
-var harmonicCount = 2;
+var harmonicCount = 1;
 
 //When simplifying from all EWMA values to annual values
 //this is the reducer that is applied.  Generally will want to pull from the 
@@ -196,7 +196,8 @@ function addPrefixToImage(i,prefix){
 }
 
 
-var ewmacdTrainingYears = 5;
+var trainingStartYear = 1984;
+var trainingEndYear = 1990;
 
 
 indexNames.map(function(indexName){
@@ -206,10 +207,10 @@ indexNames.map(function(indexName){
   
   
 //Apply EWMACD
-var ewmaOutputs = dLib.runEWMACD(lsIndex,indexName,startYear,endYear,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
+var ewmaOutputs = dLib.runEWMACD(lsIndex,indexName,startYear,endYear,trainingStartYear,trainingEndYear,harmonicCount,annualReducer,!includeSLCOffL7);
 var annualEWMA = ewmaOutputs[1]//.map(function(img){return dLib.multBands(img,1,0.01)});
-  print(annualEWMA)
-//   Map.addLayer(annualEWMA,{},indexName + 'ewma',false);
+
+  Map.addLayer(annualEWMA,{},indexName + 'ewma',false);
 //   if(outputCollection === undefined){
 //     outputCollection = annualEWMA
 //   }else{
