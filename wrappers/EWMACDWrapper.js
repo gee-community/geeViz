@@ -169,10 +169,10 @@ var harmonicCount = 1;
 //When simplifying from all EWMA values to annual values
 //this is the reducer that is applied.  Generally will want to pull from the 
 //bottom quadrant
-var annualReducer = ee.Reducer.percentile([10])
+var annualReducer = ee.Reducer.percentile([10]);
 var indexNames = ['NBR','NDVI','EVI','SAVI'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG']
 var trainingStartYear = 1984;
-var trainingEndYear = 2004;
+var trainingEndYear = 1989;
 
 ///////////////////////////////////////////////////////////////////////
 // End user parameters
