@@ -242,27 +242,25 @@ indexDirList.map(function(indexDir){
 Map.addLayer(outputCollection,{},'LT Fitted IndexNames',false);
 Map.addLayer(outputStack.select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexList[0] + ' LT Change Year',false);
   
-//Export each fitted year
-// var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo();
+// Export each fitted year
+var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo();
 
-//   years.map(function(year){
-//     var ltYr = ee.Image(outputCollection.filter(ee.Filter.calendarRange(year,year,'year')).first())
-//     .multiply(10000).int16()
-//     .set('bandsUsed',indexListString)
-//     .set('system:time_start',ee.Date.fromYMD(year,6,1).millis());
+  years.map(function(year){
+    var ltYr = ee.Image(outputCollection.filter(ee.Filter.calendarRange(year,year,'year')).first())
+    .multiply(10000).int16()
+    .set('bandsUsed',indexListString)
+    .set('system:time_start',ee.Date.fromYMD(year,6,1).millis());
  
-//   var exportName = outputName + year.toString();
-//     var exportPath = exportPathRoot + '/'+ exportName;
+  var exportName = outputName + year.toString();
+    var exportPath = exportPathRoot + '/'+ exportName;
     
-//     getImageLib.exportToAssetWrapper(ltYr,exportName,exportPath,'mean',
-//       studyArea,null,crs,transform);
-//   });
+    getImageLib.exportToAssetWrapper(ltYr,exportName,exportPath,'mean',
+      studyArea,null,crs,transform);
+  });
   
-// //Export thresholded stack
-// var exportName = outputName + 'LT_Stack';
-// var exportPath = exportPathRoot + '/'+ exportName;
+//Export thresholded stack
+var exportName = outputName + 'LT_Stack';
+var exportPath = exportPathRoot + '/'+ exportName;
     
-// getImageLib.exportToAssetWrapper(outputStack,exportName,exportPath,'mean',
-//       studyArea,null,crs,transform);
-var t = ee.Image('users/ianhousman/test/changeCollection/LT_LT_Stack')
-Map.addLayer(t.select([4]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexList[0] + ' LT Change Year',false);
+getImageLib.exportToAssetWrapper(outputStack,exportName,exportPath,'mean',
+      studyArea,null,crs,transform);
