@@ -170,6 +170,9 @@ var harmonicCount = 1;
 //this is the reducer that is applied.  Generally will want to pull from the 
 //bottom quadrant
 var annualReducer = ee.Reducer.percentile([10])
+var indexNames = ['NBR','NDVI','EVI','SAVI'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG']
+var trainingStartYear = 1984;
+var trainingEndYear = 2004;
 
 ///////////////////////////////////////////////////////////////////////
 // End user parameters
@@ -180,7 +183,6 @@ var annualReducer = ee.Reducer.percentile([10])
 
 ////////////////////////////////////////////////////////////////////////////////
 //Call on master wrapper function to get Landat scenes and composites
-var indexNames = ['NBR','NDVI','EVI','SAVI'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG']
 
 var processedScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
   
@@ -196,8 +198,6 @@ function addPrefixToImage(i,prefix){
 }
 
 
-var trainingStartYear = 2000;
-var trainingEndYear = 2004;
 
 var outputCollection;
 indexNames.map(function(indexName){
