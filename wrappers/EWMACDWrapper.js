@@ -208,9 +208,11 @@ indexNames.map(function(indexName){
 //Apply EWMACD
 var ewmaOutputs = dLib.runEWMACD(lsIndex,indexName,startYear,endYear,trainingStartYear,trainingEndYear,harmonicCount,annualReducer,!includeSLCOffL7);
 var annualEWMA = ewmaOutputs[1]//.map(function(img){return dLib.multBands(img,1,0.01)});
-var ewmaRaw = ewmaOutputs[0];
 
+var ewmaChange = dLib.thresholdChange(annualEWMA,3,-1).select('.*_change');
 Map.addLayer(annualEWMA,{},indexName + ' ewma',false);
+Map.addLayer(ewmaChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Z Most Recent Change Year',false);
+  
 //   if(outputCollection === undefined){
 //     outputCollection = annualEWMA
 //   }else{
