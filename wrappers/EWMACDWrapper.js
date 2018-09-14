@@ -1,3 +1,10 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-122.91349669443616, 40.98973589629366],
+          [-123.02335997568616, 40.4652228774622],
+          [-122.01261778818616, 40.481937594544576],
+          [-122.00163146006116, 40.931660898201365]]]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 var dLib = require('users/USFS_GTAC/modules:changeDetectionLib.js');
@@ -125,10 +132,7 @@ var outputName = 'EWMA';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
-// var exportPathRoot = 'users/iwhousman/test/ChangeCollection';
-
-// var exportPathRoot = paramDict[studyAreaName][4]+ '/EWMACD-Collection';
-var exportPathRoot = paramDict[studyAreaName][4]+ '/EWMACD-Harmonic-Coefficients';
+var exportPathRoot = 'users/ianhousman/test/changeCollection';
 
 // var exportPathRoot = 'projects/USFS/LCMS-NFS/R4/BT/Base-Learners/Base-Learners-Collection';
 //CRS- must be provided.  
@@ -178,12 +182,13 @@ var annualReducer = ee.Reducer.percentile([10])
 //Call on master wrapper function to get Landat scenes and composites
 var indexNames = ['NBR'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG']
 
-var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
+var processedScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
   
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels
   )
+  
 function addPrefixToImage(i,prefix){
   var bandNames = i.bandNames();
 	var outBandNames = bandNames.map(function(i){return ee.String(prefix).cat(i)});
@@ -191,12 +196,11 @@ function addPrefixToImage(i,prefix){
 }
 
 
-var baselineStartYear = 1984;
-var baselineEndYear = 1990;
+var ewmacdTrainingYears = 5
 
 
-
-var lsIndex = processedScenes.select(indexName);
+indexNames.map(function(indexName){
+  var lsIndex = processedScenes.select(indexName);
  
  
   
@@ -204,7 +208,7 @@ var lsIndex = processedScenes.select(indexName);
 //Apply EWMACD
 var ewmaOutputs = dLib.runEWMACD(lsIndex,indexName,startYear,endYear,ewmacdTrainingYears,harmonicCount,annualReducer,!includeSLCOffL7);
 var annualEWMA = ewmaOutputs[1]//.map(function(img){return dLib.multBands(img,1,0.01)});
-//   print(annualEWMA)
+  print(annualEWMA)
 //   Map.addLayer(annualEWMA,{},indexName + 'ewma',false);
 //   if(outputCollection === undefined){
 //     outputCollection = annualEWMA
@@ -214,6 +218,8 @@ var annualEWMA = ewmaOutputs[1]//.map(function(img){return dLib.multBands(img,1,
   
   
 // });
+})
+
 
 // var years = ee.List.sequence(startYear,endYear).getInfo();
 
