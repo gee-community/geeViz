@@ -211,7 +211,7 @@ var annualEWMA = ewmaOutputs[1]//.map(function(img){return dLib.multBands(img,1,
 
 var ewmaChange = dLib.thresholdChange(annualEWMA,3,-1).select('.*_change');
 Map.addLayer(annualEWMA,{},indexName + ' ewma',false);
-Map.addLayer(ewmaChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Z Most Recent Change Year',false);
+Map.addLayer(ewmaChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'EWMA Most Recent Change Year',false);
   
 //   if(outputCollection === undefined){
 //     outputCollection = annualEWMA
