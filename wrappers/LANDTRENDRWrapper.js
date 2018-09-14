@@ -216,7 +216,7 @@ var outputStack;
 indexDirList.map(function(indexDir){
   var indexName = indexDir[0];
   var distDir = indexDir[1];
-  print(indexName,distDir)
+  // print(indexName,distDir);
   var tsIndex = composites.select([indexName]);
   
   //Run master LT wrapper
