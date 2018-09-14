@@ -187,7 +187,7 @@ var processedScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels
-  )
+  ).map(getImageLib.addSAVIandEVI)
   
 function addPrefixToImage(i,prefix){
   var bandNames = i.bandNames();
