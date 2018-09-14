@@ -72,13 +72,15 @@ function fillEmptyCollections(inCollection,dummyImage){
 //////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
 //Adds the float year with julian proportion to image
-function addDateBand(img){
+function addDateBand(img,maskTime){
+  if(maskTime === null || maskTime === undefined){maskTime = false}
   var d = ee.Date(img.get('system:time_start'));
   var y = d.get('year');
   d = y.add(d.getFraction('year'));
   // d=d.getFraction('year')
   var db = ee.Image.constant(d).rename(['year']).float();
-  db = db//.updateMask(img.select([0]).mask())
+  if(maskTime){db = db.updateMask(img.select([0]).mask())}
+  
   return img.addBands(db);
 }
 function addYearFractionBand(img){
