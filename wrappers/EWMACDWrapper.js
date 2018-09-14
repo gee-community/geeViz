@@ -199,7 +199,7 @@ function addPrefixToImage(i,prefix){
 var trainingStartYear = 2000;
 var trainingEndYear = 2004;
 
-
+var outputCollection;
 indexNames.map(function(indexName){
   var lsIndex = processedScenes.select(indexName);
  
