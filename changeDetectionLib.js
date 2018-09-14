@@ -400,7 +400,7 @@ function runEWMACD(lsIndex,indexName,startYear,endYear,trainingStartYear,trainin
   var ewma = getEWMA(lsIndex,trainingStartYear,trainingEndYear, harmonicCount);
   
   //Get dates for later reference
-  var lsYear = lsIndex.map(function(img){return getImageLib.addDateBand(img,true).select(['year']).toArray().arrayProject([0]);
+  var lsYear = lsIndex.map(function(img){return getImageLib.addDateBand(img,true)}).select(['year']).toArray().arrayProject([0]);
 
   
   var annualEWMA = annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,remove2012);
