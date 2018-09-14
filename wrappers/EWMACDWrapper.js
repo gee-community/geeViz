@@ -180,7 +180,7 @@ var annualReducer = ee.Reducer.percentile([10])
 
 ////////////////////////////////////////////////////////////////////////////////
 //Call on master wrapper function to get Landat scenes and composites
-var indexNames = ['NBR'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG']
+var indexNames = ['NBR','NDVI'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG']
 
 var processedScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
   
