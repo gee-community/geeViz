@@ -207,10 +207,10 @@ indexNames.map(function(indexName){
  
 //Apply EWMACD
 var ewmaOutputs = dLib.runEWMACD(lsIndex,indexName,startYear,endYear,trainingStartYear,trainingEndYear,harmonicCount,annualReducer,!includeSLCOffL7);
-// var annualEWMA = ewmaOutputs[1]//.map(function(img){return dLib.multBands(img,1,0.01)});
+var annualEWMA = ewmaOutputs[1]//.map(function(img){return dLib.multBands(img,1,0.01)});
 var ewmaRaw = ewmaOutputs[0];
 
-Map.addLayer(ewmaRaw,{},indexName + ' ewma',false);
+Map.addLayer(annualEWMA,{},indexName + ' ewma',false);
 //   if(outputCollection === undefined){
 //     outputCollection = annualEWMA
 //   }else{
