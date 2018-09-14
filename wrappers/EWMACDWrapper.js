@@ -205,14 +205,14 @@ indexNames.map(function(indexName){
  
   //Apply EWMACD
   var ewmaOutputs = dLib.runEWMACD(lsIndex,indexName,startYear,endYear,trainingStartYear,trainingEndYear,harmonicCount,annualReducer,!includeSLCOffL7);
-  var annualEWMA = ewmaOutputs[1]//.map(function(img){return dLib.multBands(img,1,0.01)});
+  var annualEWMA = ewmaOutputs[1];
   
   var ewmaChange = dLib.thresholdChange(annualEWMA,3,-1).select('.*_change');
   Map.addLayer(annualEWMA,{},indexName + ' ewma',false);
   Map.addLayer(ewmaChange.min().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'EWMA Most Recent Change Year',false);
     
     if(outputCollection === undefined){
-      outputCollection = annualEWMA
+      outputCollection = annualEWMA;
     }else{
       outputCollection = getImageLib.joinCollections(outputCollection,annualEWMA,false);
     }
