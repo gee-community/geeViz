@@ -29,7 +29,7 @@ var endJulian = 365;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 1984;
+var startYear = 2000;
 var endYear = 2018;
 
 // 4. Specify an annual buffer to include imagery from the same season 
@@ -196,19 +196,18 @@ function addPrefixToImage(i,prefix){
 }
 
 
-var trainingStartYear = 1984;
-var trainingEndYear = 1990;
+var trainingStartYear = 2000;
+var trainingEndYear = 2004;
 
 
 indexNames.map(function(indexName){
   var lsIndex = processedScenes.select(indexName);
  
  
-  
-  
+ 
 //Apply EWMACD
 var ewmaOutputs = dLib.runEWMACD(lsIndex,indexName,startYear,endYear,trainingStartYear,trainingEndYear,harmonicCount,annualReducer,!includeSLCOffL7);
-var annualEWMA = ewmaOutputs[1]//.map(function(img){return dLib.multBands(img,1,0.01)});
+// var annualEWMA = ewmaOutputs[1]//.map(function(img){return dLib.multBands(img,1,0.01)});
 var ewmaRaw = ewmaOutputs[0]
   Map.addLayer(ewmaRaw,{},indexName + ' ewma',false);
 //   if(outputCollection === undefined){
