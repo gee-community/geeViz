@@ -222,17 +222,17 @@ indexNames.map(function(indexName){
 })
 
 
-// var years = ee.List.sequence(startYear,endYear).getInfo();
+var years = ee.List.sequence(startYear,endYear).getInfo();
 
-//   years.map(function(year){
-//     var ewmaYr = ee.Image(outputCollection.filter(ee.Filter.calendarRange(year,year,'year')).first())
-//     .int16();
+  years.map(function(year){
+    var ewmaYr = ee.Image(outputCollection.filter(ee.Filter.calendarRange(year,year,'year')).first())
+    .int16();
     
 
 
-//   var exportName = outputName+'_' + year.toString();
-//     var exportPath = exportPathRoot + '/'+exportName
+  var exportName = outputName+'_' + year.toString();
+    var exportPath = exportPathRoot + '/'+exportName
     
-//     getImageLib.exportToAssetWrapper(ewmaYr,exportName,exportPath,'mean',
-//       studyArea,null,crs,transform);
-//   });
+    getImageLib.exportToAssetWrapper(ewmaYr,exportName,exportPath,'mean',
+      studyArea,null,crs,transform);
+  });
