@@ -508,7 +508,8 @@ function getLinearFit(c,bandNames){
 //Iterate across each time window and do a z-score and trend analysis
 
 function zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJulian,endJulian,
-          baselineLength,baselineGap,epochLength,zReducer,exportImages,exportPathRoot,studyArea,scale,crs,transform){
+          baselineLength,baselineGap,epochLength,zReducer,useAnnualMedianForTrend,
+          exportImages,exportPathRoot,studyArea,scale,crs,transform){
   //House-keeping
 var dummyScene = ee.Image(allScenes.first());
 var outNames = indexNames.map(function(bn){return ee.String(bn).cat('_Z')});
