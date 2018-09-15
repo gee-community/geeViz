@@ -436,7 +436,19 @@ function pairwiseSlope(c){
     });
     return ee.ImageCollection.fromImages(slopeCollection);
   }
-  
+
+/////////////////////////////////////////////////////
+//Function for converting collection into annual median collection
+function toAnnualMedian(images,startYear,endYear){
+      var dummyImmage = ee.Image(images.first());
+      var out = ee.List.sequence(startYear,endYear).map(function(yr){
+        var imagesT = images.filter(ee.Filter.calendarRange(yr,yr,'year'));
+        imagesT = getImageLib.fillEmptyCollections(imagesT,dummyImmage);
+        return imagesT.median().set('system:time_start',ee.Date.fromYMD(yr,6,1));
+      });
+      return ee.ImageCollection.fromImages(out);
+    }
+////////////////////////////////////////////////////
 //Function for applying linear fit model
 //Assumes the model has a intercept and slope band prefix to the bands in the model
 //Assumes that the c (collection) has the raw bands in it
@@ -539,15 +551,7 @@ var zAndTrendCollection = years.map(function(yr){
     var trendImages = allScenes.filter(ee.Filter.calendarRange(trendStartYear,yr,'year'))
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd));
     trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene);
-    function toAnnualMedian(images,startYear,endYear){
-      var dummyImmage = ee.Image(images.first());
-      var out = ee.List.sequence(startYear,endYear).map(function(yr){
-        var imagesT = images.filter(ee.Filter.calendarRange(yr,yr,'year'));
-        imagesT = getImageLib.fillEmptyCollections(imagesT,dummyImmage);
-        return imagesT.median().set('system:time_start',ee.Date.fromYMD(yr,6,1));
-      });
-      return ee.ImageCollection.fromImages(out);
-    }
+    
     trendImages = toAnnualMedian(trendImages,trendStartYear,yr);
     
     //Perform the linear trend analysis
