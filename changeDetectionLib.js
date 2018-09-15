@@ -548,7 +548,7 @@ var zAndTrendCollection = years.map(function(yr){
       });
       return ee.ImageCollection.fromImages(out);
     }
-    // trendImages = toAnnualMedian(trendImages,trendStartYear,yr);
+    trendImages = toAnnualMedian(trendImages,trendStartYear,yr);
     
     //Perform the linear trend analysis
     var linearTrend = getLinearFit(trendImages,indexNames);
