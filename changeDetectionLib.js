@@ -558,6 +558,7 @@ var zAndTrendCollection = years.map(function(yr){
                                 .cat(ee.String('_y')).cat(ee.String(yr.int16())).cat(ee.String('_jd'))
                                 .cat(ee.String(jdStart.int16())).cat(ee.String('_')).cat(ee.String(jdEnd.int16()));
     var imageStartDate =ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis();
+    print(imageStartDate)
     dates.push(imageStartDate);
     var out = analysisImagesZ.addBands(linearTrendModel).int16()
           .set({'system:time_start':imageStartDate,
