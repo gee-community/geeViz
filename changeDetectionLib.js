@@ -599,7 +599,9 @@ function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,
     var z = image.select(['.*_Z']).multiply(10).int16();
     var slp = image.select(['.*_slope']).multiply(10000).int16();
     
-    vara out = z.addBands(slp)
+    var out = z.addBands(slp)
+            .copyProperties(image)
+            .copyProperties(image,['system:index','system:time_start','system:time_end'])
               
     print(out);
     image.id().evaluate(function(id){
