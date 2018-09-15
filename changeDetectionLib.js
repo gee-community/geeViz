@@ -578,8 +578,8 @@ var zAndTrendCollection = years.map(function(yr){
     }));
   });
   zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten());
-  print(dates)
-  return zAndTrendCollection;
+  
+  return [zAndTrendCollection,dates];
 }
 
 
