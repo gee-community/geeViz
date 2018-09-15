@@ -596,22 +596,30 @@ function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh,startYear,en
   
 }
 
-function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,transform){
+function exportZAndTrend(zAndTrendCollection,dates,exportPathRoot,studyArea,scale,crs,transform){
  
  print('Exporting z and trend collection');
- var zAndTrendCollectionL = zAndTrendCollection.toList(100);
-  zAndTrendCollection.size().evaluate(function(count){
-  ee.List.sequence(0,count-1).getInfo().map(function(i){
-   
-    var image = ee.Image(zAndTrendCollectionL.get(i));
-    
-    image.id().evaluate(function(id){
+ dates.map(function(d){
+   var image = ee.Image(zAndTrendCollection.filterDate(d,d).first());
+   image.id().evaluate(function(id){
       var outPath = exportPathRoot + '/' + id;
       getImageLib.exportToAssetWrapper(image,id,outPath,
         'mean',studyArea,scale,crs,transform);
     });
-  });
-}); 
+ })
+// var zAndTrendCollectionL = zAndTrendCollection.toList(100);
+//   zAndTrendCollection.size().evaluate(function(count){
+//   ee.List.sequence(0,count-1).getInfo().map(function(i){
+   
+//     var image = ee.Image(zAndTrendCollectionL.get(i));
+    
+//     image.id().evaluate(function(id){
+//       var outPath = exportPathRoot + '/' + id;
+//       getImageLib.exportToAssetWrapper(image,id,outPath,
+//         'mean',studyArea,scale,crs,transform);
+//     });
+//   });
+// }); 
 }
 //////////////////////////////////////////////////////////////////////////
 exports.extractDisturbance = extractDisturbance;
