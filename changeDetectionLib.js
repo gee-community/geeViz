@@ -539,7 +539,7 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
     
     //Perform the linear trend analysis
     var linearTrend = getLinearFit(trendImages,indexNames);
-    var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']);
+    var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']).multiply(10000);
     
     //Perform the z analysis
     var blMean = blImages.mean();
@@ -547,7 +547,7 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
     
     var analysisImagesZ = analysisImages.map(function(img){
       return (img.subtract(blMean)).divide(blStd);
-    }).reduce(zReducer).rename(outNames);
+    }).reduce(zReducer).rename(outNames).multiply(10);
     
     //Set up the output
     var outName = ee.String('Z_and_Trend_b').cat(ee.String(blStartYear.int16())).cat(ee.String('_'))
@@ -555,7 +555,7 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
                                 .cat(ee.String('_y')).cat(ee.String(yr.int16())).cat(ee.String('_jd'))
                                 .cat(ee.String(jdStart.int16())).cat(ee.String('_')).cat(ee.String(jdEnd.int16()));
     
-    var out = analysisImages.reduce(zReducer).rename(indexNames).addBands(analysisImagesZ).addBands(linearTrendModel)
+    var out = analysisImagesZ.addBands(linearTrendModel).int16()
           .set({'system:time_start':ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis(),
                 'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis(),
                 'baselineYrs': baselineLength,
@@ -596,16 +596,10 @@ function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,
   ee.List.sequence(0,count-1).getInfo().map(function(i){
    
     var image = ee.Image(zAndTrendCollectionL.get(i));
-    // var z = image.select(['.*_Z']).multiply(10).int16();
-    // var slp = image.select(['.*_slope']).multiply(10000).int16();
-    var out = image;
-    // var out = z.addBands(slp)
-    //         .copyProperties(image)
-    //         .copyProperties(image,['system:index','system:time_start','system:time_end'])
-    // out = ee.Image(out); 
-    out.id().evaluate(function(id){
+    
+    image.id().evaluate(function(id){
       var outPath = exportPathRoot + '/' + id;
-      getImageLib.exportToAssetWrapper(out,id,outPath,
+      getImageLib.exportToAssetWrapper(image,id,outPath,
         'mean',studyArea,scale,crs,transform);
     });
   });
