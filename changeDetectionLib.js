@@ -580,6 +580,7 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
 function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh,startYear,endYear){
   var zCollection = zAndTrendCollection.select('.*_Z');
   var trendCollection = zAndTrendCollection.select('.*_slope');
+  
   var zChange = thresholdChange(zCollection,-zThresh,-1).select('.*_change');
   var trendChange = thresholdChange(trendCollection,-slopeThresh,-1).select('.*_change');
   
