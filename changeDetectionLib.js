@@ -595,8 +595,9 @@ function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,
   zAndTrendCollection.size().evaluate(function(count){
   ee.List.sequence(0,count-1).getInfo().map(function(i){
    
-    var image = ee.Image(zAndTrendCollectionL.get(i));
-  
+    var image = ee.Image(zAndTrendCollectionL.get(i))
+                .select(['.*_Z','.*_slope']);
+    print(image.bandNames());
     image.id().evaluate(function(id){
       var outPath = exportPathRoot + '/' + id;
       getImageLib.exportToAssetWrapper(image,id,outPath,
