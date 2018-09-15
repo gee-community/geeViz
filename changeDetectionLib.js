@@ -439,6 +439,7 @@ function pairwiseSlope(c){
 
 /////////////////////////////////////////////////////
 //Function for converting collection into annual median collection
+//Does not support date wrapping across the new year (e.g. Nov- April window is a no go)
 function toAnnualMedian(images,startYear,endYear){
       var dummyImmage = ee.Image(images.first());
       var out = ee.List.sequence(startYear,endYear).map(function(yr){
@@ -552,11 +553,15 @@ var zAndTrendCollection = years.map(function(yr){
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd));
     trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene);
     
-    trendImages = toAnnualMedian(trendImages,trendStartYear,yr);
     
+    //Convert to annual stack if selected
+    if(useAnnualMedianForTrend){
+      trendImages = toAnnualMedian(trendImages,trendStartYear,yr);
+    }
+    
+    print(trendImages.size());
     //Perform the linear trend analysis
     var linearTrend = getLinearFit(trendImages,indexNames);
-    print(trendImages.size());
     var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']).multiply(10000);
     
     //Perform the z analysis
