@@ -599,7 +599,7 @@ function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh,startYear,en
 function exportZAndTrend(zAndTrendCollection,dates,exportPathRoot,studyArea,scale,crs,transform){
  
  print('Exporting z and trend collection');
- i = 0;
+ var i = 0;
  dates.map(function(d){
    var image = ee.Image(zAndTrendCollection.filterDate(d,d).first());
    getImageLib.exportToAssetWrapper(image,i.toString(),outPath,
