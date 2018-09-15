@@ -596,13 +596,13 @@ function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,
   ee.List.sequence(0,count-1).getInfo().map(function(i){
    
     var image = ee.Image(zAndTrendCollectionL.get(i));
-    var z = image.select(['.*_Z']).multiply(10).int16();
-    var slp = image.select(['.*_slope']).multiply(10000).int16();
-    
-    var out = z.addBands(slp)
-            .copyProperties(image)
-            .copyProperties(image,['system:index','system:time_start','system:time_end'])
-    out = ee.Image(out); 
+    // var z = image.select(['.*_Z']).multiply(10).int16();
+    // var slp = image.select(['.*_slope']).multiply(10000).int16();
+    var out = image;
+    // var out = z.addBands(slp)
+    //         .copyProperties(image)
+    //         .copyProperties(image,['system:index','system:time_start','system:time_end'])
+    // out = ee.Image(out); 
     out.id().evaluate(function(id){
       var outPath = exportPathRoot + '/' + id;
       getImageLib.exportToAssetWrapper(out,id,outPath,
