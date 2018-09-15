@@ -501,8 +501,10 @@ var dummyScene = ee.Image(allScenes.first());
 var outNames = indexNames.map(function(bn){return ee.String(bn).cat('_Z')});
 var analysisStartYear = Math.max(startYear+baselineLength+baselineGap,startYear+epochLength-1);
 
+var years = ee.List.sequence(analysisStartYear,endYear,1).getInfo();
+var julians = ee.List.sequence(startJulian,endJulian-nDays,nDays).getInfo();
 //Iterate across each year and perform analysis
-var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(function(yr){
+var zAndTrendCollection = years.map(function(yr){
   yr = ee.Number(yr);
   
   //Set up the baseline years
@@ -513,7 +515,7 @@ var zAndTrendCollection = ee.List.sequence(analysisStartYear,endYear,1).map(func
   var trendStartYear = yr.subtract(epochLength).add(1);
   
   //Iterate across the julian dates
-  return ee.FeatureCollection(ee.List.sequence(startJulian,endJulian-nDays,nDays).map(function(jd){
+  return ee.FeatureCollection(julians.map(function(jd){
     
     jd = ee.Number(jd);
     
