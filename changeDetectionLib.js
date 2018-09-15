@@ -598,8 +598,10 @@ function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,
     var image = ee.Image(zAndTrendCollectionL.get(i));
     var z = image.select(['.*_Z']).multiply(10).int16();
     var slp = image.select(['.*_slope']).multiply(10000).int16();
-                
-    print(image.bandNames());
+    
+    vara out = z.addBands(slp)
+              
+    print(out);
     image.id().evaluate(function(id){
       var outPath = exportPathRoot + '/' + id;
       getImageLib.exportToAssetWrapper(image,id,outPath,
