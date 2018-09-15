@@ -591,6 +591,8 @@ function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh,startYear,en
 }
 
 function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,transform){
+ 
+ print('Exporting z and trend collection');
  var zAndTrendCollectionL = zAndTrendCollection.toList(100);
   zAndTrendCollection.size().evaluate(function(count){
   ee.List.sequence(0,count-1).getInfo().map(function(i){
