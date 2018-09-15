@@ -503,7 +503,7 @@ var analysisStartYear = Math.max(startYear+baselineLength+baselineGap,startYear+
 
 var years = ee.List.sequence(analysisStartYear,endYear,1).getInfo();
 var julians = ee.List.sequence(startJulian,endJulian-nDays,nDays).getInfo();
-var dates = [];
+
 //Iterate across each year and perform analysis
 var zAndTrendCollection = years.map(function(yr){
   yr = ee.Number(yr);
@@ -559,7 +559,7 @@ var zAndTrendCollection = years.map(function(yr){
                                 .cat(ee.String(jdStart.int16())).cat(ee.String('_')).cat(ee.String(jdEnd.int16()));
     var imageStartDate =ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis();
     
-    dates.push(imageStartDate);
+    
     var out = analysisImagesZ.addBands(linearTrendModel).int16()
           .set({'system:time_start':imageStartDate,
                 'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis(),
@@ -583,7 +583,7 @@ var zAndTrendCollection = years.map(function(yr){
   });
   zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten());
   
-  return [zAndTrendCollection,dates];
+  return zAndTrendCollection;
 }
 
 
