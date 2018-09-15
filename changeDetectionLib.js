@@ -606,7 +606,7 @@ function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,
     print(out);
     out.id().evaluate(function(id){
       var outPath = exportPathRoot + '/' + id;
-      getImageLib.exportToAssetWrapper(image,id,outPath,
+      getImageLib.exportToAssetWrapper(out,id,outPath,
         'mean',studyArea,scale,crs,transform);
     });
   });
