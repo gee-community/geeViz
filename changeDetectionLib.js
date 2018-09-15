@@ -602,8 +602,7 @@ function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,
     var out = z.addBands(slp)
             .copyProperties(image)
             .copyProperties(image,['system:index','system:time_start','system:time_end'])
-    out = ee.Image(out);    
-    print(out);
+    out = ee.Image(out); 
     out.id().evaluate(function(id){
       var outPath = exportPathRoot + '/' + id;
       getImageLib.exportToAssetWrapper(out,id,outPath,
