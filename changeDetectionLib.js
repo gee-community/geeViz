@@ -539,7 +539,13 @@ var zAndTrendCollection = years.map(function(yr){
     var trendImages = allScenes.filter(ee.Filter.calendarRange(trendStartYear,yr,'year'))
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd));
     trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene);
-    
+    function toAnnualMedian(images,startYear,endYear){
+      var out = ee.List.sequence(startYear,endYear).map(function(yr){
+        var imagesT = images.filter(ee.Filter.calendarRange(yr,yr,'year'));
+        return imagesT.median().set('system:time_start',ee.Date.fromYMD(yr,6,1));
+      });
+    }
+    trendImages = toAnnualMedian(trendImages,trendStartYear,yr)
     //Perform the linear trend analysis
     var linearTrend = getLinearFit(trendImages,indexNames);
     var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']).multiply(10000);
