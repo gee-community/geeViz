@@ -669,7 +669,7 @@ exports.thresholdChange = thresholdChange;
 
 exports.predictModel = predictModel;
 exports.getLinearFit = getLinearFit;
+exports.toAnnualMedian = toAnnualMedian;
 
 exports.zAndTrendChangeDetection = zAndTrendChangeDetection;
 exports.thresholdZAndTrend = thresholdZAndTrend;
-exports.exportZAndTrend = exportZAndTrend;
