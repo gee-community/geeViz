@@ -540,8 +540,10 @@ var zAndTrendCollection = years.map(function(yr){
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd));
     trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene);
     function toAnnualMedian(images,startYear,endYear){
+      var dummyImmage = ee.Image(images.first());
       var out = ee.List.sequence(startYear,endYear).map(function(yr){
         var imagesT = images.filter(ee.Filter.calendarRange(yr,yr,'year'));
+        imagesT = getImageLib.fillEmptyCollections(imagesT,dummyImmage);
         return imagesT.median().set('system:time_start',ee.Date.fromYMD(yr,6,1));
       });
     }
