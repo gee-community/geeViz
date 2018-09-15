@@ -546,7 +546,7 @@ var zAndTrendCollection = years.map(function(yr){
         imagesT = getImageLib.fillEmptyCollections(imagesT,dummyImmage);
         return imagesT.median().set('system:time_start',ee.Date.fromYMD(yr,6,1));
       });
-      return out
+      return ee.ImageCollection.fromImages(out);
     }
     // trendImages = toAnnualMedian(trendImages,trendStartYear,yr);
     
