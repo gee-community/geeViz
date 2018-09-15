@@ -560,7 +560,6 @@ var zAndTrendCollection = years.map(function(yr){
       trendImages = toAnnualMedian(trendImages,trendStartYear,yr);
     }
     
-    print(trendImages.size());
     //Perform the linear trend analysis
     var linearTrend = getLinearFit(trendImages,indexNames);
     var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']).multiply(10000);
