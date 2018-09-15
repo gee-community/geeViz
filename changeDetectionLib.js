@@ -602,9 +602,7 @@ function exportZAndTrend(zAndTrendCollection,dates,exportPathRoot,studyArea,scal
  var i = 0;
  dates.map(function(d){
    var image = ee.Image(zAndTrendCollection.filterDate(d,d).first());
-   print(d)
-   var year = d / 31536000000.;
-   print(year)
+   
    var outPath = exportPathRoot + '/' + i;
    getImageLib.exportToAssetWrapper(image,i.toString(),outPath,
         'mean',studyArea,scale,crs,transform)
