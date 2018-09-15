@@ -596,8 +596,8 @@ var zAndTrendCollection = years.map(function(yr){
     if(exportImages){
       outName = outName.getInfo();
        var outPath = exportPathRoot + '/' + outName;
-        getImageLib.exportToAssetWrapper(out,outName,outPath,
-        'mean',studyArea,scale,crs,transform)
+        getImageLib.exportToAssetWrapper(out.clip(studyArea),outName,outPath,
+        'mean',studyArea.bounds(),scale,crs,transform)
     }
     return out;
     }));
