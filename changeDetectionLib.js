@@ -604,7 +604,7 @@ function exportZAndTrend(zAndTrendCollection,exportPathRoot,studyArea,scale,crs,
             .copyProperties(image,['system:index','system:time_start','system:time_end'])
               
     print(out);
-    image.id().evaluate(function(id){
+    out.id().evaluate(function(id){
       var outPath = exportPathRoot + '/' + id;
       getImageLib.exportToAssetWrapper(image,id,outPath,
         'mean',studyArea,scale,crs,transform);
