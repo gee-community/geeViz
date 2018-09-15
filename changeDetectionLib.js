@@ -519,7 +519,7 @@ var zAndTrendCollection = years.map(function(yr){
   return ee.FeatureCollection(julians.map(function(jd){
     
     jd = ee.Number(jd);
-    
+    print(jd)
     //Set up the julian date range
     var jdStart = jd;
     var jdEnd = jd.add(nDays);
