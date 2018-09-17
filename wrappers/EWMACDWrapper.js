@@ -32,26 +32,9 @@ var endJulian = 365;
 var startYear = 1984;
 var endYear = 2018;
 
-// 4. Specify an annual buffer to include imagery from the same season 
-// timeframe from the prior and following year. timeBuffer = 1 will result 
-// in a 3 year moving window
-var timebuffer = 1;
-
-// 5. Specify the weights to be used for the moving window created by timeBuffer
-//For example- if timeBuffer is 1, that is a 3 year moving window
-//If the center year is 2000, then the years are 1999,2000, and 2001
-//In order to overweight the center year, you could specify the weights as
-//[1,5,1] which would duplicate the center year 5 times and increase its weight for
-//the compositing method
-var weights = [1,5,1];
 
 
 
-// 6. Choose medoid or median compositing method. 
-// Median tends to be smoother, while medoid retains 
-// single date of observation across all bands
-// If not exporting indices with composites to save space, medoid should be used
-var compositingMethod = 'medoid';
 
 // 7. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
 // Specify TOA or SR
@@ -65,7 +48,7 @@ var includeSLCOffL7 = false;
 //9. Whether to defringe L5
 //Landsat 5 data has fringes on the edges that can introduce anomalies into 
 //the analysis.  This method removes them, but is somewhat computationally expensive
-var defringeL5 = false;
+var defringeL5 = true;
 
 // 10. Choose cloud/cloud shadow masking method
 // Choices are a series of booleans for cloudScore, TDOM, and elements of Fmask
@@ -148,16 +131,6 @@ var scale = null;
 
 
 ////////////////////////////////////////////////////////////
-
-
-//List of bands or indices to iterate across
-//Typically a list of spectral bands or computed indices
-//Can include: 'blue','green','red','nir','swir1','swir2'
-//'NBR','NDVI','wetness','greenness','brightness','tcAngleBG'
-// var indexList = ee.List(['nir','swir1']);
-var indexList = ['NBR','NDVI'];//['nir','swir1','swir2','NDMI',NBR','NDVI','wetness','greenness','brightness','tcAngleBG'];
-
-
 ///////////////////////////////////////////////////////////////////////
 //EWMACD Parameters
 
@@ -176,7 +149,7 @@ var annualReducer = ee.Reducer.percentile([10]);
 //Can include: 'blue','green','red','nir','swir1','swir2'
 //'NBR','NDVI','wetness','greenness','brightness','tcAngleBG'
 // var indexList = ee.List(['nir','swir1']);
-var indexList = ['NBR','SAVI','EVI'];//['NBR','blue','green','red','nir','swir1','swir2','NDMI','NDVI','wetness','greenness','brightness','tcAngleBG'];
+var indexNames = ['NBR','SAVI','EVI'];//['NBR','blue','green','red','nir','swir1','swir2','NDMI','NDVI','wetness','greenness','brightness','tcAngleBG'];
 
 //Year range to train harmonic regression model with
 var trainingStartYear = 1984;
@@ -220,15 +193,19 @@ indexNames.map(function(indexName){
 });
 
 //Export each years EWMACD output
-var years = ee.List.sequence(startYear,endYear).getInfo();
+// var years = ee.List.sequence(startYear,endYear).getInfo();
 
-  years.map(function(year){
-    var ewmaYr = ee.Image(outputCollection.filter(ee.Filter.calendarRange(year,year,'year')).first())
-    .int16();
+//   years.map(function(year){
+//     var ewmaYr = ee.Image(outputCollection.filter(ee.Filter.calendarRange(year,year,'year')).first())
+//     .int16();
     
-  var exportName = outputName+'_' + year.toString();
-    var exportPath = exportPathRoot + '/'+exportName;
+//   var exportName = outputName+'_' + year.toString();
+//     var exportPath = exportPathRoot + '/'+exportName;
     
-    getImageLib.exportToAssetWrapper(ewmaYr,exportName,exportPath,'mean',
-      studyArea,null,crs,transform);
-  });
+//     getImageLib.exportToAssetWrapper(ewmaYr,exportName,exportPath,'mean',
+//       studyArea,null,crs,transform);
+//   });
+var ewmaOut = ee.ImageCollection('users/ianhousman/test/changeCollection');
+// Map.addLayer(ewmaOut)
+ewmaOut = dLib.thresholdChange(ewmaOut,5,-1)
+Map.addLayer(ewmaOut.select([4]).min(),{'min':1984,'max':2018,'palette':'FF0,F00'})
