@@ -30,7 +30,7 @@ var endJulian = 365;
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
 var startYear = 1984;
-var endYear = 2018;
+var endYear = 2000;
 
 
 
