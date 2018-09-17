@@ -1633,7 +1633,7 @@ function getPhaseAmplitudePeak(coeffs){
       return amplitude.addBands(phase).addBands(peakDate.rename(peakDateBandNames));
     
     });
-    print(phaseAmplitude)
+  
     //Convert to an image
     phaseAmplitude = ee.ImageCollection.fromImages(phaseAmplitude);
     
