@@ -1618,17 +1618,17 @@ function getPhaseAmplitudePeak(coeffs){
       var amplitude = harmCoeffs.select([1]).hypot(harmCoeffs.select([0]))
                     .multiply(2)
                     .rename([outName.cat('_amplitude')]);
-      var phase = harmCoeffs.select([0]).atan2(harmCoeffs.select([1]))
-                    .unitScale(-Math.PI, Math.PI)
-                    .rename([outName.cat('_phase')]);
+      // var phase = harmCoeffs.select([0]).atan2(harmCoeffs.select([1]))
+      //               .unitScale(-Math.PI, Math.PI)
+      //               .rename([outName.cat('_phase')]);
       
-      //Get peak date info
-      var peakDate = getPeakDate(harmCoeffs,sign);
-      var peakDateBandNames = peakDate.bandNames();
-      peakDateBandNames = peakDateBandNames.map(function(bn){return outName.cat(ee.String('_').cat(ee.String(bn)))});
+      // //Get peak date info
+      // var peakDate = getPeakDate(harmCoeffs,sign);
+      // var peakDateBandNames = peakDate.bandNames();
+      // peakDateBandNames = peakDateBandNames.map(function(bn){return outName.cat(ee.String('_').cat(ee.String(bn)))});
       
       
-      return amplitude.addBands(phase).addBands(peakDate.rename(peakDateBandNames));
+      return amplitude//.addBands(phase).addBands(peakDate.rename(peakDateBandNames));
     
     });
     print(phaseAmplitude)
