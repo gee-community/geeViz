@@ -182,7 +182,7 @@ indexNames.map(function(indexName){
   
   var ewmaChange = dLib.thresholdChange(annualEWMA,3,-1).select('.*_change');
   Map.addLayer(annualEWMA,{},indexName + ' ewma',false);
-  Map.addLayer(ewmaChange.min().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'EWMA Most Recent Change Year',false);
+  Map.addLayer(ewmaChange.min().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexName + ' EWMA First Change Year',false);
     
     if(outputCollection === undefined){
       outputCollection = annualEWMA;
