@@ -1628,7 +1628,7 @@ function getPhaseAmplitudePeak(coeffs){
       // peakDateBandNames = peakDateBandNames.map(function(bn){return outName.cat(ee.String('_').cat(ee.String(bn)))});
       
       
-      return amplitude//.addBands(phase).addBands(peakDate.rename(peakDateBandNames));
+      return amplitude.addBands(phase)//.addBands(peakDate.rename(peakDateBandNames));
     
     });
     print(phaseAmplitude)
