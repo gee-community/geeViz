@@ -1595,12 +1595,12 @@ function getPhaseAmplitudePeak(coeffs){
   var interceptBands = ee.List.sequence(0,bandNumber.subtract(1),modelLength);
   
   var models = ee.List.sequence(0,noDependents.subtract(1));
-  print(models)
+  
   var parsedModel =models.map(function(mn){
     mn = ee.Number(mn);
     return bandNames.slice(mn.multiply(modelLength),mn.multiply(modelLength).add(modelLength));
   });
-  
+  print(parsedModel)
   // print('Parsed harmonic regression model',parsedModel);
 
   //Iterate across models to convert to phase, amplitude, and peak
