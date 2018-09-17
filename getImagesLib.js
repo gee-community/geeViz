@@ -1600,7 +1600,7 @@ function getPhaseAmplitudePeak(coeffs){
     mn = ee.Number(mn);
     return bandNames.slice(mn.multiply(modelLength),mn.multiply(modelLength).add(modelLength));
   });
-  print(parsedModel)
+  
   // print('Parsed harmonic regression model',parsedModel);
 
   //Iterate across models to convert to phase, amplitude, and peak
@@ -1631,6 +1631,7 @@ function getPhaseAmplitudePeak(coeffs){
       return amplitude.addBands(phase).addBands(peakDate.rename(peakDateBandNames));
     
     });
+    print(phaseAmplitude)
     //Convert to an image
     phaseAmplitude = ee.ImageCollection.fromImages(phaseAmplitude);
     
