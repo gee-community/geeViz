@@ -1618,9 +1618,9 @@ function getPhaseAmplitudePeak(coeffs){
       var amplitude = harmCoeffs.select([1]).hypot(harmCoeffs.select([0]))
                     .multiply(2)
                     .rename([outName.cat('_amplitude')]);
-      // var phase = harmCoeffs.select([0]).atan2(harmCoeffs.select([1]))
-      //               .unitScale(-Math.PI, Math.PI)
-      //               .rename([outName.cat('_phase')]);
+      var phase = harmCoeffs.select([0]).atan2(harmCoeffs.select([1]))
+                    .unitScale(-Math.PI, Math.PI)
+                    .rename([outName.cat('_phase')]);
       
       // //Get peak date info
       // var peakDate = getPeakDate(harmCoeffs,sign);
