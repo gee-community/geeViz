@@ -206,6 +206,6 @@ indexNames.map(function(indexName){
 //       studyArea,null,crs,transform);
 //   });
 var ewmaOut = ee.ImageCollection('users/ianhousman/test/changeCollection');
-// Map.addLayer(ewmaOut)
+Map.addLayer(ewmaOut)
 ewmaOut = dLib.thresholdChange(ewmaOut,5,-1)
 Map.addLayer(ewmaOut.select([5]).min(),{'min':1984,'max':2018,'palette':'FF0,F00'})
