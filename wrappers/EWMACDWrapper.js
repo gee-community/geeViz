@@ -48,7 +48,7 @@ var includeSLCOffL7 = false;
 //9. Whether to defringe L5
 //Landsat 5 data has fringes on the edges that can introduce anomalies into 
 //the analysis.  This method removes them, but is somewhat computationally expensive
-var defringeL5 = true;
+var defringeL5 = false;
 
 // 10. Choose cloud/cloud shadow masking method
 // Choices are a series of booleans for cloudScore, TDOM, and elements of Fmask
@@ -137,7 +137,7 @@ var scale = null;
 
 //Expected frequency of phenological cycles. 
 //harmonicCount is n pi so 1 cycle/yr is 2 
-var harmonicCount = 1;
+var harmonicCount = 2;
 
 //When simplifying from all EWMA values to annual values
 //this is the reducer that is applied.  Generally will want to pull from the 
