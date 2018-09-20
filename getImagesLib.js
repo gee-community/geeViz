@@ -1578,6 +1578,7 @@ function getPeakDate(coeffs,peakDirection){
                   .multiply(ee.Image.constant(peakDirection))
                   .addBands(greenDateLater);
   var finalGreenDate = ee.ImageCollection([predicted1,predicted2]).qualityMosaic('predicted').select(['peakDate']).rename(['peakJulianDay']);
+  
   finalGreenDate = finalGreenDate.where(finalGreenDate.lt(0), greenDate.add(1)).multiply(365).int16();
   
   //Convert to month and day of month
