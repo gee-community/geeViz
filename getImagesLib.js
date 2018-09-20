@@ -448,7 +448,6 @@ function addSAVIandEVI(img){
   ////////////////////////////////////////////////////////////////////////////////
   //NIRv: Badgley, G., Field, C. B., & Berry, J. A. (2017). Canopy near-infrared reflectance and terrestrial photosynthesis. Science Advances, 3, e1602244.
   // NIRv function: ‘image’ is a 2 band stack of NDVI and NIR
-  // TBiswas, TNC
   //////////////////////////////////////////////////////////////////////////////////////////
   var NIRv =  image.select(['NDVI']).subtract(0.08)
               .multiply(image.select(['nir']).multiply(0.0001)).select([0],['NIRv'])
