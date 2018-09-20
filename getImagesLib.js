@@ -451,7 +451,7 @@ function addSAVIandEVI(img){
   // NIRv function: ‘image’ is a 2 band stack of NDVI and NIR
   //////////////////////////////////////////////////////////////////////////////////////////
   var NIRv =  img.select(['NDVI']).subtract(0.08)
-              .multiply(img.select(['nir']).multiply(0.0001))
+              .multiply(img.select(['nir']));//.multiply(0.0001))
 
   img = img.addBands(savi.rename('SAVI')).addBands(NIRv.rename('NIRv'));
   return img;
