@@ -169,12 +169,14 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
 //Helper to multiply image
 function multBands(img,distDir,by){
     var out = img.multiply(ee.Image(distDir).multiply(by));
-    out  = out.copyProperties(img,['system:time_start']);
+    out  = out.copyProperties(img,['system:time_start'])
+              .copyProperties(img);
     return out;
   }
 function addBands(img,howMuch){
     var out = img.add(ee.Image(howMuch));
-    out  = out.copyProperties(img,['system:time_start']);
+    out  = out.copyProperties(img,['system:time_start'])
+              .copyProperties(img);
     return out;
   }
 ///////////////////////////////////////////////////////////////
