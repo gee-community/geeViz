@@ -447,12 +447,13 @@ function addSAVIandEVI(img){
   
   ////////////////////////////////////////////////////////////////////////////////
   //NIRv: Badgley, G., Field, C. B., & Berry, J. A. (2017). Canopy near-infrared reflectance and terrestrial photosynthesis. Science Advances, 3, e1602244.
+  //https://www.researchgate.net/publication/315534107_Canopy_near-infrared_reflectance_and_terrestrial_photosynthesis
   // NIRv function: ‘image’ is a 2 band stack of NDVI and NIR
   //////////////////////////////////////////////////////////////////////////////////////////
   var NIRv =  image.select(['NDVI']).subtract(0.08)
-              .multiply(image.select(['nir']).multiply(0.0001)).select([0],['NIRv'])
+              .multiply(image.select(['nir']).multiply(0.0001))
 
-  img = img.addBands(savi.rename('SAVI'));
+  img = img.addBands(savi.rename('SAVI')).addBands(NIRv.rename('NIRv'));
   return img;
 }
 /////////////////////////////////////////////////////////////////
