@@ -450,8 +450,8 @@ function addSAVIandEVI(img){
   //https://www.researchgate.net/publication/315534107_Canopy_near-infrared_reflectance_and_terrestrial_photosynthesis
   // NIRv function: ‘image’ is a 2 band stack of NDVI and NIR
   //////////////////////////////////////////////////////////////////////////////////////////
-  var NIRv =  image.select(['NDVI']).subtract(0.08)
-              .multiply(image.select(['nir']).multiply(0.0001))
+  var NIRv =  img.select(['NDVI']).subtract(0.08)
+              .multiply(img.select(['nir']).multiply(0.0001))
 
   img = img.addBands(savi.rename('SAVI')).addBands(NIRv.rename('NIRv'));
   return img;
