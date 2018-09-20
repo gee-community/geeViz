@@ -157,7 +157,7 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels
-  ).select([indexNames]);
+  ).select(indexNames);
 Map.addLayer(allScenes)
 // ////////////////////////////////////////////////////////////
 // //Iterate across each time window and fit harmonic regression model
