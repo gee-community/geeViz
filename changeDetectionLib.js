@@ -173,7 +173,7 @@ function multBands(img,distDir,by){
               .copyProperties(img);
     return out;
   }
-function addBands(img,howMuch){
+function addToImage(img,howMuch){
     var out = img.add(ee.Image(howMuch));
     out  = out.copyProperties(img,['system:time_start'])
               .copyProperties(img);
@@ -663,7 +663,7 @@ function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh,startYear,en
 exports.extractDisturbance = extractDisturbance;
 exports.landtrendrWrapper = landtrendrWrapper;
 exports.multBands = multBands;
-
+exports.addToImage = addToImage;
 exports.getExistingChangeData = getExistingChangeData;
 
 exports.verdetAnnualSlope  = verdetAnnualSlope;
