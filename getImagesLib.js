@@ -261,7 +261,9 @@ function rescale(img, exp, thresholds) {
   return img.expression(exp, {img: img})
     .subtract(thresholds[0]).divide(thresholds[1] - thresholds[0]);
 }
-
+function normalize(img,min,max){
+  return img.subtract(min).divide(max - min);
+}
 ////////////////////////////////////////////////////////////////////////////////
 // Compute a cloud score and adds a band that represents the cloud mask.  
 // This expects the input image to have the common band names: 
@@ -1820,6 +1822,7 @@ exports.collectionToImage = collectionToImage;
 exports.getImageCollection = getImageCollection;
 exports.vizParamsFalse = vizParamsFalse;
 exports.vizParamsTrue = vizParamsTrue;
+exports.normalize = normalize;
 exports.landsatCloudScore = landsatCloudScore;
 exports.applyCloudScoreAlgorithm = applyCloudScoreAlgorithm;
 exports.cFmask = cFmask;
