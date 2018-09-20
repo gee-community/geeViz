@@ -172,6 +172,11 @@ function multBands(img,distDir,by){
     out  = out.copyProperties(img,['system:time_start']);
     return out;
   }
+function addBands(img,howMuch){
+    var out = img.add(ee.Image(howMuch));
+    out  = out.copyProperties(img,['system:time_start']);
+    return out;
+  }
 ///////////////////////////////////////////////////////////////
 //Function to convert an image array object to collection
 function arrayToTimeSeries(tsArray,yearsArray,possibleYears,bandName){
