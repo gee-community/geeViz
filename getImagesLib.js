@@ -1630,7 +1630,9 @@ function getPhaseAmplitudePeak(coeffs){
       var peakDateBandNames = peakDate.bandNames();
       peakDateBandNames = peakDateBandNames.map(function(bn){return outName.cat(ee.String('_').cat(ee.String(bn)))});
       
-      
+      function getAreaUnderCurve(harmCoeffs){
+        
+      }
       return amplitude.addBands(phase).addBands(peakDate.rename(peakDateBandNames));
     
     });
