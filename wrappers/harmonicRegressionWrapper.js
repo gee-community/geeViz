@@ -157,11 +157,8 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels
-  ).select(indexNames)
-  // .map(function(img){return img.unitScale(-1, 1)
-  //                             .copyProperties(img)
-  //                             .copyProperties(img,['system:time_start'])
-  // });
+  ).select(indexNames);
+  
 
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and fit harmonic regression model
