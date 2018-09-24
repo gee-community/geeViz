@@ -192,18 +192,19 @@ var distParams = {
 ///////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 //Call on master wrapper function to get Landat scenes and composites
-var lsAndTs = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
-  timebuffer,weights,compositingMethod,
-  toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
-  applyFmaskCloudShadowMask,applyFmaskSnowMask,
-  cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
-  correctIllumination,correctScale,
-  exportComposites,outputName,exportPathRoot,crs,transform,scale);
+// var lsAndTs = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
+//   timebuffer,weights,compositingMethod,
+//   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
+//   applyFmaskCloudShadowMask,applyFmaskSnowMask,
+//   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
+//   correctIllumination,correctScale,
+//   exportComposites,outputName,exportPathRoot,crs,transform,scale);
 
-//Separate into scenes and composites for subsequent analysis
-var scenes = lsAndTs[0];
-var composites = lsAndTs[1];
-composites = composites.map(getImageLib.addSAVIandEVI);
+// //Separate into scenes and composites for subsequent analysis
+// var scenes = lsAndTs[0];
+// var composites = lsAndTs[1];
+var composites = ee.ImageCollection('projects/USFS/LCMS-NFS/R1/FNF/Composites/FNF-Composite-Collection')
+// composites = composites.map(getImageLib.addSAVIandEVI);
 // Map.addLayer(composites.select(['SAVI','EVI']),{},'savi',false);
 ////////////////////////////////////////////////////////////
 //Landtrendr code
