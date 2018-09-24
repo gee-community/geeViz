@@ -208,14 +208,18 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   
     Map.addLayer(seasonality, {'min':0,'max':1}, 'Seasonality',false);
     
-  };
+  }
   
   //Export image
-  var coeffsOut = coeffs
-    .multiply(1000).int16();
+  var coeffsOut;
+  if(detrend === false){
+   coeffsOut = coeffs
+    .multiply(1000).int16(); 
+  }else{coeffsOut = coeffs;}
+  
     
   coeffsOut = coeffsOut.copyProperties(coeffs)
-                        .copyProperties(coeffs,['system:time_start'])
+                        .copyProperties(coeffs,['system:time_start']);
   
 
   var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
