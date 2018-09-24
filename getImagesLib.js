@@ -1656,7 +1656,10 @@ function getPhaseAmplitudePeak(coeffs){
         return leftSum
       }
       var leftSum = getAreaUnderCurve(harmCoeffs)
-      return amplitude.addBands(phase).addBands(peakDate.rename(peakDateBandNames));
+      return amplitude
+            .addBands(phase)
+            .addBands(peakDate.rename(peakDateBandNames))
+            .addBands(leftSum);
     
     });
   
