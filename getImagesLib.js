@@ -1655,7 +1655,10 @@ function getPhaseAmplitudePeak(coeffs){
         var leftSum = sum1.subtract(sum0).rename(['leftSum']);
         return leftSum
       }
-      var leftSum = getAreaUnderCurve(harmCoeffs)
+      var leftSum = getAreaUnderCurve(harmCoeffs);
+      var leftSumBandNames = leftSum.bandNames();
+      leftSumBandNames = leftSumBandNames.map(function(bn){return outName.cat(ee.String('_').cat(ee.String(bn)))});
+      leftSum = leftSum.rename(leftSumBandNames)
       return amplitude
             .addBands(phase)
             .addBands(peakDate.rename(peakDateBandNames))
