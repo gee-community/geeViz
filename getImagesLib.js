@@ -1602,6 +1602,8 @@ function getPeakDate(coeffs,peakDirection){
 //Takes care of normalization by forcing the min value along the curve 0
 //by taking the amplitude as the intercept
 //Assumes the sin and cos coeffs are the harmCoeffs
+//Example of what this code is doing can be found here:
+//  http://www.wolframalpha.com/input/?i=integrate+0.15949074923992157+%2B+-0.08287599*sin(2+PI+T)+%2B+-0.11252010613*cos(2+PI+T)++from+0+to+1
 function getAreaUnderCurve(harmCoeffs){
         var amplitude = harmCoeffs.select([1]).hypot(harmCoeffs.select([0]));
         var intereceptNormalized = amplitude;
@@ -1613,9 +1615,9 @@ function getAreaUnderCurve(harmCoeffs){
                   .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI*0)));
         var sum1 = intereceptNormalized.multiply(1)
                   .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI)))
-                  .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI)))
+                  .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI)));
         var leftSum = sum1.subtract(sum0).rename(['leftSum']);
-        return leftSum
+        return leftSum;
       }
 ///////////////////////////////////////////////
 function getPhaseAmplitudePeak(coeffs){
