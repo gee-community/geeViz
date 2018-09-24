@@ -231,7 +231,13 @@ indexDirList.map(function(indexDir){
   var ltAnnualFitted = ltOutputs[2];
   var lt1 = ltHeuristic.select('.*yod');
   var lt2 = ltHeuristic.select('.*yod2');
-  print(lt2)
+  var lt3 = ltHeuristic.select('.*yod3');
+  Map.addLayer(ltAnnualFitted,{},'LT Fitted IndexNames',false);
+  
+  Map.addLayer(lt3,{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexList[0] + ' LT Change Year 3',false);
+  Map.addLayer(lt2,{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexList[0] + ' LT Change Year 2',false);
+  Map.addLayer(lt1,{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexList[0] + ' LT Change Year 1',false);
+  
 //   //Stack the heuristic output and stack each image
 //   //in fitted collection using join
 //   if(outputCollection === undefined){
