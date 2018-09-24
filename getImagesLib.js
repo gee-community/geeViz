@@ -1894,3 +1894,4 @@ exports.fillEmptyCollections = fillEmptyCollections;
 
 exports.getHarmonicCoefficientsAndFit = getHarmonicCoefficientsAndFit;
 exports.getPhaseAmplitudePeak = getPhaseAmplitudePeak;
+exports.getAreaUnderCurve = getAreaUnderCurve;
