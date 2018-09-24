@@ -158,10 +158,10 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels
   ).select(indexNames)
-  .map(function(img){return img.unitScale(-1, 1)
-                              .copyProperties(img)
-                              .copyProperties(img,['system:time_start'])
-  });
+  // .map(function(img){return img.unitScale(-1, 1)
+  //                             .copyProperties(img)
+  //                             .copyProperties(img,['system:time_start'])
+  // });
 
 ////////////////////////////////////////////////////////////
 //Iterate across each time window and fit harmonic regression model
@@ -197,8 +197,12 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
     var amplitudes = pap.select(['.*_amplitude']);
     var phases = pap.select(['.*_phase']);
     var peakJulians = pap.select(['.*peakJulianDay']);
+    var min = vals.subtract(amplitudes.divide(2))
+    Map.addLayer(amplitudes,{},'amplitude',false);
+    Map.addLayer(min,{},'min',false);
     
     // Map.addLayer(pap,{},'pap',false);
+    Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians',false);
     Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians',false);
   
     
