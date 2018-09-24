@@ -215,7 +215,7 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
   if(detrend === false){
    coeffsOut = coeffs
     .multiply(1000).int16(); 
-  }else{coeffsOut = coeffs;}
+  }else{coeffsOut = coeffs.float();}
   
     
   coeffsOut = coeffsOut.copyProperties(coeffs)
