@@ -1627,7 +1627,9 @@ function getAreaUnderCurve(harmCoeffs,t0,t1){
   return leftSum;
 }
 ///////////////////////////////////////////////
-function getPhaseAmplitudePeak(coeffs){
+function getPhaseAmplitudePeak(coeffs,t0,t1){
+  if(t0 === null || t0 === undefined){t0 = 0}
+  if(t1 === null || t1 === undefined){t1 = 1}
   //Parse the model
   var bandNames = coeffs.bandNames();
   var bandNumber = bandNames.length();
@@ -1669,7 +1671,7 @@ function getPhaseAmplitudePeak(coeffs){
       peakDateBandNames = peakDateBandNames.map(function(bn){return outName.cat(ee.String('_').cat(ee.String(bn)))});
       
       //Get the left sum
-      var leftSum = getAreaUnderCurve(harmCoeffs);
+      var leftSum = getAreaUnderCurve(harmCoeffs,t0,t1);
       var leftSumBandNames = leftSum.bandNames();
       leftSumBandNames = leftSumBandNames.map(function(bn){return outName.cat(ee.String('_').cat(ee.String(bn)))});
      
