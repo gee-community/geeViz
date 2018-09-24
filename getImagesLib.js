@@ -1598,6 +1598,25 @@ function getPeakDate(coeffs,peakDirection){
   return greenStack;
   // Map.addLayer(greenStack,{'min':1,'max':12},'greenMonth',false);
 }
+//Function for getting left sum under the curve for a single growing season
+//Takes care of normalization by forcing the min value along the curve 0
+//by taking the amplitude as the intercept
+//Assumes the sin and cos coeffs are the harmCoeffs
+function getAreaUnderCurve(harmCoeffs){
+        var amplitude = harmCoeffs.select([1]).hypot(harmCoeffs.select([0]));
+        var intereceptNormalized = amplitude;
+        var sin = harmCoeffs.select([0]);
+        var cos = harmCoeffs.select([1]);
+        
+        var sum0 = intereceptNormalized.multiply(0)
+                  .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI*0)))
+                  .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI*0)));
+        var sum1 = intereceptNormalized.multiply(1)
+                  .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI)))
+                  .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI)))
+        var leftSum = sum1.subtract(sum0).rename(['leftSum']);
+        return leftSum
+      }
 ///////////////////////////////////////////////
 function getPhaseAmplitudePeak(coeffs){
   //Parse the model
@@ -1640,21 +1659,7 @@ function getPhaseAmplitudePeak(coeffs){
       var peakDateBandNames = peakDate.bandNames();
       peakDateBandNames = peakDateBandNames.map(function(bn){return outName.cat(ee.String('_').cat(ee.String(bn)))});
       
-      function getAreaUnderCurve(harmCoeffs){
-        var amplitude = harmCoeffs.select([1]).hypot(harmCoeffs.select([0]));
-        var intereceptNormalized = amplitude;
-        var sin = harmCoeffs.select([0]);
-        var cos = harmCoeffs.select([1]);
-        
-        var sum0 = intereceptNormalized.multiply(0)
-                  .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI*0)))
-                  .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI*0)));
-        var sum1 = intereceptNormalized.multiply(1)
-                  .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI)))
-                  .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI)))
-        var leftSum = sum1.subtract(sum0).rename(['leftSum']);
-        return leftSum
-      }
+      
       var leftSum = getAreaUnderCurve(harmCoeffs);
       var leftSumBandNames = leftSum.bandNames();
       leftSumBandNames = leftSumBandNames.map(function(bn){return outName.cat(ee.String('_').cat(ee.String(bn)))});
