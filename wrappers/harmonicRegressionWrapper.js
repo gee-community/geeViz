@@ -198,9 +198,12 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
     var phases = pap.select(['.*_phase']);
     var peakJulians = pap.select(['.*peakJulianDay']);
     var min = vals.subtract(amplitudes.divide(2))
+    var max = vals.add(amplitudes.divide(2))
+    var amplitudes2 = min.add(max)
     Map.addLayer(amplitudes,{},'amplitude',false);
     Map.addLayer(min,{},'min',false);
-    
+    Map.addLayer(max,{},'max',false);
+    Map.addLayer(amplitudes2,{},'amplitudes2',false);
     // Map.addLayer(pap,{},'pap',false);
     Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians',false);
     Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians',false);
