@@ -144,7 +144,7 @@ var scale = null;
 var whichHarmonics = [2];
 
 //Which bands/indices to run harmonic regression across
-var indexNames =['NDVI'];//,'NBR','NDMI','nir','swir1','swir2','tcAngleBG'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
+var indexNames =['NDVI','NBR','swir1'];//,'NBR','NDMI','nir','swir1','swir2','tcAngleBG'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 
 var detrend = false;
 ////////////////////////////////////////////////////////////////////////////////
@@ -197,16 +197,17 @@ var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1
     var amplitudes = pap.select(['.*_amplitude']);
     var phases = pap.select(['.*_phase']);
     var peakJulians = pap.select(['.*peakJulianDay']);
-    var min = vals.subtract(amplitudes.divide(2))
-    var max = vals.add(amplitudes.divide(2))
-    var vals2 = amplitudes.divide(2).multiply(-1)
+    var leftSums = pap.select(['.*leftSum']);
+    // var min = vals.subtract(amplitudes.divide(2))
+    // var max = vals.add(amplitudes.divide(2))
+    // var vals2 = amplitudes.divide(2)
     
-    var hypMin = min.subtract(min)
+    // var hypMin = min.subtract(min)
     Map.addLayer(amplitudes,{},'amplitude',false);
-    Map.addLayer(min,{},'min',false);
-    Map.addLayer(max,{},'max',false);
-    Map.addLayer(vals2,{},'vals2',false);
-    Map.addLayer(amplitudes2,{},'amplitudes2',false);
+    Map.addLayer(leftSums,{},'leftSums',false);
+    // Map.addLayer(max,{},'max',false);
+    // Map.addLayer(vals2,{},'vals2',false);
+    // Map.addLayer(amplitudes2,{},'amplitudes2',false);
     // Map.addLayer(pap,{},'pap',false);
     Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians',false);
     Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians',false);
