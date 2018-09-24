@@ -34,14 +34,14 @@ var endJulian = 250
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2000;
+var startYear = 1984;
 var endYear = 2019;
 
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
 // in a 3 year moving window
-var timebuffer = 0;
+var timebuffer = 1;
 
 // 5. Specify the weights to be used for the moving window created by timeBuffer
 //For example- if timeBuffer is 1, that is a 3 year moving window
@@ -49,7 +49,7 @@ var timebuffer = 0;
 //In order to overweight the center year, you could specify the weights as
 //[1,5,1] which would duplicate the center year 5 times and increase its weight for
 //the compositing method
-var weights = [1];//[1,5,1];
+var weights = [1,5,1];
 
 
 // 6. Choose medoid or median compositing method. 
@@ -207,7 +207,7 @@ var composites = ee.ImageCollection('projects/USFS/LCMS-NFS/R1/FNF/Composites/FN
                 .map(function(img){return dLib.multBands(img,1,0.0001)})
                 .map(getImageLib.simpleAddIndices)
                 .map(getImageLib.addSAVIandEVI);
-Map.addLayer(composites.select(['SAVI','EVI']),{},'savi',false);
+// Map.addLayer(composites.select(['SAVI','EVI']),{},'savi',false);
 ////////////////////////////////////////////////////////////
 //Landtrendr code
 var indexListString = getImageLib.listToString(indexList,'_');
@@ -229,7 +229,9 @@ indexDirList.map(function(indexDir){
   var ltRaw = ltOutputs[0];
   var ltHeuristic = ltOutputs[1];
   var ltAnnualFitted = ltOutputs[2];
-  Map.addLayer(ltRaw)
+  var lt1 = ltHeuristic.select('.*yod');
+  var lt2 = ltHeuristic.select('.*yod2');
+  print(lt2)
 //   //Stack the heuristic output and stack each image
 //   //in fitted collection using join
 //   if(outputCollection === undefined){
