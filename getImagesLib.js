@@ -1620,7 +1620,7 @@ function getAreaUnderCurve(harmCoeffs){
                   .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI)))
                   .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI)));
         //Find the difference
-        var leftSum = sum1.subtract(sum0).rename(['leftSum']);
+        var leftSum = sum1.subtract(sum0).rename(['AUC']);
         return leftSum;
       }
 ///////////////////////////////////////////////
