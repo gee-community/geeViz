@@ -204,8 +204,10 @@ var distParams = {
 // var scenes = lsAndTs[0];
 // var composites = lsAndTs[1];
 var composites = ee.ImageCollection('projects/USFS/LCMS-NFS/R1/FNF/Composites/FNF-Composite-Collection')
-// composites = composites.map(getImageLib.addSAVIandEVI);
-// Map.addLayer(composites.select(['SAVI','EVI']),{},'savi',false);
+                .map(function(img){return dLib.multBands(img,1,0.0001)})
+                .map(getImageLib.simpleAddIndices)
+                .map(getImageLib.addSAVIandEVI);
+Map.addLayer(composites.select(['SAVI','EVI']),{},'savi',false);
 ////////////////////////////////////////////////////////////
 //Landtrendr code
 var indexListString = getImageLib.listToString(indexList,'_');
