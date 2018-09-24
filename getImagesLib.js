@@ -1615,13 +1615,13 @@ function getAreaUnderCurve(harmCoeffs,t0,t1){
   var cos = harmCoeffs.select([1]);
   
   //Find the sum from - infinity to 0
-  var sum0 = intereceptNormalized.multiply(0)
-            .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI*0)))
-            .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI*0)));
+  var sum0 = intereceptNormalized.multiply(t0)
+            .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI*t0)))
+            .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI*t0)));
   //Find the sum from - infinity to 1
-  var sum1 = intereceptNormalized.multiply(1)
-            .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI)))
-            .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI)));
+  var sum1 = intereceptNormalized.multiply(t1)
+            .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI*t1)))
+            .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI*t1)));
   //Find the difference
   var leftSum = sum1.subtract(sum0).rename(['AUC']);
   return leftSum;
