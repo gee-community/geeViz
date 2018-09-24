@@ -41,7 +41,7 @@ var endYear = 2019;
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
 // in a 3 year moving window
-var timebuffer = 1;
+var timebuffer = 0;
 
 // 5. Specify the weights to be used for the moving window created by timeBuffer
 //For example- if timeBuffer is 1, that is a 3 year moving window
@@ -49,7 +49,7 @@ var timebuffer = 1;
 //In order to overweight the center year, you could specify the weights as
 //[1,5,1] which would duplicate the center year 5 times and increase its weight for
 //the compositing method
-var weights = [1,5,1];
+var weights = [1];//[1,5,1];
 
 
 // 6. Choose medoid or median compositing method. 
@@ -226,41 +226,41 @@ indexDirList.map(function(indexDir){
   var ltRaw = ltOutputs[0];
   var ltHeuristic = ltOutputs[1];
   var ltAnnualFitted = ltOutputs[2];
-  
-  //Stack the heuristic output and stack each image
-  //in fitted collection using join
-  if(outputCollection === undefined){
-    outputCollection = ltAnnualFitted;
-    outputStack = ltHeuristic;
-  }else{
-    outputCollection = getImageLib.joinCollections(outputCollection,ltAnnualFitted,false);
-    outputStack = outputStack.addBands(ltHeuristic);
+  Map.addLayer(ltRaw)
+//   //Stack the heuristic output and stack each image
+//   //in fitted collection using join
+//   if(outputCollection === undefined){
+//     outputCollection = ltAnnualFitted;
+//     outputStack = ltHeuristic;
+//   }else{
+//     outputCollection = getImageLib.joinCollections(outputCollection,ltAnnualFitted,false);
+//     outputStack = outputStack.addBands(ltHeuristic);
     
-  }
+//   }
   
 });
-Map.addLayer(outputCollection,{},'LT Fitted IndexNames',false);
-Map.addLayer(outputStack.select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexList[0] + ' LT Change Year',false);
+// Map.addLayer(outputCollection,{},'LT Fitted IndexNames',false);
+// Map.addLayer(outputStack.select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexList[0] + ' LT Change Year',false);
   
-// Export each fitted year
-var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo();
+// // Export each fitted year
+// var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo();
 
-  years.map(function(year){
-    var ltYr = ee.Image(outputCollection.filter(ee.Filter.calendarRange(year,year,'year')).first())
-    .multiply(10000).int16()
-    .set('bandsUsed',indexListString)
-    .set('system:time_start',ee.Date.fromYMD(year,6,1).millis());
+//   years.map(function(year){
+//     var ltYr = ee.Image(outputCollection.filter(ee.Filter.calendarRange(year,year,'year')).first())
+//     .multiply(10000).int16()
+//     .set('bandsUsed',indexListString)
+//     .set('system:time_start',ee.Date.fromYMD(year,6,1).millis());
  
-  var exportName = outputName + year.toString();
-    var exportPath = exportPathRoot + '/'+ exportName;
+//   var exportName = outputName + year.toString();
+//     var exportPath = exportPathRoot + '/'+ exportName;
     
-    getImageLib.exportToAssetWrapper(ltYr,exportName,exportPath,'mean',
-      studyArea,null,crs,transform);
-  });
+//     getImageLib.exportToAssetWrapper(ltYr,exportName,exportPath,'mean',
+//       studyArea,null,crs,transform);
+//   });
   
-//Export thresholded stack
-var exportName = outputName + 'LT_Stack';
-var exportPath = exportPathRoot + '/'+ exportName;
+// //Export thresholded stack
+// var exportName = outputName + 'LT_Stack';
+// var exportPath = exportPathRoot + '/'+ exportName;
     
-getImageLib.exportToAssetWrapper(outputStack,exportName,exportPath,'mean',
-      studyArea,null,crs,transform);
+// getImageLib.exportToAssetWrapper(outputStack,exportName,exportPath,'mean',
+//       studyArea,null,crs,transform);
