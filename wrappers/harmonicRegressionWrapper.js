@@ -158,71 +158,74 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels
   ).select(indexNames)
-  .map(function(img){return dLib.addToImage(img,1)});
-Map.addLayer(allScenes)
-// ////////////////////////////////////////////////////////////
-// //Iterate across each time window and fit harmonic regression model
-// var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo().map(function(yr){
-//   //Set up dates
-//   var startYearT = yr-timebuffer;
-//   var endYearT = yr+timebuffer;
+  .map(function(img){return img.unitScale(-1, 1)
+                              .copyProperties(img)
+                              .copyProperties(img,['system:time_start'])
+  });
+
+////////////////////////////////////////////////////////////
+//Iterate across each time window and fit harmonic regression model
+var coeffCollection = ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo().map(function(yr){
+  //Set up dates
+  var startYearT = yr-timebuffer;
+  var endYearT = yr+timebuffer;
   
-//   //Get scenes for those dates
-//   var allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT,endYearT,'year'));
+  //Get scenes for those dates
+  var allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT,endYearT,'year'));
   
-//   //Fit harmonic model
-//   var coeffsPredicted =getImageLib.getHarmonicCoefficientsAndFit(allScenesT,indexNames,whichHarmonics,detrend);
+  //Fit harmonic model
+  var coeffsPredicted =getImageLib.getHarmonicCoefficientsAndFit(allScenesT,indexNames,whichHarmonics,detrend);
   
-//   //Set some properties
-//   var coeffs = coeffsPredicted[0]
-//             .set({'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
-//             'timebuffer':timebuffer,
-//             'startYearT':startYearT,
-//             'endYearT':endYearT,
-//             }).float();
-//   Map.addLayer(coeffs,{},'coeffs',false);
-//   //Get predicted values for visualization
-//   var predicted = coeffsPredicted[1];
-//   Map.addLayer(predicted,{},'predicted',false);
+  //Set some properties
+  var coeffs = coeffsPredicted[0]
+            .set({'system:time_start':ee.Date.fromYMD(yr,6,1).millis(),
+            'timebuffer':timebuffer,
+            'startYearT':startYearT,
+            'endYearT':endYearT,
+            }).float();
+  Map.addLayer(coeffs,{},'coeffs',false);
+  //Get predicted values for visualization
+  var predicted = coeffsPredicted[1];
+  Map.addLayer(predicted,{},'predicted',false);
   
-//   //Optionally simplify coeffs to phase, amplitude, and date of peak
-//   if(whichHarmonics.indexOf(2) > -1){
-//     var pap = ee.Image(getImageLib.getPhaseAmplitudePeak(coeffs));
-//     print(pap);
+  //Optionally simplify coeffs to phase, amplitude, and date of peak
+  if(whichHarmonics.indexOf(2) > -1){
+    var pap = ee.Image(getImageLib.getPhaseAmplitudePeak(coeffs));
+    print(pap);
     
-//     var vals = coeffs.select(['.*_intercept']);
-//     var amplitudes = pap.select(['.*_amplitude']);
-//     var phases = pap.select(['.*_phase']);
-//     var peakJulians = pap.select(['.*peakJulianDay']);
+    var vals = coeffs.select(['.*_intercept']);
+    var amplitudes = pap.select(['.*_amplitude']);
+    var phases = pap.select(['.*_phase']);
+    var peakJulians = pap.select(['.*peakJulianDay']);
     
-//     // Map.addLayer(pap,{},'pap',false);
-//     Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians',false);
+    // Map.addLayer(pap,{},'pap',false);
+    Map.addLayer(peakJulians,{'min':0,'max':365},'peakJulians',false);
   
     
-//     // Turn the HSV data into an RGB image and add it to the map.
-//     var seasonality = ee.Image.cat(phases.select([0]), 
-//                                     amplitudes.select([0]), 
-//                                     vals.select([0])).hsvToRgb();
+    // Turn the HSV data into an RGB image and add it to the map.
+    var seasonality = ee.Image.cat(phases.select([0]), 
+                                    amplitudes.select([0]), 
+                                    vals.select([0])).hsvToRgb();
   
-//     Map.addLayer(seasonality, {'min':0,'max':1}, 'Seasonality',false);
+    Map.addLayer(seasonality, {'min':0,'max':1}, 'Seasonality',false);
     
-//   };
+  };
   
-//   //Export image
-//   var coeffsOut = coeffs
-//     .multiply(1000).int16();
+  //Export image
+  var coeffsOut = coeffs
+    .multiply(1000).int16();
     
-//   coeffsOut = coeffsOut.copyProperties(coeffs)
-//                         .copyProperties(coeffs,['system:time_start'])
+  coeffsOut = coeffsOut.copyProperties(coeffs)
+                        .copyProperties(coeffs,['system:time_start'])
   
 
-//   var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
-//   var outPath = exportPathRoot + '/' + outName;
-//   getImageLib.exportToAssetWrapper(coeffs,outName,outPath,
-//   'mean',studyArea,scale,crs,transform);
-//   return coeffs;
+  var outName = outputName + startYearT.toString() + '_'+ endYearT.toString();
+  var outPath = exportPathRoot + '/' + outName;
+  getImageLib.exportToAssetWrapper(coeffs,outName,outPath,
+  'mean',studyArea,scale,crs,transform);
+  return coeffs;
   
-// });
+});
 
 // // coeffCollection = ee.ImageCollection(coeffCollection);
 // // Map.addLayer(coeffCollection);
