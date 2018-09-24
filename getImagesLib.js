@@ -1604,25 +1604,28 @@ function getPeakDate(coeffs,peakDirection){
 //Assumes the sin and cos coeffs are the harmCoeffs
 //Example of what this code is doing can be found here:
 //  http://www.wolframalpha.com/input/?i=integrate+0.15949074923992157+%2B+-0.08287599*sin(2+PI+T)+%2B+-0.11252010613*cos(2+PI+T)++from+0+to+1
-function getAreaUnderCurve(harmCoeffs){
-        //Pull apart the model
-        var amplitude = harmCoeffs.select([1]).hypot(harmCoeffs.select([0]));
-        var intereceptNormalized = amplitude;
-        var sin = harmCoeffs.select([0]);
-        var cos = harmCoeffs.select([1]);
-        
-        //Find the sum from - infinity to 0
-        var sum0 = intereceptNormalized.multiply(0)
-                  .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI*0)))
-                  .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI*0)));
-        //Find the sum from - infinity to 1
-        var sum1 = intereceptNormalized.multiply(1)
-                  .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI)))
-                  .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI)));
-        //Find the difference
-        var leftSum = sum1.subtract(sum0).rename(['AUC']);
-        return leftSum;
-      }
+function getAreaUnderCurve(harmCoeffs,t0,t1){
+  if(t0 === null || t0 === undefined){t0 = 0}
+  if(t1 === null || t1 === undefined){t1 = 1}
+  
+  //Pull apart the model
+  var amplitude = harmCoeffs.select([1]).hypot(harmCoeffs.select([0]));
+  var intereceptNormalized = amplitude;
+  var sin = harmCoeffs.select([0]);
+  var cos = harmCoeffs.select([1]);
+  
+  //Find the sum from - infinity to 0
+  var sum0 = intereceptNormalized.multiply(0)
+            .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI*0)))
+            .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI*0)));
+  //Find the sum from - infinity to 1
+  var sum1 = intereceptNormalized.multiply(1)
+            .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI)))
+            .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI)));
+  //Find the difference
+  var leftSum = sum1.subtract(sum0).rename(['AUC']);
+  return leftSum;
+}
 ///////////////////////////////////////////////
 function getPhaseAmplitudePeak(coeffs){
   //Parse the model
