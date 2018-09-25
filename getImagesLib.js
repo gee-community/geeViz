@@ -621,10 +621,9 @@ function exportToAssetWrapper2(imageForExport,assetName,assetPath,
 }
 ////////////////////////////////////////////////////////////////////////////////
 // Create composites for each year within startYear and endYear range
-function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod){
+function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod,compositingReducer){
   var dummyImage = ee.Image(ls.first());
-  var isReducer = compositingMethod.getInfo().type.toString().indexOf('Reducer') > -1;
-  print(isReducer)
+  
   var ts = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
     // Set up dates
@@ -659,8 +658,10 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
    
     // Compute median or medoid
     var composite;
-    
-    if (compositingMethod.toLowerCase() === 'median') {
+    if(compositingReducer != undefined && compositingReducer != null){
+      composite = lsT.reduce(compositingReducer);
+    }
+    else if (compositingMethod.toLowerCase() === 'median') {
       composite = lsT.median();
     }
     else {
