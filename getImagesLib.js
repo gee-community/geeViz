@@ -1208,7 +1208,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
 ////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 function exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
-collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands){
+collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands){
   collection = collection.select(exportBands);
   ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
@@ -1221,6 +1221,28 @@ collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,
     var composite = collection.filter(ee.Filter.calendarRange(year,year,'year'));
     composite = ee.Image(composite.first());
     
+    
+    // Add metadata, cast to integer, and export composite
+    composite = composite.set({
+      'system:time_start': ee.Date.fromYMD(year,6,1).millis(),
+      'yearBuffer':timebuffer,
+      'startJulian': startJulian,
+      'endJulian': endJulian,
+      'compositingReducer': compositingReducer
+     });
+  
+    // Export the composite 
+    // Set up export name and path
+    var exportName = outputName  + toaOrSR + '_' + compositingMethod + 
+      '_'  + startYearT + '_' + endYearT+'_' + 
+      startJulian + '_' + endJulian ;
+   
+    
+    var exportPath = exportPathRoot + '/' + exportName;
+    // print('Write down the Asset ID:', exportPath);
+  
+    exportToAssetWrapper(composite,exportName,exportPath,'mean',
+      studyArea,null,crs,transform);
     })
 }
 
