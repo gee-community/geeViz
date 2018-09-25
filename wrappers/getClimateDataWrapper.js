@@ -48,7 +48,7 @@ var weights = [1];
 // Median tends to be smoother, while medoid retains 
 // single date of observation across all bands
 // If not exporting indices with composites to save space, medoid should be used
-var compositingMethod = 'median'//ee.Reducer.sum();
+var compositingReducer = ee.Reducer.sum();
 
 // 7. Choose collection to use
 // Specify TOA or SR
@@ -114,7 +114,7 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
 ////////////////////////////////////////////////////////////////////////////////
 //Call on master wrapper function to get Landat scenes and composites
 var climateSummaries = getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
-  timebuffer,weights,compositingMethod,
+  timebuffer,weights,null,compositingReducer,
   exportComposites,outputName,exportPathRoot,crs,transform,scale);
 
 
