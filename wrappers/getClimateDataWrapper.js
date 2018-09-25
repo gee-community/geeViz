@@ -19,8 +19,8 @@ var studyArea = geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 1;
-var endJulian = 365; 
+var startJulian = 200;
+var endJulian = 210; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
@@ -89,7 +89,7 @@ var scale = null;
 //Start function calls
 function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
   timebuffer,weights,compositingReducer,
-  exportComposites,outputName,exportPathRoot,crs,transform,scale){
+  exportComposites,outputName,exportPathRoot,crs,transform,scale,exportBands){
     
     // Prepare dates
   //Wrap the dates if needed
@@ -106,6 +106,12 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
           .filter(ee.Filter.calendarRange(startJulian,endJulian));
   // Create composite time series
   var ts = getImageLib.compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,null,compositingReducer);
+  
+  exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
+    ts,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands)
+
+  
+  
   return ts
   }
 ////////////////////////////////////////////////////////////////////////////////
@@ -113,8 +119,7 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
 var climateSummaries = getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
   timebuffer,weights,compositingReducer,
   exportComposites,outputName,exportPathRoot,crs,transform,scale);
-
-
+Map.addLayer(climateSummaries.select(['prcp.*']))
 ////////////////////////////////////////////////////////////////////////////////
 // Load the study region, with a blue outline.
 // Create an empty image into which to paint the features, cast to byte.
