@@ -1613,7 +1613,7 @@ function getAreaUnderCurve(harmCoeffs,t0,t1){
   
   //Pull apart the model
   var amplitude = harmCoeffs.select([1]).hypot(harmCoeffs.select([0]));
-  var intereceptNormalized = amplitude;
+  var intereceptNormalized = amplitude;//When making the min 0, the intercept becomes the amplitude (the hypotenuse)
   var sin = harmCoeffs.select([0]);
   var cos = harmCoeffs.select([1]);
   
