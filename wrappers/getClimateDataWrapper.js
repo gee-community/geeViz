@@ -91,7 +91,7 @@ var scale = null;
 ///////////////////////////////////////////////////////////////////////
 //Start function calls
 function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
-  timebuffer,weights,compositingMethod,
+  timebuffer,weights,compositingReducer,
   exportComposites,outputName,exportPathRoot,crs,transform,scale){
     
     // Prepare dates
@@ -107,14 +107,14 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
           .filterDate(startDate,endDate)
           .filter(ee.Filter.calendarRange(startJulian,endJulian))
   // Create composite time series
-  var ts = getImageLib.compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
+  var ts = getImageLib.compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingReducer);
   Map.addLayer(ts.select(['prcp']))
   print(ts.size())
   }
 ////////////////////////////////////////////////////////////////////////////////
 //Call on master wrapper function to get Landat scenes and composites
 var climateSummaries = getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
-  timebuffer,weights,null,compositingReducer,
+  timebuffer,weights,compositingReducer,
   exportComposites,outputName,exportPathRoot,crs,transform,scale);
 
 
