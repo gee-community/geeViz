@@ -1904,7 +1904,7 @@ function getHarmonicCoefficientsAndFit(allImages,indexNames,whichHarmonics,detre
 //and possibly others
 function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
   timebuffer,weights,compositingReducer,
-  exportComposites,outputName,exportPathRoot,crs,transform,scale,exportBands){
+  exportComposites,exportPathRoot,crs,transform,scale,exportBands){
     
   // Prepare dates
   //Wrap the dates if needed
