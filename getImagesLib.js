@@ -1233,8 +1233,7 @@ collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer
   
     // Export the composite 
     // Set up export name and path
-    var exportName = outputName  + toaOrSR + '_' + compositingMethod + 
-      '_'  + startYearT + '_' + endYearT+'_' + 
+    var exportName = outputName  + toaOrSR + '_'  + startYearT + '_' + endYearT+'_' + 
       startJulian + '_' + endJulian ;
    
     
