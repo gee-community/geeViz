@@ -107,7 +107,7 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
           .filterDate(startDate,endDate)
           .filter(ee.Filter.calendarRange(startJulian,endJulian))
   // Create composite time series
-  var ts = getImageLib.compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,'median');
+  var ts = getImageLib.compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,null,compositingReducer);
   Map.addLayer(ts)
   print(ts.size())
   }
