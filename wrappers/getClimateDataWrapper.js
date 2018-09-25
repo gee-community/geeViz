@@ -48,7 +48,7 @@ var weights = [1];
 // Median tends to be smoother, while medoid retains 
 // single date of observation across all bands
 // If not exporting indices with composites to save space, medoid should be used
-var compositingMethod = ee.Reducer.sum();
+var compositingMethod = 'median'//ee.Reducer.sum();
 
 // 7. Choose collection to use
 // Specify TOA or SR
