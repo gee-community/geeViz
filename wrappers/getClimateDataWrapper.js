@@ -88,7 +88,7 @@ var scale = null;
 
 ////////////////////////////////////////////////////////////////////////////////
 //Call on master wrapper function to get Landat scenes and composites
-var climateSummaries = getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
+var climateSummaries = getImageLib.getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
   timebuffer,weights,compositingReducer,
   exportComposites,outputName,exportPathRoot,crs,transform,scale);
 // Map.addLayer(climateSummaries.select(['prcp.*']))
