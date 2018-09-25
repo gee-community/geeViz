@@ -56,7 +56,7 @@ var collectionName = 'NASA/ORNL/DAYMET_V3';
 
 
 
-//13. Export params
+//8. Export params
 //Whether to export composites
 var exportComposites = true;
 
@@ -85,7 +85,6 @@ var scale = null;
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 //Start function calls
-
 ////////////////////////////////////////////////////////////////////////////////
 //Call on master wrapper function to get Landat scenes and composites
 var climateSummaries = getImageLib.getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
