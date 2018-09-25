@@ -657,7 +657,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
    
     // Compute median or medoid
     var composite;
-    print(typeof(compositingMethod) === object)
+    print(typeof(compositingMethod).toString() === 'object')
     if (compositingMethod.toLowerCase() === 'median') {
       composite = lsT.median();
     }
