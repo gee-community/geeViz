@@ -1897,6 +1897,44 @@ function getHarmonicCoefficientsAndFit(allImages,indexNames,whichHarmonics,detre
 // //   return syntheticStack
 // }
 ////////////////////////////////////////////////////////////////////////////////
+//Wrapper function to get climate data
+// Supports:
+// NASA/ORNL/DAYMET_V3
+// UCSB-CHG/CHIRPS/DAILY (precipitation only)
+//and possibly others
+function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
+  timebuffer,weights,compositingReducer,
+  exportComposites,outputName,exportPathRoot,crs,transform,scale,exportBands){
+    
+  // Prepare dates
+  //Wrap the dates if needed
+  if (startJulian > endJulian) {
+    endJulian = endJulian + 365;
+  }
+  var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
+  var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1,'day');
+  print('Start and end dates:', startDate, endDate);
+  
+  //Get climate data
+  var c = ee.ImageCollection(collectionName)
+          .filterBounds(studyArea.bounds())
+          .filterDate(startDate,endDate)
+          .filter(ee.Filter.calendarRange(startJulian,endJulian));
+  
+  // Create composite time series
+  var ts = compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,null,compositingReducer);
+  
+  //Set up export bands if not specified
+  if(exportBands === null || exportBands === undefined){
+    exportBands = ee.Image(ts.first()).bandNames();
+  }
+  
+  //Export collection
+  exportCollection(exportPathRoot,collectionName,studyArea, crs,transform,scale,
+    ts,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands);
+  
+  return ts;
+  }
 // END FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
 exports.sieve = sieve;
@@ -1941,3 +1979,5 @@ exports.fillEmptyCollections = fillEmptyCollections;
 exports.getHarmonicCoefficientsAndFit = getHarmonicCoefficientsAndFit;
 exports.getPhaseAmplitudePeak = getPhaseAmplitudePeak;
 exports.getAreaUnderCurve = getAreaUnderCurve;
+
+exports.getClimateWrapper = getClimateWrapper;
