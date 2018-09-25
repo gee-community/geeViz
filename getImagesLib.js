@@ -1208,7 +1208,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
 ////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 function exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
-collection){
+collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands){
   
 }
 
@@ -1899,6 +1899,7 @@ exports.modisCloudScore = modisCloudScore;
 exports.despikeCollection = despikeCollection;
 exports.exportToAssetWrapper = exportToAssetWrapper;
 exports.exportToAssetWrapper2 = exportToAssetWrapper2;
+exports.exportCollection = exportCollection;
 exports.joinCollections = joinCollections;
 exports.listToString = listToString;
 exports.harmonizationRoy = harmonizationRoy;
