@@ -32,7 +32,7 @@ var endYear = 2012;
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
 // in a 3 year moving window
-var timebuffer = 1;
+var timebuffer = 0;
 
 // 5. Specify the weights to be used for the moving window created by timeBuffer
 //For example- if timeBuffer is 1, that is a 3 year moving window
@@ -40,7 +40,7 @@ var timebuffer = 1;
 //In order to overweight the center year, you could specify the weights as
 //[1,5,1] which would duplicate the center year 5 times and increase its weight for
 //the compositing method
-var weights = [1,1,1];
+var weights = [1];
 
 
 
@@ -94,11 +94,22 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
   timebuffer,weights,compositingMethod,
   exportComposites,outputName,exportPathRoot,crs,transform,scale){
     
-    var c = ee.ImageCollection(collectionName)
-            .filterBounds(studyArea.bounds())
-            .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
-            .filter(ee.Filter.calendarRange(startJulian,endJulian))
-    print(c.size())
+    // Prepare dates
+  //Wrap the dates if needed
+  if (startJulian > endJulian) {
+    endJulian = endJulian + 365;
+  }
+  var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
+  var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1,'day');
+  print('Start and end dates:', startDate, endDate);
+  var c = ee.ImageCollection(collectionName)
+          .filterBounds(studyArea.bounds())
+          .filterDate(startDate,endDate)
+          .filter(ee.Filter.calendarRange(startJulian,endJulian))
+  // Create composite time series
+  var ts = getImageLib.compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
+  Map.addLayer(ts.select(['prcp']))
+  print(ts.size())
   }
 ////////////////////////////////////////////////////////////////////////////////
 //Call on master wrapper function to get Landat scenes and composites
