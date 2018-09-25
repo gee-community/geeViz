@@ -26,8 +26,8 @@ var endJulian = 365;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2010;
-var endYear = 2012;
+var startYear = 1980;
+var endYear = 2019;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -99,14 +99,14 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
   var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
   var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1,'day');
   print('Start and end dates:', startDate, endDate);
+  
   var c = ee.ImageCollection(collectionName)
           .filterBounds(studyArea.bounds())
           .filterDate(startDate,endDate)
-          .filter(ee.Filter.calendarRange(startJulian,endJulian))
+          .filter(ee.Filter.calendarRange(startJulian,endJulian));
   // Create composite time series
   var ts = getImageLib.compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,null,compositingReducer);
-  Map.addLayer(ts.select(['prcp.*']))
-  print(ts.size())
+  return ts
   }
 ////////////////////////////////////////////////////////////////////////////////
 //Call on master wrapper function to get Landat scenes and composites
