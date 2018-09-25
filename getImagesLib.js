@@ -1209,7 +1209,19 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
 //////////////////////////////////////////////////////////////////
 function exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
 collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands){
-  
+  collection = collection.select(exportBands);
+  ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
+    .map(function(year){
+      print('Exporting:',year);
+    // Set up dates
+    var startYearT = year-timebuffer;
+    var endYearT = year+timebuffer;
+    
+    // Get yearly composite
+    var composite = collection.filter(ee.Filter.calendarRange(year,year,'year'));
+    composite = ee.Image(composite.first());
+    
+    })
 }
 
 // Function to export composite collection
