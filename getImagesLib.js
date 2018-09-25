@@ -623,6 +623,8 @@ function exportToAssetWrapper2(imageForExport,assetName,assetPath,
 // Create composites for each year within startYear and endYear range
 function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod){
   var dummyImage = ee.Image(ls.first());
+  var isReducer = compositingMethod.getInfo().type.toString().indexOf('Reducer') == 0;
+  print(isReducer)
   var ts = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
     // Set up dates
