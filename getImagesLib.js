@@ -1228,7 +1228,7 @@ collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer
       'yearBuffer':timebuffer,
       'startJulian': startJulian,
       'endJulian': endJulian,
-      'compositingReducer': compositingReducer
+      'compositingReducer': compositingReducer.toString()
      });
   
     // Export the composite 
