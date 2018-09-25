@@ -1602,6 +1602,9 @@ function getPeakDate(coeffs,peakDirection){
 //Takes care of normalization by forcing the min value along the curve 0
 //by taking the amplitude as the intercept
 //Assumes the sin and cos coeffs are the harmCoeffs
+//t0 is the start time (defaults to 0)(min value should be but doesn't have to be 0)
+//t1 is the end time (defaults to 1)(max value should be but doesn't have to be 1)
+//
 //Example of what this code is doing can be found here:
 //  http://www.wolframalpha.com/input/?i=integrate+0.15949074923992157+%2B+-0.08287599*sin(2+PI+T)+%2B+-0.11252010613*cos(2+PI+T)++from+0+to+1
 function getAreaUnderCurve(harmCoeffs,t0,t1){
