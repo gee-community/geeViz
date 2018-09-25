@@ -107,6 +107,9 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
   // Create composite time series
   var ts = getImageLib.compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,null,compositingReducer);
   
+  if(exportBands === null || exportBands === undefined){
+    exportBands = ee.Image(ts.first()).bandNames();
+  }
   exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
     ts,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands)
 
@@ -119,7 +122,7 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
 var climateSummaries = getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
   timebuffer,weights,compositingReducer,
   exportComposites,outputName,exportPathRoot,crs,transform,scale);
-Map.addLayer(climateSummaries.select(['prcp.*']))
+// Map.addLayer(climateSummaries.select(['prcp.*']))
 ////////////////////////////////////////////////////////////////////////////////
 // Load the study region, with a blue outline.
 // Create an empty image into which to paint the features, cast to byte.
