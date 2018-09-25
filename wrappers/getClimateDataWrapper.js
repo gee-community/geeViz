@@ -89,7 +89,7 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
   timebuffer,weights,compositingReducer,
   exportComposites,outputName,exportPathRoot,crs,transform,scale,exportBands){
     
-    // Prepare dates
+  // Prepare dates
   //Wrap the dates if needed
   if (startJulian > endJulian) {
     endJulian = endJulian + 365;
@@ -98,22 +98,25 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
   var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1,'day');
   print('Start and end dates:', startDate, endDate);
   
+  //Get climate data
   var c = ee.ImageCollection(collectionName)
           .filterBounds(studyArea.bounds())
           .filterDate(startDate,endDate)
           .filter(ee.Filter.calendarRange(startJulian,endJulian));
-  // Create composite time series
-  var ts = getImageLib.compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,null,compositingReducer);
   
+  // Create composite time series
+  var ts = compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,null,compositingReducer);
+  
+  //Set up export bands if not specified
   if(exportBands === null || exportBands === undefined){
     exportBands = ee.Image(ts.first()).bandNames();
   }
-  getImageLib.exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
-    ts,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands)
-
   
+  //Export collection
+  exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
+    ts,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands);
   
-  return ts
+  return ts;
   }
 ////////////////////////////////////////////////////////////////////////////////
 //Call on master wrapper function to get Landat scenes and composites
