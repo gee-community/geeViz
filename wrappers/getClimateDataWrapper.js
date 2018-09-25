@@ -110,7 +110,7 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
   if(exportBands === null || exportBands === undefined){
     exportBands = ee.Image(ts.first()).bandNames();
   }
-  exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
+  getImageLib.exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
     ts,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands)
 
   
