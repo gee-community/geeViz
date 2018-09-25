@@ -1210,7 +1210,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
 function exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
 collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands){
   
-  outputName = outputName.replace(/\s+/g,'-');
+  outputName = outputName.replace(/\\+/g,'-');
   collection = collection.select(exportBands);
   ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
