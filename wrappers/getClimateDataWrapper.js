@@ -90,14 +90,19 @@ var scale = null;
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
 //Start function calls
-function getClimateWrapper(studyArea,startYear,endYear,startJulian,endJulian,
+function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
   timebuffer,weights,compositingMethod,
   exportComposites,outputName,exportPathRoot,crs,transform,scale){
     
+    var c = ee.ImageCollection(collectionName)
+            .filterBounds(studyArea.bounds())
+            .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
+            .filter(ee.Filter.calendarRange(startJulian,endJulian))
+    print(c.size())
   }
 ////////////////////////////////////////////////////////////////////////////////
 //Call on master wrapper function to get Landat scenes and composites
-var climateSummaries = getClimateWrapper(studyArea,startYear,endYear,startJulian,endJulian,
+var climateSummaries = getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
   timebuffer,weights,compositingMethod,
   exportComposites,outputName,exportPathRoot,crs,transform,scale);
 
