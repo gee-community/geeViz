@@ -65,7 +65,7 @@ var outputName = 'Annual_Mean_Climate';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
-var exportPathRoot = 'users/ianhousman/test';
+var exportPathRoot = 'users/iwhousman/test/ChangeCollection';
 
 
 
