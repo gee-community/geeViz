@@ -44,10 +44,7 @@ var weights = [1];
 
 
 
-// 6. Choose medoid or median compositing method. 
-// Median tends to be smoother, while medoid retains 
-// single date of observation across all bands
-// If not exporting indices with composites to save space, medoid should be used
+// 6. Choose reducer to use for summarizing
 var compositingReducer = ee.Reducer.mean();
 
 // 7. Choose collection to use
@@ -108,7 +105,7 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
           .filter(ee.Filter.calendarRange(startJulian,endJulian))
   // Create composite time series
   var ts = getImageLib.compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,null,compositingReducer);
-  Map.addLayer(ts)
+  Map.addLayer(ts.select(['prcp.*']))
   print(ts.size())
   }
 ////////////////////////////////////////////////////////////////////////////////
