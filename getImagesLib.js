@@ -657,16 +657,12 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
    
     // Compute median or medoid
     var composite;
-    print(typeof(compositingMethod).toString() )
     if (compositingMethod.toLowerCase() === 'median') {
       composite = lsT.median();
     }
-    else if(compositingMethod.toLowerCase() === 'medoid'){
+    else {
       
       composite = medoidMosaicMSD(lsT,['blue','green','red','nir','swir1','swir2']);
-    } 
-    else{
-      composite = lsT.reduce(compositingMethod);
     }
     
     return composite.set('system:time_start',ee.Date.fromYMD(year,6,1).millis());
