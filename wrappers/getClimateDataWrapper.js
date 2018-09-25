@@ -63,7 +63,7 @@ var collectionName = 'NASA/ORNL/DAYMET_V3';
 var exportComposites = true;
 
 //Set up Names for the export
-var outputName = 'Median-Climate';
+var outputName = 'Annual_Mean_Climate';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
