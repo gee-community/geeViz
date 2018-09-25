@@ -1983,3 +1983,4 @@ exports.getPhaseAmplitudePeak = getPhaseAmplitudePeak;
 exports.getAreaUnderCurve = getAreaUnderCurve;
 
 exports.getClimateWrapper = getClimateWrapper;
+exports.exportCollection = exportCollection;
