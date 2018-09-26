@@ -621,6 +621,7 @@ function exportToAssetWrapper2(imageForExport,assetName,assetPath,
 }
 //////////////////////////////////////////////////
 //Function for wrapping dates when the startJulian < endJulian
+//Checks for year with majority of the days and the wrapOffset
 function wrapDates(startJulian,endJulian){
   //Set up date wrapping
   var wrapOffset = 0;
