@@ -11,16 +11,15 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 // .geometry() after it), or draw a polygon and make studyArea = drawnPolygon
 var states = ee.FeatureCollection('TIGER/2016/States');
 states = states.filter(ee.Filter.inList('NAME',['California'])).union(1000).geometry().buffer(10000);
-print(states)
-Map.addLayer(states)
+
 var studyArea = states;
 
 // 2. Update the startJulian and endJulian variables to indicate your seasonal 
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 1;
-var endJulian = 365; 
+var startJulian = 274;
+var endJulian = 273; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
@@ -58,7 +57,7 @@ var collectionName = 'NASA/ORNL/DAYMET_V3';
 
 //8. Export params
 //Whether to export composites
-var exportComposites = false;
+var exportComposites = true;
 
 
 //Provide location composites will be exported to
@@ -87,8 +86,8 @@ var scale = null;
 //Call on master wrapper function to get Landat scenes and composites
 var climateSummaries = getImageLib.getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
   timebuffer,weights,compositingReducer,
-  exportComposites,exportPathRoot,crs,transform,scale);
-// Map.addLayer(climateSummaries.select(['prcp.*']))
+  exportComposites,exportPathRoot,crs,transform,scale,null);
+Map.addLayer(climateSummaries.select(['prcp.*']))
 ////////////////////////////////////////////////////////////////////////////////
 // Load the study region, with a blue outline.
 // Create an empty image into which to paint the features, cast to byte.
