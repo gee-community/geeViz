@@ -654,7 +654,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
     var endDateT = ee.Date.fromYMD(endYearT,1,1).advance(endJulian-1+wrapOffset,'day');
     
   
-    print(year,startDateT,endDateT);
+    // print(year,startDateT,endDateT);
     
     //Set up weighted moving widow
     var yearsT = ee.List.sequence(startYearT,endYearT);
