@@ -633,6 +633,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
       var y2NDays = endJulian;
       if(y2NDays > y1NDays){yearWithMajority = 1;}
     }
+  //Iterate across each year
   var ts = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
     
@@ -644,12 +645,8 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
     
   
     print(year,startDateT,endDateT);
-    // // Filter images for given date range
-    // var lsT = ls.filterDate(startDateT,endDateT);
     
-    // //Fill empty collections
-    // lsT = fillEmptyCollections(lsT,dummyImage);
-    
+    //Set up weighted moving widow
     var yearsT = ee.List.sequence(startYearT,endYearT);
     
     var z = yearsT.zip(weights);
@@ -658,6 +655,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
       return ee.List.repeat(i.get(0),i.get(1));
     }).flatten();
     print('Weighted composite years for year:',year,yearsTT);
+    //Iterate across each year in list
     var images = yearsTT.map(function(yr){
       // Set up dates
       
