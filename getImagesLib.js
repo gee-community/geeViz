@@ -1354,7 +1354,6 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
   if(applyCloudScore){
     print('Applying cloudScore');
     ls = applyCloudScoreAlgorithm(ls,landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
-    
   }
   
   if(applyFmaskCloudMask){
