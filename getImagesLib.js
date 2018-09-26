@@ -1927,14 +1927,17 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
   // Create composite time series
   var ts = compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,null,compositingReducer);
   
-  //Set up export bands if not specified
-  if(exportBands === null || exportBands === undefined){
-    exportBands = ee.Image(ts.first()).bandNames();
+  if(exportComposites){
+    //Set up export bands if not specified
+    if(exportBands === null || exportBands === undefined){
+      exportBands = ee.Image(ts.first()).bandNames();
+    }
+    
+    //Export collection
+    exportCollection(exportPathRoot,collectionName,studyArea, crs,transform,scale,
+      ts,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands);
+     
   }
-  
-  //Export collection
-  exportCollection(exportPathRoot,collectionName,studyArea, crs,transform,scale,
-    ts,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands);
   
   return ts;
   }
