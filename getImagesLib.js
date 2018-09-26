@@ -1242,13 +1242,19 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
 function exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
 collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands){
   
+  //Take care of date wrapping
   var dateWrapping = wrapDates(startJulian,endJulian);
   var wrapOffset = dateWrapping[0];
   var yearWithMajority = dateWrapping[1];
   
+  //Clean up output name
   outputName = outputName.replace(/\s+/g,'-');
   outputName = outputName.replace(/\//g,'-');
+  
+  //Select bands for export
   collection = collection.select(exportBands);
+  
+  //Iterate across each year and export image
   ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
       print('Exporting:',year);
