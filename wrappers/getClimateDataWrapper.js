@@ -15,7 +15,7 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 // Can specify a country, provide a fusion table  or asset table (must add 
 // .geometry() after it), or draw a polygon and make studyArea = drawnPolygon
 var states = ee.FeatureCollection('TIGER/2016/States');
-states = states.filter(ee.Filter.inList('NAME',['California'])).union(1000).geometry().buffer(10000);
+states = states.filter(ee.Filter.inList('NAME',['California'])).union(1000).geometry().buffer(20000);
 
 var studyArea = states;
 
@@ -31,7 +31,7 @@ var endJulian = 273;
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
 var startYear = 1980;
-var endYear = 2018;
+var endYear = 1990;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -67,7 +67,7 @@ var exportComposites = true;
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
-var exportPathRoot = 'users/ianhousman/test/changeCollection';
+var exportPathRoot = 'projects/igde-work/raster-data/DAYMET-Collection';
 
 //Specify which bands to export
 //If not sure or want all bands, just set to null
