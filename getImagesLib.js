@@ -619,11 +619,7 @@ function exportToAssetWrapper2(imageForExport,assetName,assetPath,
   Export.image.toAsset(imageForExport, assetName, assetPath, 
     pyramidingPolicyObject, null, roi, scale, crs, transform, 1e13);
 }
-////////////////////////////////////////////////////////////////////////////////
-// Create composites for each year within startYear and endYear range
-function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod,compositingReducer){
-  var dummyImage = ee.Image(ls.first());
-  
+function wrapDates(startJulian,endJulian){
   //Set up date wrapping
   var wrapOffset = 0;
   var yearWithMajority = 0;
@@ -633,6 +629,17 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
       var y2NDays = endJulian;
       if(y2NDays > y1NDays){yearWithMajority = 1;}
     }
+  return [wrapOffset,yearWithMajority];
+}
+////////////////////////////////////////////////////////////////////////////////
+// Create composites for each year within startYear and endYear range
+function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod,compositingReducer){
+  var dummyImage = ee.Image(ls.first());
+  
+  var dateWrapping = wrapDates(startJulian,endJulian);
+  var wrapOffset = dateWrapping[0];
+  var yearWithMajority = dateWrapping[1];
+  
   //Iterate across each year
   var ts = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
