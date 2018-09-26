@@ -1932,7 +1932,7 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
     if(exportBands === null || exportBands === undefined){
       exportBands = ee.Image(ts.first()).bandNames();
     }
-    
+    print('Export bands are:',exportBands);
     //Export collection
     exportCollection(exportPathRoot,collectionName,studyArea, crs,transform,scale,
       ts,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands);
