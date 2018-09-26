@@ -1,9 +1,5 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var geometry = /* color: #98ff00 */ee.Geometry.Polygon(
-        [[[-107.88010335430403, 37.74944967250176],
-          [-104.41965417436563, 37.91850622749146],
-          [-105.360767292844, 39.25236887854654],
-          [-107.57914696634225, 39.18649132261251]]]);
+var geometry = /* color: #98ff00 */ee.Geometry.MultiPoint();
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -13,7 +9,11 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 // 1. Specify study area: Study area
 // Can specify a country, provide a fusion table  or asset table (must add 
 // .geometry() after it), or draw a polygon and make studyArea = drawnPolygon
-var studyArea = geometry;
+var states = ee.FeatureCollection('TIGER/2016/States');
+states = states.filter(ee.Filter.inList('NAME',['California','Nevada'])).union(1000).geometry().dissolve(1000);
+print(states)
+Map.addLayer(states)
+var studyArea = states;
 
 // 2. Update the startJulian and endJulian variables to indicate your seasonal 
 // constraints. This supports wrapping for tropics and southern hemisphere.
@@ -65,7 +65,7 @@ var outputName = 'Annual_Mean_Climate';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
-var exportPathRoot = 'users/iwhousman/test/ChangeCollection';
+var exportPathRoot = 'users/ianhousman/test/changeCollection';
 
 
 
