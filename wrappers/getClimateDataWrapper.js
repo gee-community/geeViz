@@ -69,7 +69,7 @@ var exportComposites = true;
 //This should be an asset folder, or more ideally, an asset imageCollection
 var exportPathRoot = 'users/ianhousman/test/changeCollection';
 
-
+var exportBands = ['prcp.*','tmax.*','tmin.*'];
 
 //CRS- must be provided.  
 //Common crs codes: Web mercator is EPSG:4326, USGS Albers is EPSG:5070, 
@@ -91,9 +91,9 @@ var scale = null;
 //Call on master wrapper function to get Landat scenes and composites
 var climateSummaries = getImageLib.getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
   timebuffer,weights,compositingReducer,
-  exportComposites,exportPathRoot,crs,transform,scale,null);
-print(climateSummaries)
-Map.addLayer(climateSummaries.select(['prcp.*']))
+  exportComposites,exportPathRoot,crs,transform,scale,exportBands);
+
+// Map.addLayer(climateSummaries.select(['prcp.*']))
 ////////////////////////////////////////////////////////////////////////////////
 // Load the study region, with a blue outline.
 // Create an empty image into which to paint the features, cast to byte.
@@ -109,3 +109,5 @@ Map.addLayer(outline, {palette: '0000FF'}, "Study Area", false);
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+var t = ee.ImageCollection('users/ianhousman/test/changeCollection');
+Map.addLayer(t.select([1,2]))
