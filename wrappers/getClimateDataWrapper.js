@@ -1,5 +1,10 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var geometry = /* color: #98ff00 */ee.Geometry.MultiPoint();
+var geometry = /* color: #98ff00 */ee.Geometry.Polygon(
+        [[[-118.63531656897908, 36.74257058586009],
+          [-117.82232828772908, 37.408727967272085],
+          [-118.17467006767367, 38.18264304528551],
+          [-119.39337320960408, 38.293547223630156],
+          [-119.54718180335408, 37.47850889576281]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -19,14 +24,14 @@ var studyArea = states;
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
 var startJulian = 274;
-var endJulian = 273; 
+var endJulian = 60; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
 var startYear = 1980;
-var endYear = 1984;
+var endYear = 1980;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
