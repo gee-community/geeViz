@@ -31,7 +31,7 @@ var endJulian = 273;
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
 var startYear = 1980;
-var endYear = 1990;
+var endYear = 2017;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
