@@ -640,7 +640,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
     print(year,startDateT,endDateT);
     // Filter images for given date range
     var lsT = ls.filterDate(startDateT,endDateT);
-    print(lsT)
+    
     //Fill empty collections
     lsT = fillEmptyCollections(lsT,dummyImage);
     
