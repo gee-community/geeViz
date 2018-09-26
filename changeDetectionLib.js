@@ -578,43 +578,43 @@ var zAndTrendCollection = years.map(function(yr){
     var blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear,blEndYear,'year'))
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd));
     blImages = getImageLib.fillEmptyCollections(blImages,dummyScene);
-    print(blImages.size())
-    
-  //   //Get the z analysis images
-  //   var analysisImages = allScenes.filter(ee.Filter.calendarRange(yr,yr,'year'))
-  //                           .filter(ee.Filter.calendarRange(jdStart,jdEnd)); 
-  //   analysisImages = getImageLib.fillEmptyCollections(analysisImages,dummyScene);
-    
-  //   //Get the images for the trend analysis
-  //   var trendImages = allScenes.filter(ee.Filter.calendarRange(trendStartYear,yr,'year'))
-  //                           .filter(ee.Filter.calendarRange(jdStart,jdEnd));
-  //   trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene);
     
     
-  //   //Convert to annual stack if selected
-  //   if(useAnnualMedianForTrend){
-  //     trendImages = toAnnualMedian(trendImages,trendStartYear,yr);
-  //   }
+    //Get the z analysis images
+    var analysisImages = allScenes.filter(ee.Filter.calendarRange(yr,yr,'year'))
+                            .filter(ee.Filter.calendarRange(jdStart,jdEnd)); 
+    analysisImages = getImageLib.fillEmptyCollections(analysisImages,dummyScene);
     
-  //   //Perform the linear trend analysis
-  //   var linearTrend = getLinearFit(trendImages,indexNames);
-  //   var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']).multiply(10000);
+    //Get the images for the trend analysis
+    var trendImages = allScenes.filter(ee.Filter.calendarRange(trendStartYear,yr,'year'))
+                            .filter(ee.Filter.calendarRange(jdStart,jdEnd));
+    trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene);
     
-  //   //Perform the z analysis
-  //   var blMean = blImages.mean();
-  //   var blStd = blImages.reduce(ee.Reducer.stdDev());
     
-  //   var analysisImagesZ = analysisImages.map(function(img){
-  //     return (img.subtract(blMean)).divide(blStd);
-  //   }).reduce(zReducer).rename(outNames).multiply(10);
+    //Convert to annual stack if selected
+    if(useAnnualMedianForTrend){
+      trendImages = toAnnualMedian(trendImages,trendStartYear,yr);
+    }
     
-  //   //Set up the output
-  //   var outName = ee.String('Z_and_Trend_b').cat(ee.String(blStartYear.int16())).cat(ee.String('_'))
-  //                               .cat(ee.String(blEndYear.int16())).cat(ee.String('_epoch')).cat(ee.String(ee.Number(epochLength)))
-  //                               .cat(ee.String('_y')).cat(ee.String(yr.int16())).cat(ee.String('_jd'))
-  //                               .cat(ee.String(jdStart.int16())).cat(ee.String('_')).cat(ee.String(jdEnd.int16()));
-  //   var imageStartDate =ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis();
+    //Perform the linear trend analysis
+    var linearTrend = getLinearFit(trendImages,indexNames);
+    var linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']).multiply(10000);
     
+    //Perform the z analysis
+    var blMean = blImages.mean();
+    var blStd = blImages.reduce(ee.Reducer.stdDev());
+    
+    var analysisImagesZ = analysisImages.map(function(img){
+      return (img.subtract(blMean)).divide(blStd);
+    }).reduce(zReducer).rename(outNames).multiply(10);
+    
+    //Set up the output
+    var outName = ee.String('Z_and_Trend_b').cat(ee.String(blStartYear.int16())).cat(ee.String('_'))
+                                .cat(ee.String(blEndYear.int16())).cat(ee.String('_epoch')).cat(ee.String(ee.Number(epochLength)))
+                                .cat(ee.String('_y')).cat(ee.String(yr.int16())).cat(ee.String('_jd'))
+                                .cat(ee.String(jdStart.int16())).cat(ee.String('_')).cat(ee.String(jdEnd.int16()));
+    var imageStartDate =ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis();
+    print(outName)
     
   //   var out = analysisImagesZ.addBands(linearTrendModel).int16()
   //         .set({'system:time_start':imageStartDate,
