@@ -573,12 +573,12 @@ var zAndTrendCollection = years.map(function(yr){
     //Set up the julian date range
     var jdStart = jd;
     var jdEnd = jd.add(nDays);
-    print(jdStart,jdEnd)
-  //   //Get the baseline images
-  //   var blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear,blEndYear,'year'))
-  //                           .filter(ee.Filter.calendarRange(jdStart,jdEnd));
-  //   blImages = getImageLib.fillEmptyCollections(blImages,dummyScene);
-    
+   
+    //Get the baseline images
+    var blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear,blEndYear,'year'))
+                            .filter(ee.Filter.calendarRange(jdStart,jdEnd));
+    blImages = getImageLib.fillEmptyCollections(blImages,dummyScene);
+    print(blImages.size())
     
   //   //Get the z analysis images
   //   var analysisImages = allScenes.filter(ee.Filter.calendarRange(yr,yr,'year'))
