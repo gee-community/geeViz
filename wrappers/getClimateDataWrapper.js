@@ -17,7 +17,7 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 var states = ee.FeatureCollection('TIGER/2016/States');
 states = states.filter(ee.Filter.inList('NAME',['California'])).union(1000).geometry().buffer(20000);
 
-var studyArea = states;
+var studyArea = geometry;//states;
 
 // 2. Update the startJulian and endJulian variables to indicate your seasonal 
 // constraints. This supports wrapping for tropics and southern hemisphere.
