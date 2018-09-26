@@ -659,10 +659,13 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
     }).flatten();
     print('Weighted composite years for year:',year,yearsTT);
     var images = yearsTT.map(function(yr){
+      // Set up dates
+      
+      var startDateT = ee.Date.fromYMD(yr,1,1).advance(startJulian-1,'day');
+      var endDateT = ee.Date.fromYMD(yr,1,1).advance(endJulian-1+wrapOffset,'day');
       
       // Filter images for given date range
-      var lsT = ls.filter(ee.Filter.calendarRange(yr,yr,'year'))
-                .filter(ee.Filter.calendarRange(startJulian,endJulian));//.toList(10000,0);
+      var lsT = ls.filterDate(startDateT,endDateT);
       lsT = fillEmptyCollections(lsT,dummyImage);
       return lsT;
     });
