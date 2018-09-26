@@ -603,11 +603,11 @@ var zAndTrendCollection = years.map(function(yr){
     //Perform the z analysis
     var blMean = blImages.mean();
     var blStd = blImages.reduce(ee.Reducer.stdDev());
-    
+    print(outNames)
     var analysisImagesZ = analysisImages.map(function(img){
       return (img.subtract(blMean)).divide(blStd);
     }).reduce(zReducer).rename(outNames).multiply(10);
-    print(analysisImagesZ)
+    
     //Set up the output
     // var outName = ee.String('Z_and_Trend_b').cat(ee.String(blStartYear.int16())).cat(ee.String('_'))
     //                             .cat(ee.String(blEndYear.int16())).cat(ee.String('_epoch')).cat(ee.String(ee.Number(epochLength)))
