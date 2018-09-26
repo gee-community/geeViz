@@ -614,21 +614,22 @@ var zAndTrendCollection = years.map(function(yr){
                                 .cat(ee.String('_y')).cat(ee.String(yr.int16())).cat(ee.String('_jd'))
                                 .cat(ee.String(jdStart.int16())).cat(ee.String('_')).cat(ee.String(jdEnd.int16()));
     var imageStartDate =ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis();
-    print(outName)
     
-  //   var out = analysisImagesZ.addBands(linearTrendModel).int16()
-  //         .set({'system:time_start':imageStartDate,
-  //               'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis(),
-  //               'baselineYrs': baselineLength,
-  //               'baselineStartYear':blStartYear,
-  //               'baselineEndYear':blEndYear,
-  //               'epochLength':epochLength,
-  //               'trendStartYear':trendStartYear,
-  //               'year':yr,
-  //               'startJulian':jdStart,
-  //               'endJulian':jdEnd,
-  //               'system:index':outName
-  //         });
+    
+    var out = analysisImagesZ.addBands(linearTrendModel).int16()
+          .set({'system:time_start':imageStartDate,
+                'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis(),
+                'baselineYrs': baselineLength,
+                'baselineStartYear':blStartYear,
+                'baselineEndYear':blEndYear,
+                'epochLength':epochLength,
+                'trendStartYear':trendStartYear,
+                'year':yr,
+                'startJulian':jdStart,
+                'endJulian':jdEnd,
+                'system:index':outName
+          });
+      print(out)
   //   if(exportImages){
   //     outName = outName.getInfo();
   //     var outPath = exportPathRoot + '/' + outName;
