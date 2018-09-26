@@ -619,6 +619,8 @@ function exportToAssetWrapper2(imageForExport,assetName,assetPath,
   Export.image.toAsset(imageForExport, assetName, assetPath, 
     pyramidingPolicyObject, null, roi, scale, crs, transform, 1e13);
 }
+//////////////////////////////////////////////////
+//Function for wrapping dates when the startJulian < endJulian
 function wrapDates(startJulian,endJulian){
   //Set up date wrapping
   var wrapOffset = 0;
