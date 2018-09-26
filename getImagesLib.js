@@ -697,6 +697,8 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
                         'endDate':endDateT.millis(),
                         'startJulian':startJulian,
                         'endJulian':endJulian,
+                        'yearBuffer':timebuffer,
+                        'yearWeights': listToString(weights),
                         'yrOriginal':year,
                         'yrUsed': year + yearWithMajority
     });
@@ -1240,6 +1242,10 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
 function exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
 collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands){
   
+  var dateWrapping = wrapDates(startJulian,endJulian);
+  var wrapOffset = dateWrapping[0];
+  var yearWithMajority = dateWrapping[1];
+  
   outputName = outputName.replace(/\s+/g,'-');
   outputName = outputName.replace(/\//g,'-');
   collection = collection.select(exportBands);
@@ -1248,21 +1254,18 @@ collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer
       print('Exporting:',year);
     // Set up dates
     var startYearT = year-timebuffer;
-    var endYearT = year+timebuffer;
+    var endYearT = year+timebuffer+yearWithMajority;
     
     // Get yearly composite
-    var composite = collection.filter(ee.Filter.calendarRange(year,year,'year'));
+    var composite = collection.filter(ee.Filter.calendarRange(year+yearWithMajority,year+yearWithMajority,'year'));
     composite = ee.Image(composite.first()).clip(studyArea);
     
     
     // Add metadata, cast to integer, and export composite
-    composite = composite.set({
-      // 'system:time_start': ee.Date.fromYMD(year,6,1).millis(),
-      'yearBuffer':timebuffer,
-      'startJulian': startJulian,
-      'endJulian': endJulian,
-      'compositingReducer': compositingReducer.toString()
-     });
+    // composite = composite.set({
+    //   // 'system:time_start': ee.Date.fromYMD(year,6,1).millis(),
+    //   'yearBuffer':timebuffer
+    // });
   
     // Export the composite 
     // Set up export name and path
