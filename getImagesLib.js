@@ -670,7 +670,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
       return lsT;
     });
     lsT = ee.ImageCollection(ee.FeatureCollection(images).flatten());
-   
+    print(year,lsT.size());
     // Compute median or medoid
     var composite;
     if(compositingReducer !== undefined && compositingReducer !== null){
