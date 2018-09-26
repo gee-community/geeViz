@@ -631,7 +631,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
       wrapOffset = 365;
       var y1NDays = 365-startJulian;
       var y2NDays = endJulian;
-      if(y2NDays > y1NDays){yearWithMajority = 1;
+      if(y2NDays > y1NDays){yearWithMajority = 1;}
     }
   var ts = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
