@@ -624,13 +624,18 @@ function exportToAssetWrapper2(imageForExport,assetName,assetPath,
 function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod,compositingReducer){
   var dummyImage = ee.Image(ls.first());
   
-  var ts = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
-    .map(function(year){
-    // Set up dates
-    var wrapOffset = 0;
+  //Set up date wrapping
+  var wrapOffset = 0;
     if (startJulian > endJulian) {
       wrapOffset = 365;
+      var y1NDays = 365-startJulian;
+      var y2NDays = endJulian;
+      
     }
+  var ts = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
+    .map(function(year){
+    
+    // Set up dates
     var startYearT = year-timebuffer;
     var endYearT = year+timebuffer;
     var startDateT = ee.Date.fromYMD(startYearT,1,1).advance(startJulian-1,'day');
