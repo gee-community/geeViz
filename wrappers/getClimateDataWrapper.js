@@ -14,10 +14,8 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 // 1. Specify study area: Study area
 // Can specify a country, provide a fusion table  or asset table (must add 
 // .geometry() after it), or draw a polygon and make studyArea = drawnPolygon
-var states = ee.FeatureCollection('TIGER/2016/States');
-states = states.filter(ee.Filter.inList('NAME',['California'])).union(1000).geometry().buffer(20000);
 
-var studyArea = states;
+var studyArea = geometry;
 
 // 2. Update the startJulian and endJulian variables to indicate your seasonal 
 // constraints. This supports wrapping for tropics and southern hemisphere.
@@ -67,7 +65,7 @@ var exportComposites = true;
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
-var exportPathRoot = 'projects/igde-work/raster-data/DAYMET-Collection';
+var exportPathRoot = 'users/ianhousman/test/changeCollection';
 
 //Specify which bands to export
 //If not sure or want all bands, just set to null
