@@ -610,7 +610,7 @@ function zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,s
         return (img.subtract(blMean)).divide(blStd);
       }).reduce(zReducer).rename(outNames).multiply(10);
       
-      Set up the output
+      // Set up the output
       var outName = ee.String('Z_and_Trend_b').cat(ee.String(blStartYear.int16())).cat(ee.String('_'))
                                   .cat(ee.String(blEndYear.int16())).cat(ee.String('_epoch')).cat(ee.String(ee.Number(epochLength)))
                                   .cat(ee.String('_y')).cat(ee.String(yr.int16())).cat(ee.String('_jd'))
