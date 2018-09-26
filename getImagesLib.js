@@ -1911,9 +1911,9 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
     
   // Prepare dates
   //Wrap the dates if needed
-  if (startJulian > endJulian) {
-    endJulian = endJulian + 365;
-  }
+  // if (startJulian > endJulian) {
+    // endJulian = endJulian + 365;
+  // }
   var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
   var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1,'day');
   print('Start and end dates:', startDate, endDate);
