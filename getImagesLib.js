@@ -1924,7 +1924,7 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
           .filterBounds(studyArea.bounds())
           .filterDate(startDate,endDate)
           .filter(ee.Filter.calendarRange(startJulian,endJulian));
-  print(c)
+  
   // Create composite time series
   var ts = compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,null,compositingReducer);
   
