@@ -24,14 +24,14 @@ var studyArea = states;
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
 var startJulian = 274;
-var endJulian = 60; 
+var endJulian = 273; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
 var startYear = 1980;
-var endYear = 1980;
+var endYear = 1982;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
