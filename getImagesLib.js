@@ -1328,11 +1328,13 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
   
   // Prepare dates
   //Wrap the dates if needed
+  var wrapOffset = 0;
   if (startJulian > endJulian) {
-    endJulian = endJulian + 365;
+    wrapOffset = 365;
   }
+   
   var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
-  var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1,'day');
+  var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day');
   print('Start and end dates:', startDate, endDate);
 
   //Do some error checking
