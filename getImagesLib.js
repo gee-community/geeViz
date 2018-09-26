@@ -678,6 +678,8 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
     return composite.set({'system:time_start':ee.Date.fromYMD(year,6,1).millis(),
                         'startDate':startDateT.millis(),
                         'endDate':endDateT.millis(),
+                        'startJulian':startJulian,
+                        'endJulian':endJulian
     });
   });
   return ee.ImageCollection(ts);
