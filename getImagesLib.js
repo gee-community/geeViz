@@ -626,11 +626,12 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
   
   //Set up date wrapping
   var wrapOffset = 0;
+  var yearWithMajority = 0;
     if (startJulian > endJulian) {
       wrapOffset = 365;
       var y1NDays = 365-startJulian;
       var y2NDays = endJulian;
-      
+      if(y2NDays > y1NDays){yearWithMajority = 1;
     }
   var ts = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
