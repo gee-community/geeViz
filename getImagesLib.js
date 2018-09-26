@@ -688,7 +688,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
                         'startJulian':startJulian,
                         'endJulian':endJulian,
                         'yrOriginal':year,
-                        'yrUsed': year + yearWithMajority;
+                        'yrUsed': year + yearWithMajority
     });
   });
   return ee.ImageCollection(ts);
