@@ -1951,7 +1951,7 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
      
   }
   
-  return ts.select(exportBands);
+  return ts;
   }
 // END FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
