@@ -540,8 +540,9 @@ function getLinearFit(c,bandNames){
   //Return both the model and predicted
   return [model,predicted];
 }
+/////////////////////////////////////////////////////////////////////////
 //Iterate across each time window and do a z-score and trend analysis
-
+//This method does not currently support date wrapping
 function zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJulian,endJulian,
           baselineLength,baselineGap,epochLength,zReducer,useAnnualMedianForTrend,
           exportImages,exportPathRoot,studyArea,scale,crs,transform){
