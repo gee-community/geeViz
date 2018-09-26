@@ -657,7 +657,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
       i = ee.List(i);
       return ee.List.repeat(i.get(0),i.get(1));
     }).flatten();
-    // print('Weighted composite years for year:',year,yearsTT);
+    print('Weighted composite years for year:',year,yearsTT);
     var images = yearsTT.map(function(yr){
       
       // Filter images for given date range
