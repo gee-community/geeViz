@@ -92,7 +92,7 @@ var scale = null;
 var climateSummaries = getImageLib.getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
   timebuffer,weights,compositingReducer,
   exportComposites,exportPathRoot,crs,transform,scale,exportBands);
-
+print(climateSummaries)
 // Map.addLayer(climateSummaries.select(['prcp.*']))
 ////////////////////////////////////////////////////////////////////////////////
 // Load the study region, with a blue outline.
