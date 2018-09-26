@@ -69,6 +69,8 @@ var exportComposites = true;
 //This should be an asset folder, or more ideally, an asset imageCollection
 var exportPathRoot = 'users/ianhousman/test/changeCollection';
 
+//Specify which bands to export
+//If not sure or want all bands, just set to null
 var exportBands = ['prcp.*','tmax.*','tmin.*'];
 
 //CRS- must be provided.  
