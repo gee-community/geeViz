@@ -627,14 +627,20 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
   var ts = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
     // Set up dates
+    var wrapOffset = 0;
+    if (startJulian > endJulian) {
+      wrapOffset = 365;
+    }
     var startYearT = year-timebuffer;
     var endYearT = year+timebuffer;
     var startDateT = ee.Date.fromYMD(startYearT,1,1).advance(startJulian-1,'day');
-    var endDateT = ee.Date.fromYMD(endYearT,1,1).advance(endJulian-1,'day');
-    print(year,startDateT,endDateT)
+    var endDateT = ee.Date.fromYMD(endYearT,1,1).advance(endJulian-1+wrapOffset,'day');
+    
+  
+    print(year,startDateT,endDateT);
     // Filter images for given date range
     var lsT = ls.filterDate(startDateT,endDateT);
-    print(lsT)
+    print(lsT);
     //Fill empty collections
     lsT = fillEmptyCollections(lsT,dummyImage);
     
