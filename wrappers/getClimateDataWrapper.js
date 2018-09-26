@@ -58,7 +58,7 @@ var collectionName = 'NASA/ORNL/DAYMET_V3';
 
 //8. Export params
 //Whether to export composites
-var exportComposites = true;
+var exportComposites = false;
 
 //Set up Names for the export
 var outputName = 'Annual_Mean_Climate';
