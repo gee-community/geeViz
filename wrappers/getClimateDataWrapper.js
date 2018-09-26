@@ -10,7 +10,7 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 // Can specify a country, provide a fusion table  or asset table (must add 
 // .geometry() after it), or draw a polygon and make studyArea = drawnPolygon
 var states = ee.FeatureCollection('TIGER/2016/States');
-states = states.filter(ee.Filter.inList('NAME',['California','Nevada'])).union(1000).geometry().dissolve(1000);
+states = states.filter(ee.Filter.inList('NAME',['California'])).union(1000).geometry().buffer(10000);
 print(states)
 Map.addLayer(states)
 var studyArea = states;
@@ -19,8 +19,8 @@ var studyArea = states;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 200;
-var endJulian = 210; 
+var startJulian = 1;
+var endJulian = 365; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
