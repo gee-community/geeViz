@@ -557,23 +557,23 @@ var julians = ee.List.sequence(startJulian,endJulian-nDays,nDays).getInfo();
 //Iterate across each year and perform analysis
 var zAndTrendCollection = years.map(function(yr){
   yr = ee.Number(yr);
-  print(yr)
-  // //Set up the baseline years
-  // var blStartYear = yr.subtract(baselineLength).subtract(baselineGap);
-  // var blEndYear = yr.subtract(1).subtract(baselineGap);
   
-  // //Set up the trend years
-  // var trendStartYear = yr.subtract(epochLength).add(1);
+  //Set up the baseline years
+  var blStartYear = yr.subtract(baselineLength).subtract(baselineGap);
+  var blEndYear = yr.subtract(1).subtract(baselineGap);
   
-  // //Iterate across the julian dates
-  // return ee.FeatureCollection(julians.map(function(jd){
+  //Set up the trend years
+  var trendStartYear = yr.subtract(epochLength).add(1);
+  
+  //Iterate across the julian dates
+  return ee.FeatureCollection(julians.map(function(jd){
     
-  //   jd = ee.Number(jd);
+    jd = ee.Number(jd);
     
-  //   //Set up the julian date range
-  //   var jdStart = jd;
-  //   var jdEnd = jd.add(nDays);
-    
+    //Set up the julian date range
+    var jdStart = jd;
+    var jdEnd = jd.add(nDays);
+    print(jdStart,jdEnd)
   //   //Get the baseline images
   //   var blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear,blEndYear,'year'))
   //                           .filter(ee.Filter.calendarRange(jdStart,jdEnd));
@@ -636,7 +636,7 @@ var zAndTrendCollection = years.map(function(yr){
   //       'mean',studyArea.bounds(),scale,crs,transform)
   //   }
   //   return out;
-  //   }));
+    }));
   });
 //   zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten());
   
