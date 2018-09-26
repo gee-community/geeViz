@@ -1222,7 +1222,7 @@ collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer
     
     // Get yearly composite
     var composite = collection.filter(ee.Filter.calendarRange(year,year,'year'));
-    composite = ee.Image(composite.first());
+    composite = ee.Image(composite.first()).clip(studyArea);
     
     
     // Add metadata, cast to integer, and export composite
@@ -1244,7 +1244,7 @@ collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer
     // print('Write down the Asset ID:', exportPath);
   
     exportToAssetWrapper(composite,exportName,exportPath,'mean',
-      studyArea,null,crs,transform);
+      studyArea.bounds(),null,crs,transform);
     })
 }
 
