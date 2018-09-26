@@ -631,7 +631,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
     var endYearT = year+timebuffer;
     var startDateT = ee.Date.fromYMD(startYearT,1,1).advance(startJulian-1,'day');
     var endDateT = ee.Date.fromYMD(endYearT,1,1).advance(endJulian-1,'day');
-  
+    print(year,startDateT,endDateT)
     // Filter images for given date range
     var lsT = ls.filterDate(startDateT,endDateT);
     
