@@ -644,11 +644,11 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
     
   
     print(year,startDateT,endDateT);
-    // Filter images for given date range
-    var lsT = ls.filterDate(startDateT,endDateT);
+    // // Filter images for given date range
+    // var lsT = ls.filterDate(startDateT,endDateT);
     
-    //Fill empty collections
-    lsT = fillEmptyCollections(lsT,dummyImage);
+    // //Fill empty collections
+    // lsT = fillEmptyCollections(lsT,dummyImage);
     
     var yearsT = ee.List.sequence(startYearT,endYearT);
     
