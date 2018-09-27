@@ -144,6 +144,8 @@ var nDays = 60;
 //Can be any of ['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','NDSI','tcAngleBG']
 var indexNames = ['NBR','NDVI'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
 
+//Whether each output should be exported to asset
+var exportImages = false;
 
 ////////////////////////////////////
 //Moving window z parameters
