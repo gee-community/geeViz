@@ -163,6 +163,11 @@ var baselineGap = 2;
 //Generally use ee.Reducer.mean() or ee.Reducer.median()
 var zReducer = ee.Reducer.mean();
 
+//Whether to reduce the collection to an annual median stack
+//Since linear regression can be leveraged by outliers, this generally
+//improves the trend analysis, but does get rid of a lot of potentially
+//good data
+var useAnnualMedianForTrend = true;
 ////////////////////////////////////
 //Moving window trend parameters
 
@@ -177,7 +182,7 @@ var epochLength = 5;
 ////////////////////////////////////////////////////////////////////////////////
 //Function Calls
 //Get all images
-var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,indexNames,startYear,endYear,startJulian,endJulian,
+var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
   
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
@@ -190,7 +195,8 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,indexNames,start
 ////////////////////////////////////////////////////////////
 
 
-var zAndTrendCollection = dLib.zAndTrendChangeDetection(allScenes,indexList,nDays,startYear,endYear,startJulian,endJulian,
+var zAndTrendCollection = 
+dLib.zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJulian,endJulian,
           baselineLength,baselineGap,epochLength,zReducer,useAnnualMedianForTrend,
           exportImages,exportPathRoot,studyArea,scale,crs,transform);
 dLib.thresholdZAndTrend(zAndTrendCollection,-5,-0.05,startYear,endYear);
