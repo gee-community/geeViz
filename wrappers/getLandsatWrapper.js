@@ -156,7 +156,10 @@ var lsAndTs = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJul
   timebuffer,weights,compositingMethod,
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
-  cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
+  cloudScoreThresh,cloudScorePctl,
+  cloudScoreThresh,cloudScorePctl,
+  zScoreThresh,shadowSumThresh,
+  contractPixels,dilatePixels,
   correctIllumination,correctScale,
   exportComposites,outputName,exportPathRoot,crs,transform,scale);
 
