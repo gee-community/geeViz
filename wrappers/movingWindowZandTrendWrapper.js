@@ -191,7 +191,7 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 
 
 var zAndTrendCollection = 
-dLib.zAndTrendChangeDetection(scenes,indexList,nDays,startYear,endYear,startJulian,endJulian,
+dLib.zAndTrendChangeDetection(allScenes,indexList,nDays,startYear,endYear,startJulian,endJulian,
           baselineLength,baselineGap,epochLength,zReducer,useAnnualMedianForTrend,
           exportImages,exportPathRoot,studyArea,scale,crs,transform);
 dLib.thresholdZAndTrend(zAndTrendCollection,-5,-0.05,startYear,endYear);
