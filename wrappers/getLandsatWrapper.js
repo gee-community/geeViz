@@ -26,7 +26,7 @@ var endJulian = 250;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2010;
+var startYear = 2005;
 var endYear = 2012;
 
 // 4. Specify an annual buffer to include imagery from the same season 
@@ -156,7 +156,6 @@ var lsAndTs = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJul
   timebuffer,weights,compositingMethod,
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
-  cloudScoreThresh,cloudScorePctl,
   cloudScoreThresh,cloudScorePctl,
   zScoreThresh,shadowSumThresh,
   contractPixels,dilatePixels,
