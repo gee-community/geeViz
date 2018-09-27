@@ -177,7 +177,7 @@ var epochLength = 5;
 ////////////////////////////////////////////////////////////////////////////////
 //Function Calls
 //Get all images
-var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
+var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,indexNames,startYear,endYear,startJulian,endJulian,
   
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
