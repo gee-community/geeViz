@@ -60,10 +60,10 @@ var defringeL5 = true;
 //always have a high cloudScore to reduce comission errors- this takes some time
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
-var applyCloudScore = false;
+var applyCloudScore = true;
 var applyFmaskCloudMask = true;
 
-var applyTDOM = false;
+var applyTDOM = true;
 var applyFmaskCloudShadowMask = true;
 
 var applyFmaskSnowMask = true;
@@ -156,7 +156,9 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
   
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
-  cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels
+  cloudScoreThresh,cloudScorePctl,
+  zScoreThresh,shadowSumThresh,
+  contractPixels,dilatePixels
   ).select(indexNames);
   
 
