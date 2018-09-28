@@ -186,14 +186,14 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     // patchify the remaining disturbance pixels using a minimum mapping unit
   if(mmu > 1){
     print('Applying mmu:',mmu,'to LANDTRENDR heuristic outputs');
-    var mmuPatches = finalDistImg.select(['yod'])           // patchify based on disturbances having the same year of detection
+    function applyMMU(finalDistImg){
+      var mmuPatches = finalDistImg.select(['yod'])           // patchify based on disturbances having the same year of detection
                             .connectedPixelCount(mmu, true) // count the number of pixel in a candidate patch
                             .gte(mmu);                      // are the the number of pixels per candidate patch greater than user-defined minimum mapping unit?
-    finalDistImg = finalDistImg.updateMask(mmuPatches);     // mask the pixels/patches that are less than minimum mapping unit
-    var mmuPatches = finalDistImg.select(['yod'])           // patchify based on disturbances having the same year of detection
-                            .connectedPixelCount(mmu, true) // count the number of pixel in a candidate patch
-                            .gte(mmu);                      // are the the number of pixels per candidate patch greater than user-defined minimum mapping unit?
-    finalDistImg = finalDistImg.updateMask(mmuPatches);
+    return finalDistImg.updateMask(mmuPatches);     // mask the pixels/patches that are less than minimum mapping unit
+    
+    }
+    
     
   } 
   
