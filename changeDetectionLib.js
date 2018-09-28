@@ -184,7 +184,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   finalDistImg3 = finalDistImg3.mask(threshold3).int16(); 
   
   function applyMMU(finalDistImg){
-      var mmuPatches = finalDistImg.select(['yod'])           // patchify based on disturbances having the same year of detection
+      var mmuPatches = finalDistImg.select(['yod.*'])           // patchify based on disturbances having the same year of detection
                             .connectedPixelCount(mmu, true) // count the number of pixel in a candidate patch
                             .gte(mmu);                      // are the the number of pixels per candidate patch greater than user-defined minimum mapping unit?
     return finalDistImg.updateMask(mmuPatches);     // mask the pixels/patches that are less than minimum mapping unit
