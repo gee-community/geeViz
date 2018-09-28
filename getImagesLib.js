@@ -3,8 +3,8 @@
 // Define visualization parameters
 var vizParamsFalse = {
   'min': 0.1, 
-  'max': [0.35,0.45,0.4], 
-  'bands': 'swir2,nir,red', 
+  'max': [0.3,0.4,0.4], 
+  'bands': 'swir1,nir,red', 
   'gamma': 1.6
 };
 
