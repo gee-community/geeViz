@@ -802,6 +802,7 @@ function listToString(list,space){
   if(space === undefined){space = ' '}
   var out = '';
   list.map(function(s){out = out + s.toString()+space});
+  out = out.slice(0,out.length-space.length)
   return out;
 }
 ////////////////////////////////////////////////////////////////////////////////
