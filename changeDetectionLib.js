@@ -200,7 +200,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     finalDistImg3 = applyMMU(finalDistImg3);
     
   } 
-  print(finalDistImg.bandNames());
+  
   return finalDistImg.addBands(finalDistImg2).addBands(finalDistImg3); // return the filtered greatest disturbance attribute image
 };
 //////////////////////////////////////////////////////////////////////////
