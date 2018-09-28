@@ -801,7 +801,7 @@ function illuminationCorrection(img, scale,studyArea){
 function listToString(list,space){
   if(space === undefined){space = ' '}
   var out = '';
-  list.map(function(s){out = out + space+s.toString()});
+  list.map(function(s){out = out + s.toString()+space});
   return out;
 }
 ////////////////////////////////////////////////////////////////////////////////
