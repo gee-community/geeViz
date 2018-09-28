@@ -193,7 +193,9 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     return finalDistImg.updateMask(mmuPatches);     // mask the pixels/patches that are less than minimum mapping unit
     
     }
-    
+    finalDistImg = applyMMU(finalDistImg);
+    finalDistImg2 = applyMMU(finalDistImg2);
+    finalDistImg3 = applyMMU(finalDistImg3);
     
   } 
   
