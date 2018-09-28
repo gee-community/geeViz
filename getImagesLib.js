@@ -798,6 +798,7 @@ function illuminationCorrection(img, scale,studyArea){
     .setMulti(props)
     .set('system:time_start',st);
 }
+//Function for converting an array to a string delimited by the space parameter
 function listToString(list,space){
   if(space === undefined){space = ' '}
   var out = '';
