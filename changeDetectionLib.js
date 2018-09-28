@@ -183,13 +183,19 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   finalDistImg2 = finalDistImg2.mask(threshold2).int16(); 
   finalDistImg3 = finalDistImg3.mask(threshold3).int16(); 
   
-   // patchify the remaining disturbance pixels using a minimum mapping unit
-  // if(mmu > 1){
-  //   var mmuPatches = finalDistImg.select(['yod'])           // patchify based on disturbances having the same year of detection
-  //                           .connectedPixelCount(mmu, true) // count the number of pixel in a candidate patch
-  //                           .gte(mmu);                      // are the the number of pixels per candidate patch greater than user-defined minimum mapping unit?
-  //   finalDistImg = finalDistImg.updateMask(mmuPatches);     // mask the pixels/patches that are less than minimum mapping unit
-  // } 
+    // patchify the remaining disturbance pixels using a minimum mapping unit
+  if(mmu > 1){
+    print('Applying mmu:',mmu,'to LANDTRENDR heuristic outputs');
+    var mmuPatches = finalDistImg.select(['yod'])           // patchify based on disturbances having the same year of detection
+                            .connectedPixelCount(mmu, true) // count the number of pixel in a candidate patch
+                            .gte(mmu);                      // are the the number of pixels per candidate patch greater than user-defined minimum mapping unit?
+    finalDistImg = finalDistImg.updateMask(mmuPatches);     // mask the pixels/patches that are less than minimum mapping unit
+    var mmuPatches = finalDistImg.select(['yod'])           // patchify based on disturbances having the same year of detection
+                            .connectedPixelCount(mmu, true) // count the number of pixel in a candidate patch
+                            .gte(mmu);                      // are the the number of pixels per candidate patch greater than user-defined minimum mapping unit?
+    finalDistImg = finalDistImg.updateMask(mmuPatches);
+    
+  } 
   
   return finalDistImg.addBands(finalDistImg2).addBands(finalDistImg3); // return the filtered greatest disturbance attribute image
 };
@@ -636,7 +642,7 @@ function zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,s
         outName = outName.getInfo();
         var outPath = exportPathRoot + '/' + outName;
           getImageLib.exportToAssetWrapper(out.clip(studyArea),outName,outPath,
-          'mean',studyArea.bounds(),scale,crs,transform)
+          'mean',studyArea.bounds(),scale,crs,transform);
       }
       return out;
       }));
