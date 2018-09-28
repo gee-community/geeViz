@@ -194,6 +194,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     
     }
     finalDistImg = applyMMU(finalDistImg);
+    print(finalDistImg.bandNames());
     finalDistImg2 = applyMMU(finalDistImg2);
     finalDistImg3 = applyMMU(finalDistImg3);
     
