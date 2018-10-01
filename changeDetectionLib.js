@@ -555,8 +555,11 @@ function getLinearFit(c,bandNames){
 //This method does not currently support date wrapping
 function zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJulian,endJulian,
           baselineLength,baselineGap,epochLength,zReducer,useAnnualMedianForTrend,
-          exportImages,exportPathRoot,studyArea,scale,crs,transform){
-
+          exportImages,exportPathRoot,studyArea,scale,crs,transform,
+          minBaselineObservationsNeeded){
+  if(minBaselineObservationsNeeded === null || minBaselineObservationsNeeded === undefined){
+    minBaselineObservationsNeeded = 30;
+  }
   //House-keeping
   allScenes = allScenes.select(indexNames);
   var dummyScene = ee.Image(allScenes.first());
