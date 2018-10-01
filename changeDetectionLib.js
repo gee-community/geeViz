@@ -596,6 +596,7 @@ function zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,s
       
       //Mask out where not enough observations
       var blCounts = blImages.count();
+      Map.addLayer(blCounts)
       blImages = blImages.map(function(img){return img.updateMask(blCounts.gte(minBaselineObservationsNeeded))});
       
       //Get the z analysis images
