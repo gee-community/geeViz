@@ -594,6 +594,8 @@ function zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,s
                               .filter(ee.Filter.calendarRange(jdStart,jdEnd));
       blImages = getImageLib.fillEmptyCollections(blImages,dummyScene);
       
+      blCounts = blImages.count();
+      blImages.map(function(img){return img.updateMask(blCounts.gte(minBaselineObservationsNeeded))})
       
       //Get the z analysis images
       var analysisImages = allScenes.filter(ee.Filter.calendarRange(yr,yr,'year'))
