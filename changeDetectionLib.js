@@ -118,7 +118,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   var vertexMask = lt.arraySlice(0, 3, 4); // get the vertex - yes(1)/no(0) dimension
   var vertices = lt.arrayMask(vertexMask); // convert the 0's to masked
   var numberOfVertices = vertices.arrayLength(0);
-  Map.addLayer(numberOfVertices)
+  Map.addLayer(numberOfVertices,{min:2,max:4},'number of vertices',false)
   // construct segment start and end point years and index values
   var left = vertices.arraySlice(1, 0, -1);    // slice out the vertices as the start of segments
   var right = vertices.arraySlice(1, 1, null); // slice out the vertices as the end of segments
