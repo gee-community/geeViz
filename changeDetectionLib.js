@@ -147,10 +147,10 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
                                   tempDistImg.arraySlice(0,2,3).arrayProject([1]).arrayFlatten([['dur']]),     // slice out the disturbance duration and re-arrange to an image band
                                   tempDistImg.arraySlice(0,3,4).arrayProject([1]).arrayFlatten([['preval']])); // slice out the pre-disturbance spectral value and re-arrange to an image band
   
-  var finalDistImg2 = ee.Image.cat(tempDistImg2.arraySlice(0,0,1).arrayProject([1]).arrayFlatten([['yod2']]),     // slice out year of disturbance detection and re-arrange to an image band 
-                                  tempDistImg2.arraySlice(0,1,2).arrayProject([1]).arrayFlatten([['mag2']]),     // slice out the disturbance magnitude and re-arrange to an image band 
-                                  tempDistImg2.arraySlice(0,2,3).arrayProject([1]).arrayFlatten([['dur2']]),     // slice out the disturbance duration and re-arrange to an image band
-                                  tempDistImg2.arraySlice(0,3,4).arrayProject([1]).arrayFlatten([['preval2']])); // slice out the pre-disturbance spectral value and re-arrange to an image band
+  // var finalDistImg2 = ee.Image.cat(tempDistImg2.arraySlice(0,0,1).arrayProject([1]).arrayFlatten([['yod2']]),     // slice out year of disturbance detection and re-arrange to an image band 
+  //                                 tempDistImg2.arraySlice(0,1,2).arrayProject([1]).arrayFlatten([['mag2']]),     // slice out the disturbance magnitude and re-arrange to an image band 
+  //                                 tempDistImg2.arraySlice(0,2,3).arrayProject([1]).arrayFlatten([['dur2']]),     // slice out the disturbance duration and re-arrange to an image band
+  //                                 tempDistImg2.arraySlice(0,3,4).arrayProject([1]).arrayFlatten([['preval2']])); // slice out the pre-disturbance spectral value and re-arrange to an image band
   
   // var finalDistImg3 = ee.Image.cat(tempDistImg3.arraySlice(0,0,1).arrayProject([1]).arrayFlatten([['yod3']]),     // slice out year of disturbance detection and re-arrange to an image band 
   //                                 tempDistImg3.arraySlice(0,1,2).arrayProject([1]).arrayFlatten([['mag3']]),     // slice out the disturbance magnitude and re-arrange to an image band 
@@ -165,12 +165,13 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
                     .and(finalDistImg.select(['mag']).gt(0))                    // and is greater than 0  
                     .and(finalDistImg.select(['preval']).gt(params.pre_val));   // and is greater than pre-disturbance spectral index value threshold
   
-  var threshold2 = ee.Image(finalDistImg2.select(['dur2']))                        // get the disturbance band out to apply duration dynamic disturbance magnitude threshold 
-                    .multiply((params.tree_loss20 - params.tree_loss1) / 19.0)  // ...
-                    .add(params.tree_loss1)                                     //    ...interpolate the magnitude threshold over years between a 1-year mag thresh and a 20-year mag thresh
-                    .lte(finalDistImg2.select(['mag2']))                          // ...is disturbance less then equal to the interpolated, duration dynamic disturbance magnitude threshold 
-                    .and(finalDistImg2.select(['mag2']).gt(0))                    // and is greater than 0  
-                    .and(finalDistImg2.select(['preval2']).gt(params.pre_val));   // and is greater than pre-disturbance spectral index value threshold
+  // var threshold2 = ee.Image(finalDistImg2.select(['dur2']))                        // get the disturbance band out to apply duration dynamic disturbance magnitude threshold 
+  //                   .multiply((params.tree_loss20 - params.tree_loss1) / 19.0)  // ...
+  //                   .add(params.tree_loss1)                                     //    ...interpolate the magnitude threshold over years between a 1-year mag thresh and a 20-year mag thresh
+  //                   .lte(finalDistImg2.select(['mag2']))                          // ...is disturbance less then equal to the interpolated, duration dynamic disturbance magnitude threshold 
+  //                   .and(finalDistImg2.select(['mag2']).gt(0))                    // and is greater than 0  
+  //                   .and(finalDistImg2.select(['preval2']).gt(params.pre_val));   // and is greater than pre-disturbance spectral index value threshold
+  
   // var threshold3 = ee.Image(finalDistImg3.select(['dur3']))                        // get the disturbance band out to apply duration dynamic disturbance magnitude threshold 
   //                   .multiply((params.tree_loss20 - params.tree_loss1) / 19.0)  // ...
   //                   .add(params.tree_loss1)                                     //    ...interpolate the magnitude threshold over years between a 1-year mag thresh and a 20-year mag thresh
@@ -180,7 +181,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   
   // apply the filter mask
   finalDistImg = finalDistImg.mask(threshold).int16(); 
-  finalDistImg2 = finalDistImg2.mask(threshold2).int16(); 
+  // finalDistImg2 = finalDistImg2.mask(threshold2).int16(); 
   // finalDistImg3 = finalDistImg3.mask(threshold3).int16(); 
   
   function applyMMU(finalDistImg){
@@ -196,12 +197,12 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     
     finalDistImg = applyMMU(finalDistImg);
     
-    finalDistImg2 = applyMMU(finalDistImg2);
+    // finalDistImg2 = applyMMU(finalDistImg2);
     // finalDistImg3 = applyMMU(finalDistImg3);
     
   } 
   
-  return finalDistImg.addBands(finalDistImg2)//.addBands(finalDistImg3); // return the filtered greatest disturbance attribute image
+  return finalDistImg//.addBands(finalDistImg2)//.addBands(finalDistImg3); // return the filtered greatest disturbance attribute image
 };
 //////////////////////////////////////////////////////////////////////////
 //Helper to multiply image
