@@ -455,7 +455,7 @@ function addSAVIandEVI(img){
       'NIR': img.select('nir'),
       'RED': img.select('red')
   }).float();
-  
+
   
   ////////////////////////////////////////////////////////////////////////////////
   //NIRv: Badgley, G., Field, C. B., & Berry, J. A. (2017). Canopy near-infrared reflectance and terrestrial photosynthesis. Science Advances, 3, e1602244.
