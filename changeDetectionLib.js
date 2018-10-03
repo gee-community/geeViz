@@ -142,13 +142,13 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   var distImgSorted = distImg.arraySort(mag.multiply(-1));    
   
   // slice out the first (greatest) delta
-  var tempDistImg = distImgSorted.arraySlice(1, 0, 1).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));
+  var tempDistImg1 = distImgSorted.arraySlice(1, 0, 1).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));
   var tempDistImg2 = distImgSorted.arraySlice(1, 1, 2).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));
   var tempDistImg3 = distImgSorted.arraySlice(1, 2, 3).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));
   
  
   // make an image from the array of attributes for the greatest disturbance
-  var finalDistImg = tempDistImg.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
+  var finalDistImg1 = tempDistImg.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
   var finalDistImg2 = tempDistImg2.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
   var finalDistImg3 = tempDistImg3.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
   
@@ -174,7 +174,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     // finalDistImg = finalDistImg.where(threshold.not(),-9999)
     return finalDistImg.updateMask(threshold); 
   }
-  finalDistImg = filterDisturbances(finalDistImg);
+  finalDistImg1 = filterDisturbances(finalDistImg1);
   finalDistImg2 = filterDisturbances(finalDistImg2);
   finalDistImg3 = filterDisturbances(finalDistImg3);
 
@@ -190,13 +190,13 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   if(mmu > 1){
     print('Applying mmu:',mmu,'to LANDTRENDR heuristic outputs');
     
-    finalDistImg = applyMMU(finalDistImg);
+    finalDistImg1 = applyMMU(finalDistImg1);
     finalDistImg2 = applyMMU(finalDistImg2);
     finalDistImg3 = applyMMU(finalDistImg3);
     
   } 
   
-  return finalDistImg.addBands(finalDistImg2)//.addBands(finalDistImg3); // return the filtered greatest disturbance attribute image
+  return finalDistImg1.addBands(finalDistImg2).addBands(finalDistImg3); // return the filtered greatest disturbance attribute image
 };
 //////////////////////////////////////////////////////////////////////////
 //Helper to multiply image
