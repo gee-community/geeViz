@@ -197,7 +197,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     
   } 
   
-  return finalDistImg//.addBands(finalDistImg2)//.addBands(finalDistImg3); // return the filtered greatest disturbance attribute image
+  return finalDistImg2//.addBands(finalDistImg2)//.addBands(finalDistImg3); // return the filtered greatest disturbance attribute image
 };
 //////////////////////////////////////////////////////////////////////////
 //Helper to multiply image
