@@ -177,7 +177,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     return finalDistImg//.updateMask(threshold).int16(); 
   }
   finalDistImg = filterDisturbances(finalDistImg);
-  // finalDistImg2 = filterDisturbances(finalDistImg2);
+  finalDistImg2 = filterDisturbances(finalDistImg2);
  
   
   function applyMMU(finalDistImg){
