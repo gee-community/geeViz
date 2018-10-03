@@ -1649,7 +1649,18 @@ var julianDay = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 
 var bandDirection = ee.Dictionary({'green':1,'nir':1,'NDVI':1,'NDMI':1,'NDSI':1,'VIG':1,'NBR':1,'tcAngleBG':1,'greenness':1,'wetness':1,
                     'blue':-1,'red':-1,'swir1':-1,'swir2':-1,'brightness':-1,
                     'SAVI':-1,'EVI':-1
-})
+});
+var changeDirDict = {
+"blue":1,"green":-1,"red":1,"nir":-1,"swir1":1,"swir2":1,"temp":1,
+"NDVI":-1,"NBR":-1,"NDMI":-1,"NDSI":1,
+"brightness":1,"greenness":-1,"wetness":-1,"fourth":-1,"fifth":1,"sixth":-1,
+
+"ND_blue_green":-1,"ND_blue_red":-1,"ND_blue_nir":1,"ND_blue_swir1":-1,"ND_blue_swir2":-1,
+"ND_green_red":-1,"ND_green_nir":1,"ND_green_swir1":-1,"ND_green_swir2":-1,"ND_red_swir1":-1,
+"ND_red_swir2":-1,"ND_nir_red":-1,"ND_nir_swir1":-1,"ND_nir_swir2":-1,"ND_swir1_swir2":-1,
+"R_swir1_nir":1,"R_red_swir1":-1,"EVI":-1,"SAVI":-1,"IBI":1,
+"tcAngleBG":-1,"tcAngleGW":-1,"tcAngleBW":-1,"tcDistBG":1,"tcDistGW":1,"tcDistBW":1
+};
 //Function for getting the date of the peak of veg vigor- can handle bands negatively correlated to veg in
 //bandDirection dictionary above
 function getPeakDate(coeffs,peakDirection){
