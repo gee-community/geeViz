@@ -118,6 +118,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   var vertexMask = lt.arraySlice(0, 3, 4); // get the vertex - yes(1)/no(0) dimension
   var vertices = lt.arrayMask(vertexMask); // convert the 0's to masked
   var dummy = vertices.arraySlice(1,-1,null);
+  vertices = vertices.arrayCat(dummy,1);
   Map.addLayer(dummy,{},'dummy',false);
   // var numberOfVertices = vertexMask.arrayReduce(ee.Reducer.sum(),[1]).arrayProject([1]).arrayFlatten([['vertexCount']]);
   // var secondMask = numberOfVertices.gte(3);
