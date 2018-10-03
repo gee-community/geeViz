@@ -198,7 +198,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   if(mmu > 1){
     print('Applying mmu:',mmu,'to LANDTRENDR heuristic outputs');
     
-    finalDistImg = applyMMU(finalDistImg);
+    // finalDistImg = applyMMU(finalDistImg);
     // finalDistImg2 = applyMMU(finalDistImg2);
     // finalDistImg3 = applyMMU(finalDistImg3);
     
