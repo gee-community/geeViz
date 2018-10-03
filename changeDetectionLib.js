@@ -148,7 +148,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   
  
   // make an image from the array of attributes for the greatest disturbance
-  var finalDistImg1 = tempDistImg.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
+  var finalDistImg1 = tempDistImg1.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
   var finalDistImg2 = tempDistImg2.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
   var finalDistImg3 = tempDistImg3.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
   
