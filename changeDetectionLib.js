@@ -139,7 +139,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   var distImgSorted = distImg.arraySort(mag.multiply(-1));    
   // slice out the first (greatest) delta
   var tempDistImg = distImgSorted.arraySlice(1, 0, 1).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));                                      // get the first segment in the sorted array
-  var distImgSorted2  = distImgSorted.updateMask(distImg.gte(3))
+  var distImgSorted2  = distImgSorted.updateMask(numberOfVertices.gte(3))
   var tempDistImg2 = distImgSorted2.arraySlice(1, 1, 2).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));                                      // get the first segment in the sorted array
   // var tempDistImg3 = distImgSorted.arraySlice(1, 2, 3).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));                                      // get the first segment in the sorted array
   
