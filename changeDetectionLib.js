@@ -117,11 +117,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   // select only the vertices that represents a change
   var vertexMask = lt.arraySlice(0, 3, 4); // get the vertex - yes(1)/no(0) dimension
   var vertices = lt.arrayMask(vertexMask); // convert the 0's to masked
-  // var dummy = vertices.arraySlice(1,-1,null);
-  // vertices = vertices.arrayCat(dummy.add(1),1);
-  // vertices = vertices.arrayCat(dummy.add(1),1);
-  // vertices = vertices.unmask()
-  Map.addLayer(vertices,{},'vertices',false);
+ 
 
   // var numberOfVertices = vertexMask.arrayReduce(ee.Reducer.sum(),[1]).arrayProject([1]).arrayFlatten([['vertexCount']]);
   // var secondMask = numberOfVertices.gte(3);
@@ -149,6 +145,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   // Map.addLayer(distImgSorted);
   var tempDistImg = distImgSorted.arraySlice(1, 0, 1).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));
   var tempDistImg2 = distImgSorted.arraySlice(1, 1, 2).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));
+  var tempDistImg3 = distImgSorted.arraySlice(1, 2, 3).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));
   
   //Find null pixels
   // var l = tempDistImg2.arrayLength(0);
@@ -166,6 +163,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   //                                 tempDistImg.arraySlice(0,3,4).arrayProject([1]).arrayFlatten([['preval']])); // slice out the pre-disturbance spectral value and re-arrange to an image band
   var finalDistImg = tempDistImg.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
   var finalDistImg2 = tempDistImg2.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
+  var finalDistImg3 = tempDistImg3.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
   
   // Map.addLayer(finalDistImg,{},'t',false);
   // var finalDistImg2 = ee.Image.cat(tempDistImg2.arraySlice(0,0,1).arrayProject([1]).arrayFlatten([['yod2']]),     // slice out year of disturbance detection and re-arrange to an image band 
@@ -186,12 +184,13 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
           .lte(finalDistImg.select(['mag']))                          // ...is disturbance less then equal to the interpolated, duration dynamic disturbance magnitude threshold 
           .and(finalDistImg.select(['mag']).gt(0))                    // and is greater than 0  
           .and(finalDistImg.select(['preval']).gt(params.pre_val)); 
-    finalDistImg = finalDistImg.where(threshold.not(),-9999)
-    return finalDistImg//.updateMask(threshold); 
+    // finalDistImg = finalDistImg.where(threshold.not(),-9999)
+    return finalDistImg.updateMask(threshold); 
   }
   finalDistImg = filterDisturbances(finalDistImg);
   finalDistImg2 = filterDisturbances(finalDistImg2);
-  Map.addLayer(finalDistImg2,{},'finalDistImg2',false);
+  finalDistImg3 = filterDisturbances(finalDistImg3);
+
   
   function applyMMU(finalDistImg){
       var mmuPatches = finalDistImg.select(['yod.*'])           // patchify based on disturbances having the same year of detection
@@ -204,9 +203,9 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   if(mmu > 1){
     print('Applying mmu:',mmu,'to LANDTRENDR heuristic outputs');
     
-    // finalDistImg = applyMMU(finalDistImg);
-    // finalDistImg2 = applyMMU(finalDistImg2);
-    // finalDistImg3 = applyMMU(finalDistImg3);
+    finalDistImg = applyMMU(finalDistImg);
+    finalDistImg2 = applyMMU(finalDistImg2);
+    finalDistImg3 = applyMMU(finalDistImg3);
     
   } 
   
