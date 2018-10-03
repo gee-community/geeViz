@@ -152,16 +152,6 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   var finalDistImg2 = tempDistImg2.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
   var finalDistImg3 = tempDistImg3.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
   
-  // Map.addLayer(finalDistImg,{},'t',false);
-  // var finalDistImg2 = ee.Image.cat(tempDistImg2.arraySlice(0,0,1).arrayProject([1]).arrayFlatten([['yod2']]),     // slice out year of disturbance detection and re-arrange to an image band 
-  //                                 tempDistImg2.arraySlice(0,1,2).arrayProject([1]).arrayFlatten([['mag2']]),     // slice out the disturbance magnitude and re-arrange to an image band 
-  //                                 tempDistImg2.arraySlice(0,2,3).arrayProject([1]).arrayFlatten([['dur2']]),     // slice out the disturbance duration and re-arrange to an image band
-  //                                 tempDistImg2.arraySlice(0,3,4).arrayProject([1]).arrayFlatten([['preval2']])); // slice out the pre-disturbance spectral value and re-arrange to an image band
-  
-  // var finalDistImg3 = ee.Image.cat(tempDistImg3.arraySlice(0,0,1).arrayProject([1]).arrayFlatten([['yod3']]),     // slice out year of disturbance detection and re-arrange to an image band 
-  //                                 tempDistImg3.arraySlice(0,1,2).arrayProject([1]).arrayFlatten([['mag3']]),     // slice out the disturbance magnitude and re-arrange to an image band 
-  //                                 tempDistImg3.arraySlice(0,2,3).arrayProject([1]).arrayFlatten([['dur3']]),     // slice out the disturbance duration and re-arrange to an image band
-  //                                 tempDistImg3.arraySlice(0,3,4).arrayProject([1]).arrayFlatten([['preval3']])); // slice out the pre-disturbance spectral value and re-arrange to an image band
   
   // filter out disturbances based on user settings
   function filterDisturbances(finalDistImg){
