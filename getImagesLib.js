@@ -1755,7 +1755,7 @@ function getPhaseAmplitudePeak(coeffs,t0,t1){
       var intercept = modelCoeffs.select('.*_intercept');
       var harmCoeffs = modelCoeffs.select('.*_200_year');
       var outName = ee.String(ee.String(pm.get(1)).split('_').get(0));
-      var sign = changeDirDict.get(outName);
+      var sign = ee.Dictionary(changeDirDict).get(outName);
       
  
   
