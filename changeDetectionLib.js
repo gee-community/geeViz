@@ -242,7 +242,7 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   
   //----- RUN LANDTRENDR -----
   var ltCollection = processedComposites.select([indexName]).map(function(img){
-     return unmask(multBands(img,distDir,1),-32768);
+     return multBands(img,distDir,1).unmask(-32768);
   });
   // Map.addLayer(ltCollection,{},'ltCollection',false);
   run_params.timeSeries = ltCollection;               // add LT collection to the segmentation run parameter object
