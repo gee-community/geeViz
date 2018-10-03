@@ -120,7 +120,8 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   var dummy = vertices.arraySlice(1,-1,null);
   vertices = vertices.arrayCat(dummy.add(1),1);
   vertices = vertices.arrayCat(dummy.add(1),1);
-  
+  Map.addLayer(vertices,{},'vertices',false);
+
   // var numberOfVertices = vertexMask.arrayReduce(ee.Reducer.sum(),[1]).arrayProject([1]).arrayFlatten([['vertexCount']]);
   // var secondMask = numberOfVertices.gte(3);
   // var thirdMask = numberOfVertices.gte(4);
@@ -136,8 +137,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   var dur = endYear.subtract(startYear);       // subtract the segment start year from the segment end year to calculate the duration of segments 
   var mag = endVal.subtract(startVal);         // substract the segment start index value from the segment end index value to calculate the delta of segments 
 
-  Map.addLayer(dur,{},'tempDistImg2',false);
-
+  
   // concatenate segment start year, delta, duration, and starting spectral index value to an array 
   var distImg = ee.Image.cat([startYear.add(1), mag, dur, startVal.multiply(distDir)]).toArray(0); // make an image of segment attributes - multiply by the distDir parameter to re-orient the spectral index if it was flipped for segmentation - do it here so that the subtraction to calculate segment delta in the above line is consistent - add 1 to the detection year, because the vertex year is not the first year that change is detected, it is the following year
  
