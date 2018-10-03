@@ -2047,3 +2047,4 @@ exports.getAreaUnderCurve = getAreaUnderCurve;
 
 exports.getClimateWrapper = getClimateWrapper;
 exports.exportCollection = exportCollection;
+exports.changeDirDict = changeDirDict;
