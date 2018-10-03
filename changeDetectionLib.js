@@ -140,7 +140,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   // slice out the first (greatest) delta
   var tempDistImg = distImgSorted.arraySlice(1, 0, 1).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));                                      // get the first segment in the sorted array
   // var distImgSorted2  = distImgSorted.updateMask(numberOfVertices.gte(3))
-  // var tempDistImg2 = distImgSorted.arraySlice(1, 1, 2).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));                                      // get the first segment in the sorted array
+  var tempDistImg2 = distImgSorted.arraySlice(1, 1, 2).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));                                      // get the first segment in the sorted array
   // // var tempDistImg3 = distImgSorted.arraySlice(1, 2, 3).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));                                      // get the first segment in the sorted array
   
   // make an image from the array of attributes for the greatest disturbance
@@ -149,6 +149,8 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   //                                 tempDistImg.arraySlice(0,2,3).arrayProject([1]).arrayFlatten([['dur']]),     // slice out the disturbance duration and re-arrange to an image band
   //                                 tempDistImg.arraySlice(0,3,4).arrayProject([1]).arrayFlatten([['preval']])); // slice out the pre-disturbance spectral value and re-arrange to an image band
   var finalDistImg = tempDistImg.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
+  var finalDistImg2 = tempDistImg2.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
+  
   Map.addLayer(finalDistImg,{},'t',false);
   // var finalDistImg2 = ee.Image.cat(tempDistImg2.arraySlice(0,0,1).arrayProject([1]).arrayFlatten([['yod2']]),     // slice out year of disturbance detection and re-arrange to an image band 
   //                                 tempDistImg2.arraySlice(0,1,2).arrayProject([1]).arrayFlatten([['mag2']]),     // slice out the disturbance magnitude and re-arrange to an image band 
@@ -161,6 +163,14 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   //                                 tempDistImg3.arraySlice(0,3,4).arrayProject([1]).arrayFlatten([['preval3']])); // slice out the pre-disturbance spectral value and re-arrange to an image band
   
   // filter out disturbances based on user settings
+  function filterDisturbances(finalDistImg){
+    return ee.Image(finalDistImg.select(['dur']))                        // get the disturbance band out to apply duration dynamic disturbance magnitude threshold 
+          .multiply((params.tree_loss20 - params.tree_loss1) / 19.0)  // ...
+          .add(params.tree_loss1)                                     //    ...interpolate the magnitude threshold over years between a 1-year mag thresh and a 20-year mag thresh
+          .lte(finalDistImg.select(['mag']))                          // ...is disturbance less then equal to the interpolated, duration dynamic disturbance magnitude threshold 
+          .and(finalDistImg.select(['mag']).gt(0))                    // and is greater than 0  
+          .and(finalDistImg.select(['preval']).gt(params.pre_val)); 
+  }
   var threshold = ee.Image(finalDistImg.select(['dur']))                        // get the disturbance band out to apply duration dynamic disturbance magnitude threshold 
                     .multiply((params.tree_loss20 - params.tree_loss1) / 19.0)  // ...
                     .add(params.tree_loss1)                                     //    ...interpolate the magnitude threshold over years between a 1-year mag thresh and a 20-year mag thresh
@@ -168,12 +178,12 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
                     .and(finalDistImg.select(['mag']).gt(0))                    // and is greater than 0  
                     .and(finalDistImg.select(['preval']).gt(params.pre_val));   // and is greater than pre-disturbance spectral index value threshold
   
-  // var threshold2 = ee.Image(finalDistImg2.select(['dur2']))                        // get the disturbance band out to apply duration dynamic disturbance magnitude threshold 
-  //                   .multiply((params.tree_loss20 - params.tree_loss1) / 19.0)  // ...
-  //                   .add(params.tree_loss1)                                     //    ...interpolate the magnitude threshold over years between a 1-year mag thresh and a 20-year mag thresh
-  //                   .lte(finalDistImg2.select(['mag2']))                          // ...is disturbance less then equal to the interpolated, duration dynamic disturbance magnitude threshold 
-  //                   .and(finalDistImg2.select(['mag2']).gt(0))                    // and is greater than 0  
-  //                   .and(finalDistImg2.select(['preval2']).gt(params.pre_val));   // and is greater than pre-disturbance spectral index value threshold
+  var threshold2 = ee.Image(finalDistImg2.select(['dur2']))                        // get the disturbance band out to apply duration dynamic disturbance magnitude threshold 
+                    .multiply((params.tree_loss20 - params.tree_loss1) / 19.0)  // ...
+                    .add(params.tree_loss1)                                     //    ...interpolate the magnitude threshold over years between a 1-year mag thresh and a 20-year mag thresh
+                    .lte(finalDistImg2.select(['mag2']))                          // ...is disturbance less then equal to the interpolated, duration dynamic disturbance magnitude threshold 
+                    .and(finalDistImg2.select(['mag2']).gt(0))                    // and is greater than 0  
+                    .and(finalDistImg2.select(['preval2']).gt(params.pre_val));   // and is greater than pre-disturbance spectral index value threshold
   
   // var threshold3 = ee.Image(finalDistImg3.select(['dur3']))                        // get the disturbance band out to apply duration dynamic disturbance magnitude threshold 
   //                   .multiply((params.tree_loss20 - params.tree_loss1) / 19.0)  // ...
