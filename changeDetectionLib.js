@@ -139,7 +139,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   var distImgSorted = distImg.arraySort(mag.multiply(-1));    
   // slice out the first (greatest) delta
   
-  Map.addLayer(distImgSorted);
+  // Map.addLayer(distImgSorted);
   var tempDistImg = distImgSorted.arraySlice(1, 0, 1)//.unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));
   
   // get the first segment in the sorted array
