@@ -171,20 +171,8 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
           .and(finalDistImg.select(['mag']).gt(0))                    // and is greater than 0  
           .and(finalDistImg.select(['preval']).gt(params.pre_val)); 
   }
-  var threshold = ee.Image(finalDistImg.select(['dur']))                        // get the disturbance band out to apply duration dynamic disturbance magnitude threshold 
-                    .multiply((params.tree_loss20 - params.tree_loss1) / 19.0)  // ...
-                    .add(params.tree_loss1)                                     //    ...interpolate the magnitude threshold over years between a 1-year mag thresh and a 20-year mag thresh
-                    .lte(finalDistImg.select(['mag']))                          // ...is disturbance less then equal to the interpolated, duration dynamic disturbance magnitude threshold 
-                    .and(finalDistImg.select(['mag']).gt(0))                    // and is greater than 0  
-                    .and(finalDistImg.select(['preval']).gt(params.pre_val));   // and is greater than pre-disturbance spectral index value threshold
-  
-  var threshold2 = ee.Image(finalDistImg2.select(['dur2']))                        // get the disturbance band out to apply duration dynamic disturbance magnitude threshold 
-                    .multiply((params.tree_loss20 - params.tree_loss1) / 19.0)  // ...
-                    .add(params.tree_loss1)                                     //    ...interpolate the magnitude threshold over years between a 1-year mag thresh and a 20-year mag thresh
-                    .lte(finalDistImg2.select(['mag2']))                          // ...is disturbance less then equal to the interpolated, duration dynamic disturbance magnitude threshold 
-                    .and(finalDistImg2.select(['mag2']).gt(0))                    // and is greater than 0  
-                    .and(finalDistImg2.select(['preval2']).gt(params.pre_val));   // and is greater than pre-disturbance spectral index value threshold
-  
+  var threshold1 = filterDisturbances(finalDistImg)
+  var threshold2 = filterDisturbances(finalDistImg2)
   // var threshold3 = ee.Image(finalDistImg3.select(['dur3']))                        // get the disturbance band out to apply duration dynamic disturbance magnitude threshold 
   //                   .multiply((params.tree_loss20 - params.tree_loss1) / 19.0)  // ...
   //                   .add(params.tree_loss1)                                     //    ...interpolate the magnitude threshold over years between a 1-year mag thresh and a 20-year mag thresh
