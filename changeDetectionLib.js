@@ -160,8 +160,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
           .add(params.tree_loss1)                                     //    ...interpolate the magnitude threshold over years between a 1-year mag thresh and a 20-year mag thresh
           .lte(finalDistImg.select(['mag']))                          // ...is disturbance less then equal to the interpolated, duration dynamic disturbance magnitude threshold 
           .and(finalDistImg.select(['mag']).gt(0))                    // and is greater than 0  
-          .and(finalDistImg.select(['preval']).gt(params.pre_val)); 
-    // finalDistImg = finalDistImg.where(threshold.not(),-9999)
+          .and(finalDistImg.select(['preval']).gt(params.pre_val));
     return finalDistImg.updateMask(threshold); 
   }
   finalDistImg1 = filterDisturbances(finalDistImg1);
