@@ -160,7 +160,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   //                                 tempDistImg.arraySlice(0,3,4).arrayProject([1]).arrayFlatten([['preval']])); // slice out the pre-disturbance spectral value and re-arrange to an image band
   var finalDistImg = tempDistImg.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
   var finalDistImg2 = tempDistImg2.arrayProject([0]).arrayFlatten([['yod','mag','dur','preval']]);
-  Map.addLayer(finalDistImg2)
+  
   // Map.addLayer(finalDistImg,{},'t',false);
   // var finalDistImg2 = ee.Image.cat(tempDistImg2.arraySlice(0,0,1).arrayProject([1]).arrayFlatten([['yod2']]),     // slice out year of disturbance detection and re-arrange to an image band 
   //                                 tempDistImg2.arraySlice(0,1,2).arrayProject([1]).arrayFlatten([['mag2']]),     // slice out the disturbance magnitude and re-arrange to an image band 
@@ -185,7 +185,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   }
   finalDistImg = filterDisturbances(finalDistImg);
   finalDistImg2 = filterDisturbances(finalDistImg2);
- 
+  Map.addLayer(finalDistImg2,{},'finalDistImg2',false);
   
   function applyMMU(finalDistImg){
       var mmuPatches = finalDistImg.select(['yod.*'])           // patchify based on disturbances having the same year of detection
