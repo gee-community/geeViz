@@ -176,7 +176,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     finalDistImg = finalDistImg.where(threshold.not(),-9999)
     return finalDistImg//.updateMask(threshold).int16(); 
   }
-  // finalDistImg = filterDisturbances(finalDistImg);
+  finalDistImg = filterDisturbances(finalDistImg);
   // finalDistImg2 = filterDisturbances(finalDistImg2);
  
   
@@ -197,7 +197,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     
   } 
   
-  return finalDistImg2//.addBands(finalDistImg2)//.addBands(finalDistImg3); // return the filtered greatest disturbance attribute image
+  return finalDistImg//.addBands(finalDistImg2)//.addBands(finalDistImg3); // return the filtered greatest disturbance attribute image
 };
 //////////////////////////////////////////////////////////////////////////
 //Helper to multiply image
