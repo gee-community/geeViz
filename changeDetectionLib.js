@@ -188,13 +188,12 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     print('Applying mmu:',mmu,'to LANDTRENDR heuristic outputs');
     
     finalDistImg = applyMMU(finalDistImg);
-    
-    // finalDistImg2 = applyMMU(finalDistImg2);
+    finalDistImg2 = applyMMU(finalDistImg2);
     // finalDistImg3 = applyMMU(finalDistImg3);
     
   } 
   
-  return finalDistImg//.addBands(finalDistImg2)//.addBands(finalDistImg3); // return the filtered greatest disturbance attribute image
+  return finalDistImg.addBands(finalDistImg2)//.addBands(finalDistImg3); // return the filtered greatest disturbance attribute image
 };
 //////////////////////////////////////////////////////////////////////////
 //Helper to multiply image
