@@ -145,8 +145,8 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   var tempDistImg = distImgSorted.arraySlice(1, 0, 1).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));
   var tempDistImg2 = distImgSorted.arraySlice(1, 1, 2).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));
   //Find null pixels
-  var l = tempDistImg2.arrayLength(0);
-  Map.addLayer(l,{},'l',false);
+  // var l = tempDistImg2.arrayLength(0);
+  // Map.addLayer(l,{},'l',false);
   // get the first segment in the sorted array
   // var distImgSorted2  = distImgSorted.updateMask(numberOfVertices.gte(3))
   // var tempDistImg2 = distImgSorted.arraySlice(1, 1, 2)//.unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));     
@@ -183,8 +183,8 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     finalDistImg = finalDistImg.where(threshold,-9999)
     return finalDistImg//.updateMask(threshold); 
   }
-  finalDistImg = filterDisturbances(finalDistImg);
-  finalDistImg2 = filterDisturbances(finalDistImg2);
+  // finalDistImg = filterDisturbances(finalDistImg);
+  // finalDistImg2 = filterDisturbances(finalDistImg2);
  
   
   function applyMMU(finalDistImg){
