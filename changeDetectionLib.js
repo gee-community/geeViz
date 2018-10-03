@@ -227,26 +227,26 @@ function arrayToTimeSeries(tsArray,yearsArray,possibleYears,bandName){
     
     //Ierate across years
     var tsC = possibleYears.map(function(yr){
-    yr = ee.Number(yr);
-    
-    //Pull out given year
-    var yrMask = yearsArray.eq(yr);
-  
-    //Mask array for that given year
-    var masked = tsArray.arrayMask(yrMask);
-    
-    
-    //Find null pixels
-    var l = masked.arrayLength(0);
-    
-    //Fill null values and convert to regular image
-    masked = masked.where(l.eq(0),dummyImage).arrayGet([-1]);
-    
-    //Remask nulls
-    masked = masked.updateMask(masked.neq(noDateValue)).rename([bandName])      
-      .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
+      yr = ee.Number(yr);
       
-    return masked;
+      //Pull out given year
+      var yrMask = yearsArray.eq(yr);
+    
+      //Mask array for that given year
+      var masked = tsArray.arrayMask(yrMask);
+      
+      
+      //Find null pixels
+      var l = masked.arrayLength(0);
+      
+      //Fill null values and convert to regular image
+      masked = masked.where(l.eq(0),dummyImage).arrayGet([-1]);
+      
+      //Remask nulls
+      masked = masked.updateMask(masked.neq(noDateValue)).rename([bandName])      
+        .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
+        
+      return masked;
     
     
   });
