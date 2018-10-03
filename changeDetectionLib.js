@@ -138,7 +138,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   // sort the segments in the disturbance attribute image delta by spectral index change delta  
   var distImgSorted = distImg.arraySort(mag.multiply(-1));    
   // slice out the first (greatest) delta
-  var tempDistImg = distImgSorted.arraySlice(1, 0, 1).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));
+  var tempDistImg = distImgSorted.arraySlice(1, 0, 1)//.unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));
   
   // get the first segment in the sorted array
   // var distImgSorted2  = distImgSorted.updateMask(numberOfVertices.gte(3))
@@ -173,7 +173,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
           .lte(finalDistImg.select(['mag']))                          // ...is disturbance less then equal to the interpolated, duration dynamic disturbance magnitude threshold 
           .and(finalDistImg.select(['mag']).gt(0))                    // and is greater than 0  
           .and(finalDistImg.select(['preval']).gt(params.pre_val)); 
-    return finalDistImg.mask(threshold).int16(); 
+    return finalDistImg.updateMask(threshold).int16(); 
   }
   finalDistImg = filterDisturbances(finalDistImg);
   finalDistImg2 = filterDisturbances(finalDistImg2);
