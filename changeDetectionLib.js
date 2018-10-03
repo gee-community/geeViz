@@ -142,7 +142,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   
   // get the first segment in the sorted array
   // var distImgSorted2  = distImgSorted.updateMask(numberOfVertices.gte(3))
-  var tempDistImg2 = distImgSorted.arraySlice(1, 1, 2).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));     
+  var tempDistImg2 = distImgSorted.arraySlice(1, 1, 2)//.unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));     
   Map.addLayer(tempDistImg2,{},'tempDistImg2',false);// get the first segment in the sorted array
   // // var tempDistImg3 = distImgSorted.arraySlice(1, 2, 3).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));                                      // get the first segment in the sorted array
   
