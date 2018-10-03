@@ -120,7 +120,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   var dummy = vertices.arraySlice(1,-1,null);
   vertices = vertices.arrayCat(dummy,1);
   vertices = vertices.arrayCat(dummy,1);
-  Map.addLayer(vertices,{},'dummy',false);
+  
   // var numberOfVertices = vertexMask.arrayReduce(ee.Reducer.sum(),[1]).arrayProject([1]).arrayFlatten([['vertexCount']]);
   // var secondMask = numberOfVertices.gte(3);
   // var thirdMask = numberOfVertices.gte(4);
@@ -148,6 +148,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   // Map.addLayer(distImgSorted);
   var tempDistImg = distImgSorted.arraySlice(1, 0, 1).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));
   var tempDistImg2 = distImgSorted.arraySlice(1, 1, 2).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));
+  Map.addLayer(tempDistImg2,{},'tempDistImg2',false);
   //Find null pixels
   // var l = tempDistImg2.arrayLength(0);
   // Map.addLayer(l,{},'l',false);
