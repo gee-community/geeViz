@@ -117,9 +117,11 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   // select only the vertices that represents a change
   var vertexMask = lt.arraySlice(0, 3, 4); // get the vertex - yes(1)/no(0) dimension
   var vertices = lt.arrayMask(vertexMask); // convert the 0's to masked
-  var numberOfVertices = vertexMask.arrayReduce(ee.Reducer.sum(),[1]).arrayProject([1]).arrayFlatten([['vertexCount']]);
-  var secondMask = numberOfVertices.gte(3);
-  var thirdMask = numberOfVertices.gte(4);
+  var dummy = vertices.arraySlice(1,-1,null);
+  Map.addLayer(dummy,{},'dummy',false);
+  // var numberOfVertices = vertexMask.arrayReduce(ee.Reducer.sum(),[1]).arrayProject([1]).arrayFlatten([['vertexCount']]);
+  // var secondMask = numberOfVertices.gte(3);
+  // var thirdMask = numberOfVertices.gte(4);
   // Map.addLayer(numberOfVertices,{min:2,max:4},'number of vertices',false)
   // construct segment start and end point years and index values
   var left = vertices.arraySlice(1, 0, -1);    // slice out the vertices as the start of segments
