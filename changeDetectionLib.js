@@ -117,9 +117,10 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   // select only the vertices that represents a change
   var vertexMask = lt.arraySlice(0, 3, 4); // get the vertex - yes(1)/no(0) dimension
   var vertices = lt.arrayMask(vertexMask); // convert the 0's to masked
-  var dummy = vertices.arraySlice(1,-1,null);
-  vertices = vertices.arrayCat(dummy.add(1),1);
-  vertices = vertices.arrayCat(dummy.add(1),1);
+  // var dummy = vertices.arraySlice(1,-1,null);
+  // vertices = vertices.arrayCat(dummy.add(1),1);
+  // vertices = vertices.arrayCat(dummy.add(1),1);
+  // vertices = vertices.unmask()
   Map.addLayer(vertices,{},'vertices',false);
 
   // var numberOfVertices = vertexMask.arrayReduce(ee.Reducer.sum(),[1]).arrayProject([1]).arrayFlatten([['vertexCount']]);
