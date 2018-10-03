@@ -181,7 +181,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
           .and(finalDistImg.select(['mag']).gt(0))                    // and is greater than 0  
           .and(finalDistImg.select(['preval']).gt(params.pre_val)); 
     finalDistImg = finalDistImg.where(threshold,-9999)
-    return finalDistImg//.updateMask(threshold); 
+    return finalDistImg.updateMask(threshold); 
   }
   finalDistImg = filterDisturbances(finalDistImg);
   finalDistImg2 = filterDisturbances(finalDistImg2);
