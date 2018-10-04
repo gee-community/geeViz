@@ -242,7 +242,9 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   var noDataValue = 32768;
   if(distDir === 1){
     print(indexName,'flipping no data value');
-    noDataValue = -noDataValue}
+    noDataValue = -noDataValue
+    print(noDataValue)
+  }
   //----- RUN LANDTRENDR -----
   var ltCollection = processedComposites.select([indexName]).map(function(img){
      return ee.Image(multBands(img,distDir,1)).unmask(32768);
