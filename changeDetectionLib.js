@@ -163,9 +163,9 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
           .and(finalDistImg.select(['preval']).gt(params.pre_val));
     return finalDistImg.updateMask(threshold); 
   }
-  // finalDistImg1 = filterDisturbances(finalDistImg1);
-  // finalDistImg2 = filterDisturbances(finalDistImg2);
-  // finalDistImg3 = filterDisturbances(finalDistImg3);
+  finalDistImg1 = filterDisturbances(finalDistImg1);
+  finalDistImg2 = filterDisturbances(finalDistImg2);
+  finalDistImg3 = filterDisturbances(finalDistImg3);
 
   
   function applyMMU(finalDistImg){
