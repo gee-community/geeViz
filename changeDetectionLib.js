@@ -127,9 +127,9 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   var left = vertices.arraySlice(1, 0, -1);    // slice out the vertices as the start of segments
   var right = vertices.arraySlice(1, 1, null); // slice out the vertices as the end of segments
   var startYear = left.arraySlice(0, 0, 1);    // get year dimension of LT data from the segment start vertices
-  var startVal = left.arraySlice(0, 2, 3).multiply(-distDir);     // get spectral index dimension of LT data from the segment start vertices
+  var startVal = left.arraySlice(0, 2, 3)//.multiply(-distDir);     // get spectral index dimension of LT data from the segment start vertices
   var endYear = right.arraySlice(0, 0, 1);     // get year dimension of LT data from the segment end vertices 
-  var endVal = right.arraySlice(0, 2, 3).multiply(-distDir);      // get spectral index dimension of LT data from the segment end vertices
+  var endVal = right.arraySlice(0, 2, 3)//.multiply(-distDir);      // get spectral index dimension of LT data from the segment end vertices
   
   var dur = endYear.subtract(startYear);       // subtract the segment start year from the segment end year to calculate the duration of segments 
   var mag = endVal.subtract(startVal);         // substract the segment start index value from the segment end index value to calculate the delta of segments 
