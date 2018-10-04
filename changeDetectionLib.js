@@ -127,14 +127,14 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   var left = vertices.arraySlice(1, 0, -1);    // slice out the vertices as the start of segments
   var right = vertices.arraySlice(1, 1, null); // slice out the vertices as the end of segments
   var startYear = left.arraySlice(0, 0, 1);    // get year dimension of LT data from the segment start vertices
-  var startVal = left.arraySlice(0, 2, 3)//.multiply(-distDir);     // get spectral index dimension of LT data from the segment start vertices
+  var startVal = left.arraySlice(0, 2, 3);     // get spectral index dimension of LT data from the segment start vertices
   var endYear = right.arraySlice(0, 0, 1);     // get year dimension of LT data from the segment end vertices 
-  var endVal = right.arraySlice(0, 2, 3)//.multiply(-distDir);      // get spectral index dimension of LT data from the segment end vertices
+  var endVal = right.arraySlice(0, 2, 3);      // get spectral index dimension of LT data from the segment end vertices
   
   var dur = endYear.subtract(startYear);       // subtract the segment start year from the segment end year to calculate the duration of segments 
   var mag = endVal.subtract(startVal);         // substract the segment start index value from the segment end index value to calculate the delta of segments 
 
-  Map.addLayer(mag)
+  
   // concatenate segment start year, delta, duration, and starting spectral index value to an array 
   var distImg = ee.Image.cat([endYear, mag, dur, startVal]).toArray(0); // make an image of segment attributes - multiply by the distDir parameter to re-orient the spectral index if it was flipped for segmentation - do it here so that the subtraction to calculate segment delta in the above line is consistent - add 1 to the detection year, because the vertex year is not the first year that change is detected, it is the following year
  
