@@ -164,7 +164,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     var longTermDisturbance = finalDistImg.select(['dur']).gte(20);
     var longTermThreshold = finalDistImg.select(['mag']).gte(params.tree_loss20).and(longTermDisturbance);
     var threshold = finalDistImg.select(['mag']).gte(params.tree_loss1);
-    return finalDistImg.updateMask(threshold); 
+    return finalDistImg.updateMask(threshold.or(longTermThreshold)); 
   }
   finalDistImg1 = filterDisturbances(finalDistImg1);
   finalDistImg2 = filterDisturbances(finalDistImg2);
