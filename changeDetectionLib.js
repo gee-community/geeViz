@@ -235,6 +235,7 @@ function arrayToTimeSeries(tsArray,yearsArray,possibleYears,bandName){
   });
   return ee.ImageCollection(tsC);
   }
+
 //Function to wrap landtrendr processing
 function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,run_params,distParams,mmu){
   // var startYear = 1984;//ee.Date(ee.Image(processedComposites.first()).get('system:time_start')).get('year').getInfo();
@@ -253,58 +254,57 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   run_params.timeSeries = ltCollection;               // add LT collection to the segmentation run parameter object
   var lt = ee.Algorithms.TemporalSegmentation.LandTrendr(run_params); // run LandTrendr spectral temporal segmentation algorithm
   
-  // //########################################################################################################
-  // //##### RUN THE GREATEST DISTURBANCE EXTRACT FUCTION #####
-  // //########################################################################################################
+  //########################################################################################################
+  //##### RUN THE GREATEST DISTURBANCE EXTRACT FUCTION #####
+  //########################################################################################################
   
-  // //assemble the disturbance extraction parameters
-  
-  
-  // // run the dist extract function
-  // var distImg = extractDisturbance(lt.select('LandTrendr'), distDir, distParams,mmu);
-  // var distImgBandNames = distImg.bandNames();
-  // distImgBandNames = distImgBandNames.map(function(bn){return ee.String(indexName).cat('_').cat(bn)});
-  // distImg = distImg.rename(distImgBandNames);
-  // // distImg = distImg.updateMask(distImg.neq(-32768));
+  //assemble the disturbance extraction parameters
   
   
-  // //########################################################################################################
-  // //##### DISTURBANCE MAP DISPLAY #####
-  // //########################################################################################################
+  // run the dist extract function
+  var distImg = extractDisturbance(lt.select('LandTrendr'), distDir, distParams,mmu);
+  var distImgBandNames = distImg.bandNames();
+  distImgBandNames = distImgBandNames.map(function(bn){return ee.String(indexName).cat('_').cat(bn)});
+  distImg = distImg.rename(distImgBandNames);
+ 
   
-  // // ----- set visualization dictionaries -----
+  //########################################################################################################
+  //##### DISTURBANCE MAP DISPLAY #####
+  //########################################################################################################
   
-  // // var yodVizParms = {
-  // //   min: startYear+1,
-  // //   max: endYear,
-  // //   palette: ['#9400D3', '#4B0082', '#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000']
-  // // };
+  // ----- set visualization dictionaries -----
   
-  // // var magVizParms = {
-  // //   min: distParams.tree_loss1,
-  // //   max: 1000,
-  // //   palette: ['#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000']
-  // // };
+  // var yodVizParms = {
+  //   min: startYear+1,
+  //   max: endYear,
+  //   palette: ['#9400D3', '#4B0082', '#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000']
+  // };
   
-  // // var durVizParms = {
-  // //   min: 1,
-  // //   max: endYear-startYear,
-  // //   palette: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF']
-  // // };
+  // var magVizParms = {
+  //   min: distParams.tree_loss1,
+  //   max: 1000,
+  //   palette: ['#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000']
+  // };
   
-  // // var preValVizParms = {
-  // //   min: distParams.pre_val,
-  // //   max: 800,
-  // //   palette: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF']
-  // // };
+  // var durVizParms = {
+  //   min: 1,
+  //   max: endYear-startYear,
+  //   palette: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF']
+  // };
+  
+  // var preValVizParms = {
+  //   min: distParams.pre_val,
+  //   max: 800,
+  //   palette: ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#0000FF']
+  // };
   
   
-  // // ----- display the disturbance attribute maps ----- 
-  //                                                 // clip the data to the geometry
-  // // Map.addLayer(distImg.select(['preval']), preValVizParms, 'LT-Pre-dist Value',false); // add pre-disturbacne spectral index value to map
-  // // Map.addLayer(distImg.select(['dur']), durVizParms, 'LT-Duration',false);             // add disturbance duration to map
-  // // Map.addLayer(distImg.select(['mag']), magVizParms, 'LT-Magnitude',false);            // add magnitude to map
-  // // Map.addLayer(distImg.select(['yod']), yodVizParms, 'LT-Year of Detection',false);    // add disturbance year of detection to map
+  // ----- display the disturbance attribute maps ----- 
+                                                  // clip the data to the geometry
+  // Map.addLayer(distImg.select(['preval']), preValVizParms, 'LT-Pre-dist Value',false); // add pre-disturbacne spectral index value to map
+  // Map.addLayer(distImg.select(['dur']), durVizParms, 'LT-Duration',false);             // add disturbance duration to map
+  // Map.addLayer(distImg.select(['mag']), magVizParms, 'LT-Magnitude',false);            // add magnitude to map
+  // Map.addLayer(distImg.select(['yod']), yodVizParms, 'LT-Year of Detection',false);    // add disturbance year of detection to map
   
   //Convert to collection
   var rawLT = lt.select([0]);
@@ -315,11 +315,11 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   }
   
   var ca = arrayToTimeSeries(ltFitted,ltYear,ee.List.sequence(startYear,endYear),'LT_Fitted_'+indexName);
-  Map.addLayer(ca)
+  
 
-  // //Convert to single image
-  // var vertStack = getLTvertStack(rawLT,run_params);
-  // return [lt,distImg,ca,vertStack];
+  //Convert to single image
+  var vertStack = getLTvertStack(rawLT,run_params);
+  return [lt,distImg,ca,vertStack];
   
 }
 
