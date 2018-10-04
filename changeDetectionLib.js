@@ -611,7 +611,7 @@ function zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,s
       //Perform the z analysis
       var blMean = blImages.mean();
       var blStd = blImages.reduce(ee.Reducer.stdDev());
-      
+    
       var analysisImagesZ = analysisImages.map(function(img){
         return (img.subtract(blMean)).divide(blStd);
       }).reduce(zReducer).rename(outNames).multiply(10);
