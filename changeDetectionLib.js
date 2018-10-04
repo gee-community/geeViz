@@ -136,7 +136,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
 
   
   // concatenate segment start year, delta, duration, and starting spectral index value to an array 
-  var distImg = ee.Image.cat([startYear.add(1), mag, dur, startVal]).toArray(0); // make an image of segment attributes - multiply by the distDir parameter to re-orient the spectral index if it was flipped for segmentation - do it here so that the subtraction to calculate segment delta in the above line is consistent - add 1 to the detection year, because the vertex year is not the first year that change is detected, it is the following year
+  var distImg = ee.Image.cat([endYear, mag, dur, startVal]).toArray(0); // make an image of segment attributes - multiply by the distDir parameter to re-orient the spectral index if it was flipped for segmentation - do it here so that the subtraction to calculate segment delta in the above line is consistent - add 1 to the detection year, because the vertex year is not the first year that change is detected, it is the following year
  
   // sort the segments in the disturbance attribute image delta by spectral index change delta  
   var distImgSorted = distImg.arraySort(mag.multiply(-1));    
