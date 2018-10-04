@@ -314,12 +314,12 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
     ltFitted = ltFitted.multiply(-1);
   }
   
-  var ca = arrayToTimeSeries(ltFitted,ltYear,ee.List.sequence(startYear,endYear),'LT_Fitted_'+indexName);
+  var fittedCollection = arrayToTimeSeries(ltFitted,ltYear,ee.List.sequence(startYear,endYear),'LT_Fitted_'+indexName);
   
 
   //Convert to single image
   var vertStack = getLTvertStack(rawLT,run_params);
-  return [lt,distImg,ca,vertStack];
+  return [lt,distImg,fittedCollection,vertStack];
   
 }
 
