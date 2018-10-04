@@ -240,7 +240,9 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   // var startYear = 1984;//ee.Date(ee.Image(processedComposites.first()).get('system:time_start')).get('year').getInfo();
   // var endYear = 2017;//ee.Date(ee.Image(processedComposites.sort('system:time_start',false).first()).get('system:time_start')).get('year').getInfo();
   var noDataValue = 32768;
-  if(distDir === 1){noDataValue = -noDataValue}
+  if(distDir === 1){
+    print(indexName,'flipping no data value');
+    noDataValue = -noDataValue}
   //----- RUN LANDTRENDR -----
   var ltCollection = processedComposites.select([indexName]).map(function(img){
      return ee.Image(multBands(img,distDir,1)).unmask(32768);
