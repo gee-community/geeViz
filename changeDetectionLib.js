@@ -244,9 +244,9 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   var ltCollection = processedComposites.select([indexName]).map(function(img){
      return ee.Image(multBands(img,distDir,1)).unmask(32768);
   });
-  Map.addLayer(ltCollection,{},'ltCollection',false);
-  // run_params.timeSeries = ltCollection;               // add LT collection to the segmentation run parameter object
-  // var lt = ee.Algorithms.TemporalSegmentation.LandTrendr(run_params); // run LandTrendr spectral temporal segmentation algorithm
+  // Map.addLayer(ltCollection,{},'ltCollection',false);
+  run_params.timeSeries = ltCollection;               // add LT collection to the segmentation run parameter object
+  var lt = ee.Algorithms.TemporalSegmentation.LandTrendr(run_params); // run LandTrendr spectral temporal segmentation algorithm
   
   // //########################################################################################################
   // //##### RUN THE GREATEST DISTURBANCE EXTRACT FUCTION #####
@@ -301,16 +301,16 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   // // Map.addLayer(distImg.select(['mag']), magVizParms, 'LT-Magnitude',false);            // add magnitude to map
   // // Map.addLayer(distImg.select(['yod']), yodVizParms, 'LT-Year of Detection',false);    // add disturbance year of detection to map
   
-  // //Convert to collection
-  // var rawLT = lt.select([0]);
-  // var ltYear = rawLT.arraySlice(0,0,1).arrayProject([1]);
-  // var ltFitted = rawLT.arraySlice(0,2,3).arrayProject([1]);
-  // if(distDir === -1){
-  //   ltFitted = ltFitted.multiply(-1);
-  // }
+  //Convert to collection
+  var rawLT = lt.select([0]);
+  var ltYear = rawLT.arraySlice(0,0,1).arrayProject([1]);
+  var ltFitted = rawLT.arraySlice(0,2,3).arrayProject([1]);
+  if(distDir === -1){
+    ltFitted = ltFitted.multiply(-1);
+  }
   
-  // var ca = arrayToTimeSeries(ltFitted,ltYear,ee.List.sequence(startYear,endYear),'LT_Fitted_'+indexName);
- 
+  var ca = arrayToTimeSeries(ltFitted,ltYear,ee.List.sequence(startYear,endYear),'LT_Fitted_'+indexName);
+  Map.addLayer(ca)
 
   // //Convert to single image
   // var vertStack = getLTvertStack(rawLT,run_params);
