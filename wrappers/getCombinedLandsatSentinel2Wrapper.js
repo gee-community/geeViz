@@ -207,10 +207,10 @@ var s2Ts = getImageLib.compositeTimeSeries(s2s,startYear,endYear,startJulian,end
 var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'];
 getImageLib.exportCompositeCollection(exportPathRoot,'Sentinel2_',studyArea,crs,transform,scale,
 s2Ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,S2ExportBands,'TOA',weights,
-              true, 'NA',true,'NA','NA','NA',correctIllumination,null);
+              true, 'NA',true,'NA','NA','NA',false,null);
 
-var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'];
-getImageLib.exportCompositeCollection(exportPathRoot,'Sentinel2_',studyArea,crs,transform,scale,
-s2Ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,S2ExportBands,'TOA',weights,
-              true, false,true,false,false,false,correctIllumination,null);
+var lExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'];
+getImageLib.exportCompositeCollection(exportPathRoot,'Landsat_',studyArea,crs,transform,scale,
+lsTs,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,lExportBands,'TOA',weights,
+              true, false,true,false,false,false,false,null);
 
