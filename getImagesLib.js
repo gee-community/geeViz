@@ -1736,10 +1736,8 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   print('Start and end dates:', startDate, endDate);
 
   
-  // // Get Sentinel2 image collection
-  // var ls = getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
-  //   toaOrSR,includeSLCOffL7,defringeL5);
-  
+  // Get Sentinel2 image collection
+  var s2s = getS2(studyArea,startDate,endDate,startJulian,endJulian)
   // // Apply relevant cloud masking methods
   // if(applyCloudScore){
   //   print('Applying cloudScore');
