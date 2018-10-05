@@ -77,7 +77,7 @@ var compositingMethod = 'medoid';
 var applyQABand = true;
 
 var applyCloudScore = true;
-var applyShadowShift = false;
+var applyShadowShift = true;
 var applyTDOM = false;
 
 
@@ -88,7 +88,13 @@ var applyTDOM = false;
 //    works best)
 var cloudScoreThresh = 20;
 
-// Percentile of cloud score to pull from time series to represent a minimum for 
+//Whether to find if an area typically has a high cloudScore
+//If an area is always cloudy, this will result in cloud masking omission
+//For bright areas, this will result in a reduction of commission errors
+var performCloudScoreOffset = false;
+
+// If performCloudScoreOffset = true:
+//Percentile of cloud score to pull from time series to represent a minimum for 
 // the cloud score over time for a given pixel. Reduces comission errors over 
 // cool bright surfaces. Generally between 5 and 10 works well. 0 generally is a
 // bit noisy
