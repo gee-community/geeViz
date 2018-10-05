@@ -1741,7 +1741,9 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   Map.addLayer(s2s.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'})
   
   if(applyQABand){
-    
+    s2s = s2s.map(maskS2clouds);
+    Map.addLayer(s2s.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'})
+  
   }
   if(applyCloudScore){
     
@@ -1750,6 +1752,8 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
     
   }
   if(applyTDOM){
+    
+  }
   }
   // // Apply relevant cloud masking methods
   // if(applyCloudScore){
