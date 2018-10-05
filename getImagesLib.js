@@ -1775,12 +1775,12 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
   )
   
   print(s2s.first())
-  // // Add zenith and azimuth
-  // if (correctIllumination){
-  //   ls = ls.map(function(img){
-  //     return addZenithAzimuth(img,toaOrSR);
-  //   });
-  // }
+  // Add zenith and azimuth
+  if (correctIllumination){
+    s2s = s2s.map(function(img){
+      return addZenithAzimuth(img,'TOA',{'TOA':'MEAN_SOLAR_ZENITH_ANGLE'},{'TOA':'MEAN_SOLAR_AZIMUTH_ANGLE'});
+    });
+  }
   
   // // Add common indices- can use addIndices for comprehensive indices 
   // //or simpleAddIndices for only common indices
