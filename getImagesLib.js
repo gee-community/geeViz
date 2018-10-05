@@ -1765,13 +1765,13 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
   correctIllumination,correctScale,
   exportComposites,outputName,exportPathRoot,crs,transform,scale){
   
-  // getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,
-  // applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
-  // cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,
-  // cloudHeights,
-  // zScoreThresh,shadowSumThresh,
-  // contractPixels,dilatePixels
-  // )
+  var s2s = getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,
+  applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
+  cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,
+  cloudHeights,
+  zScoreThresh,shadowSumThresh,
+  contractPixels,dilatePixels
+  )
   
   
   // // Add zenith and azimuth
