@@ -74,7 +74,7 @@ var defringeL5 = false;
 var applyCloudScore = true;
 var applyFmaskCloudMask = false;
 
-var applyTDOM = false;
+var applyTDOM = true;
 var applyFmaskCloudShadowMask = false;
 
 var applyFmaskSnowMask = false;
