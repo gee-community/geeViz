@@ -1789,8 +1789,8 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
           .map(simpleAddTCAngles);
   
   // Create composite time series
-  // var ts = compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
-  
+  var ts = compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
+  print(ts)
   
   // // Correct illumination
   // if (correctIllumination){
