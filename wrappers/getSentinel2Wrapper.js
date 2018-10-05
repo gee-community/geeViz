@@ -75,6 +75,8 @@ var applyCloudScore = false;
 // var applyFmaskCloudMask = true;
 
 var applyTDOM = false;
+
+var applyShadowShift = false;
 // var applyFmaskCloudShadowMask = true;
 
 // var applyFmaskSnowMask = true;
