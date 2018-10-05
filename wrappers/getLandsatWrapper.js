@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-79.00193668902529, -0.5256368366370479],
-          [-78.99781681597841, -0.6148963222946472],
-          [-78.82752873004091, -0.6162695340498422],
-          [-78.85224796832216, -0.5228903695837829]]]);
+        [[[-79.11968217561963, -0.4028583639707226],
+          [-79.10869584749463, -0.8010899762624881],
+          [-77.87822709749463, -0.8203141258345823],
+          [-77.75188432405713, -0.3534209656369885]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -72,10 +72,10 @@ var defringeL5 = false;
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
 var applyCloudScore = false;
-var applyFmaskCloudMask = true;
+var applyFmaskCloudMask = false;
 
 var applyTDOM = false;
-var applyFmaskCloudShadowMask = true;
+var applyFmaskCloudShadowMask = false;
 
 var applyFmaskSnowMask = true;
 
