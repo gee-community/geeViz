@@ -1781,7 +1781,7 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
       return addZenithAzimuth(img,'TOA',{'TOA':'MEAN_SOLAR_ZENITH_ANGLE'},{'TOA':'MEAN_SOLAR_AZIMUTH_ANGLE'});
     });
   }
-  print(s2s.first())
+ 
   // Add common indices- can use addIndices for comprehensive indices 
   //or simpleAddIndices for only common indices
   s2s = s2s.map(simpleAddIndices)
