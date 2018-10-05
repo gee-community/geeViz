@@ -1,3 +1,10 @@
+/**** Start of imports. If edited, may not auto-convert in the playground. ****/
+var geometry = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-78.62372671099854, -1.2685317355114534],
+          [-78.61686025592041, -1.379738586117538],
+          [-77.96454702349854, -1.3975861259722024],
+          [-77.92472158404541, -1.2067480596932785]]]);
+/***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 ///////////////////////////////////////////////////////////////////////////////
@@ -12,8 +19,8 @@ var studyArea = geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 190;
-var endJulian = 250; 
+var startJulian = 1;
+var endJulian = 365; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
@@ -93,6 +100,10 @@ var performCloudScoreOffset = false;
 // bit noisy but may be necessary in persistently cloudy areas
 var cloudScorePctl = 10;
 
+//Sentinel 2 only!
+//Height of clouds to use to project cloud shadows
+var cloudHeights = ee.List.sequence(500,10000,500);
+
 // zScoreThresh: Threshold for cloud shadow masking- lower number masks out 
 //    less. Between -0.8 and -1.2 generally works well
 var zScoreThresh = -1;
@@ -151,5 +162,19 @@ var scale = 30;
 ///////////////////////////////////////////////////////////////////////
 //Start function calls
 
+// Prepare dates
+//Wrap the dates if needed
+var wrapOffset = 0;
+if (startJulian > endJulian) {
+  wrapOffset = 365;
+}
+var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
+var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day');
+print('Start and end dates:', startDate, endDate);
 
 ////////////////////////////////////////////////////////////////////////////////
+var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
+    toaOrSR,includeSLCOffL7,defringeL5);
+var s2s = getImageLib.getS2(studyArea,startDate,endDate,startJulian,endJulian);
+
+print(s2s)
