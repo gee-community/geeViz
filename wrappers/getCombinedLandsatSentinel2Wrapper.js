@@ -155,6 +155,8 @@ var transform = null;//[30,0,-2361915.0,0,-30,3177735.0];
 
 //Specify scale if transform is null
 var scale = 30;
+
+
 ///////////////////////////////////////////////////////////////////////
 // End user parameters
 ///////////////////////////////////////////////////////////////////////
@@ -173,8 +175,13 @@ var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day')
 print('Start and end dates:', startDate, endDate);
 
 ////////////////////////////////////////////////////////////////////////////////
+//Get Landsat and Sentinel 2 raw images
 var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     toaOrSR,includeSLCOffL7,defringeL5);
 var s2s = getImageLib.getS2(studyArea,startDate,endDate,startJulian,endJulian);
 
-print(s2s)
+ls = applyCloudScoreAlgorithm(ls,landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
+s2s = applyCloudScoreAlgorithm(s2s,sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
+var merged = ls.merge(s2s);
+merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
+print(merged.first())
