@@ -1720,7 +1720,7 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
     Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'Cloud score cloud masked')
   }
   if(applyShadowShift){
-    var s2sT = s2s.map(function(img){return projectShadowsWrapper(img,cloudThresh,contractPixels,dilatePixels,cloudHeights)})
+    var s2sT = s2s.map(function(img){return projectShadowsWrapper(img,cloudScoreThresh,contractPixels,dilatePixels,cloudHeights)})
     Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'shadow shift shadow masked')
   }
   if(applyTDOM){
