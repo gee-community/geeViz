@@ -27,7 +27,7 @@ var endJulian = 365;
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
 var startYear = 2014;
-var endYear = 2016;
+var endYear = 2019;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -40,7 +40,7 @@ var timebuffer = 1;
 //In order to overweight the center year, you could specify the weights as
 //[1,5,1] which would duplicate the center year 5 times and increase its weight for
 //the compositing method
-var weights = [1,1,1];
+var weights = [1,3,1];
 
 
 
@@ -138,7 +138,7 @@ var correctScale = 2500;//Choose a scale to reduce on- 250 generally works well
 var exportComposites = true;
 
 //Set up Names for the export
-var outputName = 'Medoid-Landsat';
+var outputName = 'Medoid-S2-';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
