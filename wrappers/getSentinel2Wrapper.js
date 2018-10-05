@@ -40,7 +40,7 @@ var timebuffer = 1;
 //In order to overweight the center year, you could specify the weights as
 //[1,5,1] which would duplicate the center year 5 times and increase its weight for
 //the compositing method
-var weights = [1,3,1];
+var weights = [1,1,1];
 
 
 
