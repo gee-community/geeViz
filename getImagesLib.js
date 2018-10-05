@@ -1699,8 +1699,7 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,
   cloudHeights,
   zScoreThresh,shadowSumThresh,
-  contractPixels,dilatePixels,
-  correctIllumination,correctScale
+  contractPixels,dilatePixels
   ){
   
   // Prepare dates
@@ -1741,13 +1740,7 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   }
   
   
-  // Add zenith and azimuth
-  if (correctIllumination){
-    s2s = s2s.map(function(img){
-      return addZenithAzimuth(img,'TOA',{'TOA':'MEAN_SOLAR_ZENITH_ANGLE'},{'TOA':'MEAN_SOLAR_AZIMUTH_ANGLE'});
-    });
-  }
-  
+ 
   
   
   // Add common indices- can use addIndices for comprehensive indices 
@@ -1777,21 +1770,26 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
   cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,
   cloudHeights,
   zScoreThresh,shadowSumThresh,
-  contractPixels,dilatePixels,
-  correctIllumination,correctScale
+  contractPixels,dilatePixels
   );
   
   print(s2s.first())
   
+   // Add zenith and azimuth
+  if (correctIllumination){
+    s2s = s2s.map(function(img){
+      return addZenithAzimuth(img,'TOA',{'TOA':'MEAN_SOLAR_ZENITH_ANGLE'},{'TOA':'MEAN_SOLAR_AZIMUTH_ANGLE'});
+    });
+  }
   
-  // // Add common indices- can use addIndices for comprehensive indices 
-  // //or simpleAddIndices for only common indices
-  // ls = ls.map(simpleAddIndices)
-  //         .map(getTasseledCap)
-  //         .map(simpleAddTCAngles);
+  // Add common indices- can use addIndices for comprehensive indices 
+  //or simpleAddIndices for only common indices
+  s2s = s2s.map(simpleAddIndices)
+          .map(getTasseledCap)
+          .map(simpleAddTCAngles);
   
-  // // Create composite time series
-  // var ts = compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
+  // Create composite time series
+  var ts = compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
   
   
   // // Correct illumination
