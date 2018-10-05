@@ -1494,7 +1494,6 @@ applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFm
       .select(compositeBands).int16();
     }
     else{
-      print('Just multiplying bands');
       composite = composite.multiply(10000).int16();
     }
     
