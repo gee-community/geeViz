@@ -233,7 +233,7 @@ function getS2(studyArea,startDate,endDate,startJulian,endJulian){
   
   //Convert to daily mosaics to avoid redundent observations in MGRS overlap areas and edge artifacts for shadow masking
   s2s = dailyMosaics(s2s);
-return s2s
+return s2s;
 }
 //////////////////////////////////////////////////////////////////
 // Function for acquiring Landsat TOA image collection
