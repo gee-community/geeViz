@@ -1829,7 +1829,7 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
                   applyCloudScore, 'NA',applyTDOM,'NA','NA','NA',correctIllumination,null);
   }
   
-  // return [ls,ts];
+  return [s2s,ts];
 }
 //////////////////////////////////////////////////////////
 //Harmonic regression
