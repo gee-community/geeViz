@@ -1466,6 +1466,7 @@ applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFm
   collection = collection.select(exportBands);
   var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
+      print('scale',scale);
     // Set up dates
     var startYearT = year-timebuffer;
     var endYearT = year+timebuffer;
