@@ -19,15 +19,15 @@ var studyArea = geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 150;
-var endJulian = 280; 
+var startJulian = 1;
+var endJulian = 365; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2017;
-var endYear = 2017;
+var startYear = 2015;
+var endYear = 2015;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -157,10 +157,20 @@ var transform = [30,0,-2361915.0,0,-30,3177735.0];
 //Specify scale if transform is null
 var scale = null;
 ///////////////////////////////////////////////////////////////////////
-getImageLib.getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,
+// getImageLib.getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,
+//   applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
+//   cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,
+//   cloudHeights,
+//   zScoreThresh,shadowSumThresh,
+//   contractPixels,dilatePixels
+//   );
+  
+getImageLib.getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
+  timebuffer,weights,compositingMethod,
   applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
   cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,
   cloudHeights,
   zScoreThresh,shadowSumThresh,
-  contractPixels,dilatePixels
-  );
+  contractPixels,dilatePixels,
+  correctIllumination,correctScale,
+  exportComposites,outputName,exportPathRoot,crs,transform,scale)
