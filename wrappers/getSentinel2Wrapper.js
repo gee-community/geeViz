@@ -71,7 +71,8 @@ var compositingMethod = 'medoid';
 //always have a high cloudScore to reduce comission errors- this takes some time
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
-//QA band method is fast but is generally awful
+//QA band method is fast but is generally awful- don't use if you like good composites
+//Shadow shift is intended if you don't have a time series to use for TDOM or just want individual images
 
 var applyQABand = false;
 
