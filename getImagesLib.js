@@ -1794,6 +1794,7 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
   var ts = compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
   
   var img = ee.Image(ts.first());
+  illuminationCorrection(img, correctScale,studyArea,[ 'blue', 'green', 'red','nir','swir1', 'swir2'])
   // Correct illumination
   // if (correctIllumination){
   //   var f = ee.Image(ts.first());
