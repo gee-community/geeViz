@@ -1731,7 +1731,8 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
     Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'shadow shift shadow masked')
   }
   if(applyTDOM){
-    
+    var s2sT = simpleTDOM2(s2s,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
+    Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'TDOM shadow masked')
   }
   
   // // Apply relevant cloud masking methods
