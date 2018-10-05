@@ -1790,21 +1790,21 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
   
   // Create composite time series
   var ts = compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
-  print(ts)
   
-  // // Correct illumination
-  // if (correctIllumination){
-  //   var f = ee.Image(ts.first());
-  //   Map.addLayer(f,vizParamsFalse,'First-non-illuminated',false);
   
-  //   print('Correcting illumination');
-  //   ts = ts.map(illuminationCondition)
-  //     .map(function(img){
-  //       return illuminationCorrection(img, correctScale,studyArea);
-  //     });
-  //   var f = ee.Image(ts.first());
-  //   Map.addLayer(f,vizParamsFalse,'First-illuminated',false);
-  // }
+  // Correct illumination
+  if (correctIllumination){
+    var f = ee.Image(ts.first());
+    Map.addLayer(f,vizParamsFalse,'First-non-illuminated',false);
+  
+    print('Correcting illumination');
+    ts = ts.map(illuminationCondition)
+      .map(function(img){
+        return illuminationCorrection(img, correctScale,studyArea);
+      });
+    var f = ee.Image(ts.first());
+    Map.addLayer(f,vizParamsFalse,'First-illuminated',false);
+  }
   
   // //Export composites
   // if(exportComposites){// Export composite collection
