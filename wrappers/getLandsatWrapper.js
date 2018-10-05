@@ -86,11 +86,19 @@ var applyFmaskSnowMask = true;
 //    works best)
 var cloudScoreThresh = 20;
 
-// Percentile of cloud score to pull from time series to represent a minimum for 
+//Whether to find if an area typically has a high cloudScore
+//If an area is always cloudy, this will result in cloud masking omission
+//For bright areas that may always have a high cloudScore
+//but not actually be cloudy, this will result in a reduction of commission errors
+//This procedure needs at least 5 years of data to work well
+var performCloudScoreOffset = false;
+
+// If performCloudScoreOffset = true:
+//Percentile of cloud score to pull from time series to represent a minimum for 
 // the cloud score over time for a given pixel. Reduces comission errors over 
 // cool bright surfaces. Generally between 5 and 10 works well. 0 generally is a
-// bit noisy
-var cloudScorePctl = 10; 
+// bit noisy but may be necessary in persistently cloudy areas
+var cloudScorePctl = 10;
 
 // zScoreThresh: Threshold for cloud shadow masking- lower number masks out 
 //    less. Between -0.8 and -1.2 generally works well
