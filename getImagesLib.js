@@ -1486,7 +1486,7 @@ applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFm
   
     // Reformat data for export
     var compositeBands = composite.bandNames();
-    if(nonDividBands != null){
+    if(nonDivideBands != null){
       var composite10k = composite.select(compositeBands.removeAll(nonDivideBands))
       .multiply(10000);
       composite = composite10k.addBands(composite.select(nonDivideBands))
