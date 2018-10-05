@@ -1774,7 +1774,7 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
   contractPixels,dilatePixels
   )
   
-  
+  print(s2s.first())
   // // Add zenith and azimuth
   // if (correctIllumination){
   //   ls = ls.map(function(img){
