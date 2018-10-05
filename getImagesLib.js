@@ -464,6 +464,7 @@ function applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh
   });
   
   if(performCloudScoreOffset){
+    print('Computing cloudScore offset');
     // Find low cloud score pctl for each pixel to avoid comission errors
     var minCloudScore = collection.select(['cloudScore'])
       .reduce(ee.Reducer.percentile([cloudScorePctl]));
