@@ -341,7 +341,7 @@ function rescale(img, exp, thresholds) {
  */
  //Cloud heights added by Ian Housman
  //yMult bug fix adapted from code written by Noel Gorelick by Ian Housman
-function projectShadows(cloudMask,image,cloudHeights,yMult){
+function projectShadows(cloudMask,image,irSumThresh,contractPixels,dilatePixels,cloudHeights,yMult){
   if(yMult === undefined || yMult === null){
     yMult = ee.Algorithms.If(ee.Algorithms.IsEqual(image.select([3]).projection(), ee.Projection("EPSG:4326")),1,-1);
   }
@@ -394,11 +394,11 @@ function projectShadows(cloudMask,image,cloudHeights,yMult){
   image = image.updateMask(cloudShadowMask.not()).addBands(shadowMask.rename(['cloudShadowMask']));
   return image;
 }
-function projectShadowsWrapper(img,cloudThresh,contractPixels,dilatePixels,cloudHeights){
+function projectShadowsWrapper(img,cloudThresh,irSumThresh,contractPixels,dilatePixels,cloudHeights){
   var cloudMask = sentinel2CloudScore(img).gt(cloudThresh)
     .focal_min(contractPixels).focal_max(dilatePixels);
 
-  img = projectShadows(cloudMask,img,cloudHeights);
+  img = projectShadows(cloudMask,img,irSumThresh,contractPixels,dilatePixels,cloudHeights);
 
   return img;
 }
