@@ -481,7 +481,7 @@ function applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh
       .focal_max(contractPixels).focal_min(dilatePixels).rename('cloudMask');
     return img.updateMask(cloudMask);
   });
-  print('here')
+ 
   return collection;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -2304,6 +2304,7 @@ exports.getS2 = getS2;
 exports.vizParamsFalse = vizParamsFalse;
 exports.vizParamsTrue = vizParamsTrue;
 exports.landsatCloudScore = landsatCloudScore;
+exports.sentinel2CloudScore = sentinel2CloudScore;
 exports.applyCloudScoreAlgorithm = applyCloudScoreAlgorithm;
 exports.cFmask = cFmask;
 exports.simpleTDOM2 = simpleTDOM2;
