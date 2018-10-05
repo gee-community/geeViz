@@ -40,7 +40,7 @@ var timebuffer = 1;
 //In order to overweight the center year, you could specify the weights as
 //[1,5,1] which would duplicate the center year 5 times and increase its weight for
 //the compositing method
-var weights = [1,5,1];
+var weights = [1,1,1];
 
 
 
@@ -131,7 +131,7 @@ var dilatePixels = 2.5;
 // Sun-Canopy-Sensor+C correction. Additionally, choose the scale at which the
 // correction is calculated in meters.
 var correctIllumination = true;
-var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
+var correctScale = 2500;//Choose a scale to reduce on- 250 generally works well
 
 //13. Export params
 //Whether to export composites
