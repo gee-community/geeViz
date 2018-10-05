@@ -1715,7 +1715,7 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   
   // Get Sentinel2 image collection
   var s2s = getS2(studyArea,startDate,endDate,startJulian,endJulian);
-  Map.addLayer(s2s.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'})
+  Map.addLayer(s2s.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'});
   
   if(applyQABand){
     print('Applying QA band cloud mask');
@@ -1773,7 +1773,7 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
   contractPixels,dilatePixels
   );
   
-  print(s2s.first())
+  
   
    // Add zenith and azimuth
   if (correctIllumination){
@@ -1781,7 +1781,7 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
       return addZenithAzimuth(img,'TOA',{'TOA':'MEAN_SOLAR_ZENITH_ANGLE'},{'TOA':'MEAN_SOLAR_AZIMUTH_ANGLE'});
     });
   }
-  
+  print(s2s.first())
   // Add common indices- can use addIndices for comprehensive indices 
   //or simpleAddIndices for only common indices
   s2s = s2s.map(simpleAddIndices)
