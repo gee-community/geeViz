@@ -1814,7 +1814,7 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
     var exportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'];
     exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
     ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,'TOA',weights,
-                  applyCloudScore, applyFmaskCloudMask,applyTDOM,'NA','NA','NA',correctIllumination);
+                  applyCloudScore, 'NA',applyTDOM,'NA','NA','NA',correctIllumination);
   }
   
   // return [ls,ts];
