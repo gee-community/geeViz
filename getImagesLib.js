@@ -1802,7 +1802,7 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
     print('Correcting illumination');
     ts = ts.map(illuminationCondition)
       .map(function(img){
-        return illuminationCorrection(img, correctScale,studyArea);
+        return illuminationCorrection(img, correctScale,studyArea,['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2']);
       });
     var f = ee.Image(ts.first());
     Map.addLayer(f,vizParamsFalse,'First-illuminated',false);
