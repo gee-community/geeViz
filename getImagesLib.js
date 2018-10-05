@@ -1721,7 +1721,7 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   }
   if(applyShadowShift){
     var s2sT = s2s.map(function(img){return projectShadowsWrapper(img,cloudThresh,contractPixels,dilatePixels,cloudHeights)})
-    Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'QA cloud masked')
+    Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'shadow shift shadow masked')
   }
   if(applyTDOM){
     
