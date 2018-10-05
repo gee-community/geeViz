@@ -188,9 +188,13 @@ s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,c
 ls = ls.map(function(img){return img.set('whichProgram','Landsat')});
 s2s = s2s.map(function(img){return img.set('whichProgram','Sentinel2')});
 
+//Merge collections
 var merged = ls.merge(s2s);
+
+//Perform TDOM
 merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
 
+//Seperate back out
 ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
 s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 
