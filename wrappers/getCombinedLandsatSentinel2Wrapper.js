@@ -185,9 +185,12 @@ ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloud
 s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
 
 //Set a property for splitting apart later
-ls = ls.map(function(img){return img.set('whichProgram','Landsat')})
-s2s = s2s.map(function(img){return img.set('whichProgram','Sentinel2')})
+ls = ls.map(function(img){return img.set('whichProgram','Landsat')});
+s2s = s2s.map(function(img){return img.set('whichProgram','Sentinel2')});
 
 var merged = ls.merge(s2s);
 merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
-print(s2s.first(),merged.first())
+
+ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
+s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
+
