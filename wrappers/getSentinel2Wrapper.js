@@ -71,15 +71,12 @@ var compositingMethod = 'medoid';
 //always have a high cloudScore to reduce comission errors- this takes some time
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
-var applyCloudScore = false;
-// var applyFmaskCloudMask = true;
+var applyQABand = false;
 
+var applyCloudScore = true;
+var applyShadowShift = false;
 var applyTDOM = false;
 
-var applyShadowShift = false;
-// var applyFmaskCloudShadowMask = true;
-
-// var applyFmaskSnowMask = true;
 
 // 11. Cloud and cloud shadow masking parameters.
 // If cloudScoreTDOM is chosen
@@ -94,6 +91,8 @@ var cloudScoreThresh = 20;
 // bit noisy
 var cloudScorePctl = 10; 
 
+//Height of clouds to use to project cloud shadows
+var cloudHeights = ee.List.sequence(500,10000,500);
 // zScoreThresh: Threshold for cloud shadow masking- lower number masks out 
 //    less. Between -0.8 and -1.2 generally works well
 var zScoreThresh = -1;
