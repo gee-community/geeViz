@@ -1738,7 +1738,7 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   
   // Get Sentinel2 image collection
   var s2s = getS2(studyArea,startDate,endDate,startJulian,endJulian);
-  print(s2s)
+  Map.addLayer(s2s,{min:0.05,max:0.4,palette:'swir1,nir,red'})
   // // Apply relevant cloud masking methods
   // if(applyCloudScore){
   //   print('Applying cloudScore');
