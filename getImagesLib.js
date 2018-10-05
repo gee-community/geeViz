@@ -1813,8 +1813,8 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
   if(exportComposites){// Export composite collection
     var exportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'];
     exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
-    ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
-                  applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
+    ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,'TOA',weights,
+                  applyCloudScore, applyFmaskCloudMask,applyTDOM,'NA',applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
   }
   
   // return [ls,ts];
