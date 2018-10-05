@@ -273,7 +273,65 @@ function rescale(img, exp, thresholds) {
   return img.expression(exp, {img: img})
     .subtract(thresholds[0]).divide(thresholds[1] - thresholds[0]);
 }
+////////////////////////////////////////
+////////////////////////////////////////
+// Cloud masking algorithm for Sentinel2
+//Built on ideas from Landsat cloudScore algorithm
+//Currently in beta and may need tweaking for individual study areas
+function sentinelCloudScore(img) {
+  
 
+  // Compute several indicators of cloudyness and take the minimum of them.
+  var score = ee.Image(1);
+  var blueCirrusScore = ee.Image(0);
+  
+  // Clouds are reasonably bright in the blue or cirrus bands.
+  //Use .max as a pseudo OR conditional
+  blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.blue', [0.1, 0.5]));
+  blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.cb', [0.1, 0.5]));
+  blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.cirrus', [0.1, 0.3]));
+  
+  // var reSum = rescale(img,'(img.re1+img.re2+img.re3)/3',[0.5, 0.7])
+  // Map.addLayer(blueCirrusScore,{'min':0,'max':1})
+  score = score.min(blueCirrusScore);
+
+
+  // Clouds are reasonably bright in all visible bands.
+  score = score.min(rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8]));
+  
+  // Clouds are reasonably bright in all infrared bands.
+  score = score.min(
+      rescale(img, 'img.nir + img.swir1 + img.swir2', [0.3, 0.8]));
+  
+  
+  // However, clouds are not snow.
+  var ndsi =  img.normalizedDifference(['green', 'swir1']);
+ 
+  
+  score=score.min(rescale(ndsi, 'img', [0.8, 0.6]));
+  
+  score = score.multiply(100).byte();
+ 
+  return img.addBands(score.rename('cloudScore'));
+}
+//////////////////////////////////////////////////////////////////////////
+// Function to mask clouds using the Sentinel-2 QA band.
+function maskS2clouds(image) {
+  var qa = image.select('QA60').int16();
+  
+  // Bits 10 and 11 are clouds and cirrus, respectively.
+  var cloudBitMask = Math.pow(2, 10);
+  var cirrusBitMask = Math.pow(2, 11);
+  
+  // Both flags should be set to zero, indicating clear conditions.
+  var mask = qa.bitwiseAnd(cloudBitMask).eq(0).and(
+             qa.bitwiseAnd(cirrusBitMask).eq(0));
+
+  // Return the masked and scaled data.
+  return image.updateMask(mask);
+}
+//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 // Compute a cloud score and adds a band that represents the cloud mask.  
 // This expects the input image to have the common band names: 
