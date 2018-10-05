@@ -1701,11 +1701,13 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   Map.addLayer(s2s.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'})
   
   if(applyQABand){
+    print('Applying QA band cloud mask');
     var s2sT = s2s.map(maskS2clouds);
     Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'})
   
   }
   if(applyCloudScore){
+    print('Applying cloudScore');
      var s2sT = applyCloudScoreAlgorithm(s2s,sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels)
     Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'})
   }
