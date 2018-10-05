@@ -77,7 +77,7 @@ var applyFmaskCloudMask = false;
 var applyTDOM = false;
 var applyFmaskCloudShadowMask = false;
 
-var applyFmaskSnowMask = true;
+var applyFmaskSnowMask = false;
 
 // 11. Cloud and cloud shadow masking parameters.
 // If cloudScoreTDOM is chosen
