@@ -96,6 +96,7 @@ var cloudScorePctl = 10;
 
 //Height of clouds to use to project cloud shadows
 var cloudHeights = ee.List.sequence(500,10000,500);
+
 // zScoreThresh: Threshold for cloud shadow masking- lower number masks out 
 //    less. Between -0.8 and -1.2 generally works well
 var zScoreThresh = -1;
@@ -150,8 +151,8 @@ var scale = null;
 ///////////////////////////////////////////////////////////////////////
 getImageLib.getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,
   applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
-  applyFmaskCloudShadowMask,applyFmaskSnowMask,
   cloudScoreThresh,cloudScorePctl,
+  cloudHeights,
   zScoreThresh,shadowSumThresh,
   contractPixels,dilatePixels
   )
