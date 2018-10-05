@@ -922,14 +922,14 @@ function illuminationCorrection(img, scale,studyArea,bandList){
   if(bandList === null || bandList === undefined){
     bandList = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp']; 
   }
-  print(bandList)
-  // var props = img.toDictionary();
-  // var st = img.get('system:time_start');
-  // var img_plus_ic = img;
-  // var mask2 = img_plus_ic.select('slope').gte(5)
-  //   .and(img_plus_ic.select('IC').gte(0))
-  //   .and(img_plus_ic.select('nir').gt(-0.1));
-  // var img_plus_ic_mask2 = ee.Image(img_plus_ic.updateMask(mask2));
+  
+  var props = img.toDictionary();
+  var st = img.get('system:time_start');
+  var img_plus_ic = img;
+  var mask2 = img_plus_ic.select('slope').gte(5)
+    .and(img_plus_ic.select('IC').gte(0))
+    .and(img_plus_ic.select('nir').gt(-0.1));
+  var img_plus_ic_mask2 = ee.Image(img_plus_ic.updateMask(mask2));
   
   // // Specify Bands to topographically correct  
   // var compositeBands = img.bandNames();
