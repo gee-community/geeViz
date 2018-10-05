@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-79.76952173995778, 0.10173687028913508],
-          [-79.72557642745778, -0.9309369568856942],
-          [-77.15477564620778, -0.7771454958973137],
-          [-77.41844752120778, 0.255544670260995]]]);
+        [[[-79.00193668902529, -0.5256368366370479],
+          [-78.99781681597841, -0.6148963222946472],
+          [-78.82752873004091, -0.6162695340498422],
+          [-78.85224796832216, -0.5228903695837829]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -142,20 +142,20 @@ var outputName = 'Medoid-Landsat';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
-var exportPathRoot = 'users/ianhousman/test';
+var exportPathRoot = 'users/ianhousman/test/changeCollection';
 
 
 
 //CRS- must be provided.  
 //Common crs codes: Web mercator is EPSG:4326, USGS Albers is EPSG:5070, 
 //WGS84 UTM N hemisphere is EPSG:326+ zone number (zone 12 N would be EPSG:32612) and S hemisphere is EPSG:327+ zone number
-var crs = 'EPSG:5070';
+var crs = 'EPSG:32717';
 
 //Specify transform if scale is null and snapping to known grid is needed
-var transform = [30,0,-2361915.0,0,-30,3177735.0];
+var transform = null;
 
 //Specify scale if transform is null
-var scale = null;
+var scale = 20;
 ///////////////////////////////////////////////////////////////////////
 // getImageLib.getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,
 //   applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
