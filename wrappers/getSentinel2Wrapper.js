@@ -73,7 +73,7 @@ var compositingMethod = 'medoid';
 //TDOM also looks at the time series and will need a longer time series
 //QA band method is fast but is generally awful- don't use if you like good composites
 //Shadow shift is intended if you don't have a time series to use for TDOM or just want individual images
-
+//It will commit any dark area that the cloud mask is cast over (water, hill shadows, etc)
 var applyQABand = false;
 
 var applyCloudScore = true;
@@ -148,3 +148,10 @@ var transform = [30,0,-2361915.0,0,-30,3177735.0];
 //Specify scale if transform is null
 var scale = null;
 ///////////////////////////////////////////////////////////////////////
+getImageLib.getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,
+  applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
+  applyFmaskCloudShadowMask,applyFmaskSnowMask,
+  cloudScoreThresh,cloudScorePctl,
+  zScoreThresh,shadowSumThresh,
+  contractPixels,dilatePixels
+  )
