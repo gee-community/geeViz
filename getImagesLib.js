@@ -1722,7 +1722,7 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   }
   if(applyCloudScore){
     print('Applying cloudScore');
-     var s2sT = applyCloudScoreAlgorithm(s2s,sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels)
+     var s2sT = applyCloudScoreAlgorithm(s2s,sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset)
     Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'Cloud score cloud masked')
   }
   if(applyShadowShift){
