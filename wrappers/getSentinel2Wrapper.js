@@ -130,7 +130,7 @@ var dilatePixels = 2.5;
 // 12. correctIllumination: Choose if you want to correct the illumination using
 // Sun-Canopy-Sensor+C correction. Additionally, choose the scale at which the
 // correction is calculated in meters.
-var correctIllumination = true;
+var correctIllumination = false;
 var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 
 //13. Export params
