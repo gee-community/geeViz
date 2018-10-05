@@ -311,7 +311,7 @@ function sentinelCloudScore(img) {
   score=score.min(rescale(ndsi, 'img', [0.8, 0.6]));
   
   score = score.multiply(100).byte();
- 
+  score = score.clamp(0,100);
   return img.addBands(score.rename('cloudScore'));
 }
 //////////////////////////////////////////////////////////////////////////
