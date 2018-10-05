@@ -90,7 +90,9 @@ var cloudScoreThresh = 20;
 
 //Whether to find if an area typically has a high cloudScore
 //If an area is always cloudy, this will result in cloud masking omission
-//For bright areas, this will result in a reduction of commission errors
+//For bright areas that may always have a high cloudScore
+//but not actually be cloudy, this will result in a reduction of commission errors
+//This procedure needs at least 5 years of data to work well
 var performCloudScoreOffset = true;
 
 // If performCloudScoreOffset = true:
