@@ -177,7 +177,64 @@ function defringeLandsat(img){
   // Map.addLayer(img,vizParams,'defringed')
   return img;
 }
-
+//////////////////////////////////////////////////////
+//Function to find unique values of a field in a collection
+function uniqueValues(collection,field){
+    var values  =ee.Dictionary(collection.reduceColumns(ee.Reducer.frequencyHistogram(),[field]).get('histogram')).keys();
+    
+    return values;
+  }
+//////////////////////////////////////////////////////
+//Function to simplify data into daily mosaics
+//This procedure must be used for proper processing of S2 imagery
+function dailyMosaics(imgs){
+  //Simplify date to exclude time of day
+  imgs = imgs.map(function(img){
+  var d = ee.Date(img.get('system:time_start'));
+  var day = d.get('day');
+  var m = d.get('month');
+  var y = d.get('year');
+  var simpleDate = ee.Date.fromYMD(y,m,day);
+  return img.set('simpleTime',simpleDate.millis());
+  });
+  
+  //Find the unique days
+  var days = uniqueValues(imgs,'simpleTime');
+  
+  imgs = days.map(function(d){
+    d = ee.Number.parse(d);
+    d = ee.Date(d);
+    var t = imgs.filterDate(d,d.advance(1,'day'));
+    var f = ee.Image(t.first());
+    t = t.mosaic();
+    t = t.set('system:time_start',d.millis());
+    t = t.copyProperties(f);
+    return t;
+    });
+    imgs = ee.ImageCollection.fromImages(imgs);
+    
+    return imgs;
+}
+//////////////////////////////////////////////////////
+function getS2(studyArea,startDate,endDate,startJulian,endJulian){
+  //Get some s2 data
+  var s2s = ee.ImageCollection('COPERNICUS/S2')
+                    .filterDate(startDate,endDate)
+                    .filter(ee.Filter.calendarRange(startJulian,endJulian))
+                    .filterBounds(studyArea)
+                    .map(function(img){
+                      
+                      var t = img.select([ 'B1','B2','B3','B4','B5','B6','B7','B8','B8A', 'B9','B10', 'B11','B12']).divide(10000);//Rescale to 0-1
+                      t = t.addBands(img.select(['QA60']));
+                      var out = t.copyProperties(img).copyProperties(img,['system:time_start']);
+                    return out;
+                      })
+                      .select(['QA60', 'B1','B2','B3','B4','B5','B6','B7','B8','B8A', 'B9','B10', 'B11','B12'],['QA60','cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2']);
+  
+  //Convert to daily mosaics to avoid redundent observations in MGRS overlap areas and edge artifacts for shadow masking
+  s2s = dailyMosaics(s2s);
+return s2s
+}
 //////////////////////////////////////////////////////////////////
 // Function for acquiring Landsat TOA image collection
 function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
