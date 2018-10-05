@@ -1659,6 +1659,69 @@ function getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJu
   
   return ls;
 }
+//Wrapper function for getting Landsat imagery
+function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,
+  applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
+  applyFmaskCloudShadowMask,applyFmaskSnowMask,
+  cloudScoreThresh,cloudScorePctl,
+  zScoreThresh,shadowSumThresh,
+  contractPixels,dilatePixels
+  ){
+  
+  // Prepare dates
+  //Wrap the dates if needed
+  var wrapOffset = 0;
+  if (startJulian > endJulian) {
+    wrapOffset = 365;
+  }
+  var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
+  var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day');
+  print('Start and end dates:', startDate, endDate);
+
+  
+  // Get Sentinel2 image collection
+  var ls = getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
+    toaOrSR,includeSLCOffL7,defringeL5);
+  
+  // // Apply relevant cloud masking methods
+  // if(applyCloudScore){
+  //   print('Applying cloudScore');
+  //   ls = applyCloudScoreAlgorithm(ls,landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
+    
+  // }
+  
+  // if(applyFmaskCloudMask){
+  //   print('Applying Fmask cloud mask');
+  //   ls = ls.map(function(img){return cFmask(img,'cloud')});
+  // }
+  
+  // if(applyTDOM){
+  //   print('Applying TDOM');
+  //   //Find and mask out dark outliers
+  //   ls = simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
+  // }
+  // if(applyFmaskCloudShadowMask){
+  //   print('Applying Fmask shadow mask');
+  //   ls = ls.map(function(img){return cFmask(img,'shadow')});
+  // }
+  // if(applyFmaskSnowMask){
+  //   print('Applying Fmask snow mask');
+  //   ls = ls.map(function(img){return cFmask(img,'snow')});
+  // }
+  
+  
+  
+  
+  // // Add common indices- can use addIndices for comprehensive indices 
+  // //or simpleAddIndices for only common indices
+  // ls = ls.map(simpleAddIndices)
+  //         .map(getTasseledCap)
+  //         .map(simpleAddTCAngles);
+  
+  
+  
+  // return ls;
+}
 //////////////////////////////////////////////////////////
 //Harmonic regression
 ////////////////////////////////////////////////////////////////////
