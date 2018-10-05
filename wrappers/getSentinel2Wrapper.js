@@ -20,7 +20,7 @@ var studyArea = geometry;
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
 var startJulian = 1;
-var endJulian = 365; 
+var endJulian = 100; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
@@ -74,7 +74,7 @@ var compositingMethod = 'medoid';
 //QA band method is fast but is generally awful- don't use if you like good composites
 //Shadow shift is intended if you don't have a time series to use for TDOM or just want individual images
 //It will commit any dark area that the cloud mask is cast over (water, hill shadows, etc)
-var applyQABand = false;
+var applyQABand = true;
 
 var applyCloudScore = true;
 var applyShadowShift = false;
@@ -155,4 +155,4 @@ getImageLib.getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,
   cloudHeights,
   zScoreThresh,shadowSumThresh,
   contractPixels,dilatePixels
-  )
+  );
