@@ -26,8 +26,8 @@ var endJulian = 250;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2005;
-var endYear = 2012;
+var startYear = 2014;
+var endYear = 2018;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -129,7 +129,7 @@ var outputName = 'Landsat';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
-var exportPathRoot = 'users/ianhousman/test';
+var exportPathRoot = 'users/ianhousman/test/changeCollection';
 
 
 
