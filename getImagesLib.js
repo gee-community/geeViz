@@ -394,7 +394,7 @@ function projectShadows(cloudMask,image,cloudHeights,yMult){
   image = image.updateMask(cloudShadowMask.not()).addBands(shadowMask.rename(['cloudShadowMask']));
   return image;
 }
-function projectShadowsWrapper(img,cloudThresh,contractPixels,dilatePixels){
+function projectShadowsWrapper(img,cloudThresh,contractPixels,dilatePixels,cloudHeights){
   var cloudMask = sentinel2CloudScore(img).gt(cloudThresh)
     .focal_min(contractPixels).focal_max(dilatePixels);
 
