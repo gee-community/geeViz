@@ -714,17 +714,18 @@ function simpleAddTCAngles(image){
 ///////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 // Function to add solar zenith and azimuth in radians as bands to image
-function addZenithAzimuth(img,toaOrSR){
-  
-  // Define zenith and azimuth metadata
-  var zenithDict = {
+function addZenithAzimuth(img,toaOrSR,zenithDict,azimuthDict){
+  if(zenithDict === undefined || zenithDict === null){zenithDict = {
     'TOA': 'SUN_ELEVATION',
-    'SR': 'SOLAR_ZENITH_ANGLE'
-  };
-  var azimuthDict = {
+    'SR': 'SOLAR_ZENITH_ANGLE'};
+  }
+  if(azimuthDict === undefined || azimuthDict === null){azimuthDict = {
     'TOA': 'SUN_AZIMUTH',
     'SR': 'SOLAR_AZIMUTH_ANGLE'
   };
+  }
+  
+   
   
   var zenith = ee.Image.constant(img.get(zenithDict[toaOrSR]))
     .multiply(Math.PI).divide(180).float().rename('zenith');
