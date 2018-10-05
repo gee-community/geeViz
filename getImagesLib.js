@@ -1711,16 +1711,17 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   if(applyQABand){
     print('Applying QA band cloud mask');
     var s2sT = s2s.map(maskS2clouds);
-    Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'})
+    Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'QA cloud masked')
   
   }
   if(applyCloudScore){
     print('Applying cloudScore');
      var s2sT = applyCloudScoreAlgorithm(s2s,sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels)
-    Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'})
+    Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'Cloud score cloud masked')
   }
   if(applyShadowShift){
-    
+    var s2sT = s2s.map(function(img){return projectShadowsWrapper(img,cloudThresh,contractPixels,dilatePixels,cloudHeights)})
+    Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'QA cloud masked')
   }
   if(applyTDOM){
     
