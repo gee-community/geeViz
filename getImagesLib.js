@@ -462,7 +462,7 @@ function applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh
     var cs = cloudScoreFunction(img).rename(['cloudScore']);
     return img.addBands(cs);
   });
-  
+  print('here')
   if(performCloudScoreOffset){
     print('Computing cloudScore offset');
     // Find low cloud score pctl for each pixel to avoid comission errors
