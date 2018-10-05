@@ -1706,7 +1706,7 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   
   }
   if(applyCloudScore){
-    s2s = applyCloudScoreAlgorithm(ls,landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels)
+    s2s = applyCloudScoreAlgorithm(ls,sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels)
   }
   if(applyShadowShift){
     
