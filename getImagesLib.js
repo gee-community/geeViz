@@ -2299,6 +2299,7 @@ exports.addYearBand = addYearBand;
 exports.addDateBand = addDateBand;
 exports.collectionToImage = collectionToImage;
 exports.getImageCollection = getImageCollection;
+exports.getS2 = getS2;
 exports.vizParamsFalse = vizParamsFalse;
 exports.vizParamsTrue = vizParamsTrue;
 exports.landsatCloudScore = landsatCloudScore;
@@ -2341,3 +2342,4 @@ exports.getAreaUnderCurve = getAreaUnderCurve;
 exports.getClimateWrapper = getClimateWrapper;
 exports.exportCollection = exportCollection;
 exports.changeDirDict = changeDirDict;
+
