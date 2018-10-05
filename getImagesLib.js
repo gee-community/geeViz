@@ -331,47 +331,7 @@ function rescale(img, exp, thresholds) {
     .subtract(thresholds[0]).divide(thresholds[1] - thresholds[0]);
 }
 ////////////////////////////////////////
-////////////////////////////////////////
-// Cloud masking algorithm for Sentinel2
-//Built on ideas from Landsat cloudScore algorithm
-//Currently in beta and may need tweaking for individual study areas
-function sentinelCloudScore(img) {
-  
 
-  // Compute several indicators of cloudyness and take the minimum of them.
-  var score = ee.Image(1);
-  var blueCirrusScore = ee.Image(0);
-  
-  // Clouds are reasonably bright in the blue or cirrus bands.
-  //Use .max as a pseudo OR conditional
-  blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.blue', [0.1, 0.5]));
-  blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.cb', [0.1, 0.5]));
-  blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.cirrus', [0.1, 0.3]));
-  
-  // var reSum = rescale(img,'(img.re1+img.re2+img.re3)/3',[0.5, 0.7])
-  // Map.addLayer(blueCirrusScore,{'min':0,'max':1})
-  score = score.min(blueCirrusScore);
-
-
-  // Clouds are reasonably bright in all visible bands.
-  score = score.min(rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8]));
-  
-  // Clouds are reasonably bright in all infrared bands.
-  score = score.min(
-      rescale(img, 'img.nir + img.swir1 + img.swir2', [0.3, 0.8]));
-  
-  
-  // However, clouds are not snow.
-  var ndsi =  img.normalizedDifference(['green', 'swir1']);
- 
-  
-  score=score.min(rescale(ndsi, 'img', [0.8, 0.6]));
-  
-  score = score.multiply(100).byte();
-  score = score.clamp(0,100);
-  return img.addBands(score.rename('cloudScore'));
-}
-////////////////////////////////////////////////////////
 /////////////////////////////////////////////
 /***
  * Implementation of Basic cloud shadow shift
@@ -1088,7 +1048,7 @@ function modisCloudScore(img) {
 // Cloud masking algorithm for Sentinel2
 //Built on ideas from Landsat cloudScore algorithm
 //Currently in beta and may need tweaking for individual study areas
-function sentinelCloudScore(img) {
+function sentinel2CloudScore(img) {
   
 
   // Compute several indicators of cloudyness and take the minimum of them.
@@ -1746,7 +1706,7 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   
   }
   if(applyCloudScore){
-    
+    s2s = applyCloudScoreAlgorithm(ls,landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels)
   }
   if(applyShadowShift){
     
