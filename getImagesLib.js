@@ -918,7 +918,10 @@ function illuminationCondition(img){
 // Function to apply the Sun-Canopy-Sensor + C (SCSc) correction method to each 
 // image. Function by Patrick Burns (pb463@nau.edu) and Matt Macander 
 // (mmacander@abrinc.com)
-function illuminationCorrection(img, scale,studyArea){
+function illuminationCorrection(img, scale,studyArea,bandList){
+  if(bandList === null || bandList === undefined){
+    bandList = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp']; 
+  }
   var props = img.toDictionary();
   var st = img.get('system:time_start');
   var img_plus_ic = img;
@@ -928,7 +931,6 @@ function illuminationCorrection(img, scale,studyArea){
   var img_plus_ic_mask2 = ee.Image(img_plus_ic.updateMask(mask2));
   
   // Specify Bands to topographically correct  
-  var bandList = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp']; 
   var compositeBands = img.bandNames();
   var nonCorrectBands = img.select(compositeBands.removeAll(bandList));
   
