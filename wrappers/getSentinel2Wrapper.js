@@ -154,7 +154,7 @@ var exportPathRoot = 'users/ianhousman/test/changeCollection';
 var crs = 'EPSG:32717';
 
 //Specify transform if scale is null and snapping to known grid is needed
-var transform = null;
+var transform = null;//[30,0,-2361915.0,0,-30,3177735.0];
 
 //Specify scale if transform is null
 var scale = 20;
