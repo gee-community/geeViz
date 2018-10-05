@@ -931,42 +931,42 @@ function illuminationCorrection(img, scale,studyArea,bandList){
     .and(img_plus_ic.select('nir').gt(-0.1));
   var img_plus_ic_mask2 = ee.Image(img_plus_ic.updateMask(mask2));
   
-  // // Specify Bands to topographically correct  
-  // var compositeBands = img.bandNames();
-  // var nonCorrectBands = img.select(compositeBands.removeAll(bandList));
+  // Specify Bands to topographically correct  
+  var compositeBands = img.bandNames();
+  var nonCorrectBands = img.select(compositeBands.removeAll(bandList));
   
-  // function apply_SCSccorr(bandList){
-  //   var method = 'SCSc';
-  //   var out = img_plus_ic_mask2.select('IC', bandList).reduceRegion({
-  //     reducer: ee.Reducer.linearFit(),
-  //     geometry: studyArea,
-  //     scale: scale,
-  //     maxPixels: 1e13
-  //   }); 
-  //   var out_a = ee.Number(out.get('scale'));
-  //   var out_b = ee.Number(out.get('offset'));
-  //   var out_c = out_b.divide(out_a);
-  //   // Apply the SCSc correction
-  //   var SCSc_output = img_plus_ic_mask2.expression(
-  //     "((image * (cosB * cosZ + cvalue)) / (ic + cvalue))", {
-  //     'image': img_plus_ic_mask2.select(bandList),
-  //     'ic': img_plus_ic_mask2.select('IC'),
-  //     'cosB': img_plus_ic_mask2.select('cosS'),
-  //     'cosZ': img_plus_ic_mask2.select('cosZ'),
-  //     'cvalue': out_c
-  //   });
+  function apply_SCSccorr(bandList){
+    var method = 'SCSc';
+    var out = img_plus_ic_mask2.select('IC', bandList).reduceRegion({
+      reducer: ee.Reducer.linearFit(),
+      geometry: studyArea,
+      scale: scale,
+      maxPixels: 1e13
+    }); 
+    var out_a = ee.Number(out.get('scale'));
+    var out_b = ee.Number(out.get('offset'));
+    var out_c = out_b.divide(out_a);
+    // Apply the SCSc correction
+    var SCSc_output = img_plus_ic_mask2.expression(
+      "((image * (cosB * cosZ + cvalue)) / (ic + cvalue))", {
+      'image': img_plus_ic_mask2.select(bandList),
+      'ic': img_plus_ic_mask2.select('IC'),
+      'cosB': img_plus_ic_mask2.select('cosS'),
+      'cosZ': img_plus_ic_mask2.select('cosZ'),
+      'cvalue': out_c
+    });
     
-  //   return SCSc_output;
-  // }
+    return SCSc_output;
+  }
   
-  // var img_SCSccorr = ee.Image(bandList.map(apply_SCSccorr))
-  //   .addBands(img_plus_ic.select('IC'));
-  // var bandList_IC = ee.List([bandList, 'IC']).flatten();
-  // img_SCSccorr = img_SCSccorr.unmask(img_plus_ic.select(bandList_IC)).select(bandList);
+  var img_SCSccorr = ee.Image(bandList.map(apply_SCSccorr))
+    .addBands(img_plus_ic.select('IC'));
+  var bandList_IC = ee.List([bandList, 'IC']).flatten();
+  img_SCSccorr = img_SCSccorr.unmask(img_plus_ic.select(bandList_IC)).select(bandList);
   
-  // return img_SCSccorr.addBands(nonCorrectBands)
-  //   .setMulti(props)
-  //   .set('system:time_start',st);
+  return img_SCSccorr.addBands(nonCorrectBands)
+    .setMulti(props)
+    .set('system:time_start',st);
 }
 //Function for converting an array to a string delimited by the space parameter
 function listToString(list,space){
