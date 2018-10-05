@@ -199,13 +199,18 @@ ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
 s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 
 // Create composite time series
-var lsTs = compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
+var lsTs = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
 
-var s2Ts = compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
+var s2Ts = getImageLib.compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
   
 
-// var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'];
-// exportCompositeCollection(exportPathRoot,'Sentinel2',studyArea,crs,transform,scale,
-// ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,'TOA',weights,
-//               applyCloudScore, 'NA',applyTDOM,'NA','NA','NA',correctIllumination,null);
+var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'];
+getImageLib.exportCompositeCollection(exportPathRoot,'Sentinel2_',studyArea,crs,transform,scale,
+s2Ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,S2ExportBands,'TOA',weights,
+              true, 'NA',true,'NA','NA','NA',correctIllumination,null);
+
+var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'];
+getImageLib.exportCompositeCollection(exportPathRoot,'Sentinel2_',studyArea,crs,transform,scale,
+s2Ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,S2ExportBands,'TOA',weights,
+              true, false,true,false,false,false,correctIllumination,null);
 
