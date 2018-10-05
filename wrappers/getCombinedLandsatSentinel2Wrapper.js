@@ -180,8 +180,8 @@ var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,
     toaOrSR,includeSLCOffL7,defringeL5);
 var s2s = getImageLib.getS2(studyArea,startDate,endDate,startJulian,endJulian);
 
-ls = applyCloudScoreAlgorithm(ls,landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
-s2s = applyCloudScoreAlgorithm(s2s,sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
+ls = getImageLib.applyCloudScoreAlgorithm(ls,landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
+s2s = getImageLib.applyCloudScoreAlgorithm(s2s,sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
 var merged = ls.merge(s2s);
 merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
 print(merged.first())
