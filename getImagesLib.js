@@ -1699,7 +1699,8 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,
   cloudHeights,
   zScoreThresh,shadowSumThresh,
-  contractPixels,dilatePixels
+  contractPixels,dilatePixels,
+  correctIllumination,correctScale
   ){
   
   // Prepare dates
@@ -1740,7 +1741,12 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   }
   
   
-  
+  // Add zenith and azimuth
+  if (correctIllumination){
+    s2s = s2s.map(function(img){
+      return addZenithAzimuth(img,'TOA',{'TOA':'MEAN_SOLAR_ZENITH_ANGLE'},{'TOA':'MEAN_SOLAR_AZIMUTH_ANGLE'});
+    });
+  }
   
   
   
@@ -1771,16 +1777,12 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
   cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,
   cloudHeights,
   zScoreThresh,shadowSumThresh,
-  contractPixels,dilatePixels
-  )
+  contractPixels,dilatePixels,
+  correctIllumination,correctScale
+  );
   
   print(s2s.first())
-  // Add zenith and azimuth
-  if (correctIllumination){
-    s2s = s2s.map(function(img){
-      return addZenithAzimuth(img,'TOA',{'TOA':'MEAN_SOLAR_ZENITH_ANGLE'},{'TOA':'MEAN_SOLAR_AZIMUTH_ANGLE'});
-    });
-  }
+  
   
   // // Add common indices- can use addIndices for comprehensive indices 
   // //or simpleAddIndices for only common indices
