@@ -1754,7 +1754,7 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   if(applyTDOM){
     
   }
-  }
+  
   // // Apply relevant cloud masking methods
   // if(applyCloudScore){
   //   print('Applying cloudScore');
