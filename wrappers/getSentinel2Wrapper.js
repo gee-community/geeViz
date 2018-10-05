@@ -155,7 +155,7 @@ var crs = 'EPSG:32717';
 var transform = null;
 
 //Specify scale if transform is null
-var scale = 30;
+var scale = 20;
 ///////////////////////////////////////////////////////////////////////
 // getImageLib.getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,
 //   applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
