@@ -1,9 +1,5 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-79.00193668902529, -0.5256368366370479],
-          [-78.99781681597841, -0.6148963222946472],
-          [-78.82752873004091, -0.6162695340498422],
-          [-78.85224796832216, -0.5228903695837829]]]);
+var geometry = /* color: #d63000 */ee.Geometry.MultiPoint();
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
