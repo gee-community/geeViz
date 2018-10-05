@@ -314,6 +314,68 @@ function sentinelCloudScore(img) {
   score = score.clamp(0,100);
   return img.addBands(score.rename('cloudScore'));
 }
+////////////////////////////////////////////////////////
+/////////////////////////////////////////////
+/***
+ * Implementation of Basic cloud shadow shift
+ * 
+ * Author: Gennadii Donchyts
+ * License: Apache 2.0
+ */
+function projectShadows(cloudMask,image,cloudHeights,yMult){
+  if(yMult === undefined || yMult === null){
+    yMult = ee.Algorithms.If(ee.Algorithms.IsEqual(image.select([3]).projection(), ee.Projection("EPSG:4326")),1,-1);
+  }
+  var meanAzimuth = image.get('MEAN_SOLAR_AZIMUTH_ANGLE');
+  var meanZenith = image.get('MEAN_SOLAR_ZENITH_ANGLE');
+  ///////////////////////////////////////////////////////
+  // print('a',meanAzimuth);
+  // print('z',meanZenith)
+  
+  //Find dark pixels
+  var darkPixels = image.select(['nir','swir1','swir2']).reduce(ee.Reducer.sum()).lt(irSumThresh)
+    .focal_min(contractPixels).focal_max(dilatePixels)
+  ;//.gte(1);
+  
+  
+  //Get scale of image
+  var nominalScale = cloudMask.projection().nominalScale();
+  //Find where cloud shadows should be based on solar geometry
+  //Convert to radians
+  var azR =ee.Number(meanAzimuth).add(180).multiply(Math.PI).divide(180.0);
+  var zenR  =ee.Number(meanZenith).multiply(Math.PI).divide(180.0);
+  
+  
+ 
+  //Find the shadows
+  var shadows = cloudHeights.map(function(cloudHeight){
+    cloudHeight = ee.Number(cloudHeight);
+    
+    var shadowCastedDistance = zenR.tan().multiply(cloudHeight);//Distance shadow is cast
+    var x = azR.sin().multiply(shadowCastedDistance).divide(nominalScale);//X distance of shadow
+    var y = azR.cos().multiply(shadowCastedDistance).divide(nominalScale).multiply(yMult);//Y distance of shadow
+    // print(x,y)
+   
+    return cloudMask.changeProj(cloudMask.projection(), cloudMask.projection().translate(x, y));
+    
+    
+  });
+  
+  
+  var shadowMask = ee.ImageCollection.fromImages(shadows).max();
+  
+  //Create shadow mask
+  shadowMask = shadowMask.and(cloudMask.not());
+  shadowMask = shadowMask.and(darkPixels).focal_min(contractPixels).focal_max(dilatePixels);
+  // Map.addLayer(cloudMask.updateMask(cloudMask),{'min':1,'max':1,'palette':'88F'},'Cloud mask');
+  // Map.addLayer(shadowMask.updateMask(shadowMask),{'min':1,'max':1,'palette':'880'},'Shadow mask');
+  
+  var cloudShadowMask = shadowMask.or(cloudMask);
+  
+  image = image.updateMask(cloudShadowMask.not()).addBands(shadowMask.rename(['cloudShadowMask']));
+  return image;
+}
+//////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 // Function to mask clouds using the Sentinel-2 QA band.
 function maskS2clouds(image) {
