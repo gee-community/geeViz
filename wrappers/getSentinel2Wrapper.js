@@ -74,11 +74,11 @@ var compositingMethod = 'medoid';
 //QA band method is fast but is generally awful- don't use if you like good composites
 //Shadow shift is intended if you don't have a time series to use for TDOM or just want individual images
 //It will commit any dark area that the cloud mask is cast over (water, hill shadows, etc)
-var applyQABand = true;
+var applyQABand = false;
 
 var applyCloudScore = true;
-var applyShadowShift = true;
-var applyTDOM = false;
+var applyShadowShift = false;
+var applyTDOM = true;
 
 
 // 11. Cloud and cloud shadow masking parameters.
