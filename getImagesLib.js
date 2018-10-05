@@ -1462,7 +1462,10 @@ collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer
 // Function to export composite collection
 function exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
 collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
-applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination){
+applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,nonDivideBands){
+  if(nonDivideBands === undefined){
+    nonDivideBands = ['temp'];
+  }
   collection = collection.select(exportBands);
   var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
@@ -1483,11 +1486,17 @@ applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFm
   
     // Reformat data for export
     var compositeBands = composite.bandNames();
-    var nonDivideBands = ee.List(['temp']);
-    var composite10k = composite.select(compositeBands.removeAll(nonDivideBands))
+    if(nonDividBands != null){
+      var composite10k = composite.select(compositeBands.removeAll(nonDivideBands))
       .multiply(10000);
-    composite = composite10k.addBands(composite.select(nonDivideBands))
+      composite = composite10k.addBands(composite.select(nonDivideBands))
       .select(compositeBands).int16();
+    }
+    else{
+      var composite10k = composite.multiply(10000).int16();
+    }
+    
+    
 
     // Add metadata, cast to integer, and export composite
     composite = composite.set({
