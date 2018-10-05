@@ -1750,7 +1750,7 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   
   
   
-  // return ls;
+  return s2s;
 }
 //////////////////////////////////////////////////////////
 //Harmonic regression
