@@ -184,4 +184,5 @@ ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloud
 s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
 var merged = ls.merge(s2s);
 merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
-print(merged.first())
+
+
