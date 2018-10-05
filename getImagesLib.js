@@ -1744,7 +1744,7 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   
   // Add common indices- can use addIndices for comprehensive indices 
   //or simpleAddIndices for only common indices
-  ls = ls.map(simpleAddIndices)
+  s2s = s2s.map(simpleAddIndices)
           .map(getTasseledCap)
           .map(simpleAddTCAngles);
   
