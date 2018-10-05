@@ -159,15 +159,9 @@ var transform = null;//[30,0,-2361915.0,0,-30,3177735.0];
 //Specify scale if transform is null
 var scale = 20;
 ///////////////////////////////////////////////////////////////////////
-// getImageLib.getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,
-//   applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
-//   cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,
-//   cloudHeights,
-//   zScoreThresh,shadowSumThresh,
-//   contractPixels,dilatePixels
-//   );
+
   
-getImageLib.getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
+var s2sAndTs =getImageLib.getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
   timebuffer,weights,compositingMethod,
   applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
   cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,
@@ -175,4 +169,25 @@ getImageLib.getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulia
   zScoreThresh,shadowSumThresh,
   contractPixels,dilatePixels,
   correctIllumination,correctScale,
-  exportComposites,outputName,exportPathRoot,crs,transform,scale)
+  exportComposites,outputName,exportPathRoot,crs,transform,scale);
+  
+//Separate into scenes and composites for subsequent analysis
+var processedScenes = s2sAndTs[0];
+var processedComposites = s2sAndTs[1];
+
+////////////////////////////////////////////////////////////////////////////////
+// Load the study region, with a blue outline.
+// Create an empty image into which to paint the features, cast to byte.
+// Paint all the polygon edges with the same number and width, display.
+var empty = ee.Image().byte();
+var outline = empty.paint({
+  featureCollection: studyArea,
+  color: 1,
+  width: 3
+});
+Map.addLayer(outline, {palette: '0000FF'}, "Study Area", false);
+// Map.centerObject(studyArea, 6);
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
