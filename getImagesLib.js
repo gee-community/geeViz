@@ -394,6 +394,14 @@ function projectShadows(cloudMask,image,cloudHeights,yMult){
   image = image.updateMask(cloudShadowMask.not()).addBands(shadowMask.rename(['cloudShadowMask']));
   return image;
 }
+function projectShadowsWrapper(img,cloudThresh,contractPixels,dilatePixels){
+  var cloudMask = sentinel2CloudScore(img).gt(cloudThresh)
+    .focal_min(contractPixels).focal_max(dilatePixels);
+
+  img = projectShadows(cloudMask,img,cloudHeights);
+
+  return img;
+}
 //////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 // Function to mask clouds using the Sentinel-2 QA band.
