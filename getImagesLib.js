@@ -1727,39 +1727,17 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
     Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'Cloud score cloud masked')
   }
   if(applyShadowShift){
+    print('Applying shadow shift');
     var s2sT = s2s.map(function(img){return projectShadowsWrapper(img,cloudScoreThresh,shadowSumThresh,contractPixels,dilatePixels,cloudHeights)})
     Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'shadow shift shadow masked')
   }
   if(applyTDOM){
+    print('Applying TDOM');
     var s2sT = simpleTDOM2(s2s,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
     Map.addLayer(s2sT.median(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'TDOM shadow masked')
   }
   
-  // // Apply relevant cloud masking methods
-  // if(applyCloudScore){
-  //   print('Applying cloudScore');
-  //   ls = applyCloudScoreAlgorithm(ls,landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
-    
-  // }
   
-  // if(applyFmaskCloudMask){
-  //   print('Applying Fmask cloud mask');
-  //   ls = ls.map(function(img){return cFmask(img,'cloud')});
-  // }
-  
-  // if(applyTDOM){
-  //   print('Applying TDOM');
-  //   //Find and mask out dark outliers
-  //   ls = simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
-  // }
-  // if(applyFmaskCloudShadowMask){
-  //   print('Applying Fmask shadow mask');
-  //   ls = ls.map(function(img){return cFmask(img,'shadow')});
-  // }
-  // if(applyFmaskSnowMask){
-  //   print('Applying Fmask snow mask');
-  //   ls = ls.map(function(img){return cFmask(img,'snow')});
-  // }
   
   
   
