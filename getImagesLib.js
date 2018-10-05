@@ -1661,9 +1661,9 @@ function getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJu
 }
 //Wrapper function for getting Landsat imagery
 function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,
-  applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
-  applyFmaskCloudShadowMask,applyFmaskSnowMask,
+  applyQABand,applyCloudScore,applyShadowShift,applyTDOM
   cloudScoreThresh,cloudScorePctl,
+  cloudHeights,
   zScoreThresh,shadowSumThresh,
   contractPixels,dilatePixels
   ){
