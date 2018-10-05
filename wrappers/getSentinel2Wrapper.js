@@ -131,7 +131,7 @@ var dilatePixels = 2.5;
 // Sun-Canopy-Sensor+C correction. Additionally, choose the scale at which the
 // correction is calculated in meters.
 var correctIllumination = true;
-var correctScale = 2500;//Choose a scale to reduce on- 250 generally works well
+var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 
 //13. Export params
 //Whether to export composites
@@ -155,7 +155,7 @@ var crs = 'EPSG:32717';
 var transform = null;
 
 //Specify scale if transform is null
-var scale = 20;
+var scale = 30;
 ///////////////////////////////////////////////////////////////////////
 // getImageLib.getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,
 //   applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
