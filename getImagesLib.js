@@ -1501,7 +1501,7 @@ applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFm
 
     // Add metadata, cast to integer, and export composite
     composite = composite.set({
-      // 'system:time_start': ee.Date.fromYMD(year,6,1).millis(),
+      'system:time_start': ee.Date.fromYMD(year,6,1).millis(),
       'source': toaOrSR,
       'yearBuffer':timebuffer,
       'yearWeights': listToString(weights),
