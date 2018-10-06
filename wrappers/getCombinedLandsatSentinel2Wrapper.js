@@ -211,6 +211,6 @@ s2Ts,2000,2005,startJulian,endJulian,compositingMethod,timebuffer,S2ExportBands,
 
 var lExportBands = [ 'blue', 'green', 'red','nir','swir1', 'swir2','temp'];
 getImageLib.exportCompositeCollection(exportPathRoot,'Landsat_',studyArea,crs,transform,30,
-lsTs,2000,2005,startJulian,endJulian,compositingMethod,timebuffer,lExportBands,'TOA',weights,
+lsTs,2000,2005,startJulian,endJulian,compositingMethod,timebuffer,lExportBands,toaOrSR,weights,
               true, false,true,false,false,false,false,['temp']);
 
