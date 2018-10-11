@@ -199,15 +199,15 @@ ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
 s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 
 // Create composite time series
-var lsTs = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
-var s2Ts = getImageLib.compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
 
 var everyHowManyDays = 14;
 ee.List.sequence(startJulian,endJulian,everyHowManyDays).getInfo().map(function(startJD){
   
   var endJD = startJD + everyHowManyDays-1;
   if(endJD < endJulian){
-    print(startJD,endJD)
+    var lsTs = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJD,endJD,timebuffer,weights,compositingMethod);
+    var s2Ts = getImageLib.compositeTimeSeries(s2s,startYear,endYear,startJD,endJD,timebuffer,weights,compositingMethod);
+
   }
 })
 // var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2','count'];
