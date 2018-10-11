@@ -200,7 +200,7 @@ s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 
 // Create composite time series
 
-var everyHowManyDays = 365;
+var everyHowManyDays = 150;
 //Iterate across each year
 ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function(year){
     
@@ -221,7 +221,17 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
 
     if(endJulianT <= endJulian){
       print(startYearT,endYearT,year,startJulianT,endJulianT);
-      
+      //Iterate across each year in list
+      var images = yearsTT.map(function(yr){
+       
+        
+        // Filter images for given date range
+        var lsT = ls.filterDate(startDateT,endDateT);
+        lsT = fillEmptyCollections(lsT,dummyImage);
+        return lsT;
+      });
+      var lsT = ee.ImageCollection(ee.FeatureCollection(images).flatten());
+    
       
     }
 })
