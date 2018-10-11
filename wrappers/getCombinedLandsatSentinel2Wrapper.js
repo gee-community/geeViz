@@ -249,7 +249,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
     var startDate = ee.Date.fromYMD(year,1,1).advance(startJulianT,'day').millis();
     var endDate = ee.Date.fromYMD(year,1,1).advance(endJulianT,'day').millis();
     
-    composite = composite.set(composite.set({
+    composite = composite.set({
                         'system:time_start':startDate,
                         'system:time_end':endDate,
                         'startJulian':startJulian,
@@ -270,7 +270,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
                         'useCloudProject':false,
                         'useTDOM':true
                      
-    }));
+    });
     
     // Reformat data for export
     var compositeBands = composite.bandNames();
