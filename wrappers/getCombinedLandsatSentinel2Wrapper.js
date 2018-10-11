@@ -48,7 +48,7 @@ var endYear = 2018;
 // Median tends to be smoother, while medoid retains 
 // single date of observation across all bands
 // If not exporting indices with composites to save space, medoid should be used
-var compositingMethod = 'medoid';
+var compositingMethod = 'median';
 
 // 7. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
 // Specify TOA or SR
@@ -124,17 +124,17 @@ var contractPixels = 1.5;
 //    that are often missed
 // (1.5 results in a 1 pixel buffer)(0.5 results in a 0 pixel buffer)
 // (2.5 or 3.5 generally is sufficient)
-var dilatePixels = 2.5;
+var dilatePixels = 3.5;
 
-// 12. correctIllumination: Choose if you want to correct the illumination using
-// Sun-Canopy-Sensor+C correction. Additionally, choose the scale at which the
-// correction is calculated in meters.
-var correctIllumination = false;
-var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
+// // 12. correctIllumination: Choose if you want to correct the illumination using
+// // Sun-Canopy-Sensor+C correction. Additionally, choose the scale at which the
+// // correction is calculated in meters.
+// var correctIllumination = false;
+// var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 
-//13. Export params
-//Whether to export composites
-var exportComposites = true;
+// //13. Export params
+// //Whether to export composites
+// var exportComposites = true;
 
 //Set up Names for the export
 var outputName = 'Landsat';
@@ -284,7 +284,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
                         'shadowSumThresh':shadowSumThresh,
                         'zScoreThresh':zScoreThresh,
                         'terrain':false.toString(),
-                        'useCloudProject':false.toString(),
+                        'useCloudProject':performCloudScoreOffset.toString(),
                         'useTDOM':true.toString(),
                         'useLandsatS2HybridTDOM':true.toString(),
                         'whichProgram':exportName,
@@ -315,5 +315,5 @@ var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir
 // createAndExportComposites(ls,startYear,endYear,150,180,0,[1],14,exportPathRoot,'Landsat',lExportBands,['temp','count'],30,crs,null)
 // createAndExportComposites(s2s,startYear,endYear,150,180,0,[1],14,exportPathRoot,'Sentinel2',S2ExportBands,['count'],10,crs,null)
 
-createAndExportComposites(ls,startYear,endYear,1,365,1,[1,5,1],365,exportPathRoot,'Landsat',lExportBands,['temp','count'],30,crs,null);
-createAndExportComposites(s2s,startYear,endYear,1,365,1,[1,5,1],365,exportPathRoot,'Sentinel2',S2ExportBands,['count'],10,crs,null);
+createAndExportComposites(ls,startYear,endYear,1,365,1,[1,1,1],365,exportPathRoot,'Landsat',lExportBands,['temp','count'],30,crs,null);
+createAndExportComposites(s2s,startYear,endYear,1,365,1,[1,1,1],365,exportPathRoot,'Sentinel2',S2ExportBands,['count'],10,crs,null);
