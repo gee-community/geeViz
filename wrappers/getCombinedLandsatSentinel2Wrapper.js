@@ -201,8 +201,8 @@ s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,c
 // Create composite time series
 
 var everyHowManyDays = 14;
-var c = ls;
-function createAndExportComposites(c,everyHowManyDays,exportName){
+
+function createAndExportComposites(c,startYear,endYear,startJulian,endJulian,everyHowManyDays,exportName){
  //Iterate across each year
 ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function(year){
     var dummyImage = ee.Image(c.first());
@@ -251,7 +251,8 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
 })
 }) 
 }
-createAndExportComposites(ls,14,'Landsat')
+createAndExportComposites(ls,startYear,endYear,150,180,14,'Landsat')
+createAndExportComposites(s2s,startYear,endYear,150,180,14,'Sentinel')
 
 // var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2','count'];
 // getImageLib.exportCompositeCollection(exportPathRoot,'Sentinel2_',studyArea,crs,transform,10,
