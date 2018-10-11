@@ -284,7 +284,8 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
                         'zScoreThresh':zScoreThresh,
                         'terrain':false,
                         'useCloudProject':false,
-                        'useTDOM':true
+                        'useTDOM':true,
+                        'useLandsatS2HybridTDOM':true
                      
     });
     print(composite)
