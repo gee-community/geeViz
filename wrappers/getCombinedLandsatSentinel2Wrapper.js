@@ -26,7 +26,7 @@ var endJulian = 365;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2016;
+var startYear = 1984;
 var endYear = 2018;
 
 // 4. Specify an annual buffer to include imagery from the same season 
@@ -315,5 +315,5 @@ var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir
 // createAndExportComposites(ls,startYear,endYear,150,180,0,[1],14,exportPathRoot,'Landsat',lExportBands,['temp','count'],30,crs,null)
 // createAndExportComposites(s2s,startYear,endYear,150,180,0,[1],14,exportPathRoot,'Sentinel2',S2ExportBands,['count'],10,crs,null)
 
-createAndExportComposites(ls,startYear,endYear,1,365,1,[1,3,1],365,exportPathRoot,'Landsat',lExportBands,['temp','count'],scale,crs,null);
-createAndExportComposites(s2s,startYear,endYear,1,365,1,[1,3,1],365,exportPathRoot,'Sentinel2',S2ExportBands,['count'],scale,crs,null);
+createAndExportComposites(ls,1984,2019,1,365,1,[1,3,1],365,exportPathRoot,'Landsat',lExportBands,['temp','count'],scale,crs,null);
+createAndExportComposites(s2s,2014,2019,1,365,1,[1,3,1],365,exportPathRoot,'Sentinel2',S2ExportBands,['count'],scale,crs,null);
