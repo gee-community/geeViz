@@ -203,7 +203,7 @@ s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 var everyHowManyDays = 14;
 
 function createAndExportComposites(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,everyHowManyDays,exportName,exportBands,nonDivideBands){
- c = c.select(exportBands)
+
  //Iterate across each year
 ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function(year){
     var dummyImage = ee.Image(c.first());
@@ -245,7 +245,22 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
       
       composite = getImageLib.medoidMosaicMSD(cT,['blue','green','red','nir','swir1','swir2']);
     }
-    composite = composite.addBands(count);
+    composite = composite.addBands(count).select(exportBands);
+    
+    
+    
+    // Reformat data for export
+    var compositeBands = composite.bandNames();
+    if(nonDivideBands != null){
+      var composite10k = composite.select(compositeBands.removeAll(nonDivideBands))
+      .multiply(10000);
+      composite = composite10k.addBands(composite.select(nonDivideBands))
+      .select(compositeBands).int16();
+    }
+    else{
+      composite = composite.multiply(10000).int16();
+    }
+    
     
     var startDate = ee.Date.fromYMD(year,1,1).advance(startJulianT,'day').millis();
     var endDate = ee.Date.fromYMD(year,1,1).advance(endJulianT,'day').millis();
@@ -272,19 +287,6 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
                         'useTDOM':true
                      
     });
-    
-    // Reformat data for export
-    var compositeBands = composite.bandNames();
-    if(nonDivideBands != null){
-      var composite10k = composite.select(compositeBands.removeAll(nonDivideBands))
-      .multiply(10000);
-      composite = composite10k.addBands(composite.select(nonDivideBands))
-      .select(compositeBands).int16();
-    }
-    else{
-      composite = composite.multiply(10000).int16();
-    }
-    
     print(composite)
 
 
