@@ -203,6 +203,70 @@ var lsTs = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJ
 var s2Ts = getImageLib.compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
 
 var everyHowManyDays = 14;
+var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
+    .map(function(year){
+      
+    // Set up dates
+    var startYearT = year-timebuffer;
+    var endYearT = year+timebuffer;
+    
+    // Get yearly composite
+    var composite = collection.filter(ee.Filter.calendarRange(year,year,'year'));
+    composite = ee.Image(composite.first());
+    
+    // Display the Landsat composite
+    Map.addLayer(composite, vizParamsTrue, year.toString() + ' True Color ' + 
+      toaOrSR, false);
+    Map.addLayer(composite, vizParamsFalse, year.toString() + ' False Color ' + 
+      toaOrSR, false);
+  
+    // Reformat data for export
+    var compositeBands = composite.bandNames();
+    if(nonDivideBands != null){
+      var composite10k = composite.select(compositeBands.removeAll(nonDivideBands))
+      .multiply(10000);
+      composite = composite10k.addBands(composite.select(nonDivideBands))
+      .select(compositeBands).int16();
+    }
+    else{
+      composite = composite.multiply(10000).int16();
+    }
+    
+    
+
+    // Add metadata, cast to integer, and export composite
+    composite = composite.set({
+      'system:time_start': ee.Date.fromYMD(year,6,1).millis(),
+      'source': toaOrSR,
+      'yearBuffer':timebuffer,
+      'yearWeights': listToString(weights),
+      'startJulian': startJulian,
+      'endJulian': endJulian,
+      'applyCloudScore':applyCloudScore.toString(),
+      'applyFmaskCloudMask' :applyFmaskCloudMask.toString(),
+      'applyTDOM' :applyTDOM.toString(),
+      'applyFmaskCloudShadowMask' :applyFmaskCloudShadowMask.toString(),
+      'applyFmaskSnowMask': applyFmaskSnowMask.toString(),
+      'compositingMethod': compositingMethod,
+      'includeSLCOffL7': includeSLCOffL7.toString(),
+      'correctIllumination':correctIllumination.toString()
+    });
+  
+    // Export the composite 
+    // Set up export name and path
+    var exportName = outputName  + toaOrSR + '_' + compositingMethod + 
+      '_'  + startYearT + '_' + endYearT+'_' + 
+      startJulian + '_' + endJulian ;
+   
+    
+    var exportPath = exportPathRoot + '/' + exportName;
+    // print('Write down the Asset ID:', exportPath);
+  
+    exportToAssetWrapper(composite,exportName,exportPath,'mean',
+      studyArea,scale,crs,transform);
+    });
+
+
 ee.List.sequence(startJulian,endJulian,everyHowManyDays).getInfo().map(function(startJD){
   print(startJD);
   var endJD = startJD + everyHowManyDays-1;
