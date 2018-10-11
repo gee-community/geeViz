@@ -222,17 +222,18 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
     if(endJulianT <= endJulian){
       print(startYearT,endYearT,year,startJulianT,endJulianT);
       //Iterate across each year in list
-      var images = yearsTT.map(function(yr){
+      var images = yearsTT.map(function(yrT){
        
         
         // Filter images for given date range
-        var lsT = ls.filterDate(startDateT,endDateT);
+        var lsT = ls.filter(ee.Filter.calendarRange(yrT,yrT,'year'))
+                    .filter(ee.Filter.calendarRange(startJulianT,endJulianT));
         lsT = fillEmptyCollections(lsT,dummyImage);
         return lsT;
       });
       var lsT = ee.ImageCollection(ee.FeatureCollection(images).flatten());
     
-      
+      print(yr,lsT.size())
     }
 })
 })
