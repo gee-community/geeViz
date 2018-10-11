@@ -203,6 +203,7 @@ s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 var everyHowManyDays = 14;
 
 function createAndExportComposites(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,everyHowManyDays,exportName,exportBands,nonDivideBands){
+ c = c.select(exportBands)
  //Iterate across each year
 ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function(year){
     var dummyImage = ee.Image(c.first());
