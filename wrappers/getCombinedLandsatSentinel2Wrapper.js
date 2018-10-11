@@ -227,14 +227,23 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
        
         
         // Filter images for given date range
-        var lsT = c.filter(ee.Filter.calendarRange(yrT,yrT,'year'))
+        var cT = c.filter(ee.Filter.calendarRange(yrT,yrT,'year'))
                     .filter(ee.Filter.calendarRange(startJulianT,endJulianT));
-        lsT = getImageLib.fillEmptyCollections(lsT,dummyImage);
-        return lsT;
+        cT = getImageLib.fillEmptyCollections(lsT,dummyImage);
+        return cT;
       });
-      var lsT = ee.ImageCollection(ee.FeatureCollection(images).flatten());
+      var cT = ee.ImageCollection(ee.FeatureCollection(images).flatten());
     
+      // Compute median or medoid or apply reducer
+    var composite;
+    if (compositingMethod.toLowerCase() === 'median') {
+      composite = cT.median();
+    }
+    else {
       
+      composite = medoidMosaicMSD(cT,['blue','green','red','nir','swir1','swir2']);
+    }
+    
     }
 })
 })
