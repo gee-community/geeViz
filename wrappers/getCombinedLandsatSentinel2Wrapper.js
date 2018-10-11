@@ -229,7 +229,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
         // Filter images for given date range
         var cT = c.filter(ee.Filter.calendarRange(yrT,yrT,'year'))
                     .filter(ee.Filter.calendarRange(startJulianT,endJulianT));
-        cT = getImageLib.fillEmptyCollections(lsT,dummyImage);
+        cT = getImageLib.fillEmptyCollections(cT,dummyImage);
         return cT;
       });
       var cT = ee.ImageCollection(ee.FeatureCollection(images).flatten());
@@ -241,9 +241,9 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
     }
     else {
       
-      composite = medoidMosaicMSD(cT,['blue','green','red','nir','swir1','swir2']);
+      composite = getImageLib.medoidMosaicMSD(cT,['blue','green','red','nir','swir1','swir2']);
     }
-    outName = 'Composite_'+startYearT.toString() + '_'+ endYearT.toString()
+    var outName = 'Composite_'+startYearT.toString() + '_'+ endYearT.toString();
     Map.addLayer(composite,{min:0.05,max:0.5,bands:'swir1,nir,red'},outName,false);
     
     }
