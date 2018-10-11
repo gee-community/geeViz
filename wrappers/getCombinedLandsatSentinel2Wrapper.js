@@ -200,7 +200,7 @@ s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 
 // Create composite time series
 
-var everyHowManyDays = 50;
+var everyHowManyDays = 365;
 //Iterate across each year
 ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function(year){
     
@@ -219,7 +219,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
   ee.List.sequence(startJulian,endJulian,everyHowManyDays).getInfo().map(function(startJulianT){
     var endJulianT = startJulianT+everyHowManyDays-1;
 
-    if(endJulianT < endJulian){
+    if(endJulianT <= endJulian){
       print(startYearT,endYearT,year,startJulianT,endJulianT);
       
       
