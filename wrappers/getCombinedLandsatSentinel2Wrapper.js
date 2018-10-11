@@ -266,7 +266,8 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
                         'useSRmask':false,
                         'shadowSumThresh':shadowSumThresh,
                         'zScoreThresh':zScoreThresh,
-                        'terrain':false
+                        'terrain':false,
+                        'useCloudProject':false
                         
                         
                         
