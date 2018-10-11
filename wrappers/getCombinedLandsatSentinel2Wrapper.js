@@ -223,7 +223,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
     var endJulianT = startJulianT+everyHowManyDays-1;
 
     if(endJulianT <= endJulian){
-      print(startYearT,endYearT,year,startJulianT,endJulianT);
+      // print(startYearT,endYearT,year,startJulianT,endJulianT);
       //Iterate across each year in list
       var images = yearsTT.map(function(yrT){
        
@@ -245,7 +245,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
       
       composite = getImageLib.medoidMosaicMSD(cT,['blue','green','red','nir','swir1','swir2']);
     }
-    composite = composite.addBands(count).select(exportBands);
+    composite = composite.addBands(cpount).select(exportBands);
     
     
     
@@ -295,7 +295,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
 
 
     var outName = exportName+'_y'+startYearT.toString() + '_'+ endYearT.toString() + '_j'+startJulianT.toString() + '_' + endJulianT.toString();
-    Map.addLayer(composite,{min:500,max:5000,bands:'swir1,nir,red'},outName,false);
+    // Map.addLayer(composite,{min:500,max:5000,bands:'swir1,nir,red'},outName,false);
     
     
     var exportPath = exportPathRoot + '/' + outName;
