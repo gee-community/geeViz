@@ -32,7 +32,7 @@ var endYear = 2018;
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
 // in a 3 year moving window
-var timebuffer = 2;
+var timebuffer = 1;
 
 // 5. Specify the weights to be used for the moving window created by timeBuffer
 //For example- if timeBuffer is 1, that is a 3 year moving window
@@ -40,7 +40,7 @@ var timebuffer = 2;
 //In order to overweight the center year, you could specify the weights as
 //[1,5,1] which would duplicate the center year 5 times and increase its weight for
 //the compositing method
-var weights = [1,1,1,1,1];
+var weights = [1,5,1];
 
 
 
@@ -62,7 +62,7 @@ var includeSLCOffL7 = false;
 //9. Whether to defringe L5
 //Landsat 5 data has fringes on the edges that can introduce anomalies into 
 //the analysis.  This method removes them, but is somewhat computationally expensive
-var defringeL5 = false;
+var defringeL5 = true;
 
 // 10. Choose cloud/cloud shadow masking method
 // Choices are a series of booleans for cloudScore, TDOM, and elements of Fmask
