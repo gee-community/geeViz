@@ -287,7 +287,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
                         'useTDOM':true.toString(),
                         'useLandsatS2HybridTDOM':true.toString(),
                         'whichProgram':exportName,
-                        'compositingMethod':compositingMethod
+                        'compositingMethod':compositingMethod.toLowerCase()
                      
     });
     
