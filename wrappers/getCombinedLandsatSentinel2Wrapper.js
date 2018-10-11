@@ -13,7 +13,7 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 // 1. Specify study area: Study area
 // Can specify a country, provide a fusion table  or asset table (must add 
 // .geometry() after it), or draw a polygon and make studyArea = drawnPolygon
-var studyArea = geometry;
+var studyArea = ee.FeatureCollection('projects/Sacha/Ecuador_nxprovincias');//geometry;
 
 // 2. Update the startJulian and endJulian variables to indicate your seasonal 
 // constraints. This supports wrapping for tropics and southern hemisphere.
@@ -201,15 +201,22 @@ s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 // Create composite time series
 var lsTs = getImageLib.compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
 var s2Ts = getImageLib.compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
-  
 
-var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'];
-getImageLib.exportCompositeCollection(exportPathRoot,'Sentinel2_',studyArea,crs,transform,10,
-s2Ts,2014,2018,startJulian,endJulian,compositingMethod,timebuffer,S2ExportBands,'TOA',weights,
-              true, 'NA',true,'NA','NA','NA',false,null);
+var everyHowManyDays = 14;
+ee.List.sequence(startJulian,endJulian,everyHowManyDays).getInfo().map(function(startJD){
+  print(startJD);
+  var endJD = startJD + everyHowManyDays-1;
+  if(endJD < endJulian){
+    
+  }
+})
+// var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'];
+// getImageLib.exportCompositeCollection(exportPathRoot,'Sentinel2_',studyArea,crs,transform,10,
+// s2Ts,2014,2018,startJulian,endJulian,compositingMethod,timebuffer,S2ExportBands,'TOA',weights,
+//               true, 'NA',true,'NA','NA','NA',false,null);
 
-var lExportBands = [ 'blue', 'green', 'red','nir','swir1', 'swir2','temp'];
-getImageLib.exportCompositeCollection(exportPathRoot,'Landsat_',studyArea,crs,transform,30,
-lsTs,2014,2018,startJulian,endJulian,compositingMethod,timebuffer,lExportBands,toaOrSR,weights,
-              true, false,true,false,false,false,false,['temp']);
+// var lExportBands = [ 'blue', 'green', 'red','nir','swir1', 'swir2','temp'];
+// getImageLib.exportCompositeCollection(exportPathRoot,'Landsat_',studyArea,crs,transform,30,
+// lsTs,2014,2018,startJulian,endJulian,compositingMethod,timebuffer,lExportBands,toaOrSR,weights,
+//               true, false,true,false,false,false,false,['temp']);
 
