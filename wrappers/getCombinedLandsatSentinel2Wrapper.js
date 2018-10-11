@@ -234,7 +234,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
       });
       var lsT = ee.ImageCollection(ee.FeatureCollection(images).flatten());
     
-      print(year,lsT.size())
+      
     }
 })
 })
