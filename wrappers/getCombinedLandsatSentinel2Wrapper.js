@@ -181,8 +181,8 @@ var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,
 var s2s = getImageLib.getS2(studyArea,startDate,endDate,startJulian,endJulian);
 
 //Apply respective cloudScore functions
-ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
-s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
+// ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
+// s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
 
 //Set a property for splitting apart later
 // ls = ls.map(function(img){return img.float().set('whichProgram','Landsat')});
