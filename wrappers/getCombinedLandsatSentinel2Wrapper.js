@@ -312,8 +312,8 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
 var lExportBands = [ 'blue', 'green', 'red','nir','swir1', 'swir2','temp','count'];
 var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2','count'];
 
-// createAndExportComposites(ls,startYear,endYear,150,180,0,[1],14,'projects/Sacha/L8/L8_Biweekly_Updated','Landsat',lExportBands,['temp','count'],30,crs,null)
-// createAndExportComposites(s2s,startYear,endYear,150,180,0,[1],14,'projects/Sacha/S2/S2_Biweekly_Updated,'Sentinel2',S2ExportBands,['count'],10,crs,null)
+// createAndExportComposites(ls,1984,2018,1,365,0,[1],14,'projects/Sacha/L8/L8_Biweekly_Updated','Landsat',lExportBands,['temp','count'],30,crs,null)
+// createAndExportComposites(s2s,2015,2018,1,365,0,[1],14,'projects/Sacha/S2/S2_Biweekly_Updated,'Sentinel2',S2ExportBands,['count'],10,crs,null)
 
-createAndExportComposites(ls,1984,2019,1,365,1,[1,3,1],365,'projects/Sacha/L8/L8_Annual_Updated','Landsat',lExportBands,['temp','count'],scale,crs,null);
+createAndExportComposites(ls,1983,2019,1,365,1,[1,3,1],365,'projects/Sacha/L8/L8_Annual_Updated','Landsat',lExportBands,['temp','count'],scale,crs,null);
 createAndExportComposites(s2s,2014,2019,1,365,1,[1,3,1],365,'projects/Sacha/S2/S2_Annual_Updated','Sentinel2',S2ExportBands,['count'],scale,crs,null);
