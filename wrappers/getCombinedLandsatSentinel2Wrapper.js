@@ -245,7 +245,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
       
       composite = getImageLib.medoidMosaicMSD(cT,['blue','green','red','nir','swir1','swir2']);
     }
-    composite = composite.addBands(cpount).select(exportBands);
+    composite = composite.addBands(count).select(exportBands);
     
     
     
