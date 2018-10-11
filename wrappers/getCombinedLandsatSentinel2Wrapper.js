@@ -252,15 +252,48 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
     composite = composite.set(composite.set({
                         'system:time_start':startDate,
                         'system:time_end':endDate,
-                        'startDate':startDateT.millis(),
-                        'endDate':endDateT.millis(),
                         'startJulian':startJulian,
                         'endJulian':endJulian,
                         'yearBuffer':timebuffer,
                         'yearWeights': listToString(weights),
                         'yrOriginal':year,
-                        'yrUsed': year + yearWithMajority
+                        'dilatePixels':dilatePixels,
+                        'contractPixels':contractPixels,
+                        'useCloudScore':true,
+                        'crs':crs,
+                        'startDOY':startJulianT,
+                        'endDOY':endJulianT,
+                        'useSRmask':false,
+                        'shadowSumThresh':shadowSumThresh,
+                        
+                        
+                        
+                        
+                        
     }))
+    
+
+
+
+
+
+startDOY
+15 (string)
+cloudFilter
+60 (string)
+cloudScorePctl
+5 (string)
+zScoreThresh
+-1 (string)
+useTDOM
+True
+useCloudProject
+True
+cloudScoreThresh
+20 (string)
+terrain
+True
+
     var outName = exportName+'_y'+startYearT.toString() + '_'+ endYearT.toString() + '_j'+startJulianT.toString() + '_' + endJulianT.toString();
     Map.addLayer(composite,{min:0.05,max:0.5,bands:'swir1,nir,red'},outName,false);
     
