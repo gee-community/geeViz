@@ -311,7 +311,7 @@ var lExportBands = [ 'blue', 'green', 'red','nir','swir1', 'swir2','temp','count
 var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2','count'];
 
 // createAndExportComposites(ls,startYear,endYear,150,180,0,[1],14,exportPathRoot,'Landsat',lExportBands,['temp','count'],30,crs,null)
-// createAndExportComposites(s2s,startYear,endYear,150,180,0,[1],14,exportPathRoot,'Sentinel',S2ExportBands,['count'],10,crs,null)
+// createAndExportComposites(s2s,startYear,endYear,150,180,0,[1],14,exportPathRoot,'Sentinel2',S2ExportBands,['count'],10,crs,null)
 
 createAndExportComposites(ls,startYear,endYear,1,365,1,[1,5,1],365,exportPathRoot,'Landsat',lExportBands,['temp','count'],30,crs,null);
-createAndExportComposites(s2s,startYear,endYear,1,365,1,[1,5,1],365,exportPathRoot,'Sentinel',S2ExportBands,['count'],10,crs,null);
+createAndExportComposites(s2s,startYear,endYear,1,365,1,[1,5,1],365,exportPathRoot,'Sentinel2',S2ExportBands,['count'],10,crs,null);
