@@ -184,19 +184,19 @@ var s2s = getImageLib.getS2(studyArea,startDate,endDate,startJulian,endJulian);
 ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
 s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
 
-//Set a property for splitting apart later
-ls = ls.map(function(img){return img.float().set('whichProgram','Landsat')});
-s2s = s2s.map(function(img){return img.float().set('whichProgram','Sentinel2')});
+// //Set a property for splitting apart later
+// ls = ls.map(function(img){return img.float().set('whichProgram','Landsat')});
+// s2s = s2s.map(function(img){return img.float().set('whichProgram','Sentinel2')});
 
-//Merge collections
-var merged = ls.merge(s2s);
+// //Merge collections
+// var merged = ls.merge(s2s);
 
-//Perform TDOM
-merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
+// //Perform TDOM
+// merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
 
-//Seperate back out
-ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
-s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
+// //Seperate back out
+// ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
+// s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 
 // Create composite time series
 
