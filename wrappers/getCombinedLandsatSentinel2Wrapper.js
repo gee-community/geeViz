@@ -48,7 +48,7 @@ var endYear = 2018;
 // Median tends to be smoother, while medoid retains 
 // single date of observation across all bands
 // If not exporting indices with composites to save space, medoid should be used
-var compositingMethod = 'median';
+var compositingMethod = 'medoid';
 
 // 7. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
 // Specify TOA or SR
@@ -315,5 +315,5 @@ var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir
 // createAndExportComposites(ls,2000,2000,1,365,0,[1],14,'projects/Sacha/L8/L8_Biweekly_Updated','Landsat',lExportBands,['temp','count'],scale,crs,null)
 // createAndExportComposites(s2s,2015,2018,1,365,0,[1],14,'projects/Sacha/S2/S2_Biweekly_Updated','Sentinel2',S2ExportBands,['count'],scale,crs,null)
 
-// createAndExportComposites(ls,1999,2019,1,365,1,[1,3,1],365,'projects/Sacha/L8/L8_Annual_Updated','Landsat',lExportBands,['temp','count'],scale,crs,null);
-createAndExportComposites(s2s,2014,2019,1,365,1,[1,3,1],365,'projects/Sacha/S2/S2_Annual_Updated','Sentinel2',S2ExportBands,['count'],scale,crs,null);
+createAndExportComposites(ls,1999,2019,1,365,1,[1,3,1],365,'projects/Sacha/L8/L8_Annual_Updated','Landsat',lExportBands,['temp','count'],scale,crs,null);
+// createAndExportComposites(s2s,2014,2019,1,365,1,[1,3,1],365,'projects/Sacha/S2/S2_Annual_Updated','Sentinel2',S2ExportBands,['count'],scale,crs,null);
