@@ -202,7 +202,7 @@ s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 
 var everyHowManyDays = 14;
 
-function createAndExportComposites(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,everyHowManyDays,exportName){
+function createAndExportComposites(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,everyHowManyDays,exportName,nonDivideBands){
  //Iterate across each year
 ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function(year){
     var dummyImage = ee.Image(c.first());
@@ -269,13 +269,20 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
                         'terrain':false,
                         'useCloudProject':false,
                         'useTDOM':true
-                        
-                        
-                        
-                        
-                        
-                        
+                     
     }));
+    
+    // Reformat data for export
+    var compositeBands = composite.bandNames();
+    if(nonDivideBands != null){
+      var composite10k = composite.select(compositeBands.removeAll(nonDivideBands))
+      .multiply(10000);
+      composite = composite10k.addBands(composite.select(nonDivideBands))
+      .select(compositeBands).int16();
+    }
+    else{
+      composite = composite.multiply(10000).int16();
+    }
     
 
 
