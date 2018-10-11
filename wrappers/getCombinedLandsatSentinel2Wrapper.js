@@ -288,7 +288,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
                         'useLandsatS2HybridTDOM':true
                      
     });
-    print(composite)
+    
 
 
     var outName = exportName+'_y'+startYearT.toString() + '_'+ endYearT.toString() + '_j'+startJulianT.toString() + '_' + endJulianT.toString();
