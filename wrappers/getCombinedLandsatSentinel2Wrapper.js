@@ -221,6 +221,8 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
 
     if(endJulianT < endJulian){
       print(startYearT,endYearT,year,startJulianT,endJulianT);
+      
+      
     }
 })
 })
