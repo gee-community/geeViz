@@ -255,7 +255,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
                         'startJulian':startJulian,
                         'endJulian':endJulian,
                         'yearBuffer':timebuffer,
-                        'yearWeights': listToString(weights),
+                        'yearWeights': getImageLib.listToString(weights),
                         'yrOriginal':year,
                         'dilatePixels':dilatePixels,
                         'contractPixels':contractPixels,
