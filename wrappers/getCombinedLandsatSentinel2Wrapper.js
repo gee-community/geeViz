@@ -202,7 +202,7 @@ s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 
 var everyHowManyDays = 14;
 
-function createAndExportComposites(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,everyHowManyDays,exportName,exportBands,nonDivideBands){
+function createAndExportComposites(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,everyHowManyDays,exportPathRoot,exportName,exportBands,nonDivideBands){
 
  //Iterate across each year
 ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function(year){
@@ -294,6 +294,13 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
     var outName = exportName+'_y'+startYearT.toString() + '_'+ endYearT.toString() + '_j'+startJulianT.toString() + '_' + endJulianT.toString();
     Map.addLayer(composite,{min:500,max:5000,bands:'swir1,nir,red'},outName,false);
     
+    
+    var exportPath = exportPathRoot + '/' + exportName;
+    // print('Write down the Asset ID:', exportPath);
+  
+    exportToAssetWrapper(composite,exportName,exportPath,'mean',
+      studyArea,scale,crs,transform);
+    
     }
 })
 }) 
@@ -302,8 +309,8 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
 var lExportBands = [ 'blue', 'green', 'red','nir','swir1', 'swir2','temp','count'];
 var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2','count'];
 
-createAndExportComposites(ls,startYear,endYear,150,180,0,[1],14,'Landsat',lExportBands,['temp','count'])
-createAndExportComposites(s2s,startYear,endYear,150,180,0,[1],14,'Sentinel',S2ExportBands,['count'])
+createAndExportComposites(ls,startYear,endYear,150,180,0,[1],14,exportPathRoot,'Landsat',lExportBands,['temp','count'])
+createAndExportComposites(s2s,startYear,endYear,150,180,0,[1],14,exportPathRoot,'Sentinel',S2ExportBands,['count'])
 
 // getImageLib.exportCompositeCollection(exportPathRoot,'Sentinel2_',studyArea,crs,transform,10,
 // s2Ts,2014,2018,startJulian,endJulian,compositingMethod,timebuffer,S2ExportBands,'TOA',weights,
