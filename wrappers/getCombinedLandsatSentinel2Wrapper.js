@@ -286,7 +286,8 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
                         'useCloudProject':false.toString(),
                         'useTDOM':true.toString(),
                         'useLandsatS2HybridTDOM':true.toString(),
-                        'whichProgram':exportName
+                        'whichProgram':exportName,
+                        'compositingMethod':compositingMethod
                      
     });
     
