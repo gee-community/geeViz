@@ -265,6 +265,9 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
                         'endDOY':endJulianT,
                         'useSRmask':false,
                         'shadowSumThresh':shadowSumThresh,
+                        'zScoreThresh':zScoreThresh,
+                        'terrain':false
+                        
                         
                         
                         
@@ -277,8 +280,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
 
 
 
-startDOY
-15 (string)
+
 cloudFilter
 60 (string)
 cloudScorePctl
