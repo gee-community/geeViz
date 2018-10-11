@@ -234,7 +234,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
         return cT;
       });
       var cT = ee.ImageCollection(ee.FeatureCollection(images).flatten());
-      var count = cT.select([0]).count()
+      var count = cT.select([0]).count().rename(['count'])
       // Compute median or medoid or apply reducer
     var composite;
     if (compositingMethod.toLowerCase() === 'median') {
@@ -245,7 +245,10 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
       composite = getImageLib.medoidMosaicMSD(cT,['blue','green','red','nir','swir1','swir2']);
     }
     composite = composite.addBands(count);
-    print(composite)
+    
+    var startDate = ee.Date.fromYMD(year,1,1).advance(startJulianT,'day');
+    var endDate = ee.Date.fromYMD(year,1,1).advance(endJulianT,'day');
+    
     var outName = exportName+'_y'+startYearT.toString() + '_'+ endYearT.toString() + '_j'+startJulianT.toString() + '_' + endJulianT.toString();
     Map.addLayer(composite,{min:0.05,max:0.5,bands:'swir1,nir,red'},outName,false);
     
