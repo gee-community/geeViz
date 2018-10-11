@@ -291,14 +291,14 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
     
 
 
-    var exportName = exportName+'_y'+startYearT.toString() + '_'+ endYearT.toString() + '_j'+startJulianT.toString() + '_' + endJulianT.toString();
+    var outName = exportName+'_y'+startYearT.toString() + '_'+ endYearT.toString() + '_j'+startJulianT.toString() + '_' + endJulianT.toString();
     Map.addLayer(composite,{min:500,max:5000,bands:'swir1,nir,red'},exportName,false);
     
     
-    var exportPath = exportPathRoot + '/' + exportName;
+    var exportPath = exportPathRoot + '/' + outName;
     // print('Write down the Asset ID:', exportPath);
   
-    exportToAssetWrapper(composite,exportName,exportPath,'mean',
+    getImageLib.exportToAssetWrapper(composite,outName,exportPath,'mean',
       studyArea,scale,crs,transform);
     
     }
