@@ -244,7 +244,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
       composite = medoidMosaicMSD(cT,['blue','green','red','nir','swir1','swir2']);
     }
     outName = 'Composite_'+startYearT.toString() + '_'+ endYearT.toString()
-    Map.addLayer(composite,{min:0.05,max:0.5,bands:'swir1,nir,red'},outName,false);)
+    Map.addLayer(composite,{min:0.05,max:0.5,bands:'swir1,nir,red'},outName,false);
     
     }
 })
