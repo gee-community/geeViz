@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-78.62372671099854, -1.2685317355114534],
-          [-78.61686025592041, -1.379738586117538],
-          [-77.96454702349854, -1.3975861259722024],
-          [-77.92472158404541, -1.2067480596932785]]]);
+        [[[-79.51259309123247, 0.5572395194909902],
+          [-79.5249527103731, 0.2468837709315454],
+          [-79.1514175541231, 0.2949484177599466],
+          [-79.20497590373247, 0.6149147222458692]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -13,7 +13,7 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 // 1. Specify study area: Study area
 // Can specify a country, provide a fusion table  or asset table (must add 
 // .geometry() after it), or draw a polygon and make studyArea = drawnPolygon
-var studyArea = ee.FeatureCollection('projects/Sacha/Ecuador_nxprovincias');//geometry;
+var studyArea = geometry;//ee.FeatureCollection('projects/Sacha/Ecuador_nxprovincias');//geometry;
 
 // 2. Update the startJulian and endJulian variables to indicate your seasonal 
 // constraints. This supports wrapping for tropics and southern hemisphere.
