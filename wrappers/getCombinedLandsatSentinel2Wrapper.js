@@ -13,7 +13,7 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 // 1. Specify study area: Study area
 // Can specify a country, provide a fusion table  or asset table (must add 
 // .geometry() after it), or draw a polygon and make studyArea = drawnPolygon
-var studyArea = ee.FeatureCollection('projects/Sacha/Ecuador_nxprovincias');//geometry;
+var studyArea = ee.FeatureCollection('projects/Sacha/Ecuador_nxprovincias').bounds();//geometry;
 
 // 2. Update the startJulian and endJulian variables to indicate your seasonal 
 // constraints. This supports wrapping for tropics and southern hemisphere.
