@@ -185,22 +185,22 @@ ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloud
 s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
 
 //Set a property for splitting apart later
-ls = ls.map(function(img){return img.float().set('whichProgram','Landsat')});
-s2s = s2s.map(function(img){return img.float().set('whichProgram','Sentinel2')});
+// ls = ls.map(function(img){return img.float().set('whichProgram','Landsat')});
+// s2s = s2s.map(function(img){return img.float().set('whichProgram','Sentinel2')});
 
 //Merge collections
-var merged = ls.merge(s2s);
+// var merged = ls.merge(s2s);
 
 //Perform TDOM
-merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
+// merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
 
 //Seperate back out
-ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
-s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
+// ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
+// s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 
 // Create composite time series
 
-var everyHowManyDays = 150;
+var everyHowManyDays = 14;
 var c = ls;
 //Iterate across each year
 ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function(year){
