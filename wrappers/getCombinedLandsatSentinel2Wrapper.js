@@ -202,7 +202,7 @@ s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 
 var everyHowManyDays = 14;
 
-function createAndExportComposites(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,everyHowManyDays,exportName,nonDivideBands){
+function createAndExportComposites(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,everyHowManyDays,exportName,exportBands,nonDivideBands){
  //Iterate across each year
 ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function(year){
     var dummyImage = ee.Image(c.first());
@@ -294,15 +294,18 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
 })
 }) 
 }
-createAndExportComposites(ls,startYear,endYear,150,180,0,[1],14,'Landsat')
-createAndExportComposites(s2s,startYear,endYear,150,180,0,[1],14,'Sentinel')
 
-// var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2','count'];
+var lExportBands = [ 'blue', 'green', 'red','nir','swir1', 'swir2','temp','count'];
+var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2','count'];
+
+createAndExportComposites(ls,startYear,endYear,150,180,0,[1],14,'Landsat',lExportBands,['temp','count'])
+createAndExportComposites(s2s,startYear,endYear,150,180,0,[1],14,'Sentinel',S2ExportBands,['count'])
+
 // getImageLib.exportCompositeCollection(exportPathRoot,'Sentinel2_',studyArea,crs,transform,10,
 // s2Ts,2014,2018,startJulian,endJulian,compositingMethod,timebuffer,S2ExportBands,'TOA',weights,
 //               true, 'NA',true,'NA','NA','NA',false,['count']);
 
-// var lExportBands = [ 'blue', 'green', 'red','nir','swir1', 'swir2','temp','count'];
+
 // getImageLib.exportCompositeCollection(exportPathRoot,'Landsat_',studyArea,crs,transform,30,
 // lsTs,2014,2018,startJulian,endJulian,compositingMethod,timebuffer,lExportBands,toaOrSR,weights,
 //               true, false,true,false,false,false,false,['temp','count']);
