@@ -210,13 +210,13 @@ ee.List.sequence(startJulian,endJulian,everyHowManyDays).getInfo().map(function(
     
   }
 })
-// var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'];
+// var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2','count'];
 // getImageLib.exportCompositeCollection(exportPathRoot,'Sentinel2_',studyArea,crs,transform,10,
 // s2Ts,2014,2018,startJulian,endJulian,compositingMethod,timebuffer,S2ExportBands,'TOA',weights,
-//               true, 'NA',true,'NA','NA','NA',false,null);
+//               true, 'NA',true,'NA','NA','NA',false,['count']);
 
-// var lExportBands = [ 'blue', 'green', 'red','nir','swir1', 'swir2','temp'];
+// var lExportBands = [ 'blue', 'green', 'red','nir','swir1', 'swir2','temp','count'];
 // getImageLib.exportCompositeCollection(exportPathRoot,'Landsat_',studyArea,crs,transform,30,
 // lsTs,2014,2018,startJulian,endJulian,compositingMethod,timebuffer,lExportBands,toaOrSR,weights,
-//               true, false,true,false,false,false,false,['temp']);
+//               true, false,true,false,false,false,false,['temp','count']);
 
