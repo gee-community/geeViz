@@ -84,7 +84,7 @@ var defringeL5 = true;
 // cloudScoreThresh: If using the cloudScoreTDOMShift method-Threshold for cloud 
 //    masking (lower number masks more clouds.  Between 10 and 30 generally 
 //    works best)
-var cloudScoreThresh = 20;
+var cloudScoreThresh = 10;
 
 //Whether to find if an area typically has a high cloudScore
 //If an area is always cloudy, this will result in cloud masking omission
@@ -275,6 +275,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
                         'yrCenter':year,
                         'dilatePixels':dilatePixels,
                         'contractPixels':contractPixels,
+                        'cloudScoreThresh':cloudScoreThresh,
                         'useCloudScore':true,
                         'crs':crs,
                         'startDOY':startJulianT,
