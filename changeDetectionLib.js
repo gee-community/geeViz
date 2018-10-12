@@ -161,7 +161,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     //       .lte(finalDistImg.select(['mag']))                          // ...is disturbance less then equal to the interpolated, duration dynamic disturbance magnitude threshold 
     //       .and(finalDistImg.select(['mag']).gt(0))                    // and is greater than 0  
     //       .and(finalDistImg.select(['preval']).gt(params.pre_val));
-    var longTermDisturbance = finalDistImg.select(['dur']).gte(20);
+    var longTermDisturbance = finalDistImg.select(['dur']).gte(15);
     var longTermThreshold = finalDistImg.select(['mag']).gte(params.tree_loss20).and(longTermDisturbance);
     var threshold = finalDistImg.select(['mag']).gte(params.tree_loss1);
     return finalDistImg.updateMask(threshold.or(longTermThreshold)); 
