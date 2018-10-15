@@ -2345,6 +2345,7 @@ exports.addIndices = addIndices;
 exports.addSAVIandEVI = addSAVIandEVI;
 exports.simpleAddIndices = simpleAddIndices;
 exports.getTasseledCap = getTasseledCap;
+exports.simpleGetTasseledCap = simpleGetTasseledCap;
 exports.simpleAddTCAngles = simpleAddTCAngles;
 exports.compositeTimeSeries = compositeTimeSeries;
 exports.addZenithAzimuth = addZenithAzimuth;
