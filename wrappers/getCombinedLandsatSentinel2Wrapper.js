@@ -198,10 +198,7 @@ merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPix
 ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
 s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 
-// Create composite time series
-
-var everyHowManyDays = 14;
-
+// Create composite time series function
 function createAndExportComposites(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,everyHowManyDays,exportPathRoot,exportName,exportBands,nonDivideBands,scale,crs,transform){
 
 //Iterate across each year
