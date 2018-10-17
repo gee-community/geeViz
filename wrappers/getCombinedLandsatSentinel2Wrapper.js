@@ -306,6 +306,7 @@ ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function
 });
 }
 
+//Export bands for each program
 var lExportBands = [ 'blue', 'green', 'red','nir','swir1', 'swir2','temp','count'];
 var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2','count'];
 
