@@ -17,21 +17,7 @@ function thresholdChange(changeCollection,changeThresh,changeDir){
   return change;
 }
 
-function thresholdChangeTwoDir(changeCollection,declineThresh,recoveryThresh,changeDir){
-  if(changeDir === undefined || changeDir === null){changeDir = 1}
-  var bandNames = ee.Image(changeCollection.first()).bandNames();
-  bandNames = bandNames.map(function(bn){return ee.String(bn).cat('_change')});
-  var change = changeCollection.map(function(img){
-    var yr = ee.Date(img.get('system:time_start')).get('year');
-    var changeYr = img.multiply(changeDir);
-    changeYr = changeYr.gt(declineThresh).or(changeYr.lt(recoveryThresh));
-    
-    var yrImage = img.where(img.mask(),yr);
-    changeYr = yrImage.updateMask(changeYr).rename(bandNames).int16();
-    return img.mask(ee.Image(1)).addBands(changeYr);
-  });
-  return change;
-}
+
 function getExistingChangeData(changeThresh,showLayers){
   if(showLayers === undefined || showLayers === null){
     showLayers = true;
@@ -729,7 +715,6 @@ exports.runEWMACD = runEWMACD;
 
 exports.pairwiseSlope = pairwiseSlope;
 exports.thresholdChange = thresholdChange;
-exports.thresholdChangeTwoDir = thresholdChangeTwoDir;
 
 exports.predictModel = predictModel;
 exports.getLinearFit = getLinearFit;
