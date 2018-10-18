@@ -163,8 +163,8 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     //       .and(finalDistImg.select(['mag']).gt(0))                    // and is greater than 0  
     //       .and(finalDistImg.select(['preval']).gt(params.pre_val));
     var longTermDisturbance = finalDistImg.select(['dur']).gte(15);
-    var longTermThreshold = finalDistImg.select(['mag']).lte(params.tree_loss20).and(longTermDisturbance);
-    var threshold = finalDistImg.select(['mag']).lte(params.tree_loss1);
+    var longTermThreshold = finalDistImg.select(['mag']).gte(params.tree_loss20).and(longTermDisturbance);
+    var threshold = finalDistImg.select(['mag']).gte(params.tree_loss1);
 
     return finalDistImg.updateMask(threshold.or(longTermThreshold)); 
   }
