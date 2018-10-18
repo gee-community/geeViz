@@ -179,6 +179,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
     var longTermDisturbance = finalDistImg.select(['dur']).gte(15);
     var longTermThreshold = finalDistImg.select(['mag']).gte(params.tree_loss20).and(longTermDisturbance);
     var threshold = finalDistImg.select(['mag']).gte(params.tree_loss1);
+
     return finalDistImg.updateMask(threshold.or(longTermThreshold)); 
   }
   finalDistImg1 = filterDisturbances(finalDistImg1);
@@ -205,6 +206,8 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   
   return finalDistImg1.addBands(finalDistImg2).addBands(finalDistImg3); // return the filtered greatest disturbance attribute image
 };
+
+
 //////////////////////////////////////////////////////////////////////////
 //Helper to multiply image
 function multBands(img,distDir,by){
