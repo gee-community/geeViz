@@ -726,7 +726,7 @@ exports.runEWMACD = runEWMACD;
 
 exports.pairwiseSlope = pairwiseSlope;
 exports.thresholdChange = thresholdChange;
-
+exports.thresholdChangeTwoDir = thresholdChangeTwoDir;
 exports.predictModel = predictModel;
 exports.getLinearFit = getLinearFit;
 exports.toAnnualMedian = toAnnualMedian;
