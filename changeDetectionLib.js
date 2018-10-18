@@ -23,7 +23,7 @@ function thresholdChangeTwoDir(changeCollection,declineThresh,recoveryThresh,cha
   bandNames = bandNames.map(function(bn){return ee.String(bn).cat('_change')});
   var change = changeCollection.map(function(img){
     var yr = ee.Date(img.get('system:time_start')).get('year');
-    var changeYr = img.multiply(changeDir)
+    var changeYr = img.multiply(changeDir);
     changeYr = changeYr.gt(declineThresh).or(changeYr.lt(recoveryThresh));
     
     var yrImage = img.where(img.mask(),yr);
