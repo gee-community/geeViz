@@ -140,7 +140,7 @@ var extractDisturbance = function(lt, distDir, params, mmu) {
   var distImg = ee.Image.cat([startYear.add(1), mag, dur, startVal.multiply(-1)]).toArray(0); // make an image of segment attributes - multiply by the distDir parameter to re-orient the spectral index if it was flipped for segmentation - do it here so that the subtraction to calculate segment delta in the above line is consistent - add 1 to the detection year, because the vertex year is not the first year that change is detected, it is the following year
  
   // sort the segments in the disturbance attribute image delta by spectral index change delta  
-  var distImgSorted = distImg.arraySort(mag.multiply(-1));    
+  var distImgSorted = distImg.arraySort(mag);//.multiply(-1));    
   
   // slice out the first (greatest) delta
   var tempDistImg1 = distImgSorted.arraySlice(1, 0, 1).unmask(ee.Image(ee.Array([[0],[0],[0],[0]])));
