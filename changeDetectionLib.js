@@ -265,6 +265,7 @@ function landtrendrWrapper(processedComposites,startYear,endYear,indexName,distD
   
   //assemble the disturbance extraction parameters
   
+  Map.addLayer(lt.select('LandTrendr'),{},'raw inside'+indexName);
   
   // run the dist extract function
   var distImg = extractDisturbance(lt.select('LandTrendr'), distDir, distParams,mmu);
