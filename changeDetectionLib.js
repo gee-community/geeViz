@@ -51,15 +51,15 @@ function getExistingChangeData(changeThresh,showLayers){
     var conusChangeYr = ee.Image(yr).updateMask(change).rename(['change']).int16();
     return img.mask(ee.Image(1)).addBands(conusChangeYr);
   });
-  if(showLayers){
-  Map.addLayer(conusChange.select(['change']).max(),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'CONUS LCMS Most Recent Year of Change',false);
+  // if(showLayers){
+  // Map.addLayer(conusChange.select(['change']).max(),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'CONUS LCMS Most Recent Year of Change',false);
   // Map.addLayer(conusChange.select(['probability']).max(),{'min':0,'max':50,'palette':'888,008'},'LCMSC',false);
-  }
+  // }
   // var glri_lcms = glriEnsemble.updateMask(glriEnsemble.select([0])).select([1]);
   // glri_lcms = glri_lcms.updateMask(glri_lcms.gte(startYear).and(glri_lcms.lte(endYear)));
-  if(showLayers){
+  // if(showLayers){
   // Map.addLayer(glri_lcms,{'min':startYear,'max':endYear,'palette':'FF0,F00'},'GLRI LCMS',false);
-  }
+  // }
   
   
   
