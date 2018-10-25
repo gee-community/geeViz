@@ -95,6 +95,14 @@ var applyFmaskSnowMask = true;
 //    works best)
 var cloudScoreThresh = 20;
 
+//Whether to find if an area typically has a high cloudScore
+//If an area is always cloudy, this will result in cloud masking omission
+//For bright areas that may always have a high cloudScore
+//but not actually be cloudy, this will result in a reduction of commission errors
+//This procedure needs at least 5 years of data to work well
+var performCloudScoreOffset = false;
+
+
 // Percentile of cloud score to pull from time series to represent a minimum for 
 // the cloud score over time for a given pixel. Reduces comission errors over 
 // cool bright surfaces. Generally between 5 and 10 works well. 0 generally is a
@@ -196,7 +204,9 @@ var lsAndTs = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJul
   timebuffer,weights,compositingMethod,
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
   applyFmaskCloudShadowMask,applyFmaskSnowMask,
-  cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,
+  cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,
+  zScoreThresh,shadowSumThresh,
+  contractPixels,dilatePixels,
   correctIllumination,correctScale,
   exportComposites,outputName,exportPathRoot,crs,transform,scale);
 
