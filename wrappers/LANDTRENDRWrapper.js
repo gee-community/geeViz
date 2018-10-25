@@ -251,8 +251,8 @@ indexDirList.map(function(indexDir){
 });
 Map.addLayer(outputCollection,{},'LT Fitted IndexNames',false);
 Map.addLayer(outputStack.select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},indexList[0] + ' LT Change Year',true);
-Map.addLayer(outputStack.select([1]),{min:0.1,max:0.8,palette:'FF0,F00'},indexList[0] + ' LT Change Magnitude',true);
-Map.addLayer(outputStack.select([2]),{min:1,max:5,palette:'FF0,F00'},indexList[0] + ' LT Change Duration',true);
+Map.addLayer(outputStack.select([1]),{min:0.1,max:0.8,palette:'FF0,F00'},indexList[0] + ' LT Change Magnitude',false);
+Map.addLayer(outputStack.select([2]),{min:1,max:5,palette:'FF0,F00'},indexList[0] + ' LT Change Duration',false);
 
 print(outputStack)
 // Export each fitted year
