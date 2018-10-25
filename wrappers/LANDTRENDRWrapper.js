@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-121.6646587842406, 40.42996409556283],
-          [-121.5767681592406, 40.77196366286651],
-          [-122.7523052686156, 40.93815738938883],
-          [-122.8511822217406, 40.49683309199189]]]);
+        [[[-119.0179163903714, 38.018551959954884],
+          [-120.1714808434964, 39.83879720782631],
+          [-121.5063197106839, 39.44965262549703],
+          [-120.3088099450589, 37.83656845157867]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for LANDTRENDR across an annual time series
 //Supports multiple bands and/or indices
@@ -41,7 +41,7 @@ var endYear = 2019;
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
 // in a 3 year moving window
-var timebuffer = 1;
+var timebuffer = 0;
 
 // 5. Specify the weights to be used for the moving window created by timeBuffer
 //For example- if timeBuffer is 1, that is a 3 year moving window
@@ -49,7 +49,7 @@ var timebuffer = 1;
 //In order to overweight the center year, you could specify the weights as
 //[1,5,1] which would duplicate the center year 5 times and increase its weight for
 //the compositing method
-var weights = [1,5,1];
+var weights = [1];
 
 
 // 6. Choose medoid or median compositing method. 
