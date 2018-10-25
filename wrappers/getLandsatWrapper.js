@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-79.11968217561963, -0.4028583639707226],
-          [-79.10869584749463, -0.8010899762624881],
-          [-77.87822709749463, -0.8203141258345823],
-          [-77.75188432405713, -0.3534209656369885]]]);
+        [[[-114.73130309829276, 46.85073744503408],
+          [-114.75327575454276, 45.63510280393358],
+          [-113.22617614516776, 45.71186935854774],
+          [-113.54477966079276, 46.79811674259862]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -26,13 +26,13 @@ var endJulian = 250;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 1984;
+var startYear = 2010;
 var endYear = 2018;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
 // in a 3 year moving window
-var timebuffer = 2;
+var timebuffer = 1;
 
 // 5. Specify the weights to be used for the moving window created by timeBuffer
 //For example- if timeBuffer is 1, that is a 3 year moving window
@@ -40,7 +40,7 @@ var timebuffer = 2;
 //In order to overweight the center year, you could specify the weights as
 //[1,5,1] which would duplicate the center year 5 times and increase its weight for
 //the compositing method
-var weights = [1,1,1,1,1];
+var weights = [1,5,1];
 
 
 
@@ -71,11 +71,11 @@ var defringeL5 = false;
 //always have a high cloudScore to reduce comission errors- this takes some time
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
-var applyCloudScore = true;
-var applyFmaskCloudMask = false;
+var applyCloudScore = false;
+var applyFmaskCloudMask = true;
 
-var applyTDOM = true;
-var applyFmaskCloudShadowMask = false;
+var applyTDOM = false;
+var applyFmaskCloudShadowMask = true;
 
 var applyFmaskSnowMask = false;
 
@@ -144,10 +144,10 @@ var exportPathRoot = 'users/ianhousman/test/changeCollection';
 //CRS- must be provided.  
 //Common crs codes: Web mercator is EPSG:4326, USGS Albers is EPSG:5070, 
 //WGS84 UTM N hemisphere is EPSG:326+ zone number (zone 12 N would be EPSG:32612) and S hemisphere is EPSG:327+ zone number
-var crs = 'EPSG:32717'//'EPSG:5070';
+var crs = 'EPSG:5070';
 
 //Specify transform if scale is null and snapping to known grid is needed
-var transform = null;//[30,0,-2361915.0,0,-30,3177735.0];
+var transform = [30,0,-2361915.0,0,-30,3177735.0];
 
 //Specify scale if transform is null
 var scale = 30;
