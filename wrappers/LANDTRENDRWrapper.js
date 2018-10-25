@@ -214,7 +214,7 @@ var lsAndTs = getImageLib.getLandsatWrapper(studyArea,startYear,endYear,startJul
 var scenes = lsAndTs[0];
 var composites = lsAndTs[1];
 composites = composites.map(getImageLib.addSAVIandEVI);
-Map.addLayer(composites.select(['SAVI','EVI']),{},'savi',false);
+
 ////////////////////////////////////////////////////////////
 //Landtrendr code
 var indexListString = getImageLib.listToString(indexList,'_');
