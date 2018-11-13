@@ -22,15 +22,15 @@ var studyArea = geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 200;
-var endJulian = 210; 
+var startJulian = 169;
+var endJulian = 184; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2010;
-var endYear = 2010;
+var startYear = 2017;
+var endYear = 2017;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -80,7 +80,7 @@ var modisSpikeThresh = 0.1;//Threshold for identifying spikes.  Any pair of imag
 //always have a high cloudScore to reduce comission errors- this takes some time
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
-var applyCloudScore = false;
+var applyCloudScore = true;
 var applyQACloudMask = false;//Whether to use QA bits for cloud masking
 
 
@@ -92,12 +92,20 @@ var applyTDOM = false;
 // cloudScoreThresh: If using the cloudScoreTDOMShift method-Threshold for cloud 
 //    masking (lower number masks more clouds.  Between 10 and 30 generally 
 //    works best)
-var cloudScoreThresh = 20;
+var cloudScoreThresh = 10;
 
-// Percentile of cloud score to pull from time series to represent a minimum for 
+//Whether to find if an area typically has a high cloudScore
+//If an area is always cloudy, this will result in cloud masking omission
+//For bright areas that may always have a high cloudScore
+//but not actually be cloudy, this will result in a reduction of commission errors
+//This procedure needs at least 5 years of data to work well
+var performCloudScoreOffset = true;
+
+// If performCloudScoreOffset = true:
+//Percentile of cloud score to pull from time series to represent a minimum for 
 // the cloud score over time for a given pixel. Reduces comission errors over 
 // cool bright surfaces. Generally between 5 and 10 works well. 0 generally is a
-// bit noisy
+// bit noisy but may be necessary in persistently cloudy areas
 var cloudScorePctl = 10; 
 
 // zScoreThresh: Threshold for cloud shadow masking- lower number masks out 
@@ -147,15 +155,16 @@ if(applyCloudScore){var useTempInCloudMask = true}else{var useTempInCloudMask = 
 ////////////////////////////////////////////////////////////////////////////////
 // Get Landsat image collection
 var modisImages = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,applyQACloudMask,zenithThresh,useTempInCloudMask);
-Map.addLayer(modisImages.select(['nir']),{},'original',false); 
+// Map.addLayer(modisImages.select(['nir']),{},'original',false); 
+Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'Median',false);
 
   
 // Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'before',false)
 // Apply relevant cloud masking methods
 if(applyCloudScore){
   print('Applying cloudScore');
-  modisImages = getImageLib.applyCloudScoreAlgorithm(modisImages,getImageLib.modisCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
-// Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'after',false) 
+  modisImages = getImageLib.applyCloudScoreAlgorithm(modisImages,getImageLib.modisCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset); 
+Map.addLayer(modisImages.median(),getImageLib.vizParams,'after',false) 
 }
 
 
