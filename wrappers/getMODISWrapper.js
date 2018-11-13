@@ -150,7 +150,7 @@ var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
 var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1,'day');
 print('Start and end dates:', startDate, endDate);
 
-if(applyCloudScore){var useTempInCloudMask = true}else{var useTempInCloudMask = true};//Whether to use the temperature band in cloud masking- necessary to use temp in bright arid areas
+if(applyCloudScore){var useTempInCloudMask = true}else{var useTempInCloudMask = false};//Whether to use the temperature band in cloud masking- necessary to use temp in bright arid areas
 
 ////////////////////////////////////////////////////////////////////////////////
 // Get Landsat image collection
