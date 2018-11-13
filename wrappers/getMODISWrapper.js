@@ -157,7 +157,7 @@ if(applyCloudScore){var useTempInCloudMask = true}else{var useTempInCloudMask = 
 var modisImages = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,applyQACloudMask,zenithThresh,useTempInCloudMask);
 print(modisImages.first())
 // Map.addLayer(modisImages.select(['nir']),{},'original',false); 
-Map.addLayer(modisImages.median(),{min:0.05,max:0.5,bands:'swir1,nir,red'},'Median',false);
+Map.addLayer(modisImages.median(),{min:0.05,max:0.7,bands:'swir1,nir,red'},'Median',false);
 
   
 // Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'before',false)
