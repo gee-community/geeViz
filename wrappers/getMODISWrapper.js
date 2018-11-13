@@ -84,7 +84,7 @@ var applyCloudScore = true;
 var applyQACloudMask = false;//Whether to use QA bits for cloud masking
 
 
-var applyTDOM = true;
+var applyTDOM = false;
 
 
 // 13. Cloud and cloud shadow masking parameters.
