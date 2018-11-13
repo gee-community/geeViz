@@ -47,7 +47,7 @@ var weights = [1];
 
 
 // 6. Set up Names for the export
-var outputName = 'Medoid-MODIS';
+var outputName = 'Median-MODIS';
 
 // 7. Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
