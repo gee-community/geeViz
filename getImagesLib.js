@@ -1611,7 +1611,7 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
     print('Applying Fmask cloud mask');
     var preCount = ls.count();
     var cloudFreeCount = ls.map(function(img){return cFmask(img,'cloud')}).count().unmask();
-   var ls = ls.map(function(img){return cFmask(img,'cloud')})
+    var ls = ls.map(function(img){return cFmask(img,'cloud')})
     var fmaskCloudFreeProp = cloudFreeCount.divide(preCount);
     Map.addLayer(fmaskCloudFreeProp,{min:0,max:1},'Fmask cloud prop',false);
   }
