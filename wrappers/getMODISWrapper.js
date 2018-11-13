@@ -29,7 +29,7 @@ var endJulian = 184;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2017;
+var startYear = 2015;
 var endYear = 2017;
 
 // 4. Specify an annual buffer to include imagery from the same season 
@@ -84,7 +84,7 @@ var applyCloudScore = true;
 var applyQACloudMask = false;//Whether to use QA bits for cloud masking
 
 
-var applyTDOM = false;
+var applyTDOM = true;
 
 
 // 13. Cloud and cloud shadow masking parameters.
