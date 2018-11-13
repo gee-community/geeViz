@@ -1615,7 +1615,7 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
     var fmaskCloudFreeProp = cloudFreeCount.divide(preCount);
     var alwaysCloud = fmaskCloudFreeProp.lte(0.1);
     var ls = ls.map(function(img){
-      var m = img.select('pixel_qa').bitwiseAnd(fmaskBitDict['cloud']).neq(0);
+      var m = img.select('pixel_qa').bitwiseAnd(fmaskBitDict['cloud']).neq(0).and(alwaysCloud.not());
       return img.updateMask(m.not());
     })
    
