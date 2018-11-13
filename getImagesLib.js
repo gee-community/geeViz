@@ -1609,7 +1609,11 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
   
   if(applyFmaskCloudMask){
     print('Applying Fmask cloud mask');
+    var preCount = ls.count();
     ls = ls.map(function(img){return cFmask(img,'cloud')});
+    var postCount = ls.count();
+    var fmaskCloudProp = postCount.divide(preCount);
+    Map.addLayer(fmaskCloudProp,{min:0,max:1},'Fmask cloud prop',false);
   }
   
   if(applyTDOM){
