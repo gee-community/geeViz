@@ -1513,7 +1513,7 @@ applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFm
     composite = ee.Image(composite.first());
     
     // Display the Landsat composite
-    Map.addLayer(composite, vizParamsTrue, year.toString() + ' True Color ' + 
+    Map.addLayer(composite.reproject(crs,transform,scale), vizParamsTrue, year.toString() + ' True Color ' + 
       toaOrSR, false);
     Map.addLayer(composite.reproject(crs,transform,scale), vizParamsFalse, year.toString() + ' False Color ' + 
       toaOrSR, false);
