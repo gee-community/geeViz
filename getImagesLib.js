@@ -543,7 +543,8 @@ function addIndices(img){
 
   img = img.addBands(img.normalizedDifference(['red','swir1']).rename('ND_red_swir1'));
   img = img.addBands(img.normalizedDifference(['red','swir2']).rename('ND_red_swir2'));
-
+  
+  
   img = img.addBands(img.normalizedDifference(['nir','red']).rename('ND_nir_red')); //NDVI
   img = img.addBands(img.normalizedDifference(['nir','swir1']).rename('ND_nir_swir1')); //NDWI, LSWI, -NDBI
   img = img.addBands(img.normalizedDifference(['nir','swir2']).rename('ND_nir_swir2')); //NBR, MNDVI
@@ -589,6 +590,7 @@ function addIndices(img){
   var ibi = ibi_a.normalizedDifference(['IBI_A','IBI_B']);
   img = img.addBands(ibi.rename('IBI'));
   
+
   return img;
 }
 ///////////////////////////////////////////
@@ -633,7 +635,32 @@ function simpleAddIndices(in_image){
   
     return in_image;
 }
-
+///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// Function for adding common indices
+////////////////////////////////////////////////////////////////////////////////
+function addSoilIndices(img){
+  img = img.addBands(img.normalizedDifference(['red','green']).rename('NDCI'));
+  img = img.addBands(img.normalizedDifference(['red','swir2']).rename('NDII'));
+  img = img.addBands(img.normalizedDifference(['swir1','nir']).rename('NDFI'));
+  
+  var bsi = img.expression(
+  '((SWIR1 + RED) - (NIR + BLUE)) / ((SWIR1 + RED) + (NIR + BLUE))', {
+    'BLUE': img.select('blue'),
+    'RED': img.select('red'),
+    'NIR': img.select('nir'),
+    'SWIR1': img.select('swir1')
+  }).float();
+  img = img.addBands(bsi.rename('BSI'));
+  
+  var hi = img.expression(
+    'SWIR1 / SWIR2',{
+      'SWIR1': img.select('swir1'),
+      'SWIR2': img.select('swir2')
+    }).float();
+  img = img.addBands(hi.rename('HI'));  
+  return img;
+}
 /////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 // Function to compute the Tasseled Cap transformation and return an image
@@ -1439,7 +1466,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
   //   joined = despikeCollection(joined,modisSpikeThresh,indexName);
   // }
   
-  return ee.ImageCollection(joined.map(function(img){return img.resample('bicubic') }) );
+  return ee.ImageCollection(joined);
     
   }
   
@@ -2391,4 +2418,4 @@ exports.getAreaUnderCurve = getAreaUnderCurve;
 exports.getClimateWrapper = getClimateWrapper;
 exports.exportCollection = exportCollection;
 exports.changeDirDict = changeDirDict;
-
+exports.addSoilIndices = addSoilIndices;
