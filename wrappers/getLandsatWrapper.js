@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-114.73130309829276, 46.85073744503408],
-          [-114.75327575454276, 45.63510280393358],
-          [-113.22617614516776, 45.71186935854774],
-          [-113.54477966079276, 46.79811674259862]]]);
+        [[[-114.69314346464893, 48.39041972857284],
+          [-114.71490148008343, 47.17477802176634],
+          [-113.14401469992043, 47.25149041640245],
+          [-113.47117916898532, 48.33784190470248]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
