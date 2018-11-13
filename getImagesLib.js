@@ -1613,7 +1613,13 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
     var cloudFreeCount = ls.map(function(img){return cFmask(img,'cloud')}).count().unmask();
     var ls = ls.map(function(img){return cFmask(img,'cloud')})
     var fmaskCloudFreeProp = cloudFreeCount.divide(preCount);
-    Map.addLayer(fmaskCloudFreeProp,{min:0,max:1},'Fmask cloud prop',false);
+    var alwaysCloud = fmaskCloudFreeProp.lte(0.1);
+    var ls = ls.map(function(img){
+       var m = img.select('pixel_qa').bitwiseAnd(fmaskBitDict['cloud']).neq(0);
+      return img.updateMask(m.not());
+    })
+   
+    Map.addLayer(alwaysCloud,{min:0,max:1},'Fmask cloud prop',false);
   }
   
   if(applyTDOM){
