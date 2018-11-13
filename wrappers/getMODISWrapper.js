@@ -29,8 +29,8 @@ var endJulian = 184;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2017;
-var endYear = 2017;
+var startYear = 2015;
+var endYear = 2018;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -57,7 +57,7 @@ var exportPathRoot = 'users/ianhousman/test';
 // Median tends to be smoother, while medoid retains 
 // single date of observation across all bands
 // If not exporting indices with composites to save space, medoid should be used
-var compositingMethod = 'medoid';
+var compositingMethod = 'median';
 
 //MODIS Params- params if sensorProgram is modis
 //Whether to use daily MODIS (true) or 8 day composites (false)
@@ -200,7 +200,7 @@ Map.addLayer(modisImages.median().reproject('EPSG:32615',null,250),{min:0.05,max
 modisImages = modisImages.map(getImageLib.simpleAddIndices);
 
 // Create composite time series
-var modisImages = getImageLib.compositeTimeSeries(modisImages,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod,compositingReducer);
+var modisImages = getImageLib.compositeTimeSeries(modisImages,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod,null);
 var f = ee.Image(modisImages.first());
 Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
 
