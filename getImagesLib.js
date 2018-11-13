@@ -919,8 +919,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
       
       composite = medoidMosaicMSD(lsT,['blue','green','red','nir','swir1','swir2']);
     }
-    Map.addLayer(composite.reproject('EPSG:32615',null,250),{min:0.05,max:0.7,bands:'swir1,nir,red'},year.toString(),false) 
-
+    
     return composite.set({'system:time_start':ee.Date.fromYMD(year+ yearWithMajority,6,1).millis(),
                         'startDate':startDateT.millis(),
                         'endDate':endDateT.millis(),
@@ -1500,7 +1499,11 @@ collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer
     var composite = collection.filter(ee.Filter.calendarRange(year+yearWithMajority,year+yearWithMajority,'year'));
     composite = ee.Image(composite.first()).clip(studyArea);
     
-    
+    // Display the Landsat composite
+    Map.addLayer(composite, vizParamsTrue, year.toString() + ' True Color ' + 
+      toaOrSR, false);
+    Map.addLayer(composite, vizParamsFalse, year.toString() + ' False Color ' + 
+      toaOrSR, false);
     // Add metadata, cast to integer, and export composite
     // composite = composite.set({
     //   // 'system:time_start': ee.Date.fromYMD(year,6,1).millis(),
