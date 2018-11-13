@@ -84,7 +84,7 @@ var applyCloudScore = true;
 var applyQACloudMask = false;//Whether to use QA bits for cloud masking
 
 
-var applyTDOM = false;
+var applyTDOM = true;
 
 
 // 13. Cloud and cloud shadow masking parameters.
@@ -128,7 +128,7 @@ var contractPixels = 1.5;
 //    that are often missed
 // (1.5 results in a 1 pixel buffer)(0.5 results in a 0 pixel buffer)
 // (2.5 or 3.5 generally is sufficient)
-var dilatePixels = 2.5;
+var dilatePixels = 3.5;
 
 
 //15. Export params
@@ -165,7 +165,6 @@ Map.addLayer(modisImages.median(),{min:0.05,max:0.7,bands:'swir1,nir,red'},'Medi
 if(applyCloudScore){
   print('Applying cloudScore');
   modisImages = getImageLib.applyCloudScoreAlgorithm(modisImages,getImageLib.modisCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset); 
-Map.addLayer(modisImages.median().reproject('EPSG:32615',null,250),getImageLib.vizParamsFalse,'after',false) 
 }
 
 
@@ -185,6 +184,7 @@ if(despikeMODIS){
   
 }
 
+Map.addLayer(modisImages.median().reproject('EPSG:32615',null,250),{min:0.05,max:0.7,bands:'swir1,nir,red'},'after',false) 
 
 
 
