@@ -22,15 +22,15 @@ var studyArea = geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 190;
-var endJulian = 250; 
+var startJulian = 200;
+var endJulian = 210; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2018;
-var endYear = 2018;
+var startYear = 2010;
+var endYear = 2010;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -80,11 +80,11 @@ var modisSpikeThresh = 0.1;//Threshold for identifying spikes.  Any pair of imag
 //always have a high cloudScore to reduce comission errors- this takes some time
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
-var applyCloudScore = true;
+var applyCloudScore = false;
 var applyQACloudMask = false;//Whether to use QA bits for cloud masking
 
 
-var applyTDOM = true;
+var applyTDOM = false;
 
 
 // 13. Cloud and cloud shadow masking parameters.
@@ -211,7 +211,7 @@ Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
 var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
 getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
 modisImages,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,'SR',weights,
-              applyCloudScore, false,applyTDOM,false,false,false,correctIllumination);
+              applyCloudScore, false,applyTDOM,false,false,false,false);
 
 // /////////////////////////////////////////////////////////////////////////////////////////////
 
