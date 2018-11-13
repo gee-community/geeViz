@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var geometry = /* color: #98ff00 */ee.Geometry.Polygon(
-        [[[-107.88010335430403, 37.74944967250176],
-          [-104.41965417436563, 37.91850622749146],
-          [-105.360767292844, 39.25236887854654],
-          [-107.57914696634225, 39.18649132261251]]]);
+var geometry = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-89.07623635335858, 46.64062806999632],
+          [-88.39508400960858, 43.315843410604806],
+          [-82.72613869710858, 43.139732719730006],
+          [-83.29742775960858, 46.12527840714961]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -29,13 +29,13 @@ var endJulian = 250;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2010;
+var startYear = 2018;
 var endYear = 2018;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
 // in a 3 year moving window
-var timebuffer = 1;
+var timebuffer = 0;
 
 // 5. Specify the weights to be used for the moving window created by timeBuffer
 //For example- if timeBuffer is 1, that is a 3 year moving window
@@ -43,7 +43,7 @@ var timebuffer = 1;
 //In order to overweight the center year, you could specify the weights as
 //[1,5,1] which would duplicate the center year 5 times and increase its weight for
 //the compositing method
-var weights = [1,5,1];
+var weights = [1];
 
 
 // 6. Set up Names for the export
@@ -64,7 +64,7 @@ var compositingMethod = 'medoid';
 //Daily images provide complete control of cloud/cloud shadow masking as well as compositing
 //Daily images have a shorter lag time as well (~2-4 days) vs pre-computed
 //8-day composites (~7 days)
-var daily = false;
+var daily = true;
 
 //If using daily, the following parameters apply
 var zenithThresh  = 90;//If daily == true, Zenith threshold for daily acquisitions for including observations
