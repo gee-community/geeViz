@@ -99,7 +99,7 @@ var cloudScoreThresh = 10;
 //For bright areas that may always have a high cloudScore
 //but not actually be cloudy, this will result in a reduction of commission errors
 //This procedure needs at least 5 years of data to work well
-var performCloudScoreOffset = true;
+var performCloudScoreOffset = false;
 
 // If performCloudScoreOffset = true:
 //Percentile of cloud score to pull from time series to represent a minimum for 
