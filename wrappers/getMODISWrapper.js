@@ -200,8 +200,7 @@ Map.addLayer(modisImages.median().reproject('EPSG:32615',null,250),{min:0.05,max
 modisImages = modisImages.map(getImageLib.simpleAddIndices);
 
 // Create composite time series
-var modisImages = getImageLib.compositeTimeSeries(modisImages,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
-
+var modisImages = getImageLib.compositeTimeSeries(modisImages,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod,compositingReducer);
 var f = ee.Image(modisImages.first());
 Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
 
