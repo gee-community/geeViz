@@ -1500,8 +1500,8 @@ collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer
     composite = ee.Image(composite.first()).clip(studyArea);
     
     // Display the Landsat composite
-    Map.addLayer(composite, vizParamsTrue, year.toString() + ' True Color ' , false);
-    Map.addLayer(composite, vizParamsFalse, year.toString() + ' False Color ', false);
+    Map.addLayer(composite.reproject(crs,transform,scale), vizParamsTrue, year.toString() + ' True Color ' , false);
+    Map.addLayer(composite.reproject(crs,transform,scale), vizParamsFalse, year.toString() + ' False Color ', false);
     // Add metadata, cast to integer, and export composite
     composite = composite.set({
       'system:time_start': ee.Date.fromYMD(year,6,1).millis(),
