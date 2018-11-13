@@ -218,9 +218,8 @@ Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
 
 // Export composite collection
 var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
-getImageLib.exportCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
-modisImages,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,'SR',weights,
-              applyCloudScore, false,applyTDOM,false,false,false,false);
+getImageLib.exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
+modisImages,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands);
 
 // /////////////////////////////////////////////////////////////////////////////////////////////
 
