@@ -919,7 +919,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
       
       composite = medoidMosaicMSD(lsT,['blue','green','red','nir','swir1','swir2']);
     }
-    Map.addLayer(lsT.median().reproject('EPSG:32615',null,250),{min:0.05,max:0.7,bands:'swir1,nir,red'},year.toString(),false) 
+    Map.addLayer(composite.reproject('EPSG:32615',null,250),{min:0.05,max:0.7,bands:'swir1,nir,red'},year.toString(),false) 
 
     return composite.set({'system:time_start':ee.Date.fromYMD(year+ yearWithMajority,6,1).millis(),
                         'startDate':startDateT.millis(),
