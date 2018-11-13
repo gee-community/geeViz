@@ -164,7 +164,7 @@ Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'Median',false);
 if(applyCloudScore){
   print('Applying cloudScore');
   modisImages = getImageLib.applyCloudScoreAlgorithm(modisImages,getImageLib.modisCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset); 
-Map.addLayer(modisImages.median(),getImageLib.vizParams,'after',false) 
+Map.addLayer(modisImages.median().reproject('EPSG:32615',250),getImageLib.vizParamsFalse,'after',false) 
 }
 
 
