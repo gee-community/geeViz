@@ -1651,6 +1651,8 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
   ls = ls.map(simpleAddIndices)
           .map(getTasseledCap)
           .map(simpleAddTCAngles);
+          
+  //Set to appropriate resampling method for any reprojection
   ls = ls.map(function(img){return img.resample('bicubic') })    
   // Create composite time series
   var ts = compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
