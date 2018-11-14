@@ -29,7 +29,7 @@ var endJulian = 184;
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2015;
+var startYear = 2017;
 var endYear = 2017;
 
 // 4. Specify an annual buffer to include imagery from the same season 
@@ -80,11 +80,11 @@ var modisSpikeThresh = 0.1;//Threshold for identifying spikes.  Any pair of imag
 //always have a high cloudScore to reduce comission errors- this takes some time
 //and needs a longer time series (>5 years or so)
 //TDOM also looks at the time series and will need a longer time series
-var applyCloudScore = true;
+var applyCloudScore = false;
 var applyQACloudMask = false;//Whether to use QA bits for cloud masking
 
 
-var applyTDOM = true;
+var applyTDOM = false;
 
 
 // 13. Cloud and cloud shadow masking parameters.
@@ -217,7 +217,7 @@ Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
 
 
 // Export composite collection
-var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
+var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2'];
 getImageLib.exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
 modisImages,startYear,endYear,startJulian,endJulian,null,timebuffer,exportBands);
 
