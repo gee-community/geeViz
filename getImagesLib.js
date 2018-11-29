@@ -1804,7 +1804,7 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
 
   
   // Get Sentinel2 image collection
-  var s2s = getS2(studyArea,startDate,endDate,startJulian,endJulian)//.map(function(img){return img.resample('bicubic') }) ;
+  var s2s = getS2(studyArea,startDate,endDate,startJulian,endJulian)
   // Map.addLayer(s2s.median().reproject('EPSG:32612',null,30),{min:0.05,max:0.4,bands:'swir1,nir,red'});
   
   if(applyQABand){
@@ -1840,7 +1840,7 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
   //         .map(simpleAddTCAngles);
   
   
-  
+  s2s = s2s.map(function(img){return img.resample('bicubic') }) ;
   return s2s;
 }
 /////////////////////////////////////////////////////////////////////
