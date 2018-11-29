@@ -1862,7 +1862,7 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
   zScoreThresh,shadowSumThresh,
   contractPixels,dilatePixels
   );
-  
+  print('s2s',s2s)
   
   
   // // Add zenith and azimuth
