@@ -1804,8 +1804,8 @@ function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,end
 
   
   // Get Sentinel2 image collection
-  var s2s = getS2(studyArea,startDate,endDate,startJulian,endJulian).map(function(img){return img.resample('bicubic') }) ;
-  Map.addLayer(s2s.median().reproject('EPSG:32612',null,30),{min:0.05,max:0.4,bands:'swir1,nir,red'});
+  var s2s = getS2(studyArea,startDate,endDate,startJulian,endJulian)//.map(function(img){return img.resample('bicubic') }) ;
+  // Map.addLayer(s2s.median().reproject('EPSG:32612',null,30),{min:0.05,max:0.4,bands:'swir1,nir,red'});
   
   if(applyQABand){
     print('Applying QA band cloud mask');
