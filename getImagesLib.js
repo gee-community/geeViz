@@ -1862,7 +1862,8 @@ function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
   zScoreThresh,shadowSumThresh,
   contractPixels,dilatePixels
   );
-  print('s2s',s2s)
+  var f = ee.Image(s2s.first());
+  Map.addLayer(f,{},'f')
   
   
   // // Add zenith and azimuth
