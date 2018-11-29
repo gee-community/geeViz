@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-80.46836789654282, -0.7617555824639827],
-          [-79.39170774029282, -0.7864725644285828],
-          [-79.33265622662094, -0.3594014003701453],
-          [-80.46287473248032, -0.30172414008761167]]]);
+        [[[-114.56133135216896, 48.890984163850284],
+          [-114.36357744591896, 48.39008040881411],
+          [-113.59453447716896, 48.61573953438945],
+          [-113.66045244591896, 48.92708833357347]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -19,20 +19,20 @@ var studyArea = geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 1;
-var endJulian = 365; 
+var startJulian = 190;
+var endJulian = 250; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2015;
+var startYear = 2018;
 var endYear = 2018;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
 // in a 3 year moving window
-var timebuffer = 1;
+var timebuffer = 0;
 
 // 5. Specify the weights to be used for the moving window created by timeBuffer
 //For example- if timeBuffer is 1, that is a 3 year moving window
@@ -40,7 +40,7 @@ var timebuffer = 1;
 //In order to overweight the center year, you could specify the weights as
 //[1,5,1] which would duplicate the center year 5 times and increase its weight for
 //the compositing method
-var weights = [1,1,1];
+var weights = [1];
 
 
 
@@ -151,7 +151,7 @@ var exportPathRoot = 'users/ianhousman/test/changeCollection';
 //CRS- must be provided.  
 //Common crs codes: Web mercator is EPSG:4326, USGS Albers is EPSG:5070, 
 //WGS84 UTM N hemisphere is EPSG:326+ zone number (zone 12 N would be EPSG:32612) and S hemisphere is EPSG:327+ zone number
-var crs = 'EPSG:32717';
+var crs = 'EPSG:32611';
 
 //Specify transform if scale is null and snapping to known grid is needed
 var transform = null;//[30,0,-2361915.0,0,-30,3177735.0];
@@ -174,7 +174,7 @@ var s2sAndTs =getImageLib.getSentinel2Wrapper(studyArea,startYear,endYear,startJ
 //Separate into scenes and composites for subsequent analysis
 var processedScenes = s2sAndTs[0];
 var processedComposites = s2sAndTs[1];
-
+print(processedScenes)
 ////////////////////////////////////////////////////////////////////////////////
 // Load the study region, with a blue outline.
 // Create an empty image into which to paint the features, cast to byte.
