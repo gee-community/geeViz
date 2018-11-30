@@ -201,5 +201,5 @@ var zAndTrendCollection =
 dLib.zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJulian,endJulian,
           baselineLength,baselineGap,epochLength,zReducer,useAnnualMedianForTrend,
           exportImages,exportPathRoot,studyArea,scale,crs,transform);
-dLib.thresholdZAndTrend(zAndTrendCollection,-5,-0.05,startYear,endYear);
+dLib.thresholdZAndTrend(zAndTrendCollection,-50,-0.05*10000,startYear,endYear);
 
