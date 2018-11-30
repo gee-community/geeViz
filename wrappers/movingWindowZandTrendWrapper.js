@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-123.07894045524273, 41.20545062616133],
-          [-123.02400881461773, 40.57425366846473],
-          [-121.66170412711773, 40.52416604285035],
-          [-121.74959475211773, 41.263284164328454]]]);
+        [[[-114.05172947283353, 45.8923204715712],
+          [-113.48044041033353, 46.576250470830345],
+          [-115.10641697283353, 46.681873688007606],
+          [-115.39206150408353, 46.13647217324962]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for running z-score and linear trend across a moving window of years
 
@@ -25,7 +25,7 @@ var studyArea =geometry;
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
 var startJulian = 190;
-var endJulian = 250
+var endJulian = 270
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
@@ -138,7 +138,7 @@ var scale = null;
 //Number of julian days for each analysis
 //Generally want it to be >= 32 or the output will be noisy
 //Should almost never be less than 16
-var nDays = 60;
+var nDays = 80;
 
 //Which bands/indices to run the analysis with
 //Can be any of ['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','NDSI','tcAngleBG']
@@ -176,7 +176,7 @@ var useAnnualMedianForTrend = true;
 //Number of years in a given trend analysis inclusive of the analysis year
 //E.g. if the analysis year was 1990 and the epochLength was 5, 
 //the years included in the trend analysis would be 1986,1987,1988,1989, and 1990
-var epochLength = 5;
+var epochLength =10;
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -203,3 +203,6 @@ dLib.zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,start
           exportImages,exportPathRoot,studyArea,scale,crs,transform);
 dLib.thresholdZAndTrend(zAndTrendCollection,-50,-0.05*10000,startYear,endYear);
 
+var allotments = ee.FeatureCollection('projects/USFS/LCMS-NFS/R1/FNF/Ancillary/R1_Allotments_w_RPMS_Monitoring_data_1984_to_2018')
+                  .reduceToImage(['Corr'], ee.Reducer.first())
+Map.addLayer(allotments,{min:0,max:1,palette:'FF0,0F0'})
