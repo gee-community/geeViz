@@ -211,8 +211,4 @@ dLib.zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,start
 
 Map.addLayer(zAndTrendCollection,{},'zAndTrendCollection',false);         
 dLib.thresholdZAndTrend(zAndTrendCollection,-5*10,-0.05*10000,startYear,endYear);
-dLib.thresholdZAndTrend(zAndTrendCollection,-3*10,-0.03*10000,startYear,endYear,'positive');
 
-var allotments = ee.FeatureCollection('projects/USFS/LCMS-NFS/R1/FNF/Ancillary/R1_Allotments_w_RPMS_Monitoring_data_1984_to_2018')
-                  .reduceToImage(['Corr'], ee.Reducer.first())
-Map.addLayer(allotments,{min:0,max:1,palette:'FF0,0F0'},'Allotments',false);
