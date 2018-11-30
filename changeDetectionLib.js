@@ -659,6 +659,7 @@ function zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,s
 
 function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh,startYear,endYear,negativeOrPositiveChange){
   if(negativeOrPositiveChange === null || negativeOrPositiveChange === undefined){negativeOrPositiveChange = 'negative'}
+  var dir;
   if(negativeOrPositiveChange === 'negative'){dir = -1}
   else{dir = 1};
   var zCollection = zAndTrendCollection.select('.*_Z');
