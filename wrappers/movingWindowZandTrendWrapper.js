@@ -204,8 +204,9 @@ var zAndTrendCollection =
 dLib.zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJulian,endJulian,
           baselineLength,baselineGap,epochLength,zReducer,useAnnualMedianForTrend,
           exportImages,exportPathRoot,studyArea,scale,crs,transform,minBaselineObservationsNeeded);
+          
 dLib.thresholdZAndTrend(zAndTrendCollection,-50,-0.05*10000,startYear,endYear);
 
 var allotments = ee.FeatureCollection('projects/USFS/LCMS-NFS/R1/FNF/Ancillary/R1_Allotments_w_RPMS_Monitoring_data_1984_to_2018')
                   .reduceToImage(['Corr'], ee.Reducer.first())
-Map.addLayer(allotments,{min:0,max:1,palette:'FF0,0F0'})
+Map.addLayer(allotments,{min:0,max:1,palette:'FF0,0F0'},'Allotments',false);
