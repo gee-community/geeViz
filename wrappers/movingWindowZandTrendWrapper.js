@@ -138,7 +138,7 @@ var scale = null;
 //Number of julian days for each analysis
 //Generally want it to be >= 32 or the output will be noisy
 //Should almost never be less than 16
-var nDays = 70;
+var nDays = 60;
 
 //Which bands/indices to run the analysis with
 //Can be any of ['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','NDSI','tcAngleBG']
