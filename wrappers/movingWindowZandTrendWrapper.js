@@ -1,9 +1,5 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-114.05172947283353, 45.8923204715712],
-          [-113.48044041033353, 46.576250470830345],
-          [-115.10641697283353, 46.681873688007606],
-          [-115.39206150408353, 46.13647217324962]]]);
+var geometry = /* color: #d63000 */ee.Geometry.MultiPoint();
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for running z-score and linear trend across a moving window of years
 
@@ -138,7 +134,7 @@ var scale = null;
 //Number of julian days for each analysis
 //Generally want it to be >= 32 or the output will be noisy
 //Should almost never be less than 16
-var nDays = 60;
+var nDays = 80;
 
 //Which bands/indices to run the analysis with
 //Can be any of ['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','NDSI','tcAngleBG']
@@ -159,7 +155,7 @@ var baselineLength = 5;
 //temporally auto-correlated
 //E.g. if the analysis year is 1990, the last year of the baseline would be 1987
 //Set to 0 if the last year of the baseline needs to be the year just before the analysis year
-var baselineGap = 2;
+var baselineGap = 5;
 
 //Since there could be multiple z values for a given pixel on a given analysis period, how to summarize
 //Generally use ee.Reducer.mean() or ee.Reducer.median()
@@ -200,7 +196,7 @@ var allScenes = getImageLib.getProcessedLandsatScenes(studyArea,startYear,endYea
 var zAndTrendCollection = 
 dLib.zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJulian,endJulian,
           baselineLength,baselineGap,epochLength,zReducer,useAnnualMedianForTrend,
-          exportImages,exportPathRoot,studyArea,scale,crs,transform);
+          exportImages,exportPathRoot,studyArea,scale,crs,transform,minBaselineObservationsNeeded);
 dLib.thresholdZAndTrend(zAndTrendCollection,-50,-0.05*10000,startYear,endYear);
 
 var allotments = ee.FeatureCollection('projects/USFS/LCMS-NFS/R1/FNF/Ancillary/R1_Allotments_w_RPMS_Monitoring_data_1984_to_2018')
