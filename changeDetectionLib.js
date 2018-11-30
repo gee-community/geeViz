@@ -657,12 +657,15 @@ function zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,s
 }
 
 
-function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh,startYear,endYear){
+function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh,startYear,endYear,negativeOrPositiveChange){
+  if(negativeOrPositiveChange === null || negativeOrPositiveChange === undefined){negativeOrPositiveChange = 'negative'}
+  if(negativeOrPositiveChange === 'negative'){dir = -1}
+  else{dir = 1};
   var zCollection = zAndTrendCollection.select('.*_Z');
   var trendCollection = zAndTrendCollection.select('.*_slope');
   
-  var zChange = thresholdChange(zCollection,-zThresh,-1).select('.*_change');
-  var trendChange = thresholdChange(trendCollection,-slopeThresh,-1).select('.*_change');
+  var zChange = thresholdChange(zCollection,-zThresh,dir).select('.*_change');
+  var trendChange = thresholdChange(trendCollection,-slopeThresh,dir).select('.*_change');
   
   Map.addLayer(zAndTrendCollection,{},'zAndTrendCollection',false);
   Map.addLayer(zChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Z Most Recent Change Year',false);
