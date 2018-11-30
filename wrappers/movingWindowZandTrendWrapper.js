@@ -160,6 +160,8 @@ var baselineGap = 5;
 //Number of cloud/cloud shadow free observations necessary to have in the baseline for a 
 //pixel to run the analysis for a given year
 //Generally 5-30 works well.  If false positives are prevalant, use something toward 30
+//If there are too many holes in the outputs where data are sparse, this method may not work, but try 
+//using a lower minBaselineObservationsNeeded
 var minBaselineObservationsNeeded = 10;
 
 //Since there could be multiple z values for a given pixel on a given analysis period, how to summarize
