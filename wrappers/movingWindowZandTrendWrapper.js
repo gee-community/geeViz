@@ -1,5 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
-var geometry = /* color: #d63000 */ee.Geometry.MultiPoint();
+var geometry = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-114.64614410458967, 46.78379503331787],
+          [-114.71206207333967, 45.605104594235314],
+          [-111.82265777646467, 45.55127657199464],
+          [-111.98745269833967, 46.72357800019127]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Wrapper for running z-score and linear trend across a moving window of years
 
@@ -206,6 +210,7 @@ dLib.zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,start
           exportImages,exportPathRoot,studyArea,scale,crs,transform,minBaselineObservationsNeeded);
           
 dLib.thresholdZAndTrend(zAndTrendCollection,-50,-0.05*10000,startYear,endYear);
+dLib.thresholdZAndTrend(zAndTrendCollection,-50,-0.05*10000,startYear,endYear,'positive');
 
 var allotments = ee.FeatureCollection('projects/USFS/LCMS-NFS/R1/FNF/Ancillary/R1_Allotments_w_RPMS_Monitoring_data_1984_to_2018')
                   .reduceToImage(['Corr'], ee.Reducer.first())
