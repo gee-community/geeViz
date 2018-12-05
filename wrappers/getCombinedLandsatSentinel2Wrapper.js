@@ -188,7 +188,7 @@ s2s = s2s.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI',
 
 
 Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
-Map.addLayer(s2F,getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
+Map.addLayer((s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
 
 // //Apply respective cloudScore functions
