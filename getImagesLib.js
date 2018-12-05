@@ -111,7 +111,7 @@ function harmonizationChastain(img, fromSensor,toSensor){
   var intercepts = coeffList[1];
   var direction = ee.Number(coeffList[2]);
   
-  var out = ee.Algorithms.If(direction.eq(0),dir0Regression(img,slopes,intercepts),dir1Regression(img,slopes,intercepts))
+  var out = ee.Algorithms.If(direction.eq(0),dir0Regression(img,slopes,intercepts),dir1Regression(img,slopes,intercepts));
   return out;
 }
 ///////////////////////////////////////////////////////////
