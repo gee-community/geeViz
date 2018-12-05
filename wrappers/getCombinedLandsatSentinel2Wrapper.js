@@ -217,17 +217,21 @@ var oli = ls.filter(ee.Filter.inList('SATELLITE',['LANDSAT_8']));
 var msi = s2s;
 
 Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Single Image Cloud/Shadow Masking',false);
-Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
+Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Single Image Cloud/Shadow Masking',false);
 
 //Apply correction
 //Currently coded to go to ETM+
 
 //No need to correct ETM to ETM
-tm = tm.map(function(img){return getImageLib.harmonizationChastain(img, 'ETM','ETM')});
+// tm = tm.map(function(img){return getImageLib.harmonizationChastain(img, 'ETM','ETM')});
 
 //Harmonize the other two
 oli = oli.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
 msi = msi.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
+
+
+Map.addLayer(tm.merge(oli),getImageLib.vizParamsFalse,'Landsat Single Image Cloud/Shadow Masking Harmonization',false);
+Map.addLayer(msi.first(),getImageLib.vizParamsFalse,'S2 Single Image Cloud/Shadow Masking Harmonization',false);
 
 //Merge them after harmonization
 var merged = ee.ImageCollection(tm.merge(oli).merge(msi));
