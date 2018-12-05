@@ -183,6 +183,30 @@ Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat No Masking',false);
 Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 No Masking',false);
 
 
+
+
+//Apply respective cloudScore functions
+ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
+s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
+Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud Masking',false);
+Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud Masking',false);
+
+//Set a property for splitting apart later
+ls = ls.map(function(img){return img.float().set('whichProgram','Landsat')});
+s2s = s2s.map(function(img){return img.float().set('whichProgram','Sentinel2')});
+
+//Merge collections
+var merged = ls.merge(s2s);
+
+//Perform TDOM
+merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
+
+//Seperate back out
+ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
+s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
+Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
+Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
+
 ls = ls.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
 s2s = s2s.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
 
@@ -190,30 +214,10 @@ s2s = s2s.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI',
 Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
 Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
+var merged = ls.merge(s2s);
 
-// //Apply respective cloudScore functions
-// ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
-// s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
-// Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud Masking',false);
-// Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud Masking',false);
-
-// //Set a property for splitting apart later
-// ls = ls.map(function(img){return img.float().set('whichProgram','Landsat')});
-// s2s = s2s.map(function(img){return img.float().set('whichProgram','Sentinel2')});
-
-// //Merge collections
-// var merged = ls.merge(s2s);
-
-// //Perform TDOM
-// merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
-
-// //Seperate back out
-// ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
-// s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
-// Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
-// Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
-
-
+var composites = getImageLib.compositeTimeSeries(merged,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
+  print('composites',composites);
 
 // // Create composite time series function
 // function createAndExportComposites(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,everyHowManyDays,exportPathRoot,exportName,exportBands,nonDivideBands,scale,crs,transform){
