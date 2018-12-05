@@ -229,9 +229,11 @@ Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Single Image Cloud/Shado
 oli = oli.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
 msi = msi.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
 
+ls = ee.ImageCollection(tm.merge(oli));
+s2 = msi;
 
-Map.addLayer(tm.merge(oli),getImageLib.vizParamsFalse,'Landsat Single Image Cloud/Shadow Masking Harmonization',false);
-Map.addLayer(msi.first(),getImageLib.vizParamsFalse,'S2 Single Image Cloud/Shadow Masking Harmonization',false);
+Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Single Image Cloud/Shadow Masking Harmonization',false);
+Map.addLayer(s2.first(),getImageLib.vizParamsFalse,'S2 Single Image Cloud/Shadow Masking Harmonization',false);
 
 //Merge them after harmonization
 var merged = ee.ImageCollection(tm.merge(oli).merge(msi));
