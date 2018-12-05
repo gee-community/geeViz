@@ -965,7 +965,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
       return lsT;
     });
     var lsT = ee.ImageCollection(ee.FeatureCollection(images).flatten());
-    print('lsT',lsT)
+    
     // Compute median or medoid or apply reducer
     var composite;
     if(compositingReducer !== undefined && compositingReducer !== null){
@@ -978,7 +978,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
       
       composite = medoidMosaicMSD(lsT,['blue','green','red','nir','swir1','swir2']);
     }
-    
+    Map.addLayer(composite,visParamsFalse,year.toString())
     return composite.set({'system:time_start':ee.Date.fromYMD(year+ yearWithMajority,6,1).millis(),
                         'startDate':startDateT.millis(),
                         'endDate':endDateT.millis(),
