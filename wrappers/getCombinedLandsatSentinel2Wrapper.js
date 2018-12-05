@@ -209,6 +209,8 @@ var s2F = ee.Iamge(s2s.first());
 
 lsF =harmonizationChastain(lsF, 'OLI','ETM');
 s2F =harmonizationChastain(s2F, 'MSI','ETM');
+Map.addLayer(lsF,getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
+Map.addLayer(lsF,getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
 
 // // Create composite time series function
