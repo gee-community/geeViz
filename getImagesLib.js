@@ -76,6 +76,8 @@ var bandNames = ['blue','green','red','nir','swir1','swir2'];
 var msiOLISlopes = [1.09461,1.0043,1.0524,0.8954,1.0049,1.0002];
 var msiOLIIntercepts = [-0.0107,0.0026,-0.0015,0.0033,0.0065,0.0046];
 
+//msi = etm*slope+intercept
+//etm = (msi-intercept)/slope
 var msiETMSlopes = [1.10601,0.99091,1.05681,1.0045,1.03611,1.04011];
 var msiETMIntercepts = [-0.0139,0.00411,-0.0024,-0.0076,0.00411,0.00861];
 
