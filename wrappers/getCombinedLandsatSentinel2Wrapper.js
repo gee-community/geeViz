@@ -137,7 +137,7 @@ var dilatePixels = 3.5;
 var exportComposites = true;
 
 //Set up Names for the export
-var outputName = 'Landsat';
+var outputName = 'Landsat_S2_Hybrid_Composite_';
 
 //Provide location composites will be exported to
 //This should be an asset folder, or more ideally, an asset imageCollection
