@@ -81,6 +81,8 @@ var msiOLIIntercepts = [-0.0107,0.0026,-0.0015,0.0033,0.0065,0.0046];
 var msiETMSlopes = [1.10601,0.99091,1.05681,1.0045,1.03611,1.04011];
 var msiETMIntercepts = [-0.0139,0.00411,-0.0024,-0.0076,0.00411,0.00861];
 
+//oli = etm*slope+intercept
+//etm = (oli-intercept)/slope
 var oliETMSlopes =[1.03501,1.00921,1.01991,1.14061,1.04351,1.05271];
 var oliETMIntercepts = [-0.0055,-0.0008,-0.0021,-0.0163,-0.0045,0.00261];
 
