@@ -43,7 +43,7 @@ function setNoData(image,noDataValue){
 //Functions to perform basic clump and elim
 function sieve(image,mmu){
   var connected = image.connectedPixelCount(mmu+20);
-  Map.addLayer(connected,{'min':1,'max':mmu},'connected')
+  Map.addLayer(connected,{'min':1,'max':mmu},'connected');
   var elim = connected.gt(mmu);
   var mode = image.focal_mode(mmu/2,'circle');
   mode = mode.mask(image.mask());
@@ -1336,10 +1336,10 @@ function despikeCollection(c,absoluteSpike,bandNo){
     // ct = ct.mask(BinarySpike.eq(0));
     
     var doNotMask = lt.mask().not().or(rt.mask().not());
-    var lrMean = lt.add(rt)
-    lrMean = lrMean.divide(2)
+    var lrMean = lt.add(rt);
+    lrMean = lrMean.divide(2);
     // var out = ct.mask(doNotMask.not().and(ct.mask()))
-    var out = ct.where(BinarySpike.eq(1).and(doNotMask.not()),lrMean)
+    var out = ct.where(BinarySpike.eq(1).and(doNotMask.not()),lrMean);
     return out.set('system:index',si).set('system:time_start', time_start).set('system:time_end', time_end);
     
     
@@ -1578,7 +1578,7 @@ collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer
   
     exportToAssetWrapper(composite,exportName,exportPath,'mean',
       studyArea.bounds(),null,crs,transform);
-    })
+    });
 }
 
 // Function to export composite collection
