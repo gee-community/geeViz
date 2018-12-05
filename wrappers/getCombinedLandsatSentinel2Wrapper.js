@@ -84,14 +84,14 @@ var defringeL5 = false;
 // cloudScoreThresh: If using the cloudScoreTDOMShift method-Threshold for cloud 
 //    masking (lower number masks more clouds.  Between 10 and 30 generally 
 //    works best)
-var cloudScoreThresh = 10;
+var cloudScoreThresh = 20;
 
 //Whether to find if an area typically has a high cloudScore
 //If an area is always cloudy, this will result in cloud masking omission
 //For bright areas that may always have a high cloudScore
 //but not actually be cloudy, this will result in a reduction of commission errors
 //This procedure needs at least 5 years of data to work well
-var performCloudScoreOffset = false;
+var performCloudScoreOffset = true;
 
 // If performCloudScoreOffset = true:
 //Percentile of cloud score to pull from time series to represent a minimum for 
@@ -187,6 +187,7 @@ ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloud
 s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
 Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud Masking',false);
 Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud Masking',false);
+
 //Set a property for splitting apart later
 ls = ls.map(function(img){return img.float().set('whichProgram','Landsat')});
 s2s = s2s.map(function(img){return img.float().set('whichProgram','Sentinel2')});
@@ -200,7 +201,8 @@ merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPix
 //Seperate back out
 ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
 s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
-Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false)
+Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
+Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 // // Create composite time series function
 // function createAndExportComposites(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,everyHowManyDays,exportPathRoot,exportName,exportBands,nonDivideBands,scale,crs,transform){
 
