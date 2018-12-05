@@ -64,11 +64,13 @@ var harmonizationRoy = function(oli) {
   return y.toShort();                                                                       // return the image as short to match the type of the other data
 };
 
+/////////////////////////////////////////////////////////////////////////
+//Code to implement OLI/ETM/MSI regression
 //Chastain et al 2018 coefficients
 //Empirical cross sensor comparison of Sentinel-2A and 2B MSI, Landsat-8 OLI, and Landsat-7 ETM+ top of atmosphere spectral characteristics over the conterminous United States
 //https://www.sciencedirect.com/science/article/pii/S0034425718305212#t0020
 //Left out 8a coefficients since all sensors need to be cross- corrected with bands common to all sensors
-var bandNames = ['blue','green','red','nir','swir1','swir2'];
+var chastainBandNames = ['blue','green','red','nir','swir1','swir2'];
 
 //From Table 4
 //msi = oli*slope+intercept
