@@ -214,8 +214,8 @@ s2s = s2s.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI',
 Map.addLayer(ls.median(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
 Map.addLayer(s2s.median(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
-var merged = ls.merge(s2s);
-
+var merged = ee.ImageCollection(ls.merge(s2s));
+compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod,compositingReducer)
 var composites = getImageLib.compositeTimeSeries(merged,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
   print('composites',composites);
 Map.addLayer(composites,getImageLib.vizParamsFalse)
