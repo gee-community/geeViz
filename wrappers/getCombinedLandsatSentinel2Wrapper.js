@@ -199,11 +199,11 @@ s2s = s2s.map(function(img){return img.float().set('whichProgram','Sentinel2')})
 var merged = ls.merge(s2s);
 
 //Perform TDOM
-merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
+// merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
 
 //Seperate back out
-ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
-s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
+// ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
+// s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
 Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
@@ -211,8 +211,8 @@ ls = ls.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','E
 s2s = s2s.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
 
 
-Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
-Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
+Map.addLayer(ls.median(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
+Map.addLayer(s2s.median(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
 var merged = ls.merge(s2s);
 
