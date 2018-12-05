@@ -240,7 +240,7 @@ var merged = ee.ImageCollection(ls.merge(s2s));
 
 //Create hybrid composites
 var composites = getImageLib.compositeTimeSeries(merged,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
-print('composites',composites)
+
 if(exportComposites){// Export composite collection
   
     var exportBands = ['blue', 'green', 'red','nir','swir1', 'swir2'];
