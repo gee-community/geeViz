@@ -197,7 +197,7 @@ s2s = s2s.map(function(img){return img.float().set('whichProgram','Sentinel2')})
 
 //Merge collections
 var merged = ls.merge(s2s);
-
+print('merged',merged)
 //Perform TDOM
 merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
 
@@ -215,7 +215,7 @@ var oli = ls.filter(ee.Filter.inList('SATELLITE',['LANDSAT_8']));
 var msi = s2s;
 
 Map.addLayer(tm.first(),getImageLib.vizParamsFalse,'Landsat TM/ETM+ Cloud/Shadow Masking',false);
-
+print(tm.first())
 Map.addLayer(oli.first(),getImageLib.vizParamsFalse,'Landsat OLI Cloud/Shadow Masking',false);
 Map.addLayer(msi.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
