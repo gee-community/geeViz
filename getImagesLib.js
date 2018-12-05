@@ -70,6 +70,7 @@ var harmonizationRoy = function(oli) {
 //Empirical cross sensor comparison of Sentinel-2A and 2B MSI, Landsat-8 OLI, and Landsat-7 ETM+ top of atmosphere spectral characteristics over the conterminous United States
 //https://www.sciencedirect.com/science/article/pii/S0034425718305212#t0020
 //Left out 8a coefficients since all sensors need to be cross- corrected with bands common to all sensors
+//Dependent and Independent variables can be switched since Major Axis (Model 2) linear regression was used
 var chastainBandNames = ['blue','green','red','nir','swir1','swir2'];
 
 //From Table 4
@@ -99,9 +100,11 @@ var chastainCoeffDict = {'MSI_OLI':[msiOLISlopes,msiOLIIntercepts,1],
                         'ETM_MSI':[msiETMSlopes,msiETMIntercepts,0],
                         'ETM_OLI':[oliETMSlopes,oliETMIntercepts,0]
 };
+//Function to apply model in one direction
 function dir0Regression(img,slopes,intercepts){
   return img.select(chastainBandNames).multiply(slopes).add(intercepts);
 }
+//Applying the model in the opposite direction
 function dir1Regression(img,slopes,intercepts){
   return img.select(chastainBandNames).subtract(intercepts).divide(slopes);
 }
