@@ -207,7 +207,7 @@ s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 
 
 var tm = ls.filter(ee.Filter.inList('SATELLITE',['LANDSAT_7','LANDSAT_5']));
-
+print('tm',tm)
 Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
 Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
@@ -218,13 +218,9 @@ s2s = s2s.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI',
 Map.addLayer(ls.median(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
 Map.addLayer(s2s.median(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
-var merged = ee.ImageCollection(ls.merge(s2s));
-Map.addLayer(merged.median(),getImageLib.vizParamsFalse,'Merged Cloud/Shadow Masking',false);
 
-print(merged)
 var composites = getImageLib.compositeTimeSeries(merged,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
-  print('composites',composites);
-Map.addLayer(composites,getImageLib.vizParamsFalse)
+
 if(exportComposites){// Export composite collection
   
     var exportBands = ['blue', 'green', 'red','nir','swir1', 'swir2'];
