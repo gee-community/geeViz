@@ -148,7 +148,7 @@ var exportPathRoot = 'users/ianhousman/test/changeCollection';
 //CRS- must be provided.  
 //Common crs codes: Web mercator is EPSG:4326, USGS Albers is EPSG:5070, 
 //WGS84 UTM N hemisphere is EPSG:326+ zone number (zone 12 N would be EPSG:32612) and S hemisphere is EPSG:327+ zone number
-var crs = 'EPSG:32717'//'EPSG:5070';
+var crs = 'EPSG:32611'//'EPSG:5070';
 
 //Specify transform if scale is null and snapping to known grid is needed
 var transform = null;//[30,0,-2361915.0,0,-30,3177735.0];
@@ -221,7 +221,7 @@ var composites = getImageLib.compositeTimeSeries(merged,startYear,endYear,startJ
 
 if(exportComposites){// Export composite collection
   
-    var exportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'];
+    var exportBands = ['blue', 'green', 'red','nir','swir1', 'swir2'];
     getImageLib.exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
 composites,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
 true, false,true,false,false,includeSLCOffL7,false,null);
