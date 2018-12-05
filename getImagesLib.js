@@ -101,6 +101,9 @@ var chastainCoeffDict = {'MSI_OLI':[msiOLISlopes,msiOLIIntercepts,0],
 function harmonizationChastain(img, fromSensor,toSensor){
   var comboKey = from_sensor.toUpperCase()+'_'+toSensor.toUpperCase();
   var coeffList = chastainCoeffDict[comboKey];
+  var slopes = coeffList[0];
+  var intercepts = coeffList[1];
+  var direction = coeffList[2];
   
 }
 ///////////////////////////////////////////////////////////
