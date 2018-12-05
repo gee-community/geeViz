@@ -93,7 +93,8 @@ var chastainCoeffDict = {'MSI_OLI':[msiOLISlopes,msiOLIIntercepts,0],
                         
                         'OLI_MSI':[msiOLISlopes,msiOLIIntercepts,1],
                         'ETM_MSI':[msiETMSlopes,msiETMIntercepts,1],
-                        'ETM_OLI':[oliETMSlopes,oliETMIntercepts,1],
+                        'ETM_OLI':[oliETMSlopes,oliETMIntercepts,1]
+};
 //Function to correct one sensor to another
 function harmonizationChastain(img, fromSensor,toSensor){
   var comboKey = from_sensor.toUpperCase()+'_'+toSensor.toUpperCase();
