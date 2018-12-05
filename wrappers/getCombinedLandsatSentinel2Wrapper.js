@@ -215,7 +215,7 @@ Map.addLayer(ls.median(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Maskin
 Map.addLayer(s2s.median(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
 var merged = ee.ImageCollection(ls.merge(s2s));
-compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod,compositingReducer)
+
 var composites = getImageLib.compositeTimeSeries(merged,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
   print('composites',composites);
 Map.addLayer(composites,getImageLib.vizParamsFalse)
