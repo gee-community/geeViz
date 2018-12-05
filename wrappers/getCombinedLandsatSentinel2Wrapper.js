@@ -236,7 +236,7 @@ Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Single Image Cloud/S
 Map.addLayer(s2.first(),getImageLib.vizParamsFalse,'S2 Single Image Cloud/Shadow Masking Harmonization',false);
 
 //Merge them after harmonization
-var merged = ee.ImageCollection(tm.merge(oli).merge(msi));
+var merged = ee.ImageCollection(ls.merge(s2));
 
 //Create hybrid composites
 var composites = getImageLib.compositeTimeSeries(merged,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
