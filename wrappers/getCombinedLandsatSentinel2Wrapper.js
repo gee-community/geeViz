@@ -167,9 +167,9 @@ var scale = 20;
 // Prepare dates
 //Wrap the dates if needed
 var wrapOffset = 0;
-// if (startJulian > endJulian) {
-//   wrapOffset = 365;
-// }
+if (startJulian > endJulian) {
+  wrapOffset = 365;
+}
 var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
 var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day');
 print('Start and end dates:', startDate, endDate);
@@ -203,6 +203,8 @@ ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
 s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
 Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
+
+
 // // Create composite time series function
 // function createAndExportComposites(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,everyHowManyDays,exportPathRoot,exportName,exportBands,nonDivideBands,scale,crs,transform){
 
