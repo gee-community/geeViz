@@ -119,7 +119,7 @@ function harmonizationChastain(img, fromSensor,toSensor){
   
   //Apply the model in the respective direction
   var out = ee.Algorithms.If(direction.eq(0),dir0Regression(img,slopes,intercepts),dir1Regression(img,slopes,intercepts));
-  return ee.Image(out);
+  return ee.Image(out).copyProperties(img);
 }
 ///////////////////////////////////////////////////////////
 //Function to create a multiband image from a collection
