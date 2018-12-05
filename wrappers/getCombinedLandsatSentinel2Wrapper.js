@@ -207,6 +207,7 @@ s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2')).select(['blue','gr
 
 //Seperate TM/ETM+
 var tm = ls.filter(ee.Filter.inList('SATELLITE',['LANDSAT_7','LANDSAT_5']));
+//Fill if no ETM+ or TM images
 tm = getImageLib.fillEmptyCollections(tm,ee.Image(ls.first()))
 //Seperate OLI
 var oli = ls.filter(ee.Filter.inList('SATELLITE',['LANDSAT_8']));
