@@ -180,7 +180,7 @@ var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,
     toaOrSR,includeSLCOffL7,defringeL5);
 var s2s = getImageLib.getS2(studyArea,startDate,endDate,startJulian,endJulian);
 Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat No Masking',false)
-
+Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 No Masking',false)
 //Apply respective cloudScore functions
 ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
 s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
