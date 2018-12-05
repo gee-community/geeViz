@@ -207,6 +207,8 @@ Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',fa
 var lsF = ee.Image(ls.first());
 var s2F = ee.Iamge(s2s.first());
 
+lsF =harmonizationChastain(lsF, 'OLI','ETM');
+s2F =harmonizationChastain(s2F, 'OLI','ETM')
 // // Create composite time series function
 // function createAndExportComposites(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,everyHowManyDays,exportPathRoot,exportName,exportBands,nonDivideBands,scale,crs,transform){
 
