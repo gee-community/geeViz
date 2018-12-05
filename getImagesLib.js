@@ -63,6 +63,14 @@ var harmonizationRoy = function(oli) {
              .set('system:time_start', oli.get('system:time_start'));                      // ...set the output system:time_start metadata to the input image time_start otherwise it is null
   return y.toShort();                                                                       // return the image as short to match the type of the other data
 };
+
+//Chastain et al 2018 coefficients
+//Empirical cross sensor comparison of Sentinel-2A and 2B MSI, Landsat-8 OLI, and Landsat-7 ETM+ top of atmosphere spectral characteristics over the conterminous United States
+//https://www.sciencedirect.com/science/article/pii/S0034425718305212#t0020
+//Left out 8a coefficients since all sensors need to be cross- corrected with bands common to all sensors
+var bandNames = ['blue','green','red','nir','swir1','swir2']
+var tmOLISlopes =1.10601,0.99091,1.056811.0045,1.03611,1.04011
+
 ///////////////////////////////////////////////////////////
 //Function to create a multiband image from a collection
 function collectionToImage(collection){
