@@ -101,7 +101,7 @@ function dir1Regression(img,slopes,intercepts){
   return img.select(chastainBandNames).multiply(slopes).add(intercepts);
 }
 function dir2Regression(img,slopes,intercepts){
-  return img.select(chastainBandNames).multiply(slopes).add(intercepts);
+  return img.select(chastainBandNames).subtract(intercepts).divide(slopes);
 }
 //Function to correct one sensor to another
 function harmonizationChastain(img, fromSensor,toSensor){
