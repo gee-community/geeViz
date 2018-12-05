@@ -933,7 +933,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
   //Iterate across each year
   var ts = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
     .map(function(year){
-    
+    print('year',year)
     // Set up dates
     var startYearT = year-timebuffer;
     var endYearT = year+timebuffer;
