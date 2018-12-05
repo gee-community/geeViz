@@ -75,14 +75,16 @@ var chastainBandNames = ['blue','green','red','nir','swir1','swir2'];
 //From Table 4
 //msi = oli*slope+intercept
 //oli = (msi-intercept)/slope
-var msiOLISlopes = [1.09461,1.0043,1.0524,0.8954,1.0049,1.0002];
+var msiOLISlopes = [1.0946,1.0043,1.0524,0.8954,1.0049,1.0002];
 var msiOLIIntercepts = [-0.0107,0.0026,-0.0015,0.0033,0.0065,0.0046];
 
+//From Table 5
 //msi = etm*slope+intercept
 //etm = (msi-intercept)/slope
 var msiETMSlopes = [1.10601,0.99091,1.05681,1.0045,1.03611,1.04011];
 var msiETMIntercepts = [-0.0139,0.00411,-0.0024,-0.0076,0.00411,0.00861];
 
+//From Table 6
 //oli = etm*slope+intercept
 //etm = (oli-intercept)/slope
 var oliETMSlopes =[1.03501,1.00921,1.01991,1.14061,1.04351,1.05271];
@@ -110,7 +112,6 @@ function harmonizationChastain(img, fromSensor,toSensor){
   var slopes = coeffList[0];
   var intercepts = coeffList[1];
   var direction = ee.Number(coeffList[2]);
-  print('Dir',direction)
   var out = ee.Algorithms.If(direction.eq(0),dir0Regression(img,slopes,intercepts),dir1Regression(img,slopes,intercepts));
   return ee.Image(out);
 }
