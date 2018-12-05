@@ -179,43 +179,43 @@ print('Start and end dates:', startDate, endDate);
 var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     toaOrSR,includeSLCOffL7,defringeL5);
 var s2s = getImageLib.getS2(studyArea,startDate,endDate,startJulian,endJulian);
-// Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat No Masking',false);
-// Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 No Masking',false);
+Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat No Masking',false);
+Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 No Masking',false);
 
 
 
 
-// //Apply respective cloudScore functions
-// ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
-// s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
-// Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud Masking',false);
-// Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud Masking',false);
+//Apply respective cloudScore functions
+ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
+s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
+Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud Masking',false);
+Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud Masking',false);
 
-// //Set a property for splitting apart later
-// ls = ls.map(function(img){return img.float().set('whichProgram','Landsat')});
-// s2s = s2s.map(function(img){return img.float().set('whichProgram','Sentinel2')});
+//Set a property for splitting apart later
+ls = ls.map(function(img){return img.float().set('whichProgram','Landsat')});
+s2s = s2s.map(function(img){return img.float().set('whichProgram','Sentinel2')});
 
-// //Merge collections
-// var merged = ls.merge(s2s);
+//Merge collections
+var merged = ls.merge(s2s);
 
-// //Perform TDOM
-// // merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
+//Perform TDOM
+// merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
 
-// //Seperate back out
-// // ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
-// // s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
-// Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
-// Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
+//Seperate back out
+// ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
+// s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
+Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
+Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
-// ls = ls.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
-// s2s = s2s.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
+ls = ls.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
+s2s = s2s.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
 
 
-// Map.addLayer(ls.median(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
-// Map.addLayer(s2s.median(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
+Map.addLayer(ls.median(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
+Map.addLayer(s2s.median(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
 var merged = ee.ImageCollection(ls.merge(s2s));
-
+print(merged)
 var composites = getImageLib.compositeTimeSeries(merged,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
   print('composites',composites);
 Map.addLayer(composites,getImageLib.vizParamsFalse)
