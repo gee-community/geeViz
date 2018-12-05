@@ -978,7 +978,7 @@ function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuff
       
       composite = medoidMosaicMSD(lsT,['blue','green','red','nir','swir1','swir2']);
     }
-    Map.addLayer(composite,vizParamsFalse,year.toString)
+    Map.addLayer(composite,vizParamsFalse,year.toString())
     return composite.set({'system:time_start':ee.Date.fromYMD(year+ yearWithMajority,6,1).millis(),
                         'startDate':startDateT.millis(),
                         'endDate':endDateT.millis(),
