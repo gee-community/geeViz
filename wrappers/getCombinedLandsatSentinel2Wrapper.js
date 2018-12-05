@@ -179,12 +179,14 @@ print('Start and end dates:', startDate, endDate);
 var ls = getImageLib.getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     toaOrSR,includeSLCOffL7,defringeL5);
 var s2s = getImageLib.getS2(studyArea,startDate,endDate,startJulian,endJulian);
-Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat No Masking',false)
-Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 No Masking',false)
+Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat No Masking',false);
+Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 No Masking',false);
+
 //Apply respective cloudScore functions
 ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
 s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
-Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud Masking',false)
+Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud Masking',false);
+Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud Masking',false);
 //Set a property for splitting apart later
 ls = ls.map(function(img){return img.float().set('whichProgram','Landsat')});
 s2s = s2s.map(function(img){return img.float().set('whichProgram','Sentinel2')});
