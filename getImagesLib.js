@@ -68,17 +68,17 @@ var harmonizationRoy = function(oli) {
 //Empirical cross sensor comparison of Sentinel-2A and 2B MSI, Landsat-8 OLI, and Landsat-7 ETM+ top of atmosphere spectral characteristics over the conterminous United States
 //https://www.sciencedirect.com/science/article/pii/S0034425718305212#t0020
 //Left out 8a coefficients since all sensors need to be cross- corrected with bands common to all sensors
-var bandNames = ['blue','green','red','nir','swir1','swir2']
+var bandNames = ['blue','green','red','nir','swir1','swir2'];
 
 //From Table 4
 var msiOLISlopes = [1.09461,1.0043,1.05241,0.89541,1.00491,1.0002];
-var msiOLIIntercepts = [−0.01071,0.00261,−0.00151,0.00331,0.00651,0.00461];
+var msiOLIIntercepts = [-0.01071,0.00261,-0.00151,0.00331,0.00651,0.00461];
 
 var msiETMSlopes = [1.10601,0.99091,1.05681,1.0045,1.03611,1.04011];
-var msiETMIntercepts = [−0.0139,0.00411,−0.0024,−0.0076,0.00411,0.00861];
+var msiETMIntercepts = [-0.0139,0.00411,-0.0024,-0.0076,0.00411,0.00861];
 
 var oliETMSlopes =[1.03501,1.00921,1.01991,1.14061,1.04351,1.05271];
-var oliETMIntercepts = [−0.0055,−0.0008,−0.0021,−0.0163,−0.0045,0.00261];
+var oliETMIntercepts = [-0.0055,-0.0008,-0.0021,-0.0163,-0.0045,0.00261];
 
 ///////////////////////////////////////////////////////////
 //Function to create a multiband image from a collection
