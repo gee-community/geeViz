@@ -89,13 +89,13 @@ var oliETMSlopes =[1.03501,1.00921,1.01991,1.14061,1.04351,1.05271];
 var oliETMIntercepts = [-0.0055,-0.0008,-0.0021,-0.0163,-0.0045,0.00261];
 
 //Construct dictionary to handle all pairwise combos 
-var chastainCoeffDict = {'MSI_OLI':[msiOLISlopes,msiOLIIntercepts,0],
-                        'MSI_ETM':[msiETMSlopes,msiETMIntercepts,0],
-                        'OLI_ETM':[oliETMSlopes,oliETMIntercepts,0],
+var chastainCoeffDict = {'MSI_OLI':[msiOLISlopes,msiOLIIntercepts,1],
+                        'MSI_ETM':[msiETMSlopes,msiETMIntercepts,1],
+                        'OLI_ETM':[oliETMSlopes,oliETMIntercepts,1],
                         
-                        'OLI_MSI':[msiOLISlopes,msiOLIIntercepts,1],
-                        'ETM_MSI':[msiETMSlopes,msiETMIntercepts,1],
-                        'ETM_OLI':[oliETMSlopes,oliETMIntercepts,1]
+                        'OLI_MSI':[msiOLISlopes,msiOLIIntercepts,0],
+                        'ETM_MSI':[msiETMSlopes,msiETMIntercepts,0],
+                        'ETM_OLI':[oliETMSlopes,oliETMIntercepts,0]
 };
 function dir0Regression(img,slopes,intercepts){
   return img.select(chastainBandNames).multiply(slopes).add(intercepts);
