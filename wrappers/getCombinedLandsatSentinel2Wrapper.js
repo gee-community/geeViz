@@ -218,7 +218,7 @@ var merged = ls.merge(s2s);
 
 var composites = getImageLib.compositeTimeSeries(merged,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
   print('composites',composites);
-
+Map.addLayer(composites,getImageLib.vizParamsFalse)
 if(exportComposites){// Export composite collection
   
     var exportBands = ['blue', 'green', 'red','nir','swir1', 'swir2'];
