@@ -205,11 +205,19 @@ merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPix
 ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
 s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 
-
+//Seperate TM/ETM+
 var tm = ls.filter(ee.Filter.inList('SATELLITE',['LANDSAT_7','LANDSAT_5']));
-print('tm',tm)
-Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
-Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
+
+//Seperate OLI
+var oli = ls.filter(ee.Filter.inList('SATELLITE',['LANDSAT_8']));
+
+//Seperate MSI
+var msi = s2s;
+
+Map.addLayer(tm.first(),getImageLib.vizParamsFalse,'Landsat TM/ETM+ Cloud/Shadow Masking',false);
+
+Map.addLayer(oli.first(),getImageLib.vizParamsFalse,'Landsat OLI Cloud/Shadow Masking',false);
+Map.addLayer(msi.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
 ls = ls.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
 s2s = s2s.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
