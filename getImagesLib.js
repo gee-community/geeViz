@@ -110,11 +110,14 @@ function dir1Regression(img,slopes,intercepts){
 }
 //Function to correct one sensor to another
 function harmonizationChastain(img, fromSensor,toSensor){
+  //Get the model for the given from and to sensor
   var comboKey = fromSensor.toUpperCase()+'_'+toSensor.toUpperCase();
   var coeffList = chastainCoeffDict[comboKey];
   var slopes = coeffList[0];
   var intercepts = coeffList[1];
   var direction = ee.Number(coeffList[2]);
+  
+  //Apply the model in the respective direction
   var out = ee.Algorithms.If(direction.eq(0),dir0Regression(img,slopes,intercepts),dir1Regression(img,slopes,intercepts));
   return ee.Image(out);
 }
