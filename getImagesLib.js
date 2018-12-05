@@ -527,7 +527,7 @@ function applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh
     // Find low cloud score pctl for each pixel to avoid comission errors
     var minCloudScore = collection.select(['cloudScore'])
       .reduce(ee.Reducer.percentile([cloudScorePctl]));
-    Map.addLayer(minCloudScore,{'min':0,'max':30},'minCloudScore',false);
+    // Map.addLayer(minCloudScore,{'min':0,'max':30},'minCloudScore',false);
   }else{
     print('Not computing cloudScore offset');
     var minCloudScore = ee.Image(0).rename(['cloudScore']);
