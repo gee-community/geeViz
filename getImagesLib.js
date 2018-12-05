@@ -109,9 +109,9 @@ function harmonizationChastain(img, fromSensor,toSensor){
   var coeffList = chastainCoeffDict[comboKey];
   var slopes = coeffList[0];
   var intercepts = coeffList[1];
-  var direction = coeffList[2];
+  var direction = ee.Number(coeffList[2]);
   
-  
+  var out = ee.Algorithms.If(direction)
   
 }
 ///////////////////////////////////////////////////////////
