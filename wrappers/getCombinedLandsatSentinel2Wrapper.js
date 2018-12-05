@@ -197,17 +197,17 @@ s2s = s2s.map(function(img){return img.float().set('whichProgram','Sentinel2')})
 
 //Merge collections
 var merged = ls.merge(s2s);
-print('merged',merged)
+
 //Perform TDOM
 merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
 
-//Seperate back out
-ls = merged.filter(ee.Filter.eq('whichProgram','Landsat'));
-s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
+//Seperate back out and select common band names
+ls = merged.filter(ee.Filter.eq('whichProgram','Landsat')).select(['blue','green','red','nir','swir1','swir2']);
+s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2')).select(['blue','green','red','nir','swir1','swir2']);
 
 //Seperate TM/ETM+
 var tm = ls.filter(ee.Filter.inList('SATELLITE',['LANDSAT_7','LANDSAT_5']));
-
+tm = getImageLib.fillEmptyCollections(tm,ee.Image(ls.first()))
 //Seperate OLI
 var oli = ls.filter(ee.Filter.inList('SATELLITE',['LANDSAT_8']));
 
