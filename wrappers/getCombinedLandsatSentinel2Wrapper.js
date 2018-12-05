@@ -154,7 +154,7 @@ var crs = 'EPSG:32611'//'EPSG:5070';
 var transform = null;//[30,0,-2361915.0,0,-30,3177735.0];
 
 //Specify scale if transform is null
-var scale = 20;
+var scale = 10;
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -229,8 +229,10 @@ tm = tm.map(function(img){return getImageLib.harmonizationChastain(img, 'ETM','E
 oli = oli.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
 msi = msi.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
 
+//Merge them after harmonization
 var merged = ee.ImageCollection(tm.merge(oli).merge(msi));
 
+//Create hybrid composites
 var composites = getImageLib.compositeTimeSeries(merged,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
 
 if(exportComposites){// Export composite collection
