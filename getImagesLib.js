@@ -105,7 +105,7 @@ function dir1Regression(img,slopes,intercepts){
 }
 //Function to correct one sensor to another
 function harmonizationChastain(img, fromSensor,toSensor){
-  var comboKey = from_sensor.toUpperCase()+'_'+toSensor.toUpperCase();
+  var comboKey = fromSensor.toUpperCase()+'_'+toSensor.toUpperCase();
   var coeffList = chastainCoeffDict[comboKey];
   var slopes = coeffList[0];
   var intercepts = coeffList[1];
