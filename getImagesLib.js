@@ -105,6 +105,8 @@ function harmonizationChastain(img, fromSensor,toSensor){
   var intercepts = coeffList[1];
   var direction = coeffList[2];
   
+  
+  
 }
 ///////////////////////////////////////////////////////////
 //Function to create a multiband image from a collection
