@@ -97,10 +97,10 @@ var chastainCoeffDict = {'MSI_OLI':[msiOLISlopes,msiOLIIntercepts,0],
                         'ETM_MSI':[msiETMSlopes,msiETMIntercepts,1],
                         'ETM_OLI':[oliETMSlopes,oliETMIntercepts,1]
 };
-function dir1Regression(img,slopes,intercepts){
+function dir0Regression(img,slopes,intercepts){
   return img.select(chastainBandNames).multiply(slopes).add(intercepts);
 }
-function dir2Regression(img,slopes,intercepts){
+function dir1Regression(img,slopes,intercepts){
   return img.select(chastainBandNames).subtract(intercepts).divide(slopes);
 }
 //Function to correct one sensor to another
@@ -111,7 +111,7 @@ function harmonizationChastain(img, fromSensor,toSensor){
   var intercepts = coeffList[1];
   var direction = ee.Number(coeffList[2]);
   
-  var out = ee.Algorithms.If(direction)
+  var out = ee.Algorithms.If(direction.eq(0),dir0Regression(img,slopes,intercepts),dir1Regression(img,slopes,intercepts))
   
 }
 ///////////////////////////////////////////////////////////
