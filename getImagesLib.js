@@ -2463,6 +2463,7 @@ exports.exportCollection = exportCollection;
 exports.joinCollections = joinCollections;
 exports.listToString = listToString;
 exports.harmonizationRoy = harmonizationRoy;
+exports.harmonizationChastain = harmonizationChastain;
 exports.fillEmptyCollections = fillEmptyCollections;
 
 exports.getHarmonicCoefficientsAndFit = getHarmonicCoefficientsAndFit;
@@ -2473,3 +2474,4 @@ exports.getClimateWrapper = getClimateWrapper;
 exports.exportCollection = exportCollection;
 exports.changeDirDict = changeDirDict;
 exports.addSoilIndices = addSoilIndices;
+
