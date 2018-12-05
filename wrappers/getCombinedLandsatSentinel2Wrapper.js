@@ -182,6 +182,16 @@ var s2s = getImageLib.getS2(studyArea,startDate,endDate,startJulian,endJulian);
 Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat No Masking',false);
 Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 No Masking',false);
 
+
+var lsF = ee.Image(ls.first());
+var s2F = ee.Iamge(s2s.first());
+
+lsF =harmonizationChastain(lsF, 'OLI','ETM');
+s2F =harmonizationChastain(s2F, 'MSI','ETM');
+Map.addLayer(lsF,getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
+Map.addLayer(lsF,getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
+
+
 //Apply respective cloudScore functions
 ls = getImageLib.applyCloudScoreAlgorithm(ls,getImageLib.landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
 s2s = getImageLib.applyCloudScoreAlgorithm(s2s,getImageLib.sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
@@ -204,13 +214,6 @@ s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2'));
 Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
 Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
-var lsF = ee.Image(ls.first());
-var s2F = ee.Iamge(s2s.first());
-
-lsF =harmonizationChastain(lsF, 'OLI','ETM');
-s2F =harmonizationChastain(s2F, 'MSI','ETM');
-Map.addLayer(lsF,getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
-Map.addLayer(lsF,getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
 
 // // Create composite time series function
