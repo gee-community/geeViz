@@ -132,9 +132,9 @@ var dilatePixels = 3.5;
 // var correctIllumination = false;
 // var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 
-// //13. Export params
-// //Whether to export composites
-// var exportComposites = true;
+//13. Export params
+//Whether to export composites
+var exportComposites = true;
 
 //Set up Names for the export
 var outputName = 'Landsat';
@@ -219,126 +219,13 @@ var merged = ls.merge(s2s);
 var composites = getImageLib.compositeTimeSeries(merged,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
   print('composites',composites);
 
-// // Create composite time series function
-// function createAndExportComposites(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,everyHowManyDays,exportPathRoot,exportName,exportBands,nonDivideBands,scale,crs,transform){
-
-// //Iterate across each year
-// ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo().map(function(year){
-//     var dummyImage = ee.Image(c.first());
-//     // Set up dates
-//     var startYearT = year-timebuffer;
-//     var endYearT = year+timebuffer;
-//   //Set up weighted moving widow
-//     var yearsT = ee.List.sequence(startYearT,endYearT);
-    
-//     var z = yearsT.zip(weights);
-//     var yearsTT = z.map(function(i){
-//       i = ee.List(i);
-//       return ee.List.repeat(i.get(0),i.get(1));
-//     }).flatten();
-    
-//   ee.List.sequence(startJulian,endJulian,everyHowManyDays).getInfo().map(function(startJulianT){
-//     var endJulianT = startJulianT+everyHowManyDays-1;
-
-//     if(endJulianT <= endJulian){
-//       // print(startYearT,endYearT,year,startJulianT,endJulianT);
-//       //Iterate across each year in list
-//       var images = yearsTT.map(function(yrT){
-       
-        
-//         // Filter images for given date range
-//         var cT = c.filter(ee.Filter.calendarRange(yrT,yrT,'year'))
-//                     .filter(ee.Filter.calendarRange(startJulianT,endJulianT));
-//         cT = getImageLib.fillEmptyCollections(cT,dummyImage);
-//         return cT;
-//       });
-//       var cT = ee.ImageCollection(ee.FeatureCollection(images).flatten());
-//       var count = cT.select([0]).count().rename(['count'])
-//       // Compute median or medoid or apply reducer
-//     var composite;
-//     if (compositingMethod.toLowerCase() === 'median') {
-//       composite = cT.median();
-//     }
-//     else {
-      
-//       composite = getImageLib.medoidMosaicMSD(cT,['blue','green','red','nir','swir1','swir2']);
-//     }
-//     composite = composite.addBands(count).select(exportBands);
-    
-    
-    
-//     // Reformat data for export
-//     var compositeBands = composite.bandNames();
-//     if(nonDivideBands != null){
-//       var composite10k = composite.select(compositeBands.removeAll(nonDivideBands))
-//       .multiply(10000);
-//       composite = composite10k.addBands(composite.select(nonDivideBands))
-//       .select(compositeBands).int16();
-//     }
-//     else{
-//       composite = composite.multiply(10000).int16();
-//     }
-    
-    
-//     var startDate = ee.Date.fromYMD(year,1,1).advance(startJulianT,'day').millis();
-//     var endDate = ee.Date.fromYMD(year,1,1).advance(endJulianT,'day').millis();
-    
-//     composite = composite.set({
-//                         'system:time_start':startDate,
-//                         'system:time_end':endDate,
-//                         'startJulian':startJulian,
-//                         'endJulian':endJulian,
-//                         'yearBuffer':timebuffer,
-//                         'yearWeights': getImageLib.listToString(weights),
-//                         'yrCenter':year,
-//                         'dilatePixels':dilatePixels,
-//                         'contractPixels':contractPixels,
-//                         'cloudScoreThresh':cloudScoreThresh,
-//                         'useCloudScore':true,
-//                         'crs':crs,
-//                         'startDOY':startJulianT,
-//                         'endDOY':endJulianT,
-//                         'useSRmask':false,
-//                         'shadowSumThresh':shadowSumThresh,
-//                         'zScoreThresh':zScoreThresh,
-//                         'terrain':false.toString(),
-//                         'useCloudProject':performCloudScoreOffset.toString(),
-//                         'useTDOM':true.toString(),
-//                         'useLandsatS2HybridTDOM':true.toString(),
-//                         'whichProgram':exportName,
-//                         'compositingMethod':compositingMethod.toLowerCase()
-                     
-//     });
-    
-
-
-//     var outName = exportName+'_y'+startYearT.toString() + '_'+ endYearT.toString() + '_j'+startJulianT.toString() + '_' + endJulianT.toString();
-//     // Map.addLayer(composite,{min:500,max:5000,bands:'swir1,nir,red'},outName,false);
-    
-    
-//     var exportPath = exportPathRoot + '/' + outName;
-//     // print('Write down the Asset ID:', exportPath);
+if(exportComposites){// Export composite collection
   
-//     getImageLib.exportToAssetWrapper(composite,outName,exportPath,'mean',
-//       studyArea,scale,crs,transform);
-    
-//     }
-// });
-// });
-// }
-
-// //Export bands for each program
-// var lExportBands = [ 'blue', 'green', 'red','nir','swir1', 'swir2','temp','count'];
-// var S2ExportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2','count'];
-
-// //Export bi-weekly
-// createAndExportComposites(ls,2000,2018,1,365,0,[1],14,'projects/Sacha/L8/L8_Biweekly_Updated','Landsat',lExportBands,['temp','count'],scale,crs,null);
-// createAndExportComposites(s2s,2015,2018,1,365,0,[1],14,'projects/Sacha/S2/S2_Biweekly_Updated','Sentinel2',S2ExportBands,['count'],scale,crs,null);
-
-//Export annuals
-// createAndExportComposites(ls,1999,2019,1,365,1,[1,3,1],365,'projects/Sacha/L8/L8_Annual_Updated','Landsat',lExportBands,['temp','count'],scale,crs,null);
-// createAndExportComposites(s2s,2014,2019,1,365,1,[1,3,1],365,'projects/Sacha/S2/S2_Annual_Updated','Sentinel2',S2ExportBands,['count'],scale,crs,null);
-
+    var exportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'];
+    getImageLib.exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
+composites,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
+true, false,true,false,false,includeSLCOffL7,false,nonDivideBands);
+  }
 /////////////////////////////////////////////////////
 //Code for starting all tasks once this script has ran
 //Press f12, then paste functions into console
