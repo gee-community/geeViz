@@ -86,6 +86,8 @@ var msiETMIntercepts = [-0.0139,0.00411,-0.0024,-0.0076,0.00411,0.00861];
 var oliETMSlopes =[1.03501,1.00921,1.01991,1.14061,1.04351,1.05271];
 var oliETMIntercepts = [-0.0055,-0.0008,-0.0021,-0.0163,-0.0045,0.00261];
 
+//Function to correct one sensor to another
+function harmonizationChastain(img, fromSensor,toSensor)
 ///////////////////////////////////////////////////////////
 //Function to create a multiband image from a collection
 function collectionToImage(collection){
