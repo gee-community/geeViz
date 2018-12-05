@@ -205,20 +205,19 @@ merged = getImageLib.simpleTDOM2(merged,zScoreThresh,shadowSumThresh,contractPix
 ls = merged.filter(ee.Filter.eq('whichProgram','Landsat')).select(['blue','green','red','nir','swir1','swir2']);
 s2s = merged.filter(ee.Filter.eq('whichProgram','Sentinel2')).select(['blue','green','red','nir','swir1','swir2']);
 
+//Seperate each sensor for correction
 //Seperate TM/ETM+
 var tm = ls.filter(ee.Filter.inList('SATELLITE',['LANDSAT_7','LANDSAT_5']));
 //Fill if no ETM+ or TM images
-tm = getImageLib.fillEmptyCollections(tm,ee.Image(ls.first()))
+tm = getImageLib.fillEmptyCollections(tm,ee.Image(ls.first()));
 //Seperate OLI
 var oli = ls.filter(ee.Filter.inList('SATELLITE',['LANDSAT_8']));
 
 //Seperate MSI
 var msi = s2s;
 
-Map.addLayer(tm.first(),getImageLib.vizParamsFalse,'Landsat TM/ETM+ Cloud/Shadow Masking',false);
-print(tm.first())
-Map.addLayer(oli.first(),getImageLib.vizParamsFalse,'Landsat OLI Cloud/Shadow Masking',false);
-Map.addLayer(msi.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
+Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Single Image Cloud/Shadow Masking',false);
+Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
 oli = oli.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
 msi = msi.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
