@@ -219,7 +219,7 @@ Map.addLayer(tm.first(),getImageLib.vizParamsFalse,'Landsat TM/ETM+ Cloud/Shadow
 Map.addLayer(oli.first(),getImageLib.vizParamsFalse,'Landsat OLI Cloud/Shadow Masking',false);
 Map.addLayer(msi.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
-ls = ls.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
+tm = tm.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
 s2s = s2s.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
 
 
