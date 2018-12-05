@@ -189,7 +189,7 @@ var s2F = ee.Image(s2s.first());
 lsF =getImageLib.harmonizationChastain(lsF, 'OLI','ETM');
 s2F =getImageLib.harmonizationChastain(s2F, 'MSI','ETM');
 Map.addLayer(lsF,getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
-Map.addLayer(lsF,getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
+Map.addLayer(s2F,getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
 
 // //Apply respective cloudScore functions
