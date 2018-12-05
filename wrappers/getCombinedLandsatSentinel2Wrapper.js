@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-79.51259309123247, 0.5572395194909902],
-          [-79.5249527103731, 0.2468837709315454],
-          [-79.1514175541231, 0.2949484177599466],
-          [-79.20497590373247, 0.6149147222458692]]]);
+        [[[-115.19522231507318, 48.704101580291294],
+          [-115.12930434632318, 48.39866293818322],
+          [-114.10757583069818, 48.62065285721024],
+          [-114.40969985413568, 48.87781053836135]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -13,20 +13,20 @@ var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
 // 1. Specify study area: Study area
 // Can specify a country, provide a fusion table  or asset table (must add 
 // .geometry() after it), or draw a polygon and make studyArea = drawnPolygon
-var studyArea = ee.FeatureCollection('projects/Sacha/Ecuador_nxprovincias').geometry().bounds();//geometry;
+var studyArea = geometry;
 
 // 2. Update the startJulian and endJulian variables to indicate your seasonal 
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 1;
-var endJulian = 365; 
+var startJulian =190;
+var endJulian = 250; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 1984;
+var startYear = 2016;
 var endYear = 2018;
 
 // 4. Specify an annual buffer to include imagery from the same season 
