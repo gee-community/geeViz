@@ -224,7 +224,7 @@ if(exportComposites){// Export composite collection
     var exportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'];
     getImageLib.exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
 composites,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
-true, false,true,false,false,includeSLCOffL7,false,nonDivideBands);
+true, false,true,false,false,includeSLCOffL7,false,null);
   }
 /////////////////////////////////////////////////////
 //Code for starting all tasks once this script has ran
