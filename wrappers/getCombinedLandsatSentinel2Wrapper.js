@@ -230,13 +230,13 @@ oli = oli.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI',
 msi = msi.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
 
 ls = ee.ImageCollection(tm.merge(oli));
-s2 = msi;
+s2s = msi;
 
 Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Single Image Cloud/Shadow Masking Harmonization',false);
-Map.addLayer(s2.first(),getImageLib.vizParamsFalse,'S2 Single Image Cloud/Shadow Masking Harmonization',false);
+Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Single Image Cloud/Shadow Masking Harmonization',false);
 
 //Merge them after harmonization
-var merged = ee.ImageCollection(ls.merge(s2));
+var merged = ee.ImageCollection(ls.merge(s2s));
 
 //Create hybrid composites
 var composites = getImageLib.compositeTimeSeries(merged,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
