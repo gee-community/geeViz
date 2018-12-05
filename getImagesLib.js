@@ -69,7 +69,13 @@ var harmonizationRoy = function(oli) {
 //https://www.sciencedirect.com/science/article/pii/S0034425718305212#t0020
 //Left out 8a coefficients since all sensors need to be cross- corrected with bands common to all sensors
 var bandNames = ['blue','green','red','nir','swir1','swir2']
-var oliTMSlopes =[1.10601,0.99091,1.05681,1.0045,1.03611,1.04011]
+
+var msiOLISlopes = [1.09461,1.0043,1.05241,0.89541,1.00491,1.0002];
+var msiOLIIntercepts = [−0.01071,0.00261,−0.00151,0.00331,0.00651,0.00461];
+
+
+var oliTMSlopes =[1.03501,1.00921,1.01991,1.14061,1.04351,1.05271]
+
 var msiTMSlopes = [1.10601,0.99091,1.05681,1.0045,1.03611,1.04011]
 
 ///////////////////////////////////////////////////////////
