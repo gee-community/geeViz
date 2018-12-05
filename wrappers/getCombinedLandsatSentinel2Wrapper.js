@@ -219,13 +219,10 @@ Map.addLayer(tm.first(),getImageLib.vizParamsFalse,'Landsat TM/ETM+ Cloud/Shadow
 Map.addLayer(oli.first(),getImageLib.vizParamsFalse,'Landsat OLI Cloud/Shadow Masking',false);
 Map.addLayer(msi.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
-tm = tm.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
-s2s = s2s.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
+oli = oli.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
+msi = msi.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
 
-
-Map.addLayer(ls.median(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
-Map.addLayer(s2s.median(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
-
+var merged = ee.ImageCollection(tm.merge(oli).merge(msi))
 
 var composites = getImageLib.compositeTimeSeries(merged,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
 
