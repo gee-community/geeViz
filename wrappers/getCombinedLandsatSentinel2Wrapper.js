@@ -183,8 +183,8 @@ Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat No Masking',false);
 Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 No Masking',false);
 
 
-var lsF = ee.Image(ls.first());
-var s2F = ee.Image(s2s.first());
+ls = ls.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
+s2s = s2s.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
 
 lsF =getImageLib.harmonizationChastain(lsF, 'OLI','ETM');
 s2F =getImageLib.harmonizationChastain(s2F, 'MSI','ETM');
