@@ -219,6 +219,13 @@ var msi = s2s;
 Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Single Image Cloud/Shadow Masking',false);
 Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
+//Apply correction
+//Currently coded to go to ETM+
+
+//No need to correct ETM to ETM
+tm = tm.map(function(img){return getImageLib.harmonizationChastain(img, 'ETM','ETM')});
+
+//Harmonize the other two
 oli = oli.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
 msi = msi.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
 
