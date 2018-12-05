@@ -97,7 +97,9 @@ var chastainCoeffDict = {'MSI_OLI':[msiOLISlopes,msiOLIIntercepts,0],
                         'ETM_MSI':[msiETMSlopes,msiETMIntercepts,1],
                         'ETM_OLI':[oliETMSlopes,oliETMIntercepts,1]
 };
-function dir1Regression(img,slopes,intercepts)
+function dir1Regression(img,slopes,intercepts){
+  return img.select(chastainBandNames).multiply(slopes).add(intercepts);
+}
 //Function to correct one sensor to another
 function harmonizationChastain(img, fromSensor,toSensor){
   var comboKey = from_sensor.toUpperCase()+'_'+toSensor.toUpperCase();
