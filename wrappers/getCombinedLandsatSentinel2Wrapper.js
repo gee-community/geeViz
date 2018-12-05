@@ -184,7 +184,7 @@ Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 No Masking',false);
 
 
 var lsF = ee.Image(ls.first());
-var s2F = ee.Iamge(s2s.first());
+var s2F = ee.Image(s2s.first());
 
 lsF =harmonizationChastain(lsF, 'OLI','ETM');
 s2F =harmonizationChastain(s2F, 'MSI','ETM');
