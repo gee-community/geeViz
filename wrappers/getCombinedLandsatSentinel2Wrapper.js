@@ -222,7 +222,7 @@ Map.addLayer(msi.first(),getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',fa
 oli = oli.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
 msi = msi.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
 
-var merged = ee.ImageCollection(tm.merge(oli).merge(msi))
+var merged = ee.ImageCollection(tm.merge(oli).merge(msi));
 
 var composites = getImageLib.compositeTimeSeries(merged,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
 
