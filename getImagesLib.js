@@ -71,8 +71,8 @@ var harmonizationRoy = function(oli) {
 var bandNames = ['blue','green','red','nir','swir1','swir2'];
 
 //From Table 4
-//oli = msi*slope+intercept
-//msi = (oli-intercept)/slope
+//msi = oli*slope+intercept
+//oli = (msi-intercept)/slope
 var msiOLISlopes = [1.09461,1.0043,1.0524,0.8954,1.0049,1.0002];
 var msiOLIIntercepts = [-0.0107,0.0026,-0.0015,0.0033,0.0065,0.0046];
 
