@@ -186,9 +186,8 @@ Map.addLayer(s2s.first(),getImageLib.vizParamsFalse,'S2 No Masking',false);
 ls = ls.map(function(img){return getImageLib.harmonizationChastain(img, 'OLI','ETM')});
 s2s = s2s.map(function(img){return getImageLib.harmonizationChastain(img, 'MSI','ETM')});
 
-lsF =getImageLib.harmonizationChastain(lsF, 'OLI','ETM');
-s2F =getImageLib.harmonizationChastain(s2F, 'MSI','ETM');
-Map.addLayer(lsF,getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
+
+Map.addLayer(ls.first(),getImageLib.vizParamsFalse,'Landsat Cloud/Shadow Masking',false);
 Map.addLayer(s2F,getImageLib.vizParamsFalse,'S2 Cloud/Shadow Masking',false);
 
 
