@@ -1,9 +1,9 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-89.07623635335858, 46.64062806999632],
-          [-88.39508400960858, 43.315843410604806],
-          [-82.72613869710858, 43.139732719730006],
-          [-83.29742775960858, 46.12527840714961]]]);
+        [[[-116.29374999999999, 46.54729956447318],
+          [-116.03007812499999, 38.809492348693325],
+          [-85.26835937499999, 37.63572230181635],
+          [-77.09453124999999, 47.565183593175995]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -22,15 +22,15 @@ var studyArea = geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 169;
-var endJulian = 184; 
+var startJulian = 256;
+var endJulian = 256; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2017;
-var endYear = 2017;
+var startYear = 2018;
+var endYear = 2018;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -92,14 +92,14 @@ var applyTDOM = false;
 // cloudScoreThresh: If using the cloudScoreTDOMShift method-Threshold for cloud 
 //    masking (lower number masks more clouds.  Between 10 and 30 generally 
 //    works best)
-var cloudScoreThresh = 10;
+var cloudScoreThresh = 5;
 
 //Whether to find if an area typically has a high cloudScore
 //If an area is always cloudy, this will result in cloud masking omission
 //For bright areas that may always have a high cloudScore
 //but not actually be cloudy, this will result in a reduction of commission errors
 //This procedure needs at least 5 years of data to work well
-var performCloudScoreOffset = false;
+var performCloudScoreOffset = true;
 
 // If performCloudScoreOffset = true:
 //Percentile of cloud score to pull from time series to represent a minimum for 
@@ -121,7 +121,7 @@ var shadowSumThresh = 0.35;
 //    patches that are likely errors
 // (1.5 results in a -1 pixel buffer)(0.5 results in a -0 pixel buffer)
 // (1.5 or 2.5 generally is sufficient)
-var contractPixels = 1.5; 
+var contractPixels = 0; 
 
 // dilatePixels: The radius of the number of pixels to dilate (buffer) clouds 
 //    and cloud shadows by. Intended to include edges of clouds/cloud shadows 
