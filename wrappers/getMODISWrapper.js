@@ -23,7 +23,7 @@ var studyArea = geometry;
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
 var startJulian = 256;
-var endJulian = 256; 
+var endJulian = 256+16; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
