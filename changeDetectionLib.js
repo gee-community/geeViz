@@ -671,7 +671,8 @@ function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh,startYear,en
   Map.addLayer(trendChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Trend Most Recent Change Year '+negativeOrPositiveChange,false);
   
 }
-function thresholdZAndTrend(zAndTrendCollection,zThreshLow,zThreshHigh,slopeThreshLow,slopeThreshHigh,startYear,endYear,negativeOrPositiveChange){
+
+function thresholdZAndTrendSubtle(zAndTrendCollection,zThreshLow,zThreshHigh,slopeThreshLow,slopeThreshHigh,startYear,endYear,negativeOrPositiveChange){
   if(negativeOrPositiveChange === null || negativeOrPositiveChange === undefined){negativeOrPositiveChange = 'negative'}
   var dir;
   if(negativeOrPositiveChange === 'negative'){dir = -1}
@@ -739,3 +740,5 @@ exports.toAnnualMedian = toAnnualMedian;
 
 exports.zAndTrendChangeDetection = zAndTrendChangeDetection;
 exports.thresholdZAndTrend = thresholdZAndTrend;
+exports.thresholdZAndTrendSubtle = thresholdZAndTrendSubtle;
+exports.thresholdSubtleChange = thresholdSubtleChange;
