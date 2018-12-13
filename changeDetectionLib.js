@@ -674,9 +674,9 @@ function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh,startYear,en
 
 function thresholdZAndTrendSubtle(zAndTrendCollection,zThreshLow,zThreshHigh,slopeThreshLow,slopeThreshHigh,startYear,endYear,negativeOrPositiveChange){
   if(negativeOrPositiveChange === null || negativeOrPositiveChange === undefined){negativeOrPositiveChange = 'negative'}
-  var dir;
-  if(negativeOrPositiveChange === 'negative'){dir = -1}
-  else{dir = 1};
+  var dir;var colorRamp;
+  if(negativeOrPositiveChange === 'negative'){dir = -1;colorRamp = 'FF0,F00';}
+  else{dir = 1; colorRamp = 'BBB,080';}
   var zCollection = zAndTrendCollection.select('.*_Z');
   var trendCollection = zAndTrendCollection.select('.*_slope');
   
@@ -684,8 +684,9 @@ function thresholdZAndTrendSubtle(zAndTrendCollection,zThreshLow,zThreshHigh,slo
   var trendChange = thresholdSubtleChange(trendCollection,-slopeThreshLow,-slopeThreshHigh,dir).select('.*_change');
   
   
-  Map.addLayer(zChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Z Most Recent Change Year '+negativeOrPositiveChange,false);
-  Map.addLayer(trendChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Trend Most Recent Change Year '+negativeOrPositiveChange,false);
+  
+  Map.addLayer(zChange.max().select([0]),{'min':startYear,'max':endYear,'palette':colorRamp},'Z Most Recent Change Year '+negativeOrPositiveChange,false);
+  Map.addLayer(trendChange.max().select([0]),{'min':startYear,'max':endYear,'palette':colorRamp},'Trend Most Recent Change Year '+negativeOrPositiveChange,false);
   
 }
 // function exportZAndTrend(zAndTrendCollection,dates,exportPathRoot,studyArea,scale,crs,transform){
