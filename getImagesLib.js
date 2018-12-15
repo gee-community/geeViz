@@ -891,8 +891,7 @@ function medoidMosaicMSD(inCollection,medoidIncludeBands) {
 function exportToAssetWrapper(imageForExport,assetName,assetPath,
   pyramidingPolicy,roi,scale,crs,transform){
   //Make sure image is clipped to roi in case it's a multi-part polygon
-  imageForExport = imageForExport//.clip(roi);
-  print('hello there');
+  imageForExport = imageForExport.clip(roi);
   assetName = assetName.replace(/\s+/g,'-');//Get rid of any spaces
   
   Export.image.toAsset(imageForExport, assetName, assetPath, 
