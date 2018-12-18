@@ -27,12 +27,12 @@ var endJulian = 250;
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
 var startYear = 2010;
-var endYear = 2010;
+var endYear = 2018;
 
 // 4. Specify an annual buffer to include imagery from the same season 
 // timeframe from the prior and following year. timeBuffer = 1 will result 
 // in a 3 year moving window
-var timebuffer = 0;
+var timebuffer = 1;
 
 // 5. Specify the weights to be used for the moving window created by timeBuffer
 //For example- if timeBuffer is 1, that is a 3 year moving window
@@ -40,7 +40,7 @@ var timebuffer = 0;
 //In order to overweight the center year, you could specify the weights as
 //[1,5,1] which would duplicate the center year 5 times and increase its weight for
 //the compositing method
-var weights = [1];
+var weights = [1,5,1];
 
 
 
@@ -130,7 +130,7 @@ var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 
 //13. Export params
 //Whether to export composites
-var exportComposites = false;
+var exportComposites = true;
 
 //Set up Names for the export
 var outputName = 'Landsat';
