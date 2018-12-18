@@ -400,6 +400,7 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     
     var lsTOAFMASK;
     if(includeSLCOffL7){ 
+      print('Including All Landsat 7 for TOA QA');
       var l7sTOAFMASK =  ee.ImageCollection(collectionDict['L7SR'])
               .filterDate(startDate,endDate)
               .filter(ee.Filter.calendarRange(startJulian,endJulian))
@@ -407,10 +408,18 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
               .filter(ee.Filter.lte('WRS_ROW',120))
               .select(sensorBandDict['L7SRFMASK'],sensorBandNameDict['SRFMASK']);
     
-    lsTOAFMASK = ee.ImageCollection(l5sTOAFMASK.merge(l7sTOAFMASK).merge(l8sTOAFMASK));
+    
+    }else{
+      print('Only including SLC On Landat 7 for TOA QA');
+      var l7sTOAFMASK =  ee.ImageCollection(collectionDict['L7SR'])
+              .filterDate(startDate,endDate)
+              .filter(ee.Filter.calendarRange(startJulian,endJulian))
+              .filterBounds(studyArea)
+              .filter(ee.Filter.lte('WRS_ROW',120))
+              .select(sensorBandDict['L7SRFMASK'],sensorBandNameDict['SRFMASK']);
     }
-    else{lsTOAFMASK = ee.ImageCollection(l5sTOAFMASK.merge(l8sTOAFMASK))} 
-   
+    
+    lsTOAFMASK = ee.ImageCollection(l5sTOAFMASK.merge(l7sTOAFMASK).merge(l8sTOAFMASK));
     //Join the TOA with SR QA bands
     print('Joining TOA with SR QA bands');
     ls = joinCollections(ls.select([0,1,2,3,4,5,6]),lsTOAFMASK);
