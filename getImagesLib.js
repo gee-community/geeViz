@@ -386,14 +386,14 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
   if(toaOrSR.toLowerCase() === 'toa' && addPixelQA === true){
     print('Acquiring SR qa bands for applying Fmask to TOA data');
     var l5sTOAFMASK =  ee.ImageCollection(collectionDict['L5SR'])
-              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
-              .filter(ee.Filter.calendarRange(startJulian,endJulian,'day_of_year'))
+              .filterDate(startDate,endDate)
+              .filter(ee.Filter.calendarRange(startJulian,endJulian))
               .filterBounds(studyArea)
               .filter(ee.Filter.lte('WRS_ROW',120))
               .select(sensorBandDict['L5SRFMASK'],sensorBandNameDict['SRFMASK']);
     var l8sTOAFMASK =  ee.ImageCollection(collectionDict['L8SR'])
-              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
-              .filter(ee.Filter.calendarRange(startJulian,endJulian,'day_of_year'))
+              .filterDate(startDate,endDate)
+              .filter(ee.Filter.calendarRange(startJulian,endJulian))
               .filterBounds(studyAreaBounds)
               .filterMetadata('CLOUD_COVER','less_than',metadataCloudCoverMax)
               .filter(ee.Filter.lte('WRS_ROW',120))
@@ -402,8 +402,8 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     var lsTOAFMASK;
     if(includeL7){ 
       var l7sTOAFMASK =  ee.ImageCollection(collectionDict['L7SR'])
-              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
-              .filter(ee.Filter.calendarRange(startJulian,endJulian,'day_of_year'))
+              .filterDate(startDate,endDate)
+              .filter(ee.Filter.calendarRange(startJulian,endJulian))
               .filterBounds(studyAreaBounds)
               .filterMetadata('CLOUD_COVER','less_than',metadataCloudCoverMax)
               .filter(ee.Filter.lte('WRS_ROW',120))
