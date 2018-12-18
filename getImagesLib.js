@@ -399,7 +399,7 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
               .select(sensorBandDict['L8SRFMASK'],sensorBandNameDict['SRFMASK']);
     
     var lsTOAFMASK;
-    if(includeL7){ 
+    if(includeSLCOffL7){ 
       var l7sTOAFMASK =  ee.ImageCollection(collectionDict['L7SR'])
               .filterDate(startDate,endDate)
               .filter(ee.Filter.calendarRange(startJulian,endJulian))
