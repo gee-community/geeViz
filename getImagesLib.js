@@ -394,7 +394,7 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     var l8sTOAFMASK =  ee.ImageCollection(collectionDict['L8SR'])
               .filterDate(startDate,endDate)
               .filter(ee.Filter.calendarRange(startJulian,endJulian))
-              .filterBounds(studyAreaBounds)
+              .filterBounds(studyArea)
               .filterMetadata('CLOUD_COVER','less_than',metadataCloudCoverMax)
               .filter(ee.Filter.lte('WRS_ROW',120))
               .select(sensorBandDict['L8SRFMASK'],sensorBandNameDict['SRFMASK']);
@@ -404,7 +404,7 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
       var l7sTOAFMASK =  ee.ImageCollection(collectionDict['L7SR'])
               .filterDate(startDate,endDate)
               .filter(ee.Filter.calendarRange(startJulian,endJulian))
-              .filterBounds(studyAreaBounds)
+              .filterBounds(studyArea)
               .filterMetadata('CLOUD_COVER','less_than',metadataCloudCoverMax)
               .filter(ee.Filter.lte('WRS_ROW',120))
               .select(sensorBandDict['L7SRFMASK'],sensorBandNameDict['SRFMASK']);
