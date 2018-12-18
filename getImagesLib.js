@@ -1726,16 +1726,17 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
 
   //Do some error checking
   toaOrSR = toaOrSR.toUpperCase();
-  if(toaOrSR === 'TOA'){
-      applyFmaskCloudMask = false;
+  if(toaOrSR === 'TOA' && (applyFmaskCloudMask === true ||  applyFmaskCloudShadowMask === true || applyFmaskSnowMask === true)){
+      addPixelQA = true;
+      // applyFmaskCloudMask = false;
   
-      applyFmaskCloudShadowMask = false;
+      // applyFmaskCloudShadowMask = false;
   
-      applyFmaskSnowMask = false;
-    }
+      // applyFmaskSnowMask = false;
+    }else{addPixelQA = false;
   // Get Landsat image collection
   var ls = getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
-    toaOrSR,includeSLCOffL7,defringeL5);
+    toaOrSR,includeSLCOffL7,defringeL5,addPixelQA);
   
   // Apply relevant cloud masking methods
   if(applyCloudScore){
