@@ -412,6 +412,7 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     }else{
       print('Only including SLC On Landat 7 for TOA QA');
       var l7sTOAFMASK =  ee.ImageCollection(collectionDict['L7SR'])
+              .filterDate(ee.Date.fromYMD(1998,1,1),ee.Date.fromYMD(2003,5,31))
               .filterDate(startDate,endDate)
               .filter(ee.Filter.calendarRange(startJulian,endJulian))
               .filterBounds(studyArea)
