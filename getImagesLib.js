@@ -297,10 +297,10 @@ return s2s;
 //////////////////////////////////////////////////////////////////
 // Function for acquiring Landsat TOA image collection
 function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
-  toaOrSR,includeSLCOffL7,defringeL5){
+  toaOrSR,includeSLCOffL7,defringeL5,addPixelQA){
   
   if(defringeL5 === null || defringeL5 === undefined){defringeL5 = false}
-  
+  if(addPixelQA === null || addPixelQA === undefined){addPixelQA = false}
   
   // Set up bands and corresponding band names
   var sensorBandDict = {
@@ -312,11 +312,16 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     'L7SR': ee.List([0,1,2,3,4,5,6,'pixel_qa']),
     'L5SR': ee.List([0,1,2,3,4,5,6,'pixel_qa']),
     'L4SR': ee.List([0,1,2,3,4,5,6,'pixel_qa']),
+    'L8SRFMASK': ee.List(['pixel_qa']),
+    'L7SRFMASK': ee.List(['pixel_qa']),
+    'L5SRFMASK': ee.List(['pixel_qa']),
+    'L4SRFMASK': ee.List(['pixel_qa']),
   };
   
   var sensorBandNameDict = {
     'TOA': ee.List(['blue','green','red','nir','swir1','temp','swir2','BQA']),
-    'SR': ee.List(['blue','green','red','nir','swir1','temp', 'swir2','pixel_qa'])
+    'SR': ee.List(['blue','green','red','nir','swir1','temp', 'swir2','pixel_qa']),
+    'SRFMASK': ee.List(['pixel_qa'])
   };
   
   // Set up collections
