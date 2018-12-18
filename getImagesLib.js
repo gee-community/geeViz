@@ -1726,6 +1726,7 @@ function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
 
   //Do some error checking
   toaOrSR = toaOrSR.toUpperCase();
+  var addPixelQA;
   if(toaOrSR === 'TOA' && (applyFmaskCloudMask === true ||  applyFmaskCloudShadowMask === true || applyFmaskSnowMask === true)){
       addPixelQA = true;
       // applyFmaskCloudMask = false;
