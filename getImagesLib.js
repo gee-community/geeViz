@@ -344,6 +344,7 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     .filterDate(startDate,endDate)
     .filter(ee.Filter.calendarRange(startJulian,endJulian))
     .filterBounds(studyArea)
+    .filter(ee.Filter.lte('WRS_ROW',120))
     .select(sensorBandDict['L5'+ toaOrSR],sensorBandNameDict[toaOrSR]);
     
   if(defringeL5){
@@ -354,6 +355,7 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     .filterDate(startDate,endDate)
     .filter(ee.Filter.calendarRange(startJulian,endJulian))
     .filterBounds(studyArea)
+    .filter(ee.Filter.lte('WRS_ROW',120))
     .select(sensorBandDict['L8'+ toaOrSR],sensorBandNameDict[toaOrSR]);
   
   var ls; var l7s;
@@ -363,6 +365,7 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
       .filterDate(startDate,endDate)
       .filter(ee.Filter.calendarRange(startJulian,endJulian))
       .filterBounds(studyArea)
+      .filter(ee.Filter.lte('WRS_ROW',120))
       .select(sensorBandDict['L7'+ toaOrSR],sensorBandNameDict[ toaOrSR]);
   } else {
     print('Only including SLC On Landat 7');
@@ -371,11 +374,51 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
       .filterDate(startDate,endDate)
       .filter(ee.Filter.calendarRange(startJulian,endJulian))
       .filterBounds(studyArea)
+      .filter(ee.Filter.lte('WRS_ROW',120))
       .select(sensorBandDict['L7'+ toaOrSR],sensorBandNameDict[toaOrSR]);
   }
   
   // Merge collections
   ls = ee.ImageCollection(l5s.merge(l7s).merge(l8s));
+  
+  
+  //If TOA and Fmask need to merge Fmask qa bits with toa- this gets the qa band from the sr collections
+  if(toaOrSR.toLowerCase() === 'toa' && addPixelQA === true){
+    print('Acquiring SR qa bands for applying Fmask to TOA data');
+    var l5sTOAFMASK =  ee.ImageCollection(collectionDict['L5SR'])
+              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
+              .filter(ee.Filter.calendarRange(startJulian,endJulian,'day_of_year'))
+              .filterBounds(studyArea)
+              .filter(ee.Filter.lte('WRS_ROW',120))
+              .select(sensorBandDict['L5SRFMASK'],sensorBandNameDict['SRFMASK']);
+    var l8sTOAFMASK =  ee.ImageCollection(collectionDict['L8SR'])
+              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
+              .filter(ee.Filter.calendarRange(startJulian,endJulian,'day_of_year'))
+              .filterBounds(studyAreaBounds)
+              .filterMetadata('CLOUD_COVER','less_than',metadataCloudCoverMax)
+              .filter(ee.Filter.lte('WRS_ROW',120))
+              .select(sensorBandDict['L8SRFMASK'],sensorBandNameDict['SRFMASK']);
+    
+    var lsTOAFMASK;
+    if(includeL7){ 
+      var l7sTOAFMASK =  ee.ImageCollection(collectionDict['L7SR'])
+              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
+              .filter(ee.Filter.calendarRange(startJulian,endJulian,'day_of_year'))
+              .filterBounds(studyAreaBounds)
+              .filterMetadata('CLOUD_COVER','less_than',metadataCloudCoverMax)
+              .filter(ee.Filter.lte('WRS_ROW',120))
+              .select(sensorBandDict['L7SRFMASK'],sensorBandNameDict['SRFMASK']);
+    
+    lsTOAFMASK = ee.ImageCollection(l5sTOAFMASK.merge(l7sTOAFMASK).merge(l8sTOAFMASK));
+    }
+    else{lsTOAFMASK = ee.ImageCollection(l5sTOAFMASK.merge(l8sTOAFMASK))} 
+   
+    //Join the TOA with SR QA bands
+    print('Joining TOA with SR QA bands');
+    ls = joinCollections(ls.select([0,1,2,3,4,5,6]),lsTOAFMASK);
+    
+  }
+  
   
   // Make sure all bands have data
   ls = ls.map(function(img){
