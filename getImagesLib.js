@@ -363,6 +363,7 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     
   if(defringeL5){
     print('Defringing L5');
+    l4s = l4s.map(defringeLandsat);
     l5s = l5s.map(defringeLandsat);
   }
   var l8s = ee.ImageCollection(collectionDict['L8'+ toaOrSR])
