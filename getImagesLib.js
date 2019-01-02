@@ -390,7 +390,7 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
   }
   
   // Merge collections
-  ls = ee.ImageCollection(l5s.merge(l7s).merge(l8s));
+  ls = ee.ImageCollection(l4s.merge(l5s).merge(l7s).merge(l8s));
   
   
   //If TOA and Fmask need to merge Fmask qa bits with toa- this gets the qa band from the sr collections
