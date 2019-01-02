@@ -348,11 +348,7 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     .filter(ee.Filter.lte('WRS_ROW',120))
     .select(sensorBandDict['L4'+ toaOrSR],sensorBandNameDict[toaOrSR]);
     
-  if(defringeL5){
-    print('Defringing L5');
-    l4s = l4s.map(defringeLandsat);
-    l5s = l5s.map(defringeLandsat);
-  }
+  
   // Get Landsat data
   var l5s = ee.ImageCollection(collectionDict['L5'+ toaOrSR])
     .filterDate(startDate,endDate)
