@@ -340,7 +340,19 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     'TOA': ee.Image([1,1,1,1,1,1,1,1]),
     'SR': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.1,0.0001,1])
   };
-  
+  // Get Landsat data
+  var l4s = ee.ImageCollection(collectionDict['L4'+ toaOrSR])
+    .filterDate(startDate,endDate)
+    .filter(ee.Filter.calendarRange(startJulian,endJulian))
+    .filterBounds(studyArea)
+    .filter(ee.Filter.lte('WRS_ROW',120))
+    .select(sensorBandDict['L4'+ toaOrSR],sensorBandNameDict[toaOrSR]);
+    
+  if(defringeL5){
+    print('Defringing L5');
+    l4s = l4s.map(defringeLandsat);
+    l5s = l5s.map(defringeLandsat);
+  }
   // Get Landsat data
   var l5s = ee.ImageCollection(collectionDict['L5'+ toaOrSR])
     .filterDate(startDate,endDate)
