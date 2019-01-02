@@ -329,9 +329,11 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
     'L8TOA': 'LANDSAT/LC08/C01/T1_TOA',
     'L7TOA': 'LANDSAT/LE07/C01/T1_TOA',
     'L5TOA': 'LANDSAT/LT05/C01/T1_TOA',
+    'L4TOA': 'LANDSAT/LT04/C01/T1_TOA',
     'L8SR': 'LANDSAT/LC08/C01/T1_SR',
     'L7SR': 'LANDSAT/LE07/C01/T1_SR',
-    'L5SR': 'LANDSAT/LT05/C01/T1_SR'
+    'L5SR': 'LANDSAT/LT05/C01/T1_SR',
+    'L4SR': 'LANDSAT/LT04/C01/T1_SR'
   };
   
   var multImageDict = {
