@@ -396,6 +396,13 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
   //If TOA and Fmask need to merge Fmask qa bits with toa- this gets the qa band from the sr collections
   if(toaOrSR.toLowerCase() === 'toa' && addPixelQA === true){
     print('Acquiring SR qa bands for applying Fmask to TOA data');
+    var l4sTOAFMASK =  ee.ImageCollection(collectionDict['L4SR'])
+              .filterDate(startDate,endDate)
+              .filter(ee.Filter.calendarRange(startJulian,endJulian))
+              .filterBounds(studyArea)
+              .filter(ee.Filter.lte('WRS_ROW',120))
+              .select(sensorBandDict['L4SRFMASK'],sensorBandNameDict['SRFMASK']);
+              
     var l5sTOAFMASK =  ee.ImageCollection(collectionDict['L5SR'])
               .filterDate(startDate,endDate)
               .filter(ee.Filter.calendarRange(startJulian,endJulian))
@@ -431,7 +438,7 @@ function getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
               .select(sensorBandDict['L7SRFMASK'],sensorBandNameDict['SRFMASK']);
     }
     
-    lsTOAFMASK = ee.ImageCollection(l5sTOAFMASK.merge(l7sTOAFMASK).merge(l8sTOAFMASK));
+    lsTOAFMASK = ee.ImageCollection(l4sTOAFMASK.merge(l5sTOAFMASK).merge(l7sTOAFMASK).merge(l8sTOAFMASK));
     //Join the TOA with SR QA bands
     print('Joining TOA with SR QA bands');
     ls = joinCollections(ls.select([0,1,2,3,4,5,6]),lsTOAFMASK);
