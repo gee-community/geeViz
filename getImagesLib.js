@@ -4,7 +4,7 @@
 var vizParamsFalse = {
   'min': 0.1, 
   'max': [0.5,0.6,0.6], 
-  'bands': 'swir1,nir,red', 
+  'bands': 'swir2,nir,red', 
   'gamma': 1.6
 };
 
