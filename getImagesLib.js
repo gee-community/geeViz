@@ -2504,6 +2504,31 @@ function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulia
   
   return ts;
   }
+//////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+//Adds absolute difference from a specified band summarized by a provided percentile
+//Intended for custom sorting across collections
+var addAbsDiff = function(inCollection, qualityBand, percentile,sign){
+  var bestQuality = inCollection.select([qualityBand]).reduce(ee.Reducer.percentile([percentile]));
+  var out = inCollection.map(function(image) {
+    var delta = image.select([qualityBand]).subtract(bestQuality).abs().multiply(sign);
+    return image.addBands(delta.select([0], ['delta']));
+  });
+  return out
+};
+////////////////////////////////////////////////////////////
+//Method for applying the qualityMosaic function using a specified percentile
+//Useful when the max of the quality band is not what is wanted
+var customQualityMosaic = function(inCollection,qualityBand,percentile){
+  //Add an absolute difference from the specified percentile
+  //This is inverted for the qualityMosaic function to properly prioritize
+  var inCollectionDelta = addAbsDiff(inCollection, qualityBand, percentile,-1);
+  
+  //Apply the qualityMosaic function
+  return inCollectionDelta.qualityMosaic('delta');
+
+};
+//////////////////////////////////////////////////////////////////////////
 // END FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
 exports.sieve = sieve;
@@ -2559,4 +2584,6 @@ exports.getClimateWrapper = getClimateWrapper;
 exports.exportCollection = exportCollection;
 exports.changeDirDict = changeDirDict;
 exports.addSoilIndices = addSoilIndices;
+
+exports.customQualityMosaic  = customQualityMosaic;
 
