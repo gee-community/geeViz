@@ -1599,7 +1599,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
   //   joined = despikeCollection(joined,modisSpikeThresh,indexName);
   // }
   
-  return ee.ImageCollection(joined.map(function(img){return img.resample('bicubic') }) );
+  return ee.ImageCollection(joined.map(function(img){return img.resample('bilinear') }) );
     
   }
   
