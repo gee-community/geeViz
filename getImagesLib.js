@@ -2585,5 +2585,6 @@ exports.exportCollection = exportCollection;
 exports.changeDirDict = changeDirDict;
 exports.addSoilIndices = addSoilIndices;
 
+exports.addAbsDiff = addAbsDiff;
 exports.customQualityMosaic  = customQualityMosaic;
 
