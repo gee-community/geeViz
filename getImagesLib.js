@@ -131,6 +131,43 @@ function collectionToImage(collection){
   stack = stack.select(ee.List.sequence(1, stack.bandNames().size().subtract(1)));
   return stack;
 } 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//Function to find the date for a given composite computed from a given set of images
+//Will work on composites computed with methods that include different dates across different bands
+//such as the median.  For something like a medoid, only a single bands needs passed through
+function compositeDates(images,composite,bandNames){
+  if(bandNames === null || bandNames === undefined){
+     bandNames = ee.Image(images.first());
+  }else{images = images.select([bandNames])}
+
+  var bns = ee.Image(images.first()).bandNames().map(function(bn){return ee.String(bn).cat('_diff')});
+
+  //Function to get the abs diff from a given composite *-1
+  function getDiff(img,composite){
+    var out = img.subtract(composite).abs().multiply(-1).rename(bns);
+    return img.addBands(out);
+  }
+
+  //Find the diff and add a date band
+  images = images.map(function(img){return getDiff(img,composite)});
+  images = images.map(getImageLib.addDateBand);
+  
+  //Iterate across each band and find the corresponding date to the composite
+  var out = bandNames.map(function(bn){
+    bn = ee.String(bn);
+    var t = images.select([bn,bn.cat('_diff'),'year']).qualityMosaic(bn.cat('_diff'));
+    return t.select(['year']).rename(['YYYYDD']);
+  });
+  //Convert to ann image and rename
+  out  = getImageLib.collectionToImage(ee.ImageCollection(out));
+  var outBns = bandNames.map(function(bn){return ee.String(bn).cat('YYYYDD')});
+  out = out.rename(outBns);
+  
+  return out;
+}
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 //Function to handle empty collections that will cause subsequent processes to fail
 //If the collection is empty, will fill it with an empty image
 function fillEmptyCollections(inCollection,dummyImage){                       
@@ -2587,4 +2624,4 @@ exports.addSoilIndices = addSoilIndices;
 
 exports.addAbsDiff = addAbsDiff;
 exports.customQualityMosaic  = customQualityMosaic;
-
+exports.compositeDates = compositeDates;
