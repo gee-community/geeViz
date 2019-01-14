@@ -157,7 +157,7 @@ function compositeDates(images,composite,bandNames){
   var out = bandNames.map(function(bn){
     bn = ee.String(bn);
     var t = images.select([bn,bn.cat('_diff'),'year']).qualityMosaic(bn.cat('_diff'));
-    return t//.select(['year']).rename(['YYYYDD']);
+    return t.select(['year']).rename(['YYYYDD']);
   });
   //Convert to ann image and rename
   out  = collectionToImage(ee.ImageCollection(out));
