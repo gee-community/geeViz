@@ -146,7 +146,7 @@ function compositeDates(images,composite,bandNames){
 
   //Function to get the abs diff from a given composite *-1
   function getDiff(img,composite){
-    var out = img.float().subtract(composite).abs().multiply(-1).rename(bns);
+    var out = img.float().subtract(composite).abs().multiply(-1.0).rename(bns);
     return img.addBands(out);
   }
 
