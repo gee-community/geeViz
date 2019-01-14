@@ -138,7 +138,7 @@ function collectionToImage(collection){
 //such as the median.  For something like a medoid, only a single bands needs passed through
 function compositeDates(images,composite,bandNames){
   if(bandNames === null || bandNames === undefined){
-     bandNames = ee.Image(images.first());
+     bandNames = ee.Image(images.first()).bandNames();
   }else{images = images.select([bandNames])}
 
   var bns = ee.Image(images.first()).bandNames().map(function(bn){return ee.String(bn).cat('_diff')});
