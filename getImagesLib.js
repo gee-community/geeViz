@@ -151,7 +151,7 @@ function compositeDates(images,composite,bandNames){
 
   //Find the diff and add a date band
   images = images.map(function(img){return getDiff(img,composite)});
-  images = images.map(getImageLib.addDateBand);
+  images = images.map(addDateBand);
   
   //Iterate across each band and find the corresponding date to the composite
   var out = bandNames.map(function(bn){
@@ -160,7 +160,7 @@ function compositeDates(images,composite,bandNames){
     return t.select(['year']).rename(['YYYYDD']);
   });
   //Convert to ann image and rename
-  out  = getImageLib.collectionToImage(ee.ImageCollection(out));
+  out  = collectionToImage(ee.ImageCollection(out));
   var outBns = bandNames.map(function(bn){return ee.String(bn).cat('YYYYDD')});
   out = out.rename(outBns);
   
