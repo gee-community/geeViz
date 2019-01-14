@@ -141,12 +141,11 @@ function compositeDates(images,composite,bandNames){
      bandNames = ee.Image(images.first()).bandNames();
   }else{images = images.select(bandNames);composite = composite.select(bandNames)}
   
-  composite = composite.float();
   var bns = ee.Image(images.first()).bandNames().map(function(bn){return ee.String(bn).cat('_diff')});
 
   //Function to get the abs diff from a given composite *-1
   function getDiff(img,composite){
-    var out = img.float().subtract(composite).abs().multiply(-1.0).rename(bns);
+    var out = img.subtract(composite).abs().multiply(-1).rename(bns);
     return img.addBands(out);
   }
 
@@ -157,10 +156,8 @@ function compositeDates(images,composite,bandNames){
   //Iterate across each band and find the corresponding date to the composite
   var out = bandNames.map(function(bn){
     bn = ee.String(bn);
-    var t = images.select([bn,bn.cat('_diff'),'year'])
-    var count = images.select([bn.cat('_diff')]).map(function(img){return img.eq(0)}).sum()
-    t = t.qualityMosaic(bn.cat('_diff'));
-    return t.addBands(count)//.select(['year']).rename(['YYYYDD']);
+    var t = images.select([bn,bn.cat('_diff'),'year']).qualityMosaic(bn.cat('_diff'));
+    return t//.select(['year']).rename(['YYYYDD']);
   });
   //Convert to ann image and rename
   out  = collectionToImage(ee.ImageCollection(out));
