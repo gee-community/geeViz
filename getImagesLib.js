@@ -2532,7 +2532,7 @@ var customQualityMosaic = function(inCollection,qualityBand,percentile){
 // END FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
 exports.sieve = sieve;
-exports.setNoDate = setNoData;
+exports.setNoData = setNoData;
 exports.addYearBand = addYearBand;
 exports.addDateBand = addDateBand;
 exports.collectionToImage = collectionToImage;
