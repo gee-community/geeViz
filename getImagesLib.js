@@ -136,6 +136,7 @@ function collectionToImage(collection){
 //Function to find the date for a given composite computed from a given set of images
 //Will work on composites computed with methods that include different dates across different bands
 //such as the median.  For something like a medoid, only a single bands needs passed through
+//A known bug is that if the same value occurs twice, it will choose only a single date
 function compositeDates(images,composite,bandNames){
   if(bandNames === null || bandNames === undefined){
      bandNames = ee.Image(images.first()).bandNames();
