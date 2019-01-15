@@ -616,30 +616,6 @@ def simpleTDOM2(collection,zScoreThresh = -1,shadowSumThresh = 0.35,contractPixe
   return collection
 
 
-
-# ls = getImageCollection(ee.Geometry.Polygon(\
-#          [[[-107.65431394109078, 39.088573472024486],\
-#            [-109.36818112859078, 35.5781084059458],\
-#            [-108.64308347234078, 35.16602548916899],\
-#            [-107.08302487859078, 38.575083190487966]]]),ee.Date.fromYMD(2014,7,1),ee.Date.fromYMD(2014,10,1),190,250,'SR',False)
-# Map.addLayer(ls.median(),vizParamsFalse,'before masking')
-
-# ls = applyCloudScoreAlgorithm(ls,landsatCloudScore,10,0,1.5,3.5,performCloudScoreOffset = True)
-
-
-# Map.addLayer(ls.median(),vizParamsFalse,'after cloud masking')
-# ls = simpleTDOM2(ls,-1,0.35,1.5,3.5)
-# Map.addLayer(ls.median(),vizParamsFalse,'after cloud/shadow masking')
-# # ls = getImageCollection(ee.Geometry.Polygon(\
-# #          [[[-107.65431394109078, 39.088573472024486],\
-# #            [-109.36818112859078, 35.5781084059458],\
-# #            [-108.64308347234078, 35.16602548916899],\
-# #            [-107.08302487859078, 38.575083190487966]]]),ee.Date.fromYMD(2018,7,1),ee.Date.fromYMD(2018,10,1),190,250,'SR',False)
-# # ls = ls.map(cFmaskCloud)
-# # ls = ls.map(cFmaskCloudShadow).median()
-# # Map.addLayer(ls,vizParamsFalse)
-
-# Map.launchGEEVisualization()\
 #########################################################################
 #########################################################################
 #Function to add common (and less common) spectral indices to an image.
@@ -723,7 +699,7 @@ def addSAVIandEVI(img):
   img = img.addBands(evi.rename('EVI'))
   
   #Add Soil Adjust Vegetation Index (SAVI)
-  using L = 0.5
+  #using L = 0.5
   savi = img.expression(\
     '(NIR - RED) * (1 + 0.5)/(NIR + RED + 0.5)', {\
       'NIR': img.select('nir'),\
@@ -731,325 +707,320 @@ def addSAVIandEVI(img):
   }).float()
 
   
-#   ////////////////////////////////////////////////////////////////////////////////
-#   //NIRv: Badgley, G., Field, C. B., & Berry, J. A. (2017). Canopy near-infrared reflectance and terrestrial photosynthesis. Science Advances, 3, e1602244.
-#   //https://www.researchgate.net/publication/315534107_Canopy_near-infrared_reflectance_and_terrestrial_photosynthesis
-#   // NIRv function: ‘image’ is a 2 band stack of NDVI and NIR
-#   //////////////////////////////////////////////////////////////////////////////////////////
-#   var NIRv =  img.select(['NDVI']).subtract(0.08)
-#               .multiply(img.select(['nir']));//.multiply(0.0001))
+  #########################################################################
+  #NIRv: Badgley, G., Field, C. B., & Berry, J. A. (2017). Canopy near-infrared reflectance and terrestrial photosynthesis. Science Advances, 3, e1602244.
+  #https://www.researchgate.net/publication/315534107_Canopy_near-infrared_reflectance_and_terrestrial_photosynthesis
+  #NIRv function: ‘image’ is a 2 band stack of NDVI and NIR
+  #########################################################################
+  NIRv =  img.select(['NDVI']).subtract(0.08).multiply(img.select(['nir']))#.multiply(0.0001))
 
-#   img = img.addBands(savi.rename('SAVI')).addBands(NIRv.rename('NIRv'));
-#   return img;
-# }
-# /////////////////////////////////////////////////////////////////
-# //Function for only adding common indices
-# function simpleAddIndices(in_image){
-#     in_image = in_image.addBands(in_image.normalizedDifference(['nir', 'red']).select([0],['NDVI']));
-#     in_image = in_image.addBands(in_image.normalizedDifference(['nir', 'swir2']).select([0],['NBR']));
-#     in_image = in_image.addBands(in_image.normalizedDifference(['nir', 'swir1']).select([0],['NDMI']));
-#     in_image = in_image.addBands(in_image.normalizedDifference(['green', 'swir1']).select([0],['NDSI']));
+  img = img.addBands(savi.rename('SAVI')).addBands(NIRv.rename('NIRv'))
+  return img
+
+#########################################################################
+#########################################################################
+#Function for only adding common indices
+def simpleAddIndices(in_image):
+  in_image = in_image.addBands(in_image.normalizedDifference(['nir', 'red']).select([0],['NDVI']))
+  in_image = in_image.addBands(in_image.normalizedDifference(['nir', 'swir2']).select([0],['NBR']))
+  in_image = in_image.addBands(in_image.normalizedDifference(['nir', 'swir1']).select([0],['NDMI']))
+  in_image = in_image.addBands(in_image.normalizedDifference(['green', 'swir1']).select([0],['NDSI']))
   
-#     return in_image;
-# }
-# ///////////////////////////////////////////////////////////////////////////////
-# ////////////////////////////////////////////////////////////////////////////////
-# // Function for adding common indices
-# ////////////////////////////////////////////////////////////////////////////////
-# function addSoilIndices(img){
-#   img = img.addBands(img.normalizedDifference(['red','green']).rename('NDCI'));
-#   img = img.addBands(img.normalizedDifference(['red','swir2']).rename('NDII'));
-#   img = img.addBands(img.normalizedDifference(['swir1','nir']).rename('NDFI'));
+  return in_image
+
+#########################################################################
+#########################################################################
+#Function for adding common indices
+#########################################################################
+def addSoilIndices(img):
+  img = img.addBands(img.normalizedDifference(['red','green']).rename('NDCI'))
+  img = img.addBands(img.normalizedDifference(['red','swir2']).rename('NDII'))
+  img = img.addBands(img.normalizedDifference(['swir1','nir']).rename('NDFI'))
   
-#   var bsi = img.expression(
-#   '((SWIR1 + RED) - (NIR + BLUE)) / ((SWIR1 + RED) + (NIR + BLUE))', {
-#     'BLUE': img.select('blue'),
-#     'RED': img.select('red'),
-#     'NIR': img.select('nir'),
-#     'SWIR1': img.select('swir1')
-#   }).float();
-#   img = img.addBands(bsi.rename('BSI'));
+  bsi = img.expression(\
+  '((SWIR1 + RED) - (NIR + BLUE)) / ((SWIR1 + RED) + (NIR + BLUE))', {\
+    'BLUE': img.select('blue'),\
+    'RED': img.select('red'),\
+    'NIR': img.select('nir'),\
+    'SWIR1': img.select('swir1')\
+  }).float()
+
+  img = img.addBands(bsi.rename('BSI'))
   
-#   var hi = img.expression(
-#     'SWIR1 / SWIR2',{
-#       'SWIR1': img.select('swir1'),
-#       'SWIR2': img.select('swir2')
-#     }).float();
-#   img = img.addBands(hi.rename('HI'));  
-#   return img;
-# }
-# /////////////////////////////////////////////////////////////////
-# ///////////////////////////////////////////////////////////////////////////////
-# // Function to compute the Tasseled Cap transformation and return an image
-# // with the following bands added: ['brightness', 'greenness', 'wetness', 
-# // 'fourth', 'fifth', 'sixth']
-# function getTasseledCap(image) {
- 
-#   var bands = ee.List(['blue','green','red','nir','swir1','swir2']);
-#   // // Kauth-Thomas coefficients for Thematic Mapper data
-#   // var coefficients = ee.Array([
-#   //   [0.3037, 0.2793, 0.4743, 0.5585, 0.5082, 0.1863],
-#   //   [-0.2848, -0.2435, -0.5436, 0.7243, 0.0840, -0.1800],
-#   //   [0.1509, 0.1973, 0.3279, 0.3406, -0.7112, -0.4572],
-#   //   [-0.8242, 0.0849, 0.4392, -0.0580, 0.2012, -0.2768],
-#   //   [-0.3280, 0.0549, 0.1075, 0.1855, -0.4357, 0.8085],
-#   //   [0.1084, -0.9022, 0.4120, 0.0573, -0.0251, 0.0238]
-#   // ]);
-  
-#   //Crist 1985 coeffs - TOA refl (http://www.gis.usu.edu/~doug/RS5750/assign/OLD/RSE(17)-301.pdf)
-#   var coefficients = ee.Array([[0.2043, 0.4158, 0.5524, 0.5741, 0.3124, 0.2303],
-#                     [-0.1603, -0.2819, -0.4934, 0.7940, -0.0002, -0.1446],
-#                     [0.0315, 0.2021, 0.3102, 0.1594, -0.6806, -0.6109],
-#                     [-0.2117, -0.0284, 0.1302, -0.1007, 0.6529, -0.7078],
-#                     [-0.8669, -0.1835, 0.3856, 0.0408, -0.1132, 0.2272],
-#                    [0.3677, -0.8200, 0.4354, 0.0518, -0.0066, -0.0104]]);
-#   // Make an Array Image, with a 1-D Array per pixel.
-#   var arrayImage1D = image.select(bands).toArray();
-  
-#   // Make an Array Image with a 2-D Array per pixel, 6x1.
-#   var arrayImage2D = arrayImage1D.toArray(1);
-  
-#   var componentsImage = ee.Image(coefficients)
-#     .matrixMultiply(arrayImage2D)
-#     // Get rid of the extra dimensions.
-#     .arrayProject([0])
-#     // Get a multi-band image with TC-named bands.
-#     .arrayFlatten(
-#       [['brightness', 'greenness', 'wetness', 'fourth', 'fifth', 'sixth']])
-#     .float();
-  
-#   return image.addBands(componentsImage);
-# }
-# function simpleGetTasseledCap(image) {
- 
-#   var bands = ee.List(['blue','green','red','nir','swir1','swir2']);
-#   // // Kauth-Thomas coefficients for Thematic Mapper data
-#   // var coefficients = ee.Array([
-#   //   [0.3037, 0.2793, 0.4743, 0.5585, 0.5082, 0.1863],
-#   //   [-0.2848, -0.2435, -0.5436, 0.7243, 0.0840, -0.1800],
-#   //   [0.1509, 0.1973, 0.3279, 0.3406, -0.7112, -0.4572],
-#   //   [-0.8242, 0.0849, 0.4392, -0.0580, 0.2012, -0.2768],
-#   //   [-0.3280, 0.0549, 0.1075, 0.1855, -0.4357, 0.8085],
-#   //   [0.1084, -0.9022, 0.4120, 0.0573, -0.0251, 0.0238]
-#   // ]);
-  
-#   //Crist 1985 coeffs - TOA refl (http://www.gis.usu.edu/~doug/RS5750/assign/OLD/RSE(17)-301.pdf)
-#   var coefficients = ee.Array([[0.2043, 0.4158, 0.5524, 0.5741, 0.3124, 0.2303],
-#                     [-0.1603, -0.2819, -0.4934, 0.7940, -0.0002, -0.1446],
-#                     [0.0315, 0.2021, 0.3102, 0.1594, -0.6806, -0.6109]]);
-#   // Make an Array Image, with a 1-D Array per pixel.
-#   var arrayImage1D = image.select(bands).toArray();
-  
-#   // Make an Array Image with a 2-D Array per pixel, 6x1.
-#   var arrayImage2D = arrayImage1D.toArray(1);
-  
-#   var componentsImage = ee.Image(coefficients)
-#     .matrixMultiply(arrayImage2D)
-#     // Get rid of the extra dimensions.
-#     .arrayProject([0])
-#     // Get a multi-band image with TC-named bands.
-#     .arrayFlatten(
-#       [['brightness', 'greenness', 'wetness']])
-#     .float();
-  
-#   return image.addBands(componentsImage);
-# }
-# ///////////////////////////////////////////////////////////////////////////////
-# // Function to add Tasseled Cap angles and distances to an image.
-# // Assumes image has bands: 'brightness', 'greenness', and 'wetness'.
-# function addTCAngles(image){
-#   // Select brightness, greenness, and wetness bands
-#   var brightness = image.select(['brightness']);
-#   var greenness = image.select(['greenness']);
-#   var wetness = image.select(['wetness']);
-  
-#   // Calculate Tasseled Cap angles and distances
-#   var tcAngleBG = brightness.atan2(greenness).divide(Math.PI).rename('tcAngleBG');
-#   var tcAngleGW = greenness.atan2(wetness).divide(Math.PI).rename('tcAngleGW');
-#   var tcAngleBW = brightness.atan2(wetness).divide(Math.PI).rename('tcAngleBW');
-#   var tcDistBG = brightness.hypot(greenness).rename('tcDistBG');
-#   var tcDistGW = greenness.hypot(wetness).rename('tcDistGW');
-#   var tcDistBW = brightness.hypot(wetness).rename('tcDistBW');
-#   image = image.addBands(tcAngleBG).addBands(tcAngleGW)
-#     .addBands(tcAngleBW).addBands(tcDistBG).addBands(tcDistGW)
-#     .addBands(tcDistBW);
-#   return image;
-# }
-# ////////////////////////////////////////////////////
-# //Only adds tc bg angle as in Powell et al 2009
-# //https://www.sciencedirect.com/science/article/pii/S0034425709003745?via%3Dihub
-# function simpleAddTCAngles(image){
-#   // Select brightness, greenness, and wetness bands
-#   var brightness = image.select(['brightness']);
-#   var greenness = image.select(['greenness']);
-#   var wetness = image.select(['wetness']);
-  
-#   // Calculate Tasseled Cap angles and distances
-#   var tcAngleBG = brightness.atan2(greenness).divide(Math.PI).rename('tcAngleBG');
-  
-#   return image.addBands(tcAngleBG);
-# }
-# ///////////////////////////////////////////////////////////////////////////////
-# ////////////////////////////////////////////////////////////////////////////////
-# // Function to add solar zenith and azimuth in radians as bands to image
-# function addZenithAzimuth(img,toaOrSR,zenithDict,azimuthDict){
-#   if(zenithDict === undefined || zenithDict === null){zenithDict = {
-#     'TOA': 'SUN_ELEVATION',
-#     'SR': 'SOLAR_ZENITH_ANGLE'};
-#   }
-#   if(azimuthDict === undefined || azimuthDict === null){azimuthDict = {
-#     'TOA': 'SUN_AZIMUTH',
-#     'SR': 'SOLAR_AZIMUTH_ANGLE'
-#   };
-#   }
-  
+  hi = img.expression(\
+    'SWIR1 / SWIR2',{\
+      'SWIR1': img.select('swir1'),\
+      'SWIR2': img.select('swir2')\
+    }).float()
+  img = img.addBands(hi.rename('HI'))  
+  return img
+
+#########################################################################
+#########################################################################
+#Function to compute the Tasseled Cap transformation and return an image
+#with the following bands added: ['brightness', 'greenness', 'wetness', 
+#'fourth', 'fifth', 'sixth']
+def getTasseledCap(image):
    
-  
-#   var zenith = ee.Image.constant(img.get(zenithDict[toaOrSR]))
-#     .multiply(Math.PI).divide(180).float().rename('zenith');
-  
-#   var azimuth = ee.Image.constant(img.get(azimuthDict[toaOrSR]))
-#     .multiply(Math.PI).divide(180).float().rename('azimuth');
+  bands = ee.List(['blue','green','red','nir','swir1','swir2'])
+  #   // // Kauth-Thomas coefficients for Thematic Mapper data
+  #   // var coefficients = ee.Array([
+  #   //   [0.3037, 0.2793, 0.4743, 0.5585, 0.5082, 0.1863],
+  #   //   [-0.2848, -0.2435, -0.5436, 0.7243, 0.0840, -0.1800],
+  #   //   [0.1509, 0.1973, 0.3279, 0.3406, -0.7112, -0.4572],
+  #   //   [-0.8242, 0.0849, 0.4392, -0.0580, 0.2012, -0.2768],
+  #   //   [-0.3280, 0.0549, 0.1075, 0.1855, -0.4357, 0.8085],
+  #   //   [0.1084, -0.9022, 0.4120, 0.0573, -0.0251, 0.0238]
+  #   // ]);
     
-#   return img.addBands(zenith).addBands(azimuth);
-# }
+  #Crist 1985 coeffs - TOA refl (http://www.gis.usu.edu/~doug/RS5750/assign/OLD/RSE(17)-301.pdf)
+  coefficients = ee.Array([[0.2043, 0.4158, 0.5524, 0.5741, 0.3124, 0.2303],\
+                      [-0.1603, -0.2819, -0.4934, 0.7940, -0.0002, -0.1446],\
+                      [0.0315, 0.2021, 0.3102, 0.1594, -0.6806, -0.6109],\
+                      [-0.2117, -0.0284, 0.1302, -0.1007, 0.6529, -0.7078],\
+                      [-0.8669, -0.1835, 0.3856, 0.0408, -0.1132, 0.2272],\
+                     [0.3677, -0.8200, 0.4354, 0.0518, -0.0066, -0.0104]])
+  #Make an Array Image, with a 1-D Array per pixel.
+  arrayImage1D = image.select(bands).toArray()
+  
+  #Make an Array Image with a 2-D Array per pixel, 6x1.
+  arrayImage2D = arrayImage1D.toArray(1)
+  
+  componentsImage = ee.Image(coefficients).matrixMultiply(arrayImage2D)\
+  .arrayProject([0])\
+  .arrayFlatten([['brightness', 'greenness', 'wetness', 'fourth', 'fifth', 'sixth']]).float()
+  
+  return image.addBands(componentsImage)
 
-# ////////////////////////////////////////////////////////////////////////////////
-# // Function for computing the mean squared difference medoid from an image 
-# // collection
-# function medoidMosaicMSD(inCollection,medoidIncludeBands) {
-#   // Find band names in first image
-#   var f = ee.Image(inCollection.first());
-#   var bandNames = f.bandNames();
-#   var bandNumbers = ee.List.sequence(1,bandNames.length());
+#########################################################################
+#########################################################################
+def simpleGetTasseledCap(image):
+ 
+  bands = ee.List(['blue','green','red','nir','swir1','swir2'])
+  #   // // Kauth-Thomas coefficients for Thematic Mapper data
+  #   // var coefficients = ee.Array([
+  #   //   [0.3037, 0.2793, 0.4743, 0.5585, 0.5082, 0.1863],
+  #   //   [-0.2848, -0.2435, -0.5436, 0.7243, 0.0840, -0.1800],
+  #   //   [0.1509, 0.1973, 0.3279, 0.3406, -0.7112, -0.4572],
+  #   //   [-0.8242, 0.0849, 0.4392, -0.0580, 0.2012, -0.2768],
+  #   //   [-0.3280, 0.0549, 0.1075, 0.1855, -0.4357, 0.8085],
+  #   //   [0.1084, -0.9022, 0.4120, 0.0573, -0.0251, 0.0238]
+  #   // ]);
+    
+  #Crist 1985 coeffs - TOA refl (http://www.gis.usu.edu/~doug/RS5750/assign/OLD/RSE(17)-301.pdf)
+  coefficients = ee.Array([[0.2043, 0.4158, 0.5524, 0.5741, 0.3124, 0.2303],\
+                      [-0.1603, -0.2819, -0.4934, 0.7940, -0.0002, -0.1446],\
+                      [0.0315, 0.2021, 0.3102, 0.1594, -0.6806, -0.6109]])
+  #Make an Array Image, with a 1-D Array per pixel.
+  arrayImage1D = image.select(bands).toArray()
   
-#   if (medoidIncludeBands === undefined || medoidIncludeBands === null) {
-#     medoidIncludeBands = bandNames;
-#   }
-#   // Find the median
-#   var median = inCollection.select(medoidIncludeBands).median();
+  #Make an Array Image with a 2-D Array per pixel, 6x1.
+  arrayImage2D = arrayImage1D.toArray(1)
   
-#   // Find the squared difference from the median for each image
-#   var medoid = inCollection.map(function(img){
-#     var diff = ee.Image(img).select(medoidIncludeBands).subtract(median)
-#       .pow(ee.Image.constant(2));
-#     return diff.reduce('sum').addBands(img);
-#   });
+  componentsImage = ee.Image(coefficients).matrixMultiply(arrayImage2D)\
+  .arrayProject([0])\
+  .arrayFlatten([['brightness', 'greenness', 'wetness']]).float()
   
-#   // Minimize the distance across all bands
-#   medoid = ee.ImageCollection(medoid)
-#     .reduce(ee.Reducer.min(bandNames.length().add(1)))
-#     .select(bandNumbers,bandNames);
+  return image.addBands(componentsImage)
 
-#   return medoid;
-# }
+#########################################################################
+#########################################################################
+#Function to add Tasseled Cap angles and distances to an image.
+#Assumes image has bands: 'brightness', 'greenness', and 'wetness'.
+def addTCAngles(image):
+  #Select brightness, greenness, and wetness bands
+  brightness = image.select(['brightness'])
+  greenness = image.select(['greenness'])
+  wetness = image.select(['wetness'])
+  
+  #Calculate Tasseled Cap angles and distances
+  tcAngleBG = brightness.atan2(greenness).divide(Math.PI).rename('tcAngleBG')
+  tcAngleGW = greenness.atan2(wetness).divide(Math.PI).rename('tcAngleGW')
+  tcAngleBW = brightness.atan2(wetness).divide(Math.PI).rename('tcAngleBW')
+  tcDistBG = brightness.hypot(greenness).rename('tcDistBG')
+  tcDistGW = greenness.hypot(wetness).rename('tcDistGW')
+  tcDistBW = brightness.hypot(wetness).rename('tcDistBW')
+  image = image.addBands(tcAngleBG).addBands(tcAngleGW)\
+    .addBands(tcAngleBW).addBands(tcDistBG).addBands(tcDistGW)\
+    .addBands(tcDistBW)
+  return image
 
-# ////////////////////////////////////////////////////////////////////////////////
-# // Function to export a provided image to an EE asset
-# function exportToAssetWrapper(imageForExport,assetName,assetPath,
-#   pyramidingPolicy,roi,scale,crs,transform){
-#   //Make sure image is clipped to roi in case it's a multi-part polygon
-#   imageForExport = imageForExport.clip(roi);
-#   assetName = assetName.replace(/\s+/g,'-');//Get rid of any spaces
+#########################################################################
+#########################################################################
+#Only adds tc bg angle as in Powell et al 2009
+#https://www.sciencedirect.com/science/article/pii/S0034425709003745?via%3Dihub
+def simpleAddTCAngles(image):
+  #Select brightness, greenness, and wetness bands
+  brightness = image.select(['brightness'])
+  greenness = image.select(['greenness'])
+  wetness = image.select(['wetness'])
   
-#   Export.image.toAsset(imageForExport, assetName, assetPath, 
-#     {'.default': pyramidingPolicy}, null, roi, scale, crs, transform, 1e13);
-# }
-# function exportToAssetWrapper2(imageForExport,assetName,assetPath,
-#   pyramidingPolicyObject,roi,scale,crs,transform){
-#   //Make sure image is clipped to roi in case it's a multi-part polygon
-#   imageForExport = imageForExport.clip(roi);
-#   assetName = assetName.replace(/\s+/g,'-');//Get rid of any spaces
+  #Calculate Tasseled Cap angles and distances
+  tcAngleBG = brightness.atan2(greenness).divide(Math.PI).rename('tcAngleBG')
   
-#   Export.image.toAsset(imageForExport, assetName, assetPath, 
-#     pyramidingPolicyObject, null, roi, scale, crs, transform, 1e13);
-# }
-# //////////////////////////////////////////////////
-# //Function for wrapping dates when the startJulian < endJulian
-# //Checks for year with majority of the days and the wrapOffset
-# function wrapDates(startJulian,endJulian){
-#   //Set up date wrapping
-#   var wrapOffset = 0;
-#   var yearWithMajority = 0;
-#     if (startJulian > endJulian) {
-#       wrapOffset = 365;
-#       var y1NDays = 365-startJulian;
-#       var y2NDays = endJulian;
-#       if(y2NDays > y1NDays){yearWithMajority = 1;}
-#     }
-#   return [wrapOffset,yearWithMajority];
-# }
-# ////////////////////////////////////////////////////////////////////////////////
-# // Create composites for each year within startYear and endYear range
-# function compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod,compositingReducer){
-#   var dummyImage = ee.Image(ls.first());
+  return image.addBands(tcAngleBG)
+
+#########################################################################
+#########################################################################
+#Function to add solar zenith and azimuth in radians as bands to image
+def addZenithAzimuth(img,toaOrSR,zenithDict = None,azimuthDict = None):
+  if zenithDict == None:
+    zenithDict = {\
+    'TOA': 'SUN_ELEVATION',\
+    'SR': 'SOLAR_ZENITH_ANGLE'}
   
-#   var dateWrapping = wrapDates(startJulian,endJulian);
-#   var wrapOffset = dateWrapping[0];
-#   var yearWithMajority = dateWrapping[1];
-  
-#   //Iterate across each year
-#   var ts = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
-#     .map(function(year){
+  if azimuthDict == None:
+    azimuthDict = {\
+    'TOA': 'SUN_AZIMUTH',\
+    'SR': 'SOLAR_AZIMUTH_ANGLE'}
    
-#     // Set up dates
-#     var startYearT = year-timebuffer;
-#     var endYearT = year+timebuffer;
-#     var startDateT = ee.Date.fromYMD(startYearT,1,1).advance(startJulian-1,'day');
-#     var endDateT = ee.Date.fromYMD(endYearT,1,1).advance(endJulian-1+wrapOffset,'day');
+  zenith = ee.Image.constant(img.get(zenithDict[toaOrSR]))\
+          .multiply(math.pi).divide(180).float().rename('zenith')
+  
+  azimuth = ee.Image.constant(img.get(azimuthDict[toaOrSR]))\
+          .multiply(math.pi).divide(180).float().rename('azimuth')
+    
+  return img.addBands(zenith).addBands(azimuth)
+
+#########################################################################
+#########################################################################
+#Function for computing the mean squared difference medoid from an image collection
+def medoidMosaicMSD(inCollection,medoidIncludeBands = None):
+  #Find band names in first image
+  f = ee.Image(inCollection.first())
+  bandNames = f.bandNames()
+  bandNumbers = ee.List.sequence(1,bandNames.length())
+  
+  if medoidIncludeBands == None:
+    medoidIncludeBands = bandNames
+
+  #Find the median
+  median = inCollection.select(medoidIncludeBands).median()
+  
+  #Find the squared difference from the median for each image
+  def msdGetter(img):
+    diff = ee.Image(img).select(medoidIncludeBands).subtract(median).pow(ee.Image.constant(2))
+    return diff.reduce('sum').addBands(img)
+  
+  medoid = inCollection.map(msdGetter)
     
   
-#     // print(year,startDateT,endDateT);
-    
-#     //Set up weighted moving widow
-#     var yearsT = ee.List.sequence(startYearT,endYearT);
-    
-#     var z = yearsT.zip(weights);
-#     var yearsTT = z.map(function(i){
-#       i = ee.List(i);
-#       return ee.List.repeat(i.get(0),i.get(1));
-#     }).flatten();
-#     // print('Weighted composite years for year:',year,yearsTT);
-#     //Iterate across each year in list
-#     var images = yearsTT.map(function(yr){
-#       // Set up dates
-      
-#       var startDateT = ee.Date.fromYMD(yr,1,1).advance(startJulian-1,'day');
-#       var endDateT = ee.Date.fromYMD(yr,1,1).advance(endJulian-1+wrapOffset,'day');
-      
-#       // Filter images for given date range
-#       var lsT = ls.filterDate(startDateT,endDateT);
-#       lsT = fillEmptyCollections(lsT,dummyImage);
-#       return lsT;
-#     });
-#     var lsT = ee.ImageCollection(ee.FeatureCollection(images).flatten());
-    
-#     // Compute median or medoid or apply reducer
-#     var composite;
-#     if(compositingReducer !== undefined && compositingReducer !== null){
-#       composite = lsT.reduce(compositingReducer);
-#     }
-#     else if (compositingMethod.toLowerCase() === 'median') {
-#       composite = lsT.median();
-#     }
-#     else {
-      
-#       composite = medoidMosaicMSD(lsT,['blue','green','red','nir','swir1','swir2']);
-#     }
+  #Minimize the distance across all bands
+  medoid = ee.ImageCollection(medoid)\
+    .reduce(ee.Reducer.min(bandNames.length().add(1)))\
+    .select(bandNumbers,bandNames)
 
-#     return composite.set({'system:time_start':ee.Date.fromYMD(year+ yearWithMajority,6,1).millis(),
-#                         'startDate':startDateT.millis(),
-#                         'endDate':endDateT.millis(),
-#                         'startJulian':startJulian,
-#                         'endJulian':endJulian,
-#                         'yearBuffer':timebuffer,
-#                         'yearWeights': listToString(weights),
-#                         'yrOriginal':year,
-#                         'yrUsed': year + yearWithMajority
-#     });
-#   });
-#   return ee.ImageCollection(ts);
-# }
+  return medoid
+
+
+#########################################################################
+#########################################################################
+#Function to export a provided image to an EE asset
+def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicy = None,roi = None,scale = None,crs = None,transform = None):
+  #Make sure image is clipped to roi in case it's a multi-part polygon
+  imageForExport = imageForExport.clip(roi)
+  assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
+  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath + '/'+assetName,  {'.default': pyramidingPolicy}, None, roi, scale, crs, crsTransform, 1e13)
+  t.start()
+
+def exportToAssetWrapper2(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
+  #Make sure image is clipped to roi in case it's a multi-part polygon
+  imageForExport = imageForExport.clip(roi)
+  assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
+  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath + '/'+assetName,  pyramidingPolicyObject, None, roi, scale, crs, crsTransform, 1e13)
+  t.start()
+
+#########################################################################
+#########################################################################
+#Function for wrapping dates when the startJulian < endJulian
+#Checks for year with majority of the days and the wrapOffset
+def wrapDates(startJulian,endJulian):
+  #Set up date wrapping
+  wrapOffset = 0
+  yearWithMajority = 0
+  if startJulian > endJulian:
+    wrapOffset = 365
+    y1NDays = 365-startJulian
+    y2NDays = endJulian
+    if y2NDays > y1NDays:yearWithMajority = 1
+  
+  return [wrapOffset,yearWithMajority]
+
+#########################################################################
+#########################################################################
+#Create composites for each year within startYear and endYear range
+def compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer = 0,weights = [1],compositingMethod = 'medoid',compositingReducer = None):
+  dummyImage = ee.Image(ls.first())
+  
+  dateWrapping = wrapDates(startJulian,endJulian)
+  wrapOffset = dateWrapping[0]
+  yearWithMajority = dateWrapping[1]
+  
+
+
+  def yearCompositeGetter(year):
+   
+    #Set up dates
+    startYearT = year-timebuffer
+    endYearT = year+timebuffer
+    startDateT = ee.Date.fromYMD(startYearT,1,1).advance(startJulian-1,'day')
+    endDateT = ee.Date.fromYMD(endYearT,1,1).advance(endJulian-1+wrapOffset,'day')
+ 
+  
+    #print(year,startDateT,endDateT)
+    
+    #Set up weighted moving widow
+    yearsT = ee.List.sequence(startYearT,endYearT)
+    
+    def zipper(i):
+      i = ee.List(i)
+      return ee.List.repeat(i.get(0),i.get(1))
+
+    z = yearsT.zip(weights)
+
+    yearsTT = z.map(zipper).flatten()
+
+    print('Weighted composite years for year:',year,yearsTT.getInfo())
+    
+    #Iterate across each year in list
+    def yrGetter(yr):
+      #Set up dates
+      startDateT = ee.Date.fromYMD(yr,1,1).advance(startJulian-1,'day')
+      endDateT = ee.Date.fromYMD(yr,1,1).advance(endJulian-1+wrapOffset,'day')
+
+      #Filter images for given date range
+      lsT = ls.filterDate(startDateT,endDateT)
+      lsT = fillEmptyCollections(lsT,dummyImage)
+      return lsT
+    images = yearsTT.map(yrGetter)
+    
+    
+    lsT = ee.ImageCollection(ee.FeatureCollection(images).flatten())
+   
+    #Compute median or medoid or apply reducer
+    if compositingReducer != None:
+      composite = lsT.reduce(compositingReducer)
+    elif compositingMethod.lower() == 'median':
+      composite = lsT.median()
+    else:
+      composite = medoidMosaicMSD(lsT,['blue','green','red','nir','swir1','swir2'])
+    # Map.addLayer(composite,vizParamsFalse,str(year))
+
+    return composite.set({'system:time_start':ee.Date.fromYMD(year+ yearWithMajority,6,1).millis(),\
+                        'startDate':startDateT.millis(),\
+                        'endDate':endDateT.millis(),\
+                        'startJulian':startJulian,\
+                        'endJulian':endJulian,\
+                        'yearBuffer':timebuffer,\
+                        'yearWeights': '[1,2,1]',\
+                        'yrOriginal':year,\
+                        'yrUsed': year + yearWithMajority})
+
+  #Iterate across each year
+  ts = [yearCompositeGetter(yr) for yr in ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()]
+  ts = ee.ImageCollection(ts)
+  
+  return ts
 
 # ////////////////////////////////////////////////////////////////////////////////
 # // Function to calculate illumination condition (IC). Function by Patrick Burns 
@@ -1095,7 +1066,7 @@ def addSAVIandEVI(img):
 # ////////////////////////////////////////////////////////////////////////////////
 # // Function to apply the Sun-Canopy-Sensor + C (SCSc) correction method to each 
 # // image. Function by Patrick Burns (pb463@nau.edu) and Matt Macander 
-# // (mmacander@abrinc.com)
+# // (mmacander@s.com)
 # function illuminationCorrection(img, scale,studyArea,bandList){
 #   if(bandList === null || bandList === undefined){
 #     bandList = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp']; 
@@ -1146,232 +1117,237 @@ def addSAVIandEVI(img):
 #     .setMulti(props)
 #     .set('system:time_start',st);
 # }
-# //Function for converting an array to a string delimited by the space parameter
-# function listToString(list,space){
-#   if(space === undefined){space = ' '}
-#   var out = '';
-#   list.map(function(s){out = out + s.toString()+space});
-#   out = out.slice(0,out.length-space.length);
-#   return out;
-# }
-# ////////////////////////////////////////////////////////////////////////////////
-# ///////////////////////////////////////////////////
-# // A function to mask out pixels that did not have observations for MODIS.
-# var maskEmptyPixels = function(image) {
-#   // Find pixels that had observations.
-#   var withObs = image.select('num_observations_1km').gt(0);
-#   return image.mask(image.mask().and(withObs));
-# };
-# //////////////////////////////////////////////////////////////////////////
-# /*
-#  * A function that returns an image containing just the specified QA bits.
-#  *
-#  * Args:
-#  *   image - The QA Image to get bits from.
-#  *   start - The first bit position, 0-based.
-#  *   end   - The last bit position, inclusive.
-#  *   name  - A name for the output image.
-#  */
-# var getQABits = function(image, start, end, newName) {
-#     // Compute the bits we need to extract.
-#     var pattern = 0;
-#     for (var i = start; i <= end; i++) {
-#        pattern += Math.pow(2, i);
-#     }
-#     // Return a single band image of the extracted QA bits, giving the band
-#     // a new name.
-#     return image.select([0], [newName])
-#                   .bitwiseAnd(pattern)
-#                   .rightShift(start);
-# };
-# /////////////////////////////////////////////////////////////////
-# // A function to mask out cloudy pixels.
-# var maskCloudsWQA = function(image) {
-#   // Select the QA band.
-#   var QA = image.select('state_1km');
-#   // Get the internal_cloud_algorithm_flag bit.
-#   var internalCloud = getQABits(QA, 10, 10, 'internal_cloud_algorithm_flag');
-#   // Return an image masking out cloudy areas.
-#   return image.mask(image.mask().and(internalCloud.eq(0)));
-# };
-# /////////////////////////////////////////////////////////////////
-# //////////////////////////////////////////////////////////////////////////
-# //Source: code.earthengine.google.com
-# // Compute a cloud score.  This expects the input image to have the common
-# // band names: ["red", "blue", etc], so it can work across sensors.
-# function modisCloudScore(img) {
-#   var useTempInCloudMask = true;
-#   // A helper to apply an expression and linearly rescale the output.
-#   var rescale = function(img, exp, thresholds) {
-#     return img.expression(exp, {img: img})
-#         .subtract(thresholds[0]).divide(thresholds[1] - thresholds[0]);
-#   };
+#########################################################################
+#########################################################################
+#Function for converting an array to a string delimited by the space parameter
+def listToString(list,space = ' '):
+  out = ''
+  for s in list:
+    out += str(s) +space
+  out = out[0:len(out)-len(space)]
+  return out
+#########################################################################
+#########################################################################
+#A function to mask out pixels that did not have observations for MODIS.
+def maskEmptyPixels(image):
+  #Find pixels that had observations.
+  withObs = image.select('num_observations_1km').gt(0)
+  return image.mask(image.mask().And(withObs))
 
-#   // Compute several indicators of cloudyness and take the minimum of them.
-#   var score = ee.Image(1.0);
-  
-#   // Clouds are reasonably bright in the blue band.
-#   score = score.min(rescale(img, 'img.blue', [0.1, 0.3]));
-  
-#   // Clouds are reasonably bright in all visible bands.
-#   var vizSum = rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8]);
-#   score = score.min(vizSum);
-  
-#   // Clouds are reasonably bright in all infrared bands.
-#   var irSum =rescale(img, 'img.nir + img.swir1 + img.swir2', [0.3, 0.8]);
-#   score = score.min(
-#       irSum);
-  
-  
-  
-#   // However, clouds are not snow.
-#   var ndsi = img.normalizedDifference(['green', 'swir1']);
-#   var snowScore = rescale(ndsi, 'img', [0.8, 0.6]);
-#   score =score.min(snowScore);
-  
-#   //For MODIS, provide the option of not using thermal since it introduces
-#   //a precomputed mask that may or may not be wanted
-#   if(useTempInCloudMask === true){
-#     // Clouds are reasonably cool in temperature.
-#     var tempScore = rescale(img, 'img.temp', [305, 300]);
-#     score = score.min(tempScore);
-#   }
-  
-#   score = score.multiply(100);
-#   score = score.clamp(0,100);
-#   return score;
-# }
-# ////////////////////////////////////////
-# // Cloud masking algorithm for Sentinel2
-# //Built on ideas from Landsat cloudScore algorithm
-# //Currently in beta and may need tweaking for individual study areas
-# function sentinel2CloudScore(img) {
-  
-
-#   // Compute several indicators of cloudyness and take the minimum of them.
-#   var score = ee.Image(1);
-#   var blueCirrusScore = ee.Image(0);
-  
-#   // Clouds are reasonably bright in the blue or cirrus bands.
-#   //Use .max as a pseudo OR conditional
-#   blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.blue', [0.1, 0.5]));
-#   blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.cb', [0.1, 0.5]));
-#   blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.cirrus', [0.1, 0.3]));
-  
-#   // var reSum = rescale(img,'(img.re1+img.re2+img.re3)/3',[0.5, 0.7])
-#   // Map.addLayer(blueCirrusScore,{'min':0,'max':1})
-#   score = score.min(blueCirrusScore);
-
-
-#   // Clouds are reasonably bright in all visible bands.
-#   score = score.min(rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8]));
-  
-#   // Clouds are reasonably bright in all infrared bands.
-#   score = score.min(
-#       rescale(img, 'img.nir + img.swir1 + img.swir2', [0.3, 0.8]));
-  
-  
-#   // However, clouds are not snow.
-#   var ndsi =  img.normalizedDifference(['green', 'swir1']);
+#########################################################################
+#########################################################################
+# A function that returns an image containing just the specified QA bits.
+# 
+# Args:
+#   image - The QA Image to get bits from.
+#   start - The first bit position, 0-based.
+#   end   - The last bit position, inclusive.
+#   name  - A name for the output image.
  
+def getQABits(image, start, end, newName):
+  #Compute the bits we need to extract.
+  pattern = 0
+  for i in range(start,end+1):
+    pattern += Math.pow(2, i)
   
-#   score=score.min(rescale(ndsi, 'img', [0.8, 0.6]));
-  
-#   score = score.multiply(100).byte();
-#   score = score.clamp(0,100).rename(['cloudScore']);
- 
-#   return score;
-# }
-# ///////////////////////////////////////////////////////////////////////////////////////
-# //////////////////////////////////////////////////////////////////////////
-# //////////////////////////////////////////////////////////////////////////
-# //MODIS processing
-# //////////////////////////////////////////////////
-# //Some globals to deal with multi-spectral MODIS
-# var wTempSelectOrder = [2,3,0,1,4,6,5];//Band order to select to be Landsat 5-like if thermal is included
-# var wTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','temp','swir2'];
+  #Return a single band image of the extracted QA bits, giving the band a new name.
+  return image.select([0], [newName]).bitwiseAnd(pattern).rightShift(start)
 
-# var woTempSelectOrder = [2,3,0,1,4,5];//Band order to select to be Landsat 5-like if thermal is excluded
-# var woTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','swir2'];
+#########################################################################
+#########################################################################
+#A function to mask out cloudy pixels.
+def maskCloudsWQA(image):
+  #Select the QA band.
+  QA = image.select('state_1km')
+  #Get the internal_cloud_algorithm_flag bit.
+  internalCloud = getQABits(QA, 10, 10, 'internal_cloud_algorithm_flag')
+  #Return an image masking out cloudy areas.
+  return image.mask(image.mask().And(internalCloud.eq(0)))
 
-# //Band names from different MODIS resolutions
-# //Try to take the highest spatial res for a given band
-# var modis250SelectBands = ['sur_refl_b01','sur_refl_b02'];
-# var modis250BandNames = ['red','nir'];
+#########################################################################
+#########################################################################
+#Source: code.earthengine.google.com
+#Compute a cloud score.  This expects the input image to have the common
+#band names: ["red", "blue", etc], so it can work across sensors.
+def modisCloudScore(img):
 
-# var modis500SelectBands = ['sur_refl_b03','sur_refl_b04','sur_refl_b06','sur_refl_b07'];
-# var modis500BandNames = ['blue','green','swir1','swir2'];
+  useTempInCloudMask = True
+  #Compute several indicators of cloudyness and take the minimum of them.
+  score = ee.Image(1.0);
 
-# var combinedModisBandNames = ['red','nir','blue','green','swir1','swir2'];
+  #Clouds are reasonably bright in the blue band.
+  score = score.min(rescale(img, 'img.blue', [0.1, 0.3]))
+  #Clouds are reasonably bright in all visible bands.
+  vizSum = rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8])
+  score = score.min(vizSum)
+
+  #Clouds are reasonably bright in all infrared bands.
+  irSum =rescale(img, 'img.nir + img.swir1 + img.swir2', [0.3, 0.8])
+  score = score.min(irSum)
 
 
-# //Dictionary of MODIS collections
-# var modisCDict = {
-#   'eightDayNDVIA' : 'MODIS/006/MYD13Q1',
-#   'eightDayNDVIT' : 'MODIS/006/MOD13Q1',
-  
-  
-#   'eightDaySR250A' : 'MODIS/006/MYD09Q1',
-#   'eightDaySR250T' : 'MODIS/006/MOD09Q1',
-  
-#   'eightDaySR500A' : 'MODIS/006/MYD09A1',
-#   'eightDaySR500T' : 'MODIS/006/MOD09A1',
-  
-#   'eightDayLST1000A' : 'MODIS/006/MYD11A2',
-#   'eightDayLST1000T' : 'MODIS/006/MOD11A2',
-  
-#   // 'dailyNDVIA' : 'MODIS/MYD09GA_NDVI',
-#   // 'dailyNDVIT' : 'MODIS/MOD09GA_NDVI',
-  
-  
-#   'dailySR250A' : 'MODIS/006/MYD09GQ',
-#   'dailySR250T' : 'MODIS/006/MOD09GQ',
-  
-#   'dailySR500A' : 'MODIS/006/MYD09GA',
-#   'dailySR500T' : 'MODIS/006/MOD09GA',
-  
-#   'dailyLST1000A' : 'MODIS/006/MYD11A1',
-#   'dailyLST1000T' : 'MODIS/006/MOD11A1'
-# };
-# /////////////////////////////////////////////////
-# //Helper function to join two collections- Source: code.earthengine.google.com
-#     function joinCollections(c1,c2, maskAnyNullValues){
-#       if(maskAnyNullValues === undefined || maskAnyNullValues === null){maskAnyNullValues = true}
-#       var MergeBands = function(element) {
-#         // A function to merge the bands together.
-#         // After a join, results are in 'primary' and 'secondary' properties.
-#         return ee.Image.cat(element.get('primary'), element.get('secondary'));
-#       };
 
-#       var join = ee.Join.inner();
-#       var filter = ee.Filter.equals('system:time_start', null, 'system:time_start');
-#       var joined = ee.ImageCollection(join.apply(c1, c2, filter));
+  #However, clouds are not snow.
+  ndsi = img.normalizedDifference(['green', 'swir1'])
+  snowScore = rescale(ndsi, 'img', [0.8, 0.6])
+  score =score.min(snowScore)
+
+  #For MODIS, provide the option of not using thermal since it introduces
+  #a precomputed mask that may or may not be wanted
+  if useTempInCloudMask:
+      #Clouds are reasonably cool in temperature.
+      tempScore = rescale(img, 'img.temp', [305, 300])
+      score = score.min(tempScore)
+
+  score = score.multiply(100)
+  score = score.clamp(0,100);
+  return score;
+
+#########################################################################
+#########################################################################
+#Cloud masking algorithm for Sentinel2
+#Built on ideas from Landsat cloudScore algorithm
+#Currently in beta and may need tweaking for individual study areas
+def sentinel2CloudScore(img):
+  #Compute several indicators of cloudyness and take the minimum of them.
+  score = ee.Image(1)
+  blueCirrusScore = ee.Image(0)
+
+  #Clouds are reasonably bright in the blue or cirrus bands.
+  #Use .max as a pseudo OR conditional
+  blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.blue', [0.1, 0.5]))
+  blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.cb', [0.1, 0.5]))
+  blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.cirrus', [0.1, 0.3]))
+
+  reSum = rescale(img,'(img.re1+img.re2+img.re3)/3',[0.5, 0.7])
+
+  score = score.min(blueCirrusScore)
+
+  #Clouds are reasonably bright in all visible bands.
+  score = score.min(rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8]))
+
+  #Clouds are reasonably bright in all infrared bands.
+  score = score.min(rescale(img, 'img.nir + img.swir1 + img.swir2', [0.3, 0.8]))
+
+  #However, clouds are not snow.
+  ndsi =  img.normalizedDifference(['green', 'swir1'])
+  score=score.min(rescale(ndsi, 'img', [0.8, 0.6]))
+
+  score = score.multiply(100).byte().rename(['cloudScore'])
+  return score
+#########################################################################
+#########################################################################
+#MODIS processing
+#########################################################################
+#########################################################################
+#Some globals to deal with multi-spectral MODIS
+wTempSelectOrder = [2,3,0,1,4,6,5]#Band order to select to be Landsat 5-like if thermal is included
+wTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','temp','swir2']
+
+woTempSelectOrder = [2,3,0,1,4,5]#Band order to select to be Landsat 5-like if thermal is excluded
+woTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','swir2']
+
+#Band names from different MODIS resolutions
+#Try to take the highest spatial res for a given band
+modis250SelectBands = ['sur_refl_b01','sur_refl_b02']
+modis250BandNames = ['red','nir']
+
+modis500SelectBands = ['sur_refl_b03','sur_refl_b04','sur_refl_b06','sur_refl_b07']
+modis500BandNames = ['blue','green','swir1','swir2']
+
+combinedModisBandNames = ['red','nir','blue','green','swir1','swir2']
+
+
+#Dictionary of MODIS collections
+modisCDict = {\
+  'eightDayNDVIA' : 'MODIS/006/MYD13Q1',\
+  'eightDayNDVIT' : 'MODIS/006/MOD13Q1',\
+  'eightDaySR250A' : 'MODIS/006/MYD09Q1',\
+  'eightDaySR250T' : 'MODIS/006/MOD09Q1',\
+  'eightDaySR500A' : 'MODIS/006/MYD09A1',\
+  'eightDaySR500T' : 'MODIS/006/MOD09A1',\
+  'eightDayLST1000A' : 'MODIS/006/MYD11A2',\
+  'eightDayLST1000T' : 'MODIS/006/MOD11A2',\
+  'dailySR250A' : 'MODIS/006/MYD09GQ',\
+  'dailySR250T' : 'MODIS/006/MOD09GQ',\
+  'dailySR500A' : 'MODIS/006/MYD09GA',\
+  'dailySR500T' : 'MODIS/006/MOD09GA',\
+  'dailyLST1000A' : 'MODIS/006/MYD11A1',\
+  'dailyLST1000T' : 'MODIS/006/MOD11A1'}
+#########################################################################
+#########################################################################
+#Helper function to join two collections- Source: code.earthengine.google.com
+def joinCollections(c1,c2, maskAnyNullValues = True):
+  def MergeBands(element):
+    #A function to merge the bands together.
+    #After a join, results are in 'primary' and 'secondary' properties.
+    return ee.Image.cat(element.get('primary'), element.get('secondary'))
+
+
+  join = ee.Join.inner()
+  filter = ee.Filter.equals('system:time_start', None, 'system:time_start')
+  joined = ee.ImageCollection(join.apply(c1, c2, filter))
      
-#       joined = ee.ImageCollection(joined.map(MergeBands));
-#       if(maskAnyNullValues){
-#         joined = joined.map(function(img){return img.mask(img.mask().and(img.reduce(ee.Reducer.min()).neq(0)))});
-#       }
-#       return joined;
-#     }
-# //////////////////////////////////////////////////////
-# //////////////////////////////////////////////////////
-# //Method for removing spikes in time series
-# function despikeCollection(c,absoluteSpike,bandNo){
-#   c = c.toList(10000,0);
+  joined = ee.ImageCollection(joined.map(MergeBands))
+  if maskAnyNullValues:
+    joined = joined.map(lambda: img, img.mask(img.mask().And(img.reduce(ee.Reducer.min()).neq(0))));
+
+  return joined;
+
+
+
+# ls = getImageCollection(ee.Geometry.Polygon(\
+#          [[[-107.65431394109078, 39.088573472024486],\
+#            [-109.36818112859078, 35.5781084059458],\
+#            [-108.64308347234078, 35.16602548916899],\
+#            [-107.08302487859078, 38.575083190487966]]]),ee.Date.fromYMD(2014,7,1),ee.Date.fromYMD(2018,10,1),190,250,'SR',False)
+# print(ee.Image(ls.first()).bandNames().getInfo())
+# print(ee.Image(joinCollections(ls,ls,False).first()).bandNames().getInfo())
+# Map.addLayer(ls.median(),vizParamsFalse,'median before masking')
+# # medoid = medoidMosaicMSD(ls,['blue','green','red','nir','swir1','swir2'])
+# # Map.addLayer(medoid,vizParamsFalse,'medoid before masking')
+
+# # ls = ls.map(simpleAddIndices)
+# # ls = ls.map(addSAVIandEVI)
+# # ls = ls.map(simpleGetTasseledCap)
+# # Map.addLayer(ls.select(['brightness','greenness','wetness']).median())
+# # # ls = applyCloudScoreAlgorithm(ls,landsatCloudScore,10,0,1.5,3.5,performCloudScoreOffset = True)
+
+
+# # # Map.addLayer(ls.median(),vizParamsFalse,'after cloud masking')
+# # # ls = simpleTDOM2(ls,-1,0.35,1.5,3.5)
+# # # Map.addLayer(ls.median(),vizParamsFalse,'after cloud/shadow masking')
+# # # # ls = getImageCollection(ee.Geometry.Polygon(\
+# # # #          [[[-107.65431394109078, 39.088573472024486],\
+# # # #            [-109.36818112859078, 35.5781084059458],\
+# # # #            [-108.64308347234078, 35.16602548916899],\
+# # # #            [-107.08302487859078, 38.575083190487966]]]),ee.Date.fromYMD(2018,7,1),ee.Date.fromYMD(2018,10,1),190,250,'SR',False)
+# ls = ls.map(cFmaskCloud)
+# ls = ls.map(cFmaskCloudShadow)
+# compositeTimeSeries(ls,2014,2018,190,250,1,[1,5,1],'medoid')
+
+# # # # Map.addLayer(ls,vizParamsFalse)
+
+# Map.launchGEEVisualization()
+#########################################################################
+#########################################################################
+#Method for removing spikes in time series
+def despikeCollection(c,absoluteSpike,bandNo):
+  c = c.toList(10000,0)
   
-#   //Get book ends for adding back at the end
-#   var first = c.slice(0,1);
-#   var last = c.slice(-1,null);
+  #Get book ends for adding back at the end
+  first = c.slice(0,1)
+  last = c.slice(-1,None)
   
-#   //Slice the left, center, and right for the moving window
-#   var left = c.slice(0,-2);
-#   var center = c.slice(1,-1);
-#   var right = c.slice(2,null);
+  #Slice the left, center, and right for the moving window
+  left = c.slice(0,-2)
+  center = c.slice(1,-1)
+  right = c.slice(2,None)
   
-#   //Find how many images there are to compare
-#   var seq = ee.List.sequence(0,left.length().subtract(1));
+  #Find how many images there are to compare
+  seq = ee.List.sequence(0,left.length().subtract(1))
   
-#   //Compare the center to the left and right images
+  #Compare the center to the left and right images
 #   var outCollection = seq.map(function(i){
 #     var lt = ee.Image(left.get(i));
 #     var rt = ee.Image(right.get(i));
