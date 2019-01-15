@@ -153,7 +153,7 @@ print('Start and end dates:', startDate, endDate);
 if(applyCloudScore){var useTempInCloudMask = true}else{var useTempInCloudMask = false};//Whether to use the temperature band in cloud masking- necessary to use temp in bright arid areas
 
 ////////////////////////////////////////////////////////////////////////////////
-// Get Landsat image collection
+// Get MODIS image collection
 var modisImages = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,applyQACloudMask,zenithThresh,useTempInCloudMask);
 print(modisImages.first())
 // Map.addLayer(modisImages.select(['nir']),{},'original',false); 
