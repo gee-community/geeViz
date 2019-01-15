@@ -131,6 +131,44 @@ function collectionToImage(collection){
   stack = stack.select(ee.List.sequence(1, stack.bandNames().size().subtract(1)));
   return stack;
 } 
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
+//Function to find the date for a given composite computed from a given set of images
+//Will work on composites computed with methods that include different dates across different bands
+//such as the median.  For something like a medoid, only a single bands needs passed through
+//A known bug is that if the same value occurs twice, it will choose only a single date
+function compositeDates(images,composite,bandNames){
+  if(bandNames === null || bandNames === undefined){
+     bandNames = ee.Image(images.first()).bandNames();
+  }else{images = images.select(bandNames);composite = composite.select(bandNames)}
+  
+  var bns = ee.Image(images.first()).bandNames().map(function(bn){return ee.String(bn).cat('_diff')});
+
+  //Function to get the abs diff from a given composite *-1
+  function getDiff(img,composite){
+    var out = img.subtract(composite).abs().multiply(-1).rename(bns);
+    return img.addBands(out);
+  }
+
+  //Find the diff and add a date band
+  images = images.map(function(img){return getDiff(img,composite)});
+  images = images.map(addDateBand);
+  
+  //Iterate across each band and find the corresponding date to the composite
+  var out = bandNames.map(function(bn){
+    bn = ee.String(bn);
+    var t = images.select([bn,bn.cat('_diff'),'year']).qualityMosaic(bn.cat('_diff'));
+    return t.select(['year']).rename(['YYYYDD']);
+  });
+  //Convert to ann image and rename
+  out  = collectionToImage(ee.ImageCollection(out));
+  // var outBns = bandNames.map(function(bn){return ee.String(bn).cat('YYYYDD')});
+  // out = out.rename(outBns);
+  
+  return out;
+}
+///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 //Function to handle empty collections that will cause subsequent processes to fail
 //If the collection is empty, will fill it with an empty image
 function fillEmptyCollections(inCollection,dummyImage){                       
@@ -1599,7 +1637,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
   //   joined = despikeCollection(joined,modisSpikeThresh,indexName);
   // }
   
-  return ee.ImageCollection(joined.map(function(img){return img.resample('bilinear') }) );
+  return ee.ImageCollection(joined)//.map(function(img){return img.resample('bilinear') }) );
     
   }
   
@@ -2532,7 +2570,7 @@ var customQualityMosaic = function(inCollection,qualityBand,percentile){
 // END FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
 exports.sieve = sieve;
-exports.setNoDate = setNoData;
+exports.setNoData = setNoData;
 exports.addYearBand = addYearBand;
 exports.addDateBand = addDateBand;
 exports.collectionToImage = collectionToImage;
@@ -2585,5 +2623,6 @@ exports.exportCollection = exportCollection;
 exports.changeDirDict = changeDirDict;
 exports.addSoilIndices = addSoilIndices;
 
+exports.addAbsDiff = addAbsDiff;
 exports.customQualityMosaic  = customQualityMosaic;
-
+exports.compositeDates = compositeDates;
