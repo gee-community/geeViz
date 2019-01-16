@@ -8,8 +8,6 @@
 
 Ian Housman- ihousman@fs.fed.us
 
-Karis Tenneson- krtenneson@fs.fed.us
-
 Bonnie Ruefenacht- bruefenacht@fs.fed.us
 
 ## Using
@@ -22,7 +20,10 @@ Bonnie Ruefenacht- bruefenacht@fs.fed.us
 4. To stay up to date, pull the latest commit (`git pull origin master`)
 5. This repository is also available within the FS gitHub instance (<https://code.fs.usda.gov/Geospatial/GEE-modules.git>)
    * To add this instance to your local git instance execute `remote add github https://code.fs.usda.gov/Geospatial/GEE-modules.git` in a git bash
-   * Now you can pull the latest from your origin (`git pull origin master`) or gee (`git pull github master`)
+   * Now you can pull the latest from your origin (`git pull origin master`) or github (`git pull github master`)
+6. This repository is also available within the Bitbucket (<https://bitbucket.org/ihousman/gee-modules.git>)
+   * To add this instance to your local git instance execute `remote add bitbucket https://bitbucket.org/ihousman/gee-modules.git` in a git bash
+   * Now you can pull the latest from your origin (`git pull origin master`) or bitbucket (`git pull bitbucket master`)
 
 ## Contributing
 
