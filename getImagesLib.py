@@ -920,14 +920,18 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicy = N
   #Make sure image is clipped to roi in case it's a multi-part polygon
   imageForExport = imageForExport.clip(roi)
   assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
-  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath + '/'+assetName,  {'.default': pyramidingPolicy}, None, roi, scale, crs, crsTransform, 1e13)
+  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath + '/'+assetName,  json.dumps({'.default': pyramidingPolicy}), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
   t.start()
 
 def exportToAssetWrapper2(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
   #Make sure image is clipped to roi in case it's a multi-part polygon
   imageForExport = imageForExport.clip(roi)
   assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
-  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath + '/'+assetName,  pyramidingPolicyObject, None, roi, scale, crs, crsTransform, 1e13)
+
+  if pyramidingPolicyObject == None:
+    pyramidingPolicyObject = {'.default':'mean'}
+
+  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath + '/'+assetName,  json.dumps(pyramidingPolicyObject), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
   t.start()
 
 #########################################################################
@@ -1290,45 +1294,14 @@ def joinCollections(c1,c2, maskAnyNullValues = True):
      
   joined = ee.ImageCollection(joined.map(MergeBands))
   if maskAnyNullValues:
-    joined = joined.map(lambda: img, img.mask(img.mask().And(img.reduce(ee.Reducer.min()).neq(0))));
+    def nuller(img):
+      return img.mask(img.mask().And(img.reduce(ee.Reducer.min()).neq(0)))
+    joined = joined.map(nuller);
 
   return joined;
 
 
 
-# ls = getImageCollection(ee.Geometry.Polygon(\
-#          [[[-107.65431394109078, 39.088573472024486],\
-#            [-109.36818112859078, 35.5781084059458],\
-#            [-108.64308347234078, 35.16602548916899],\
-#            [-107.08302487859078, 38.575083190487966]]]),ee.Date.fromYMD(2014,7,1),ee.Date.fromYMD(2018,10,1),190,250,'SR',False)
-# print(ee.Image(ls.first()).bandNames().getInfo())
-# print(ee.Image(joinCollections(ls,ls,False).first()).bandNames().getInfo())
-# Map.addLayer(ls.median(),vizParamsFalse,'median before masking')
-# # medoid = medoidMosaicMSD(ls,['blue','green','red','nir','swir1','swir2'])
-# # Map.addLayer(medoid,vizParamsFalse,'medoid before masking')
-
-# # ls = ls.map(simpleAddIndices)
-# # ls = ls.map(addSAVIandEVI)
-# # ls = ls.map(simpleGetTasseledCap)
-# # Map.addLayer(ls.select(['brightness','greenness','wetness']).median())
-# # # ls = applyCloudScoreAlgorithm(ls,landsatCloudScore,10,0,1.5,3.5,performCloudScoreOffset = True)
-
-
-# # # Map.addLayer(ls.median(),vizParamsFalse,'after cloud masking')
-# # # ls = simpleTDOM2(ls,-1,0.35,1.5,3.5)
-# # # Map.addLayer(ls.median(),vizParamsFalse,'after cloud/shadow masking')
-# # # # ls = getImageCollection(ee.Geometry.Polygon(\
-# # # #          [[[-107.65431394109078, 39.088573472024486],\
-# # # #            [-109.36818112859078, 35.5781084059458],\
-# # # #            [-108.64308347234078, 35.16602548916899],\
-# # # #            [-107.08302487859078, 38.575083190487966]]]),ee.Date.fromYMD(2018,7,1),ee.Date.fromYMD(2018,10,1),190,250,'SR',False)
-# ls = ls.map(cFmaskCloud)
-# ls = ls.map(cFmaskCloudShadow)
-# compositeTimeSeries(ls,2014,2018,190,250,1,[1,5,1],'medoid')
-
-# # # # Map.addLayer(ls,vizParamsFalse)
-
-# Map.launchGEEVisualization()
 #########################################################################
 #########################################################################
 #Method for removing spikes in time series
@@ -1348,165 +1321,148 @@ def despikeCollection(c,absoluteSpike,bandNo):
   seq = ee.List.sequence(0,left.length().subtract(1))
   
   #Compare the center to the left and right images
-#   var outCollection = seq.map(function(i){
-#     var lt = ee.Image(left.get(i));
-#     var rt = ee.Image(right.get(i));
+  def compare(i):
+    lt = ee.Image(left.get(i))
+    rt = ee.Image(right.get(i))
     
-#     var ct = ee.Image(center.get(i));
-#     var time_start = ct.get('system:time_start');
-#     var time_end = ct.get('system:time_end');
-#     var si = ct.get('system:index');
-   
+    ct = ee.Image(center.get(i));
+    time_start = ct.get('system:time_start')
+    time_end = ct.get('system:time_end')
+    si = ct.get('system:index')
+
+
+
+    diff1 = ct.select([bandNo]).add(1).subtract(lt.select([bandNo]).add(1))
+    diff2 = ct.select([bandNo]).add(1).subtract(rt.select([bandNo]).add(1))
+
+    highSpike = diff1.gt(absoluteSpike).And(diff2.gt(absoluteSpike))
+    lowSpike = diff1.lt(- absoluteSpike).And(diff2.lt(- absoluteSpike))
+    BinarySpike = highSpike.Or(lowSpike)
+    
+    originalMask = ct.mask()
+    ct = ct.mask(BinarySpike.eq(0))
+    
+    doNotMask = lt.mask().Not().Or(rt.mask().Not())
+    lrMean = lt.add(rt)
+    lrMean = lrMean.divide(2)
+    #out = ct.mask(doNotMask.Not().And(ct.mask()))
+    out = ct.where(BinarySpike.eq(1).And(doNotMask.Not()),lrMean)
+    return out.set('system:index',si).set('system:time_start', time_start).set('system:time_end', time_end)
     
     
-#     var diff1 = ct.select([bandNo]).add(1).subtract(lt.select([bandNo]).add(1));
-#     var diff2 = ct.select([bandNo]).add(1).subtract(rt.select([bandNo]).add(1));
-    
-#     var highSpike = diff1.gt(absoluteSpike).and(diff2.gt(absoluteSpike));
-#     var lowSpike = diff1.lt(- absoluteSpike).and(diff2.lt(- absoluteSpike));
-#     var BinarySpike = highSpike.or(lowSpike);
-    
-#     //var originalMask = ct.mask();
-#     // ct = ct.mask(BinarySpike.eq(0));
-    
-#     var doNotMask = lt.mask().not().or(rt.mask().not());
-#     var lrMean = lt.add(rt);
-#     lrMean = lrMean.divide(2);
-#     // var out = ct.mask(doNotMask.not().and(ct.mask()))
-#     var out = ct.where(BinarySpike.eq(1).and(doNotMask.not()),lrMean);
-#     return out.set('system:index',si).set('system:time_start', time_start).set('system:time_end', time_end);
-    
-    
-#   });
-#   //Add the bookends back on
-#   outCollection =  ee.List([first,outCollection,last]).flatten();
-   
-#   return ee.ImageCollection.fromImages(outCollection);
+  outCollection = seq.map(compare)
+
+  #Add the bookends back on
+  outCollection =  ee.List([first,outCollection,last]).flatten()
+  return ee.ImageCollection.fromImages(outCollection)
+
+#########################################################################
+#########################################################################
+#Function to get MODIS data from various collections
+#Will pull from daily or 8-day composite collections based on the boolean variable "daily"
+def getModisData(startYear,endYear,startJulian,endJulian,daily = False,maskWQA = False,zenithThresh = 90,useTempInCloudMask = True):
   
-# }
+  #Find which collections to pull from based on daily or 8-day
+  if daily == False:
+    a250C = modisCDict['eightDaySR250A']
+    t250C = modisCDict['eightDaySR250T']
+    a500C = modisCDict['eightDaySR500A']
+    t500C = modisCDict['eightDaySR500T']
+    a1000C = modisCDict['eightDayLST1000A']
+    t1000C = modisCDict['eightDayLST1000T']
+  else:
+    a250C = modisCDict['dailySR250A']
+    t250C = modisCDict['dailySR250T']
+    a500C = modisCDict['dailySR500A']
+    t500C = modisCDict['dailySR500T']
+    a1000C = modisCDict['dailyLST1000A']
+    t1000C = modisCDict['dailyLST1000T']
+
+  #Pull images from each of the collections  
+  a250 = ee.ImageCollection(a250C)\
+    .filter(ee.Filter.calendarRange(startYear,endYear,'year'))\
+    .filter(ee.Filter.calendarRange(startJulian,endJulian))\
+    .select(modis250SelectBands,modis250BandNames)
 
 
-# ///////////////////////////////////////////////////////////
-# //Function to get MODIS data from various collections
-# //Will pull from daily or 8-day composite collections based on the boolean variable "daily"
-# function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zenithThresh,useTempInCloudMask){
-#     var a250C;var t250C;var a500C;var t500C;var a1000C;var t1000C;
-#     var a250CV6;var t250CV6;var a500CV6;var t500CV6;var a1000CV6;var t1000CV6;
+  t250 = ee.ImageCollection(t250C)\
+  .filter(ee.Filter.calendarRange(startYear,endYear,'year'))\
+  .filter(ee.Filter.calendarRange(startJulian,endJulian))\
+  .select(modis250SelectBands,modis250BandNames)
+
+
+  def get500(c):
+    images = ee.ImageCollection(c)\
+    .filter(ee.Filter.calendarRange(startYear,endYear,'year'))\
+    .filter(ee.Filter.calendarRange(startJulian,endJulian))
+
+    #Mask pixels above a certain zenith
+    if daily:
+      if maskWQA:print('Masking with QA band:',c)
+      def applyer(img):
+        img = img.mask(img.mask().And(img.select(['SensorZenith']).lt(zenithThresh*100)))
+        if maskWQA:img = maskCloudsWQA(img)
+        return img;
     
-#       //Find which collections to pull from based on daily or 8-day
-#       if(daily === false){
-#         a250C = modisCDict.eightDaySR250A;
-#         t250C = modisCDict.eightDaySR250T;
-#         a500C = modisCDict.eightDaySR500A;
-#         t500C = modisCDict.eightDaySR500T;
-#         a1000C = modisCDict.eightDayLST1000A;
-#         t1000C = modisCDict.eightDayLST1000T;
-        
-      
-#       }
-#      else{
-#         a250C = modisCDict.dailySR250A;
-#         t250C = modisCDict.dailySR250T;
-#         a500C = modisCDict.dailySR500A;
-#         t500C = modisCDict.dailySR500T;
-#         a1000C = modisCDict.dailyLST1000A;
-#         t1000C = modisCDict.dailyLST1000T;
-        
-        
-#       }
-      
-#     //Pull images from each of the collections  
-#     var a250 = ee.ImageCollection(a250C)
-#               .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
-#               .filter(ee.Filter.calendarRange(startJulian,endJulian))
-#               .select(modis250SelectBands,modis250BandNames);
+      images = images.map(applyer)
     
-            
-#     var t250 = ee.ImageCollection(t250C)
-#               .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
-#               .filter(ee.Filter.calendarRange(startJulian,endJulian))
-#               .select(modis250SelectBands,modis250BandNames);
+    images = images.select(modis500SelectBands,modis500BandNames)
+    return images
+          
+  a500 = get500(a500C)
+  t500 = get500(t500C)
+
     
+  #If thermal collection is wanted, pull it as well
+  if useTempInCloudMask:
+    t1000 = ee.ImageCollection(t1000C)\
+            .filter(ee.Filter.calendarRange(startYear,endYear,'year'))\
+            .filter(ee.Filter.calendarRange(startJulian,endJulian))\
+            .select([0])
+          
+    a1000 = ee.ImageCollection(a1000C)\
+            .filter(ee.Filter.calendarRange(startYear,endYear,'year'))\
+            .filter(ee.Filter.calendarRange(startJulian,endJulian))\
+            .select([0])  
+  
+
+  #Now all collections are pulled, start joining them
+  #First join the 250 and 500 m Aqua
+  a = joinCollections(a250,a500)
     
-#     function get500(c){
-#        var images = ee.ImageCollection(c)
-#               .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
-#               .filter(ee.Filter.calendarRange(startJulian,endJulian));
-              
-#               //Mask pixels above a certain zenith
-#               if(daily === true){
-#                 if(maskWQA === true){print('Masking with QA band:',c)}
-#                 images = images
-#               .map(function(img){
-#                 img = img.mask(img.mask().and(img.select(['SensorZenith']).lt(zenithThresh*100)));
-#                 if(maskWQA === true){
-                  
-#                   img = maskCloudsWQA (img);
-#                 }
-#                 return img;
-#               });
-#               }
-#               images = images
-#               .select(modis500SelectBands,modis500BandNames);
-#               return images;
-#     }         
-#     var a500 = get500(a500C);
-#     var t500 = get500(t500C);
+  #Then Terra
+  t = joinCollections(t250,t500)
+
+  #If temp was pulled, join that in as well
+  #Also select the bands in an L5-like order and give descriptive names
+  if useTempInCloudMask:
+    a = joinCollections(a,a1000)
+    t = joinCollections(t,t1000)
+    tSelectOrder = wTempSelectOrder
+    tStdNames = wTempStdNames
+  
+  #If no thermal was pulled, leave that out
+  else:
+    tSelectOrder = woTempSelectOrder
+    tStdNames = woTempStdNames
+  
+  
+  #Join Terra and Aqua 
+  joined = ee.ImageCollection(a.merge(t)).select(tSelectOrder,tStdNames)
+ 
+  #Divide by 10000 to make it work with cloud masking algorithm out of the box
+  def divider(img):
+    return img.divide(10000).float().copyProperties(img,['system:time_start','system:time_end'])
+  joined = joined.map(divider)
     
-    
-#     //If thermal collection is wanted, pull it as well
-#     if(useTempInCloudMask === true){
-#        var t1000 = ee.ImageCollection(t1000C)
-#               .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
-#               .filter(ee.Filter.calendarRange(startJulian,endJulian))
-#               .select([0]);
-            
-#       var a1000 = ee.ImageCollection(a1000C)
-#               .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
-#               .filter(ee.Filter.calendarRange(startJulian,endJulian))
-#               .select([0]);        
-#     }
-    
-#     //Now all collections are pulled, start joining them
-#     //First join the 250 and 500 m Aqua
-#       var a;var t;var tSelectOrder;var tStdNames;
-#       a = joinCollections(a250,a500);
-      
-#       //Then Terra
-#       t = joinCollections(t250,t500);
-      
-#       //If temp was pulled, join that in as well
-#       //Also select the bands in an L5-like order and give descriptive names
-#       if(useTempInCloudMask === true){
-#         a = joinCollections(a,a1000);
-#         t = joinCollections(t,t1000);
-#         tSelectOrder = wTempSelectOrder;
-#         tStdNames = wTempStdNames;
-#       }
-#       //If no thermal was pulled, leave that out
-#       else{
-#         tSelectOrder = woTempSelectOrder;
-#         tStdNames = woTempStdNames;
-#       }
-      
-#       //Join Terra and Aqua 
-#       var joined = ee.ImageCollection(a.merge(t)).select(tSelectOrder,tStdNames);
-     
-#       //Divide by 10000 to make it work with cloud masking algorithm out of the box
-#       joined = joined.map(function(img){return img.divide(10000).float()
-#         .copyProperties(img,['system:time_start','system:time_end']);
-        
-#       });
-#       // print('Collection',joined);
-#       //Since MODIS thermal is divided by 0.02, multiply it by that and 10000 if it was included
-#       if(useTempInCloudMask === true){
-#       joined = joined.map(function(img){
-#         var t = img.select(['temp']).multiply(0.02*10000);
-#         return img.select(['blue','green','red','nir','swir1','swir2'])
-#         .addBands(t).select([0,1,2,3,4,6,5]);
-      
-#       });
-#       }
+
+  #Since MODIS thermal is divided by 0.02, multiply it by that and 10000 if it was included
+  def multiplier(img):
+    t = img.select(['temp']).multiply(0.02*10000);
+    return img.select(['blue','green','red','nir','swir1','swir2']).addBands(t).select([0,1,2,3,4,6,5])
+  
+  if useTempInCloudMask:
+    joined = joined.map(multiplier)
     
 #   //   //Get some descriptive names for displaying layers
 #   //   var name = 'surRefl';
@@ -1559,133 +1515,151 @@ def despikeCollection(c,absoluteSpike,bandNo):
 #   //   joined = despikeCollection(joined,modisSpikeThresh,indexName);
 #   // }
   
-#   return ee.ImageCollection(joined);//.map(function(img){return img.resample('bicubic') }) );
+  return ee.ImageCollection(joined)#.map(lambda:img, img.resample('bicubic'))
     
-#   }
+# m = getModisData(2010,2010,190,200,daily = True)
+# m = applyCloudScoreAlgorithm(m,modisCloudScore,10,0,1.5,3.5,performCloudScoreOffset = True)
+# Map.addLayer(m.median(),vizParamsFalse)
+# Map.launchGEEVisualization()
+#########################################################################
+#########################################################################
+def exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands):
   
-# ////////////////////////////////////////////////////
-# //////////////////////////////////////////////////////////////////
-# function exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
-# collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands){
+  #Take care of date wrapping
+  dateWrapping = wrapDates(startJulian,endJulian)
+  wrapOffset = dateWrapping[0]
+  yearWithMajority = dateWrapping[1]
   
-#   //Take care of date wrapping
-#   var dateWrapping = wrapDates(startJulian,endJulian);
-#   var wrapOffset = dateWrapping[0];
-#   var yearWithMajority = dateWrapping[1];
+  #Clean up output name
+  outputName = outputName.replace('/\s+/g','-')
+  outputName = outputName.replace('/\//g','-')
   
-#   //Clean up output name
-#   outputName = outputName.replace(/\s+/g,'-');
-#   outputName = outputName.replace(/\//g,'-');
+  #Select bands for export
+  collection = collection.select(exportBands)
   
-#   //Select bands for export
-#   collection = collection.select(exportBands);
-  
-#   //Iterate across each year and export image
-#   ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
-#     .map(function(year){
-#       print('Exporting:',year);
-#     // Set up dates
-#     var startYearT = year-timebuffer;
-#     var endYearT = year+timebuffer+yearWithMajority;
+  #Iterate across each year and export image
+  for year in ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo():
+    print('Exporting:',year)
+    #Set up dates
+    #startYearT = year-timebuffer
+    endYearT = year+timebuffer+yearWithMajority
     
-#     // Get yearly composite
-#     var composite = collection.filter(ee.Filter.calendarRange(year+yearWithMajority,year+yearWithMajority,'year'));
-#     composite = ee.Image(composite.first()).clip(studyArea);
+    #Get yearly composite
+    composite = collection.filter(ee.Filter.calendarRange(year+yearWithMajority,year+yearWithMajority,'year'))
+    composite = ee.Image(composite.first()).clip(studyArea)
     
-#     // Display the Landsat composite
-#     Map.addLayer(composite, vizParamsTrue, year.toString() + ' True Color ' , false);
-#     Map.addLayer(composite, vizParamsFalse, year.toString() + ' False Color ', false);
-#     // Add metadata, cast to integer, and export composite
-#     composite = composite.set({
-#       'system:time_start': ee.Date.fromYMD(year,6,1).millis(),
-#       'yearBuffer':timebuffer
-#     });
+    #Display the Landsat composite
+    Map.addLayer(composite, vizParamsTrue, str(year) + ' True Color ' , False)
+    Map.addLayer(composite, vizParamsFalse, str(year) + ' False Color ', False)
+    #Add metadata, cast to integer, and export composite
+    composite = composite.set({\
+      'system:time_start': ee.Date.fromYMD(year,6,1).millis(),\
+      'yearBuffer':timebuffer\
+    })
   
-#     // Export the composite 
-#     // Set up export name and path
-#     var exportName = outputName  +'_'  + startYearT + '_' + endYearT+'_' + 
-#       startJulian + '_' + endJulian ;
+    #Export the composite 
+    #Set up export name and path
+    exportName = outputName  +'_'  + str(startYearT) + '_' + str(endYearT)+'_' + str(startJulian) + '_' + str(endJulian)
    
-    
-#     var exportPath = exportPathRoot + '/' + exportName;
-#     // print('Write down the Asset ID:', exportPath);
-  
-#     exportToAssetWrapper(composite,exportName,exportPath,'mean',
-#       studyArea.bounds(),null,crs,transform);
-#     });
-# }
-
-# // Function to export composite collection
-# function exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
-# collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
-# applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,nonDivideBands){
-#   if(nonDivideBands === undefined){
-#     nonDivideBands = ['temp'];
-#   }
-#   collection = collection.select(exportBands);
-#   var years = ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo()
-#     .map(function(year){
-      
-#     // Set up dates
-#     var startYearT = year-timebuffer;
-#     var endYearT = year+timebuffer;
-    
-#     // Get yearly composite
-#     var composite = collection.filter(ee.Filter.calendarRange(year,year,'year'));
-#     composite = ee.Image(composite.first());
-    
-#     // Display the Landsat composite
-#     Map.addLayer(composite, vizParamsTrue, year.toString() + ' True Color ' + 
-#       toaOrSR, false);
-#     Map.addLayer(composite, vizParamsFalse, year.toString() + ' False Color ' + 
-#       toaOrSR, false);
-  
-#     // Reformat data for export
-#     var compositeBands = composite.bandNames();
-#     if(nonDivideBands != null){
-#       var composite10k = composite.select(compositeBands.removeAll(nonDivideBands))
-#       .multiply(10000);
-#       composite = composite10k.addBands(composite.select(nonDivideBands))
-#       .select(compositeBands).int16();
-#     }
-#     else{
-#       composite = composite.multiply(10000).int16();
-#     }
-    
-    
-
-#     // Add metadata, cast to integer, and export composite
-#     composite = composite.set({
-#       'system:time_start': ee.Date.fromYMD(year,6,1).millis(),
-#       'source': toaOrSR,
-#       'yearBuffer':timebuffer,
-#       'yearWeights': listToString(weights),
-#       'startJulian': startJulian,
-#       'endJulian': endJulian,
-#       'applyCloudScore':applyCloudScore.toString(),
-#       'applyFmaskCloudMask' :applyFmaskCloudMask.toString(),
-#       'applyTDOM' :applyTDOM.toString(),
-#       'applyFmaskCloudShadowMask' :applyFmaskCloudShadowMask.toString(),
-#       'applyFmaskSnowMask': applyFmaskSnowMask.toString(),
-#       'compositingMethod': compositingMethod,
-#       'includeSLCOffL7': includeSLCOffL7.toString(),
-#       'correctIllumination':correctIllumination.toString()
-#     });
-  
-#     // Export the composite 
-#     // Set up export name and path
-#     var exportName = outputName  + toaOrSR + '_' + compositingMethod + 
-#       '_'  + startYearT + '_' + endYearT+'_' + 
-#       startJulian + '_' + endJulian ;
+    exportPath = exportPathRoot + '/' + exportName
    
+    exportToAssetWrapper(composite,exportName,exportPath,'mean',studyArea.bounds(),scale,crs,transform);
     
-#     var exportPath = exportPathRoot + '/' + exportName;
-#     // print('Write down the Asset ID:', exportPath);
+# g = ee.Geometry.Polygon(\
+#         [[[-111.91844482421874, 40.74321533866182],\
+#           [-111.92393798828124, 40.62032737332187],\
+#           [-111.75914306640624, 40.61407278054859],\
+#           [-111.75364990234374, 40.745296232768496]]])
+
+# ls = getImageCollection(g,ee.Date.fromYMD(2014,7,1),ee.Date.fromYMD(2018,10,1),190,250,'SR',False)
+# exportToAssetWrapper(ls.median(),'test','users/ianhousman/test','mean',g,30,'EPSG:5070',None);
+# exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicy = None,roi = None,scale = None,crs = None,transform = None):
+
+# print(ee.Image(ls.first()).bandNames().getInfo())
+# print(ee.Image(joinCollections(ls,ls,False).first()).bandNames().getInfo())
+# Map.addLayer(ls.median(),vizParamsFalse,'median before masking')
+# # medoid = medoidMosaicMSD(ls,['blue','green','red','nir','swir1','swir2'])
+# # Map.addLayer(medoid,vizParamsFalse,'medoid before masking')
+
+# # ls = ls.map(simpleAddIndices)
+# # ls = ls.map(addSAVIandEVI)
+# # ls = ls.map(simpleGetTasseledCap)
+# # Map.addLayer(ls.select(['brightness','greenness','wetness']).median())
+# # # ls = applyCloudScoreAlgorithm(ls,landsatCloudScore,10,0,1.5,3.5,performCloudScoreOffset = True)
+
+
+# # # Map.addLayer(ls.median(),vizParamsFalse,'after cloud masking')
+# # # ls = simpleTDOM2(ls,-1,0.35,1.5,3.5)
+# # # Map.addLayer(ls.median(),vizParamsFalse,'after cloud/shadow masking')
+# # # # ls = getImageCollection(ee.Geometry.Polygon(\
+# # # #          [[[-107.65431394109078, 39.088573472024486],\
+# # # #            [-109.36818112859078, 35.5781084059458],\
+# # # #            [-108.64308347234078, 35.16602548916899],\
+# # # #            [-107.08302487859078, 38.575083190487966]]]),ee.Date.fromYMD(2018,7,1),ee.Date.fromYMD(2018,10,1),190,250,'SR',False)
+# ls = ls.map(cFmaskCloud)
+# ls = ls.map(cFmaskCloudShadow)
+# compositeTimeSeries(ls,2014,2018,190,250,1,[1,5,1],'medoid')
+
+# # # # Map.addLayer(ls,vizParamsFalse)
+
+# Map.launchGEEVisualization()
+
+#########################################################################
+#########################################################################
+#Function to export composite collection
+def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,\
+  collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
+  applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,nonDivideBands = ['temp']):
+
+  collection = collection.select(exportBands)
+  for year in ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo():
+    #Set up dates
+    startYearT = year-timebuffer
+    endYearT = year+timebuffer
+    
+    #Get yearly composite
+    composite = collection.filter(ee.Filter.calendarRange(year,year,'year'))
+    composite = ee.Image(composite.first())
+    
+    #Display the Landsat composite
+    Map.addLayer(composite, vizParamsTrue, str(year) + ' True Color ' + toaOrSR, false);
+    Map.addLayer(composite, vizParamsFalse, str(year) + ' False Color ' + toaOrSR, false);
   
-#     exportToAssetWrapper(composite,exportName,exportPath,'mean',
-#       studyArea,scale,crs,transform);
-#     });
-# }
+    #Reformat data for export
+    compositeBands = composite.bandNames()
+    if nonDivideBands != None:
+      composite10k = composite.select(compositeBands.removeAll(nonDivideBands)).multiply(10000)
+      composite = composite10k.addBands(composite.select(nonDivideBands)).select(compositeBands).int16()
+    
+    else:
+      composite = composite.multiply(10000).int16()
+    
+    #Add metadata, cast to integer, and export composite
+    composite = composite.set({\
+      'system:time_start': ee.Date.fromYMD(year,6,1).millis(),\
+      'source': toaOrSR,\
+      'yearBuffer':timebuffer,\
+      'yearWeights': listToString(weights),\
+      'startJulian': startJulian,\
+      'endJulian': endJulian,\
+      'applyCloudScore':str(applyCloudScore),\
+      'applyFmaskCloudMask' :str(applyFmaskCloudMask),\
+      'applyTDOM' :str(applyTDOM),\
+      'applyFmaskCloudShadowMask' :str(applyFmaskCloudShadowMask),\
+      'applyFmaskSnowMask': str(applyFmaskSnowMask),\
+      'compositingMethod': compositingMethod,\
+      'includeSLCOffL7': str(includeSLCOffL7),\
+      'correctIllumination':str(correctIllumination)})
+  
+    #Export the composite 
+    #Set up export name and path
+    exportName = outputName  + toaOrSR + '_' + compositingMethod + '_'  + str(startYearT) + '_' + str(endYearT)+'_' + str(startJulian) + '_' + str(endJulian)
+   
+    exportPath = exportPathRoot + '/' + exportName
+  
+    exportToAssetWrapper(composite,exportName,exportPath,'mean',studyArea,scale,crs,transform)
+    
+
 # /////////////////////////////////////////////////////////////////////
 # /////////////////////////////////////////////////////////////////////
 # //Wrapper function for getting Landsat imagery
