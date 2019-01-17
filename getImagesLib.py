@@ -560,7 +560,7 @@ def applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh = 10
     #Find low cloud score pctl for each pixel to avoid comission errors
     minCloudScore = collection.select(['cloudScore'])\
       .reduce(ee.Reducer.percentile([cloudScorePctl]))
-    #Map.addLayer(minCloudScore,{'min':0,'max':30},'minCloudScore',false)
+    # Map.addLayer(minCloudScore,{'min':0,'max':30},'minCloudScore',False)
   else:
     print('Not computing cloudScore offset')
     minCloudScore = ee.Image(0).rename(['cloudScore'])
@@ -570,7 +570,7 @@ def applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh = 10
   def cloudScoreBusterWrapper(img):
     cloudMask = img.select(['cloudScore']).subtract(minCloudScore)\
       .lt(cloudScoreThresh)\
-      .focal_max(contractPixels).focal_min(dilatePixels).rename('cloudMask')
+      .focal_max(contractPixels).focal_min(dilatePixels).rename(['cloudMask'])
     return img.updateMask(cloudMask)
 
   collection = collection.map(cloudScoreBusterWrapper)
@@ -622,30 +622,30 @@ def simpleTDOM2(collection,zScoreThresh = -1,shadowSumThresh = 0.35,contractPixe
 #Includes the Normalized Difference Spectral Vector from (Angiuli and Trianni, 2014)
 def addIndices(img):
   #Add Normalized Difference Spectral Vector (NDSV)
-  img = img.addBands(img.normalizedDifference(['blue','green']).rename('ND_blue_green'))
-  img = img.addBands(img.normalizedDifference(['blue','red']).rename('ND_blue_red'))
-  img = img.addBands(img.normalizedDifference(['blue','nir']).rename('ND_blue_nir'))
-  img = img.addBands(img.normalizedDifference(['blue','swir1']).rename('ND_blue_swir1'))
-  img = img.addBands(img.normalizedDifference(['blue','swir2']).rename('ND_blue_swir2'))
+  img = img.addBands(img.normalizedDifference(['blue','green']).rename(['ND_blue_green']))
+  img = img.addBands(img.normalizedDifference(['blue','red']).rename(['ND_blue_red']))
+  img = img.addBands(img.normalizedDifference(['blue','nir']).rename(['ND_blue_nir']))
+  img = img.addBands(img.normalizedDifference(['blue','swir1']).rename(['ND_blue_swir1']))
+  img = img.addBands(img.normalizedDifference(['blue','swir2']).rename(['ND_blue_swir2']))
 
-  img = img.addBands(img.normalizedDifference(['green','red']).rename('ND_green_red'))
-  img = img.addBands(img.normalizedDifference(['green','nir']).rename('ND_green_nir'))#NDWBI
-  img = img.addBands(img.normalizedDifference(['green','swir1']).rename('ND_green_swir1'))#NDSI, MNDWI
-  img = img.addBands(img.normalizedDifference(['green','swir2']).rename('ND_green_swir2'))
+  img = img.addBands(img.normalizedDifference(['green','red']).rename(['ND_green_red']))
+  img = img.addBands(img.normalizedDifference(['green','nir']).rename(['ND_green_nir']))#NDWBI
+  img = img.addBands(img.normalizedDifference(['green','swir1']).rename(['ND_green_swir1']))#NDSI, MNDWI
+  img = img.addBands(img.normalizedDifference(['green','swir2']).rename(['ND_green_swir2']))
 
-  img = img.addBands(img.normalizedDifference(['red','swir1']).rename('ND_red_swir1'))
-  img = img.addBands(img.normalizedDifference(['red','swir2']).rename('ND_red_swir2'))
+  img = img.addBands(img.normalizedDifference(['red','swir1']).rename(['ND_red_swir1']))
+  img = img.addBands(img.normalizedDifference(['red','swir2']).rename(['ND_red_swir2']))
 
 
-  img = img.addBands(img.normalizedDifference(['nir','red']).rename('ND_nir_red'))#NDVI
-  img = img.addBands(img.normalizedDifference(['nir','swir1']).rename('ND_nir_swir1'))#NDWI, LSWI, -NDBI
-  img = img.addBands(img.normalizedDifference(['nir','swir2']).rename('ND_nir_swir2'))#NBR, MNDVI
+  img = img.addBands(img.normalizedDifference(['nir','red']).rename(['ND_nir_red']))#NDVI
+  img = img.addBands(img.normalizedDifference(['nir','swir1']).rename(['ND_nir_swir1']))#NDWI, LSWI, -NDBI
+  img = img.addBands(img.normalizedDifference(['nir','swir2']).rename(['ND_nir_swir2']))#NBR, MNDVI
 
-  img = img.addBands(img.normalizedDifference(['swir1','swir2']).rename('ND_swir1_swir2'));
+  img = img.addBands(img.normalizedDifference(['swir1','swir2']).rename(['ND_swir1_swir2']));
 
   #Add ratios
-  img = img.addBands(img.select('swir1').divide(img.select('nir')).rename('R_swir1_nir'))#ratio 5/4
-  img = img.addBands(img.select('red').divide(img.select('swir1')).rename('R_red_swir1'))#ratio 3/5
+  img = img.addBands(img.select('swir1').divide(img.select('nir')).rename(['R_swir1_nir']))#ratio 5/4
+  img = img.addBands(img.select('red').divide(img.select('swir1')).rename(['R_red_swir1']))#ratio 3/5
 
   #Add Enhanced Vegetation Index (EVI)
   evi = img.expression(\
@@ -663,14 +663,14 @@ def addIndices(img):
       'NIR': img.select('nir'),\
       'RED': img.select('red')\
   }).float()
-  img = img.addBands(savi.rename('SAVI'))
+  img = img.addBands(savi.rename(['SAVI']))
   
   #Add Index-Based Built-Up Index (IBI)
   ibi_a = img.expression(\
     '2*SWIR1/(SWIR1 + NIR)', {\
       'SWIR1': img.select('swir1'),\
       'NIR': img.select('nir')\
-    }).rename('IBI_A')
+    }).rename(['IBI_A'])
 
   ibi_b = img.expression(\
     '(NIR/(NIR + RED)) + (GREEN/(GREEN + SWIR1))', {\
@@ -678,11 +678,11 @@ def addIndices(img):
       'RED': img.select('red'),\
       'GREEN': img.select('green'),\
       'SWIR1': img.select('swir1')\
-    }).rename('IBI_B')
+    }).rename(['IBI_B'])
 
   ibi_a = ibi_a.addBands(ibi_b)
   ibi = ibi_a.normalizedDifference(['IBI_A','IBI_B'])
-  img = img.addBands(ibi.rename('IBI'))
+  img = img.addBands(ibi.rename(['IBI']))
   
   return img
 #########################################################################
@@ -696,7 +696,7 @@ def addSAVIandEVI(img):
       'RED': img.select('red'),\
       'BLUE': img.select('blue')\
   }).float()
-  img = img.addBands(evi.rename('EVI'))
+  img = img.addBands(evi.rename(['EVI']))
   
   #Add Soil Adjust Vegetation Index (SAVI)
   #using L = 0.5
@@ -710,11 +710,11 @@ def addSAVIandEVI(img):
   #########################################################################
   #NIRv: Badgley, G., Field, C. B., & Berry, J. A. (2017). Canopy near-infrared reflectance and terrestrial photosynthesis. Science Advances, 3, e1602244.
   #https://www.researchgate.net/publication/315534107_Canopy_near-infrared_reflectance_and_terrestrial_photosynthesis
-  #NIRv function: ‘image’ is a 2 band stack of NDVI and NIR
+  #NIRv function: 'image' is a 2 band stack of NDVI and NIR
   #########################################################################
   NIRv =  img.select(['NDVI']).subtract(0.08).multiply(img.select(['nir']))#.multiply(0.0001))
 
-  img = img.addBands(savi.rename('SAVI')).addBands(NIRv.rename('NIRv'))
+  img = img.addBands(savi.rename(['SAVI'])).addBands(NIRv.rename(['NIRv']))
   return img
 
 #########################################################################
@@ -733,9 +733,9 @@ def simpleAddIndices(in_image):
 #Function for adding common indices
 #########################################################################
 def addSoilIndices(img):
-  img = img.addBands(img.normalizedDifference(['red','green']).rename('NDCI'))
-  img = img.addBands(img.normalizedDifference(['red','swir2']).rename('NDII'))
-  img = img.addBands(img.normalizedDifference(['swir1','nir']).rename('NDFI'))
+  img = img.addBands(img.normalizedDifference(['red','green']).rename(['NDCI']))
+  img = img.addBands(img.normalizedDifference(['red','swir2']).rename(['NDII']))
+  img = img.addBands(img.normalizedDifference(['swir1','nir']).rename(['NDFI']))
   
   bsi = img.expression(\
   '((SWIR1 + RED) - (NIR + BLUE)) / ((SWIR1 + RED) + (NIR + BLUE))', {\
@@ -745,14 +745,14 @@ def addSoilIndices(img):
     'SWIR1': img.select('swir1')\
   }).float()
 
-  img = img.addBands(bsi.rename('BSI'))
+  img = img.addBands(bsi.rename(['BSI']))
   
   hi = img.expression(\
     'SWIR1 / SWIR2',{\
       'SWIR1': img.select('swir1'),\
       'SWIR2': img.select('swir2')\
     }).float()
-  img = img.addBands(hi.rename('HI'))  
+  img = img.addBands(hi.rename(['HI']))  
   return img
 
 #########################################################################
@@ -834,12 +834,12 @@ def addTCAngles(image):
   wetness = image.select(['wetness'])
   
   #Calculate Tasseled Cap angles and distances
-  tcAngleBG = brightness.atan2(greenness).divide(Math.PI).rename('tcAngleBG')
-  tcAngleGW = greenness.atan2(wetness).divide(Math.PI).rename('tcAngleGW')
-  tcAngleBW = brightness.atan2(wetness).divide(Math.PI).rename('tcAngleBW')
-  tcDistBG = brightness.hypot(greenness).rename('tcDistBG')
-  tcDistGW = greenness.hypot(wetness).rename('tcDistGW')
-  tcDistBW = brightness.hypot(wetness).rename('tcDistBW')
+  tcAngleBG = brightness.atan2(greenness).divide(Math.PI).rename(['tcAngleBG'])
+  tcAngleGW = greenness.atan2(wetness).divide(Math.PI).rename(['tcAngleGW'])
+  tcAngleBW = brightness.atan2(wetness).divide(Math.PI).rename(['tcAngleBW'])
+  tcDistBG = brightness.hypot(greenness).rename(['tcDistBG'])
+  tcDistGW = greenness.hypot(wetness).rename(['tcDistGW'])
+  tcDistBW = brightness.hypot(wetness).rename(['tcDistBW'])
   image = image.addBands(tcAngleBG).addBands(tcAngleGW)\
     .addBands(tcAngleBW).addBands(tcDistBG).addBands(tcDistGW)\
     .addBands(tcDistBW)
@@ -856,7 +856,7 @@ def simpleAddTCAngles(image):
   wetness = image.select(['wetness'])
   
   #Calculate Tasseled Cap angles and distances
-  tcAngleBG = brightness.atan2(greenness).divide(math.pi).rename('tcAngleBG')
+  tcAngleBG = brightness.atan2(greenness).divide(math.pi).rename(['tcAngleBG'])
   
   return image.addBands(tcAngleBG)
 
@@ -875,10 +875,10 @@ def addZenithAzimuth(img,toaOrSR,zenithDict = None,azimuthDict = None):
     'SR': 'SOLAR_AZIMUTH_ANGLE'}
    
   zenith = ee.Image.constant(img.get(zenithDict[toaOrSR]))\
-          .multiply(math.pi).divide(180).float().rename('zenith')
+          .multiply(math.pi).divide(180).float().rename(['zenith'])
   
   azimuth = ee.Image.constant(img.get(azimuthDict[toaOrSR]))\
-          .multiply(math.pi).divide(180).float().rename('azimuth')
+          .multiply(math.pi).divide(180).float().rename(['azimuth'])
     
   return img.addBands(zenith).addBands(azimuth)
 
@@ -1838,6 +1838,7 @@ def getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulia
   
   #Get Sentinel2 image collection
   s2s = getS2(studyArea,startDate,endDate,startJulian,endJulian)
+
   # Map.addLayer(ee.Image(s2s.first()),{'min':0.05,'max':0.4,'bands':'swir1,nir,red'},'No masking')
   
   if applyQABand:
@@ -1912,52 +1913,52 @@ def getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,\
   s2s = s2s.map(simpleAddTCAngles)
   
   #Create composite time series
-  ts = compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod)
+  # ts = compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod)
   
   
-  #Correct illumination
-  # if (correctIllumination){
-  #   var f = ee.Image(ts.first());
-  #   Map.addLayer(f,vizParamsFalse,'First-non-illuminated',false);
+  # #Correct illumination
+  # # if (correctIllumination){
+  # #   var f = ee.Image(ts.first());
+  # #   Map.addLayer(f,vizParamsFalse,'First-non-illuminated',false);
   
-  #   print('Correcting illumination');
-  #   ts = ts.map(illuminationCondition)
-  #     .map(function(img){
-  #       return illuminationCorrection(img, correctScale,studyArea,[ 'blue', 'green', 'red','nir','swir1', 'swir2']);
-  #     });
-  #   var f = ee.Image(ts.first());
-  #   Map.addLayer(f,vizParamsFalse,'First-illuminated',false);
-  
-  
-  #port composites
-  if exportComposites:
-  
-    exportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2']
-    exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,\
-    ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,'TOA',weights,\
-                  applyCloudScore, 'NA',applyTDOM,'NA','NA','NA',correctIllumination,null)
+  # #   print('Correcting illumination');
+  # #   ts = ts.map(illuminationCondition)
+  # #     .map(function(img){
+  # #       return illuminationCorrection(img, correctScale,studyArea,[ 'blue', 'green', 'red','nir','swir1', 'swir2']);
+  # #     });
+  # #   var f = ee.Image(ts.first());
+  # #   Map.addLayer(f,vizParamsFalse,'First-illuminated',false);
   
   
-  return [s2s,ts]
+  # #port composites
+  # if exportComposites:
+  
+  #   exportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2']
+  #   exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,\
+  #   ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,'TOA',weights,\
+  #                 applyCloudScore, 'NA',applyTDOM,'NA','NA','NA',correctIllumination,null)
+  
+  
+  # return [s2s,ts]
 
 
-# g = ee.Geometry.Polygon(\
-#         [[[-107.65431394109078, 39.088573472024486],\
-#            [-109.36818112859078, 35.5781084059458],\
-#            [-108.64308347234078, 35.16602548916899],\
-#            [-107.08302487859078, 38.575083190487966]]])
-# s2s,ts = getSentinel2Wrapper(g,2015,2018,190,250,\
-#   timebuffer = 0,weights = [1],compositingMethod = 'medoid',\
-#   applyQABand = False,applyCloudScore = True,applyShadowShift = False,applyTDOM = True,\
-#   cloudScoreThresh = 10,performCloudScoreOffset = True,cloudScorePctl = 10,\
-#   cloudHeights =ee.List.sequence(500,10000,500),\
-#   zScoreThresh = -1,shadowSumThresh = 0.35,\
-#   contractPixels = 1.5,dilatePixels = 3.5,\
-#   correctIllumination = False,correctScale = 250,\
-#   exportComposites = False,outputName = 'Sentinel2-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = None,scale = 30)
+g = ee.Geometry.Polygon(\
+        [[[-107.65431394109078, 39.088573472024486],\
+           [-109.36818112859078, 35.5781084059458],\
+           [-108.64308347234078, 35.16602548916899],\
+           [-107.08302487859078, 38.575083190487966]]])
+getSentinel2Wrapper(g,2015,2018,190,250,\
+  timebuffer = 0,weights = [1],compositingMethod = 'medoid',\
+  applyQABand = False,applyCloudScore = True,applyShadowShift = False,applyTDOM = True,\
+  cloudScoreThresh = 10,performCloudScoreOffset = True,cloudScorePctl = 10,\
+  cloudHeights =ee.List.sequence(500,10000,500),\
+  zScoreThresh = -1,shadowSumThresh = 0.35,\
+  contractPixels = 1.5,dilatePixels = 3.5,\
+  correctIllumination = False,correctScale = 250,\
+  exportComposites = False,outputName = 'Sentinel2-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = 'None',scale = 30)
   
 # Map.addLayer(ee.Image(s2s.first()),vizParamsFalse,'s2')
-# Map.launchGEEVisualization()
+Map.launchGEEVisualization()
 
 #########################################################################
 #########################################################################
@@ -2004,7 +2005,7 @@ def getHarmonics2(collection,transformBandName,harmonicList,detrend = False):
     return outT
   out = collection.map(harmWrap)
   
-  if !detrend:
+  if not detrend:
     outBandNames = ee.Image(out.first()).bandNames().removeAll(['year'])
     out = out.select(outBandNames)
   
