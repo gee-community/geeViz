@@ -1877,7 +1877,7 @@ def getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulia
 
 #########################################################################
 #########################################################################
-# Wrapper function for getting Landsat imagery
+# Wrapper function for getting Sentinel 2 imagery
 def getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,\
   timebuffer = 0,weights = [1],compositingMethod = 'medoid',\
   applyQABand = False,applyCloudScore = True,applyShadowShift = False,applyTDOM = True,\
@@ -1941,147 +1941,139 @@ def getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,\
   return [s2s,ts]
 
 
-g = ee.Geometry.Polygon(\
-        [[[-107.65431394109078, 39.088573472024486],\
-           [-109.36818112859078, 35.5781084059458],\
-           [-108.64308347234078, 35.16602548916899],\
-           [-107.08302487859078, 38.575083190487966]]])
-s2s,ts = getSentinel2Wrapper(g,2015,2018,190,250,\
-  timebuffer = 0,weights = [1],compositingMethod = 'medoid',\
-  applyQABand = False,applyCloudScore = True,applyShadowShift = False,applyTDOM = True,\
-  cloudScoreThresh = 10,performCloudScoreOffset = True,cloudScorePctl = 10,\
-  cloudHeights =ee.List.sequence(500,10000,500),\
-  zScoreThresh = -1,shadowSumThresh = 0.35,\
-  contractPixels = 1.5,dilatePixels = 3.5,\
-  correctIllumination = False,correctScale = 250,\
-  exportComposites = False,outputName = 'Sentinel2-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = None,scale = 30)
+# g = ee.Geometry.Polygon(\
+#         [[[-107.65431394109078, 39.088573472024486],\
+#            [-109.36818112859078, 35.5781084059458],\
+#            [-108.64308347234078, 35.16602548916899],\
+#            [-107.08302487859078, 38.575083190487966]]])
+# s2s,ts = getSentinel2Wrapper(g,2015,2018,190,250,\
+#   timebuffer = 0,weights = [1],compositingMethod = 'medoid',\
+#   applyQABand = False,applyCloudScore = True,applyShadowShift = False,applyTDOM = True,\
+#   cloudScoreThresh = 10,performCloudScoreOffset = True,cloudScorePctl = 10,\
+#   cloudHeights =ee.List.sequence(500,10000,500),\
+#   zScoreThresh = -1,shadowSumThresh = 0.35,\
+#   contractPixels = 1.5,dilatePixels = 3.5,\
+#   correctIllumination = False,correctScale = 250,\
+#   exportComposites = False,outputName = 'Sentinel2-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = None,scale = 30)
   
-Map.addLayer(ee.Image(s2s.first()),vizParamsFalse,'s2')
-Map.launchGEEVisualization()
+# Map.addLayer(ee.Image(s2s.first()),vizParamsFalse,'s2')
+# Map.launchGEEVisualization()
 
-# //////////////////////////////////////////////////////////
-# //Harmonic regression
-# ////////////////////////////////////////////////////////////////////
-# //Function to give year.dd image and harmonics list (e.g. [1,2,3,...])
-# function getHarmonicList(yearDateImg,transformBandName,harmonicList){
-#     var t= yearDateImg.select([transformBandName]);
-#     var selectBands = ee.List.sequence(0,harmonicList.length-1);
+#########################################################################
+#########################################################################
+#Harmonic regression
+#########################################################################
+#########################################################################
+#Function to give year.dd image and harmonics list (e.g. [1,2,3,...])
+def getHarmonicList(yearDateImg,transformBandName,harmonicList):
+  t= yearDateImg.select([transformBandName])
+  selectBands = ee.List.sequence(0,len(harmonicList)-1)
     
-#     var sinNames = harmonicList.map(function(h){
-#       var ht = h*100;
-#       return ee.String('sin_').cat(ht.toString()).cat('_').cat(transformBandName);
-#     });
-#     var cosNames = harmonicList.map(function(h){
-#       var ht =h*100;
-#       return ee.String('cos_').cat(ht.toString()).cat('_').cat(transformBandName);
-#     });
-    
-#     // var sinCosNames = harmonicList.map(function(h){
-#     //   var ht =h*100
-#     //   return ee.String('sin_x_cos_').cat(ht.toString()).cat('_').cat(transformBandName)
-#     // })
-    
-#     var multipliers = ee.Image(harmonicList).multiply(ee.Number(Math.PI).float()) 
-#     var sinInd = (t.multiply(ee.Image(multipliers))).sin().select(selectBands,sinNames).float()
-#     var cosInd = (t.multiply(ee.Image(multipliers))).cos().select(selectBands,cosNames).float();
-#     // var sinCosInd = sinInd.multiply(cosInd).select(selectBands,sinCosNames);
-    
-#     return yearDateImg.addBands(sinInd.addBands(cosInd));//.addBands(sinCosInd)
-#   }
-# //////////////////////////////////////////////////////
-# //Takes a dependent and independent variable and returns the dependent, 
-# // sin of ind, and cos of ind
-# //Intended for harmonic regression
-# function getHarmonics2(collection,transformBandName,harmonicList,detrend){
-#   if(detrend === undefined || detrend === null){detrend = false}
-  
-#   var depBandNames = ee.Image(collection.first()).bandNames().remove(transformBandName);
-#   var depBandNumbers = depBandNames.map(function(dbn){
-#     return depBandNames.indexOf(dbn);
-#   });
-  
-#   var out = collection.map(function(img){
-#     var outT = getHarmonicList(img,transformBandName,harmonicList)
-#     .copyProperties(img,['system:time_start','system:time_end']);
-#     return outT;
-#   });
-  
-#   if(!detrend){
-#     var outBandNames = ee.Image(out.first()).bandNames().removeAll(['year'])
-#     out = out.select(outBandNames)
-#   }
-  
-#   // Map.addLayer(out)
-#   var indBandNames = ee.Image(out.first()).bandNames().removeAll(depBandNames);
-#   var indBandNumbers = indBandNames.map(function(ind){
-#     return ee.Image(out.first()).bandNames().indexOf(ind);
-#   });
-  
-#   out = out.set({'indBandNames':indBandNames,'depBandNames':depBandNames,
-#                 'indBandNumbers':indBandNumbers,'depBandNumbers':depBandNumbers
-#   });
-  
-#   return out;
-# }
-# ////////////////////////////////////////////////////////
-# ////////////////////////////////////////////////////////////////
-# //Simplifies the use of the robust linear regression reducer
-# //Assumes the dependent is the first band and all subsequent bands are independents
-# function newRobustMultipleLinear2(dependentsIndependents){//,dependentBands,independentBands){
-#   //Set up the band names
+  def sinCat(h):
+    ht = h*100
+    return ee.String('sin_').cat(ht.toString()).cat('_').cat(transformBandName)
+  sinNames = harmonicList.map(sinCat)
 
-#   var dependentBands = ee.List(dependentsIndependents.get('depBandNumbers'));
-#   var independentBands = ee.List(dependentsIndependents.get('indBandNumbers'));
-#   var bns = ee.Image(dependentsIndependents.first()).bandNames();
-#   var dependents = ee.List(dependentsIndependents.get('depBandNames'));
-#   var independents = ee.List(dependentsIndependents.get('indBandNames'));
+  def cosCat(h):
+    ht =h*100;
+    return ee.String('cos_').cat(ht.toString()).cat('_').cat(transformBandName)
+    
+  cosNames = harmonicList.map(cosCat)
+      
+    
   
-#   // var dependent = bns.slice(0,1);
-#   // var independents = bns.slice(1,null)
-#   var noIndependents = independents.length().add(1);
-#   var noDependents = dependents.length();
+  multipliers = ee.Image(harmonicList).multiply(ee.Number(math.pi).float()) 
+  sinInd = (t.multiply(ee.Image(multipliers))).sin().select(selectBands,sinNames).float()
+  cosInd = (t.multiply(ee.Image(multipliers))).cos().select(selectBands,cosNames).float()
   
-#   var outNames = ee.List(['intercept']).cat(independents);
+  return yearDateImg.addBands(sinInd.addBands(cosInd))
+  
+#########################################################################
+#########################################################################
+#Takes a dependent and independent variable and returns the dependent, 
+# sin of ind, and cos of ind
+#Intended for harmonic regression
+def getHarmonics2(collection,transformBandName,harmonicList,detrend = False):
  
-#   //Add constant band for intercept and reorder for 
-#   //syntax: constant, ind1,ind2,ind3,indn,dependent
-#   var forFit = dependentsIndependents.map(function(img){
-#     var out = img.addBands(ee.Image(1).select([0],['constant']));
-#     out = out.select(ee.List(['constant',independents]).flatten());
-#     return out.addBands(img.select(dependents));
-#   });
+  depBandNames = ee.Image(collection.first()).bandNames().remove(transformBandName)
+  depBandNumbers = depBandNames.map(lambda dbn:depBandNames.indexOf(dbn))
   
-#   //Apply reducer, and convert back to image with respective bandNames
-#   var reducerOut = forFit.reduce(ee.Reducer.linearRegression(noIndependents,noDependents));
-#   // var test = forFit.reduce(ee.Reducer.robustLinearRegression(noIndependents,noDependents,0.2))
-#   // var resids = test
-#   // .select([1],['residuals']).arrayFlatten([dependents]);
-#   // Map.addLayer(resids,{},'residsImage');
-#   // Map.addLayer(reducerOut.select([0]),{},'coefficients');
-#   // Map.addLayer(test.select([1]),{},'tresiduals');
-#   // Map.addLayer(reducerOut.select([1]),{},'roresiduals');
-#   reducerOut = reducerOut
-#   .select([0],['coefficients']).arrayTranspose().arrayFlatten([dependents,outNames]);
-#   reducerOut = reducerOut
-#   .set({'noDependents':ee.Number(noDependents),
-#   'modelLength':ee.Number(noIndependents)
+  def harmWrap(img):
+    outT = getHarmonicList(img,transformBandName,harmonicList)\
+    .copyProperties(img,['system:time_start','system:time_end'])
+    return outT
+  out = collection.map(harmWrap)
+  
+  if !detrend:
+    outBandNames = ee.Image(out.first()).bandNames().removeAll(['year'])
+    out = out.select(outBandNames)
+  
+  
+  indBandNames = ee.Image(out.first()).bandNames().removeAll(depBandNames)
+  indBandNumbers = indBandNames.map(lambda ind: ee.Image(out.first()).bandNames().indexOf(ind))
+  
+  
+  out = out.set({'indBandNames':indBandNames,'depBandNames':depBandNames,\
+                'indBandNumbers':indBandNumbers,'depBandNumbers':depBandNumbers})
+  
+  return out
+
+#########################################################################
+#########################################################################
+#Simplifies the use of the robust linear regression reducer
+#Assumes the dependent is the first band and all subsequent bands are independents
+def newRobustMultipleLinear2(dependentsIndependents):
+  #Set up the band names
+
+  dependentBands = ee.List(dependentsIndependents.get('depBandNumbers'))
+  independentBands = ee.List(dependentsIndependents.get('indBandNumbers'))
+  bns = ee.Image(dependentsIndependents.first()).bandNames()
+  dependents = ee.List(dependentsIndependents.get('depBandNames'))
+  independents = ee.List(dependentsIndependents.get('indBandNames'))
+  
+  #dependent = bns.slice(0,1)
+  #independents = bns.slice(1,null)
+  noIndependents = independents.length().add(1)
+  noDependents = dependents.length()
+  
+  outNames = ee.List(['intercept']).cat(independents)
+ 
+  #Add constant band for intercept and reorder for 
+  #syntax: constant, ind1,ind2,ind3,indn,dependent
+  def forFitFun(img):
+    out = img.addBands(ee.Image(1).select([0],['constant']))
+    out = out.select(ee.List(['constant',independents]).flatten())
+    return out.addBands(img.select(dependents))
+  
+  
+  forFit = dependentsIndependents.map(forFitFun)
     
-#   });
+  #Apply reducer, and convert back to image with respective bandNames
+  reducerOut = forFit.reduce(ee.Reducer.linearRegression(noIndependents,noDependents))
+  # // var test = forFit.reduce(ee.Reducer.robustLinearRegression(noIndependents,noDependents,0.2))
+  # // var resids = test
+  # // .select([1],['residuals']).arrayFlatten([dependents]);
+  # // Map.addLayer(resids,{},'residsImage');
+  # // Map.addLayer(reducerOut.select([0]),{},'coefficients');
+  # // Map.addLayer(test.select([1]),{},'tresiduals');
+  # // Map.addLayer(reducerOut.select([1]),{},'roresiduals');
+  reducerOut = reducerOut.select([0],['coefficients']).arrayTranspose().arrayFlatten([dependents,outNames])
+  reducerOut = reducerOut.set({'noDependents':ee.Number(noDependents),\
+  'modelLength':ee.Number(noIndependents)\
+  })
   
-#   return reducerOut;
-# };
+  return reducerOut
+#########################################################################
+#########################################################################
+#Code for finding the date of peak of green
+# Also converts it to Julian day, month, and day of month
+monthRemap =[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12 ]
+monthDayRemap = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 ]
+julianDay = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365 ]
 
 
-# /////////////////////////////////////////////////////////////////
-# //Code for finding the date of peak of green
-# //Also converts it to Julian day, month, and day of month
-# var monthRemap =[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12 ];
-# var monthDayRemap = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 ];
-# var julianDay = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365 ];
-
-
-# //Function for getting the date of the peak of veg vigor- can handle bands negatively correlated to veg in
-# //changeDirDict dictionary above
+#Function for getting the date of the peak of veg vigor- can handle bands negatively correlated to veg in
+#changeDirDict dictionary above
 # function getPeakDate(coeffs,peakDirection){
 #   if(peakDirection === null || peakDirection === undefined){peakDirection = 1};
   
