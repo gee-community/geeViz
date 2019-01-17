@@ -1,5 +1,5 @@
 from pyMapViewerLib import *
-
+import math
 ######################################################################
 #Module for getting Landsat, Sentinel 2 and MODIS images/composites
 #Define visualization parameters
@@ -856,7 +856,7 @@ def simpleAddTCAngles(image):
   wetness = image.select(['wetness'])
   
   #Calculate Tasseled Cap angles and distances
-  tcAngleBG = brightness.atan2(greenness).divide(Math.PI).rename('tcAngleBG')
+  tcAngleBG = brightness.atan2(greenness).divide(math.pi).rename('tcAngleBG')
   
   return image.addBands(tcAngleBG)
 
@@ -920,7 +920,8 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicy = N
   #Make sure image is clipped to roi in case it's a multi-part polygon
   imageForExport = imageForExport.clip(roi)
   assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
-  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath + '/'+assetName,  json.dumps({'.default': pyramidingPolicy}), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
+  print(assetName,assetPath)
+  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath ,  json.dumps({'.default': pyramidingPolicy}), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
   t.start()
 
 def exportToAssetWrapper2(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
@@ -1517,10 +1518,7 @@ def getModisData(startYear,endYear,startJulian,endJulian,daily = False,maskWQA =
   
   return ee.ImageCollection(joined)#.map(lambda:img, img.resample('bicubic'))
     
-# m = getModisData(2010,2010,190,200,daily = True)
-# m = applyCloudScoreAlgorithm(m,modisCloudScore,10,0,1.5,3.5,performCloudScoreOffset = True)
-# Map.addLayer(m.median(),vizParamsFalse)
-# Map.launchGEEVisualization()
+
 #########################################################################
 #########################################################################
 def exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands):
@@ -1559,51 +1557,12 @@ def exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,co
   
     #Export the composite 
     #Set up export name and path
-    exportName = outputName  +'_'  + str(startYearT) + '_' + str(endYearT)+'_' + str(startJulian) + '_' + str(endJulian)
+    exportName = outputName  +'_'  + str(int(startYearT)) + '_' + str(int(endYearT))+'_' + str(int(startJulian)) + '_' + str(int(endJulian))
    
     exportPath = exportPathRoot + '/' + exportName
    
     exportToAssetWrapper(composite,exportName,exportPath,'mean',studyArea.bounds(),scale,crs,transform);
     
-# g = ee.Geometry.Polygon(\
-#         [[[-111.91844482421874, 40.74321533866182],\
-#           [-111.92393798828124, 40.62032737332187],\
-#           [-111.75914306640624, 40.61407278054859],\
-#           [-111.75364990234374, 40.745296232768496]]])
-
-# ls = getImageCollection(g,ee.Date.fromYMD(2014,7,1),ee.Date.fromYMD(2018,10,1),190,250,'SR',False)
-# exportToAssetWrapper(ls.median(),'test','users/ianhousman/test','mean',g,30,'EPSG:5070',None);
-# exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicy = None,roi = None,scale = None,crs = None,transform = None):
-
-# print(ee.Image(ls.first()).bandNames().getInfo())
-# print(ee.Image(joinCollections(ls,ls,False).first()).bandNames().getInfo())
-# Map.addLayer(ls.median(),vizParamsFalse,'median before masking')
-# # medoid = medoidMosaicMSD(ls,['blue','green','red','nir','swir1','swir2'])
-# # Map.addLayer(medoid,vizParamsFalse,'medoid before masking')
-
-# # ls = ls.map(simpleAddIndices)
-# # ls = ls.map(addSAVIandEVI)
-# # ls = ls.map(simpleGetTasseledCap)
-# # Map.addLayer(ls.select(['brightness','greenness','wetness']).median())
-# # # ls = applyCloudScoreAlgorithm(ls,landsatCloudScore,10,0,1.5,3.5,performCloudScoreOffset = True)
-
-
-# # # Map.addLayer(ls.median(),vizParamsFalse,'after cloud masking')
-# # # ls = simpleTDOM2(ls,-1,0.35,1.5,3.5)
-# # # Map.addLayer(ls.median(),vizParamsFalse,'after cloud/shadow masking')
-# # # # ls = getImageCollection(ee.Geometry.Polygon(\
-# # # #          [[[-107.65431394109078, 39.088573472024486],\
-# # # #            [-109.36818112859078, 35.5781084059458],\
-# # # #            [-108.64308347234078, 35.16602548916899],\
-# # # #            [-107.08302487859078, 38.575083190487966]]]),ee.Date.fromYMD(2018,7,1),ee.Date.fromYMD(2018,10,1),190,250,'SR',False)
-# ls = ls.map(cFmaskCloud)
-# ls = ls.map(cFmaskCloudShadow)
-# compositeTimeSeries(ls,2014,2018,190,250,1,[1,5,1],'medoid')
-
-# # # # Map.addLayer(ls,vizParamsFalse)
-
-# Map.launchGEEVisualization()
-
 #########################################################################
 #########################################################################
 #Function to export composite collection
@@ -1622,8 +1581,8 @@ def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform
     composite = ee.Image(composite.first())
     
     #Display the Landsat composite
-    Map.addLayer(composite, vizParamsTrue, str(year) + ' True Color ' + toaOrSR, false);
-    Map.addLayer(composite, vizParamsFalse, str(year) + ' False Color ' + toaOrSR, false);
+    Map.addLayer(composite, vizParamsTrue, str(year) + ' True Color ' + toaOrSR, False);
+    Map.addLayer(composite, vizParamsFalse, str(year) + ' False Color ' + toaOrSR, False);
   
     #Reformat data for export
     compositeBands = composite.bandNames()
@@ -1653,107 +1612,99 @@ def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform
   
     #Export the composite 
     #Set up export name and path
-    exportName = outputName  + toaOrSR + '_' + compositingMethod + '_'  + str(startYearT) + '_' + str(endYearT)+'_' + str(startJulian) + '_' + str(endJulian)
+    exportName = outputName  + toaOrSR + '_' + compositingMethod + '_'  + str(int(startYearT)) + '_' + str(int(endYearT))+'_' + str(int(startJulian)) + '_' + str(int(endJulian))
+
    
     exportPath = exportPathRoot + '/' + exportName
   
     exportToAssetWrapper(composite,exportName,exportPath,'mean',studyArea,scale,crs,transform)
     
 
-# /////////////////////////////////////////////////////////////////////
-# /////////////////////////////////////////////////////////////////////
-# //Wrapper function for getting Landsat imagery
-# function getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,
-#   timebuffer,weights,compositingMethod,
-#   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
-#   applyFmaskCloudShadowMask,applyFmaskSnowMask,
-#   cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,
-#   zScoreThresh,shadowSumThresh,
-#   contractPixels,dilatePixels,
-#   correctIllumination,correctScale,
-#   exportComposites,outputName,exportPathRoot,crs,transform,scale){
+#########################################################################
+#########################################################################
+#Wrapper function for getting Landsat imagery
+def getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,\
+  timebuffer = 0,weights = [1],compositingMethod = 'medoid',\
+  toaOrSR = 'SR',includeSLCOffL7 = False,defringeL5 = False,applyCloudScore = False,applyFmaskCloudMask = True,applyTDOM = False,\
+  applyFmaskCloudShadowMask = True,applyFmaskSnowMask = False,\
+  cloudScoreThresh = 10,performCloudScoreOffset = True,cloudScorePctl = 10,\
+  zScoreThresh = -1,shadowSumThresh = 0.35,\
+  contractPixels = 1.5,dilatePixels = 3.5,\
+  correctIllumination = False,correctScale = 250,\
+  exportComposites = False,outputName = 'Landsat-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = None,scale = 30):
   
-#   // Prepare dates
-#   //Wrap the dates if needed
-#   var wrapOffset = 0;
-#   if (startJulian > endJulian) {
-#     wrapOffset = 365;
-#   }
-   
-#   var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
-#   var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day');
-#   print('Start and end dates:', startDate, endDate);
+  #Prepare dates
+  #Wrap the dates if needed
+  wrapOffset = 0
+  if startJulian > endJulian:
+    wrapOffset = 365
+  
+  startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day')
+  endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day')
+  #print('Start and end dates:', startDate, endDate)
 
-#   //Do some error checking
-#   toaOrSR = toaOrSR.toUpperCase();
-#   var addPixelQA;
-#   if(toaOrSR === 'TOA' && (applyFmaskCloudMask === true ||  applyFmaskCloudShadowMask === true || applyFmaskSnowMask === true)){
-#       addPixelQA = true;
-#       // applyFmaskCloudMask = false;
+  #Do some error checking
+  toaOrSR = toaOrSR.upper()
   
-#       // applyFmaskCloudShadowMask = false;
+  if toaOrSR =='TOA' and (applyFmaskCloudMask or applyFmaskCloudShadowMask  or applyFmaskSnowMask ):
+      addPixelQA = True
+    
+  else:addPixelQA = False
+
+  #Get Landsat image collection
+  ls = getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR,includeSLCOffL7,defringeL5,addPixelQA)
   
-#       // applyFmaskSnowMask = false;
-#     }else{addPixelQA = false;}
-#   // Get Landsat image collection
-#   var ls = getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
-#     toaOrSR,includeSLCOffL7,defringeL5,addPixelQA);
+  #Apply relevant cloud masking methods
+  if applyCloudScore:
+    print('Applying cloudScore')
+    ls = applyCloudScoreAlgorithm(ls,landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset); 
   
-#   // Apply relevant cloud masking methods
-#   if(applyCloudScore){
-#     print('Applying cloudScore');
-#     ls = applyCloudScoreAlgorithm(ls,landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset); 
-#   }
   
-#   if(applyFmaskCloudMask){
-#     print('Applying Fmask cloud mask');
-#     ls = ls.map(function(img){return cFmask(img,'cloud')});
-#     //Experimenting on how to reduce commission errors over bright cool areas
-#     // var preCount = ls.count();
-#     // var cloudFreeCount = ls.map(function(img){return cFmask(img,'cloud')}).count().unmask();
-#     // // var ls = ls.map(function(img){return cFmask(img,'cloud')})
-#     // var fmaskCloudFreeProp = cloudFreeCount.divide(preCount);
-#     // var alwaysCloud = fmaskCloudFreeProp.lte(0.1);
-#     // var ls = ls.map(function(img){
-#     //   var m = img.select('pixel_qa').bitwiseAnd(fmaskBitDict['cloud']).neq(0).and(alwaysCloud.not());
-#     //   return img.updateMask(m.not());
-#     // })
+  if applyFmaskCloudMask:
+    print('Applying Fmask cloud mask')
+    def fmCloudWrapper(img):
+      return cFmask(img,'cloud')
+
+    ls = ls.map(fmCloudWrapper)
    
-#     // Map.addLayer(alwaysCloud,{min:0,max:1},'Fmask cloud prop',false);
-#   }
+   
+    
   
-#   if(applyTDOM){
-#     print('Applying TDOM');
-#     //Find and mask out dark outliers
-#     ls = simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
-#   }
-#   if(applyFmaskCloudShadowMask){
-#     print('Applying Fmask shadow mask');
-#     ls = ls.map(function(img){return cFmask(img,'shadow')});
-#   }
-#   if(applyFmaskSnowMask){
-#     print('Applying Fmask snow mask');
-#     ls = ls.map(function(img){return cFmask(img,'snow')});
-#   }
+  if applyTDOM:
+    print('Applying TDOM')
+    #Find and mask out dark outliers
+    ls = simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels)
+
+  if applyFmaskCloudShadowMask:
+    print('Applying Fmask shadow mask')
+    def fmShadowWrapper(img):
+      return cFmask(img,'shadow')
+
+    ls = ls.map(fmShadowWrapper)
+  
+  if applyFmaskSnowMask:
+    def fmSnowWrapper(img):
+      return cFmask(img,'snow')
+
+    ls = ls.map(fmSnowWrapper)
   
   
-#   // Add zenith and azimuth
-#   if (correctIllumination){
-#     ls = ls.map(function(img){
-#       return addZenithAzimuth(img,toaOrSR);
-#     });
-#   }
+  #Add zenith and azimuth
+  if correctIllumination:
+    def zAzAdder(img):
+      return addZenithAzimuth(img,toaOrSR)
+    ls = ls.map(addZenithAzimuth)
   
-#   // Add common indices- can use addIndices for comprehensive indices 
-#   //or simpleAddIndices for only common indices
-#   ls = ls.map(simpleAddIndices)
-#           .map(getTasseledCap)
-#           .map(simpleAddTCAngles);
+  #Add common indices- can use addIndices for comprehensive indices 
+  #or simpleAddIndices for only common indices
+  ls = ls.map(simpleAddIndices)
+  ls = ls.map(getTasseledCap)
+  ls = ls.map(simpleAddTCAngles)
           
-#   //Set to appropriate resampling method for any reprojection
-#   // ls = ls.map(function(img){return img.resample('bicubic') })    
-#   // Create composite time series
-#   var ts = compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
+  #Set to appropriate resampling method for any reprojection
+  # ls = ls.map(lambda img: img.resample('bicubic') )    
+  #Create composite time series
+  ts = compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod)
   
   
 #   // Correct illumination
@@ -1770,139 +1721,148 @@ def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform
 #     Map.addLayer(f,vizParamsFalse,'First-illuminated',false);
 #   }
   
-#   //Export composites
-#   if(exportComposites){// Export composite collection
-#     var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp'];
-#     exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
-#     ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,
-#                   applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination);
-#   }
+  #Export composites
+  if exportComposites:
+    exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp']
+    exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,\
+    ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
+                  applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination)
   
-#   return [ls,ts];
-# }
-# //Wrapper function for getting Landsat imagery
-# function getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
-#   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,
-#   applyFmaskCloudShadowMask,applyFmaskSnowMask,
-#   cloudScoreThresh,cloudScorePctl,
-#   zScoreThresh,shadowSumThresh,
-#   contractPixels,dilatePixels
-#   ){
   
-#   // Prepare dates
-#   //Wrap the dates if needed
-#   var wrapOffset = 0;
-#   if (startJulian > endJulian) {
-#     wrapOffset = 365;
-#   }
-#   var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
-#   var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day');
-#   print('Start and end dates:', startDate, endDate);
+  return [ls,ts]
 
-#   //Do some error checking
-#   toaOrSR = toaOrSR.toUpperCase();
-#   var addPixelQA;
-#   if(toaOrSR === 'TOA' && (applyFmaskCloudMask === true ||  applyFmaskCloudShadowMask === true || applyFmaskSnowMask === true)){
-#       addPixelQA = true;
-#       // applyFmaskCloudMask = false;
+#########################################################################
+#########################################################################
+#Wrapper function for getting Landsat imagery
+def getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,\
+  toaOrSR = 'SR',includeSLCOffL7 = False,defringeL5 = False,applyCloudScore = False,applyFmaskCloudMask = True,applyTDOM = False,\
+  applyFmaskCloudShadowMask = True,applyFmaskSnowMask = False,\
+  cloudoudScoreThresh = 10,cloudScorePctl = 10,\
+  zScoreThresh = -1,shadowSumThresh = 0.35,\
+  contractPixels = 1.5,dilatePixels = 3.5):
   
-#       // applyFmaskCloudShadowMask = false;
+  #Prepare dates
+  #Wrap the dates if needed
+  wrapOffset = 0
+  if startJulian > endJulian:
+    wrapOffset = 365
   
-#       // applyFmaskSnowMask = false;
-#     }else{addPixelQA = false;}
-#   // Get Landsat image collection
-#   var ls = getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,
-#     toaOrSR,includeSLCOffL7,defringeL5,addPixelQA);
-  
-#   // Apply relevant cloud masking methods
-#   if(applyCloudScore){
-#     print('Applying cloudScore');
-#     ls = applyCloudScoreAlgorithm(ls,landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels); 
-    
-#   }
-  
-#   if(applyFmaskCloudMask){
-#     print('Applying Fmask cloud mask');
-#     ls = ls.map(function(img){return cFmask(img,'cloud')});
-#   }
-  
-#   if(applyTDOM){
-#     print('Applying TDOM');
-#     //Find and mask out dark outliers
-#     ls = simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
-#   }
-#   if(applyFmaskCloudShadowMask){
-#     print('Applying Fmask shadow mask');
-#     ls = ls.map(function(img){return cFmask(img,'shadow')});
-#   }
-#   if(applyFmaskSnowMask){
-#     print('Applying Fmask snow mask');
-#     ls = ls.map(function(img){return cFmask(img,'snow')});
-#   }
-  
-  
-  
-  
-#   // Add common indices- can use addIndices for comprehensive indices 
-#   //or simpleAddIndices for only common indices
-#   ls = ls.map(simpleAddIndices)
-#           .map(getTasseledCap)
-#           .map(simpleAddTCAngles);
-  
-  
-  
-#   return ls;
-# }
-# ///////////////////////////////////////////////////////////////////
-# //Wrapper function for getting Sentinel2 imagery
-# function getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,
-#   applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
-#   cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,
-#   cloudHeights,
-#   zScoreThresh,shadowSumThresh,
-#   contractPixels,dilatePixels
-#   ){
-  
-#   // Prepare dates
-#   //Wrap the dates if needed
-#   var wrapOffset = 0;
-#   if (startJulian > endJulian) {
-#     wrapOffset = 365;
-#   }
-#   var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
-#   var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day');
-#   print('Start and end dates:', startDate, endDate);
+  startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day')
+  endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day')
+  print('Start and end dates:', startDate, endDate);
 
-  
-#   // Get Sentinel2 image collection
-#   var s2s = getS2(studyArea,startDate,endDate,startJulian,endJulian)
-#   // Map.addLayer(s2s.median().reproject('EPSG:32612',null,30),{min:0.05,max:0.4,bands:'swir1,nir,red'});
-  
-#   if(applyQABand){
-#     print('Applying QA band cloud mask');
-#     s2s = s2s.map(maskS2clouds);
-#     // Map.addLayer(s2s.mosaic(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'QA cloud masked');
-  
-#   }
-#   if(applyCloudScore){
-#     print('Applying cloudScore');
-#      s2s = applyCloudScoreAlgorithm(s2s,sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset);
-#     // Map.addLayer(s2s.mosaic(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'Cloud score cloud masked');
-#   }
-#   if(applyShadowShift){
-#     print('Applying shadow shift');
-#     s2s = s2s.map(function(img){return projectShadowsWrapper(img,cloudScoreThresh,shadowSumThresh,contractPixels,dilatePixels,cloudHeights)});
-#     // Map.addLayer(s2s.mosaic(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'shadow shift shadow masked');
-#   }
-#   if(applyTDOM){
-#     print('Applying TDOM');
-#     s2s = simpleTDOM2(s2s,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
-#     // Map.addLayer(s2s.mosaic(),{min:0.05,max:0.4,bands:'swir1,nir,red'},'TDOM shadow masked');
-#   }
-  
-  
+  #Do some error checking
+  toaOrSR = toaOrSR.upper()
  
+  if toaOrSR =='TOA' and (applyFmaskCloudMask or applyFmaskCloudShadowMask  or applyFmaskSnowMask ):
+      addPixelQA = True
+    
+  else:addPixelQA = False
+
+  #Get Landsat image collection
+  ls = getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR,includeSLCOffL7,defringeL5,addPixelQA)
   
+  #Apply relevant cloud masking methods
+  if applyCloudScore:
+    print('Applying cloudScore')
+    ls = applyCloudScoreAlgorithm(ls,landsatCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset); 
+  
+  
+  if applyFmaskCloudMask:
+    print('Applying Fmask cloud mask')
+    def fmCloudWrapper(img):
+      return cFmask(img,'cloud')
+
+    ls = ls.map(fmCloudWrapper)
+   
+   
+    
+  
+  if applyTDOM:
+    print('Applying TDOM')
+    #Find and mask out dark outliers
+    ls = simpleTDOM2(ls,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels)
+
+  if applyFmaskCloudShadowMask:
+    print('Applying Fmask shadow mask')
+    def fmShadowWrapper(img):
+      return cFmask(img,'shadow')
+
+    ls = ls.map(fmShadowWrapper)
+  
+  if applyFmaskSnowMask:
+    def fmSnowWrapper(img):
+      return cFmask(img,'snow')
+
+    ls = ls.map(fmSnowWrapper)
+  
+  
+  #Add zenith and azimuth
+  if correctIllumination:
+    def zAzAdder(img):
+      return addZenithAzimuth(img,toaOrSR)
+    ls = ls.map(addZenithAzimuth)
+  
+  #Add common indices- can use addIndices for comprehensive indices 
+  #or simpleAddIndices for only common indices
+  ls = ls.map(simpleAddIndices)
+  ls = ls.map(getTasseledCap)
+  ls = ls.map(simpleAddTCAngles)
+          
+  #Set to appropriate resampling method for any reprojection
+  # ls = ls.map(lambda img: img.resample('bicubic') )    
+  
+  
+  return ls;
+
+#########################################################################
+#########################################################################
+#Wrapper function for getting Sentinel2 imagery
+def getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,\
+  applyQABand = False,applyCloudScore = True,applyShadowShift = False,applyTDOM = True,\
+  cloudScoreThresh = 10,performCloudScoreOffset = True,cloudScorePctl = 10,\
+  cloudHeights = ee.List.sequence(500,10000,500),\
+  zScoreThresh = -1,shadowSumThresh = 0.35,\
+  contractPixels = 1.5,dilatePixels = 3.5):
+  
+  #Prepare dates
+  #Wrap the dates if needed
+  wrapOffset = 0
+  if startJulian > endJulian:
+    wrapOffset = 365
+  
+  startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day')
+  endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day')
+  print('Start and end dates:', startDate, endDate)
+
+  
+  #Get Sentinel2 image collection
+  s2s = getS2(studyArea,startDate,endDate,startJulian,endJulian)
+  # Map.addLayer(ee.Image(s2s.first()),{'min':0.05,'max':0.4,'bands':'swir1,nir,red'},'No masking')
+  
+  if applyQABand:
+    print('Applying QA band cloud mask')
+    s2s = s2s.map(maskS2clouds)
+    #Map.addLayer(s2s.mosaic(),{'min':0.05,'max':0.4,'bands':'swir1,nir,red'},'QA cloud masked')
+  
+  
+  if applyCloudScore:
+    print('Applying cloudScore')
+    s2s = applyCloudScoreAlgorithm(s2s,sentinel2CloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset)
+    # Map.addLayer(ee.Image(s2s.first()),{'min':0.05,'max':0.4,'bands':'swir1,nir,red'},'Cloud score cloud masked')
+
+  if applyShadowShift:
+    print('Applying shadow shift')
+    def projWrapper(img):
+      return projectShadowsWrapper(img,cloudScoreThresh,shadowSumThresh,contractPixels,dilatePixels,cloudHeights)
+    s2s = s2s.map(projWrapper)
+    # Map.addLayer(s2s.mosaic(),{'min':0.05,'max':0.4,'bands':'swir1,nir,red'},'shadow shift shadow masked')
+ 
+  if applyTDOM:
+    print('Applying TDOM')
+    s2s = simpleTDOM2(s2s,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels)
+    # Map.addLayer(ee.Image(s2s.first()),{'min':0.05,'max':0.4,'bands':'swir1,nir,red'},'TDOM shadow masked');
+
   
 #   // Add common indices- can use addIndices for comprehensive indices 
 #   //or simpleAddIndices for only common indices
@@ -1912,72 +1872,93 @@ def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform
   
   
   
-#   return s2s;
-# }
-# /////////////////////////////////////////////////////////////////////
-# //Wrapper function for getting Landsat imagery
-# function getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
-#   timebuffer,weights,compositingMethod,
-#   applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
-#   cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,
-#   cloudHeights,
-#   zScoreThresh,shadowSumThresh,
-#   contractPixels,dilatePixels,
-#   correctIllumination,correctScale,
-#   exportComposites,outputName,exportPathRoot,crs,transform,scale){
+  return s2s;
+
+
+#########################################################################
+#########################################################################
+# Wrapper function for getting Landsat imagery
+def getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,\
+  timebuffer = 0,weights = [1],compositingMethod = 'medoid',\
+  applyQABand = False,applyCloudScore = True,applyShadowShift = False,applyTDOM = True,\
+  cloudScoreThresh = 10,performCloudScoreOffset = True,cloudScorePctl = 10,\
+  cloudHeights =ee.List.sequence(500,10000,500),\
+  zScoreThresh = -1,shadowSumThresh = 0.35,\
+  contractPixels = 1.5,dilatePixels = 3.5,\
+  correctIllumination = False,correctScale = 250,\
+  exportComposites = False,outputName = 'Sentinel2-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = None,scale = 30):
   
-#   var s2s = getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,
-#   applyQABand,applyCloudScore,applyShadowShift,applyTDOM,
-#   cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,
-#   cloudHeights,
-#   zScoreThresh,shadowSumThresh,
-#   contractPixels,dilatePixels
-#   );
+  s2s = getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,\
+  applyQABand,applyCloudScore,applyShadowShift,applyTDOM,\
+  cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,\
+  cloudHeights,\
+  zScoreThresh,shadowSumThresh,\
+  contractPixels,dilatePixels\
+  )
   
   
   
-#   // // Add zenith and azimuth
-#   // if (correctIllumination){
-#   //   s2s = s2s.map(function(img){
-#   //     return addZenithAzimuth(img,'TOA',{'TOA':'MEAN_SOLAR_ZENITH_ANGLE'},{'TOA':'MEAN_SOLAR_AZIMUTH_ANGLE'});
-#   //   });
-#   // }
+  #Add zenith and azimuth
+  #if correctIllumination:
+  #  s2s = s2s.map(function(img){
+  #    return addZenithAzimuth(img,'TOA',{'TOA':'MEAN_SOLAR_ZENITH_ANGLE'},{'TOA':'MEAN_SOLAR_AZIMUTH_ANGLE'});
+  #  });
+  #}
  
-#   // Add common indices- can use addIndices for comprehensive indices 
-#   //or simpleAddIndices for only common indices
-#   s2s = s2s.map(simpleAddIndices)
-#           .map(getTasseledCap)
-#           .map(simpleAddTCAngles);
+  #Add common indices- can use addIndices for comprehensive indices 
+  #or simpleAddIndices for only common indices
+  s2s = s2s.map(simpleAddIndices)
+  s2s = s2s.map(getTasseledCap)
+  s2s = s2s.map(simpleAddTCAngles)
   
-#   // Create composite time series
-#   var ts = compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod);
+  #Create composite time series
+  ts = compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod)
   
   
-#   // Correct illumination
-#   // if (correctIllumination){
-#   //   var f = ee.Image(ts.first());
-#   //   Map.addLayer(f,vizParamsFalse,'First-non-illuminated',false);
+  #Correct illumination
+  # if (correctIllumination){
+  #   var f = ee.Image(ts.first());
+  #   Map.addLayer(f,vizParamsFalse,'First-non-illuminated',false);
   
-#   //   print('Correcting illumination');
-#   //   ts = ts.map(illuminationCondition)
-#   //     .map(function(img){
-#   //       return illuminationCorrection(img, correctScale,studyArea,[ 'blue', 'green', 'red','nir','swir1', 'swir2']);
-#   //     });
-#   //   var f = ee.Image(ts.first());
-#   //   Map.addLayer(f,vizParamsFalse,'First-illuminated',false);
-#   // }
+  #   print('Correcting illumination');
+  #   ts = ts.map(illuminationCondition)
+  #     .map(function(img){
+  #       return illuminationCorrection(img, correctScale,studyArea,[ 'blue', 'green', 'red','nir','swir1', 'swir2']);
+  #     });
+  #   var f = ee.Image(ts.first());
+  #   Map.addLayer(f,vizParamsFalse,'First-illuminated',false);
   
-#   //Export composites
-#   if(exportComposites){// Export composite collection
   
-#     var exportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'];
-#     exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,
-#     ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,'TOA',weights,
-#                   applyCloudScore, 'NA',applyTDOM,'NA','NA','NA',correctIllumination,null);
-#   }
+  #port composites
+  if exportComposites:
   
-#   return [s2s,ts];
-# }
+    exportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2']
+    exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,\
+    ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,'TOA',weights,\
+                  applyCloudScore, 'NA',applyTDOM,'NA','NA','NA',correctIllumination,null)
+  
+  
+  return [s2s,ts]
+
+
+g = ee.Geometry.Polygon(\
+        [[[-107.65431394109078, 39.088573472024486],\
+           [-109.36818112859078, 35.5781084059458],\
+           [-108.64308347234078, 35.16602548916899],\
+           [-107.08302487859078, 38.575083190487966]]])
+s2s,ts = getSentinel2Wrapper(g,2015,2018,190,250,\
+  timebuffer = 0,weights = [1],compositingMethod = 'medoid',\
+  applyQABand = False,applyCloudScore = True,applyShadowShift = False,applyTDOM = True,\
+  cloudScoreThresh = 10,performCloudScoreOffset = True,cloudScorePctl = 10,\
+  cloudHeights =ee.List.sequence(500,10000,500),\
+  zScoreThresh = -1,shadowSumThresh = 0.35,\
+  contractPixels = 1.5,dilatePixels = 3.5,\
+  correctIllumination = False,correctScale = 250,\
+  exportComposites = False,outputName = 'Sentinel2-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = None,scale = 30)
+  
+Map.addLayer(ee.Image(s2s.first()),vizParamsFalse,'s2')
+Map.launchGEEVisualization()
+
 # //////////////////////////////////////////////////////////
 # //Harmonic regression
 # ////////////////////////////////////////////////////////////////////
