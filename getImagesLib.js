@@ -1531,8 +1531,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
                 return img;
               });
               }
-              images = images
-              .select(modis500SelectBands,modis500BandNames);
+              images = images.select(modis500SelectBands,modis500BandNames);
               return images;
     }         
     var a500 = get500(a500C);
