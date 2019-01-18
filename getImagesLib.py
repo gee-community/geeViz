@@ -1913,52 +1913,52 @@ def getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,\
   s2s = s2s.map(simpleAddTCAngles)
   
   #Create composite time series
-  # ts = compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod)
+  ts = compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod)
   
   
-  # #Correct illumination
-  # # if (correctIllumination){
-  # #   var f = ee.Image(ts.first());
-  # #   Map.addLayer(f,vizParamsFalse,'First-non-illuminated',false);
+  #Correct illumination
+  # if (correctIllumination){
+  #   var f = ee.Image(ts.first());
+  #   Map.addLayer(f,vizParamsFalse,'First-non-illuminated',false);
   
-  # #   print('Correcting illumination');
-  # #   ts = ts.map(illuminationCondition)
-  # #     .map(function(img){
-  # #       return illuminationCorrection(img, correctScale,studyArea,[ 'blue', 'green', 'red','nir','swir1', 'swir2']);
-  # #     });
-  # #   var f = ee.Image(ts.first());
-  # #   Map.addLayer(f,vizParamsFalse,'First-illuminated',false);
-  
-  
-  # #port composites
-  # if exportComposites:
-  
-  #   exportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2']
-  #   exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,\
-  #   ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,'TOA',weights,\
-  #                 applyCloudScore, 'NA',applyTDOM,'NA','NA','NA',correctIllumination,null)
+  #   print('Correcting illumination');
+  #   ts = ts.map(illuminationCondition)
+  #     .map(function(img){
+  #       return illuminationCorrection(img, correctScale,studyArea,[ 'blue', 'green', 'red','nir','swir1', 'swir2']);
+  #     });
+  #   var f = ee.Image(ts.first());
+  #   Map.addLayer(f,vizParamsFalse,'First-illuminated',false);
   
   
-  # return [s2s,ts]
+  #port composites
+  if exportComposites:
+  
+    exportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2']
+    exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,\
+    ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,'TOA',weights,\
+                  applyCloudScore, 'NA',applyTDOM,'NA','NA','NA',correctIllumination,null)
+  
+  
+  return [s2s,ts]
 
 
-g = ee.Geometry.Polygon(\
-        [[[-107.65431394109078, 39.088573472024486],\
-           [-109.36818112859078, 35.5781084059458],\
-           [-108.64308347234078, 35.16602548916899],\
-           [-107.08302487859078, 38.575083190487966]]])
-getSentinel2Wrapper(g,2015,2018,190,250,\
-  timebuffer = 0,weights = [1],compositingMethod = 'medoid',\
-  applyQABand = False,applyCloudScore = True,applyShadowShift = False,applyTDOM = True,\
-  cloudScoreThresh = 10,performCloudScoreOffset = True,cloudScorePctl = 10,\
-  cloudHeights =ee.List.sequence(500,10000,500),\
-  zScoreThresh = -1,shadowSumThresh = 0.35,\
-  contractPixels = 1.5,dilatePixels = 3.5,\
-  correctIllumination = False,correctScale = 250,\
-  exportComposites = False,outputName = 'Sentinel2-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = 'None',scale = 30)
-  
-# Map.addLayer(ee.Image(s2s.first()),vizParamsFalse,'s2')
-Map.launchGEEVisualization()
+# g = ee.Geometry.Polygon(\
+#         [[[-107.65431394109078, 39.088573472024486],\
+#            [-109.36818112859078, 35.5781084059458],\
+#            [-108.64308347234078, 35.16602548916899],\
+#            [-107.08302487859078, 38.575083190487966]]])
+# s2s, ts = getSentinel2Wrapper(g,2016,2018,190,250,\
+#   timebuffer = 1,weights = [1,5,1],compositingMethod = 'medoid',\
+#   applyQABand = False,applyCloudScore = True,applyShadowShift = False,applyTDOM = True,\
+#   cloudScoreThresh = 10,performCloudScoreOffset = True,cloudScorePctl = 10,\
+#   cloudHeights =ee.List.sequence(500,10000,500),\
+#   zScoreThresh = -1,shadowSumThresh = 0.35,\
+#   contractPixels = 1.5,dilatePixels = 3.5,\
+#   correctIllumination = False,correctScale = 250,\
+#   exportComposites = False,outputName = 'Sentinel2-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = 'None',scale = 30)
+# print(ts.size().getInfo())
+# Map.addLayer(ee.Image(ts.first()),vizParamsFalse,'s2')
+# Map.launchGEEVisualization()
 
 #########################################################################
 #########################################################################
@@ -2072,275 +2072,275 @@ monthRemap =[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 monthDayRemap = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 ]
 julianDay = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365 ]
 
-
+#########################################################################
+#########################################################################
 #Function for getting the date of the peak of veg vigor- can handle bands negatively correlated to veg in
 #changeDirDict dictionary above
-# function getPeakDate(coeffs,peakDirection){
-#   if(peakDirection === null || peakDirection === undefined){peakDirection = 1};
-  
-#   var sin = coeffs.select([0]);
-#   var cos = coeffs.select([1]);
-  
-#   //Find where in cycle slope is zero
-#   var greenDate = ((sin.divide(cos)).atan()).divide(2*Math.PI).rename(['peakDate']);
-#   var greenDateLater = greenDate.add(0.5);
-#   //Check which d1 slope = 0 is the max by predicting out the value
-#   var predicted1 = coeffs.select([0])
-#                   .add(sin.multiply(greenDate.multiply(2*Math.PI).sin()))
-#                   .add(cos.multiply(greenDate.multiply(2*Math.PI).cos()))
-#                   .rename('predicted')
-#                   .multiply(ee.Image.constant(peakDirection))
-#                   .addBands(greenDate);
-#   var predicted2 = coeffs.select([0])
-#                   .add(sin.multiply(greenDateLater.multiply(2*Math.PI).sin()))
-#                   .add(cos.multiply(greenDateLater.multiply(2*Math.PI).cos()))
-#                   .rename('predicted')
-#                   .multiply(ee.Image.constant(peakDirection))
-#                   .addBands(greenDateLater);
-#   var finalGreenDate = ee.ImageCollection([predicted1,predicted2]).qualityMosaic('predicted').select(['peakDate']).rename(['peakJulianDay']);
-  
-#   finalGreenDate = finalGreenDate.where(finalGreenDate.lt(0), greenDate.add(1)).multiply(365).int16();
-  
-#   //Convert to month and day of month
-#   var greenMonth = finalGreenDate.remap(julianDay,monthRemap).rename(['peakMonth']);
-#   var greenMonthDay = finalGreenDate.remap(julianDay,monthDayRemap).rename(['peakDayOfMonth']);
-#   var greenStack = finalGreenDate.addBands(greenMonth).addBands(greenMonthDay);
-#   return greenStack;
-#   // Map.addLayer(greenStack,{'min':1,'max':12},'greenMonth',false);
-# }
-# //Function for getting left sum under the curve for a single growing season
-# //Takes care of normalization by forcing the min value along the curve 0
-# //by taking the amplitude as the intercept
-# //Assumes the sin and cos coeffs are the harmCoeffs
-# //t0 is the start time (defaults to 0)(min value should be but doesn't have to be 0)
-# //t1 is the end time (defaults to 1)(max value should be but doesn't have to be 1)
-# //
-# //Example of what this code is doing can be found here:
-# //  http://www.wolframalpha.com/input/?i=integrate+0.15949074923992157+%2B+-0.08287599*sin(2+PI+T)+%2B+-0.11252010613*cos(2+PI+T)++from+0+to+1
-# function getAreaUnderCurve(harmCoeffs,t0,t1){
-#   if(t0 === null || t0 === undefined){t0 = 0}
-#   if(t1 === null || t1 === undefined){t1 = 1}
-  
-#   //Pull apart the model
-#   var amplitude = harmCoeffs.select([1]).hypot(harmCoeffs.select([0]));
-#   var intereceptNormalized = amplitude;//When making the min 0, the intercept becomes the amplitude (the hypotenuse)
-#   var sin = harmCoeffs.select([0]);
-#   var cos = harmCoeffs.select([1]);
-  
-#   //Find the sum from - infinity to 0
-#   var sum0 = intereceptNormalized.multiply(t0)
-#             .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI*t0)))
-#             .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI*t0)));
-#   //Find the sum from - infinity to 1
-#   var sum1 = intereceptNormalized.multiply(t1)
-#             .subtract(sin.divide(2*Math.PI).multiply(Math.sin(2*Math.PI*t1)))
-#             .add(cos.divide(2*Math.PI).multiply(Math.cos(2*Math.PI*t1)));
-#   //Find the difference
-#   var leftSum = sum1.subtract(sum0).rename(['AUC']);
-#   return leftSum;
-# }
-# ///////////////////////////////////////////////
-# function getPhaseAmplitudePeak(coeffs,t0,t1){
-#   if(t0 === null || t0 === undefined){t0 = 0}
-#   if(t1 === null || t1 === undefined){t1 = 1}
-#   //Parse the model
-#   var bandNames = coeffs.bandNames();
-#   var bandNumber = bandNames.length();
-#   var noDependents = ee.Number(coeffs.get('noDependents'));
-#   var modelLength = ee.Number(coeffs.get('modelLength'));
-#   var interceptBands = ee.List.sequence(0,bandNumber.subtract(1),modelLength);
-  
-#   var models = ee.List.sequence(0,noDependents.subtract(1));
-  
-#   var parsedModel =models.map(function(mn){
-#     mn = ee.Number(mn);
-#     return bandNames.slice(mn.multiply(modelLength),mn.multiply(modelLength).add(modelLength));
-#   });
-  
-#   // print('Parsed harmonic regression model',parsedModel);
+def getPeakDate(coeffs,peakDirection = 1):
 
-#   //Iterate across models to convert to phase, amplitude, and peak
-#   var phaseAmplitude =parsedModel.map(function(pm){
-#       pm = ee.List(pm);
-#       var modelCoeffs = coeffs.select(pm);
-      
-#       var intercept = modelCoeffs.select('.*_intercept');
-#       var harmCoeffs = modelCoeffs.select('.*_200_year');
-#       var outName = ee.String(ee.String(pm.get(1)).split('_').get(0));
-#       var sign = ee.Dictionary(changeDirDict).get(outName);
-      
- 
+  sin = coeffs.select([0])
+  cos = coeffs.select([1])
   
-#       var amplitude = harmCoeffs.select([1]).hypot(harmCoeffs.select([0]))
-#                     .multiply(2)
-#                     .rename([outName.cat('_amplitude')]);
-#       var phase = harmCoeffs.select([0]).atan2(harmCoeffs.select([1]))
-#                     .unitScale(-Math.PI, Math.PI)
-#                     .rename([outName.cat('_phase')]);
+  #Find where in cycle slope is zero
+  greenDate = ((sin.divide(cos)).atan()).divide(2*math.pi).rename(['peakDate'])
+  greenDateLater = greenDate.add(0.5)
+  #Check which d1 slope = 0 is the max by predicting out the value
+  predicted1 = coeffs.select([0])\
+              .add(sin.multiply(greenDate.multiply(2*math.pi).sin()))\
+              .add(cos.multiply(greenDate.multiply(2*math.pi).cos()))\
+              .rename(['predicted'])\
+              .multiply(ee.Image.constant(peakDirection))\
+              .addBands(greenDate)
+  predicted2 = coeffs.select([0])\
+              .add(sin.multiply(greenDateLater.multiply(2*math.pi).sin()))\
+              .add(cos.multiply(greenDateLater.multiply(2*math.pi).cos()))\
+              .rename(['predicted'])\
+              .multiply(ee.Image.constant(peakDirection))\
+              .addBands(greenDateLater)
+  finalGreenDate = ee.ImageCollection([predicted1,predicted2]).qualityMosaic('predicted').select(['peakDate']).rename(['peakJulianDay'])
+  
+  finalGreenDate = finalGreenDate.where(finalGreenDate.lt(0), greenDate.add(1)).multiply(365).int16();
+  
+  #Convert to month and day of month
+  greenMonth = finalGreenDate.remap(julianDay,monthRemap).rename(['peakMonth'])
+  greenMonthDay = finalGreenDate.remap(julianDay,monthDayRemap).rename(['peakDayOfMonth'])
+  greenStack = finalGreenDate.addBands(greenMonth).addBands(greenMonthDay)
+  return greenStack
+  #Map.addLayer(greenStack,{'min':1,'max':12},'greenMonth',False)
+
+#########################################################################
+#########################################################################
+#Function for getting left sum under the curve for a single growing season
+#Takes care of normalization by forcing the min value along the curve 0
+#by taking the amplitude as the intercept
+#Assumes the sin and cos coeffs are the harmCoeffs
+#t0 is the start time (defaults to 0)(min value should be but doesn't have to be 0)
+#t1 is the end time (defaults to 1)(max value should be but doesn't have to be 1)
+
+#Example of what this code is doing can be found here:
+#  http://www.wolframalpha.com/input/?i=integrate+0.15949074923992157+%2B+-0.08287599*sin(2+PI+T)+%2B+-0.11252010613*cos(2+PI+T)++from+0+to+1
+def getAreaUnderCurve(harmCoeffs,t0= 0,t1 = 1):
+ 
+  #Pull apart the model
+  amplitude = harmCoeffs.select([1]).hypot(harmCoeffs.select([0]))
+  intereceptNormalized = amplitude#When making the min 0, the intercept becomes the amplitude (the hypotenuse)
+  sin = harmCoeffs.select([0])
+  cos = harmCoeffs.select([1])
+  
+  #Find the sum from - infinity to 0
+  sum0 = intereceptNormalized.multiply(t0)\
+            .subtract(sin.divide(2*math.pi).multiply(math.sin(2*math.pi*t0)))\
+            .add(cos.divide(2*math.pi).multiply(math.cos(2*math.pi*t0)))
+  #Find the sum from - infinity to 1
+  sum1 = intereceptNormalized.multiply(t1)\
+        .subtract(sin.divide(2*math.pi).multiply(math.sin(2*math.pi*t1)))
+        .add(cos.divide(2*Math.PI).multiply(math.cos(2*math.pi*t1)))
+  #Find the difference
+  leftSum = sum1.subtract(sum0).rename(['AUC'])
+  return leftSum
+
+#########################################################################
+#########################################################################
+def getPhaseAmplitudePeak(coeffs,t0 = 0,t1 = 1):
+  #Parse the model
+  bandNames = coeffs.bandNames()
+  bandNumber = bandNames.length()
+  noDependents = ee.Number(coeffs.get('noDependents'))
+  modelLength = ee.Number(coeffs.get('modelLength'))
+  interceptBands = ee.List.sequence(0,bandNumber.subtract(1),modelLength)
+
+  models = ee.List.sequence(0,noDependents.subtract(1))
+
+  def modelGetter(mn):
+    mn = ee.Number(mn)
+    return bandNames.slice(mn.multiply(modelLength),mn.multiply(modelLength).add(modelLength))
+  
+  parsedModel =models.map(modelGetter)
+    
+  
+  #print('Parsed harmonic regression model',parsedModel)
+
+  #Iterate across models to convert to phase, amplitude, and peak
+  def papGetter(pm):
+    pm = ee.List(pm);
+    modelCoeffs = coeffs.select(pm)
       
-#       //Get peak date info
-#       var peakDate = getPeakDate(harmCoeffs,sign);
-#       var peakDateBandNames = peakDate.bandNames();
-#       peakDateBandNames = peakDateBandNames.map(function(bn){return outName.cat(ee.String('_').cat(ee.String(bn)))});
+    intercept = modelCoeffs.select('.*_intercept')
+    harmCoeffs = modelCoeffs.select('.*_200_year')
+    outName = ee.String(ee.String(pm.get(1)).split('_').get(0))
+    sign = ee.Dictionary(changeDirDict).get(outName)
+  
+    amplitude = harmCoeffs.select([1]).hypot(harmCoeffs.select([0]))\
+              .multiply(2)\
+              .rename([outName.cat('_amplitude')])
+    phase = harmCoeffs.select([0]).atan2(harmCoeffs.select([1]))\
+              .unitScale(-math.pi, math.pi)\
+              .rename([outName.cat('_phase')])
       
-#       //Get the left sum
-#       var leftSum = getAreaUnderCurve(harmCoeffs,t0,t1);
-#       var leftSumBandNames = leftSum.bandNames();
-#       leftSumBandNames = leftSumBandNames.map(function(bn){return outName.cat(ee.String('_').cat(ee.String(bn)))});
+    #Get peak date info
+    peakDate = getPeakDate(harmCoeffs,sign)
+    peakDateBandNames = peakDate.bandNames()
+    peakDateBandNames = peakDateBandNames.map(lambda bn: outName.cat(ee.String('_').cat(ee.String(bn))))
+      
+    #Get the left sum
+    leftSum = getAreaUnderCurve(harmCoeffs,t0,t1)
+    leftSumBandNames = leftSum.bandNames()
+    leftSumBandNames = leftSumBandNames.map(lambda bn: outName.cat(ee.String('_').cat(ee.String(bn))))
      
-#       return amplitude
-#             .addBands(phase)
-#             .addBands(peakDate.rename(peakDateBandNames))
-#             .addBands(leftSum.rename(leftSumBandNames));
+    return amplitude\
+            .addBands(phase)\
+            .addBands(peakDate.rename(peakDateBandNames))\
+            .addBands(leftSum.rename(leftSumBandNames))
     
-#     });
+    
   
-#     //Convert to an image
-#     phaseAmplitude = ee.ImageCollection.fromImages(phaseAmplitude);
-    
-#     phaseAmplitude = ee.Image(collectionToImage(phaseAmplitude)).float()
-#           .copyProperties(coeffs,['system:time_start']);
-#     // print('pa',phaseAmplitude);
-#     return phaseAmplitude;
+  #Convert to an image
+  phaseAmplitude =parsedModel.map(papGetter)
 
-
-# }
-# /////////////////////////////////////////////////////
-# //Function for applying harmonic regression model to set of predictor sets
-# function newPredict(coeffs,harmonics){
-#   //Parse the model
-#   var bandNames = coeffs.bandNames();
-#   var bandNumber = bandNames.length();
-#   var noDependents = ee.Number(coeffs.get('noDependents'));
-#   var modelLength = ee.Number(coeffs.get('modelLength'));
-#   var interceptBands = ee.List.sequence(0,bandNumber.subtract(1),modelLength);
-#   var timeBand = ee.List(harmonics.get('indBandNames')).get(0);
-#   var actualBands = harmonics.get('depBandNumbers');
-#   var indBands = harmonics.get('indBandNumbers');
-#   var indBandNames = ee.List(harmonics.get('indBandNames'));
-#   var depBandNames = ee.List(harmonics.get('depBandNames'));
-#   var predictedBandNames = depBandNames.map(function(depbnms){return ee.String(depbnms).cat('_predicted')});
-#   var predictedBandNumbers = ee.List.sequence(0,predictedBandNames.length().subtract(1));
-
-#   var models = ee.List.sequence(0,noDependents.subtract(1));
-#   var parsedModel =models.map(function(mn){
-#     mn = ee.Number(mn);
-#     return bandNames.slice(mn.multiply(modelLength),mn.multiply(modelLength).add(modelLength));
-#   });
-#   // print('Parsed harmonic regression model',parsedModel,predictedBandNames);
+  phaseAmplitude = ee.ImageCollection.fromImages(phaseAmplitude)
   
-#   //Apply parsed model
-#   var predicted =harmonics.map(function(img){
-#     var time = img.select(timeBand);
-#     var actual = img.select(actualBands).float();
-#     var predictorBands = img.select(indBandNames);
-    
-#     //Iterate across each model for each dependent variable
-#     var predictedList =parsedModel.map(function(pm){
-#       pm = ee.List(pm);
-#       var modelCoeffs = coeffs.select(pm);
-#       var outName = ee.String(pm.get(1)).cat('_predicted');
-#       var intercept = modelCoeffs.select(modelCoeffs.bandNames().slice(0,1));
-#       var others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,null));
-    
-#       predicted = predictorBands.multiply(others).reduce(ee.Reducer.sum()).add(intercept).float();
-#       return predicted.float();
-    
-#     });
-#     //Convert to an image
-#     predictedList = ee.ImageCollection.fromImages(predictedList);
-#     var predictedImage = collectionToImage(predictedList).select(predictedBandNumbers,predictedBandNames);
-    
-#     //Set some metadata
-#     var out = actual.addBands(predictedImage.float())
-#     .copyProperties(img,['system:time_start','system:time_end']);
-#     return out;
-    
-#   });
-#   predicted = ee.ImageCollection(predicted);
-#   // var g = Chart.image.series(predicted,plotPoint,ee.Reducer.mean(),90);
-#   // print(g);
-#   // Map.addLayer(predicted,{},'predicted',false);
+  phaseAmplitude = ee.Image(collectionToImage(phaseAmplitude)).float()\
+        .copyProperties(coeffs,['system:time_start'])
+  #print('pa',phaseAmplitude);
+  return phaseAmplitude;
+
+#########################################################################
+#########################################################################
+#Function for applying harmonic regression model to set of predictor sets
+def newPredict(coeffs,harmonics):
+  #Parse the model
+  bandNames = coeffs.bandNames()
+  bandNumber = bandNames.length()
+  noDependents = ee.Number(coeffs.get('noDependents'))
+  modelLength = ee.Number(coeffs.get('modelLength'))
+  interceptBands = ee.List.sequence(0,bandNumber.subtract(1),modelLength)
+  timeBand = ee.List(harmonics.get('indBandNames')).get(0)
+  actualBands = harmonics.get('depBandNumbers')
+  indBands = harmonics.get('indBandNumbers')
+  indBandNames = ee.List(harmonics.get('indBandNames'))
+  depBandNames = ee.List(harmonics.get('depBandNames'))
+  predictedBandNames = depBandNames.map(lambda depbnms:ee.String(depbnms).cat('_predicted'))
+  predictedBandNumbers = ee.List.sequence(0,predictedBandNames.length().subtract(1))
+
+  models = ee.List.sequence(0,noDependents.subtract(1))
+  def mnGetter(mn):
+    mn = ee.Number(mn)
+    return bandNames.slice(mn.multiply(modelLength),mn.multiply(modelLength).add(modelLength))
   
-#   return predicted;
-# }
-# //////////////////////////////////////////////////////
-# //Function to get a dummy image stack for synthetic time series
-# function getDateStack(startYear,endYear,startJulian,endJulian,frequency){
-#   var years = ee.List.sequence(startYear,endYear);
-#   var dates = ee.List.sequence(startJulian,endJulian,frequency);
-#   //print(startYear,endYear,startJulian,endJulian)
-#   var dateSets = years.map(function(yr){
-#     var ds = dates.map(function(d){
-#       return ee.Date.fromYMD(yr,1,1).advance(d,'day');
-#     });
-#     return ds;
-#   });
-#   var l = range(1,indexNames.length+1);
-#   l = l.map(function(i){return i%i});
-#   var c = ee.Image(l).rename(indexNames);
-#   c = c.divide(c);
+  parsedModel =models.map(mnGetter)
+    
+  #print('Parsed harmonic regression model',parsedModel,predictedBandNames)
+  
+  #Apply parsed model
+  def predGetter(img):
+    time = img.select(timeBand)
+    actual = img.select(actualBands).float()
+    predictorBands = img.select(indBandNames)
+    
+    #Iterate across each model for each dependent variable
+    def pmGetter(pm):
+      pm = ee.List(pm)
+      modelCoeffs = coeffs.select(pm)
+      outName = ee.String(pm.get(1)).cat('_predicted')
+      intercept = modelCoeffs.select(modelCoeffs.bandNames().slice(0,1))
+      others = modelCoeffs.select(modelCoeffs.bandNames().slice(1,None))
+    
+      predicted = predictorBands.multiply(others).reduce(ee.Reducer.sum()).add(intercept).float()
+      return predicted.float()
+    
+    
+    predictedList =parsedModel.map(pmGetter)
+      
+    #Convert to an image
+    predictedList = ee.ImageCollection.fromImages(predictedList)
+    predictedImage = collectionToImage(predictedList).select(predictedBandNumbers,predictedBandNames)
+    
+    #Set some metadata
+    out = actual.addBands(predictedImage.float())\
+    .copyProperties(img,['system:time_start','system:time_end'])
+    return out
+  
+  predicted =harmonics.map(predGetter)
+    
+  predicted = ee.ImageCollection(predicted)
  
-#   dateSets = dateSets.flatten();
-#   var stack = dateSets.map(function(dt){
-#     dt = ee.Date(dt);
-#     var y = dt.get('year');
-#     var d = dt.getFraction('year');
-#     var i = ee.Image(y.add(d)).float().select([0],['year']);
+  #Map.addLayer(predicted,{},'predicted',False)
+  
+  return predicted
+
+#########################################################################
+#########################################################################
+#Function to get a dummy image stack for synthetic time series
+def getDateStack(startYear,endYear,startJulian,endJulian,frequency):
+  years = ee.List.sequence(startYear,endYear)
+  dates = ee.List.sequence(startJulian,endJulian,frequency)
+
+  def yrGetter(yr):
+    def dGetter(d):
+      return ee.Date.fromYMD(yr,1,1).advance(d,'day')
+    ds = dates.map(dGetter)
+    return ds
+
+  dateSets = years.map(yrGetter)
+
+  l = range(1,len(indexNames)+1)
+  l = [i%i for i in l]
+  c = ee.Image(l).rename(indexNames)
+  c = c.divide(c)
+ 
+  dateSets = dateSets.flatten()
+
+  def dtGetter(dt):
+    dt = ee.Date(dt)
+    y = dt.get('year')
+    d = dt.getFraction('year')
+    i = ee.Image(y.add(d)).float().select([0],['year'])
     
-#     i = c.addBands(i).float()
-#     .set('system:time_start',dt.millis())
-#     .set('system:time_end',dt.advance(frequency,'day').millis());
-#     return i;
-    
-#   });
-#   stack = ee.ImageCollection.fromImages(stack);
-#   return stack;
-# }
+    i = c.addBands(i).float()\
+      .set('system:time_start',dt.millis())\
+      .set('system:time_end',dt.advance(frequency,'day').millis())
+    return i
+  stack = dateSets.map(dtGetter)
+  stack = ee.ImageCollection.fromImages(stack)
+  return stack
 
+#########################################################################
+#########################################################################
+def getHarmonicCoefficientsAndFit(allImages,indexNames,whichHarmonics = [2],detrend = False):
 
+  #Select desired bands
+  allIndices = allImages.select(indexNames)
+  
+  #Add date band
+  if detrend:
+    allIndices = allIndices.map(addDateBand)
+  else:
+    allIndices = allIndices.map(addYearFractionBand)
+  
+  
+  #Add independent predictors (harmonics)
+  withHarmonics = getHarmonics2(allIndices,'year',whichHarmonics,detrend)
+  withHarmonicsBns = ee.Image(withHarmonics.first()).bandNames().slice(len(indexNames)+1,None)
+  
+  #Optionally chart the collection with harmonics
+ 
+  #Fit a linear regression model
+  coeffs = newRobustMultipleLinear2(withHarmonics)
+  
+  #Can visualize the phase and amplitude if only the first ([2]) harmonic is chosen
+  # if whichHarmonics == 2{
+  #    var pa = getPhaseAmplitude(coeffs);
+  #  // Turn the HSV data into an RGB image and add it to the map.
+  #  var seasonality = pa.select([1,0]).addBands(allIndices.select([indexNames[0]]).mean()).hsvToRgb();
+  #  // Map.addLayer(seasonality, {}, 'Seasonality');
+  #  }
+  
+  
+  
+  #Map.addLayer(coeffs,{},'Harmonic Regression Coefficients',False)
+  predicted = newPredict(coeffs,withHarmonics)
+  return [coeffs,predicted]
 
-# ////////////////////////////////////////////////////////////////////
-# function getHarmonicCoefficientsAndFit(allImages,indexNames,whichHarmonics,detrend){
-#   if(detrend === undefined || detrend === null){detrend = false}
-#   if(whichHarmonics === undefined || whichHarmonics === null){whichHarmonics = [2]}
-  
-#   //Select desired bands
-#   var allIndices = allImages.select(indexNames);
-  
-#   //Add date band
-#   if(detrend){
-#     allIndices = allIndices.map(addDateBand);
-#   }
-#   else{
-#     allIndices = allIndices.map(addYearFractionBand);
-#   }
-  
-#   //Add independent predictors (harmonics)
-#   var withHarmonics = getHarmonics2(allIndices,'year',whichHarmonics,detrend);
-#   var withHarmonicsBns = ee.Image(withHarmonics.first()).bandNames().slice(indexNames.length+1,null);
-  
-#   //Optionally chart the collection with harmonics
-#   // var g = Chart.image.series(withHarmonics.select(withHarmonicsBns),plotPoint,ee.Reducer.mean(),30);
-#   // print(g);
-  
-#   //Fit a linear regression model
-#   var coeffs = newRobustMultipleLinear2(withHarmonics);
-  
-#   //Can visualize the phase and amplitude if only the first ([2]) harmonic is chosen
-#   // if(whichHarmonics == 2){
-#   //   var pa = getPhaseAmplitude(coeffs);
-#   // // Turn the HSV data into an RGB image and add it to the map.
-#   // var seasonality = pa.select([1,0]).addBands(allIndices.select([indexNames[0]]).mean()).hsvToRgb();
-#   // // Map.addLayer(seasonality, {}, 'Seasonality');
-#   // }
-  
-  
-  
-#   // Map.addLayer(coeffs,{},'Harmonic Regression Coefficients',false);
-#   var predicted = newPredict(coeffs,withHarmonics);
-#   return [coeffs,predicted];
-# }
 # ///////////////////////////////////////////////////////////////
 # // function getHarmonicFit(allImages,indexNames,whichHarmonics){
 # //   getHarmonicCoefficients(allImages,indexNames,whichHarmonics)
