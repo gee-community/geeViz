@@ -1358,13 +1358,6 @@ var modis500BandNames = ['blue','green','swir1','swir2','SensorZenith'];
 
 var combinedModisBandNames = ['red','nir','blue','green','swir1','swir2'];
 
-//b1 = red
-//b2 = nir
-//b3 = blue
-//b4 = green
-//b5 = swirNotInLandsat
-//b6 = swir1
-//b7 = swir2
 
 //Dictionary of MODIS collections
 var modisCDict = {
