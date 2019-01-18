@@ -1342,22 +1342,29 @@ function sentinel2CloudScore(img) {
 //MODIS processing
 //////////////////////////////////////////////////
 //Some globals to deal with multi-spectral MODIS
-var wTempSelectOrder = [2,3,0,1,4,6,5];//Band order to select to be Landsat 5-like if thermal is included
-var wTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','temp','swir2'];
+var wTempSelectOrder = [2,3,0,1,4,7,5,6];//Band order to select to be Landsat 5-like if thermal is included
+var wTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','temp','swir2','SensorZenith'];
 
-var woTempSelectOrder = [2,3,0,1,4,5];//Band order to select to be Landsat 5-like if thermal is excluded
-var woTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','swir2'];
+var woTempSelectOrder = [2,3,0,1,4,5,6];//Band order to select to be Landsat 5-like if thermal is excluded
+var woTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','swir2','SensorZenith'];
 
 //Band names from different MODIS resolutions
 //Try to take the highest spatial res for a given band
 var modis250SelectBands = ['sur_refl_b01','sur_refl_b02'];
 var modis250BandNames = ['red','nir'];
 
-var modis500SelectBands = ['sur_refl_b03','sur_refl_b04','sur_refl_b06','sur_refl_b07'];
-var modis500BandNames = ['blue','green','swir1','swir2'];
+var modis500SelectBands = ['sur_refl_b03','sur_refl_b04','sur_refl_b06','sur_refl_b07','SensorZenith'];
+var modis500BandNames = ['blue','green','swir1','swir2','SensorZenith'];
 
 var combinedModisBandNames = ['red','nir','blue','green','swir1','swir2'];
 
+//b1 = red
+//b2 = nir
+//b3 = blue
+//b4 = green
+//b5 = swirNotInLandsat
+//b6 = swir1
+//b7 = swir2
 
 //Dictionary of MODIS collections
 var modisCDict = {
