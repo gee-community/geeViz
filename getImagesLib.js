@@ -1576,22 +1576,22 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
       });
       // print('Collection',joined);
       //Since MODIS thermal is divided by 0.02, multiply it by that and 10000 if it was included
-      if(useTempInCloudMask === true){
-      joined = joined.map(function(img){
-        var t = img.select(['temp']).multiply(0.02*10000);
-        var z = img.select(['SensorZenith']).multiply(100);
-        return img.select(['blue','green','red','nir','swir1','swir2'])
-        .addBands(z).addBands(t).select([0,1,2,3,4,7,5,6]);
+      // if(useTempInCloudMask === true){
+      // joined = joined.map(function(img){
+      //   var t = img.select(['temp']).multiply(0.02*10000);
+      //   var z = img.select(['SensorZenith']).multiply(100);
+      //   return img.select(['blue','green','red','nir','swir1','swir2'])
+      //   .addBands(z).addBands(t).select([0,1,2,3,4,7,5,6]);
       
-      });
-      }else{
-        joined = joined.map(function(img){
-        var z = img.select(['SensorZenith']).multiply(100);
-        return img.select(['blue','green','red','nir','swir1','swir2'])
-        .addBands(z);
+      // });
+      // }else{
+      //   joined = joined.map(function(img){
+      //   var z = img.select(['SensorZenith']).multiply(100);
+      //   return img.select(['blue','green','red','nir','swir1','swir2'])
+      //   .addBands(z);
       
-      });
-      }
+      // });
+      // }
     
   //   //Get some descriptive names for displaying layers
   //   var name = 'surRefl';
