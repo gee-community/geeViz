@@ -1187,14 +1187,14 @@ def modisCloudScore(img):
   score = score.min(vizSum)
 
   #Clouds are reasonably bright in all infrared bands.
-  irSum =rescale(img, 'img.nir + img.swir1 + img.swir2', [0.3, 0.8])
+  irSum =rescale(img, 'img.nir + img.swir2', [0.3, 0.7])
   score = score.min(irSum)
 
 
 
   #However, clouds are not snow.
-  ndsi = img.normalizedDifference(['green', 'swir1'])
-  snowScore = rescale(ndsi, 'img', [0.8, 0.6])
+  ndsi = img.normalizedDifference(['green', 'swir2'])
+  snowScore = rescale(ndsi, 'img', [0.7, 0.5])
   score =score.min(snowScore)
 
   #For MODIS, provide the option of not using thermal since it introduces
@@ -1202,6 +1202,7 @@ def modisCloudScore(img):
   if useTempInCloudMask:
       #Clouds are reasonably cool in temperature.
       tempScore = rescale(img, 'img.temp', [305, 300])
+      Map.addLayer(tempScore,{},'tempscore')
       score = score.min(tempScore)
 
   score = score.multiply(100)
@@ -1424,8 +1425,8 @@ def getModisData(startYear,endYear,startJulian,endJulian,daily = False,maskWQA =
     a1000 = ee.ImageCollection(a1000C)\
             .filter(ee.Filter.calendarRange(startYear,endYear,'year'))\
             .filter(ee.Filter.calendarRange(startJulian,endJulian))\
-            .select([0])  
-  
+            .select([0]) 
+   
 
   #Now all collections are pulled, start joining them
   #First join the 250 and 500 m Aqua
@@ -1439,6 +1440,7 @@ def getModisData(startYear,endYear,startJulian,endJulian,daily = False,maskWQA =
   if useTempInCloudMask:
     a = joinCollections(a,a1000)
     t = joinCollections(t,t1000)
+
     tSelectOrder = wTempSelectOrder
     tStdNames = wTempStdNames
   
@@ -1464,7 +1466,7 @@ def getModisData(startYear,endYear,startJulian,endJulian,daily = False,maskWQA =
   
   if useTempInCloudMask:
     joined = joined.map(multiplier)
-    
+  Map.addLayer(ee.Image(joined.first()),vizParamsFalse)
 #   //   //Get some descriptive names for displaying layers
 #   //   var name = 'surRefl';
 #   //   if(daily === true){
@@ -2133,8 +2135,8 @@ def getAreaUnderCurve(harmCoeffs,t0= 0,t1 = 1):
             .add(cos.divide(2*math.pi).multiply(math.cos(2*math.pi*t0)))
   #Find the sum from - infinity to 1
   sum1 = intereceptNormalized.multiply(t1)\
-        .subtract(sin.divide(2*math.pi).multiply(math.sin(2*math.pi*t1)))
-        .add(cos.divide(2*Math.PI).multiply(math.cos(2*math.pi*t1)))
+        .subtract(sin.divide(2*math.pi).multiply(math.sin(2*math.pi*t1)))\
+        .add(cos.divide(2*math.pi).multiply(math.cos(2*math.pi*t1)))
   #Find the difference
   leftSum = sum1.subtract(sum0).rename(['AUC'])
   return leftSum
