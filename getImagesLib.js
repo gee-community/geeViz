@@ -1342,19 +1342,19 @@ function sentinel2CloudScore(img) {
 //MODIS processing
 //////////////////////////////////////////////////
 //Some globals to deal with multi-spectral MODIS
-var wTempSelectOrder = [2,3,0,1,4,6,5];//Band order to select to be Landsat 5-like if thermal is included
-var wTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','temp','swir2'];
+var wTempSelectOrder = [2,3,0,1,4,7,5,6];//Band order to select to be Landsat 5-like if thermal is included
+var wTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','temp','swir2','SensorZenith'];
 
-var woTempSelectOrder = [2,3,0,1,4,5];//Band order to select to be Landsat 5-like if thermal is excluded
-var woTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','swir2'];
+var woTempSelectOrder = [2,3,0,1,4,5,6];//Band order to select to be Landsat 5-like if thermal is excluded
+var woTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','swir2','SensorZenith'];
 
 //Band names from different MODIS resolutions
 //Try to take the highest spatial res for a given band
 var modis250SelectBands = ['sur_refl_b01','sur_refl_b02'];
 var modis250BandNames = ['red','nir'];
 
-var modis500SelectBands = ['sur_refl_b03','sur_refl_b04','sur_refl_b06','sur_refl_b07'];
-var modis500BandNames = ['blue','green','swir1','swir2'];
+var modis500SelectBands = ['sur_refl_b03','sur_refl_b04','sur_refl_b06','sur_refl_b07','SensorZenith'];
+var modis500BandNames = ['blue','green','swir1','swir2','SensorZenith'];
 
 var combinedModisBandNames = ['red','nir','blue','green','swir1','swir2'];
 
@@ -1524,8 +1524,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
                 return img;
               });
               }
-              images = images
-              .select(modis500SelectBands,modis500BandNames);
+              images = images.select(modis500SelectBands,modis500BandNames);
               return images;
     }         
     var a500 = get500(a500C);
@@ -1580,8 +1579,16 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
       if(useTempInCloudMask === true){
       joined = joined.map(function(img){
         var t = img.select(['temp']).multiply(0.02*10000);
+        var z = img.select(['SensorZenith']).multiply(100);
         return img.select(['blue','green','red','nir','swir1','swir2'])
-        .addBands(t).select([0,1,2,3,4,6,5]);
+        .addBands(z).addBands(t).select([0,1,2,3,4,7,5,6]);
+      
+      });
+      }else{
+        joined = joined.map(function(img){
+        var z = img.select(['SensorZenith']).multiply(100);
+        return img.select(['blue','green','red','nir','swir1','swir2'])
+        .addBands(z);
       
       });
       }
