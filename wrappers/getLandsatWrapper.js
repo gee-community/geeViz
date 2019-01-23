@@ -1,9 +1,13 @@
 /**** Start of imports. If edited, may not auto-convert in the playground. ****/
 var geometry = /* color: #d63000 */ee.Geometry.Polygon(
-        [[[-114.69314346464893, 48.39041972857284],
-          [-114.71490148008343, 47.17477802176634],
-          [-113.14401469992043, 47.25149041640245],
-          [-113.47117916898532, 48.33784190470248]]]);
+        [[[-87.66682292308292, 1.5723669111173635],
+          [-92.10529948558292, 1.4845075653768571],
+          [-92.50080729808292, -1.4595043849082556],
+          [-80.72346354808292, -4.180557261715335],
+          [-79.14143229808292, -5.275434793375029],
+          [-75.18635417308292, -2.5574454160619378],
+          [-75.01057292308292, 0.12236890549915176],
+          [-79.36115886058292, 1.660222558786905]]]);
 /***** End of imports. If edited, may not auto-convert in the playground. *****/
 //Module imports
 var getImageLib = require('users/USFS_GTAC/modules:getImagesLib.js');
@@ -19,14 +23,14 @@ var studyArea = geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 190;
-var endJulian = 250; 
+var startJulian = 1;
+var endJulian = 365; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
 // well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 // matter
-var startYear = 2010;
+var startYear = 2012;
 var endYear = 2018;
 
 // 4. Specify an annual buffer to include imagery from the same season 
@@ -57,7 +61,7 @@ var toaOrSR = 'SR';
 
 // 8. Choose whether to include Landat 7
 // Generally only included when data are limited
-var includeSLCOffL7 = false;
+var includeSLCOffL7 = true;
 
 //9. Whether to defringe L5
 //Landsat 5 data has fringes on the edges that can introduce anomalies into 
@@ -130,7 +134,7 @@ var correctScale = 250;//Choose a scale to reduce on- 250 generally works well
 
 //13. Export params
 //Whether to export composites
-var exportComposites = true;
+var exportComposites = false;
 
 //Set up Names for the export
 var outputName = 'Landsat';
