@@ -128,7 +128,7 @@ var contractPixels = 0;
 //    that are often missed
 // (1.5 results in a 1 pixel buffer)(0.5 results in a 0 pixel buffer)
 // (2.5 or 3.5 generally is sufficient)
-var dilatePixels = 0;
+var dilatePixels = 3.5;
 
 
 //15. Export params
