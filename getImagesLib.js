@@ -1272,14 +1272,14 @@ function modisCloudScore(img) {
   score = score.min(vizSum);
   
   // Clouds are reasonably bright in all infrared bands.
-  var irSum =rescale(img, 'img.nir  + img.swir2', [0.3, 0.8]);
+  var irSum =rescale(img, 'img.nir +img.swir1 + img.swir2', [0.3, 0.8]);
   score = score.min(
       irSum);
   
   
   
   // However, clouds are not snow.
-  var ndsi = img.normalizedDifference(['green', 'swir2']);
+  var ndsi = img.normalizedDifference(['green', 'swir1']);
   var snowScore = rescale(ndsi, 'img', [0.8, 0.6]);
   score =score.min(snowScore);
   
