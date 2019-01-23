@@ -22,8 +22,8 @@ var studyArea = geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 256;
-var endJulian = 256+16; 
+var startJulian = 100;
+var endJulian = 100+16; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
@@ -160,66 +160,66 @@ print(modisImages.first())
 Map.addLayer(modisImages.median(),{min:0.05,max:0.7,bands:'swir1,nir,red'},'Before Masking',false);
 
   
-// Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'before',false)
-// Apply relevant cloud masking methods
-if(applyCloudScore){
-  print('Applying cloudScore');
-  modisImages = getImageLib.applyCloudScoreAlgorithm(modisImages,getImageLib.modisCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset); 
-}
+// // Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'before',false)
+// // Apply relevant cloud masking methods
+// if(applyCloudScore){
+//   print('Applying cloudScore');
+//   modisImages = getImageLib.applyCloudScoreAlgorithm(modisImages,getImageLib.modisCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset); 
+// }
 
 
-// Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'beforetdom') 
+// // Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'beforetdom') 
 
-if(applyTDOM){
-  print('Applying TDOM');
-  // Find and mask out dark outliers
-  modisImages = getImageLib.simpleTDOM2(modisImages,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
-// Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'aftertdom') 
-}
+// if(applyTDOM){
+//   print('Applying TDOM');
+//   // Find and mask out dark outliers
+//   modisImages = getImageLib.simpleTDOM2(modisImages,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
+// // Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'aftertdom') 
+// }
 
-if(despikeMODIS){
-    print('Despiking MODIS');
-    modisImages = getImageLib.despikeCollection(modisImages,modisSpikeThresh,'nir');
+// if(despikeMODIS){
+//     print('Despiking MODIS');
+//     modisImages = getImageLib.despikeCollection(modisImages,modisSpikeThresh,'nir');
    
   
-}
-
-Map.addLayer(modisImages.median(),{min:0.05,max:0.7,bands:'swir1,nir,red'},'After Masking',false) 
-
-
-
-// // Add zenith and azimuth
-// if (correctIllumination){
-//   ls = ls.map(function(img){
-//     return getImageLib.addZenithAzimuth(img,toaOrSR);
-//   });
 // }
 
-// Add common indices- can use addIndices for comprehensive indices 
-//or simpleAddIndices for only common indices
-modisImages = modisImages.map(getImageLib.simpleAddIndices);
-
-// Create composite time series
-var modisImages = getImageLib.compositeTimeSeries(modisImages,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod,null);
-var f = ee.Image(modisImages.first());
-Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
-
-// // Correct illumination
-// if (correctIllumination){
-//   print('Correcting illumination');
-//   ts = ts.map(getImageLib.illuminationCondition)
-//     .map(function(img){
-//       return getImageLib.illuminationCorrection(img, correctScale,studyArea);
-//     });
-//   var f = ee.Image(ts.first());
-//   Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated',false);
-// }
+// Map.addLayer(modisImages.median(),{min:0.05,max:0.7,bands:'swir1,nir,red'},'After Masking',false) 
 
 
-// Export composite collection
-var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2'];
-getImageLib.exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
-modisImages,startYear,endYear,startJulian,endJulian,null,timebuffer,exportBands);
+
+// // // Add zenith and azimuth
+// // if (correctIllumination){
+// //   ls = ls.map(function(img){
+// //     return getImageLib.addZenithAzimuth(img,toaOrSR);
+// //   });
+// // }
+
+// // Add common indices- can use addIndices for comprehensive indices 
+// //or simpleAddIndices for only common indices
+// modisImages = modisImages.map(getImageLib.simpleAddIndices);
+
+// // Create composite time series
+// var modisImages = getImageLib.compositeTimeSeries(modisImages,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod,null);
+// var f = ee.Image(modisImages.first());
+// Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
+
+// // // Correct illumination
+// // if (correctIllumination){
+// //   print('Correcting illumination');
+// //   ts = ts.map(getImageLib.illuminationCondition)
+// //     .map(function(img){
+// //       return getImageLib.illuminationCorrection(img, correctScale,studyArea);
+// //     });
+// //   var f = ee.Image(ts.first());
+// //   Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated',false);
+// // }
+
+
+// // Export composite collection
+// var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2'];
+// getImageLib.exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
+// modisImages,startYear,endYear,startJulian,endJulian,null,timebuffer,exportBands);
 
 // /////////////////////////////////////////////////////////////////////////////////////////////
 
