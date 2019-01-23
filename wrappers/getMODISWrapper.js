@@ -22,8 +22,8 @@ var studyArea = geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 70;
-var endJulian = 70+16; 
+var startJulian = 50;
+var endJulian = 50+16; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
@@ -57,7 +57,7 @@ var exportPathRoot = 'users/ianhousman/test';
 // Median tends to be smoother, while medoid retains 
 // single date of observation across all bands
 // If not exporting indices with composites to save space, medoid should be used
-var compositingMethod = 'median';
+var compositingMethod = 'medoid';
 
 //MODIS Params- params if sensorProgram is modis
 //Whether to use daily MODIS (true) or 8 day composites (false)
@@ -157,73 +157,69 @@ if(applyCloudScore){var useTempInCloudMask = true}else{var useTempInCloudMask = 
 var modisImages = getImageLib.getModisData(startYear,endYear,startJulian,endJulian,daily,applyQACloudMask,zenithThresh,useTempInCloudMask);
 print(modisImages.first())
 // Map.addLayer(modisImages.select(['nir']),{},'original',false); 
-Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'Before Masking',false);
-Map.addLayer(ee.Image(modisImages.first()),getImageLib.vizParamsFalse)
+Map.addLayer(modisImages.median(),{min:0.05,max:0.7,bands:'swir1,nir,red'},'Before Masking',false);
+
   
 // Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'before',false)
 // Apply relevant cloud masking methods
-var cs = getImageLib.modisCloudScore(ee.Image(modisImages.first()))
-Map.addLayer(cs,{min:0,max:100},'cs')
 if(applyCloudScore){
   print('Applying cloudScore');
   modisImages = getImageLib.applyCloudScoreAlgorithm(modisImages,getImageLib.modisCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset); 
 }
-Map.addLayer(ee.Image(modisImages.first()),getImageLib.vizParamsFalse)
-Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'After cloud Masking',false);
 
 
-// // Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'beforetdom') 
+// Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'beforetdom') 
 
-// if(applyTDOM){
-//   print('Applying TDOM');
-//   // Find and mask out dark outliers
-//   modisImages = getImageLib.simpleTDOM2(modisImages,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
-// // Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'aftertdom') 
-// }
+if(applyTDOM){
+  print('Applying TDOM');
+  // Find and mask out dark outliers
+  modisImages = getImageLib.simpleTDOM2(modisImages,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels);
+// Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'aftertdom') 
+}
 
-// if(despikeMODIS){
-//     print('Despiking MODIS');
-//     modisImages = getImageLib.despikeCollection(modisImages,modisSpikeThresh,'nir');
+if(despikeMODIS){
+    print('Despiking MODIS');
+    modisImages = getImageLib.despikeCollection(modisImages,modisSpikeThresh,'nir');
    
   
+}
+
+Map.addLayer(modisImages.median(),{min:0.05,max:0.7,bands:'swir1,nir,red'},'After Masking',false) 
+
+
+
+// // Add zenith and azimuth
+// if (correctIllumination){
+//   ls = ls.map(function(img){
+//     return getImageLib.addZenithAzimuth(img,toaOrSR);
+//   });
 // }
 
-// Map.addLayer(modisImages.median(),{min:0.05,max:0.7,bands:'swir1,nir,red'},'After Masking',false) 
+// Add common indices- can use addIndices for comprehensive indices 
+//or simpleAddIndices for only common indices
+modisImages = modisImages.map(getImageLib.simpleAddIndices);
+
+// Create composite time series
+var modisImages = getImageLib.compositeTimeSeries(modisImages,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod,null);
+var f = ee.Image(modisImages.first());
+Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
+
+// // Correct illumination
+// if (correctIllumination){
+//   print('Correcting illumination');
+//   ts = ts.map(getImageLib.illuminationCondition)
+//     .map(function(img){
+//       return getImageLib.illuminationCorrection(img, correctScale,studyArea);
+//     });
+//   var f = ee.Image(ts.first());
+//   Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated',false);
+// }
 
 
-
-// // // Add zenith and azimuth
-// // if (correctIllumination){
-// //   ls = ls.map(function(img){
-// //     return getImageLib.addZenithAzimuth(img,toaOrSR);
-// //   });
-// // }
-
-// // Add common indices- can use addIndices for comprehensive indices 
-// //or simpleAddIndices for only common indices
-// modisImages = modisImages.map(getImageLib.simpleAddIndices);
-
-// // Create composite time series
-// var modisImages = getImageLib.compositeTimeSeries(modisImages,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod,null);
-// var f = ee.Image(modisImages.first());
-// Map.addLayer(f,getImageLib.vizParamsFalse,'First-non-illuminated',false);
-
-// // // Correct illumination
-// // if (correctIllumination){
-// //   print('Correcting illumination');
-// //   ts = ts.map(getImageLib.illuminationCondition)
-// //     .map(function(img){
-// //       return getImageLib.illuminationCorrection(img, correctScale,studyArea);
-// //     });
-// //   var f = ee.Image(ts.first());
-// //   Map.addLayer(f,getImageLib.vizParamsFalse,'First-illuminated',false);
-// // }
-
-
-// // Export composite collection
-// var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2'];
-// getImageLib.exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
-// modisImages,startYear,endYear,startJulian,endJulian,null,timebuffer,exportBands);
+// Export composite collection
+var exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2'];
+getImageLib.exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,
+modisImages,startYear,endYear,startJulian,endJulian,null,timebuffer,exportBands);
 
 // /////////////////////////////////////////////////////////////////////////////////////////////
 
