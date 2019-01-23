@@ -616,9 +616,7 @@ function landsatCloudScore(img) {
   var ndsi = img.normalizedDifference(['green', 'swir1']);
   score = score.min(rescale(ndsi, 'img', [0.8, 0.6]));
   
-  // var ss = snowScore(img).select(['snowScore']);
-  // score = score.min(rescale(ss, 'img', [0.3, 0]));
-  
+ 
   score = score.multiply(100).byte();
   score = score.clamp(0,100);
   return score;
