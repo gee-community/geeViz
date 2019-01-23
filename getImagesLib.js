@@ -1285,11 +1285,11 @@ function modisCloudScore(img) {
   
   //For MODIS, provide the option of not using thermal since it introduces
   //a precomputed mask that may or may not be wanted
-  if(useTempInCloudMask === true){
-    // Clouds are reasonably cool in temperature.
-    var tempScore = rescale(img, 'img.temp', [305, 300]);
-    score = score.min(tempScore);
-  }
+  // if(useTempInCloudMask === true){
+  //   // Clouds are reasonably cool in temperature.
+  //   var tempScore = rescale(img, 'img.temp', [305, 300]);
+  //   score = score.min(tempScore);
+  // }
   
   score = score.multiply(100);
   score = score.clamp(0,100);
