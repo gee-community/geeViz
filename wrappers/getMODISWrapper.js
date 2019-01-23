@@ -22,7 +22,7 @@ var studyArea = geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 100;
+var startJulian = 110;
 var endJulian = 100+16; 
 
 // 3. Specify start and end years for all analyses
@@ -128,7 +128,7 @@ var contractPixels = 0;
 //    that are often missed
 // (1.5 results in a 1 pixel buffer)(0.5 results in a 0 pixel buffer)
 // (2.5 or 3.5 generally is sufficient)
-var dilatePixels = 3.5;
+var dilatePixels = 0;
 
 
 //15. Export params
@@ -158,14 +158,18 @@ var modisImages = getImageLib.getModisData(startYear,endYear,startJulian,endJuli
 print(modisImages.first())
 // Map.addLayer(modisImages.select(['nir']),{},'original',false); 
 Map.addLayer(modisImages.median(),{min:0.05,max:0.7,bands:'swir1,nir,red'},'Before Masking',false);
-
+Map.addLayer(ee.Image(modisImages.first()),getImageLib.vizParamsFalse)
   
-// // Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'before',false)
-// // Apply relevant cloud masking methods
-// if(applyCloudScore){
-//   print('Applying cloudScore');
-//   modisImages = getImageLib.applyCloudScoreAlgorithm(modisImages,getImageLib.modisCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset); 
-// }
+// Map.addLayer(modisImages.median(),getImageLib.vizParamsFalse,'before',false)
+// Apply relevant cloud masking methods
+var cs = getImageLib.modisCloudScore(ee.Image(modisImages.first()))
+Map.addLayer(cs,{min:0,max:100},'cs')
+if(applyCloudScore){
+  print('Applying cloudScore');
+  modisImages = getImageLib.applyCloudScoreAlgorithm(modisImages,getImageLib.modisCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset); 
+}
+Map.addLayer(ee.Image(modisImages.first()),getImageLib.vizParamsFalse)
+Map.addLayer(modisImages.median(),{min:0.05,max:0.7,bands:'swir1,nir,red'},'After cloud Masking',false);
 
 
 // // Map.addLayer(modisImages.min(),getImageLib.vizParamsFalse,'beforetdom') 
