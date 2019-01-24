@@ -337,13 +337,10 @@ function verdetAnnualSlope(tsIndex,indexName,startYear,endYear){
   print('indexName',indexName)
   print('verdet',verdet)                                      
   var tsYear = tsIndex.map(getImageLib.addYearBand).select([1]).toArray().arraySlice(0,1,null).arrayProject([0]);
-  print('tsYear',tsYear)
   
   //Find possible years to convert back to collection with
   var possibleYears = ee.List.sequence(startYear+1,endYear);
-  print('possibleYears',possibleYears)
   var verdetC = arrayToTimeSeries(verdet,tsYear,possibleYears,'VERDET_fitted_'+indexName+'_slope');
-  print('verdetC',verdetC)
   
   return verdetC;
 }
