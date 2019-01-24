@@ -334,14 +334,16 @@ function verdetAnnualSlope(tsIndex,indexName,startYear,endYear){
   var verdet =   ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: tsIndex,
                                         tolerance: 0.0001,
                                         alpha: 1/3.0}).arraySlice(0,1,null);
-                                        
+  print('indexName',indexName)
+  print('verdet',verdet)                                      
   var tsYear = tsIndex.map(getImageLib.addYearBand).select([1]).toArray().arraySlice(0,1,null).arrayProject([0]);
-  
+  print('tsYear',tsYear)
   
   //Find possible years to convert back to collection with
   var possibleYears = ee.List.sequence(startYear+1,endYear);
+  print('possibleYears',possibleYears)
   var verdetC = arrayToTimeSeries(verdet,tsYear,possibleYears,'VERDET_fitted_'+indexName+'_slope');
- 
+  print('verdetC',verdetC)
   
   return verdetC;
 }
