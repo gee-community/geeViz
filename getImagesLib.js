@@ -1568,7 +1568,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
       t = t.map(function(img){return img.set({'platform':'terra'})});
       
       //Join Terra and Aqua 
-      var joined = ee.ImageCollection(a.merge(t)).select(tSelectOrder,tStdNames);
+      var joined = ee.ImageCollection(a).select(tSelectOrder,tStdNames);
      
       //Divide by 10000 to make it work with cloud masking algorithm out of the box
       joined = joined.map(function(img){return img.divide(10000).float()
