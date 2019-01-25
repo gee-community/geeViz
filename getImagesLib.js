@@ -1252,7 +1252,7 @@ var maskCloudsWQA = function(image) {
 // Compute a cloud score.  This expects the input image to have the common
 // band names: ["red", "blue", etc], so it can work across sensors.
 function modisCloudScore(img) {
-  var useTempInCloudMask = true;
+  var useTempInCloudMask = false;
   // A helper to apply an expression and linearly rescale the output.
   var rescale = function(img, exp, thresholds) {
     return img.expression(exp, {img: img})
