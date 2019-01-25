@@ -1287,6 +1287,7 @@ function modisCloudScore(img) {
     // Clouds are reasonably cool in temperature.
     var tempScore = rescale(img, 'img.temp', [305, 300]);
     score = score.min(tempScore);
+    score = score.updateMask(img.select(['temp']).mask());
   }
   
   score = score.multiply(100);
