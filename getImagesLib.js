@@ -1584,14 +1584,14 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
       joined = joined.map(function(img){
         var t = img.select(['temp']).multiply(0.02*10000);
         var z = img.select(['SensorZenith']).multiply(100);
-        return img.select(['blue','green','red','nir','swir1','swir2'])
-        .addBands(z).addBands(t).select([0,1,2,3,4,7,5,6]);
+        return img.select(['blue','green','red','nir','swir2'])
+        .addBands(z).addBands(t).select([0,1,2,3,4,6,5]);
       
       });
       }else{
         joined = joined.map(function(img){
         var z = img.select(['SensorZenith']).multiply(100);
-        return img.select(['blue','green','red','nir','swir1','swir2'])
+        return img.select(['blue','green','red','nir','swir2'])
         .addBands(z);
       
       });
