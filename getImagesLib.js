@@ -1564,6 +1564,9 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
         tStdNames = woTempStdNames;
       }
       
+      a = a.map(function(img){return img.set({'platform':'aqua'})});
+      t = t.map(function(img){return img.set({'platform':'terra'})});
+      
       //Join Terra and Aqua 
       var joined = ee.ImageCollection(a.merge(t)).select(tSelectOrder,tStdNames);
      
