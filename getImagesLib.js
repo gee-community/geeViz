@@ -1545,16 +1545,16 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     //Now all collections are pulled, start joining them
     //First join the 250 and 500 m Aqua
       var a;var t;var tSelectOrder;var tStdNames;
-      a = joinCollections(a250,a500);
+      a = joinCollections(a250,a500,false);
       
       //Then Terra
-      t = joinCollections(t250,t500);
+      t = joinCollections(t250,t500,false);
       
       //If temp was pulled, join that in as well
       //Also select the bands in an L5-like order and give descriptive names
       if(useTempInCloudMask === true){
-        a = joinCollections(a,a1000);
-        t = joinCollections(t,t1000);
+        a = joinCollections(a,a1000,false);
+        t = joinCollections(t,t1000,false);
         tSelectOrder = wTempSelectOrder;
         tStdNames = wTempStdNames;
       }
