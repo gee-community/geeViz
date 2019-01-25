@@ -1401,7 +1401,7 @@ var modisCDict = {
      
       joined = ee.ImageCollection(joined.map(MergeBands));
       if(maskAnyNullValues){
-        joined = joined.map(function(img){return img.updateMask(img.reduce(ee.Reducer.min()))});
+        joined = joined.map(function(img){return img.mask(img.mask().and(img.reduce(ee.Reducer.min()).neq(0)))});
       }
       return joined;
     }
