@@ -616,9 +616,7 @@ function landsatCloudScore(img) {
   var ndsi = img.normalizedDifference(['green', 'swir1']);
   score = score.min(rescale(ndsi, 'img', [0.8, 0.6]));
   
-  // var ss = snowScore(img).select(['snowScore']);
-  // score = score.min(rescale(ss, 'img', [0.3, 0]));
-  
+ 
   score = score.multiply(100).byte();
   score = score.clamp(0,100);
   return score;
@@ -1272,14 +1270,14 @@ function modisCloudScore(img) {
   score = score.min(vizSum);
   
   // Clouds are reasonably bright in all infrared bands.
-  var irSum =rescale(img, 'img.nir + img.swir1 + img.swir2', [0.3, 0.8]);
+  var irSum =rescale(img, 'img.nir  + img.swir2 + img.swir2', [0.3, 0.8]);
   score = score.min(
       irSum);
   
   
   
   // However, clouds are not snow.
-  var ndsi = img.normalizedDifference(['green', 'swir1']);
+  var ndsi = img.normalizedDifference(['green', 'swir2']);
   var snowScore = rescale(ndsi, 'img', [0.8, 0.6]);
   score =score.min(snowScore);
   
@@ -1287,8 +1285,9 @@ function modisCloudScore(img) {
   //a precomputed mask that may or may not be wanted
   if(useTempInCloudMask === true){
     // Clouds are reasonably cool in temperature.
-    var tempScore = rescale(img, 'img.temp', [305, 300]);
-    score = score.min(tempScore);
+    // var tempScore = rescale(img, 'img.temp', [305, 300]);
+    // score = score.min(tempScore);
+    score = score.where(img.select(['temp']).mask().not(),1);
   }
   
   score = score.multiply(100);
@@ -1547,16 +1546,17 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     //Now all collections are pulled, start joining them
     //First join the 250 and 500 m Aqua
       var a;var t;var tSelectOrder;var tStdNames;
-      a = joinCollections(a250,a500);
+      a = joinCollections(a250,a500,false);
       
       //Then Terra
-      t = joinCollections(t250,t500);
+      t = joinCollections(t250,t500,false);
       
       //If temp was pulled, join that in as well
       //Also select the bands in an L5-like order and give descriptive names
       if(useTempInCloudMask === true){
-        a = joinCollections(a,a1000);
-        t = joinCollections(t,t1000);
+        a = joinCollections(a,a1000,false);
+        t = joinCollections(t,t1000,false);
+        
         tSelectOrder = wTempSelectOrder;
         tStdNames = wTempStdNames;
       }
@@ -1566,12 +1566,16 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
         tStdNames = woTempStdNames;
       }
       
+      a = a.map(function(img){return img.set({'platform':'aqua'})});
+      t = t.map(function(img){return img.set({'platform':'terra'})});
+      
       //Join Terra and Aqua 
       var joined = ee.ImageCollection(a.merge(t)).select(tSelectOrder,tStdNames);
      
       //Divide by 10000 to make it work with cloud masking algorithm out of the box
       joined = joined.map(function(img){return img.divide(10000).float()
-        .copyProperties(img,['system:time_start','system:time_end']);
+        .copyProperties(img,['system:time_start','system:time_end','system:index'])
+        .copyProperties(img);
         
       });
       // print('Collection',joined);
