@@ -1555,6 +1555,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
       if(useTempInCloudMask === true){
         a = joinCollections(a,a1000,false);
         t = joinCollections(t,t1000,false);
+        
         tSelectOrder = wTempSelectOrder;
         tStdNames = wTempStdNames;
       }
