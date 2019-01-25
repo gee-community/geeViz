@@ -1572,7 +1572,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
      
       //Divide by 10000 to make it work with cloud masking algorithm out of the box
       joined = joined.map(function(img){return img.divide(10000).float()
-        .copyProperties(img,['system:time_start','system:time_end']);
+        .copyProperties(img);
         
       });
       // print('Collection',joined);
