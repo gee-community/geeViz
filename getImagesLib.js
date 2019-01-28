@@ -1297,7 +1297,7 @@ function modisCloudScore(img) {
   score = score.multiply(100);
   score = score.clamp(0,100);
   var masked = img.updateMask(score.lt(5))
-  Map.addLayer(img,vizParamsFalse,'imgMasked',false)
+  Map.addLayer(masked,vizParamsFalse,'imgMasked',false)
   return score;
 }
 ////////////////////////////////////////
