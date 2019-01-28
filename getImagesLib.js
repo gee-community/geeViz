@@ -1251,6 +1251,7 @@ var maskCloudsWQA = function(image) {
 };
 /////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
+//Comparable bands: https://pbs.twimg.com/media/Cr2V5GJUAAAU6DX.jpg
 //Source: code.earthengine.google.com
 // Compute a cloud score.  This expects the input image to have the common
 // band names: ["red", "blue", etc], so it can work across sensors.
@@ -1343,6 +1344,7 @@ function sentinel2CloudScore(img) {
 //////////////////////////////////////////////////////////////////////////
 //MODIS processing
 //////////////////////////////////////////////////
+//Comparable Landsat bands to MODIS https://pbs.twimg.com/media/Cr2V5GJUAAAU6DX.jpg
 //Some globals to deal with multi-spectral MODIS
 var wTempSelectOrder = [2,3,0,1,4,7,5,6];//Band order to select to be Landsat 5-like if thermal is included
 var wTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','temp','swir2','SensorZenith'];
