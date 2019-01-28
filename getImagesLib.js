@@ -1262,7 +1262,7 @@ function modisCloudScore(img) {
     return img.expression(exp, {img: img})
         .subtract(thresholds[0]).divide(thresholds[1] - thresholds[0]);
   };
-
+  Map.addLayer(img,vizParams)
   // Compute several indicators of cloudyness and take the minimum of them.
   var score = ee.Image(1.0);
   
