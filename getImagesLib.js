@@ -1284,7 +1284,7 @@ function modisCloudScore(img) {
   var ndsi = img.normalizedDifference(['green', 'swir2']);
   var snowScore = rescale(ndsi, 'img', [0.8, 0.6]);
   score =score.min(snowScore);
-  Map.addLayer(score,{min:0,max:1},'blue+viz+ir_ndsi')
+  Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi')
   //For MODIS, provide the option of not using thermal since it introduces
   //a precomputed mask that may or may not be wanted
   if(useTempInCloudMask === true){
@@ -1293,7 +1293,7 @@ function modisCloudScore(img) {
     score = score.min(tempScore);
     score = score.where(img.select(['temp']).mask().not(),1);
   }
-  
+  Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi+temp')
   score = score.multiply(100);
   score = score.clamp(0,100);
   var masked = img.updateMask(score.lt(5))
