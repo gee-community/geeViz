@@ -1274,7 +1274,7 @@ function modisCloudScore(img) {
   score = score.min(vizSum);
    Map.addLayer(score,{min:0,max:1},'blue+viz')
   // Clouds are reasonably bright in all infrared bands.
-  var irSum =rescale(img, 'img.nir  + img.swir1 + img.swir2', [0.3, 0.8]);
+  var irSum =rescale(img, 'img.nir  + img.swir2 + img.swir2', [0.3, 0.8]);
   score = score.min(
       irSum);
   
