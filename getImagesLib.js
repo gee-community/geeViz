@@ -1262,7 +1262,7 @@ function modisCloudScore(img) {
     return img.expression(exp, {img: img})
         .subtract(thresholds[0]).divide(thresholds[1] - thresholds[0]);
   };
-  Map.addLayer(img,vizParamsFalse,'img',false)
+  // Map.addLayer(img,vizParamsFalse,'img',false)
   // Compute several indicators of cloudyness and take the minimum of them.
   var score = ee.Image(1.0);
   
@@ -1272,19 +1272,19 @@ function modisCloudScore(img) {
   // Clouds are reasonably bright in all visible bands.
   var vizSum = rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8]);
   score = score.min(vizSum);
-   Map.addLayer(score,{min:0,max:1},'blue+viz',false)
+  // Map.addLayer(score,{min:0,max:1},'blue+viz',false)
   // Clouds are reasonably bright in all infrared bands.
   var irSum =rescale(img, 'img.nir  + img.swir2 + img.swir2', [0.3, 0.8]);
   score = score.min(
       irSum);
   
-  Map.addLayer(score,{min:0,max:1},'blue+viz+ir',false)
+  // Map.addLayer(score,{min:0,max:1},'blue+viz+ir',false)
   
   // However, clouds are not snow.
   var ndsi = img.normalizedDifference(['green', 'swir2']);
   var snowScore = rescale(ndsi, 'img', [0.8, 0.6]);
   score =score.min(snowScore);
-  Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi',false)
+  // Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi',false)
   //For MODIS, provide the option of not using thermal since it introduces
   //a precomputed mask that may or may not be wanted
   if(useTempInCloudMask === true){
@@ -1293,11 +1293,11 @@ function modisCloudScore(img) {
     // score = score.min(tempScore);
     score = score.where(img.select(['temp']).mask().not(),1);
   }
-  Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi+temp',false)
+  // Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi+temp',false)
   score = score.multiply(100);
   score = score.clamp(0,100);
-  var masked = img.updateMask(score.lt(5))
-  Map.addLayer(masked,vizParamsFalse,'imgMasked',false)
+  // var masked = img.updateMask(score.lt(5))
+  // Map.addLayer(masked,vizParamsFalse,'imgMasked',false)
   return score;
 }
 ////////////////////////////////////////
