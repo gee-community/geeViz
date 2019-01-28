@@ -1268,17 +1268,17 @@ function modisCloudScore(img) {
   
   // Clouds are reasonably bright in the blue band.
   score = score.min(rescale(img, 'img.blue', [0.1, 0.3]));
-  
+  Map.addLayer(score,{min:0,max:1},'blue')
   // Clouds are reasonably bright in all visible bands.
   var vizSum = rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8]);
   score = score.min(vizSum);
-  
+   Map.addLayer(score,{min:0,max:1},'blue+viz')
   // Clouds are reasonably bright in all infrared bands.
   var irSum =rescale(img, 'img.nir  + img.swir2 + img.swir2', [0.3, 0.8]);
   score = score.min(
       irSum);
   
-  
+  Map.addLayer(score,{min:0,max:1},'blue+viz+ir')
   
   // However, clouds are not snow.
   var ndsi = img.normalizedDifference(['green', 'swir2']);
