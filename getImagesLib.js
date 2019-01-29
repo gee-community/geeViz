@@ -1512,7 +1512,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
               // .select(modis250SelectBands,modis250BandNames);
     
     var af = ee.Image(a250.first());
-    var bit1 = af.select(['QC_250m']).bitwiseAnd(0);
+    var bit1 = af.select(['QC_250m']).bitwiseAnd(2^1);
     Map.addLayer(bit1,{},'bit1')
     Map.addLayer(a250.count(),{min:0,max:16},'aCount')
     Map.addLayer(t250.count(),{min:0,max:16},'tCount')
