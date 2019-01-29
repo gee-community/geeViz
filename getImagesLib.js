@@ -1503,13 +1503,13 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     var a250 = ee.ImageCollection(a250C)
               .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
               .filter(ee.Filter.calendarRange(startJulian,endJulian))
-              .select(modis250SelectBands,modis250BandNames);
+              // .select(modis250SelectBands,modis250BandNames);
     
             
     var t250 = ee.ImageCollection(t250C)
               .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
               .filter(ee.Filter.calendarRange(startJulian,endJulian))
-              .select(modis250SelectBands,modis250BandNames);
+              // .select(modis250SelectBands,modis250BandNames);
     
     print(a250);
   //   function get500(c){
