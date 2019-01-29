@@ -1512,6 +1512,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
               // .select(modis250SelectBands,modis250BandNames);
     
     Map.addLayer(a250.count(),{min:0,max:16},'aCount')
+    Map.addLayer(t250.count(),{min:0,max:16},'tCount')
   //   function get500(c){
   //     var images = ee.ImageCollection(c)
   //             .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
