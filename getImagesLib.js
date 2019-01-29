@@ -1413,6 +1413,31 @@ var modisCDict = {
       }
       return joined;
     }
+function smartJoin(c1,c2,hourDiff){
+  // Define a max difference filter to compare timestamps.
+  var maxDiffFilter = ee.Filter.maxDifference({
+    difference: hourDiff * 60 * 60 * 1000,
+    leftField: 'system:time_start',
+    rightField: 'system:time_start'
+  });
+  // Define the join.
+  var saveBestJoin = ee.Join.saveBest({
+    matchKey: 'bestImage',
+    measureKey: 'timeDiff'
+  });
+  
+  // Apply the join.
+  var joined = saveBestJoin.apply(c1, c2, maxDiffFilter);
+  
+  var MergeBands = function(element) {
+        // A function to merge the bands together.
+        // After a join, results are in 'primary' and 'secondary' properties.
+        return ee.Image.cat(element, element.get('bestImage'));
+      };
+  joined = ee.ImageCollection(joined.map(MergeBands));
+  // Print the result.
+  return joined
+}
 //////////////////////////////////////////////////////
 //////////////////////////////////////////////////////
 //Method for removing spikes in time series
@@ -2641,6 +2666,7 @@ exports.exportToAssetWrapper = exportToAssetWrapper;
 exports.exportToAssetWrapper2 = exportToAssetWrapper2;
 exports.exportCollection = exportCollection;
 exports.joinCollections = joinCollections;
+exports.smartJoin = smartJoin;
 exports.listToString = listToString;
 exports.harmonizationRoy = harmonizationRoy;
 exports.harmonizationChastain = harmonizationChastain;
