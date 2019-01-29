@@ -1421,7 +1421,7 @@ function smartJoin(c1,c2,hourDiff){
     rightField: 'system:time_start'
   });
   // Define the join.
-  var saveBestJoin = ee.Join.saveBest({
+  var saveBestJoin = ee.Join.saveAll({
     matchKey: 'bestImage',
     measureKey: 'timeDiff'
   });
@@ -1434,7 +1434,7 @@ function smartJoin(c1,c2,hourDiff){
         // After a join, results are in 'primary' and 'secondary' properties.
         return ee.Image.cat(element, element.get('bestImage'));
       };
-  joined = ee.ImageCollection(joined.map(MergeBands));
+  // joined = ee.ImageCollection(joined.map(MergeBands));
   // Print the result.
   return joined
 }
