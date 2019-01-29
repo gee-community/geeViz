@@ -1513,6 +1513,8 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     
     Map.addLayer(a250.count(),{min:0,max:16},'aCount')
     Map.addLayer(t250.count(),{min:0,max:16},'tCount')
+    Map.addLayer(a250,{},'a')
+    Map.addLayer(t250,{},'t')
   //   function get500(c){
   //     var images = ee.ImageCollection(c)
   //             .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
