@@ -1511,151 +1511,151 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
               .filter(ee.Filter.calendarRange(startJulian,endJulian))
               .select(modis250SelectBands,modis250BandNames);
     
-    
-    function get500(c){
-       var images = ee.ImageCollection(c)
-              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
-              .filter(ee.Filter.calendarRange(startJulian,endJulian));
+    print(a250);
+  //   function get500(c){
+  //     var images = ee.ImageCollection(c)
+  //             .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
+  //             .filter(ee.Filter.calendarRange(startJulian,endJulian));
               
-              //Mask pixels above a certain zenith
-              if(daily === true){
-                if(maskWQA === true){print('Masking with QA band:',c)}
-                images = images
-              .map(function(img){
-                img = img.mask(img.mask().and(img.select(['SensorZenith']).lt(zenithThresh*100)));
-                if(maskWQA === true){
+  //             //Mask pixels above a certain zenith
+  //             if(daily === true){
+  //               if(maskWQA === true){print('Masking with QA band:',c)}
+  //               images = images
+  //             .map(function(img){
+  //               img = img.mask(img.mask().and(img.select(['SensorZenith']).lt(zenithThresh*100)));
+  //               if(maskWQA === true){
                   
-                  img = maskCloudsWQA (img);
-                }
-                return img;
-              });
-              }
-              images = images.select(modis500SelectBands,modis500BandNames);
-              return images;
-    }         
-    var a500 = get500(a500C);
-    var t500 = get500(t500C);
+  //                 img = maskCloudsWQA (img);
+  //               }
+  //               return img;
+  //             });
+  //             }
+  //             images = images.select(modis500SelectBands,modis500BandNames);
+  //             return images;
+  //   }         
+  //   var a500 = get500(a500C);
+  //   var t500 = get500(t500C);
     
     
-    //If thermal collection is wanted, pull it as well
-    if(useTempInCloudMask === true){
-       var t1000 = ee.ImageCollection(t1000C)
-              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
-              .filter(ee.Filter.calendarRange(startJulian,endJulian))
-              .select([0]);
+  //   //If thermal collection is wanted, pull it as well
+  //   if(useTempInCloudMask === true){
+  //     var t1000 = ee.ImageCollection(t1000C)
+  //             .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
+  //             .filter(ee.Filter.calendarRange(startJulian,endJulian))
+  //             .select([0]);
             
-      var a1000 = ee.ImageCollection(a1000C)
-              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
-              .filter(ee.Filter.calendarRange(startJulian,endJulian))
-              .select([0]);        
-    }
+  //     var a1000 = ee.ImageCollection(a1000C)
+  //             .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
+  //             .filter(ee.Filter.calendarRange(startJulian,endJulian))
+  //             .select([0]);        
+  //   }
     
-    //Now all collections are pulled, start joining them
-    //First join the 250 and 500 m Aqua
-      var a;var t;var tSelectOrder;var tStdNames;
-      a = joinCollections(a250,a500,false);
+  //   //Now all collections are pulled, start joining them
+  //   //First join the 250 and 500 m Aqua
+  //     var a;var t;var tSelectOrder;var tStdNames;
+  //     a = joinCollections(a250,a500,false);
       
-      //Then Terra
-      t = joinCollections(t250,t500,false);
+  //     //Then Terra
+  //     t = joinCollections(t250,t500,false);
       
-      //If temp was pulled, join that in as well
-      //Also select the bands in an L5-like order and give descriptive names
-      if(useTempInCloudMask === true){
-        a = joinCollections(a,a1000,false);
-        t = joinCollections(t,t1000,false);
+  //     //If temp was pulled, join that in as well
+  //     //Also select the bands in an L5-like order and give descriptive names
+  //     if(useTempInCloudMask === true){
+  //       a = joinCollections(a,a1000,false);
+  //       t = joinCollections(t,t1000,false);
         
-        tSelectOrder = wTempSelectOrder;
-        tStdNames = wTempStdNames;
-      }
-      //If no thermal was pulled, leave that out
-      else{
-        tSelectOrder = woTempSelectOrder;
-        tStdNames = woTempStdNames;
-      }
+  //       tSelectOrder = wTempSelectOrder;
+  //       tStdNames = wTempStdNames;
+  //     }
+  //     //If no thermal was pulled, leave that out
+  //     else{
+  //       tSelectOrder = woTempSelectOrder;
+  //       tStdNames = woTempStdNames;
+  //     }
       
-      a = a.map(function(img){return img.set({'platform':'aqua'})});
-      t = t.map(function(img){return img.set({'platform':'terra'})});
+  //     a = a.map(function(img){return img.set({'platform':'aqua'})});
+  //     t = t.map(function(img){return img.set({'platform':'terra'})});
       
-      //Join Terra and Aqua 
-      var joined = ee.ImageCollection(a.merge(t)).select(tSelectOrder,tStdNames);
+  //     //Join Terra and Aqua 
+  //     var joined = ee.ImageCollection(a.merge(t)).select(tSelectOrder,tStdNames);
      
-      //Divide by 10000 to make it work with cloud masking algorithm out of the box
-      joined = joined.map(function(img){return img.divide(10000).float()
-        .copyProperties(img,['system:time_start','system:time_end','system:index'])
-        .copyProperties(img);
+  //     //Divide by 10000 to make it work with cloud masking algorithm out of the box
+  //     joined = joined.map(function(img){return img.divide(10000).float()
+  //       .copyProperties(img,['system:time_start','system:time_end','system:index'])
+  //       .copyProperties(img);
         
-      });
-      // print('Collection',joined);
-      //Since MODIS thermal is divided by 0.02, multiply it by that and 10000 if it was included
-      if(useTempInCloudMask === true){
-      joined = joined.map(function(img){
-        var t = img.select(['temp']).multiply(0.02*10000);
-        var z = img.select(['SensorZenith']).multiply(100);
-        return img.select(['blue','green','red','nir','swir1','swir2'])
-        .addBands(z).addBands(t).select([0,1,2,3,4,7,5,6]);
+  //     });
+  //     // print('Collection',joined);
+  //     //Since MODIS thermal is divided by 0.02, multiply it by that and 10000 if it was included
+  //     if(useTempInCloudMask === true){
+  //     joined = joined.map(function(img){
+  //       var t = img.select(['temp']).multiply(0.02*10000);
+  //       var z = img.select(['SensorZenith']).multiply(100);
+  //       return img.select(['blue','green','red','nir','swir1','swir2'])
+  //       .addBands(z).addBands(t).select([0,1,2,3,4,7,5,6]);
       
-      });
-      }else{
-        joined = joined.map(function(img){
-        var z = img.select(['SensorZenith']).multiply(100);
-        return img.select(['blue','green','red','nir','swir1','swir2'])
-        .addBands(z);
+  //     });
+  //     }else{
+  //       joined = joined.map(function(img){
+  //       var z = img.select(['SensorZenith']).multiply(100);
+  //       return img.select(['blue','green','red','nir','swir1','swir2'])
+  //       .addBands(z);
       
-      });
-      }
+  //     });
+  //     }
     
-  //   //Get some descriptive names for displaying layers
-  //   var name = 'surRefl';
-  //   if(daily === true){
-  //     name = name + '_daily';
-  //   }
-  //   else{name = name + '8DayComposite'}
-  //   if(maskWQA === true){
-  //     name = name + '_WQAMask';
-  //   }
+  // //   //Get some descriptive names for displaying layers
+  // //   var name = 'surRefl';
+  // //   if(daily === true){
+  // //     name = name + '_daily';
+  // //   }
+  // //   else{name = name + '8DayComposite'}
+  // //   if(maskWQA === true){
+  // //     name = name + '_WQAMask';
+  // //   }
     
-  // //Add first image as well as median for visualization
-  //   // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageBeforeMasking',false);
-  //   // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeBeforeMasking',false);
+  // // //Add first image as well as median for visualization
+  // //   // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageBeforeMasking',false);
+  // //   // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeBeforeMasking',false);
     
-  //   if(applyCloudScore === true){
-  // //Compute cloud score and mask cloudy pixels
-  //     print('Applying Google cloudScore algorithm');
-  //     // var joined = joined.map(function(img,useTempInCloudMask){
-  //     //   var cs = modisCloudScore(img);
-  //     //   return img.mask(img.mask().and(cs.lt(cloudThresh)))//.addBands(cs.select([0],['cloudScore']))
+  // //   if(applyCloudScore === true){
+  // // //Compute cloud score and mask cloudy pixels
+  // //     print('Applying Google cloudScore algorithm');
+  // //     // var joined = joined.map(function(img,useTempInCloudMask){
+  // //     //   var cs = modisCloudScore(img);
+  // //     //   return img.mask(img.mask().and(cs.lt(cloudThresh)))//.addBands(cs.select([0],['cloudScore']))
         
-  //     // });
-  //   //Add first image as well as median for visualization
-  //   // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMasking',false);
-  //   // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMasking',false);
-  //   joined = joined.map(function(img){return getCloudMask(img,modisCloudScore,cloudThresh,useTempInCloudMask,contractPixels,dilatePixels)});
+  // //     // });
+  // //   //Add first image as well as median for visualization
+  // //   // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMasking',false);
+  // //   // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMasking',false);
+  // //   joined = joined.map(function(img){return getCloudMask(img,modisCloudScore,cloudThresh,useTempInCloudMask,contractPixels,dilatePixels)});
       
-  //   }
+  // //   }
     
-  // //   //If cloud shadow masking is chosen, run it
-  // //   if(runTDOM === true){
-  // //     print('Running TDOM');
-  // //     joined = simpleTDOM(joined,zShadowThresh,zCloudThresh,maskAllDarkPixels)
+  // // //   //If cloud shadow masking is chosen, run it
+  // // //   if(runTDOM === true){
+  // // //     print('Running TDOM');
+  // // //     joined = simpleTDOM(joined,zShadowThresh,zCloudThresh,maskAllDarkPixels)
     
-  // //   //Add first image as well as median for visualization after TDOM
-  // // // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMaskingWTDOM',false);
-  // // // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMaskingWTDOM',false);
+  // // //   //Add first image as well as median for visualization after TDOM
+  // // // // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMaskingWTDOM',false);
+  // // // // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMaskingWTDOM',false);
   
       
-  // //   };
+  // // //   };
   
   
-  // // //Add indices and select them
+  // // // //Add indices and select them
+  // // // joined = joined.map(addIndices);
   // // joined = joined.map(addIndices);
-  // joined = joined.map(addIndices);
-  // var indicesAdded = true;
-  // if(despikeMODIS){
-  //   print('Despiking MODIS');
-  //   joined = despikeCollection(joined,modisSpikeThresh,indexName);
-  // }
+  // // var indicesAdded = true;
+  // // if(despikeMODIS){
+  // //   print('Despiking MODIS');
+  // //   joined = despikeCollection(joined,modisSpikeThresh,indexName);
+  // // }
   
-  return ee.ImageCollection(joined)//.map(function(img){return img.resample('bilinear') }) );
+  // return ee.ImageCollection(joined)//.map(function(img){return img.resample('bilinear') }) );
     
   }
   
