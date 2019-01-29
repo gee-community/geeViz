@@ -1667,9 +1667,9 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
   //   print('Despiking MODIS');
   //   joined = despikeCollection(joined,modisSpikeThresh,indexName);
   // }
-  Map.addLayer(joined)
-  Map.addLayer(joined.count(),{min:1,max:32})
-  // return ee.ImageCollection(joined)//.map(function(img){return img.resample('bilinear') }) );
+  // Map.addLayer(joined)
+  // Map.addLayer(joined.count(),{min:1,max:32})
+  return ee.ImageCollection(joined)//.map(function(img){return img.resample('bilinear') }) );
     
   }
   
