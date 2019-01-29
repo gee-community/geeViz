@@ -1515,7 +1515,8 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     var tf = ee.Image(t250.first());
     var abit1 = af.select(['QC_250m']).bitwiseAnd(Math.pow(2,1));
     var tbit1 = tf.select(['QC_250m']).bitwiseAnd(Math.pow(2,1));
-    Map.addLayer(bit1,{min:0,max:2},'bit1')
+    Map.addLayer(abit1,{min:0,max:2},'abit1')
+    Map.addLayer(tbit1,{min:0,max:2},'tbit1')
     Map.addLayer(a250.count(),{min:0,max:16},'aCount')
     Map.addLayer(t250.count(),{min:0,max:16},'tCount')
     Map.addLayer(a250.select(modis250SelectBands,modis250BandNames),{},'a')
