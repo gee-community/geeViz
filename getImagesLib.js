@@ -1516,8 +1516,8 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     Map.addLayer(bit1,{},'bit1')
     Map.addLayer(a250.count(),{min:0,max:16},'aCount')
     Map.addLayer(t250.count(),{min:0,max:16},'tCount')
-    Map.addLayer(a250,{'bands':'QC_250m'},'a')
-    Map.addLayer(t250,{'bands':'QC_250m'},'t')
+    Map.addLayer(a250.select(modis250SelectBands,modis250BandNames),{},'a')
+    Map.addLayer(t250.select(modis250SelectBands,modis250BandNames),{},'t')
   //   function get500(c){
   //     var images = ee.ImageCollection(c)
   //             .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
