@@ -1654,6 +1654,10 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     'noTempAngleDaily': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,1]),
     'noTempAngleComposite': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1])
   };
+    var dailyPiece;var tempPiece;var anglePiece;
+    if(daily){dailyPiece = 'Daily'}else{dailyPiece = 'Composite'}
+    if(useTempInCloudMask){tempPiece = 'Temp'}else{tempPiece = 'NoTemp'}
+    if(useTempInCloudMask){tempPiece = 'Temp'}else{tempPiece = 'NoTemp'}
       // }else{
       //   joined = joined.map(function(img){
       //   // var z = img.select(['SensorZenith']).multiply(100);
