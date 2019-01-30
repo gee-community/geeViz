@@ -1642,8 +1642,10 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
       // });
       
       var multModisDict = {
-    'tempNoAngle': ee.Image([1,1,1,1,1,1,1,1]),
-    'tempAngle': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.1,0.0001,1]),
+    'tempNoAngleDaily': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.02]),
+    'tempNoAngleComposite': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.02]),
+    
+    'tempAngleDaily': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.1,0.0001,1,1,1]),
     'noTempNoAngle': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.1,0.0001,1]),
     'noTempAngle': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.1,0.0001,1])
   };
