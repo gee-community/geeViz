@@ -1668,6 +1668,8 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     if(addLookAngleBands){anglePiece = 'Angle'}else{anglePiece = 'NoAngle'}
     var multKey = tempPiece+anglePiece+dailyPiece;
     var mult = multModisDict[multKey];
+    var multImage = mult[0];
+    var multNames = mult[1];
     print(multKey,mult);
       // }else{
       //   joined = joined.map(function(img){
