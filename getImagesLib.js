@@ -1657,7 +1657,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
       });
       }
       if(addLookAngleBands){
-      joined = getImageLib.joinCollections(joined, ee.ImageCollection(a500Angles.merge(t500Angles)))
+      joined = joinCollections(joined, ee.ImageCollection(a500Angles.merge(t500Angles)))
     }
     
   //   //Get some descriptive names for displaying layers
