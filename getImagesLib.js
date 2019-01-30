@@ -1365,7 +1365,7 @@ var modis500BandNames = ['blue','green','swir1','swir2'];
 var combinedModisBandNames = ['red','nir','blue','green','swir1','swir2'];
 
 var dailyViewAngleBandNames = ['SensorZenith','SensorAzimuth','SolarZenith','SolarAzimuth'];
-
+var compositeViewAngleBandNames = ['SolarZenith', 'ViewZenith', 'RelativeAzimuth'];
 //Dictionary of MODIS collections
 var modisCDict = {
   'eightDayNDVIA' : 'MODIS/006/MYD13Q1',
@@ -1617,40 +1617,37 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
         tSelectOrder = woTempSelectOrder;
         tStdNames = woTempStdNames;
       }
-    //   if(addLookAngleBands){
-    //     a = joinCollections(a,a500Angles,false);
-    //     t = joinCollections(t,t500Angles,false);
-    // }
+    
       a = a.map(function(img){return img.set({'platform':'aqua'})});
       t = t.map(function(img){return img.set({'platform':'terra'})});
       
       //Join Terra and Aqua 
       var joined = ee.ImageCollection(a.merge(t))//.select(tSelectOrder,tStdNames);
      
-      // //Divide by 10000 to make it work with cloud masking algorithm out of the box
-      // joined = joined.map(function(img){return img.divide(10000).float()
-      //   .copyProperties(img,['system:time_start','system:time_end','system:index'])
-      //   .copyProperties(img);
+      //Divide by 10000 to make it work with cloud masking algorithm out of the box
+      joined = joined.map(function(img){return img.divide(10000).float()
+        .copyProperties(img,['system:time_start','system:time_end','system:index'])
+        .copyProperties(img);
         
-      // });
-      // // print('Collection',joined);
-      // //Since MODIS thermal is divided by 0.02, multiply it by that and 10000 if it was included
-      // if(useTempInCloudMask === true){
-      // joined = joined.map(function(img){
-      //   var t = img.select(['temp']).multiply(0.02*10000);
-      //   // var z = img.select(['SensorZenith']).multiply(100);
-      //   return img.select(['blue','green','red','nir','swir1','swir2'])
-      //         .addBands(t).select([0,1,2,3,4,6,5]);
+      });
+      // print('Collection',joined);
+      //Since MODIS thermal is divided by 0.02, multiply it by that and 10000 if it was included
+      if(useTempInCloudMask === true){
+      joined = joined.map(function(img){
+        var t = img.select(['temp']).multiply(0.02*10000);
+        var angles = img.select(['SensorZenith']).multiply(100);
+        return img.select(['blue','green','red','nir','swir1','swir2'])
+              .addBands(t).select([0,1,2,3,4,6,5]);
       
-      // });
-      // }else{
-      //   joined = joined.map(function(img){
-      //   // var z = img.select(['SensorZenith']).multiply(100);
-      //   return img.select(['blue','green','red','nir','swir1','swir2'])
-      //   // .addBands(z);
+      });
+      }else else{
+        joined = joined.map(function(img){
+        // var z = img.select(['SensorZenith']).multiply(100);
+        return img.select(['blue','green','red','nir','swir1','swir2'])
+        // .addBands(z);
       
-      // });
-      // }
+      });
+      }
       
     
   //   //Get some descriptive names for displaying layers
