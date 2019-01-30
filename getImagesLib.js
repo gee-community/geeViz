@@ -1624,12 +1624,12 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
       //Join Terra and Aqua 
       var joined = ee.ImageCollection(a.merge(t))//.select(tSelectOrder,tStdNames);
      
-      // //Divide by 10000 to make it work with cloud masking algorithm out of the box
-      // joined = joined.map(function(img){return img.divide(10000).float()
-      //   .copyProperties(img,['system:time_start','system:time_end','system:index'])
-      //   .copyProperties(img);
+      //Divide by 10000 to make it work with cloud masking algorithm out of the box
+      joined = joined.map(function(img){return img.divide(10000).float()
+        .copyProperties(img,['system:time_start','system:time_end','system:index'])
+        .copyProperties(img);
         
-      // });
+      });
       // // print('Collection',joined);
       // //Since MODIS thermal is divided by 0.02, multiply it by that and 10000 if it was included
       // if(useTempInCloudMask === true){
