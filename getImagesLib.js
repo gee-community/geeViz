@@ -1570,13 +1570,26 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
                 return img;
               });
               }
+              
               images = images.select(modis500SelectBands,modis500BandNames);
               return images;
-    }         
+    } 
+    function getAngles(c){
+      var images = ee.ImageCollection(c)
+              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
+              .filter(ee.Filter.calendarRange(startJulian,endJulian));
+              
+              
+      images = images.select(dailyViewAngleBandNames);
+      return images;
+    }
     var a500 = get500(a500C);
     var t500 = get500(t500C);
     
-    
+    if(addLookAngleBands){
+      var a500Angles = getAngles(a500C);
+      var t500Angles = getAngles(t500C);
+    }
     //If thermal collection is wanted, pull it as well
     if(useTempInCloudMask === true){
       var t1000 = ee.ImageCollection(t1000C)
