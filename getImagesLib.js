@@ -208,6 +208,12 @@ function addYearBand(img){
   db = db;//.updateMask(img.select([0]).mask())
   return img.addBands(db);
 }
+function addJulianDayBand(img){
+  var d = ee.Date(img.get('system:time_start'));
+  var julian = ee.Number(d.getRelative('day','year')).add(1);
+
+  return img.addBands(julian);
+}
 ////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 var fringeCountThreshold = 279;//Define number of non null observations for pixel to not be classified as a fringe
