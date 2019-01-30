@@ -1659,7 +1659,8 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     if(useTempInCloudMask){tempPiece = 'Temp'}else{tempPiece = 'NoTemp'}
     if(addLookAngleBands){anglePiece = 'Angle'}else{anglePiece = 'NoAngle'}
     var multKey = tempPiece+anglePiece+dailyPiece;
-    print(multKey)
+    var mult = multModisDict[multKey];
+    print(multKey,mult);
       // }else{
       //   joined = joined.map(function(img){
       //   // var z = img.select(['SensorZenith']).multiply(100);
