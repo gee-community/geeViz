@@ -1441,30 +1441,41 @@ var multModisDict = {
       }
       return joined;
     }
-function smartJoin(c1,c2,hourDiff){
+function smartJoin(primary,secondary){
+  var millis = 12 * 60 * 60 * 1000;
   // Define a max difference filter to compare timestamps.
-  var maxDiffFilter = ee.Filter.maxDifference({
-    difference: hourDiff * 60 * 60 * 1000,
+  // var maxDiffFilter = ee.Filter.maxDifference({
+  //   difference: 12 * 60 * 60 * 1000,
+  //   leftField: 'system:time_start',
+  //   rightField: 'system:time_start'
+  // });
+  // Create a time filter to define a match as overlapping timestamps.
+var maxDiffFilter = ee.Filter.or(
+  ee.Filter.maxDifference({
+    difference: millis,
     leftField: 'system:time_start',
+    rightField: 'system:time_end'
+  }),
+  ee.Filter.maxDifference({
+    difference: millis,
+    leftField: 'system:time_end',
     rightField: 'system:time_start'
-  });
+  })
+);
   // Define the join.
-  var saveBestJoin = ee.Join.saveAll({
+  var saveBestJoin = ee.Join.saveBest({
     matchKey: 'bestImage',
     measureKey: 'timeDiff'
   });
-  
-  // Apply the join.
-  var joined = saveBestJoin.apply(c1, c2, maxDiffFilter);
-  
   var MergeBands = function(element) {
         // A function to merge the bands together.
         // After a join, results are in 'primary' and 'secondary' properties.
         return ee.Image.cat(element, element.get('bestImage'));
       };
-  // joined = ee.ImageCollection(joined.map(MergeBands));
-  // Print the result.
-  return joined
+  // Apply the join.
+  var joined = saveBestJoin.apply(primary, secondary, maxDiffFilter);
+  joined = joined.map(MergeBands);
+  return joined;
 }
 //////////////////////////////////////////////////////
 //////////////////////////////////////////////////////
