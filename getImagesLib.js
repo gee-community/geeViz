@@ -1441,8 +1441,8 @@ var multModisDict = {
       }
       return joined;
     }
-function smartJoin(primary,secondary){
-  var millis = 12 * 60 * 60 * 1000;
+function smartJoin(primary,secondary,hourDiff){
+  var millis = hourDiff * 60 * 60 * 1000;
   // Define a max difference filter to compare timestamps.
   // var maxDiffFilter = ee.Filter.maxDifference({
   //   difference: 12 * 60 * 60 * 1000,
