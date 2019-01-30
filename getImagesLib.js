@@ -1364,6 +1364,7 @@ var modis500BandNames = ['blue','green','swir1','swir2'];
 
 var combinedModisBandNames = ['red','nir','blue','green','swir1','swir2'];
 
+var dailyViewAngleBandNames = ['SensorZenith','SensorAzimuth','SolarZenith','SolarAzimuth'];
 
 //Dictionary of MODIS collections
 var modisCDict = {
