@@ -1614,10 +1614,10 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
         tSelectOrder = woTempSelectOrder;
         tStdNames = woTempStdNames;
       }
-      if(addLookAngleBands){
-        a = joinCollections(a,a500Angles,false);
-        t = joinCollections(t,t500Angles,false);
-    }
+    //   if(addLookAngleBands){
+    //     a = joinCollections(a,a500Angles,false);
+    //     t = joinCollections(t,t500Angles,false);
+    // }
       a = a.map(function(img){return img.set({'platform':'aqua'})});
       t = t.map(function(img){return img.set({'platform':'terra'})});
       
