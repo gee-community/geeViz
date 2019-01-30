@@ -1645,8 +1645,11 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     'tempNoAngleDaily': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.02]),
     'tempNoAngleComposite': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.02]),
     
-    'tempAngleDaily': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.1,0.0001,1,1,1]),
-    'noTempNoAngle': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.1,0.0001,1]),
+    'tempAngleDaily': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,1,0.02]),
+    'tempAngleComposite': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,0.02]),
+    
+    'noTempNoAngleDaily': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001]),
+    'noTempNoAngleComposite': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001]),
     'noTempAngle': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.1,0.0001,1])
   };
       // }else{
