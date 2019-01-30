@@ -2603,6 +2603,7 @@ var customQualityMosaic = function(inCollection,qualityBand,percentile){
 ////////////////////////////////////////////////////////////////////////////////
 exports.sieve = sieve;
 exports.setNoData = setNoData;
+exports.addJulianDayBand = addJulianDayBand;
 exports.addYearBand = addYearBand;
 exports.addDateBand = addDateBand;
 exports.collectionToImage = collectionToImage;
