@@ -206,13 +206,13 @@ function addYearBand(img){
   
   var db = ee.Image.constant(y).rename(['year']).float();
   db = db;//.updateMask(img.select([0]).mask())
-  return img.addBands(db);
+  return img.addBands(db).float();
 }
 function addJulianDayBand(img){
   var d = ee.Date(img.get('system:time_start'));
   var julian = ee.Image(ee.Number(d.getRelative('day','year')).add(1)).rename(['julianDay']);
 
-  return img.addBands(julian);
+  return img.addBands(julian).float();
 }
 ////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
