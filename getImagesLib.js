@@ -1443,12 +1443,7 @@ var multModisDict = {
     }
 function smartJoin(primary,secondary,hourDiff){
   var millis = hourDiff * 60 * 60 * 1000;
-  // Define a max difference filter to compare timestamps.
-  // var maxDiffFilter = ee.Filter.maxDifference({
-  //   difference: 12 * 60 * 60 * 1000,
-  //   leftField: 'system:time_start',
-  //   rightField: 'system:time_start'
-  // });
+  
   // Create a time filter to define a match as overlapping timestamps.
 var maxDiffFilter = ee.Filter.or(
   ee.Filter.maxDifference({
