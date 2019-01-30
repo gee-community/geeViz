@@ -1671,11 +1671,11 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     var multImage = mult[0];
     var multNames = mult[1];
     print(multKey,multImage,multNames);
-      // }else{
-      //   joined = joined.map(function(img){
-      //   // var z = img.select(['SensorZenith']).multiply(100);
-      //   return img.select(['blue','green','red','nir','swir1','swir2'])
-      //   // .addBands(z);
+    
+    joined = joined.map(function(img){return img.multiply(multImage).float().select(multNames)
+        .copyProperties(img,['system:time_start','system:time_end','system:index'])
+        .copyProperties(img);
+      }
       
       // });
       // }
