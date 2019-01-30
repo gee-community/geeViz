@@ -1595,12 +1595,12 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
       var t1000 = ee.ImageCollection(t1000C)
               .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
               .filter(ee.Filter.calendarRange(startJulian,endJulian))
-              .select([0]);
+              .select([0],['temp']);
             
       var a1000 = ee.ImageCollection(a1000C)
               .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
               .filter(ee.Filter.calendarRange(startJulian,endJulian))
-              .select([0]);        
+              .select([0],['temp']);        
     }
     
     //Now all collections are pulled, start joining them
