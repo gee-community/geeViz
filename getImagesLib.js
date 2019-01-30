@@ -1672,10 +1672,10 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     var multNames = mult[1];
     print(multKey,multImage,multNames);
     
-    joined = joined.map(function(img){return img.multiply(multImage).float().select(multNames)
-        .copyProperties(img,['system:time_start','system:time_end','system:index'])
-        .copyProperties(img);
-      }
+    // joined = joined.map(function(img){return img.multiply(multImage).float().select(multNames)
+    //     .copyProperties(img,['system:time_start','system:time_end','system:index'])
+    //     .copyProperties(img);
+    //   }
       
       // });
       // }
