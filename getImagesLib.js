@@ -1570,8 +1570,11 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
                 return img;
               });
               }
-              
-              images = images.select(ee.List(modis500SelectBands).cat(dailyViewAngleBandNames),ee.List(modis500BandNames).cat(dailyViewAngleBandNames));
+              if(addLookAngleBands){
+                 images = images.select(ee.List(modis500SelectBands).cat(dailyViewAngleBandNames),ee.List(modis500BandNames).cat(dailyViewAngleBandNames));
+              }else{
+                images = images.select(modis500SelectBands,modis500BandNames);
+              }
               return images;
     } 
     
