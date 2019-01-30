@@ -1394,6 +1394,27 @@ var modisCDict = {
   'dailyLST1000A' : 'MODIS/006/MYD11A1',
   'dailyLST1000T' : 'MODIS/006/MOD11A1'
 };
+var multModisDict = {
+    'tempNoAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.02]),
+                        ['blue','green','red','nir','swir1','temp','swir2']],
+    'tempNoAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.02]),
+                        ['blue','green','red','nir','swir1','temp','swir2']],
+                        
+    'tempAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,1,0.02]),
+                      ['blue','green','red','nir','swir1','temp','swir2','SensorZenith','SensorAzimuth','SolarZenith','SolarAzimuth']],
+    'tempAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,0.02]),
+                      ['blue','green','red','nir','swir1','temp','swir2','SolarZenith', 'ViewZenith', 'RelativeAzimuth']],
+                      
+    'noTempNoAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001]),
+                      ['blue','green','red','nir','swir1','swir2']],
+    'noTempNoAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001]),
+                      ['blue','green','red','nir','swir1','swir2']],
+                      
+    'noTempAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,1]),
+                      ['blue','green','red','nir','swir1','swir2','SensorZenith','SensorAzimuth','SolarZenith','SolarAzimuth']],
+    'noTempAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1]),
+                      ['blue','green','red','nir','swir1','swir2','SolarZenith', 'ViewZenith', 'RelativeAzimuth']],
+  };
 /////////////////////////////////////////////////
 //Helper function to join two collections- Source: code.earthengine.google.com
     function joinCollections(c1,c2, maskAnyNullValues){
@@ -1624,44 +1645,9 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
       //Join Terra and Aqua 
       var joined = ee.ImageCollection(a.merge(t))//.select(tSelectOrder,tStdNames);
      
-      // //Divide by 10000 to make it work with cloud masking algorithm out of the box
-      // joined = joined.map(function(img){return img.divide(10000).float()
-      //   .copyProperties(img,['system:time_start','system:time_end','system:index'])
-      //   .copyProperties(img);
-        
-      // });
-      // // print('Collection',joined);
-      // //Since MODIS thermal is divided by 0.02, multiply it by that and 10000 if it was included
-      // if(useTempInCloudMask === true){
-      // joined = joined.map(function(img){
-      //   var t = img.select(['temp']).multiply(0.02*10000);
-      //   var angles = img.select(['SensorZenith']).multiply(100);
-      //   return img.select(['blue','green','red','nir','swir1','swir2'])
-      //         .addBands(t).select([0,1,2,3,4,6,5]);
       
-      // });
       
-      var multModisDict = {
-    'tempNoAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.02]),
-                        ['blue','green','red','nir','swir1','temp','swir2']],
-    'tempNoAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.02]),
-                        ['blue','green','red','nir','swir1','temp','swir2']],
-                        
-    'tempAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,1,0.02]),
-                      ['blue','green','red','nir','swir1','temp','swir2','SensorZenith','SensorAzimuth','SolarZenith','SolarAzimuth']],
-    'tempAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,0.02]),
-                      ['blue','green','red','nir','swir1','temp','swir2','SolarZenith', 'ViewZenith', 'RelativeAzimuth']],
-                      
-    'noTempNoAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001]),
-                      ['blue','green','red','nir','swir1','swir2']],
-    'noTempNoAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001]),
-                      ['blue','green','red','nir','swir1','swir2']],
-                      
-    'noTempAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,1]),
-                      ['blue','green','red','nir','swir1','swir2','SensorZenith','SensorAzimuth','SolarZenith','SolarAzimuth']],
-    'noTempAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1]),
-                      ['blue','green','red','nir','swir1','swir2','SolarZenith', 'ViewZenith', 'RelativeAzimuth']],
-  };
+      
     var dailyPiece;var tempPiece;var anglePiece;
     if(daily){dailyPiece = 'Daily'}else{dailyPiece = 'Composite'}
     if(useTempInCloudMask){tempPiece = 'temp'}else{tempPiece = 'noTemp'}
@@ -1670,69 +1656,13 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     var mult = multModisDict[multKey];
     var multImage = mult[0];
     var multNames = mult[1];
-    print(multKey,multImage,multNames);
+    // print(multKey,multImage,multNames);
     
     joined = joined.map(function(img){return img.multiply(multImage).float().select(multNames)
         .copyProperties(img,['system:time_start','system:time_end','system:index'])
         .copyProperties(img);
       })
       
-      // });
-      // }
-      
-    
-  //   //Get some descriptive names for displaying layers
-  //   var name = 'surRefl';
-  //   if(daily === true){
-  //     name = name + '_daily';
-  //   }
-  //   else{name = name + '8DayComposite'}
-  //   if(maskWQA === true){
-  //     name = name + '_WQAMask';
-  //   }
-    
-  // //Add first image as well as median for visualization
-  //   // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageBeforeMasking',false);
-  //   // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeBeforeMasking',false);
-    
-  //   if(applyCloudScore === true){
-  // //Compute cloud score and mask cloudy pixels
-  //     print('Applying Google cloudScore algorithm');
-  //     // var joined = joined.map(function(img,useTempInCloudMask){
-  //     //   var cs = modisCloudScore(img);
-  //     //   return img.mask(img.mask().and(cs.lt(cloudThresh)))//.addBands(cs.select([0],['cloudScore']))
-        
-  //     // });
-  //   //Add first image as well as median for visualization
-  //   // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMasking',false);
-  //   // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMasking',false);
-  //   joined = joined.map(function(img){return getCloudMask(img,modisCloudScore,cloudThresh,useTempInCloudMask,contractPixels,dilatePixels)});
-      
-  //   }
-    
-  // //   //If cloud shadow masking is chosen, run it
-  // //   if(runTDOM === true){
-  // //     print('Running TDOM');
-  // //     joined = simpleTDOM(joined,zShadowThresh,zCloudThresh,maskAllDarkPixels)
-    
-  // //   //Add first image as well as median for visualization after TDOM
-  // // // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMaskingWTDOM',false);
-  // // // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMaskingWTDOM',false);
-  
-      
-  // //   };
-  
-  
-  // // //Add indices and select them
-  // // joined = joined.map(addIndices);
-  // joined = joined.map(addIndices);
-  // var indicesAdded = true;
-  // if(despikeMODIS){
-  //   print('Despiking MODIS');
-  //   joined = despikeCollection(joined,modisSpikeThresh,indexName);
-  // }
-  // Map.addLayer(joined)
-  // Map.addLayer(joined.count(),{min:1,max:32})
   return ee.ImageCollection(joined);//.map(function(img){return img.resample('bilinear') });
     
   }
