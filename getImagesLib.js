@@ -1670,7 +1670,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
     var mult = multModisDict[multKey];
     var multImage = mult[0];
     var multNames = mult[1];
-    print(multKey,mult);
+    print(multKey,multImage,multNames);
       // }else{
       //   joined = joined.map(function(img){
       //   // var z = img.select(['SensorZenith']).multiply(100);
