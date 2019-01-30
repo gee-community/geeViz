@@ -1656,7 +1656,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
   };
     var dailyPiece;var tempPiece;var anglePiece;
     if(daily){dailyPiece = 'Daily'}else{dailyPiece = 'Composite'}
-    if(useTempInCloudMask){tempPiece = 'Temp'}else{tempPiece = 'NoTemp'}
+    if(useTempInCloudMask){tempPiece = 'temp'}else{tempPiece = 'noTemp'}
     if(addLookAngleBands){anglePiece = 'Angle'}else{anglePiece = 'NoAngle'}
     var multKey = tempPiece+anglePiece+dailyPiece;
     var mult = multModisDict[multKey];
