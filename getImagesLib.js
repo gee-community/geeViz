@@ -1657,7 +1657,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
       });
       }
       if(addLookAngleBands){
-      joined = joinCollections(joined, a500Angles))
+      joined = joinCollections(joined, a500Angles)
     }
     
   //   //Get some descriptive names for displaying layers
