@@ -1642,17 +1642,25 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
       // });
       
       var multModisDict = {
-    'tempNoAngleDaily': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.02]),
-    'tempNoAngleComposite': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.02]),
-    
-    'tempAngleDaily': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,1,0.02]),
-    'tempAngleComposite': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,0.02]),
-    
-    'noTempNoAngleDaily': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001]),
-    'noTempNoAngleComposite': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001]),
-    
-    'noTempAngleDaily': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,1]),
-    'noTempAngleComposite': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1])
+    'tempNoAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.02]),
+                        ['blue','green','red','nir','swir1','temp','swir2']],
+    'tempNoAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.02]),
+                        ['blue','green','red','nir','swir1','temp','swir2']],
+                        
+    'tempAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,1,0.02]),
+                      ['blue','green','red','nir','swir1','temp','swir2','SensorZenith','SensorAzimuth','SolarZenith','SolarAzimuth']],
+    'tempAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,0.02]),
+                      ['blue','green','red','nir','swir1','temp','swir2','SolarZenith', 'ViewZenith', 'RelativeAzimuth']],
+                      
+    'noTempNoAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001]),
+                      ['blue','green','red','nir','swir1','swir2']],
+    'noTempNoAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001]),
+                      ['blue','green','red','nir','swir1','swir2']],
+                      
+    'noTempAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,1]),
+                      ['blue','green','red','nir','swir1','swir2','SensorZenith','SensorAzimuth','SolarZenith','SolarAzimuth']],
+    'noTempAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1]),
+                      ['blue','green','red','nir','swir1','swir2','SolarZenith', 'ViewZenith', 'RelativeAzimuth']],
   };
     var dailyPiece;var tempPiece;var anglePiece;
     if(daily){dailyPiece = 'Daily'}else{dailyPiece = 'Composite'}
