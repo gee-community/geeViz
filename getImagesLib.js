@@ -1630,16 +1630,23 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
         .copyProperties(img);
         
       });
-      // // print('Collection',joined);
-      // //Since MODIS thermal is divided by 0.02, multiply it by that and 10000 if it was included
-      // if(useTempInCloudMask === true){
-      // joined = joined.map(function(img){
-      //   var t = img.select(['temp']).multiply(0.02*10000);
-      //   var angles = img.select(['SensorZenith']).multiply(100);
-      //   return img.select(['blue','green','red','nir','swir1','swir2'])
-      //         .addBands(t).select([0,1,2,3,4,6,5]);
+      // print('Collection',joined);
+      //Since MODIS thermal is divided by 0.02, multiply it by that and 10000 if it was included
+      if(useTempInCloudMask === true){
+      joined = joined.map(function(img){
+        var t = img.select(['temp']).multiply(0.02*10000);
+        var angles = img.select(['SensorZenith']).multiply(100);
+        return img.select(['blue','green','red','nir','swir1','swir2'])
+              .addBands(t).select([0,1,2,3,4,6,5]);
       
-      // });
+      });
+      
+      var multModisDict = {
+    'tempNoAngle': ee.Image([1,1,1,1,1,1,1,1]),
+    'tempAngle': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.1,0.0001,1]),
+    'noTempNoAngle': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.1,0.0001,1]),
+    'noTempAngle': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.1,0.0001,1])
+  };
       // }else{
       //   joined = joined.map(function(img){
       //   // var z = img.select(['SensorZenith']).multiply(100);
