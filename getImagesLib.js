@@ -1272,24 +1272,24 @@ function modisCloudScore(img) {
   // Compute several indicators of cloudyness and take the minimum of them.
   var score = ee.Image(1.0);
   
-  // Clouds are reasonably bright in the blue band.
-  // score = score.min(rescale(img, 'img.blue', [0.05, 0.1]));
-  // Map.addLayer(score,{min:0,max:1},'blue')
-  // Clouds are reasonably bright in all visible bands.
-  var vizSum = rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8]);
-  score = score.min(vizSum);
-  // Map.addLayer(score,{min:0,max:1},'blue+viz',false)
-  // Clouds are reasonably bright in all infrared bands.
-  var irSum =rescale(img, 'img.nir  + img.swir2 + img.swir2', [0.3, 0.8]);
-  score = score.min(
-      irSum);
+  // // Clouds are reasonably bright in the blue band.
+  // // score = score.min(rescale(img, 'img.blue', [0.05, 0.1]));
+  // // Map.addLayer(score,{min:0,max:1},'blue')
+  // // Clouds are reasonably bright in all visible bands.
+  // var vizSum = rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8]);
+  // score = score.min(vizSum);
+  // // Map.addLayer(score,{min:0,max:1},'blue+viz',false)
+  // // Clouds are reasonably bright in all infrared bands.
+  // var irSum =rescale(img, 'img.nir  + img.swir2 + img.swir2', [0.3, 0.8]);
+  // score = score.min(
+  //     irSum);
   
-  // Map.addLayer(score,{min:0,max:1},'blue+viz+ir',false)
+  // // Map.addLayer(score,{min:0,max:1},'blue+viz+ir',false)
   
-  // However, clouds are not snow.
-  var ndsi = img.normalizedDifference(['green', 'swir2']);
-  var snowScore = rescale(ndsi, 'img', [0.8, 0.6]);
-  score =score.min(snowScore);
+  // // However, clouds are not snow.
+  // var ndsi = img.normalizedDifference(['green', 'swir2']);
+  // var snowScore = rescale(ndsi, 'img', [0.8, 0.6]);
+  // score =score.min(snowScore);
   // Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi',false)
   //For MODIS, provide the option of not using thermal since it introduces
   //a precomputed mask that may or may not be wanted
