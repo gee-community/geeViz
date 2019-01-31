@@ -1270,7 +1270,7 @@ function modisCloudScore(img) {
   };
   // Map.addLayer(img,vizParamsFalse,'img',false)
   // Compute several indicators of cloudyness and take the minimum of them.
-  var score = ee.Image(1.0);
+  var score = ee.Image(1);
   
   // // Clouds are reasonably bright in the blue band.
   // // score = score.min(rescale(img, 'img.blue', [0.05, 0.1]));
