@@ -1296,7 +1296,7 @@ function modisCloudScore(img) {
     // Clouds are reasonably cool in temperature.
     // var tempScore = rescale(img, 'img.temp', [310, 300]);
     // score = score.min(tempScore);
-    // score = score.where(img.select(['temp']).mask().not(),1);
+    score = score.where(img.select(['temp']).mask().not(),1);
   }
   // Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi+temp',false)
   score = score.multiply(100);
@@ -1353,11 +1353,11 @@ function sentinel2CloudScore(img) {
 //////////////////////////////////////////////////
 //Comparable Landsat bands to MODIS https://pbs.twimg.com/media/Cr2V5GJUAAAU6DX.jpg
 //Some globals to deal with multi-spectral MODIS
-var wTempSelectOrder = [2,3,0,1,4,6,5];//Band order to select to be Landsat 5-like if thermal is included
-var wTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','temp','swir2'];
+// var wTempSelectOrder = [2,3,0,1,4,6,5];//Band order to select to be Landsat 5-like if thermal is included
+// var wTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','temp','swir2'];
 
-var woTempSelectOrder = [2,3,0,1,4,5];//Band order to select to be Landsat 5-like if thermal is excluded
-var woTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','swir2'];
+// var woTempSelectOrder = [2,3,0,1,4,5];//Band order to select to be Landsat 5-like if thermal is excluded
+// var woTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','swir2'];
 
 //Band names from different MODIS resolutions
 //Try to take the highest spatial res for a given band
