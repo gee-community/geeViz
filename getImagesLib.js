@@ -1281,14 +1281,14 @@ function modisCloudScore(img) {
   // Map.addLayer(score,{min:0,max:1},'blue+viz',false)
   // Clouds are reasonably bright in all infrared bands.
   var irSum =rescale(img, 'img.nir  + img.swir2 + img.swir2', [0.3, 0.8]);
-  score = score.min(irSum);
+  // score = score.min(irSum);
   
   // Map.addLayer(score,{min:0,max:1},'blue+viz+ir',false)
   
   // However, clouds are not snow.
   var ndsi = img.normalizedDifference(['green', 'swir2']);
-  // var snowScore = rescale(ndsi, 'img', [0.8, 0.6]);
-  // score =score.min(snowScore);
+  var snowScore = rescale(ndsi, 'img', [0.8, 0.6]);
+  score =score.min(snowScore);
   // Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi',false)
   //For MODIS, provide the option of not using thermal since it introduces
   //a precomputed mask that may or may not be wanted
