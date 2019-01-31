@@ -1641,14 +1641,14 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
         a = joinCollections(a,a1000,false);
         t = joinCollections(t,t1000,false);
         
-        tSelectOrder = wTempSelectOrder;
-        tStdNames = wTempStdNames;
+        // tSelectOrder = wTempSelectOrder;
+        // tStdNames = wTempStdNames;
       }
       //If no thermal was pulled, leave that out
-      else{
-        tSelectOrder = woTempSelectOrder;
-        tStdNames = woTempStdNames;
-      }
+      // else{
+      //   tSelectOrder = woTempSelectOrder;
+      //   tStdNames = woTempStdNames;
+      // }
     
       a = a.map(function(img){return img.set({'platform':'aqua'})});
       t = t.map(function(img){return img.set({'platform':'terra'})});
