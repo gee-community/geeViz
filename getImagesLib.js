@@ -1294,8 +1294,11 @@ function modisCloudScore(img) {
   //a precomputed mask that may or may not be wanted
   if(useTempInCloudMask === true){
     // Clouds are reasonably cool in temperature.
-    // var tempScore = rescale(img, 'img.temp', [310, 300]);
-    // score = score.min(tempScore);
+    var maskMax = img.select(['temp']).mask().not().focal_max(20)
+    var tempScore = rescale(img, 'img.temp', [310, 300]);
+    tempScore = tempScore.where(maskMax,1)
+    score = score.min(tempScore);
+    
     score = score.where(img.select(['temp']).mask().not(),1);
   }
   // Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi+temp',false)
