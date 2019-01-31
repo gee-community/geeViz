@@ -1297,7 +1297,7 @@ function modisCloudScore(img) {
     // Clouds are reasonably cool in temperature.
     // var tempScore = rescale(img, 'img.temp', [310, 300]);
     // score = score.min(tempScore);
-    // score = score.where(img.select(['temp']).mask().not(),1);
+    score = score.where(img.select(['temp']).mask().not(),1);
   }
   // Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi+temp',false)
   score = score.multiply(100);
