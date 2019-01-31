@@ -1294,10 +1294,10 @@ function modisCloudScore(img) {
   //a precomputed mask that may or may not be wanted
   if(useTempInCloudMask === true){
     // Clouds are reasonably cool in temperature.
-    var maskMax = img.select(['temp']).mask().focal_min(5)
-    var tempScore = rescale(img, 'img.temp', [320, 300]);
-    tempScore = ee.Image(1).where(maskMax,tempScore)
-    score = score.min(tempScore);
+    // var maskMax = img.select(['temp']).mask().focal_min(5)
+    // var tempScore = rescale(img, 'img.temp', [320, 300]);
+    // tempScore = ee.Image(1).where(maskMax,tempScore)
+    // score = score.min(tempScore);
     
     score = score.where(img.select(['temp']).mask().not(),1);
   }
