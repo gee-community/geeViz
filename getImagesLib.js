@@ -1295,7 +1295,7 @@ function modisCloudScore(img) {
   if(useTempInCloudMask === true){
     // Clouds are reasonably cool in temperature.
     var maskMax = img.select(['temp']).mask().focal_min(5)
-    var tempScore = rescale(img, 'img.temp', [300, 270]);
+    var tempScore = rescale(img, 'img.temp', [320, 310]);
     tempScore = ee.Image(1).where(maskMax,tempScore)
     score = score.min(tempScore);
     
