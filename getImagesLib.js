@@ -220,7 +220,9 @@ function yearJulianDayBand(img){
   var y = d.get('year');
   return img.addBands(julian).float();
 }
-var i = ee.Image(1).set('system:time_start',ee.Date.fromYMD(2000,1,1))
+var i = ee.Image(1).set('system:time_start',ee.Date.fromYMD(2000,1,1));
+var j = addJulianDayBand(i);
+Map.addLayer(j)
 ////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 var fringeCountThreshold = 279;//Define number of non null observations for pixel to not be classified as a fringe
