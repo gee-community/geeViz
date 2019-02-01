@@ -216,7 +216,7 @@ function addJulianDayBand(img){
 }
 function yearJulianDayBand(img){
   var d = ee.Date(img.get('system:time_start'));
-  var julian = ee.String(ee.Number(d.getRelative('day','year')).add(1));
+  var julian = ee.String('00').cat(ee.String(ee.Number(d.getRelative('day','year')).add(1)));
   var y = ee.String(d.get('year')).slice(2,4);
   var yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian']);
   print(julian)
