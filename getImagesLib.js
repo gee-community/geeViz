@@ -214,6 +214,13 @@ function addJulianDayBand(img){
 
   return img.addBands(julian).float();
 }
+function yearJulianDayBand(img){
+  var d = ee.Date(img.get('system:time_start'));
+  var julian = ee.Image(ee.Number(d.getRelative('day','year')).add(1)).rename(['julianDay']);
+  var y = d.get('year');
+  return img.addBands(julian).float();
+}
+var i = ee.Image(1).set('system:time_start',ee.Date.fromYMD(2000,1,1))
 ////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 var fringeCountThreshold = 279;//Define number of non null observations for pixel to not be classified as a fringe
