@@ -217,10 +217,9 @@ function addJulianDayBand(img){
 function yearJulianDayBand(img){
   var d = ee.Date(img.get('system:time_start'));
   var julian = ee.String(ee.Number(d.getRelative('day','year')).add(1));
-  julian = 
   var y = ee.String(d.get('year')).slice(2,4);
-  y = ee.Image(ee.Number.parse(y));
-  var yj = y.add(julian).rename(['yearJulian'])
+  var yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian']);
+
   return img.addBands(yj).float();
 }
 var i = ee.Image(1).set('system:time_start',ee.Date.fromYMD(1999,2,1));
