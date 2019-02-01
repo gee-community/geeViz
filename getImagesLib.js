@@ -219,12 +219,10 @@ function yearJulianDayBand(img){
   var julian = ee.String('00').cat(ee.String(ee.Number(d.getRelative('day','year')).add(1))).slice(-3,null);
   var y = ee.String(d.get('year')).slice(2,4);
   var yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian']);
-  print(julian)
+  
   return img.addBands(yj).float();
 }
-var i = ee.Image(1).set('system:time_start',ee.Date.fromYMD(1999,2,1));
-var j = yearJulianDayBand(i);
-// Map.addLayer(j)
+
 
 ////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
