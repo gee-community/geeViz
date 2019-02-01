@@ -2624,6 +2624,7 @@ exports.setNoData = setNoData;
 exports.addJulianDayBand = addJulianDayBand;
 exports.addYearBand = addYearBand;
 exports.addDateBand = addDateBand;
+exports.yearJulianDayBand = yearJulianDayBand;
 exports.collectionToImage = collectionToImage;
 exports.getImageCollection = getImageCollection;
 exports.getS2 = getS2;
