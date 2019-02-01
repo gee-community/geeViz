@@ -214,7 +214,7 @@ function addJulianDayBand(img){
 
   return img.addBands(julian).float();
 }
-function yearJulianDayBand(img){
+function addYearJulianDayBand(img){
   var d = ee.Date(img.get('system:time_start'));
   var julian = ee.String('00').cat(ee.String(ee.Number(d.getRelative('day','year')).add(1))).slice(-3,null);
   var y = ee.String(d.get('year')).slice(2,4);
@@ -2624,7 +2624,7 @@ exports.setNoData = setNoData;
 exports.addJulianDayBand = addJulianDayBand;
 exports.addYearBand = addYearBand;
 exports.addDateBand = addDateBand;
-exports.yearJulianDayBand = yearJulianDayBand;
+exports.addYearJulianDayBand = addYearJulianDayBand;
 exports.collectionToImage = collectionToImage;
 exports.getImageCollection = getImageCollection;
 exports.getS2 = getS2;
