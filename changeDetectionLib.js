@@ -726,7 +726,7 @@ exports.landtrendrWrapper = landtrendrWrapper;
 exports.multBands = multBands;
 exports.addToImage = addToImage;
 exports.getExistingChangeData = getExistingChangeData;
-
+exports.arrayToTimeSeries = arrayToTimeSeries;
 exports.verdetAnnualSlope  = verdetAnnualSlope;
 exports.annualizeEWMA = annualizeEWMA;
 exports.getEWMA = getEWMA;
