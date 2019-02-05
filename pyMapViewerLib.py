@@ -1,4 +1,5 @@
-import ee,sys,os,webbrowser,json,http.server,socketserver,socket,subprocess
+import ee
+import sys,os,webbrowser,json,http.server,socketserver,socket,subprocess
 from threading import Thread
 
 

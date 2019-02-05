@@ -137,12 +137,49 @@ def collectionToImage(collection):
   stack = stack.select(ee.List.sequence(1, stack.bandNames().size().subtract(1)))
   return stack
 
-# i = ee.ImageCollection([ee.Image(3).byte(),ee.Image(3).byte(),ee.Image(1).byte(),])
-# out = ee.Image(collectionToImage(i))
+####################################################################
+####################################################################
+#Function to find the date for a given composite computed from a given set of images
+#Will work on composites computed with methods that include different dates across different bands
+#such as the median.  For something like a medoid, only a single bands needs passed through
+#A known bug is that if the same value occurs twice, it will choose only a single date
+def compositeDates(images,composite,bandNames = None):
+  if bandNames == None:
+    bandNames = ee.Image(images.first()).bandNames()
+  else:
+    images = images.select(bandNames)
+    composite = composite.select(bandNames)
+  
+  def bnCat(bn):
+    return ee.String(bn).cat('_diff')
 
-# Map.addLayer(out,{'min':1,'max':3})
-# Map.launchGEEVisualization()
+  bns = ee.Image(images.first()).bandNames().map(bnCat)
 
+  #Function to get the abs diff from a given composite *-1
+  def getDiff(img):
+    out = img.subtract(composite).abs().multiply(-1).rename(bns)
+    return img.addBands(out);
+  
+
+  #Find the diff and add a date band
+  images = images.map(getDiff)
+  images = images.map(addDateBand)
+  
+  #Iterate across each band and find the corresponding date to the composite
+  def bnCat2(bn):
+    bn = ee.String(bn)
+    t = images.select([bn,bn.cat('_diff'),'year']).qualityMosaic(bn.cat('_diff'))
+    return t.select(['year']).rename(['YYYYDD'])
+  out = bandNames.map(bnCat2)
+
+  #Convert to ann image and rename
+  out  = collectionToImage(ee.ImageCollection(out))
+  #var outBns = bandNames.map(function(bn){return ee.String(bn).cat('YYYYDD')});
+  #out = out.rename(outBns);
+  
+  return out
+
+# ///////////////////////////////////////////////////////////////////////////
 #Function to handle empty collections that will cause subsequent processes to fail
 #If the collection is empty, will fill it with an empty image
 def fillEmptyCollections(inCollection,dummyImage):                       
@@ -916,19 +953,34 @@ def medoidMosaicMSD(inCollection,medoidIncludeBands = None):
 #########################################################################
 #########################################################################
 #Function to export a provided image to an EE asset
-def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicy = None,roi = None,scale = None,crs = None,transform = None):
+def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicy = 'mean',roi = None,scale = None,crs = None,transform = None):
   #Make sure image is clipped to roi in case it's a multi-part polygon
   imageForExport = imageForExport.clip(roi)
   assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
   print(assetName,assetPath)
+  if transform != None and str(type(transform)) == "<type 'list'>":
+    transform = str(transform)
+
   t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath ,  json.dumps({'.default': pyramidingPolicy}), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
   t.start()
+
+
+geometry =ee.Geometry.Polygon(\
+        [[[-78.51239897230147, 41.245757946343204],\
+          [-78.32563139417647, 41.245757946343204],\
+          [-78.38056303480147, 41.361302521523925],\
+          [-78.54535795667647, 41.344808688955986]]])
+i = ee.Image(1);
+exportToAssetWrapper(i,'test','users/ianhousman/test/test3',pyramidingPolicy = 'mean',roi = geometry,scale = None,crs = 'EPSG:5070',transform = [30,0,-2361915.0,0,-30,3177735.0])
 
 def exportToAssetWrapper2(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
   #Make sure image is clipped to roi in case it's a multi-part polygon
   imageForExport = imageForExport.clip(roi)
   assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
 
+  if transform != None and str(type(transform)) == "<type 'list'>":
+    transform = str(transform)
+    
   if pyramidingPolicyObject == None:
     pyramidingPolicyObject = {'.default':'mean'}
 
