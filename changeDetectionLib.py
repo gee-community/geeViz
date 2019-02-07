@@ -6,8 +6,8 @@
 # I have only been converting functions as I use them. Unconverted functions are included at the bottom of this file.
 
 import sys, ee, json
-sys.path.append('C:\Users\leahcampbell\home\scripts')
-from gee_modules import getImagesLib as getImageLib
+sys.path.append('Y:\GEE\modules')#'\\166.2.126.25\GTAC_Apps\GEE\modules')
+import getImagesLib as getImageLib
 import math
 ee.Initialize()
 
@@ -150,16 +150,15 @@ def getLTvertStack(LTresult,run_params):
   vertLabels = []                              # make empty array to hold band names whose length will vary depending on maxSegments parameter 
   #iString                                      # initialize variable to hold vertex number
   # loop through the maximum number of vertices in segmentation and fill empty arrays:
-  for i in range(1, run_params.maxSegments+2):   
-    #iString = i.toString()                         # define vertex number as string 
-    vertLabels.append("vert_"+i.toString())               # make a band name for given vertex
+  for i in range(1, run_params['maxSegments']+2):   
+    vertLabels.append("vert_"+str(i))               # define vertex number as string, make a band name for given vertex
     emptyArray.append(0)                             # fill in emptyArray
   
   zeros = ee.Image(ee.Array([emptyArray,        # make an image to fill holes in result 'LandTrendr' array where vertices found is not equal to maxSegments parameter plus 1
                                  emptyArray,
                                  emptyArray]))
   
-  lbls = [['yrs_','src_','fit_'], vertLabels,] # labels for 2 dimensions of the array that will be cast to each other in the final step of creating the vertice output 
+  lbls = [['yrs_','src_','fit_'], vertLabels] # labels for 2 dimensions of the array that will be cast to each other in the final step of creating the vertice output 
 
   vmask = LTresult.arraySlice(0,3,4)           # slices out the 4th row of a 4 row x N col (N = number of years in annual stack) matrix, which identifies vertices - contains only 0s and 1s, where 1 is a vertex (referring to spectral-temporal segmentation) year and 0 is not
   
@@ -174,7 +173,7 @@ def getLTvertStack(LTresult,run_params):
     .arraySlice(0, 0, 3)\
     .addBands(zeros)\
     .toArray(1)\
-    .arraySlice(1, 0, run_params.maxSegments+1)\
+    .arraySlice(1, 0, run_params['maxSegments']+1)\
     .arrayFlatten(lbls, '')    
     
   return ltVertStack                               # return the stack
@@ -196,7 +195,7 @@ def landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,ru
   lt = ee.Algorithms.TemporalSegmentation.LandTrendr(**run_params) # run LandTrendr spectral temporal segmentation algorithm
   
   #########################################################################################################
-  ###### RUN THE GREATEST DISTURBANCE EXTRACT FUCTION #####
+  ###### RUN THE GREATEST DISTURBANCE EXTRACT FUNCTION #####
   #########################################################################################################
   
   # run the dist extract function
@@ -220,6 +219,25 @@ def landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,ru
   vertStack = getLTvertStack(rawLT,run_params)
   return [lt,distImg,fittedCollection,vertStack]
   
+#--------------------------------------------------------------------------
+#                 VERDET
+#--------------------------------------------------------------------------
+#Wrapper for applying VERDET slightly more simply
+#Returns annual collection of verdet slope
+def verdetAnnualSlope(tsIndex,indexName,startYear,endYear):
+  #Apply VERDET
+  verdet =   ee.Algorithms.TemporalSegmentation.Verdet({'timeSeries': tsIndex,
+                                        'tolerance': 0.0001,
+                                        'alpha': 1/3.0}).arraySlice(0,1,null)
+  print('indexName: '+indexName)
+  #Map.addLayer(verdet,{},'verdet '+indexName)
+  tsYear = tsIndex.map(getImageLib.addYearBand).select([1]).toArray().arraySlice(0,1,null).arrayProject([0])
+  
+  #Find possible years to convert back to collection with
+  possibleYears = ee.List.sequence(startYear+1,endYear)
+  verdetC = arrayToTimeSeries(verdet,tsYear,possibleYears,'VERDET_fitted_'+indexName+'_slope')
+  
+  return verdetC
 
 #--------------------------------------------------------------------------
 #          UNCONVERTED JAVASCRIPT FUNCTIONS BELOW HERE
@@ -294,38 +312,6 @@ function getExistingChangeData(changeThresh,showLayers){
 
 
 
-
-
-
-
-
-
-#####################################
-
-###############################/
-
-
-
-
-#####################################
-#Wrapper for applying VERDET slightly more simply
-#Returns annual collection of verdet slope
-function verdetAnnualSlope(tsIndex,indexName,startYear,endYear){
-  #Apply VERDET
-  verdet =   ee.Algorithms.TemporalSegmentation.Verdet({timeSeries: tsIndex,
-                                        tolerance: 0.0001,
-                                        alpha: 1/3.0}).arraySlice(0,1,null)
-  print('indexName',indexName)
-  print('verdet',verdet) 
-  Map.addLayer(verdet,{},'verdet '+indexName)
-  tsYear = tsIndex.map(getImageLib.addYearBand).select([1]).toArray().arraySlice(0,1,null).arrayProject([0])
-  
-  #Find possible years to convert back to collection with
-  possibleYears = ee.List.sequence(startYear+1,endYear)
-  verdetC = arrayToTimeSeries(verdet,tsYear,possibleYears,'VERDET_fitted_'+indexName+'_slope')
-  
-  return verdetC
-}
 #####################################
 #Wrapper for applying EWMACD slightly more simply
 function getEWMA(lsIndex,trainingStartYear,trainingEndYear, harmonicCount){
