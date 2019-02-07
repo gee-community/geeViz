@@ -192,8 +192,8 @@ def landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,ru
      ee.Image(multBands(img,distDir,1)))#.unmask(noDataValue)
 
   # Map.addLayer(ltCollection,{},'ltCollection',false)
-  run_params.timeSeries = ltCollection               # add LT collection to the segmentation run parameter object
-  lt = ee.Algorithms.TemporalSegmentation.LandTrendr(run_params) # run LandTrendr spectral temporal segmentation algorithm
+  run_params['timeSeries'] = ltCollection               # add LT collection to the segmentation run parameter object
+  lt = ee.Algorithms.TemporalSegmentation.LandTrendr(**run_params) # run LandTrendr spectral temporal segmentation algorithm
   
   #########################################################################################################
   ###### RUN THE GREATEST DISTURBANCE EXTRACT FUCTION #####
