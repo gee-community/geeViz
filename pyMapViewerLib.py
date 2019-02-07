@@ -1,6 +1,10 @@
 import ee
-import sys,os,webbrowser,json,http.server,socketserver,socket,subprocess
+import sys,os,webbrowser,json,socket,subprocess
 from threading import Thread
+if sys.version_info[0] < 3:
+    import SimpleHTTPServer, SocketServer
+else:
+    import http.server, socketserver 
 
 
 ee.Initialize()
@@ -21,7 +25,7 @@ def run_local_server(port = 8001):
     # Check out :
     # https://stackoverflow.com/questions/15260558/python-tcpserver-address-already-in-use-but-i-close-the-server-and-i-use-allow
     # """
-    # Handler = http.server.SimpleHTTPRequestHandler
+    # Handler = httpserver.SimpleHTTPRequestHandler
     # httpd = socketserver.TCPServer(("", port), Handler)
     # print("Creating server at port", port)
     # httpd.serve_forever()
