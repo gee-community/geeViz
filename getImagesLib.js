@@ -698,10 +698,12 @@ function simpleTDOM2(collection,zScoreThresh,shadowSumThresh,contractPixels,
   
   // Get some pixel-wise stats for the time series
   if(irMean === null || irMean === undefined){
-   irMean = collection.select(shadowSumBands).mean();
+    print('Computing irMean for TDOM');
+    irMean = collection.select(shadowSumBands).mean();
   }
   if(irStdDev === null || irStdDev === undefined){
-   irStdDev = collection.select(shadowSumBands).reduce(ee.Reducer.stdDev());
+    print('Computing irStdDev for TDOM');
+    irStdDev = collection.select(shadowSumBands).reduce(ee.Reducer.stdDev());
   }
   
   // Mask out dark dark outliers
