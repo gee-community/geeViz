@@ -690,15 +690,21 @@ function cFmaskCloudShadow(img){
 // Original concept written by Carson Stam and adapted by Ian Housman.
 // Adds a band that is a mask of pixels that are dark, and dark outliers.
 function simpleTDOM2(collection,zScoreThresh,shadowSumThresh,contractPixels,
-  dilatePixels,shadowSumBands){
+  dilatePixels,shadowSumBands,irMean,irStdDev){
   if(shadowSumBands === null || shadowSumBands === undefined){
     shadowSumBands = ['nir','swir1'];
   }
   
   
   // Get some pixel-wise stats for the time series
-  var irStdDev = collection.select(shadowSumBands).reduce(ee.Reducer.stdDev());
-  var irMean = collection.select(shadowSumBands).mean();
+  if(irMean === null || irMean === undefined){
+    print('Computing irMean for TDOM');
+    irMean = collection.select(shadowSumBands).mean();
+  }
+  if(irStdDev === null || irStdDev === undefined){
+    print('Computing irStdDev for TDOM');
+    irStdDev = collection.select(shadowSumBands).reduce(ee.Reducer.stdDev());
+  }
   
   // Mask out dark dark outliers
   collection = collection.map(function(img){
