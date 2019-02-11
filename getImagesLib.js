@@ -639,8 +639,9 @@ function landsatCloudScore(img) {
 }
 ////////////////////////////////////////////////////////////////////////////////
 //Wrapper for applying cloudScore function
-function applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset){
+function applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset,returnCloudScoreOffset){
   if(performCloudScoreOffset === undefined || performCloudScoreOffset === null){performCloudScoreOffset = true}
+  if(returnCloudScoreOffset === undefined || returnCloudScoreOffset === null){returnCloudScoreOffset = false}
   
   // Add cloudScore
   var collection = collection.map(function(img){
