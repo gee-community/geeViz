@@ -965,13 +965,13 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicy = '
   t.start()
 
 
-geometry =ee.Geometry.Polygon(\
-        [[[-78.51239897230147, 41.245757946343204],\
-          [-78.32563139417647, 41.245757946343204],\
-          [-78.38056303480147, 41.361302521523925],\
-          [-78.54535795667647, 41.344808688955986]]])
-i = ee.Image(1);
-exportToAssetWrapper(i,'test','users/ianhousman/test/test3',pyramidingPolicy = 'mean',roi = geometry,scale = None,crs = 'EPSG:5070',transform = [30,0,-2361915.0,0,-30,3177735.0])
+#geometry =ee.Geometry.Polygon(\
+#        [[[-78.51239897230147, 41.245757946343204],\
+#          [-78.32563139417647, 41.245757946343204],\
+#          [-78.38056303480147, 41.361302521523925],\
+#          [-78.54535795667647, 41.344808688955986]]])
+#i = ee.Image(1);
+#exportToAssetWrapper(i,'test','users/ianhousman/test/test3',pyramidingPolicy = 'mean',roi = geometry,scale = None,crs = 'EPSG:5070',transform = [30,0,-2361915.0,0,-30,3177735.0])
 
 def exportToAssetWrapper2(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
   #Make sure image is clipped to roi in case it's a multi-part polygon
