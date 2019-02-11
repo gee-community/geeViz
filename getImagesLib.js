@@ -1319,10 +1319,10 @@ function modisCloudScore(img) {
   }
   // Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi+temp',false)
   score = score.multiply(100);
-  score = score.clamp(0,100);
+  score = score.clamp(0,100).byte();
   // var masked = img.updateMask(score.lt(5))
   // Map.addLayer(masked,vizParamsFalse,'imgMasked',false)
-  return score.byte();
+  return score;
 }
 ////////////////////////////////////////
 // Cloud masking algorithm for Sentinel2
