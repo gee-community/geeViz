@@ -67,6 +67,7 @@ function getExistingChangeData(changeThresh,showLayers){
   Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Hansen Change Year',false);
   }
   // return conusChangeOut;
+  return hansen
 }
 //########################################################################################################
 //Landtrendr code taken from users/emaprlab/public

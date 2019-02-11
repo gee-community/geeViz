@@ -666,7 +666,7 @@ function applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh
       .focal_max(contractPixels).focal_min(dilatePixels).rename('cloudMask');
     return img.updateMask(cloudMask);
   });
- 
+  
   return collection;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -1304,7 +1304,7 @@ function modisCloudScore(img) {
   // However, clouds are not snow.
   var ndsi = img.normalizedDifference(['green', 'swir2']);
   var snowScore = rescale(ndsi, 'img', [0.8, 0.6]);
-  score =score.min(snowScore);
+  // score =score.min(snowScore);
   // Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi',false)
   //For MODIS, provide the option of not using thermal since it introduces
   //a precomputed mask that may or may not be wanted
@@ -1319,10 +1319,10 @@ function modisCloudScore(img) {
   }
   // Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi+temp',false)
   score = score.multiply(100);
-  score = score.clamp(0,100);
+  score = score.clamp(0,100).byte();
   // var masked = img.updateMask(score.lt(5))
   // Map.addLayer(masked,vizParamsFalse,'imgMasked',false)
-  return score;
+  return score.rename(['cloudScore']);
 }
 ////////////////////////////////////////
 // Cloud masking algorithm for Sentinel2
