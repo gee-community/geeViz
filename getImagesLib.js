@@ -667,7 +667,9 @@ function applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh
       .focal_max(contractPixels).focal_min(dilatePixels).rename('cloudMask');
     return img.updateMask(cloudMask);
   });
- 
+  if(returnCloudScoreOffset){
+    collection = collection.map(function(img){return img.addBands(minCloudScore)});
+  }
   return collection;
 }
 ////////////////////////////////////////////////////////////////////////////////
