@@ -102,8 +102,6 @@
                 var inst = this;
 
                 this.layer = new ee.MapLayerOverlay('https://earthengine.googleapis.com/map', MAPID, TOKEN, {});
-                console.log('here')
-                console.log(this.layer);
                 this.layer.addTileCallback(function(event){
                     if(event.count > inst.highWaterMark){
                         inst.highWaterMark = event.count;
@@ -111,28 +109,29 @@
 
                     inst.percent = 100-((event.count / inst.highWaterMark) * 100);
                 });
-
-                if(!this.visible) return;
-
-                this.map.overlayMapTypes.setAt(this.layerId, this.layer);
-            },
-            onChange:function(){
-                console.log('Changing it');
-                // var isChecked = this.visible = this.$.enabled.checked;
-                // console.log(isChecked);
-              
                 
                 if(this.visible){
+                    this.map.overlayMapTypes.setAt(this.layerId, this.layer);
+
+                }
+
+                
+            },
+            onChange:function(){
+                
+                
+                if(this.visible){
+                    console.log('its visible')
+                    
                     this.map.overlayMapTypes.setAt(this.layerId,null);
-                    this.map.overlayMapTypes.removeAt(this.layerId);
-                    this.$.opacity.disabled = true;
+                    // this.map.overlayMapTypes.removeAt(this.layerId);
+                    // this.$.opacity.disabled = true;
                     this.detached();
                     this.percent = 0;
 
                 }else{
-                    this.percent = 0;
                     this.map.overlayMapTypes.setAt(this.layerId,this.layer);
-                    this.$.opacity.disabled = false;
+                    // this.$.opacity.disabled = false;
                     // this.detached();
                 }
             },
