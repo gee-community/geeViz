@@ -1635,8 +1635,8 @@ def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform
     composite = ee.Image(composite.first())
     
     #Display the Landsat composite
-    Map.addLayer(composite, vizParamsTrue, str(year) + ' True Color ' + toaOrSR, False);
-    Map.addLayer(composite, vizParamsFalse, str(year) + ' False Color ' + toaOrSR, False);
+    #Map.addLayer(composite, vizParamsTrue, str(year) + ' True Color ' + toaOrSR, False);
+    #Map.addLayer(composite, vizParamsFalse, str(year) + ' False Color ' + toaOrSR, False);
   
     #Reformat data for export
     compositeBands = composite.bandNames()
