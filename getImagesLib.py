@@ -984,7 +984,7 @@ def exportToAssetWrapper2(imageForExport,assetName,assetPath,pyramidingPolicyObj
   if pyramidingPolicyObject == None:
     pyramidingPolicyObject = {'.default':'mean'}
 
-  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath + '/'+assetName,  json.dumps(pyramidingPolicyObject), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
+  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath,  json.dumps(pyramidingPolicyObject), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
   t.start()
 
 #########################################################################

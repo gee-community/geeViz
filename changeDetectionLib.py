@@ -5,8 +5,8 @@
 # Adapted from changeDetectionLib.js
 # I have only been converting functions as I use them. Unconverted functions are included at the bottom of this file.
 
-import sys, ee, json
-sys.path.append('Y:\GEE\modules')#'\\166.2.126.25\GTAC_Apps\GEE\modules')
+import sys, ee
+sys.path.append('C:\Users\leahcampbell\home\scripts\gee-modules')#'\\166.2.126.25\GTAC_Apps\GEE\modules')
 import getImagesLib as getImageLib
 import math
 ee.Initialize()
