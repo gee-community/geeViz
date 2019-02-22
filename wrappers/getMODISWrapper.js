@@ -22,8 +22,8 @@ var studyArea = geometry;
 // constraints. This supports wrapping for tropics and southern hemisphere.
 // startJulian: Starting Julian date 
 // endJulian: Ending Julian date
-var startJulian = 256;
-var endJulian = 256+16; 
+var startJulian = 50;
+var endJulian = 50+16; 
 
 // 3. Specify start and end years for all analyses
 // More than a 3 year span should be provided for time series methods to work 
@@ -57,7 +57,7 @@ var exportPathRoot = 'users/ianhousman/test';
 // Median tends to be smoother, while medoid retains 
 // single date of observation across all bands
 // If not exporting indices with composites to save space, medoid should be used
-var compositingMethod = 'median';
+var compositingMethod = 'medoid';
 
 //MODIS Params- params if sensorProgram is modis
 //Whether to use daily MODIS (true) or 8 day composites (false)
@@ -128,7 +128,7 @@ var contractPixels = 0;
 //    that are often missed
 // (1.5 results in a 1 pixel buffer)(0.5 results in a 0 pixel buffer)
 // (2.5 or 3.5 generally is sufficient)
-var dilatePixels = 3.5;
+var dilatePixels = 0;
 
 
 //15. Export params

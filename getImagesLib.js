@@ -206,8 +206,24 @@ function addYearBand(img){
   
   var db = ee.Image.constant(y).rename(['year']).float();
   db = db;//.updateMask(img.select([0]).mask())
-  return img.addBands(db);
+  return img.addBands(db).float();
 }
+function addJulianDayBand(img){
+  var d = ee.Date(img.get('system:time_start'));
+  var julian = ee.Image(ee.Number(d.getRelative('day','year')).add(1)).rename(['julianDay']);
+
+  return img.addBands(julian).float();
+}
+function addYearJulianDayBand(img){
+  var d = ee.Date(img.get('system:time_start'));
+  var julian = ee.String('00').cat(ee.String(ee.Number(d.getRelative('day','year')).add(1))).slice(-3,null);
+  var y = ee.String(d.get('year')).slice(2,4);
+  var yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian']);
+  
+  return img.addBands(yj).float();
+}
+
+
 ////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 var fringeCountThreshold = 279;//Define number of non null observations for pixel to not be classified as a fringe
@@ -616,9 +632,7 @@ function landsatCloudScore(img) {
   var ndsi = img.normalizedDifference(['green', 'swir1']);
   score = score.min(rescale(ndsi, 'img', [0.8, 0.6]));
   
-  // var ss = snowScore(img).select(['snowScore']);
-  // score = score.min(rescale(ss, 'img', [0.3, 0]));
-  
+ 
   score = score.multiply(100).byte();
   score = score.clamp(0,100);
   return score;
@@ -652,7 +666,7 @@ function applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh
       .focal_max(contractPixels).focal_min(dilatePixels).rename('cloudMask');
     return img.updateMask(cloudMask);
   });
- 
+  
   return collection;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -676,18 +690,27 @@ function cFmaskCloudShadow(img){
 // Original concept written by Carson Stam and adapted by Ian Housman.
 // Adds a band that is a mask of pixels that are dark, and dark outliers.
 function simpleTDOM2(collection,zScoreThresh,shadowSumThresh,contractPixels,
-  dilatePixels){
-  var shadowSumBands = ['nir','swir1'];
+  dilatePixels,shadowSumBands,irMean,irStdDev){
+  if(shadowSumBands === null || shadowSumBands === undefined){
+    shadowSumBands = ['nir','swir1'];
+  }
+  
   
   // Get some pixel-wise stats for the time series
-  var irStdDev = collection.select(shadowSumBands).reduce(ee.Reducer.stdDev());
-  var irMean = collection.select(shadowSumBands).mean();
+  if(irMean === null || irMean === undefined){
+    print('Computing irMean for TDOM');
+    irMean = collection.select(shadowSumBands).mean();
+  }
+  if(irStdDev === null || irStdDev === undefined){
+    print('Computing irStdDev for TDOM');
+    irStdDev = collection.select(shadowSumBands).reduce(ee.Reducer.stdDev());
+  }
   
   // Mask out dark dark outliers
   collection = collection.map(function(img){
     var zScore = img.select(shadowSumBands).subtract(irMean).divide(irStdDev);
     var irSum = img.select(shadowSumBands).reduce(ee.Reducer.sum());
-    var TDOMMask = zScore.lt(zScoreThresh).reduce(ee.Reducer.sum()).eq(2)
+    var TDOMMask = zScore.lt(zScoreThresh).reduce(ee.Reducer.sum()).eq(shadowSumBands.length)
       .and(irSum.lt(shadowSumThresh));
     TDOMMask = TDOMMask.focal_min(contractPixels).focal_max(dilatePixels);
     return img.updateMask(TDOMMask.not());
@@ -1250,6 +1273,7 @@ var maskCloudsWQA = function(image) {
 };
 /////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
+//Comparable bands: https://pbs.twimg.com/media/Cr2V5GJUAAAU6DX.jpg
 //Source: code.earthengine.google.com
 // Compute a cloud score.  This expects the input image to have the common
 // band names: ["red", "blue", etc], so it can work across sensors.
@@ -1260,40 +1284,45 @@ function modisCloudScore(img) {
     return img.expression(exp, {img: img})
         .subtract(thresholds[0]).divide(thresholds[1] - thresholds[0]);
   };
-
+  // Map.addLayer(img,vizParamsFalse,'img',false)
   // Compute several indicators of cloudyness and take the minimum of them.
   var score = ee.Image(1.0);
   
   // Clouds are reasonably bright in the blue band.
-  score = score.min(rescale(img, 'img.blue', [0.1, 0.3]));
-  
+  // score = score.min(rescale(img, 'img.blue', [0.05, 0.1]));
+  // Map.addLayer(score,{min:0,max:1},'blue')
   // Clouds are reasonably bright in all visible bands.
   var vizSum = rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8]);
   score = score.min(vizSum);
-  
+  // Map.addLayer(score,{min:0,max:1},'blue+viz',false)
   // Clouds are reasonably bright in all infrared bands.
-  var irSum =rescale(img, 'img.nir + img.swir1 + img.swir2', [0.3, 0.8]);
-  score = score.min(
-      irSum);
+  var irSum =rescale(img, 'img.nir  + img.swir2 + img.swir2', [0.3, 0.8]);
+  score = score.min(irSum);
   
-  
+  // Map.addLayer(score,{min:0,max:1},'blue+viz+ir',false)
   
   // However, clouds are not snow.
-  var ndsi = img.normalizedDifference(['green', 'swir1']);
+  var ndsi = img.normalizedDifference(['green', 'swir2']);
   var snowScore = rescale(ndsi, 'img', [0.8, 0.6]);
-  score =score.min(snowScore);
-  
+  // score =score.min(snowScore);
+  // Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi',false)
   //For MODIS, provide the option of not using thermal since it introduces
   //a precomputed mask that may or may not be wanted
   if(useTempInCloudMask === true){
     // Clouds are reasonably cool in temperature.
-    var tempScore = rescale(img, 'img.temp', [305, 300]);
-    score = score.min(tempScore);
+    // var maskMax = img.select(['temp']).mask().focal_min(5)
+    // var tempScore = rescale(img, 'img.temp', [320, 300]);
+    // tempScore = ee.Image(1).where(maskMax,tempScore)
+    // score = score.min(tempScore);
+    
+    score = score.where(img.select(['temp']).mask().not(),1);
   }
-  
+  // Map.addLayer(score,{min:0,max:1},'blue+viz+ir+ndsi+temp',false)
   score = score.multiply(100);
-  score = score.clamp(0,100);
-  return score;
+  score = score.clamp(0,100).byte();
+  // var masked = img.updateMask(score.lt(5))
+  // Map.addLayer(masked,vizParamsFalse,'imgMasked',false)
+  return score.rename(['cloudScore']);
 }
 ////////////////////////////////////////
 // Cloud masking algorithm for Sentinel2
@@ -1341,24 +1370,26 @@ function sentinel2CloudScore(img) {
 //////////////////////////////////////////////////////////////////////////
 //MODIS processing
 //////////////////////////////////////////////////
+//Comparable Landsat bands to MODIS https://pbs.twimg.com/media/Cr2V5GJUAAAU6DX.jpg
 //Some globals to deal with multi-spectral MODIS
-var wTempSelectOrder = [2,3,0,1,4,7,5,6];//Band order to select to be Landsat 5-like if thermal is included
-var wTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','temp','swir2','SensorZenith'];
+// var wTempSelectOrder = [2,3,0,1,4,6,5];//Band order to select to be Landsat 5-like if thermal is included
+// var wTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','temp','swir2'];
 
-var woTempSelectOrder = [2,3,0,1,4,5,6];//Band order to select to be Landsat 5-like if thermal is excluded
-var woTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','swir2','SensorZenith'];
+// var woTempSelectOrder = [2,3,0,1,4,5];//Band order to select to be Landsat 5-like if thermal is excluded
+// var woTempStdNames = ['blue', 'green', 'red', 'nir', 'swir1','swir2'];
 
 //Band names from different MODIS resolutions
 //Try to take the highest spatial res for a given band
 var modis250SelectBands = ['sur_refl_b01','sur_refl_b02'];
 var modis250BandNames = ['red','nir'];
 
-var modis500SelectBands = ['sur_refl_b03','sur_refl_b04','sur_refl_b06','sur_refl_b07','SensorZenith'];
-var modis500BandNames = ['blue','green','swir1','swir2','SensorZenith'];
+var modis500SelectBands = ['sur_refl_b03','sur_refl_b04','sur_refl_b06','sur_refl_b07'];
+var modis500BandNames = ['blue','green','swir1','swir2'];
 
 var combinedModisBandNames = ['red','nir','blue','green','swir1','swir2'];
 
-
+var dailyViewAngleBandNames = ['SensorZenith','SensorAzimuth','SolarZenith','SolarAzimuth'];
+var compositeViewAngleBandNames = ['SolarZenith', 'ViewZenith', 'RelativeAzimuth'];
 //Dictionary of MODIS collections
 var modisCDict = {
   'eightDayNDVIA' : 'MODIS/006/MYD13Q1',
@@ -1387,6 +1418,27 @@ var modisCDict = {
   'dailyLST1000A' : 'MODIS/006/MYD11A1',
   'dailyLST1000T' : 'MODIS/006/MOD11A1'
 };
+var multModisDict = {
+    'tempNoAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.02,1,1]),
+                        ['blue','green','red','nir','swir1','temp','swir2','Emis_31','Emis_32']],
+    'tempNoAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.02,1,1]),
+                        ['blue','green','red','nir','swir1','temp','swir2','Emis_31','Emis_32']],
+                        
+    'tempAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,1,0.02,1,1]),
+                      ['blue','green','red','nir','swir1','temp','swir2','SensorZenith','SensorAzimuth','SolarZenith','SolarAzimuth','Emis_31','Emis_32']],
+    'tempAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,0.02,1,1]),
+                      ['blue','green','red','nir','swir1','temp','swir2','SolarZenith', 'ViewZenith', 'RelativeAzimuth','Emis_31','Emis_32']],
+                      
+    'noTempNoAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001]),
+                      ['blue','green','red','nir','swir1','swir2']],
+    'noTempNoAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001]),
+                      ['blue','green','red','nir','swir1','swir2']],
+                      
+    'noTempAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1,1]),
+                      ['blue','green','red','nir','swir1','swir2','SensorZenith','SensorAzimuth','SolarZenith','SolarAzimuth']],
+    'noTempAngleComposite': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,1,1,1]),
+                      ['blue','green','red','nir','swir1','swir2','SolarZenith', 'ViewZenith', 'RelativeAzimuth']],
+  };
 /////////////////////////////////////////////////
 //Helper function to join two collections- Source: code.earthengine.google.com
     function joinCollections(c1,c2, maskAnyNullValues){
@@ -1407,6 +1459,37 @@ var modisCDict = {
       }
       return joined;
     }
+function smartJoin(primary,secondary,hourDiff){
+  var millis = hourDiff * 60 * 60 * 1000;
+  
+  // Create a time filter to define a match as overlapping timestamps.
+var maxDiffFilter = ee.Filter.or(
+  ee.Filter.maxDifference({
+    difference: millis,
+    leftField: 'system:time_start',
+    rightField: 'system:time_end'
+  }),
+  ee.Filter.maxDifference({
+    difference: millis,
+    leftField: 'system:time_end',
+    rightField: 'system:time_start'
+  })
+);
+  // Define the join.
+  var saveBestJoin = ee.Join.saveBest({
+    matchKey: 'bestImage',
+    measureKey: 'timeDiff'
+  });
+  var MergeBands = function(element) {
+        // A function to merge the bands together.
+        // After a join, results are in 'primary' and 'secondary' properties.
+        return ee.Image.cat(element, element.get('bestImage'));
+      };
+  // Apply the join.
+  var joined = saveBestJoin.apply(primary, secondary, maxDiffFilter);
+  joined = joined.map(MergeBands);
+  return joined;
+}
 //////////////////////////////////////////////////////
 //////////////////////////////////////////////////////
 //Method for removing spikes in time series
@@ -1467,10 +1550,11 @@ function despikeCollection(c,absoluteSpike,bandNo){
 ///////////////////////////////////////////////////////////
 //Function to get MODIS data from various collections
 //Will pull from daily or 8-day composite collections based on the boolean variable "daily"
-function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zenithThresh,useTempInCloudMask){
+function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zenithThresh,useTempInCloudMask,addLookAngleBands){
+    if(addLookAngleBands === undefined || addLookAngleBands === null){addLookAngleBands = false}
     var a250C;var t250C;var a500C;var t500C;var a1000C;var t1000C;
     var a250CV6;var t250CV6;var a500CV6;var t500CV6;var a1000CV6;var t1000CV6;
-    
+    var viewAngleBandNames;
       //Find which collections to pull from based on daily or 8-day
       if(daily === false){
         a250C = modisCDict.eightDaySR250A;
@@ -1480,7 +1564,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
         a1000C = modisCDict.eightDayLST1000A;
         t1000C = modisCDict.eightDayLST1000T;
         
-      
+        viewAngleBandNames = compositeViewAngleBandNames;
       }
      else{
         a250C = modisCDict.dailySR250A;
@@ -1490,7 +1574,7 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
         a1000C = modisCDict.dailyLST1000A;
         t1000C = modisCDict.dailyLST1000T;
         
-        
+        viewAngleBandNames = dailyViewAngleBandNames;
       }
       
     //Pull images from each of the collections  
@@ -1505,9 +1589,22 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
               .filter(ee.Filter.calendarRange(startJulian,endJulian))
               .select(modis250SelectBands,modis250BandNames);
     
-    
+    // var af = ee.Image(a250.first());
+    // var tf = ee.Image(t250.first());
+    // var abit1 = af.select(['QC_250m']).bitwiseAnd(Math.pow(2,1));
+    // var tbit1 = tf.select(['QC_250m']).bitwiseAnd(Math.pow(2,1));
+    // var abit8 = af.select(['QC_250m']).bitwiseAnd(Math.pow(2,8));
+    // var tbit8= tf.select(['QC_250m']).bitwiseAnd(Math.pow(2,8));
+    // Map.addLayer(abit1,{min:0,max:2},'abit1')
+    // Map.addLayer(tbit1,{min:0,max:2},'tbit1')
+    // Map.addLayer(abit8,{min:0,max:2},'abit8')
+    // Map.addLayer(tbit8,{min:0,max:2},'tbit8')
+    // Map.addLayer(a250.count(),{min:0,max:16},'aCount')
+    // Map.addLayer(t250.count(),{min:0,max:16},'tCount')
+    // Map.addLayer(a250.select(modis250SelectBands,modis250BandNames),{},'a')
+    // Map.addLayer(t250.select(modis250SelectBands,modis250BandNames),{},'t')
     function get500(c){
-       var images = ee.ImageCollection(c)
+      var images = ee.ImageCollection(c)
               .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
               .filter(ee.Filter.calendarRange(startJulian,endJulian));
               
@@ -1524,127 +1621,79 @@ function getModisData(startYear,endYear,startJulian,endJulian,daily,maskWQA,zeni
                 return img;
               });
               }
-              images = images.select(modis500SelectBands,modis500BandNames);
+              if(addLookAngleBands){
+                 images = images.select(ee.List(modis500SelectBands).cat(viewAngleBandNames),ee.List(modis500BandNames).cat(viewAngleBandNames));
+              }else{
+                images = images.select(modis500SelectBands,modis500BandNames);
+              }
               return images;
-    }         
+    } 
+    
     var a500 = get500(a500C);
     var t500 = get500(t500C);
     
-    
+
     //If thermal collection is wanted, pull it as well
     if(useTempInCloudMask === true){
-       var t1000 = ee.ImageCollection(t1000C)
+      var t1000 = ee.ImageCollection(t1000C)
               .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
               .filter(ee.Filter.calendarRange(startJulian,endJulian))
-              .select([0]);
+              .select([0,8,9],['temp','Emis_31','Emis_32']);
             
       var a1000 = ee.ImageCollection(a1000C)
               .filter(ee.Filter.calendarRange(startYear,endYear,'year'))
               .filter(ee.Filter.calendarRange(startJulian,endJulian))
-              .select([0]);        
+              .select([0,8,9],['temp','Emis_31','Emis_32']);    
     }
     
     //Now all collections are pulled, start joining them
     //First join the 250 and 500 m Aqua
       var a;var t;var tSelectOrder;var tStdNames;
-      a = joinCollections(a250,a500);
+      a = joinCollections(a250,a500,false);
       
       //Then Terra
-      t = joinCollections(t250,t500);
+      t = joinCollections(t250,t500,false);
       
       //If temp was pulled, join that in as well
       //Also select the bands in an L5-like order and give descriptive names
       if(useTempInCloudMask === true){
-        a = joinCollections(a,a1000);
-        t = joinCollections(t,t1000);
-        tSelectOrder = wTempSelectOrder;
-        tStdNames = wTempStdNames;
+        a = joinCollections(a,a1000,false);
+        t = joinCollections(t,t1000,false);
+        
+        // tSelectOrder = wTempSelectOrder;
+        // tStdNames = wTempStdNames;
       }
       //If no thermal was pulled, leave that out
-      else{
-        tSelectOrder = woTempSelectOrder;
-        tStdNames = woTempStdNames;
-      }
+      // else{
+      //   tSelectOrder = woTempSelectOrder;
+      //   tStdNames = woTempStdNames;
+      // }
+    
+      a = a.map(function(img){return img.set({'platform':'aqua'})});
+      t = t.map(function(img){return img.set({'platform':'terra'})});
       
       //Join Terra and Aqua 
-      var joined = ee.ImageCollection(a.merge(t)).select(tSelectOrder,tStdNames);
+      var joined = ee.ImageCollection(a.merge(t))//.select(tSelectOrder,tStdNames);
      
-      //Divide by 10000 to make it work with cloud masking algorithm out of the box
-      joined = joined.map(function(img){return img.divide(10000).float()
-        .copyProperties(img,['system:time_start','system:time_end']);
-        
-      });
-      // print('Collection',joined);
-      //Since MODIS thermal is divided by 0.02, multiply it by that and 10000 if it was included
-      if(useTempInCloudMask === true){
-      joined = joined.map(function(img){
-        var t = img.select(['temp']).multiply(0.02*10000);
-        var z = img.select(['SensorZenith']).multiply(100);
-        return img.select(['blue','green','red','nir','swir1','swir2'])
-        .addBands(z).addBands(t).select([0,1,2,3,4,7,5,6]);
       
-      });
-      }else{
-        joined = joined.map(function(img){
-        var z = img.select(['SensorZenith']).multiply(100);
-        return img.select(['blue','green','red','nir','swir1','swir2'])
-        .addBands(z);
       
-      });
-      }
-    
-  //   //Get some descriptive names for displaying layers
-  //   var name = 'surRefl';
-  //   if(daily === true){
-  //     name = name + '_daily';
-  //   }
-  //   else{name = name + '8DayComposite'}
-  //   if(maskWQA === true){
-  //     name = name + '_WQAMask';
-  //   }
-    
-  // //Add first image as well as median for visualization
-  //   // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageBeforeMasking',false);
-  //   // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeBeforeMasking',false);
-    
-  //   if(applyCloudScore === true){
-  // //Compute cloud score and mask cloudy pixels
-  //     print('Applying Google cloudScore algorithm');
-  //     // var joined = joined.map(function(img,useTempInCloudMask){
-  //     //   var cs = modisCloudScore(img);
-  //     //   return img.mask(img.mask().and(cs.lt(cloudThresh)))//.addBands(cs.select([0],['cloudScore']))
-        
-  //     // });
-  //   //Add first image as well as median for visualization
-  //   // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMasking',false);
-  //   // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMasking',false);
-  //   joined = joined.map(function(img){return getCloudMask(img,modisCloudScore,cloudThresh,useTempInCloudMask,contractPixels,dilatePixels)});
       
-  //   }
+    var dailyPiece;var tempPiece;var anglePiece;
+    if(daily){dailyPiece = 'Daily'}else{dailyPiece = 'Composite'}
+    if(useTempInCloudMask){tempPiece = 'temp'}else{tempPiece = 'noTemp'}
+    if(addLookAngleBands){anglePiece = 'Angle'}else{anglePiece = 'NoAngle'}
+    var multKey = tempPiece+anglePiece+dailyPiece;
+    var mult = multModisDict[multKey];
+    var multImage = mult[0];
+    var multNames = mult[1];
+    // print(multKey,multImage,multNames);
     
-  // //   //If cloud shadow masking is chosen, run it
-  // //   if(runTDOM === true){
-  // //     print('Running TDOM');
-  // //     joined = simpleTDOM(joined,zShadowThresh,zCloudThresh,maskAllDarkPixels)
-    
-  // //   //Add first image as well as median for visualization after TDOM
-  // // // Map.addLayer(ee.Image(joined.first()),vizParams,name+'_singleFirstImageAfterMaskingWTDOM',false);
-  // // // Map.addLayer(ee.Image(joined.median()),vizParams,name+'_CompositeAfterMaskingWTDOM',false);
-  
+    joined = joined.map(function(img){return img.multiply(multImage).float().select(multNames)
+        .copyProperties(img,['system:time_start','system:time_end','system:index'])
+        .copyProperties(img);
+      })
       
-  // //   };
-  
-  
-  // // //Add indices and select them
-  // // joined = joined.map(addIndices);
-  // joined = joined.map(addIndices);
-  // var indicesAdded = true;
-  // if(despikeMODIS){
-  //   print('Despiking MODIS');
-  //   joined = despikeCollection(joined,modisSpikeThresh,indexName);
-  // }
-  
-  return ee.ImageCollection(joined)//.map(function(img){return img.resample('bilinear') }) );
+  return ee.ImageCollection(joined);//.map(function(img){return img.resample('bilinear') });
     
   }
   
@@ -2578,8 +2627,10 @@ var customQualityMosaic = function(inCollection,qualityBand,percentile){
 ////////////////////////////////////////////////////////////////////////////////
 exports.sieve = sieve;
 exports.setNoData = setNoData;
+exports.addJulianDayBand = addJulianDayBand;
 exports.addYearBand = addYearBand;
 exports.addDateBand = addDateBand;
+exports.addYearJulianDayBand = addYearJulianDayBand;
 exports.collectionToImage = collectionToImage;
 exports.getImageCollection = getImageCollection;
 exports.getS2 = getS2;
@@ -2616,6 +2667,7 @@ exports.exportToAssetWrapper = exportToAssetWrapper;
 exports.exportToAssetWrapper2 = exportToAssetWrapper2;
 exports.exportCollection = exportCollection;
 exports.joinCollections = joinCollections;
+exports.smartJoin = smartJoin;
 exports.listToString = listToString;
 exports.harmonizationRoy = harmonizationRoy;
 exports.harmonizationChastain = harmonizationChastain;
