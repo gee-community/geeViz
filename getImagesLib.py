@@ -1466,6 +1466,7 @@ def getModisData(startYear,endYear,startJulian,endJulian,daily = False,maskWQA =
   
   if useTempInCloudMask:
     joined = joined.map(multiplier)
+  print(joined.first().getInfo())
   Map.addLayer(ee.Image(joined.first()),vizParamsFalse)
 #   //   //Get some descriptive names for displaying layers
 #   //   var name = 'surRefl';

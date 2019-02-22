@@ -1,6 +1,6 @@
 import sys,os
-sys.path.append('G:/GEE/modules')
-os.chdir('G:/GEE/modules')
+sys.path.append('C:/USFS/modules')
+os.chdir('C:/USFS/modules')
 from getImagesLib import *
 #########################################################################
 
