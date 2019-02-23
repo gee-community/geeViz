@@ -12,6 +12,7 @@ ee.Initialize()
 #Set up template web viewer
 #Do not change
 cwd = os.getcwd()
+
 template = cwd+'/template/index.html'
 ee_run = cwd +'/template/ee/run.js'
 local_server_port = 8004

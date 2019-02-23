@@ -29,6 +29,7 @@ changeDirDict = {\
 'NIRv':-1\
 }
 
+
 ######################################################################
 #FUNCTIONS
 ######################################################################
@@ -217,6 +218,20 @@ def addYearBand(img):
   db = ee.Image.constant(y).rename(['year']).float()
   db = db#.updateMask(img.select([0]).mask())
   return img.addBands(db)
+def addJulianDayBand(img):
+  d = ee.Date(img.get('system:time_start'))
+  julian = ee.Image(ee.Number(d.getRelative('day','year')).add(1)).rename(['julianDay'])
+
+  return img.addBands(julian).float()
+
+def addYearJulianDayBand(img):
+  d = ee.Date(img.get('system:time_start'))
+  julian = ee.String('00').cat(ee.String(ee.Number(d.getRelative('day','year')).add(1))).slice(-3,None)
+  y = ee.String(d.get('year')).slice(2,4)
+  yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian'])
+  
+  return img.addBands(yj).float()
+
 
 ################################################################
 ################################################################
@@ -646,7 +661,7 @@ def simpleTDOM2(collection,zScoreThresh = -1,shadowSumThresh = 0.35,contractPixe
   def zThresholder(img):
     zScore = img.select(shadowSumBands).subtract(irMean).divide(irStdDev)
     irSum = img.select(shadowSumBands).reduce(ee.Reducer.sum())
-    TDOMMask = zScore.lt(zScoreThresh).reduce(ee.Reducer.sum()).eq(length(shadowSumBands)).And(irSum.lt(shadowSumThresh))
+    TDOMMask = zScore.lt(zScoreThresh).reduce(ee.Reducer.sum()).eq(len(shadowSumBands)).And(irSum.lt(shadowSumThresh))
     TDOMMask = TDOMMask.focal_min(contractPixels).focal_max(dilatePixels)
     return img.updateMask(TDOMMask.Not())
 
