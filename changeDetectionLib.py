@@ -5,11 +5,8 @@
 # Adapted from changeDetectionLib.js
 # I have only been converting functions as I use them. Unconverted functions are included at the bottom of this file.
 
-import sys, ee
-sys.path.append('C:\Users\leahcampbell\home\scripts\gee-modules')#'\\166.2.126.25\GTAC_Apps\GEE\modules')
 import getImagesLib as getImageLib
-import math
-ee.Initialize()
+import sys, math, ee
 
 #-------------------------------------------------------------------------
 #             Image and array manipulation
@@ -110,8 +107,8 @@ def extractDisturbance(lt, distDir, params, mmu):
     #       .and(finalDistImg.select(['mag']).gt(0))                    # and is greater than 0  
     #       .and(finalDistImg.select(['preval']).gt(params.pre_val))
     longTermDisturbance = finalDistImg.select(['dur']).gte(15)
-    longTermThreshold = finalDistImg.select(['mag']).gte(params.tree_loss20).And(longTermDisturbance)
-    threshold = finalDistImg.select(['mag']).gte(params.tree_loss1)
+    longTermThreshold = finalDistImg.select(['mag']).gte(params['tree_loss20']).And(longTermDisturbance)
+    threshold = finalDistImg.select(['mag']).gte(params['tree_loss1'])
 
     return finalDistImg.updateMask(threshold.Or(longTermThreshold)) 
 
@@ -130,7 +127,7 @@ def extractDisturbance(lt, distDir, params, mmu):
 
   # patchify the remaining disturbance pixels using a minimum mapping unit
   if (mmu > 1):
-    print('Applying mmu:'+mmu+' to LANDTRENDR heuristic outputs')
+    print('Applying mmu:'+str(mmu)+' to LANDTRENDR heuristic outputs')
     
     finalDistImg1 = applyMMU(finalDistImg1)
     finalDistImg2 = applyMMU(finalDistImg2)
@@ -226,12 +223,13 @@ def landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,ru
 #Returns annual collection of verdet slope
 def verdetAnnualSlope(tsIndex,indexName,startYear,endYear):
   #Apply VERDET
-  verdet =   ee.Algorithms.TemporalSegmentation.Verdet({'timeSeries': tsIndex,
-                                        'tolerance': 0.0001,
-                                        'alpha': 1/3.0}).arraySlice(0,1,null)
+  run_params = {'timeSeries': tsIndex,
+                'tolerance': 0.0001,
+                'alpha': 1/3.0}
+  verdet =   ee.Algorithms.TemporalSegmentation.Verdet(**run_params).arraySlice(0,1,None)
   print('indexName: '+indexName)
   #Map.addLayer(verdet,{},'verdet '+indexName)
-  tsYear = tsIndex.map(getImageLib.addYearBand).select([1]).toArray().arraySlice(0,1,null).arrayProject([0])
+  tsYear = tsIndex.map(getImageLib.addYearBand).select([1]).toArray().arraySlice(0,1,None).arrayProject([0])
   
   #Find possible years to convert back to collection with
   possibleYears = ee.List.sequence(startYear+1,endYear)
