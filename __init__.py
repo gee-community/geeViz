@@ -15,7 +15,7 @@ def findPaths(module_list):
 
 import ee, sys, os
 ee.Initialize()
-module_list = ['gee_py_modules','lcms_scripts']
+module_list = ['gee_py_modules','lcms_scripts','google_cloud_sdk','gcs_jsonPath']
 module_dict = findPaths(module_list)
 sys.path.append(module_dict['gee_py_modules'])
 sys.path.append(module_dict['lcms_scripts'])
