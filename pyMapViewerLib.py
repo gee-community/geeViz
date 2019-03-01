@@ -98,6 +98,9 @@ class mapper:
             print('Local web server at: http://localhost:'+str(local_server_port)+'/template/ already serving.')
             print('Refresh browser instance')
         webbrowser.open('http://localhost:'+str(local_server_port)+'/template/',new = 1)
+        
+    def clearMap(self):
+        self.idDictList = []
     
 
 

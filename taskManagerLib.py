@@ -60,13 +60,14 @@ def timeTaskList(starttime, endtime):
 # Only move on when no 'ready' or 'running' jobs remain, i.e. all have completed or failed
 # Then print status of all tasks 
 # Starttime and endtime must be python datetimes, in UTC, e.g. datetime.datetime.utcnow()
-def jobCompletionTracker(starttime, endtime):
+# check_interval = seconds between status checks
+def jobCompletionTracker(starttime, endtime, check_interval):
     thisTasklist = timeTaskList(starttime,endtime)
     for i in thisTasklist:
         print i['description'], i['state']
     currentJobs = 1
     while currentJobs > 0:
-        time.sleep(60)
+        time.sleep(check_interval)
         thisTasklist = timeTaskList(starttime,endtime)
         ready = [i for i in thisTasklist if (i['state'] == 'READY')]
         running = [i for i in thisTasklist if (i['state'] == 'RUNNING')]
