@@ -226,8 +226,9 @@ def addJulianDayBand(img):
 
 def addYearJulianDayBand(img):
   d = ee.Date(img.get('system:time_start'))
-  julian = ee.String('00').cat(ee.String(ee.Number(d.getRelative('day','year')).add(1))).slice(-3,None)
-  y = ee.String(d.get('year')).slice(2,4)
+  julian = ee.Number(d.getRelative('day','year')).add(1).format('%03d')
+  y = d.get('year').format().slice(2,4)
+
   yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian'])
   
   return img.addBands(yj).float()
@@ -1256,14 +1257,15 @@ def modisCloudScore(img):
   score = score.min(vizSum)
 
   #Clouds are reasonably bright in all infrared bands.
-  irSum =rescale(img, 'img.nir + img.swir2', [0.3, 0.7])
+  # irSum =rescale(img, 'img.nir + img.swir2', [0.3, 0.7])
+  irSum =rescale(img, 'img.nir  + img.swir2 + img.swir2', [0.3, 0.8])
   score = score.min(irSum)
 
 
 
   #However, clouds are not snow.
   ndsi = img.normalizedDifference(['green', 'swir2'])
-  snowScore = rescale(ndsi, 'img', [0.7, 0.5])
+  snowScore = rescale(ndsi, 'img', [0.8, 0.6])
   score =score.min(snowScore)
 
   #For MODIS, provide the option of not using thermal since it introduces
