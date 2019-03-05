@@ -4,7 +4,7 @@
 #--------------------------------------------------------------------------
 
 import sys, ee, os, shutil, subprocess, datetime, calendar, json
-import time
+import time, logging, pdb
 ee.Initialize()
 
 taskLimit = 10
@@ -33,22 +33,30 @@ def batchUpdateAcl(folder,writers = [],all_users_can_read = True,readers = []):
 #############################################################################################
 # Functions for copying, deleting, etc. assets
 #############################################################################################
+# outTypes = 'imageCollection' or 'tables'
 def batchCopy(fromFolder,toFolder,outType = 'imageCollection'):
-    create_image_collection(toFolder)
+
+    if outType == 'imageCollection':
+        create_image_collection(toFolder)
+    elif outType == 'tables':
+        verify_path(toFolder)
+
     if toFolder[-1] == '/':
         toFolder = toFolder[:-1]
 
-    images = walkFolders(fromFolder)
-##    images =[i for i in images if i.find('housman/Zambia_Alt_C')>-1]
-    print( images)
-##    images = filter(lambda i: i.find('GLRI_3_Season') >-1, images)
+    if outType == 'imageCollection':
+        images = walkFolders(fromFolder)
+    elif outType == 'tables':
+        images = walkFoldersTables(fromFolder)
+    #print( images)
+
     for image in images:
         out = toFolder +'/'+ base(image)
         print( out)
         try:
             ee.data.copyAsset(image,out)
         except:
-            print( out,'already exists')
+            print( out,'Error: May already exist')
 
 #---------------------------------------------------------------------------------------------
 
@@ -64,9 +72,14 @@ def moveImages(images,toFolder):
             print (out,'already exists')
 
 #---------------------------------------------------------------------------------------------
+# types = 'imageCollection' or 'tables'
+def batchDelete(Collection, type = 'imageCollection'):
 
-def batchDelete(Collection):
-    images = walkFolders(Collection)
+    if type == 'imageCollection':
+        images = walkFolders(Collection)
+    elif type == 'tables':
+        images = walkFoldersTables(Collection) 
+
     for image in images:
         print('Deleting: '+ Collection +'/'+ base(image))
         ee.data.deleteAsset(image)
@@ -207,6 +220,32 @@ def walkFolders(folder,images = []):
         iteration+=1
 
     return images
+
+#################################################################
+#Function to walk down folders and get all tables
+def walkFoldersTables(folder, tables = []):
+    assets = ee.data.getList({'id':folder})
+    folders = [str(i['id']) for i in assets if i['type'] == 'Folder']
+    tablesT = [str(i['id']) for i in assets if i['type'] == 'Table']
+    print tablesT
+    for i in tablesT:
+        if i not in tables:
+            tables.append(i)
+    iteration = 2
+    while len(folders)>0:
+        print 'Starting iteration',iteration
+        for folder in folders:
+            print folder
+            assets = ee.data.getList({'id':folder})
+            folders = [str(i['id']) for i in assets if i['type'] == 'Folder']
+            tablesT = [str(i['id']) for i in assets if i['type'] == 'Table']
+            for i in tablesT:
+                if i not in tables:
+                    tables.append(i)
+
+        iteration+=1
+
+    return tables
 #################################################################
 ##############################################################################################
 #Make sure the directory exists
@@ -252,6 +291,13 @@ def create_image_collection(full_path_to_collection):
     else:
         ee.data.createAsset({'type': ee.data.ASSET_TYPE_IMAGE_COLL}, full_path_to_collection)
         print 'New collection '+full_path_to_collection+' created'
+
+def verify_path(path):
+    response = ee.data.getInfo(path)
+    if not response:
+        logging.error('%s is not a valid destination. Make sure full path is provided e.g. users/user/nameofcollection '
+                      'or projects/myproject/myfolder/newcollection and that you have write access there.', path)
+        sys.exit(1)
 ##############################################################################################
 #Find whether image is a leap year
 def is_leap_year(year):
