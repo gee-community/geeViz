@@ -42,6 +42,15 @@ def batchCancel():
     map(ee.data.cancelTask,running)
     map(ee.data.cancelTask,ready)
 
+# Cancels all running tasks with identifier in their name
+def cancelByName(nameIdentifier):
+    cancelList = nameTaskList(nameIdentifier)
+    if cancelList:
+        for task in cancelList:
+            print('Cancelling '+task['description'])
+            ee.data.cancelTask(task['id'])
+    else:
+        print('No Tasks to Cancel')
 #------------------------------------------------------------------------------
 #                 Task Tracking Using Time Interval
 #------------------------------------------------------------------------------    
@@ -89,5 +98,5 @@ def jobCompletionTracker(starttime, endtime, check_interval):
 # Get list of tasks with specified name/description prefix (e.g. "description" passed to GEE export function)
 def nameTaskList(nameIdentifier):
     tasks = ee.data.getTaskList()
-    thisList = [i for i in tasks if re.findall(nameIdentifier, i['description'])]
+    thisList = [i for i in tasks if re.findall(nameIdentifier, i['description']) and (i['state'] == 'READY' or i['state'] == 'RUNNING')]
     return thisList
