@@ -232,8 +232,9 @@ def verdetAnnualSlope(tsIndex,indexName,startYear,endYear):
   tsYear = tsIndex.map(getImageLib.addYearBand).select([1]).toArray().arraySlice(0,1,None).arrayProject([0])
   
   #Find possible years to convert back to collection with
-  possibleYears = ee.List.sequence(startYear+1,endYear)
-  verdetC = arrayToTimeSeries(verdet,tsYear,possibleYears,'VERDET_fitted_'+indexName+'_slope')
+  #possibleYears = ee.List.sequence(startYear+1,endYear)
+  possibleYears = ee.List.sequence(startYear, endYear)
+  verdetC = arrayToTimeSeries(verdet, tsYear, possibleYears, 'VERDET_fitted_'+indexName+'_slope')
   
   return verdetC
 
