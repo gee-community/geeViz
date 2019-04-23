@@ -340,7 +340,7 @@ def dailyMosaics(imgs):
   return imgs
 
 ################################################################
-def getS2(studyArea,startDate,endDate,startJulian,endJulian):
+def getS2(studyArea,startDate,endDate,startJulian,endJulian,resampleMethod = 'near'):
 
   def multS2(img):
     t = img.select([ 'B1','B2','B3','B4','B5','B6','B7','B8','B8A', 'B9','B10', 'B11','B12']).divide(10000)#Rescale to 0-1
@@ -354,8 +354,14 @@ def getS2(studyArea,startDate,endDate,startJulian,endJulian):
             .filter(ee.Filter.calendarRange(startJulian,endJulian))\
             .filterBounds(studyArea)\
             .map(multS2).select(['QA60', 'B1','B2','B3','B4','B5','B6','B7','B8','B8A', 'B9','B10', 'B11','B12'],['QA60','cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'])\
-            .map(lambda img: img.resample('bicubic'))
   
+  
+  def setResample(img):
+    return img.resample(resampleMethod)
+
+  if  resampleMethod in ['bilinear','bicubic']:
+    print('Setting resample method to ',resampleMethod)
+    s2s = s2s.map(setResample)
   #Convert to daily mosaics to avoid redundent observations in MGRS overlap areas and edge artifacts for shadow masking
   s2s = dailyMosaics(s2s)
   return s2s
@@ -363,7 +369,7 @@ def getS2(studyArea,startDate,endDate,startJulian,endJulian):
 
 ##################################################################
 #Function for acquiring Landsat TOA image collection
-def getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR,includeSLCOffL7,defringeL5 = False,addPixelQA = False):
+def getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR,includeSLCOffL7,defringeL5 = False,addPixelQA = False,resampleMethod = 'near'):
   
   #Set up bands and corresponding band names
   sensorBandDict = {\
@@ -474,6 +480,12 @@ def getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR
   #Make sure all bands have data
   ls = ls.map(dataInAllBands)
 
+  def setResample(img):
+    return img.resample(resampleMethod)
+
+  if  resampleMethod in ['bilinear','bicubic']:
+    print('Setting resample method to ',resampleMethod)
+    ls = ls.map(setResample)
   
   return ls;
 
@@ -1251,7 +1263,7 @@ def modisCloudScore(img):
   score = ee.Image(1.0);
 
   #Clouds are reasonably bright in the blue band.
-  score = score.min(rescale(img, 'img.blue', [0.1, 0.3]))
+  # score = score.min(rescale(img, 'img.blue', [0.1, 0.3]))
   #Clouds are reasonably bright in all visible bands.
   vizSum = rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8])
   score = score.min(vizSum)
@@ -1480,7 +1492,7 @@ def despikeCollection(c,absoluteSpike,bandNo):
 #########################################################################
 #Function to get MODIS data from various collections
 #Will pull from daily or 8-day composite collections based on the boolean variable "daily"
-def getModisData(startYear,endYear,startJulian,endJulian,daily = False,maskWQA = False,zenithThresh = 90,useTempInCloudMask = True,addLookAngleBands = False):
+def getModisData(startYear,endYear,startJulian,endJulian,daily = False,maskWQA = False,zenithThresh = 90,useTempInCloudMask = True,addLookAngleBands = False,resampleMethod = 'near'):
   
   #Find which collections to pull from based on daily or 8-day
   if daily == False:
@@ -1597,10 +1609,14 @@ def getModisData(startYear,endYear,startJulian,endJulian,daily = False,maskWQA =
     return img.multiply(multImage).float().select(multNames)\
         .copyProperties(img,['system:time_start','system:time_end','system:index'])\
         .copyProperties(img)
-  
+  def setResample(img):
+    return img.resample(resampleMethod)
+
   joined = joined.map(multiplyImg)
-  
-  return ee.ImageCollection(joined)#.map(function(img){return img.resample('bilinear') });
+  if  resampleMethod in ['bilinear','bicubic']:
+    print('Setting resample method to ',resampleMethod)
+    joined = joined.map(setResample)
+  return joined
     
 
 #########################################################################
@@ -1715,7 +1731,7 @@ def getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,\
   zScoreThresh = -1,shadowSumThresh = 0.35,\
   contractPixels = 1.5,dilatePixels = 3.5,\
   correctIllumination = False,correctScale = 250,\
-  exportComposites = False,outputName = 'Landsat-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = None,scale = 30):
+  exportComposites = False,outputName = 'Landsat-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = None,scale = 30,resampleMethod = 'near'):
   
   #Prepare dates
   #Wrap the dates if needed
@@ -1736,7 +1752,7 @@ def getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,\
   else:addPixelQA = False
 
   #Get Landsat image collection
-  ls = getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR,includeSLCOffL7,defringeL5,addPixelQA)
+  ls = getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR,includeSLCOffL7,defringeL5,addPixelQA,resampleMethod)
   
   #Apply relevant cloud masking methods
   if applyCloudScore:
@@ -1823,7 +1839,7 @@ def getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
   applyFmaskCloudShadowMask = True,applyFmaskSnowMask = False,\
   cloudoudScoreThresh = 10,cloudScorePctl = 10,\
   zScoreThresh = -1,shadowSumThresh = 0.35,\
-  contractPixels = 1.5,dilatePixels = 3.5):
+  contractPixels = 1.5,dilatePixels = 3.5,resampleMethod = 'near'):
   
   #Prepare dates
   #Wrap the dates if needed
@@ -1844,7 +1860,7 @@ def getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
   else:addPixelQA = False
 
   #Get Landsat image collection
-  ls = getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR,includeSLCOffL7,defringeL5,addPixelQA)
+  ls = getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR,includeSLCOffL7,defringeL5,addPixelQA,resampleMethod)
   
   #Apply relevant cloud masking methods
   if applyCloudScore:
@@ -1907,7 +1923,7 @@ def getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulia
   cloudScoreThresh = 10,performCloudScoreOffset = True,cloudScorePctl = 10,\
   cloudHeights = ee.List.sequence(500,10000,500),\
   zScoreThresh = -1,shadowSumThresh = 0.35,\
-  contractPixels = 1.5,dilatePixels = 3.5):
+  contractPixels = 1.5,dilatePixels = 3.5,resampleMethod = 'near'):
   
   #Prepare dates
   #Wrap the dates if needed
@@ -1921,7 +1937,7 @@ def getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulia
 
   
   #Get Sentinel2 image collection
-  s2s = getS2(studyArea,startDate,endDate,startJulian,endJulian)
+  s2s = getS2(studyArea,startDate,endDate,startJulian,endJulian,resampleMethod)
 
   # Map.addLayer(ee.Image(s2s.first()),{'min':0.05,'max':0.4,'bands':'swir1,nir,red'},'No masking')
   
@@ -1971,14 +1987,14 @@ def getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,\
   zScoreThresh = -1,shadowSumThresh = 0.35,\
   contractPixels = 1.5,dilatePixels = 3.5,\
   correctIllumination = False,correctScale = 250,\
-  exportComposites = False,outputName = 'Sentinel2-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = None,scale = 30):
+  exportComposites = False,outputName = 'Sentinel2-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = None,scale = 30,resampleMethod = 'near'):
   
   s2s = getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,\
   applyQABand,applyCloudScore,applyShadowShift,applyTDOM,\
   cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,\
   cloudHeights,\
   zScoreThresh,shadowSumThresh,\
-  contractPixels,dilatePixels\
+  contractPixels,dilatePixels,resampleMethod\
   )
   
   

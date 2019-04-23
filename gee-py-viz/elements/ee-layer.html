@@ -1,0 +1,1161 @@
+<!-- <link rel="import" href="../components/polymer/polymer.html"> -->
+<!-- <link rel="stylesheet" href="main.css"> -->
+<script type="text/javascript">
+    var exportImageDict = {};
+    var plotIDList = [];
+    var plotID = 1;
+    var plotProjectID = 1;
+</script>
+
+<polymer-element name="ee-layer" attributes="name">
+    <template>
+        <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+       
+        <style>
+
+
+        input[type='range'] {
+            -webkit-appearance: none;
+            border-radius: 5px;
+            
+            box-shadow: inset 0 0 5px #333;
+            background-color: #999;
+            height: 5px;
+            vertical-align: middle;
+        }
+        input[type='range']::-moz-range-track {
+            -moz-appearance: none;
+            border-radius: 5px;
+            box-shadow: inset 0 0 5px #333;
+            background-color: #999;
+            height: 10px;
+        }
+        input[type='range']::-webkit-slider-thumb {
+            -webkit-appearance: none !important;
+            border-radius: 5px;
+            background-color: #FFF;
+            
+            box-shadow:inset 0 0 10px rgba(000,000,000,0.5);
+            border: 1px solid #999;
+            height: 12px;
+            width: 10px;
+        }
+        input[type='range']::-moz-range-thumb {
+            -moz-appearance: none;
+            border-radius: 20px;
+            background-color: #FFF;
+            box-shadow:inset 0 0 10px rgba(000,000,000,0.5);
+            border: 1px solid #999;
+            height: 0px;
+            width: 20px;
+
+        }
+            li{
+                list-style-type:none;
+                margin-bottom:12px;
+                clear:both;
+                /*padding-bottom:6px;*/
+                color: #FFFFFF;
+                font-size: 1.1em;
+            }
+            #viz:hover{width:50px;}
+            li:hover{color: #9aa9b3;-webkit-transition: color  0.5s;}
+            .leftLabel{float:left;}
+            .rightLabel{float:right;}
+            .deactivated{display:none;}
+            .container{float:left;display: inline-block;
+    vertical-align: top;}
+            /*.legend{color: #000;font-weight: bold;float:right;height:10;width:200px;margin: 0 0 10px 10px;}*/
+            .range{float:right;}
+            #opacity{margin-left:1Spx;}
+        </style>
+        <li style = 'height:10px;' href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title= {{helpBoxMessage}}>
+
+            <div class="container" style="margin-bottom:  10px ;border-radius:10px;height:3px;background-image: -webkit-linear-gradient(left, #999, #FFF {{percent}}%, transparent {{percent}}%, transparent 100%)"><i class="fa fa-spinner fa-spin {{ {deactivated:layer != null}| tokenList }}"></i><input class="{{ {deactivated:layer == null}| tokenList }}" id="enabled" type="checkbox" on-change="{{onChange}}" checked="{{visible}}"> {{name}}</div> 
+            <!-- <input type="text" style = 'width:150px;' var = 'viz' value="{{viz}}" spellcheck="false" on-change="{{onVizChange}}"  > -->
+            <input id="opacity"  type="range" class="range" value=100 style = 'display:inline-block !important;vertical-align:bottom !important;margin-top:12px;' on-input="{{onRangeChange}}">
+        
+        </li>
+
+    </template>
+    <script>
+        var nextId = 0;
+
+        Polymer('ee-layer',{
+            viz:JSON.stringify({}),
+            map:null,
+            layer:null,
+            visible:true,
+            name:"Test",
+            layerId:null,
+            highWaterMark:0,
+            urls:null,
+            percent:0,
+            created:function(){
+                this.layerId = nextId;
+           
+                
+                nextId += 1;
+                this.urls=[];
+            },
+            addToLayerObj:function(name,visible,item){
+
+                layerObj[name] = [visible,1];
+                queryObj[name] = [visible,1,item];
+            },
+            setLayer:function(layer){
+
+                var MAPID = layer.mapid;
+                var TOKEN = layer.token;
+                var inst = this;
+                
+                this.layer = new ee.MapLayerOverlay('https://earthengine.googleapis.com/map', MAPID, TOKEN, {});
+                this.layer.addTileCallback(function(event){
+                    if(event.count > inst.highWaterMark){
+                        inst.highWaterMark = event.count;
+                    }
+
+                    inst.percent = 100-((event.count / inst.highWaterMark) * 100);
+                });
+                
+                if(this.visible){
+                    this.map.overlayMapTypes.setAt(this.layerId, this.layer);
+
+                }
+
+                
+            },
+            onChange:function(){
+                
+                if(this.visible){
+                    console.log('its visible')
+                    
+                    this.map.overlayMapTypes.setAt(this.layerId,null);
+                    // this.map.overlayMapTypes.removeAt(this.layerId);
+                    // this.$.opacity.disabled = true;
+                    // this.detached();
+                    this.percent = 0;
+
+
+                }else{
+                    this.map.overlayMapTypes.setAt(this.layerId,this.layer);
+                    // this.$.opacity.disabled = false;
+                    // this.detached();
+                }
+                var item = queryObj[this.name][1];
+
+                layerObj[this.name] = [!this.visible,this.getOpacity()];
+                queryObj[this.name] = [!this.visible,item];
+                if(typeof(Storage) == "undefined") return;
+                localStorage.setItem("layerObj",JSON.stringify(layerObj));
+            },
+            setOpacity:function(opacity,item){
+                // var item = layerObj[this.name][-1];
+                this.layer.setOpacity(opacity);
+                this.$.opacity.value = opacity*100;
+                layerObj[this.name] = [this.visible,this.getOpacity()];
+                queryObj[this.name] = [this.visible,item];
+                if(typeof(Storage) == "undefined") return;
+                localStorage.setItem("layerObj",JSON.stringify(layerObj));
+            },
+            onRangeChange:function(){
+                var item = queryObj[this.name][1];
+                this.layer.setOpacity(this.getOpacity());
+                layerObj[this.name] = [this.visible,this.getOpacity()];
+                queryObj[this.name] = [this.visible,item];
+                if(typeof(Storage) == "undefined") return;
+                localStorage.setItem("layerObj",JSON.stringify(layerObj));
+            },
+            // vizMouseover:function(){
+            //     // console.log('mouse overed');
+            // },
+            // onVizChange:function(){
+                
+            //     // this.detached();
+            //     // this.viz = this.$.viz.value;
+            //     console.log(this.$.viz);
+               
+
+            // },
+            getOpacity:function(){
+                return this.$.opacity.value/100.0;
+            },
+            detached:function(){
+                print('detaching')
+                if(this.map.overlayMapTypes.getLength() == 1){
+                    this.map.overlayMapTypes.clear();
+                    return;
+                }
+
+                var foundIndex;
+                var layer = this.layer;
+                this.map.overlayMapTypes.forEach(function(element,index){
+                    if(element == layer){
+                        foundIndex = index;
+                    }
+                    // console.log(index)
+                });
+
+                if(foundIndex == null || foundIndex <= 0) return;
+
+                this.map.overlayMapTypes.removeAt(foundIndex);
+            }
+        });
+    </script>
+</polymer>
+
+
+<polymer-element name="REST-layer" attributes="name,baseURL">
+    
+
+    <template>
+        <!-- <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet"> -->
+        <style>
+
+
+        input[type='range'] {
+            -webkit-appearance: none;
+            border-radius: 5px;
+            
+            box-shadow: inset 0 0 5px #333;
+            background-color: #999;
+            height: 5px;
+            vertical-align: middle;
+        }
+        input[type='range']::-moz-range-track {
+            -moz-appearance: none;
+            border-radius: 5px;
+            box-shadow: inset 0 0 5px #333;
+            background-color: #999;
+            height: 10px;
+        }
+        input[type='range']::-webkit-slider-thumb {
+            -webkit-appearance: none !important;
+            border-radius: 5px;
+            background-color: #FFF;
+            
+            box-shadow:inset 0 0 10px rgba(000,000,000,0.5);
+            border: 1px solid #999;
+            height: 12px;
+            width: 10px;
+        }
+        input[type='range']::-moz-range-thumb {
+            -moz-appearance: none;
+            border-radius: 20px;
+            background-color: #FFF;
+            box-shadow:inset 0 0 10px rgba(000,000,000,0.5);
+            border: 1px solid #999;
+            height: 20px;
+            width: 20px;
+
+        }
+            li{
+                list-style-type:none;
+                margin-bottom:12px;
+                clear:both;
+                /*padding-bottom:6px;*/
+                color: #FFFFFF;
+                font-size: 0.8em;
+            }
+            #viz:hover{width:50px;}
+            li:hover{color: #9aa9b3;-webkit-transition: color  0.5s;}
+            .leftLabel{float:left;}
+            .rightLabel{float:right;}
+            .deactivated{display:none;}
+            .container{float:left;display: inline-block;
+    vertical-align: top;}
+            /*.legend{color: #000;font-weight: bold;float:right;height:10;width:200px;margin: 0 0 10px 10px;}*/
+            .range{float:right;}
+            #opacity{margin-left:1Spx;}
+        </style>
+        <li style = 'height:5px;' href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title= {{helpBoxMessage}}>
+
+            <div class="container" style="margin-bottom:  10px ;border-radius:10px;height:5px;background-size: 80px 10px;"><i class="fa fa-spinner fa-spin {{ {deactivated:layer != null}| tokenList }}"></i><input class="{{ {deactivated:layer == null}| tokenList }}" id="enabled" type="checkbox" on-change="{{onChange}}" checked="{{visible}}"> {{name}}</div> 
+            <!-- <input type="text" style = 'width:150px;' var = 'viz' value="{{viz}}" spellcheck="false" on-change="{{onVizChange}}"  > -->
+            <input id="opacity" type="range" class="range" value="100" style = 'display:inline-block !important;vertical-align:bottom !important;margin-top:12px;' on-input="{{onRangeChange}}">
+        </li>
+    </template>
+    <script>
+        var nextId = 0;
+
+        Polymer('REST-layer',{
+            viz:JSON.stringify({}),
+            map:null,
+            tileURLFunction :null,
+            layer:null,
+            visible:true,
+            name:"Test",
+            layerId:null,
+            highWaterMark:0,
+            urls:null,
+            percent:0,
+            maxZoom:20,
+            created:function(){
+                this.layerId = nextId;
+                nextId += 1;
+                this.urls=[];
+                
+            },
+            setLayer:function(layer){
+                var MAPID = layer.mapid;
+                var TOKEN = layer.token;
+                var inst = this;
+                // console.log('url');
+                // console.log(this.baseURL);
+
+                this.layer = new google.maps.ImageMapType({
+                getTileUrl: this.tileURLFunction,
+                tileSize: new google.maps.Size(256, 256),
+                // tileSize: new google.maps.Size($('#map').width(),$('#map').height()),
+                maxZoom: this.maxZoom
+            
+            })
+
+               
+
+                if(!this.visible) return;
+                this.map.overlayMapTypes.setAt(this.layerId, this.layer);
+            },
+            onChange:function(){
+                console.log('Changing it');
+                // var isChecked = this.visible = this.$.enabled.checked;
+                // console.log(isChecked);
+                // this.$.opacity.disabled = this.visible;
+                
+               
+               
+
+                  if(this.visible){
+                    this.map.overlayMapTypes.setAt(this.layerId,null);
+                    this.map.overlayMapTypes.removeAt(this.layerId);
+                    this.$.opacity.disabled = true;
+                    this.detached();
+                    this.percent = 0;
+
+                }else{
+                    this.percent = 0;
+                    this.map.overlayMapTypes.setAt(this.layerId,this.layer);
+                    this.$.opacity.disabled = false;
+                    // this.detached();
+                }
+            },
+
+            // onChange:function(){
+            //     var isChecked = this.visible = this.$.enabled.checked;
+            //     this.$.opacity.disabled = !isChecked;
+            //     this.map.overlayMapTypes.setAt(this.layerId,isChecked?this.layer:null);
+            //     if(isChecked){
+            //         this.percent = 100;
+            //         if(this.map.zoom > this.maxZoom){map.setZoom(this.maxZoom)}
+            //     }else{
+            //         this.percent = 0;
+            //     }
+                
+                
+            // },
+            onRangeChange:function(){
+                this.layer.setOpacity(this.getOpacity());
+            },
+            // vizMouseover:function(){
+            //     // console.log('mouse overed');
+            // },
+            // onVizChange:function(){
+                
+            //     // this.detached();
+            //     // this.viz = this.$.viz.value;
+            //     console.log(this.$.viz);
+               
+
+            // },
+            getOpacity:function(){
+                return this.$.opacity.value/100.0;
+            },
+            detached:function(){
+              
+                if(this.map.overlayMapTypes.getLength() == 1){
+                    this.map.overlayMapTypes.clear();
+                    return;
+                }
+
+                var foundIndex;
+                var layer = this.layer;
+                this.map.overlayMapTypes.forEach(function(element,index){
+                    if(element == layer){
+                        foundIndex = index;
+                    }
+                    // console.log(index)
+                });
+
+                if(foundIndex == null || foundIndex <= 0) return;
+
+                this.map.overlayMapTypes.removeAt(foundIndex);
+            }
+        });
+    </script>
+</polymer>
+
+
+
+<polymer-element name="dynamic-layer" attributes="name">
+    
+
+    <template>
+        <!-- <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet"> -->
+        <style>
+
+
+        input[type='range'] {
+            -webkit-appearance: none;
+            border-radius: 5px;
+            
+            box-shadow: inset 0 0 5px #333;
+            background-color: #999;
+            height: 5px;
+            vertical-align: middle;
+        }
+        input[type='range']::-moz-range-track {
+            -moz-appearance: none;
+            border-radius: 5px;
+            box-shadow: inset 0 0 5px #333;
+            background-color: #999;
+            height: 10px;
+        }
+        input[type='range']::-webkit-slider-thumb {
+            -webkit-appearance: none !important;
+            border-radius: 5px;
+            background-color: #FFF;
+            
+            box-shadow:inset 0 0 10px rgba(000,000,000,0.5);
+            border: 1px solid #999;
+            height: 12px;
+            width: 10px;
+        }
+        input[type='range']::-moz-range-thumb {
+            -moz-appearance: none;
+            border-radius: 20px;
+            background-color: #FFF;
+            box-shadow:inset 0 0 10px rgba(000,000,000,0.5);
+            border: 1px solid #999;
+            height: 20px;
+            width: 20px;
+
+        }
+            li{
+                list-style-type:none;
+                margin-bottom:12px;
+                clear:both;
+                /*padding-bottom:6px;*/
+                color: #FFFFFF;
+                font-size: 0.8em;
+            }
+            #viz:hover{width:50px;}
+            li:hover{color: #9aa9b3;-webkit-transition: color  0.5s;}
+            .leftLabel{float:left;}
+            .rightLabel{float:right;}
+            .deactivated{display:none;}
+            .container{float:left;display: inline-block;
+    vertical-align: top;}
+            /*.legend{color: #000;font-weight: bold;float:right;height:10;width:200px;margin: 0 0 10px 10px;}*/
+            .range{float:right;}
+            #opacity{margin-left:1Spx;}
+        </style>
+        <li style = 'height:5px;' href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title= {{helpBoxMessage}}>
+
+            <div class="container" style="margin-bottom:  10px ;border-radius:10px;height:5px;background-size: 80px 10px;"><i class="fa fa-spinner fa-spin {{ {deactivated:layer != null}| tokenList }}"></i><input class="{{ {deactivated:layer == null}| tokenList }}" id="enabled" type="checkbox" on-change="{{onChange}}" checked="{{visible}}"> {{name}}</div> 
+            <!-- <input type="text" style = 'width:150px;' var = 'viz' value="{{viz}}" spellcheck="false" on-change="{{onVizChange}}"  > -->
+            <input id="opacity" type="range" class="range" value="100" style = 'display:inline-block !important;vertical-align:bottom !important;margin-top:12px;' on-input="{{onRangeChange}}">
+        </li>
+    </template>
+    <script>
+        var nextId = 0;
+
+        Polymer('dynamic-layer',{
+            viz:JSON.stringify({}),
+            map:null,
+            tileURLFunction :null,
+            layer:null,
+            visible:true,
+            name:"Test",
+            layerId:null,
+            highWaterMark:0,
+            urls:null,
+            percent:0,
+            maxZoom:20,
+            baseUrl:null,
+            opacity:0,
+            groundOverlayFunction:null,
+            created:function(){
+                this.layerId = nextId;
+                nextId += 1;
+                this.urls=[];
+                
+            },
+            updateGroundOverlay:function(){
+                if(this.layer != null){
+                    this.layer.setMap(null);
+                }
+                
+                this.layer =this.groundOverlayFunction();
+                if(this.visible){
+                this.layer.setMap(map);
+                groundOverlayOn = true
+              
+                this.layer.setOpacity(this.opacity);
+                }
+                
+
+                
+            },
+            switchMap:function(){
+
+            },
+            startUp:function(){
+                 
+                    // // this.layer.setOpacity(0.5)
+                    // if(!this.visible) return;
+                
+                this.updateGroundOverlay();
+                if(this.visible){this.opacity = 1}
+                else{this.opacity = 0}
+                google.maps.event.addListener(this.map,'zoom_changed',$.proxy(this.updateGroundOverlay, this));
+
+                google.maps.event.addListener(this.map,'dragend',$.proxy(this.updateGroundOverlay, this));
+            },
+           
+            onChange:function(){
+                var isChecked = this.visible = this.$.enabled.checked;
+                this.$.opacity.disabled = !isChecked;
+
+                // this.map.overlayMapTypes.setAt(this.layerId,isChecked?this.layer:null);
+                if(isChecked){
+                    this.percent = 100;
+                    this.opacity  = this.getOpacity();
+                    this.layer.setMap(this.map);
+                    groundOverlayOn = true;
+                    this.layer.setOpacity(this.opacity);
+                    // if(this.map.zoom > this.maxZoom){map.setZoom(this.maxZoom)}
+                }else{
+                    this.percent = 0;
+                    this.opacity = 0;
+                    this.layer.setMap(null);
+                    groundOverlayOn = false;
+                    this.layer.setOpacity(this.opacity);
+                }
+                
+                
+            },
+            onRangeChange:function(){
+                var opacity = this.getOpacity();
+                this.opacity = opacity;
+                this.layer.setOpacity(opacity);
+            },
+            // vizMouseover:function(){
+            //     // console.log('mouse overed');
+            // },
+            // onVizChange:function(){
+                
+            //     // this.detached();
+            //     // this.viz = this.$.viz.value;
+            //     console.log(this.$.viz);
+               
+
+            // },
+            getOpacity:function(){
+                return this.$.opacity.value/100.0;
+            }
+            // detached:function(){
+            //     if(this.map.overlayMapTypes.getLength() == 1){
+            //         this.map.overlayMapTypes.clear();
+            //         return;
+            //     }
+
+            //     var foundIndex;
+            //     var layer = this.layer;
+            //     this.map.overlayMapTypes.forEach(function(element,index){
+            //         if(element == layer){
+            //             foundIndex = index;
+            //         }
+            //     });
+
+            //     if(foundIndex == null || foundIndex <= 0) return;
+
+            //     this.map.overlayMapTypes.removeAt(foundIndex);
+            // }
+        });
+    </script>
+</polymer>
+
+<polymer-element name="ee-legend" attributes="colorRamp,min,max,fontColor">
+    <template>
+        <!-- <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet"> -->
+        <style>
+            .leftLabel{float:left;text-shadow:1px 1px 0 #000,
+                -1px -1px 0 #000,
+                1px -1px 0 #000,
+                -1px 1px 0 #000,
+                0px 1px 0 #000,
+                1px 0px 0 #000,
+                0px -1px 0 #000,
+                -1px 0px 0 #000;}
+            .rightLabel{float:right;text-shadow:1px 1px 0 #000,
+            -1px -1px 0 #000,
+            1px -1px 0 #000,
+            -1px 1px 0 #000,
+            0px 1px 0 #000,
+            1px 0px 0 #000,
+            0px -1px 0 #000,
+            -1px 0px 0 #000;}
+                        
+            .container{float:left;}
+            .legendT{font-weight: bold;float:right;height:2%;width:100%;margin: 0 0 10px 10px;opacity:1;}
+            
+            li{
+                list-style-type:none;
+                margin-bottom:12px;
+                clear:both;
+                padding-bottom:6px;
+                color: #FFFFFF;
+                font-size: 0.9em;
+                
+            }
+
+            
+        </style>
+        <li  href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title= {{helpBoxMessage}}>
+            <div>{{name}}</div><div class = 'legendT'style={{colorRamp}} ><span class = 'leftLabel' style = '{{fontColor}}'>{{min}}</span><span class = 'rightLabel' style = {{fontColor}}>{{max}}</span></div>
+        </li>
+    </template>
+    
+    <script>
+        var nextId = 0;
+        
+        Polymer('ee-legend',{
+            
+            name:"Test",
+            
+            
+            
+        });
+    </script>
+</polymer>
+
+<polymer-element name="ee-class-legend" >
+    <template>
+        <!-- <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet"> -->
+        <style>
+            
+
+  .my-legend .legend-title {
+    text-align: left;
+    margin-bottom: 1px;
+    font-weight: bold;
+    font-size: 90%;
+    color:#FFF;
+    }
+  .my-legend .legend-scale ul {
+    margin: 0;
+    margin-bottom: 1px;
+    padding: 0;
+    float: left;
+    list-style: none;
+    color: #FFF;
+    }
+  .my-legend .legend-scale ul li {
+    font-size: 80%;
+    list-style: none;
+    margin-left: 0;
+    line-height: 18px;
+    margin-bottom: 1px;
+    }
+  .my-legend ul.legend-labels li span {
+    display: block;
+    float: left;
+    height: 16px;
+    width: 30px;
+    margin-right: 5px;
+    margin-left: 0;
+    border: 1px solid #999;
+    
+
+    }
+  .my-legend .legend-source {
+    font-size: 70%;
+    color: #999;
+    clear: both;
+    
+    }
+  .my-legend a {
+    color: #777;
+    border: 1px solid
+    }
+
+            
+            .container{float:left;}
+            
+            li{
+                list-style-type:none;
+                margin-bottom:10px;
+                clear:both;
+                padding-bottom:1px;
+                color: #FFFFFF;
+                font-size: 0.9em;
+                
+            }
+
+            
+        </style>
+        <li  href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title= {{helpBoxMessage}}>
+            <div class='my-legend'>
+
+<div class='legend-scale'>
+  <ul class='legend-labels'>
+  <!-- <div class='legend-title'>{{name}}</div> -->
+    <!-- {{classLegendHTML}} -->
+
+<!-- {{classLegendHTML}} -->
+<li><span style='background:#{{classColor}};'></span>{{className}}</li>
+
+</script>
+
+  </ul>
+</div>
+</div>
+        </li>
+    </template>
+    
+    <script>
+        var nextId = 0;
+        
+        Polymer('ee-class-legend',{
+             classLegendHTML:'',
+            name:"Test",
+            
+            
+            
+        });
+    </script>
+</polymer>
+
+<polymer-element name="ee-class-legend-title" >
+    <template>
+        <!-- <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet"> -->
+        <style>
+            
+
+  .my-legend .legend-title {
+    text-align: left;
+    margin-bottom: 1px;
+    margin-top:10px;
+    font-weight: bold;
+    font-size: 90%;
+    color:#FFF;
+    }
+  .my-legend .legend-scale ul {
+    margin: 0;
+    margin-bottom: 1px;
+    padding: 0;
+    float: left;
+    list-style: none;
+    color: #FFF;
+    }
+  .my-legend .legend-scale ul li {
+    font-size: 80%;
+    list-style: none;
+    margin-left: 0;
+    line-height: 18px;
+    margin-bottom: 1px;
+    }
+  .my-legend ul.legend-labels li span {
+    display: block;
+    float: left;
+    height: 16px;
+    width: 30px;
+    margin-right: 5px;
+    margin-left: 0;
+    border: 1px solid #999;
+    
+
+    }
+  .my-legend .legend-source {
+    font-size: 70%;
+    color: #999;
+    clear: both;
+    
+    }
+  .my-legend a {
+    color: #777;
+    border: 1px solid
+    }
+
+            
+            .container{float:left;}
+            
+            li{
+                list-style-type:none;
+                margin-bottom:1px;
+                margin-top : 10px;
+                clear:both;
+                padding-bottom:6px;
+                color: #FFFFFF;
+                font-size: 0.9em;
+                
+            }
+
+            
+        </style>
+        <li  href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title= {{helpBoxMessage}}>
+            <div class='my-legend'>
+
+<!-- <div class='legend-scale'> -->
+  <!-- <ul class='legend-labels'> -->
+  <div class='legend-title'>{{name}}</div>
+    <!-- {{classLegendHTML}} -->
+
+<!-- {{classLegendHTML}} -->
+<!-- <li><span style='background:#{{classColor}};'></span>{{className}}</li> -->
+
+</script>
+
+  </ul>
+</div>
+</div>
+        </li>
+    </template>
+    
+    <script>
+        var nextId = 0;
+        
+        Polymer('ee-class-legend-title',{
+             classLegendHTML:'',
+            name:"Test",
+            
+            
+            
+        });
+    </script>
+</polymer>
+
+
+<polymer-element name="legend-break" >
+    <template>
+       <br>
+        <div style='width:100%;height:2px;border-radius:5px;margin-bottom:5px;background-color:#fff'></div>
+       
+    </template>
+    
+    <script>
+       
+        Polymer('legend-break');
+    </script>
+</polymer>
+
+<polymer-element name="ee-pt-project" attributes="name, ID,plotList">
+    <template>
+        <style type="text/css">
+
+.button {
+  display: inline-block;
+  width:100%;
+  background: #576066;
+  background-image: -webkit-linear-gradient(top, #576066, #9aa9b3);
+  background-image: -moz-linear-gradient(top, #576066, #9aa9b3);
+  background-image: -ms-linear-gradient(top, #576066, #9aa9b3);
+  background-image: -o-linear-gradient(top, #576066, #9aa9b3);
+  background-image: linear-gradient(to bottom, #576066, #9aa9b3);
+  -webkit-border-radius: 13;
+  -moz-border-radius: 13;
+  border-radius: 5px;
+  font-family: Arial;
+  color: #ffffff;
+  font-size: 14px;
+  padding: 4px 7px 4px 7px;
+  text-decoration: none;
+}
+
+.button:hover {
+  background: #aebbc2;
+  background-image: -webkit-linear-gradient(top, #aebbc2, #cad3d9);
+  background-image: -moz-linear-gradient(top, #aebbc2, #cad3d9);
+  background-image: -ms-linear-gradient(top, #aebbc2, #cad3d9);
+  background-image: -o-linear-gradient(top, #aebbc2, #cad3d9);
+  background-image: linear-gradient(to bottom, #aebbc2, #cad3d9);
+  text-decoration: none;}
+
+.button:active {
+  background-color: #FFFFFF;
+  box-shadow: 5 10px #666;
+  transform: translateY(10px);
+  
+}
+.button:visited {
+    outline: #FFF dotted;
+}
+
+    </style>
+         
+        <input  id =  'btn' on-mousedown = "{{onClick}}"  style = 'width:90%;margin-bottom:5px;' type=button class='button' value="{{name}}" >
+       
+    </template>
+    
+    <script>
+        
+
+        var hasRunOnce = false;
+        Polymer('ee-pt-project',{
+            // on :false,
+            name:null,
+            plotList:null,
+            ID:null,
+            onClick:function(){
+                // document.getElementById('loading-window').style.display = 'inline-block';
+                setPlotProjectColor(this.ID)
+                if(hasRunOnce ){
+                clearPlots();
+                }
+                this.plotList.map(function(pt){
+    
+                pt[0] =  pt[0].toString();
+                addPlot(pt);
+                
+                })
+                
+                
+                hasRunOnce  = true;
+                console.log('done');
+                // document.getElementById('loading-window').style.display = 'none';   
+            }
+        });
+    </script>
+</polymer>
+<polymer-element name="ee-pt" attributes="name, ID">
+    <template>
+        <style type="text/css">
+
+.button {
+  display: inline-block;
+  width:100%;
+  background: #576066;
+  background-image: -webkit-linear-gradient(top, #576066, #9aa9b3);
+  background-image: -moz-linear-gradient(top, #576066, #9aa9b3);
+  background-image: -ms-linear-gradient(top, #576066, #9aa9b3);
+  background-image: -o-linear-gradient(top, #576066, #9aa9b3);
+  background-image: linear-gradient(to bottom, #576066, #9aa9b3);
+  -webkit-border-radius: 13;
+  -moz-border-radius: 13;
+  border-radius: 5px;
+  font-family: Arial;
+  color: #ffffff;
+  font-size: 12px;
+  padding: 4px 7px 4px 7px;
+  text-decoration: none;
+}
+
+.button:hover {
+  background: #aebbc2;
+  background-image: -webkit-linear-gradient(top, #aebbc2, #cad3d9);
+  background-image: -moz-linear-gradient(top, #aebbc2, #cad3d9);
+  background-image: -ms-linear-gradient(top, #aebbc2, #cad3d9);
+  background-image: -o-linear-gradient(top, #aebbc2, #cad3d9);
+  background-image: linear-gradient(to bottom, #aebbc2, #cad3d9);
+  text-decoration: none;}
+
+.button:active {
+  background-color: #FFFFFF;
+  box-shadow: 5 10px #666;
+  transform: translateY(10px);
+  
+}
+.button:visited {
+    outline: #FFF dotted;
+}
+
+    </style>
+         
+        <input  id =  'btn' on-mousedown = "{{onClick}}"  style = 'width:90%;margin-bottom:5px;' type=button class='button' value="{{name[0]}}" >
+        
+    </template>
+    
+    <script>
+        var nextId = 0;
+
+        plotIDList.push(plotID)
+        plotID ++;
+        Polymer('ee-pt',{
+            // on :false,
+            name:null,
+            ID:null,
+            
+            onClick:function(){
+                var latRand = getRandomArbitrary(0.0001, 0.0008);
+                var lngRand = getRandomArbitrary(0.0001, 0.0008);
+                
+                setPlotColor(this.ID)
+                map.setCenter({lat:this.name[2]+latRand,lng:this.name[1]+lngRand});
+                map.setZoom(18);
+                
+            },
+            
+        });
+    </script>
+</polymer>
+
+<polymer-element name="ee-export" attributes="eeImage,name,res,min,max,step,Export">
+    <template>
+        <!-- <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet"> -->
+        <style>
+
+
+        input[type='range'] {
+            -webkit-appearance: none;
+            border-radius: 5px;
+            
+            box-shadow: inset 0 0 5px #333;
+            background-color: #999;
+            height: 5px;
+            vertical-align: top;
+        }
+        input[type='range']::-moz-range-track {
+            -moz-appearance: none;
+            border-radius: 5px;
+            box-shadow: inset 0 0 5px #333;
+            background-color: #999;
+            height: 10px;
+        }
+        input[type='range']::-webkit-slider-thumb {
+            -webkit-appearance: none !important;
+            border-radius: 5px;
+            background-color: #FFF;
+            
+            box-shadow:inset 0 0 10px rgba(000,000,000,0.5);
+            border: 1px solid #999;
+            height: 12px;
+            width: 10px;
+        }
+        input[type='range']::-moz-range-thumb {
+            -moz-appearance: none;
+            border-radius: 20px;
+            background-color: #FFF;
+            box-shadow:inset 0 0 10px rgba(000,000,000,0.5);
+            border: 1px solid #999;
+            height: 20px;
+            width: 20px;
+
+        }
+            li{
+                list-style-type:none;
+                margin-bottom:12px;
+                clear:both;
+                /*padding-bottom:6px;*/
+                color: #FFFFFF;
+                font-size: 0.8em;
+            }
+            #viz:hover{width:50px;}
+            li:hover{color: #9aa9b3;-webkit-transition: color  0.5s;}
+            .leftLabel{float:left;}
+            .rightLabel{float:right;}
+            .deactivated{display:none;}
+            .container{margin-bottom:15px;float:left;display: inline-block;
+    vertical-align: top;}
+            /*.legend{color: #000;font-weight: bold;float:right;height:10;width:200px;margin: 0 0 10px 10px;}*/
+            .range{float:right;}
+            #opacity{margin-left:1Spx;}
+        </style>
+        
+        <li style = 'height:10px;margin-bottom:10px;' href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title= {{helpBoxMessage}}>
+            <div class = 'container' style = "width:100%;">
+            <input  style = 'float:left;' id="enabled" type="checkbox" on-change="{{onChange}}" checked={{Export}}
+            href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title= 'Whether or not to export image: {{name}}' >
+             <input type="text"  id = 'name' value="{{name}}"style = 'float:right;height:5px;color:#FFF;border-radius:5px;width:90%;padding:5px;background-color:#576066;' spellcheck="false" on-change="{{onNameChange}}" on-click="{{onNameChange}}" on-keyup = "{{onNameChange}}"
+              href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title= 'Name of output export image.  Change if needed.'>
+     
+            <!-- <input type="text" style = 'width:150px;' var = 'viz' value="{{viz}}" spellcheck="false" on-change="{{onVizChange}}"  > -->
+            <!-- <input id="res" type="range" value='{{res}}' step = '{{step}}'min = '{{min}}' max = '{{max}}'style = 'float:center !important;display:inline-block !important;margin-top:12px;min-width:30%;' on-input="{{onRangeChange}}"
+            href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title= 'Resolution (m) of image: {{name}}'>{{res}} (m) -->
+        </div>
+        </li>
+        
+
+
+     
+   
+        </li>
+
+    </template>
+    <script>
+        // var exportID = 0;
+
+        Polymer('ee-export',{
+        
+            visible:true,
+            // Export:true,
+            name:null,
+            id:null,
+            // ready:function(){
+            //     exportImageDict[this.name]  ={}
+            // },
+            
+            // setLayer:function(layer){
+            //     var MAPID = layer.mapid;
+            //     var TOKEN = layer.token;
+            //     var inst = this;
+
+            //     this.layer = new ee.MapLayerOverlay('https://earthengine.googleapis.com/map', MAPID, TOKEN, {});
+            //     this.layer.addTileCallback(function(event){
+            //         if(event.count > inst.highWaterMark){
+            //             inst.highWaterMark = event.count;
+            //         }
+
+            //         inst.percent = (event.count / inst.highWaterMark) * 100;
+            //     });
+
+            //     if(!this.visible) return;
+            //     this.map.overlayMapTypes.setAt(this.layerId, this.layer);
+            // },
+            onChange:function(){
+                var isChecked = this.$.enabled.checked;
+                exportImageDict[this.ID]['shouldExport'] = isChecked
+                console.log(exportImageDict[this.ID])
+                // var isChecked = this.visible = this.$.enabled.checked;
+                // this.$.opacity.disabled = !isChecked;
+                // this.map.overlayMapTypes.setAt(this.layerId,isChecked?this.layer:null);
+                // if(isChecked){
+                //     this.percent = 100;
+                // }else{
+                //     this.percent = 0;
+                // }
+            },
+            onRangeChange:function(){
+                // this.layer.setOpacity(this.getOpacity());
+                // exportImageDict[this.name]['res'] = this.$.res.value
+                exportImageDict[this.ID]['res'] = this.$.res.value
+                // console.log(exportImageDict[this.id])
+                console.log(exportImageDict[this.ID]);
+                console.log(this.$.res.value)
+            },
+            onNameChange:function(){
+                console.log(this.name);
+                // this.layer.setOpacity(this.getOpacity());
+                // exportImageDict[this.ID]['res'] = this.$.res.value
+                exportImageDict[this.ID]['name'] = this.name
+                console.log(exportImageDict[this.ID])
+            },
+            vizMouseover:function(){
+                // console.log('mouse overed');
+            },
+            ready:function(){
+                // this.name = name.value;
+                // this.res = res;
+                // this.id = exportID;
+                // window[exportImageDict[this.id]] ={}
+                // exportImageDict[this.id]  ={}
+
+                // window[exportImageDict[this.id]['name']] = name
+                // exportImageDict[this.id]['name'] = this.name
+                // exportID ++
+                            // 'differenceImage':{'name':'Difference image','image':'d','shouldExport':true},
+                            // 'composite1':{'name':'First Composite','image':'ls1','shouldExport':true}
+                            // }
+            },
+        });
+    </script>
+</polymer>

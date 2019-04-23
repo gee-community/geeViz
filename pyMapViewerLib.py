@@ -13,8 +13,8 @@ ee.Initialize()
 #Do not change
 cwd = os.getcwd()
 
-template = cwd+'/template/index.html'
-ee_run = cwd +'/template/ee/run.js'
+template = cwd+'/gee-py-viz/index.html'
+ee_run = cwd +'/gee-py-viz/ee/run2.js'
 local_server_port = 8004
 
 
@@ -48,20 +48,22 @@ class mapper:
         self.layerNumber = 1
         self.idDictList = []
     #Function for adding a layer to the map
-    def addLayer(self,image,viz = None,name= None,visible= True):
+    def addLayer(self,image,viz = {},name= None,visible= True):
         
         
 
-        if viz != None:
-            image = image.visualize(**viz)
-        else:
-            viz = {};
+        # if viz != None:
+        #     image = image.visualize(**viz)
+        # else:
+
+            # viz = {};
         if name == None:
             name = 'Layer '+str(self.layerNumber)
             self.layerNumber+=1
         print('Adding layer: ' +name)
         #Get the id and populate dictionary
-        idDict = image.getMapId()
+        idDict = {}#image.getMapId()
+        idDict['item'] = image.serialize()
         idDict['name'] = name
         idDict['visible'] = str(visible).lower()
         idDict['viz'] = json.dumps(viz)
@@ -78,7 +80,7 @@ class mapper:
 
         #Iterate across each map layer to add js code to
         for idDict in self.idDictList:
-            t ="addIDTokenToMap('"+idDict['mapid']+"','"+idDict['token']+"',"+idDict['viz']+",'"+idDict['name']+"',"+str(idDict['visible']).lower()+");\n"
+            t ="addSerializedRasterToMap('"+idDict['item']+"',"+idDict['viz']+",'"+idDict['name']+"',"+str(idDict['visible']).lower()+");\n"
             lines += t
         lines += "}"
 
@@ -88,16 +90,16 @@ class mapper:
         oo.close()
         # print 'Open web browser to http://localhost:'+str(local_server_port) + '/template/'
         if not isPortActive(local_server_port):
-            print('Starting local web server at: http://localhost:'+str(local_server_port)+ '/template/')
+            print('Starting local web server at: http://localhost:'+str(local_server_port)+ '/gee-py-viz/')
             # run_local_server(local_server_port)
             # subprocess.Popen('python -m SimpleHTTPServer '+str(local_server_port),shell = True)
             t = Thread(target = run_local_server,args = (local_server_port,))
             t.start()
 
         else:
-            print('Local web server at: http://localhost:'+str(local_server_port)+'/template/ already serving.')
+            print('Local web server at: http://localhost:'+str(local_server_port)+'/gee-py-viz/ already serving.')
             print('Refresh browser instance')
-        webbrowser.open('http://localhost:'+str(local_server_port)+'/template/',new = 1)
+        webbrowser.open('http://localhost:'+str(local_server_port)+'/gee-py-viz/',new = 1)
         
     def clearMap(self):
         self.idDictList = []

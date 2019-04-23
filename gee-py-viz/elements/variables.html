@@ -1,0 +1,515 @@
+<link rel="import" href="../components/polymer/polymer.html">
+
+
+<!-- <dom-element name="ee-variable" noscript>
+	<template>
+		<style>
+			:host{
+
+				display:list-item;
+				list-style: none;
+				color: #FFF;
+				font-size: 0.8em;
+				padding: 3px;
+			}
+			
+			
+
+		</style>
+	</template>
+</dom-element> -->
+
+<polymer-element name="variable-number" attributes="name default var min max step" extends="ee-variable">
+	<template>
+		{{name}}: <input type="number" min="{{min}}" max="{{max}}" step="{{step}}" value="{{value}}" on-change="{{onValueChange}}">
+	</template>
+	<script>
+		Polymer('variable-number',{
+			default:0,
+			value:0,
+			min:0,
+			max:10,
+			step:1,
+			var:'aVar',
+			ready:function(){
+				this.value = this.default;
+				window[this.var] = this.value;
+			},
+			onValueChange:function(){
+				if(this.value == '' || isNaN(this.value)) return;
+
+				var value = parseInt(this.value);
+				if(value > this.max || value < this.min) return;
+
+				window[this.var] = value;
+				// reRun();
+			}
+		});
+	</script>
+
+</polymer-element>
+
+<polymer-element name="variable-date" attributes="name default var " extends="ee-variable">
+	<template>
+	
+		{{name}}: <input type="date"  value="{{value}}" on-click="{{onValueChange}}">
+	</template>
+	<script>
+
+	Date.prototype.toDateInputValue = (function() {
+    var local = new Date(this);
+    local.setMinutes(this.getMinutes() - this.getTimezoneOffset());
+    return local.toJSON().slice(0,10);
+});
+		Polymer('variable-date',{
+			default: new Date().toDateInputValue(),
+			value:new Date().toDateInputValue(),
+			
+			var:'aVar',
+			ready:function(){
+				console.log('changed');
+				this.value = this.default;
+				window[this.var] = this.value;
+			},
+			onValueChange:function(){
+				
+				if(this.value == '' || isNaN(this.value)) return;
+
+				var value = this.value;
+				console.log(value);
+
+				window[this.var] = value;
+				
+				// reRun();
+			}
+		});
+	</script>
+
+</polymer-element>
+
+<polymer-element name="variable-text" attributes="name default var " extends="ee-variable">
+	<template>
+		<style >
+		input[type='text'] {
+            border-radius: 4px;
+            background-color: #999;
+            color:#FFF;
+            font-size: 1em;
+            /*font-weight: bold;*/
+            float:right;
+            min-width:40%;
+
+           
+        }
+		</style>
+		<div style = 'margin-bottom:5px;'>{{name}}: <input type="text"  value="{{value}}" spellcheck="false" on-keyup="{{onValueChange}}" on-change="{{onValueChange}}" on-click="{{onValueChange}}">
+		</div>
+		
+	</template>
+	<script>
+		Polymer('variable-text',{
+			default:'hello',
+			value:'hello',
+			
+			var:'aVar',
+			ready:function(){
+				this.value = this.default;
+				window[this.var] = this.value;
+			},
+			onValueChange:function(){
+				if(this.value == '') return;
+
+				
+				console.log(this.value);
+				window[this.var] = this.value;
+				// reRun();
+			}
+		});
+	</script>
+
+</polymer-element>
+
+
+<polymer-element name="variable-range" attributes="name default var min max step" extends="ee-variable">
+	<template>
+	<style>
+                input[type='range'] {
+            -webkit-appearance: none;
+            border-radius: 5px;
+            
+            box-shadow: inset 0 0 5px #333;
+            background-color: #999;
+            height: 5px;
+            vertical-align: middle;
+        }
+        input[type='range']::-moz-range-track {
+            -moz-appearance: none;
+            border-radius: 5px;
+            box-shadow: inset 0 0 5px #333;
+            background-color: #999;
+            height: 20px;
+        }
+        input[type='range']::-webkit-slider-thumb {
+            -webkit-appearance: none !important;
+            border-radius: 5px;
+            background-color: #FFF;
+            
+            box-shadow:inset 0 0 10px rgba(000,000,000,0.5);
+            /*border: 1px solid #999;*/
+            height: 12px;
+            width: 10px;
+        }
+     
+            li{
+                list-style-type:none;
+                margin-bottom:12px;
+                clear:both;
+                padding-bottom:6px;
+                color: #FFFFFF;
+                font-size: 0.9em;
+            }
+
+            .deactivated{display:none;}
+            .container{float:left;}
+            .range{float:right;}
+            #opacity{margin-left:1Spx;}
+        </style>
+		{{name}}: <input type="range" min="{{min}}" max="{{max}}" step="{{step}}" value="{{value}}" on-change="{{onValueChange}}"> {{value}}
+	</template>
+
+	<script>
+
+		Polymer('variable-range',{
+			default:0,
+			value:0,
+			min:0,
+			max:10,
+			step:1,
+			var:'aVar',
+			ready:function(){
+				this.value = this.default;
+				window[this.var] = this.value;
+			},
+			onValueChange:function(){
+				if(this.value == '' || isNaN(this.value)) return;
+
+				var value = parseInt(this.value);
+				if(value > this.max || value < this.min) return;
+				console.log(value);
+				window[this.var] = value;
+				// reRun();
+			}
+		});
+		console.log('its a range')
+	</script>
+</polymer-element>
+
+<polymer-element name="variable-checkbox" attributes="name checked var" extends="ee-variable">
+	<template>
+	
+		{{name}}: <input class = 'slideOne' type="checkbox" checked = "{{checked}}" on-change="{{onValueChange}}">{{checked}}
+	</template>
+	
+	<script>
+		Polymer('variable-checkbox',{
+			default:false,
+			checked:false,
+			
+			var:'aVar',
+			ready:function(){
+				// this.value = this.checked;
+				
+				window[this.var] = this.checked;
+			},
+			onValueChange:function(){
+				console.log(this.checked)
+				
+				window[this.var] = this.checked;
+				// reRun();
+			}
+		});
+	</script>
+	
+</polymer-element>
+
+
+<polymer-element name="variable-radio" attributes="var name1 name2 value1 value2 type title2" extends="ee-variable">
+	
+	<template>
+		
+		{{title2}}&nbsp&nbsp&nbsp&nbsp<input type="radio" name="browser" on-change="{{checkIt1}}" value="1" checked>{{name1}}
+				<input type="radio" name="browser" on-change="{{checkIt2}}" value="2">{{name2}}
+	</template>
+	
+	<script>
+		Polymer('variable-radio',{
+			default:1,
+			checked:false,
+			value1: null,
+			value2: null,
+			type : 'string',
+			
+			var:'aVar',
+			ready:function(){
+				
+				if(this.type.toLowerCase() == 'numeric'){this.value1 = parseFloat(this.value1);this.value2 = parseFloat(this.value2)};
+				if(this.type.toLowerCase() == 'boolean'){this.value1 = stringToBoolean(this.value1);this.value2 = stringToBoolean(this.value2)}
+				window[this.var] = this.value1;
+			},
+			checkIt1:function(){
+				window[this.var] = this.value1;
+				reRun();
+			},
+			checkIt2:function(){
+				window[this.var] = this.value2;
+				reRun();
+			}
+			
+			
+		});
+	</script>
+	
+</polymer-element>
+
+
+<polymer-element name="variable-radio3" attributes="var name1 name2 name3 value1 value2 value3 type" extends="ee-variable">
+	<template>
+		{{name1}}<input type="radio" name="browser" on-change="{{checkIt1}}" value="1" checked>
+				<input type="radio" name="browser" on-change="{{checkIt2}}" value="2">{{name2}}
+				<input type="radio" name="browser" on-change="{{checkIt3}}" value="3">{{name3}}
+	</template>
+	
+	<script>
+		Polymer('variable-radio3',{
+			default:1,
+			checked:false,
+			value1: null,
+			value2: null,
+			type : 'string',
+			
+			var:'aVar',
+			ready:function(){
+				
+				if(this.type.toLowerCase() == 'numeric'){this.value1 = parseFloat(this.value1);this.value2 = parseFloat(this.value2);this.value3 = parseFloat(this.value3)};
+				if(this.type.toLowerCase() == 'boolean'){this.value1 = stringToBoolean(this.value1);this.value2 = stringToBoolean(this.value2);this.value3 = stringToBoolean(this.value3)}
+				window[this.var] = this.value1;
+			},
+			checkIt1:function(){
+				window[this.var] = this.value1;
+				// reRun();
+			},
+			checkIt2:function(){
+				window[this.var] = this.value2;
+				// reRun();
+			},
+			checkIt3:function(){
+				window[this.var] = this.value3;
+				// reRun();
+			}
+			
+			
+		});
+	</script>
+	
+</polymer-element>
+<script>
+	
+
+function zeroPad(num, places) {
+  var zero = places - num.toString().length + 1;
+  return Array(+(zero > 0 && zero)).join("0") + num;
+}
+function formatDT(__dt) {
+    var year = __dt.getFullYear();
+    var month = zeroPad(__dt.getMonth()+1, 2);
+    var date = zeroPad(__dt.getDate(), 2);
+    // var hours = zeroPad(__dt.getHours(), 2);
+    // var minutes = zeroPad(__dt.getMinutes(), 2);
+    // var seconds = zeroPad(__dt.getSeconds(), 2);
+    return   month + '/'+ date + '/'+ year.toString().slice(2,4) //+ ' ' + hours + ':' + minutes + ':' + seconds;
+};
+function formatDTJulian(__dt) {
+    // var year = __dt.getFullYear();
+    var month = zeroPad(__dt.getMonth()+1, 2);
+    var date = zeroPad(__dt.getDate(), 2);
+    // var hours = zeroPad(__dt.getHours(), 2);
+    // var minutes = zeroPad(__dt.getMinutes(), 2);
+    // var seconds = zeroPad(__dt.getSeconds(), 2);
+    return  month + '/' + date ;//+ ' ' + hours + ':' + minutes + ':' + seconds;
+};
+
+Date.fromDayofYear= function(n, y){
+    if(!y) y= new Date().getFullYear();
+    var d= new Date(y, 0, 1);
+    return new Date(d.setMonth(0, n));
+}
+Date.prototype.dayofYear= function(){
+    var d= new Date(this.getFullYear(), 0, 0);
+    return Math.floor((this-d)/8.64e+7);
+}
+
+
+  function setUpRangeSlider(var1,var2,min,max,defaultMin,defaultMax,step,sliderID,updateID,mode){
+    // var dt_from = "2000/11/01";
+  // var dt_to = "2015/11/24";
+// $("#"+updateID +" .ui-slider .ui-slider-handle").css( {"width": '3px'} );
+  if(mode === undefined  || mode === null){mode = 'date'};
+  if(defaultMin === undefined  || defaultMin   === null){defaultMin  = min};
+  if(defaultMax === undefined  || defaultMax   === null){defaultMax  = max};
+  // if(step === undefined  || step === null){step = 1};
+
+  if(mode === 'date'){
+    min = new Date(min);
+    max = new Date(max);
+    step = step *24*60*60;
+    defaultMin   = new Date(defaultMin);
+    defaultMax   = new Date(defaultMax);
+    // step = step*60*60*24
+    $( "#"+updateID).html(formatDT(defaultMin)+ ' - ' + formatDT(defaultMax));
+  }
+  else if(mode === 'julian'){
+    min = Date.fromDayofYear(min);
+    max = Date.fromDayofYear(max);
+    step = step *24*60*60;
+    defaultMin = Date.fromDayofYear(defaultMin);
+    defaultMax = Date.fromDayofYear(defaultMax);
+    $( "#"+updateID).html(formatDTJulian(defaultMin)+ ' - ' + formatDTJulian(defaultMax));
+  }
+  else{$( "#"+updateID).html(defaultMin.toString()+ ' - ' + defaultMax.toString());}
+  
+  
+  
+
+  
+  
+
+  if(mode === 'date' || mode === 'julian'){
+  var minVal = Date.parse(min)/1000;
+  var maxVal = Date.parse(max)/1000;
+  var minDefault = Date.parse(defaultMin)/1000;
+  var maxDefault = Date.parse(defaultMax)/1000;
+  }
+  else{
+    var minVal = min;
+    var maxVal = max;
+    var minDefault = defaultMin;
+    var maxDefault = defaultMax;
+  }
+
+      $("#"+sliderID).slider({
+        range:true,
+         min: minVal,
+    max: maxVal,
+    step: step,
+    values: [minDefault, maxDefault],
+
+    slide: function(e,ui){
+
+      if(mode === 'date'){
+      var value1 = ui.values[0]*1000;
+      var value2 = ui.values[1]*1000;
+
+      var value1Show  = formatDT(new Date(value1));
+      var value2Show  = formatDT(new Date(value2));
+
+      // value1 = new Date(value1);
+      // value2 = new Date(value2);
+      $( "#"+updateID ).html(value1Show.toString() + ' - ' + value2Show.toString());
+      
+      eval(var1 + '= new Date('+ value1.toString()+')');
+      eval(var2 + '= new Date('+ value2.toString()+')');
+        }
+      else if(mode === 'julian'){
+      var value1 = new Date(ui.values[0]*1000);
+      var value2 = new Date(ui.values[1]*1000);
+
+      var value1Show  = formatDTJulian(value1);
+      var value2Show  = formatDTJulian(value2);
+      value1 =value1.dayofYear();
+      value2 = value2.dayofYear();
+      
+$( "#"+updateID ).html(value1Show.toString() + ' - ' + value2Show.toString());
+      
+      eval(var1 + '= '+ value1.toString());
+      eval(var2 + '= '+ value2.toString());
+        }
+      else{
+      var value1 = ui.values[0];
+      var value2 = ui.values[1];
+
+      var value1Show  = value1;
+      var value2Show  = value2;
+
+      $( "#"+updateID ).html(value1Show.toString() + ' - ' + value2Show.toString());
+      
+      eval(var1 + '= '+ value1.toString());
+      eval(var2 + '= '+ value2.toString());
+      }
+
+
+      
+     
+    },
+    stop: function(e,ui){reRun()}
+
+      });
+    
+    // $( " .ui-slider-range" ).css( "background-color", '#000' );
+
+    // $( " .ui-widget-content .ui-state-default" ).css( "background-color", "chartreuse" );
+
+  }
+</script>
+<!-- 
+<polymer-element name="variable-dual-slider" attributes= var min max step"" extends="ee-variable">
+  
+<template>
+  <style>
+    /** /
+    References:
+    http://jsfiddle.net/IonDen/qv6yrjrv/
+    https://github.com/IonDen/ion.rangeSlider#experiments-playground
+    /**/
+  </style>
+  
+
+  <div>
+     <p style = 'display:inline-block;margin-right:10px;'>{{name}} </p>
+<div id= "slider" style = 'width:25%;display:inline-block;margin-right:10px;' ></div>
+<p id = 'date-range-value'style = 'display:inline-block;margin-right:10px;'> </p>
+   </div>
+</template>
+  
+<script>
+  
+   Polymer('variable-dual-slider',{
+			default:1,
+			checked:false,
+			value1: null,
+			value2: null,
+			type : 'string',
+			
+			var:'aVar',
+			ready:function(){
+				
+				if(this.type.toLowerCase() == 'numeric'){this.value1 = parseFloat(this.value1);this.value2 = parseFloat(this.value2)};
+				if(this.type.toLowerCase() == 'boolean'){this.value1 = stringToBoolean(this.value1);this.value2 = stringToBoolean(this.value2)}
+				window[this.var] = this.value1;
+			},
+			checkIt1:function(){
+				window[this.var] = this.value1;
+				// reRun();
+			},
+			checkIt2:function(){
+				window[this.var] = this.value2;
+				// reRun();
+			}
+			
+			
+		});
+</script>
+
+</polymer-element>
+  
+
+ -->

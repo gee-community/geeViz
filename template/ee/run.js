@@ -1,5 +1,7 @@
 function run(){
-addIDTokenToMap('7a3015af8be667addbde71a3a1a217d1','64691f0003c6db8275a2a1f3a57efd67',{"max": [0.2, 0.95, 0.2], "bands": "swir2,nir,red", "min": 0.1},'Layer 1',true);
-addIDTokenToMap('1b864899e2a0aeeacae8539977830373','b286d0bd263dbce184b6fb29d5c96912',{"max": 20, "min": 0},'minCloudScore',true);
-addIDTokenToMap('21f2c5e6d79b52729ac8519848a7c313','d3083699d423814bdd89c08074435455',{},'Layer 2',true);
+addIDTokenToMap('427c1f314f0756318fe667b596e41acf','6d31fb0ec529b2837e3f6bf8ee9dffba',{"max": 80, "palette": "000,0F0", "min": 20},'Tcc',false);
+addIDTokenToMap('427c1f314f0756318fe667b596e41acf','1fe788e7a4ec276deab5342f9b27fb8c',{"max": 80, "palette": "000,0F0", "min": 20},'Tcc',false);
+addIDTokenToMap('427c1f314f0756318fe667b596e41acf','3dff31e8dc345f3e4ca8cd945b0ba1f0',{"max": 80, "palette": "000,0F0", "min": 20},'Tcc',false);
+addIDTokenToMap('427c1f314f0756318fe667b596e41acf','ac9ced45eefef3993e1664d4b44f6be9',{"max": 80, "palette": "000,0F0", "min": 20},'Tcc',false);
+addIDTokenToMap('427c1f314f0756318fe667b596e41acf','805cb107be3479a170baafd8b41d7d01',{"max": 80, "palette": "000,0F0", "min": 20},'Tcc',false);
 }
