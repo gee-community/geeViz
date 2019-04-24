@@ -221,11 +221,11 @@ def landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,ru
 #--------------------------------------------------------------------------
 #Wrapper for applying VERDET slightly more simply
 #Returns annual collection of verdet slope
-def verdetAnnualSlope(tsIndex,indexName,startYear,endYear):
+def verdetAnnualSlope(tsIndex, indexName, startYear, endYear, alpha): #tolerance = 0.0001,alpha = 1/3.0):
   #Apply VERDET
   run_params = {'timeSeries': tsIndex,
-                'tolerance': 0.0001,
-                'alpha': 1/3.0}
+                'tolerance': 0.0001, # default = 0.0001
+                'alpha': alpha} # default = 1/3.0
   verdet =   ee.Algorithms.TemporalSegmentation.Verdet(**run_params).arraySlice(0,1,None)
   print('indexName: '+indexName)
   #Map.addLayer(verdet,{},'verdet '+indexName)
