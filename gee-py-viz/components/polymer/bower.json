@@ -1,0 +1,13 @@
+{
+  "name": "polymer",
+  "private": true,
+  "dependencies": {
+    "platform": "Polymer/platform#>=0.3.0 <1.0.0",
+    "core-component-page": "Polymer/core-component-page#>=0.3.0 <1.0.0",
+    "paper-range-slider": "git://github.com/IftachSadeh/paper-range-slider"
+  },
+  "resolutions": {
+    "polymer": "^0.5",
+    "webcomponentsjs": "^0.6.0"
+  }
+}

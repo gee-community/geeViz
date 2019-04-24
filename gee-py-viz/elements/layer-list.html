@@ -1,0 +1,158 @@
+<link rel="import" href="../components/polymer/polymer.html">
+
+<polymer-element name="base-list" noscript attributes="listName">
+	<template>
+		<style>
+			:host{				
+				margin-left:2px;
+				margin-right: 2px;
+				background:rgba(100,100,100,0.9);
+				border-radius: 15px;
+				padding:5px;
+				padding-top:3px;
+				display:block;
+				margin-bottom:4px;
+			}
+			div {
+				/*font-family:"Courier New", Courier, monospace;*/
+				/*font-weight:bold;*/
+				font-size: font-size:18pt;
+				/*text-decoration:overline;	
+							*/
+				text-align:center;				
+				margin-bottom:2px;
+				color: #FFFFFF;
+			}
+		</style>
+		<div>{{listName}}</div>
+		<content></content>
+	</template>
+</polymer-element>
+
+<polymer-element name="layer-list" noscript>
+	<template>
+
+		<base-list >
+			<content></content>
+		</base-list>
+	</template>
+</polymer-element>
+<polymer-element name="reference-layer-list" noscript>
+	<template>
+		<base-list >
+			<content></content>
+		</base-list>
+	</template>
+</polymer-element>
+<polymer-element name="export-layer-list" noscript>
+	<template>
+		<base-list listName="LCMS Export Layers">
+			<content></content>
+		</base-list>
+	</template>
+</polymer-element>
+
+
+
+<polymer-element name="legend-list" style = 'width:95%;' noscript>
+	<template >
+	
+		 <base-list>
+			<content></content>
+
+		
+
+
+		
+		</base-list>
+	</template>
+</polymer-element>
+
+<polymer-element name="pt-project-list" noscript>
+	<template>
+		
+		<base-list style = 'width:90%;' listName= "Plot Projects" href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click on buttons to select project plots">
+			<content></content>
+		</base-list>
+		
+	</template>
+</polymer-element>
+
+<polymer-element name="pt-list" noscript>
+	<template>
+		
+		<base-list style = 'width:90%;' listName="Plots" href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click on buttons below to fly to plot">
+			<content></content>
+		</base-list>
+		
+	</template>
+</polymer-element>
+
+<polymer-element name="variable-list" noscript>
+	<template>
+		<base-list listName="Parameters">
+			<content></content>
+		</base-list>
+	</template>	
+</polymer-element>
+
+<polymer-element name="export-list" noscript>
+	<template>
+	<style type="text/css">
+
+.button {
+  display: inline-block;
+  background: #576066;
+  background-image: -webkit-linear-gradient(top, #576066, #9aa9b3);
+  background-image: -moz-linear-gradient(top, #576066, #9aa9b3);
+  background-image: -ms-linear-gradient(top, #576066, #9aa9b3);
+  background-image: -o-linear-gradient(top, #576066, #9aa9b3);
+  background-image: linear-gradient(to bottom, #576066, #9aa9b3);
+  -webkit-border-radius: 13;
+  -moz-border-radius: 13;
+  border-radius: 5px;
+  font-family: Arial;
+  color: #ffffff;
+  font-size: 12px;
+  padding: 4px 7px 4px 7px;
+  text-decoration: none;
+}
+
+.button:hover {
+  background: #aebbc2;
+  background-image: -webkit-linear-gradient(top, #aebbc2, #cad3d9);
+  background-image: -moz-linear-gradient(top, #aebbc2, #cad3d9);
+  background-image: -ms-linear-gradient(top, #aebbc2, #cad3d9);
+  background-image: -o-linear-gradient(top, #aebbc2, #cad3d9);
+  background-image: linear-gradient(to bottom, #aebbc2, #cad3d9);
+  text-decoration: none;}
+
+.button:active {
+  background-color: #FFFFFF;
+  box-shadow: 0 5px #666;
+  transform: translateY(4px);
+}
+	</style>
+		<div style = 'background-color:#666;border-radius:5px;width:100%;'>
+		<base-list listName="Download Image List" href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Use drawing tools in center left of screen to select areas for export.  Then check any images you would like to download, and then click  'Export Data' image for export">
+		<div style='width:99%;height:2px;border-radius:5px;margin:5px;background-color:#fff'></div>
+			<content>
+				
+
+			</content>
+
+			
+       
+		</base-list>
+		 <div style='width:99%;height:2px;border-radius:5px;margin:5px;background-color:#fff'></div>
+		<!-- <input onclick="closePopup();" type=button class='button' value="x" style='border-radius:5px;position:absolute;right:1px;top:1px;'
+        href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Cancel"> -->
+        <variable-text id="export-crs" name="Export crs" var="exportCRS" default="EPSG:26912"  style='display:inline-block'
+       href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="EPSG format export projection specification. UTM WGS 84: 326 + zone number, UTM NAD83: 269 + zone number, USGS Albers: 5070, Web Mercator: 4326"></variable-text>
+       <br>
+        <div style='width:99%;height:2px;border-radius:5px;margin:5px;background-color:#fff'></div>
+
+		</div>
+		
+	</template>	
+</polymer-element>

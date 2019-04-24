@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html>
+ <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
+    <!-- Specify whether to allow user vector drawing, exporting, charting (drawing must be true for exportCapability to be possible) -->
+    <script type="text/javascript">
+    var includeLegend = true;//Whether to include a legend
+    var useShapes = false;//Whether to provie the ability of the user to draw polygons
+    var exportCapability = false;//Whether to include the ability to export EE data added with the addExport command (useShapes must = true)
+    var includeTools = true;//Whether to include the distance, area, and charting tools
+    var userCharting = true;//Whether to provide the ability to chart values of keyword chartCollection
+    var displayParameters = true;//Whether to provide the ability to change EE parameters
+    var plotNavigation = false;//Whether to provide the capability to show a list of plot IDS with corresponding jump-to locations
+    var helpBox = false;//Whether to provide the capability to show a help box with a message about the webpage
+
+    // var initialCenter = [48.16,-113.08];//Provide initial map center (lat,lng)for first time user loads page
+    var initialCenter = [43.2,-110.1];
+    var initialZoomLevel = 8;//Provide initial map zoom level (1-20) for first time user loads page
+
+    var chartTypeOptions = true;
+    </script>
+    <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
+  <head>
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=UA-128044829-1"></script>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'UA-128044829-1');
+      </script>
+
+
+    <!-- <title>Climate Viz</title> -->
+    <title>GEE Python Visualization</title>
+    <!-- <title>Forest Change Detection</title> -->
+    <link rel="icon" href="images/usfslogo.png">
+
+    <!-- <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" /> -->
+    <!-- <meta http-equiv="Pragma" content="no-cache" /> -->
+    <!-- <meta http-equiv="Expires" content="0" /> -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="visualize where land cover change is happening">
+    <link rel="stylesheet" href="main.css">
+    <!-- <link rel="stylesheet" href="css/iThing.css" type="text/css" /> -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/polymer/0.3.4/platform.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+    <script  async src="https://maps.googleapis.com/maps/api/js?v=3.exp&key=AIzaSyCEfhh_56VLoQEYIczNxJlrsPRWNYQ5NJE&libraries=drawing"></script>
+    <script type="text/javascript" src="js/ee_api_js.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+    google.charts.load('current', {'packages': ['corechart','table']});
+ 
+    </script>
+    <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+
+
+
+
+    <!--<script src="jquery/jquery-ui.custom.js"></script>-->
+    <!--<script src="jquery/jQDateRangeSlider-min.js"></script>-->
+
+     <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <!-- <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> -->
+
+
+    <link rel="import" href="elements/layer-list.html">
+    <link rel="import" href="elements/ee-layer.html">
+    <link rel="import" href="elements/variables.html">
+    
+
+  <!--   <style>
+      @font-face {
+        font-family: 'FontAwesome';
+        src: url('//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.1.0/fonts/fontawesome-webfont.eot');
+        src: url('//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/fonts/fonts/fontawesome-webfont.eot?#iefix') format('embedded-opentype'), url('//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.1.0/fonts/fontawesome-webfont.woff') format('woff'), url('//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.1.0/fonts/fontawesome-webfont.ttf') format('truetype'), url('//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.1.0/fonts/fontawesome-webfont.svg') format('svg');
+        font-weight: normal;
+        font-style: normal;
+      }
+
+    </style> -->
+    <!-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+    <script>
+      $(function() {
+        // $( "#parameters-tools-layers" ).draggable();
+        // $("#legend").draggable();
+        // $("#export-list").draggable();
+        
+    //     $("#distance-area-measurement").draggable({
+    //     cancel: false
+    // });;
+        
+        
+        $('#popup').resizable()
+        $("#messageBox").draggable();
+        $("#help-window").draggable();
+        // $("#messageBox").resizable();
+        
+        // $('#curve_chart').draggable();
+        // $('#curve_chart').resizable();
+        $('#resizable').resizable()
+      });
+      $("parameters-tools-layers").hover(
+        function() {
+          $(this).append($("<span> ***</span>"));
+        },
+        function() {
+          $(this).find("span:last").remove();
+        }
+      );
+
+      $("li.fade").hover(function() {
+        $(this).fadeOut(100);
+        $(this).fadeIn(500);
+      });
+     
+      $('input[rel="txtTooltip"]').tooltip({
+    
+    
+    });
+    </script>
+
+ 
+    
+    <script>
+    //<!--
+      // $("#slider").dateRangeSlider();
+      
+      //     $("#slider").dateRangeSlider("bounds", new Date(2000, 1, 1), new Date(2015, 12, 31));                                                        
+      //      $("#slider").dateRangeSlider("values", new Date(2012, 6, 1), new Date(2012, 8, 31));
+      //      $("#slider").dateRangeSlider('resize');
+      //      $("#slider").dateRangeSlider('slide',
+      //      function( event, ui ) {
+      //       var v = ui.values
+      //       console.log(v)
+      //      })
+
+// $("#slider").rangeSlider();
+
+//   function loadScript(url)
+// {    
+//     var head = document.getElementsByTagName('head')[0];
+//     var script = document.createElement('script');
+//     script.type = 'text/javascript';
+//     script.src = url;
+//     head.appendChild(script);
+// }
+
+  
+    </script>
+
+
+   </head> 
+
+  <body>
+  
+
+    <script>
+      
+
+    </script>
+    <!-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////////////////////////////////////////////////////////////////////////////////////////// -->
+
+    <!-- Add Google Map -->
+    <div id="map"></div>
+
+
+    <!-- Bring in various js modules -->
+
+   
+    <script type="text/javascript" src="js/drawing-manager2.js"></script><!--Module for user-defined vectors-->
+    <script type="text/javascript" src="js/map-manager2.js"></script><!--Module for managing EE, area and distance calculation etc-->
+
+    <script type="text/javascript" src="ee/run2.js"></script><!--Module for general EE code- place all EE code here to run on refresh-->
+    <script type="text/javascript" src="metadata/metadata-parser.js"></script><!--For parsing metadata-->
+    <script type="text/javascript" src="js/chart-manager2.js"></script><!--Module for charting-->
+    <script type="text/javascript" src="js/export-manager2.js"></script><!--Module for creating EE images for exporting- Place all EE code here for exporting EE objects-->
+     
+ 
+    <div id="top-button-panel">
+  
+    </div>
+
+
+
+
+    <div id="parameters-tools-layers" style = "color:#FFF;" disabled="disabled">
+
+      <!-- <button data-toggle="collapse" data-target="#collapse-menu" style = 'color:#000;left:50%;'>Collapsible</button> -->
+      <button data-toggle="collapse" class="button" data-target="#collapse-menu"  style = 'color:#FFF;width:100%;'
+      data-toggle="tooltip" data-placement="top" title="Show or hide map controls"><i class="fa fa-bars"></i></button>
+ 
+
+
+<div id="collapse-menu" class="collapse fade in active">
+<ul class="nav nav-tabs  nav-stacked"  >
+  
+
+  
+ <button class="button" style= "width:100%;color:#FFF;border-radius: 5px;" type="button" data-toggle="collapse" data-target="#basic-tools-tab" 
+  rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click here to view available reference layers.  These layers include existing geospatial data related to land cover and land cover change">
+    Tools
+  </button>
+
+  <div id="basic-tools-tab" class="collapse">
+        <div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>
+        <input style='display:inline-block;' id="box1" name='cb' value='none' type="radio" checked=t rue onclick="toggleRadio(this.value);" />
+        <label for="box1" style='display: inline-block;float: center;margin: 1px 0 2px 2px;color:#fff;font-weight: normal'>None</label>
+        
+       
+        <br>
+             <!--  <input style = 'display:inline-block;'name = 'cb' value = 'drawing'type="radio" id = 'toggle-drawing-button'  onclick = "toggleRadio(this.value);"/><label
+         style = 'display: inline-block;float: center;margin: 1px 0 2px 2px;color:#fff'>Drawing</label> -->
+        <input  name='cb' value='distance' type="radio" onclick="toggleRadio(this.value);" style='display:inline-block;font:#fff'/>
+        <label style='display: inline-block;float: center;margin: 1px 0 2px 2px;color:#fff;font-weight: normal;'
+        href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Measure distance (m/km or ft/miles). Double click to finish measurement. Click distance indicator to toggle metric/imperial"
+        >Distance Measuring</label>
+
+        <input style='display:inline-block;' name='cb' value='area' type="radio" onclick="toggleRadio(this.value);" />
+        <label style='display: inline-block;float: center;margin: 1px 0 2px 2px;color:#fff;font-weight: normal'
+        href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Measure area (sq m/hectares or sq ft/acres). Click distance indicator to toggle metric/imperial.  Double click to start new polygon. Press 'd' or 'Delete' button to clear. Press 'u' to undo last vertex placement"
+        >Area Measuring</label>
+        <br>
+        <button id = 'distance-area-measurement' class = 'button'  onclick = 'toggleDistanceAreaUnits(this.value)' style = 'display:none;height:100;width:300px;font-weight: normal;'
+        href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click to toggle metric or imperial.  Drag if needed.  Click on map to start measuring.  Press 'Delete' or 'd' button to clear for area measuring and double click for distance measuring.  Press 'u' to undo last vertex placement for area measuring.  Press 'None' radio button to stop measuring"
+        ></button>
+        <div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>
+        
+        <input style='display:inline-block;' name='cb' value='query' type="radio" onclick="toggleRadio(this.value);" />
+        <label style='display: inline-block;float: center;margin: 1px 0 2px 2px;color:#fff;font-weight: normal;'
+        href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Double click to inspect values of layers that are currently visible.  After double-clicking, panning can continue.   WARNING!!!- Extracting the data can take time, and re-double-clicking will just add to the queque"
+        >Pixel Inspector (double-click)</label>
+        <div id = 'query-container' style = 'display:none;background-color:#333' ></div> 
+        <div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>
+
+        <div id = 'charting-container' style = 'display: none;width:100%;font-weight: normal;'>
+        <input   id="charting-radio" style='font:#fff;' name='cb' value='charting' type="radio" onclick="toggleRadio(this.value);" />
+        <label  id = 'charting-label' style='position:relative;display: none;float: center;margin: 1px 0 2px 2px;color:#fff;font-weight: normal;'
+         href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Double click to chart time series.  After double-clicking, panning can continue.   WARNING!!!- Extracting the data can take time, and re-double-clicking will just add to the queque"
+        >Time Series Charting (double-click)</label>
+        <br>
+        <variable-radio var = 'whichIndex' title2 = 'Index for charting:' name2 = 'NBR' name1 = 'NDVI' value2 = 'NBR' value1 = 'NDVI' type = 'string' href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Which vegetation index to use for charting"></variable-radio>
+            <br>
+        <!-- <br> -->
+        <!-- <input onclick="toggleLegend();" type=button id = 'legend-button' style = 'display:none;'class='button' value="Toggle Legend"> -->
+ <div id = 'charting-parameters' style = 'display:none;
+                      margin-left:2px;
+                      margin-right: 2px;
+                      background:rgba(100,100,100,0.9);
+                      border-radius: 15px;
+                      padding:5px;
+                      padding-top:3px;
+                      color:#fff;
+                      margin-bottom:4px;'>Charting Progress
+    <div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>
+    <script type="text/javascript">
+      var plotRadius = 15;var plotScale = 30;
+    </script>
+        
+        <!-- <variable-range id="plot-radius"   name="Chart plot radius (m)" var="plotRadius" default="16" min="16" max="91" step="10"
+        href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Radius of plot to use for double click charting"
+        ></variable-range>
+
+        
+        <br>
+        <variable-range id="plot-scale"   name="Chart plot spatial res (m)" var="plotScale" default="30" min="30" max="180" step="30"
+        href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Spatial resolution for double click charting"
+        ></variable-range>
+        <br> -->
+        <div id="Progress" style = 'display:none;' href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Progress bar for double-click charting">
+          <div id="Bar"></div>
+        </div>
+        <div id="curve_chart" style="display: none;width:100%;border-radius: 10px;background: #888"></div>
+      </div> 
+        </div>
+</div>
+    <div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div> 
+     <button class="button" style= "width:100%;color:#FFF;border-radius: 5px;"  data-toggle="collapse" data-target="#layers-tab" 
+  rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click here to view available GEE layers">
+    Layers
+  </button>
+
+
+<div id="layers-tab" class="collapse in">
+    <layer-list id="layers"></layer-list>
+  </div>
+
+
+<div class="tab-content">
+ 
+ 
+</div>
+
+
+</div>
+  <div style='width:100%;height:2px;border-radius:5px;margin:5px;background-color:#fff'></div>
+  
+
+<button class="button" style= "width:100%;color:#FFF;border-radius: 5px;" type="button" data-toggle="collapse" data-target="#legendCollapse" aria-expanded="false" aria-controls="collapseExample">
+    Show Legend
+  </button>
+
+<div class="collapse" id="legendCollapse">
+  
+    <legend-list id="legend" ></legend-list>
+ 
+</div>
+</div>
+          </div>
+
+
+
+    </div>
+
+      
+    <p id='current-mouse-position' style='color:#FFF;position:absolute;bottom:1%;right:50px;padding:2px;height: 20px;background-color:rgba(75,75,75,0.8);border-radius:5px' rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Cursor lng, lat, and zoom level"></p>
+    <input onclick="toggleLegend();" type=button id = 'legend-button' style = 'display:none;'class='button' value="Toggle Legend">
+    
+    
+    
+    <plot-container id="plot-container" style = 'position:absolute;left:0%;top:10%;width:150px;max-height:50%;overflow-y:auto;display:none;'> 
+    <pt-project-list id="pt-project-list" ></pt-project-list>
+    <pt-list id="pt-list" ></pt-list>
+    </plot-container>
+
+    <img id='download-spinner'  src="images/ee-logo-spinner2.gif" alt="EE image exporting" style="position:absolute;right:50%;bottom:3%;padding: 1px ;visibility:hidden;width:50px;height:50px;background-color:rgba(255,255,255,0.6);border-radius: 10px;"
+    href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="">
+    
+    
+    <div style="position:absolute;height:3%;left:70px;bottom:1%;right:0px">
+       <a href="http://www.fs.fed.us//" target="_blank">
+      <img src="images/usfslogo.png" alt="FS Logo" style="height:100%;background-color:rgba(200,200,200,0.7);border-radius: 5px;"
+      href="#" class 'dual-range-slider-container' rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click to learn more the US Forest Service">
+    </a>
+      <a href="https://www.fs.fed.us/gstc/" target="_blank">
+      <img src="images/GTAC_Logo.png" alt="GTAC Logo" style="height:100%;background-color:rgba(200,200,200,0.7);border-radius: 5px;"
+      href="#" class 'dual-range-slider-container' rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click to learn more about the Geospatial Technology and Applications Center (GTAC)">
+    </a>
+      <a href="https://www.redcastleresources.com/" target="_blank">
+      <img src="images/RCR-logo.jpg" alt="RedCastle Inc. Logo" style="height:100%;background-color:rgba(200,200,200,0.7);border-radius: 5px;"
+      href="#" class 'dual-range-slider-container' rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click to learn more about RedCastle Resources Inc.">
+    </a>
+   
+      <a href="https://earthengine.google.com/" target="_blank">
+      <img src="images/GEE.png" alt="Powered by Google Earth Engine" style="height:100%;background-color:rgba(200,200,200,0.7);border-radius: 5px;"
+      href="#" class 'dual-range-slider-container' rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click to learn more about Google Earth Engine">
+    </a>
+    
+    </div>
+     
+    
+    <!-- <div id = "resizable" style = "position: absolute;background:#FFF">hello -->
+    <!-- <div id = 'curve_chart'style="visible :false; position: absolute;width: 60%; height: 45%;top: 20%"></div> -->
+    
+
+    <div id = 'messageBox' style = 'display:none;
+                      border-radius:5px;
+                      position:absolute;
+                      z-index: 15;
+                      top: 50%;
+                      left: 30%;
+                      width:500px;
+                      max-height:500px;
+                      overflow-y:auto;
+                      overflow-x:auto;
+                      margin: -100px 0 0 -150px;background-color:rgba(150,150,150,0.95)'>
+  <p id = 'message-title' style='text-align:center;vertical-align:bottom;color:#fff;font-size:15pt;margin:5px'>MESSAGE</p> 
+  <div style='width:95%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>
+  <p id = 'message' style='text-align:left;vertical-align:bottom;color:#fff;font-size:15pt;margin:5px'></p> 
+  
+        <input onclick="closeMessage()" type=button class='button' value="x" style='position:absolute;right:0%;top:0%;'
+        href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Cancel">
+    </div>
+ 
+    <div id = 'popup' style = 'display:none;
+                      border-radius:5px;
+                      position:absolute;
+                      z-index: 15;
+                      top: 50%;
+                      left: 30%;
+                      width: 500px;
+                      margin: -100px 0 0 -150px;background-color:rgba(150,150,150,0.95)'>
+  <p style='text-align:left;vertical-align:bottom;color:#fff;font-size:15pt;margin:5px'>Image Export Parameters</p> 
+  <div style='width:95%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>
+      <ol id = 'popup-output-list'>
+        
+
+      </ol>
+      <!-- <input id = 'popup-text-input' type = 'text' style = 'color:#FFF;border-radius:5px;width:90%;padding:5px;background-color:#576066;' -->
+      <!-- href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Name of image to be exported.  No extension necessary"> -->
+
+         <!-- <variable-range id="export-scale"  name="Image Export Resolution (m)" var="exportScale" default="30" min="15" max="1000" step="15"
+        href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Spatial resolution (m) of image exports"
+        ></variable-range>
+
+      <variable-text id="export-crs" name="Export crs:" var="exportCRS" default="EPSG:4326" 
+       href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="EPSG format export projection specification. UTM WGS 84: 326 + zone number, USGS Albers: 5070, Web Mercator: 4326"
+       ></variable-text>
+       <br>
+      <input onclick="submitOutputName();" type=button class='button' value="Submit" style='float: center;margin: 5px 0 2px 2px;'
+        href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Submit">
+        <input onclick="closePopup();" type=button class='button' value="Cancel" style='float: center;margin: 5px 0 2px 2px;'
+        href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Cancel">
+        <input onclick="updatePopup();" type=button class='button' value="Auto-update output name" style='float: center;margin: 5px 0 2px 2px;'
+        href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Update output name to include latest resolution and CRS">
+        <input onclick="closePopup();" type=button class='button' value="x" style='position:absolute;right:1px;top:1px;'
+        href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Cancel"> -->
+        <!-- <p id = 'popupList'style='text-align:left;vertical-align:bottom;color:#fff;font-size:15pt;margin:5px'></p>  -->
+       
+    </div>
+    <!-- </div>	 -->
+    <div id="marker-position"></div>
+
+    <script>
+      var widgetsOn = true;
+      var layersOn = true;
+      var legendOn = true;
+      var chartingOn = false;
+      var distanceOn = false;
+      var areaOn = false;
+      var drawing = false;
+      var plotsOn = true;
+      var helpOn = false;
+      var queryOn = false;
+      function toggleHelp(){
+        if (helpOn) {
+          $("#help-window").slideUp();
+          
+
+          helpOn = false;
+        } else {
+          $("#help-window").slideDown();
+         
+
+          helpOn = true;
+        }
+      }
+      function toggleWidgets() {
+        if (widgetsOn) {
+          $("#tool-area").slideUp();
+          $("#shape-edit-container").slideUp();
+          $("#export-container").slideUp();
+          // $("#parameters-tools-layers").css('min-width','25%');
+
+          widgetsOn = false;
+        } else {
+          $("#tool-area").slideDown();
+          $("#shape-edit-container").slideDown();
+          $("#export-container").slideDown();
+          // $("#parameters-tools-layers").css('min-width','35%');
+
+          widgetsOn = true;
+        }
+      }
+
+        function toggleLayers() {
+        if (layersOn) {
+          $("#layers-container").slideUp();
+          
+
+          layersOn = false;
+        } else {
+          $("#layers-container").slideDown();
+
+          layersOn = true;
+        }
+      }
+      function togglePlotList() {
+        if (plotsOn) {
+          $("#plot-container").slideUp();
+          
+
+          plotsOn = false;
+        } else {
+          $("#plot-container").slideDown();
+
+          plotsOn = true;
+        }
+      }
+
+      function toggleLegend() {
+        if (legendOn) {
+
+          $("#legend").slideUp();
+          legendOn = false;
+        } else {
+          $("#legend").slideDown();
+
+          legendOn = true;
+        }
+      }
+
+      function toggleCharting() {
+        if (chartingOn) {
+          stopCharting();
+          chartingOn = false;
+        } else {
+          drawChart();
+          chartingOn = true;
+        }
+      }
+
+      function toggleDistance() {
+        if (distanceOn) {
+          stopDistance();
+          distanceOn = false;
+        } else {
+          startDistance();
+          distanceOn = true;
+        }
+      }
+
+      function toggleArea() {
+        if (areaOn) {
+          stopArea();
+          map.setOptions({draggableCursor:'hand'});
+          areaOn = false;
+        } else {
+          startArea();
+          areaOn = true;
+        }
+      }
+      function toggleQuery(){
+        if(queryOn){
+          queryOn = false;
+          stopQuery();
+        }else{
+          queryOn = true;
+          startQuery();
+        }
+      }
+      function toggleDrawing() {
+        if (drawing) {
+          // shapesMap = undefined;
+          drawingManager.setMap(null);
+          drawing = false;
+        } else {
+          console.log('shapesmap');
+          console.log(shapesMap)
+          if (shapesMap != undefined) {
+            drawingManager.setMap(map);
+          } else {
+            shapesMap = new ShapesMap(
+              map,
+              document.getElementById("delete-button"),
+              document.getElementById("clear-button"),
+              document.getElementById("process-button"),
+              document.getElementById("export-button"),
+              document.getElementById("toggle-drawing-button"),
+              document.getElementById("console"));
+          }
+          drawing = true;
+        }
+      }
+    
+      function toggleRadio(thisValue) {
+        if (thisValue == 'charting') {
+          if (distanceOn) {
+            toggleDistance()
+          };
+          if (areaOn) {
+            toggleArea()
+          };
+          if (drawing) {
+            toggleDrawing()
+          };
+          if (queryOn) {
+            toggleQuery()
+          };
+          if (!chartingOn) {
+            toggleCharting()
+          };
+        } else if (thisValue == 'distance') {
+          if (areaOn) {
+            toggleArea()
+          };
+          if (chartingOn) {
+            toggleCharting()
+          };
+          if (drawing) {
+            toggleDrawing()
+          };
+          if (queryOn) {
+            toggleQuery()
+          };
+          if (!distanceOn) {
+            toggleDistance()
+          };
+        } 
+        else if (thisValue == 'query') {
+          if (areaOn) {
+            toggleArea()
+          };
+          if (chartingOn) {
+            toggleCharting()
+          };
+          if (drawing) {
+            toggleDrawing()
+          };
+          if (distanceOn) {
+            toggleDistance()
+          };
+          if (!queryOn) {
+            toggleQuery()
+          };
+        }else if (thisValue == 'drawing') {
+          if (areaOn) {
+            toggleArea()
+          };
+          if (chartingOn) {
+            toggleCharting()
+          };
+          if (distanceOn) {
+            toggleDistance()
+          };
+          if (queryOn) {
+            toggleQuery()
+          };
+          if (!drawing) {
+            toggleDrawing()
+          };
+        } else if (thisValue == 'area') {
+          if (drawing) {
+            toggleDrawing()
+          };
+          if (chartingOn) {
+            toggleCharting()
+          };
+          if (distanceOn) {
+            toggleDistance()
+          };
+          if (queryOn) {
+            toggleQuery()
+          };
+          if (!areaOn) {
+            toggleArea()
+          };
+        } else if (thisValue == 'none') {
+          if (areaOn) {
+            toggleArea()
+          };
+          if (chartingOn) {
+            toggleCharting()
+          };
+          if (drawing) {
+            toggleDrawing()
+          };
+          if (queryOn) {
+            toggleQuery()
+          };
+          if (distanceOn) {
+            toggleDistance()
+          };
+        }
+      }
+      
+//       function dateSlider(){
+//         var values = $("#slider").dateRangeSlider("values");
+// console.log(values .min + " " + values .max);
+//       }
+     // toggleWidgets();
+    </script>
+ <!-- <script type="text/javascript" src="js/pt-parser.js"></script> -->
+<!-- <script type="text/javascript" src="js/plot-parser.js"></script> -->
+<!-- <script type="text/javascript">toggleWidgets();toggleWidgets();toggleWidgets()</script> -->
+<!-- <div id = 'loading-window' style= 'top:0%;left:0%;opacity:0.8;height:100%;width:100%;background-color:#333;position:absolute;display:none;'> 
+<img src="images/Loading_icon.gif" alt="Loading" style="height:250px;width:300px;position:fixed ;top:50%;left:50%;transform: translate(-50%, -50%);">
+</div> -->
+ 
+  </body>
+
+
+
+
+</html>
