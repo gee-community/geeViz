@@ -1,5 +1,9 @@
 function run(){
-addIDTokenToMap('7a3015af8be667addbde71a3a1a217d1','64691f0003c6db8275a2a1f3a57efd67',{"max": [0.2, 0.95, 0.2], "bands": "swir2,nir,red", "min": 0.1},'Layer 1',true);
-addIDTokenToMap('1b864899e2a0aeeacae8539977830373','b286d0bd263dbce184b6fb29d5c96912',{"max": 20, "min": 0},'minCloudScore',true);
-addIDTokenToMap('21f2c5e6d79b52729ac8519848a7c313','d3083699d423814bdd89c08074435455',{},'Layer 2',true);
+addIDTokenToMap('6e08428f0981089089f6a8219c059733','92e2d1f55b92c66004b1af4e984d705c',{"max": 0.35, "bands": "swir2,nir,red", "min": -0.35},'Composite 1991',false);
+addIDTokenToMap('322fb9db77bc18510b8c11b8b1ce225a','1481f2ab718a558730515192dfabc701',{"max": 0.35, "bands": "LT_Fitted_swir2,LT_Fitted_nir,LT_Fitted_red", "min": -0.35},'LandTrendr 1991',false);
+addIDTokenToMap('64b797c6c77a9cfc3c3722b87c4b1b0c','9b9dce64ac5811c64cf748985f9716fb',{"max": 0.35, "bands": "VERDET_fitted_NDVI,VERDET_fitted_NBR,VERDET_fitted_NDMI", "min": -0.35},'Verdet 1991',false);
+addIDTokenToMap('6229d3d2e7b573d94c503cf72ca281ba','70f4b0496bcc3251a2d644ceee485e06',{"max": 0.7, "min": 0},'DND 1991',false);
+addIDTokenToMap('c17755c863b538c4cf5c1f81fc1c11c4','e4e988ba9efdb3b0fe53991a11e28e29',{"max": 0.7, "min": 0},'RNR 1991',false);
+addIDTokenToMap('804adb3f8c33f7f33c008693abeb0c6d','a919933243656950797589528a7df9ed',{"max": 0.7, "min": 0},'SLOW 1991',false);
+addIDTokenToMap('e180a0022b913965fc19107854064d03','595ba5545d80fdb75c0ee529184af5a4',{"max": 0.7, "min": 0},'FAST 1991',false);
 }
