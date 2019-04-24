@@ -634,8 +634,18 @@ def applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh = 10
 #Functions for applying fmask to SR data
 fmaskBitDict = {'cloud' : 32, 'shadow': 8,'snow':16}
 
+# LSC updated 4/16/19 to add medium and high confidence cloud masks
+# Supported fmaskClass options: 'cloud', 'shadow', 'snow', 'high_confidence_cloud', 'med_confidence_cloud'
 def cFmask(img,fmaskClass):
-  m = img.select('pixel_qa').bitwiseAnd(fmaskBitDict[fmaskClass]).neq(0)
+  
+  qa = img.select('pixel_qa')
+  if fmaskClass == 'high_confidence_cloud':
+     m = qa.bitwiseAnd(1 << 6).neq(0).And(qa.bitwiseAnd(1 << 7).neq(0))
+  elif fmaskClass == 'med_confidence_cloud':
+     m = qa.bitwiseAnd(1 << 7).neq(0)
+  else:
+    m = qa.bitwiseAnd(fmaskBitDict[fmaskClass]).neq(0)
+
   return img.updateMask(m.Not())
 
 
