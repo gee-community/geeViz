@@ -241,420 +241,434 @@ def verdetAnnualSlope(tsIndex,indexName,startYear,endYear):
 #--------------------------------------------------------------------------
 #          UNCONVERTED JAVASCRIPT FUNCTIONS BELOW HERE
 #--------------------------------------------------------------------------
-'''
+
 #######################/
-function thresholdChange(changeCollection,changeThresh,changeDir){
-  if(changeDir === undefined || changeDir === null){changeDir = 1}
+def thresholdChange(changeCollection,changeThresh,changeDir = None):
+  if changeDir == None:changeDir = 1
   bandNames = ee.Image(changeCollection.first()).bandNames()
-  bandNames = bandNames.map(function(bn){return ee.String(bn).cat('_change')})
-  change = changeCollection.map(function(img){
+  bandNames = bandNames.map(lambda bn: ee.String(bn).cat('_change'))
+  def thresholder(img):
     yr = ee.Date(img.get('system:time_start')).get('year')
     changeYr = img.multiply(changeDir).gt(changeThresh)
     yrImage = img.where(img.mask(),yr)
     changeYr = yrImage.updateMask(changeYr).rename(bandNames).int16()
     return img.mask(ee.Image(1)).addBands(changeYr)
-  })
-  return change
-}
-function thresholdSubtleChange(changeCollection,changeThreshLow,changeThreshHigh,changeDir){
-  if(changeDir === undefined || changeDir === null){changeDir = 1}
-  bandNames = ee.Image(changeCollection.first()).bandNames()
-  bandNames = bandNames.map(function(bn){return ee.String(bn).cat('_change')})
-  change = changeCollection.map(function(img){
-    yr = ee.Date(img.get('system:time_start')).get('year')
-    changeYr = img.multiply(changeDir).gt(changeThreshLow).and(img.multiply(changeDir).lt(changeThreshHigh))
-    yrImage = img.where(img.mask(),yr)
-    changeYr = yrImage.updateMask(changeYr).rename(bandNames).int16()
-    return img.mask(ee.Image(1)).addBands(changeYr)
-  })
-  return change
-}
 
-function getExistingChangeData(changeThresh,showLayers){
-  if(showLayers === undefined || showLayers === null){
-    showLayers = true
-  }
-  if(changeThresh === undefined || changeThresh === null){
-    changeThresh = 50
-  }
-  startYear = 1985
-  endYear = 2016
+  change = changeCollection.map(thresholder)
+
+  return change
+
+# function thresholdSubtleChange(changeCollection,changeThreshLow,changeThreshHigh,changeDir){
+#   if(changeDir === undefined || changeDir === null){changeDir = 1}
+#   bandNames = ee.Image(changeCollection.first()).bandNames()
+#   bandNames = bandNames.map(function(bn){return ee.String(bn).cat('_change')})
+#   change = changeCollection.map(function(img){
+#     yr = ee.Date(img.get('system:time_start')).get('year')
+#     changeYr = img.multiply(changeDir).gt(changeThreshLow).and(img.multiply(changeDir).lt(changeThreshHigh))
+#     yrImage = img.where(img.mask(),yr)
+#     changeYr = yrImage.updateMask(changeYr).rename(bandNames).int16()
+#     return img.mask(ee.Image(1)).addBands(changeYr)
+#   })
+#   return change
+# }
+
+# function getExistingChangeData(changeThresh,showLayers){
+#   if(showLayers === undefined || showLayers === null){
+#     showLayers = true
+#   }
+#   if(changeThresh === undefined || changeThresh === null){
+#     changeThresh = 50
+#   }
+#   startYear = 1985
+#   endYear = 2016
   
   
   
-  # glriEnsemble = ee.Image('projects/glri-phase3/changeMaps/ensembleOutputs/NBR_NDVI_TCBGAngle_swir1_swir2_median_LT_Ensemble')
+#   # glriEnsemble = ee.Image('projects/glri-phase3/changeMaps/ensembleOutputs/NBR_NDVI_TCBGAngle_swir1_swir2_median_LT_Ensemble')
   
   
   
   
   
  
-  # if(showLayers){
-  # Map.addLayer(conusChange.select(['change']).max(),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'CONUS LCMS Most Recent Year of Change',false)
-  # Map.addLayer(conusChange.select(['probability']).max(),{'min':0,'max':50,'palette':'888,008'},'LCMSC',false)
-  # }
-  # glri_lcms = glriEnsemble.updateMask(glriEnsemble.select([0])).select([1])
-  # glri_lcms = glri_lcms.updateMask(glri_lcms.gte(startYear).and(glri_lcms.lte(endYear)))
-  # if(showLayers){
-  # Map.addLayer(glri_lcms,{'min':startYear,'max':endYear,'palette':'FF0,F00'},'GLRI LCMS',false)
-  # }
+#   # if(showLayers){
+#   # Map.addLayer(conusChange.select(['change']).max(),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'CONUS LCMS Most Recent Year of Change',false)
+#   # Map.addLayer(conusChange.select(['probability']).max(),{'min':0,'max':50,'palette':'888,008'},'LCMSC',false)
+#   # }
+#   # glri_lcms = glriEnsemble.updateMask(glriEnsemble.select([0])).select([1])
+#   # glri_lcms = glri_lcms.updateMask(glri_lcms.gte(startYear).and(glri_lcms.lte(endYear)))
+#   # if(showLayers){
+#   # Map.addLayer(glri_lcms,{'min':startYear,'max':endYear,'palette':'FF0,F00'},'GLRI LCMS',false)
+#   # }
   
   
   
-  hansen = ee.Image('UMD/hansen/global_forest_change_2016_v1_4').select(['lossyear']).add(2000).int16()
-  hansen = hansen.updateMask(hansen.neq(2000).and(hansen.gte(startYear)).and(hansen.lte(endYear)))
-  if(showLayers){
-  Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Hansen Change Year',false)
-  }
-  # return conusChangeOut
-}
+#   hansen = ee.Image('UMD/hansen/global_forest_change_2016_v1_4').select(['lossyear']).add(2000).int16()
+#   hansen = hansen.updateMask(hansen.neq(2000).and(hansen.gte(startYear)).and(hansen.lte(endYear)))
+#   if(showLayers){
+#   Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Hansen Change Year',false)
+#   }
+#   # return conusChangeOut
+# }
 
 
 
-#####################################
-#Wrapper for applying EWMACD slightly more simply
-function getEWMA(lsIndex,trainingStartYear,trainingEndYear, harmonicCount){
-  if(harmonicCount === null || harmonicCount === undefined){harmonicCount = 1}
+# #####################################
+# #Wrapper for applying EWMACD slightly more simply
+# function getEWMA(lsIndex,trainingStartYear,trainingEndYear, harmonicCount){
+#   if(harmonicCount === null || harmonicCount === undefined){harmonicCount = 1}
   
   
-  #Run EWMACD 
-  ewmacd = ee.Algorithms.TemporalSegmentation.Ewmacd({
-    timeSeries: lsIndex, 
-    vegetationThreshold: -1, 
-    trainingStartYear: trainingStartYear, 
-    trainingEndYear: trainingEndYear, 
-    harmonicCount: harmonicCount
-  })
+#   #Run EWMACD 
+#   ewmacd = ee.Algorithms.TemporalSegmentation.Ewmacd({
+#     timeSeries: lsIndex, 
+#     vegetationThreshold: -1, 
+#     trainingStartYear: trainingStartYear, 
+#     trainingEndYear: trainingEndYear, 
+#     harmonicCount: harmonicCount
+#   })
   
-  #Extract the ewmac values
-  ewma = ewmacd.select(['ewma'])
-  return ewma
-}
+#   #Extract the ewmac values
+#   ewma = ewmacd.select(['ewma'])
+#   return ewma
+# }
 
-#Function for converting EWMA values to annual collection
-function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,remove2012){
-  #Fill null parameters
-  if(annualReducer === null || annualReducer === undefined){annualReducer = ee.Reducer.min()}
-  if(remove2012 === null || remove2012 === undefined){remove2012 = true}
+# #Function for converting EWMA values to annual collection
+# function annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,remove2012){
+#   #Fill null parameters
+#   if(annualReducer === null || annualReducer === undefined){annualReducer = ee.Reducer.min()}
+#   if(remove2012 === null || remove2012 === undefined){remove2012 = true}
   
-   #Find the years to annualize with
-  years = ee.List.sequence(startYear,endYear)
+#    #Find the years to annualize with
+#   years = ee.List.sequence(startYear,endYear)
   
-  #Find if 2012 needs replaced
-  replace2012 = ee.Number(ee.List([years.indexOf(2011),years.indexOf(2012),years.indexOf(2013)]).reduce(ee.Reducer.min())).neq(-1).getInfo()
-  print('2012 needs replaced:',replace2012)
-  
-  
-  #Remove 2012 if in list and set to true
-  if(remove2012){years = years.removeAll([2012])}
+#   #Find if 2012 needs replaced
+#   replace2012 = ee.Number(ee.List([years.indexOf(2011),years.indexOf(2012),years.indexOf(2013)]).reduce(ee.Reducer.min())).neq(-1).getInfo()
+#   print('2012 needs replaced:',replace2012)
   
   
+#   #Remove 2012 if in list and set to true
+#   if(remove2012){years = years.removeAll([2012])}
   
   
-  #Annualize
-  #Set up dummy image for handling null values
-  noDateValue = -32768;
-  dummyImage = ee.Image(noDateValue).toArray();
+  
+  
+#   #Annualize
+#   #Set up dummy image for handling null values
+#   noDateValue = -32768;
+#   dummyImage = ee.Image(noDateValue).toArray();
     
   
-  annualEWMA = years.map(function(yr){
-    yr = ee.Number(yr);
-    yrMask = lsYear.int16().eq(yr);
-    ewmacdYr = ewma.arrayMask(yrMask);
-    ewmacdYearYr = lsYear.arrayMask(yrMask);
-    ewmacdYrSorted = ewmacdYr.arraySort(ewmacdYr);
-    ewmacdYearYrSorted= ewmacdYearYr.arraySort(ewmacdYr);
+#   annualEWMA = years.map(function(yr){
+#     yr = ee.Number(yr);
+#     yrMask = lsYear.int16().eq(yr);
+#     ewmacdYr = ewma.arrayMask(yrMask);
+#     ewmacdYearYr = lsYear.arrayMask(yrMask);
+#     ewmacdYrSorted = ewmacdYr.arraySort(ewmacdYr);
+#     ewmacdYearYrSorted= ewmacdYearYr.arraySort(ewmacdYr);
     
-    yrData = ewmacdYrSorted.arrayCat(ewmacdYearYrSorted,1);
-    yrReduced = ewmacdYrSorted.arrayReduce(annualReducer,[0]);
+#     yrData = ewmacdYrSorted.arrayCat(ewmacdYearYrSorted,1);
+#     yrReduced = ewmacdYrSorted.arrayReduce(annualReducer,[0]);
    
     
-    #Find null pixels
-    l = yrReduced.arrayLength(0);
+#     #Find null pixels
+#     l = yrReduced.arrayLength(0);
     
-    #Fill null values and convert to regular image
-    yrReduced = yrReduced.where(l.eq(0),dummyImage).arrayGet([-1]);
+#     #Fill null values and convert to regular image
+#     yrReduced = yrReduced.where(l.eq(0),dummyImage).arrayGet([-1]);
     
-    #Remask nulls
-    yrReduced = yrReduced.updateMask(yrReduced.neq(noDateValue)).rename(['EWMA_'+indexName])      
-      .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis()).int16();
+#     #Remask nulls
+#     yrReduced = yrReduced.updateMask(yrReduced.neq(noDateValue)).rename(['EWMA_'+indexName])      
+#       .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis()).int16();
       
    
-    return yrReduced;
-  });
-  annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
-  # print(remove2012,replace2012 ==1)
-  if(remove2012 && replace2012 ==1){
-    print('Replacing EWMA 2012 with mean of 2011 and 2013');
-    value2011 = ee.Image(annualEWMA.filter(ee.Filter.calendarRange(2011,2011,'year')).first());
-    value2013 = ee.Image(annualEWMA.filter(ee.Filter.calendarRange(2013,2013,'year')).first());
-    value2012 = value2013.add(value2011);
-    value2012 = value2012.divide(2).rename(['EWMA_'+indexName])
-    .set('system:time_start',ee.Date.fromYMD(2012,6,1).millis()).int16();
+#     return yrReduced;
+#   });
+#   annualEWMA = ee.ImageCollection.fromImages(annualEWMA);
+#   # print(remove2012,replace2012 ==1)
+#   if(remove2012 && replace2012 ==1){
+#     print('Replacing EWMA 2012 with mean of 2011 and 2013');
+#     value2011 = ee.Image(annualEWMA.filter(ee.Filter.calendarRange(2011,2011,'year')).first());
+#     value2013 = ee.Image(annualEWMA.filter(ee.Filter.calendarRange(2013,2013,'year')).first());
+#     value2012 = value2013.add(value2011);
+#     value2012 = value2012.divide(2).rename(['EWMA_'+indexName])
+#     .set('system:time_start',ee.Date.fromYMD(2012,6,1).millis()).int16();
     
-    annualEWMA = ee.ImageCollection(ee.FeatureCollection([annualEWMA,ee.ImageCollection([value2012])]).flatten()).sort('system:time_start');
-  }
-  return annualEWMA;
-}
-#
-function runEWMACD(lsIndex,indexName,startYear,endYear,trainingStartYear,trainingEndYear, harmonicCount,annualReducer,remove2012){
-  # bandName = ee.String(ee.Image(lsIndex.first()).bandNames().get(0));
+#     annualEWMA = ee.ImageCollection(ee.FeatureCollection([annualEWMA,ee.ImageCollection([value2012])]).flatten()).sort('system:time_start');
+#   }
+#   return annualEWMA;
+# }
+# #
+# function runEWMACD(lsIndex,indexName,startYear,endYear,trainingStartYear,trainingEndYear, harmonicCount,annualReducer,remove2012){
+#   # bandName = ee.String(ee.Image(lsIndex.first()).bandNames().get(0));
  
-  ewma = getEWMA(lsIndex,trainingStartYear,trainingEndYear, harmonicCount);
+#   ewma = getEWMA(lsIndex,trainingStartYear,trainingEndYear, harmonicCount);
   
-  #Get dates for later reference
-  lsYear = lsIndex.map(function(img){return getImageLib.addDateBand(img,true)}).select(['year']).toArray().arrayProject([0]);
+#   #Get dates for later reference
+#   lsYear = lsIndex.map(function(img){return getImageLib.addDateBand(img,true)}).select(['year']).toArray().arrayProject([0]);
 
   
-  annualEWMA = annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,remove2012);
+#   annualEWMA = annualizeEWMA(ewma,indexName,lsYear,startYear,endYear,annualReducer,remove2012);
   
-  return [ewma.arrayCat(lsYear,1),annualEWMA];
-}
-#####################################
-#Function to find the pairwise difference of a time series
-#Assumes one image per year
-function pairwiseSlope(c){
-    c = c.sort('system:time_start');
+#   return [ewma.arrayCat(lsYear,1),annualEWMA];
+# }
+# #####################################
+# #Function to find the pairwise difference of a time series
+# #Assumes one image per year
+# function pairwiseSlope(c){
+#     c = c.sort('system:time_start');
     
-    bandNames = ee.Image(c.first()).bandNames();
-    # bandNames = bandNames.map(function(bn){return ee.String(bn).cat('_slope')});
+#     bandNames = ee.Image(c.first()).bandNames();
+#     # bandNames = bandNames.map(function(bn){return ee.String(bn).cat('_slope')});
     
-    years = c.toList(10000).map(function(i){i = ee.Image(i);return ee.Date(i.get('system:time_start')).get('year')});
+#     years = c.toList(10000).map(function(i){i = ee.Image(i);return ee.Date(i.get('system:time_start')).get('year')});
     
-    yearsLeft = years.slice(0,-1);
-    yearsRight = years.slice(1,null);
-    yearPairs = yearsLeft.zip(yearsRight);
+#     yearsLeft = years.slice(0,-1);
+#     yearsRight = years.slice(1,null);
+#     yearPairs = yearsLeft.zip(yearsRight);
     
-    slopeCollection = yearPairs.map(function(yp){
-      yp = ee.List(yp);
-      yl = ee.Number(yp.get(0));
-      yr = ee.Number(yp.get(1));
-      yd = yr.subtract(yl);
-      l = ee.Image(c.filter(ee.Filter.calendarRange(yl,yl,'year')).first()).add(0.000001);
-      r = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
+#     slopeCollection = yearPairs.map(function(yp){
+#       yp = ee.List(yp);
+#       yl = ee.Number(yp.get(0));
+#       yr = ee.Number(yp.get(1));
+#       yd = yr.subtract(yl);
+#       l = ee.Image(c.filter(ee.Filter.calendarRange(yl,yl,'year')).first()).add(0.000001);
+#       r = ee.Image(c.filter(ee.Filter.calendarRange(yr,yr,'year')).first());
       
-      slope = (r.subtract(l)).rename(bandNames);
-      slope = slope.set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
-      return slope;
-    });
-    return ee.ImageCollection.fromImages(slopeCollection);
-  }
+#       slope = (r.subtract(l)).rename(bandNames);
+#       slope = slope.set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
+#       return slope;
+#     });
+#     return ee.ImageCollection.fromImages(slopeCollection);
+#   }
 
-##########################/
-#Function for converting collection into annual median collection
+############################################Function for converting collection into annual median collection
 #Does not support date wrapping across the new year (e.g. Nov- April window is a no go)
-function toAnnualMedian(images,startYear,endYear){
-      dummyImmage = ee.Image(images.first());
-      out = ee.List.sequence(startYear,endYear).map(function(yr){
-        imagesT = images.filter(ee.Filter.calendarRange(yr,yr,'year'));
-        imagesT = getImageLib.fillEmptyCollections(imagesT,dummyImmage);
-        return imagesT.median().set('system:time_start',ee.Date.fromYMD(yr,6,1));
-      });
-      return ee.ImageCollection.fromImages(out);
-    }
-##########################
-#Function for applying linear fit model
+def toAnnualMedian(images,startYear,endYear):
+  dummyImmage = ee.Image(images.first())
+  def getMedian(yr):
+    imagesT = images.filter(ee.Filter.calendarRange(yr,yr,'year'))
+    imagesT = getImageLib.fillEmptyCollections(imagesT,dummyImmage)
+    return imagesT.median().set('system:time_start',ee.Date.fromYMD(yr,6,1))
+  out = ee.List.sequence(startYear,endYear).map(getMedian)
+  return ee.ImageCollection.fromImages(out)
+
+############################################Function for applying linear fit model
 #Assumes the model has a intercept and slope band prefix to the bands in the model
 #Assumes that the c (collection) has the raw bands in it
-function predictModel(c,model,bandNames){
+def predictModel(c,model,bandNames = None):
   
   #Parse model
-  intercepts = model.select('intercept_.*');
-  slopes = model.select('slope_.*');
+  intercepts = model.select('intercept_.*')
+  slopes = model.select('slope_.*')
   
   #Find band names for raw data if not provided
-  if(bandNames === null || bandNames === undefined){
-    bandNames = slopes.bandNames().map(function(bn){return ee.String(bn).split('_').get(1)});
-  }
+  if bandNames == None:
+    bandNames = slopes.bandNames().map(lambda bn: ee.String(bn).split('_').get(1))
+
   
   #Set up output band names
-  predictedBandNames = bandNames.map(function(bn){return ee.String(bn).cat('_trend')});
+  predictedBandNames = bandNames.map(lambda bn :ee.String(bn).cat('_trend'))
   
   #Predict model
-  predicted = c.map(function(img){
+  def pModel(img):
     cActual = img.select(bandNames);
-    out = img.select(['year']).multiply(slopes).add(img.select(['constant']).multiply(intercepts)).rename(predictedBandNames);
-    return cActual.addBands(out).copyProperties(img,['system:time_start']);
-  });
+    out = img.select(['year']).multiply(slopes).add(img.select(['constant']).multiply(intercepts)).rename(predictedBandNames)
+    return cActual.addBands(out).copyProperties(img,['system:time_start'])
+  predicted = c.map(pModel)
   
-  return predicted;
-}
-###########
+  return predicted
+###########################################
 #Function for getting a linear fit of a time series and applying it
-function getLinearFit(c,bandNames){
+def getLinearFit(c,bandNames = None):
   #Find band names for raw data if not provided
-  if(bandNames === null || bandNames === undefined){
-    bandNames = ee.Image(c.first()).bandNames();
-  }
-  else{
-    bandNames = ee.List(bandNames);
-    c = c.select(bandNames);
-  }
+  if bandNames == None:
+    bandNames = ee.Image(c.first()).bandNames()
+  else:
+    bandNames = ee.List(bandNames)
+    c = c.select(bandNames)
+  
   
   #Add date and constant independents
-  c = c.map(function(img){return img.addBands(ee.Image(1))});
-  c = c.map(getImageLib.addDateBand);
-  selectOrder = ee.List([['constant','year'],bandNames]).flatten();
+  c = c.map(lambda img: img.addBands(ee.Image(1)))
+  c = c.map(getImageLib.addDateBand)
+  selectOrder = ee.List([['constant','year'],bandNames]).flatten()
   
   #Fit model
-  model = c.select(selectOrder).reduce(ee.Reducer.linearRegression(2,bandNames.length())).select([0]);
+  model = c.select(selectOrder).reduce(ee.Reducer.linearRegression(2,bandNames.length())).select([0])
   
   #Convert model to image
-  model = model.arrayTranspose().arrayFlatten([bandNames,['intercept','slope']]);
+  model = model.arrayTranspose().arrayFlatten([bandNames,['intercept','slope']])
   
   #Apply model
-  predicted = predictModel(c,model,bandNames);
+  predicted = predictModel(c,model,bandNames)
   
   #Return both the model and predicted
-  return [model,predicted];
-}
+  return [model,predicted]
+
 ####################################/
-#Iterate across each time window and do a z-score and trend analysis
-#This method does not currently support date wrapping
-function zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJulian,endJulian,
-          baselineLength,baselineGap,epochLength,zReducer,useAnnualMedianForTrend,
-          exportImages,exportPathRoot,studyArea,scale,crs,transform,
-          minBaselineObservationsNeeded){
-  if(minBaselineObservationsNeeded === null || minBaselineObservationsNeeded === undefined){
-    minBaselineObservationsNeeded = 30;
-  }
+# #Iterate across each time window and do a z-score and trend analysis
+# #This method does not currently support date wrapping
+def zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJulian,endJulian,\
+          baselineLength = 5,baselineGap = 1,epochLength = 5,zReducer = ee.Reducer.mean(),useAnnualMedianForTrend = True,\
+          exportImages = False,exportPathRoot = 'users/iwhousman/test/ChangeCollection',studyArea = None,scale = 30,crs = None,transform = None,\
+          minBaselineObservationsNeeded = 10):
+
   #House-keeping
-  allScenes = allScenes.select(indexNames);
+  allScenes = allScenes.select(indexNames)
+  print(allScenes.size().getInfo())
   dummyScene = ee.Image(allScenes.first());
-  outNames = indexNames.map(function(bn){return ee.String(bn).cat('_Z')});
-  analysisStartYear = Math.max(startYear+baselineLength+baselineGap,startYear+epochLength-1);
+
+  outNames = map(lambda bn: bn +'_Z',indexNames)
+ 
+  analysisStartYear = max(startYear+baselineLength+baselineGap,startYear+epochLength-1)
   
-  years = ee.List.sequence(analysisStartYear,endYear,1).getInfo();
-  julians = ee.List.sequence(startJulian,endJulian-nDays,nDays).getInfo();
+  years = ee.List.sequence(analysisStartYear,endYear,1).getInfo()
+  julians = ee.List.sequence(startJulian,endJulian-nDays,nDays).getInfo()
   
   #Iterate across each year and perform analysis
-  zAndTrendCollection = years.map(function(yr){
-    yr = ee.Number(yr);
-    
+  
+  def processYrJd(yjd):
+    yjd = ee.List(yjd)
+    yr = ee.Number(yjd.get(0))
+    jd = ee.Number(yjd.get(1))
     #Set up the baseline years
-    blStartYear = yr.subtract(baselineLength).subtract(baselineGap);
-    blEndYear = yr.subtract(1).subtract(baselineGap);
+    blStartYear = yr.subtract(baselineLength).subtract(baselineGap)
+    blEndYear = yr.subtract(1).subtract(baselineGap)
+
     
     #Set up the trend years
-    trendStartYear = yr.subtract(epochLength).add(1);
+    trendStartYear = yr.subtract(epochLength).add(1)
+
+
     
+      
+    #Set up the julian date range
+    jdStart = jd
+    jdEnd = jd.add(nDays)
+   
+    #Get the baseline images
+    blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear,blEndYear,'year'))\
+                            .filter(ee.Filter.calendarRange(jdStart,jdEnd))
+    blImages = getImageLib.fillEmptyCollections(blImages,dummyScene);
+
+    #Mask out where not enough observations
+    blCounts = blImages.count();
+    blImages = blImages.map(lambda img: img.updateMask(blCounts.gte(minBaselineObservationsNeeded)))
+
+    
+    #Get the z analysis images
+    analysisImages = allScenes.filter(ee.Filter.calendarRange(yr,yr,'year'))\
+                            .filter(ee.Filter.calendarRange(jdStart,jdEnd))
+    analysisImages = getImageLib.fillEmptyCollections(analysisImages,dummyScene)
+    
+    #Get the images for the trend analysis
+    trendImages = allScenes.filter(ee.Filter.calendarRange(trendStartYear,yr,'year'))\
+                            .filter(ee.Filter.calendarRange(jdStart,jdEnd))
+    trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene)
+    
+    
+    #Convert to annual stack if selected
+    if useAnnualMedianForTrend:
+      trendImages = toAnnualMedian(trendImages,trendStartYear,yr)
+   
+    
+    #Perform the linear trend analysis
+    linearTrend = getLinearFit(trendImages,indexNames);
+    linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']).multiply(10000)
+  
+    #Perform the z analysis
+    blMean = blImages.mean()
+    blStd = blImages.reduce(ee.Reducer.stdDev())
+  
+    analysisImagesZ = analysisImages.map(lambda img:img.subtract(blMean).divide(blStd))\
+              .reduce(zReducer).rename(outNames).multiply(10)
+    
+    # Set up the output
+    outName = ee.String('Z_and_Trend_b').cat(ee.Number(blStartYear).int16().format('%04d')).cat(ee.String('_'))\
+                                .cat(ee.Number(blEndYear).int16().format('%04d'))\
+                                .cat(ee.String('_epoch')).cat(ee.Number(epochLength).format('%02d'))\
+                                .cat(ee.String('_y')).cat(yr.int16().format('%04d')).cat(ee.String('_jd'))\
+                                .cat(jdStart.int16().format('%03d')).cat(ee.String('_')).cat(jdEnd.int16().format('%03d'))
+    
+
+    imageStartDate =ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis()
+    
+    
+    out = analysisImagesZ.addBands(linearTrendModel).int16()\
+          .set({'system:time_start':imageStartDate,\
+                'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis(),\
+                'baselineYrs': baselineLength,\
+                'baselineStartYear':blStartYear,\
+                'baselineEndYear':blEndYear,\
+                'epochLength':epochLength,\
+                'trendStartYear':trendStartYear,\
+                'year':yr,\
+                'startJulian':jdStart,\
+                'endJulian':jdEnd,\
+                'system:index':outName\
+          })
+    
+    # if exportImages:
+    #   outName = outName.getInfo()
+    #   outPath = exportPathRoot + '/' + outName
+    #   getImageLib.exportToAssetWrapper(out.clip(studyArea),outName,outPath,\
+    #     'mean',studyArea.bounds(),scale,crs,transform)
+    # zAndTrendCollection.append(out)
+    return out
+
+
+  yjdList = []
+  for yr in years:
     #Iterate across the julian dates
-    return ee.FeatureCollection(julians.map(function(jd){
-      
-      jd = ee.Number(jd);
-      
-      #Set up the julian date range
-      jdStart = jd;
-      jdEnd = jd.add(nDays);
-     
-      #Get the baseline images
-      blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear,blEndYear,'year'))
-                              .filter(ee.Filter.calendarRange(jdStart,jdEnd));
-      blImages = getImageLib.fillEmptyCollections(blImages,dummyScene);
-      
-      #Mask out where not enough observations
-      blCounts = blImages.count();
-      blImages = blImages.map(function(img){return img.updateMask(blCounts.gte(minBaselineObservationsNeeded))});
-      
-      #Get the z analysis images
-      analysisImages = allScenes.filter(ee.Filter.calendarRange(yr,yr,'year'))
-                              .filter(ee.Filter.calendarRange(jdStart,jdEnd)); 
-      analysisImages = getImageLib.fillEmptyCollections(analysisImages,dummyScene);
-      
-      #Get the images for the trend analysis
-      trendImages = allScenes.filter(ee.Filter.calendarRange(trendStartYear,yr,'year'))
-                              .filter(ee.Filter.calendarRange(jdStart,jdEnd));
-      trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene);
-      
-      
-      #Convert to annual stack if selected
-      if(useAnnualMedianForTrend){
-        trendImages = toAnnualMedian(trendImages,trendStartYear,yr);
-      }
-      
-      #Perform the linear trend analysis
-      linearTrend = getLinearFit(trendImages,indexNames);
-      linearTrendModel = ee.Image(linearTrend[0]).select(['.*_slope']).multiply(10000);
-      
-      #Perform the z analysis
-      blMean = blImages.mean();
-      blStd = blImages.reduce(ee.Reducer.stdDev());
-    
-      analysisImagesZ = analysisImages.map(function(img){
-        return (img.subtract(blMean)).divide(blStd);
-      }).reduce(zReducer).rename(outNames).multiply(10);
-      
-      # Set up the output
-      outName = ee.String('Z_and_Trend_b').cat(ee.String(blStartYear.int16())).cat(ee.String('_'))
-                                  .cat(ee.String(blEndYear.int16())).cat(ee.String('_epoch')).cat(ee.String(ee.Number(epochLength)))
-                                  .cat(ee.String('_y')).cat(ee.String(yr.int16())).cat(ee.String('_jd'))
-                                  .cat(ee.String(jdStart.int16())).cat(ee.String('_')).cat(ee.String(jdEnd.int16()));
-      imageStartDate =ee.Date.fromYMD(yr,1,1).advance(jdStart,'day').millis();
-      
-      
-      out = analysisImagesZ.addBands(linearTrendModel).int16()
-            .set({'system:time_start':imageStartDate,
-                  'system:time_end':ee.Date.fromYMD(yr,1,1).advance(jdEnd,'day').millis(),
-                  'baselineYrs': baselineLength,
-                  'baselineStartYear':blStartYear,
-                  'baselineEndYear':blEndYear,
-                  'epochLength':epochLength,
-                  'trendStartYear':trendStartYear,
-                  'year':yr,
-                  'startJulian':jdStart,
-                  'endJulian':jdEnd,
-                  'system:index':outName
-            });
-        
-      if(exportImages){
-        outName = outName.getInfo();
-        outPath = exportPathRoot + '/' + outName;
-          getImageLib.exportToAssetWrapper(out.clip(studyArea),outName,outPath,
-          'mean',studyArea.bounds(),scale,crs,transform);
-      }
-      return out;
-      }));
-    });
-    zAndTrendCollection = ee.ImageCollection(ee.FeatureCollection(zAndTrendCollection).flatten());
-    
-    return zAndTrendCollection;
-}
+    for jd in julians:
+      yjdList.append(ee.List([yr,jd]))
+
+  
+
+  zAndTrendCollection = ee.ImageCollection.fromImages(ee.List(yjdList).map(processYrJd))
+
+  return zAndTrendCollection
 
 
-function thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh,startYear,endYear,negativeOrPositiveChange){
-  if(negativeOrPositiveChange === null || negativeOrPositiveChange === undefined){negativeOrPositiveChange = 'negative'}
-  dir;
-  if(negativeOrPositiveChange === 'negative'){dir = -1}
-  else{dir = 1};
-  zCollection = zAndTrendCollection.select('.*_Z');
-  trendCollection = zAndTrendCollection.select('.*_slope');
-  
-  zChange = thresholdChange(zCollection,-zThresh,dir).select('.*_change');
-  trendChange = thresholdChange(trendCollection,-slopeThresh,dir).select('.*_change');
-  
-  
-  Map.addLayer(zChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Z Most Recent Change Year '+negativeOrPositiveChange,false);
-  Map.addLayer(trendChange.max().select([0]),{'min':startYear,'max':endYear,'palette':'FF0,F00'},'Trend Most Recent Change Year '+negativeOrPositiveChange,false);
-  
-}
 
-function thresholdZAndTrendSubtle(zAndTrendCollection,zThreshLow,zThreshHigh,slopeThreshLow,slopeThreshHigh,startYear,endYear,negativeOrPositiveChange){
-  if(negativeOrPositiveChange === null || negativeOrPositiveChange === undefined){negativeOrPositiveChange = 'negative'}
-  dir;colorRamp;
-  if(negativeOrPositiveChange === 'negative'){dir = -1;colorRamp = 'FF0,F00';}
-  else{dir = 1; colorRamp = 'BBB,080';}
-  zCollection = zAndTrendCollection.select('.*_Z');
-  trendCollection = zAndTrendCollection.select('.*_slope');
+def thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh,startYear,endYear,negativeOrPositiveChange = None):
+  if negativeOrPositiveChange == None:
+    negativeOrPositiveChange = 'negative'
+
+  if negativeOrPositiveChange == 'negative':dir = -1
+  else:dir = 1
+
+  zCollection = zAndTrendCollection.select('.*_Z')
+  trendCollection = zAndTrendCollection.select('.*_slope')
   
-  zChange = thresholdSubtleChange(zCollection,-zThreshLow,-zThreshHigh,dir).select('.*_change');
-  trendChange = thresholdSubtleChange(trendCollection,-slopeThreshLow,-slopeThreshHigh,dir).select('.*_change');
+  zChange = thresholdChange(zCollection,-zThresh,dir).select('.*_change')
+  trendChange = thresholdChange(trendCollection,-slopeThresh,dir).select('.*_change')
+  
+  return [zChange,trendChange]
+  
+ 
+
+
+# function thresholdZAndTrendSubtle(zAndTrendCollection,zThreshLow,zThreshHigh,slopeThreshLow,slopeThreshHigh,startYear,endYear,negativeOrPositiveChange){
+#   if(negativeOrPositiveChange === null || negativeOrPositiveChange === undefined){negativeOrPositiveChange = 'negative'}
+#   dir;colorRamp;
+#   if(negativeOrPositiveChange === 'negative'){dir = -1;colorRamp = 'FF0,F00';}
+#   else{dir = 1; colorRamp = 'BBB,080';}
+#   zCollection = zAndTrendCollection.select('.*_Z');
+#   trendCollection = zAndTrendCollection.select('.*_slope');
+  
+#   zChange = thresholdSubtleChange(zCollection,-zThreshLow,-zThreshHigh,dir).select('.*_change');
+#   trendChange = thresholdSubtleChange(trendCollection,-slopeThreshLow,-slopeThreshHigh,dir).select('.*_change');
   
   
   
-  Map.addLayer(zChange.max().select([0]),{'min':startYear,'max':endYear,'palette':colorRamp},'Z Most Recent Change Year '+negativeOrPositiveChange,false);
-  Map.addLayer(trendChange.max().select([0]),{'min':startYear,'max':endYear,'palette':colorRamp},'Trend Most Recent Change Year '+negativeOrPositiveChange,false);
+#   Map.addLayer(zChange.max().select([0]),{'min':startYear,'max':endYear,'palette':colorRamp},'Z Most Recent Change Year '+negativeOrPositiveChange,false);
+#   Map.addLayer(trendChange.max().select([0]),{'min':startYear,'max':endYear,'palette':colorRamp},'Trend Most Recent Change Year '+negativeOrPositiveChange,false);
   
-}
+# }
+
+
 # function exportZAndTrend(zAndTrendCollection,dates,exportPathRoot,studyArea,scale,crs,transform){
  
 # print('Exporting z and trend collection');
@@ -687,26 +701,3 @@ function thresholdZAndTrendSubtle(zAndTrendCollection,zThreshLow,zThreshHigh,slo
 # # }); 
 # }
 #####################################
-exports.extractDisturbance = extractDisturbance;
-exports.landtrendrWrapper = landtrendrWrapper;
-exports.multBands = multBands;
-exports.addToImage = addToImage;
-exports.getExistingChangeData = getExistingChangeData;
-
-exports.verdetAnnualSlope  = verdetAnnualSlope;
-exports.annualizeEWMA = annualizeEWMA;
-exports.getEWMA = getEWMA;
-exports.runEWMACD = runEWMACD;
-
-exports.pairwiseSlope = pairwiseSlope;
-exports.thresholdChange = thresholdChange;
-
-exports.predictModel = predictModel;
-exports.getLinearFit = getLinearFit;
-exports.toAnnualMedian = toAnnualMedian;
-
-exports.zAndTrendChangeDetection = zAndTrendChangeDetection;
-exports.thresholdZAndTrend = thresholdZAndTrend;
-exports.thresholdZAndTrendSubtle = thresholdZAndTrendSubtle;
-exports.thresholdSubtleChange = thresholdSubtleChange;
-'''

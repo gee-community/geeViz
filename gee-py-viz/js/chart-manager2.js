@@ -1,4 +1,5 @@
 var center;var globalChartValues;
+var chartTextColor = '#FFF';
 var mapDiv = document.getElementById('map');
 function updateProgress(pct) {
     var elem = document.getElementById("Bar"); 
@@ -23,11 +24,69 @@ function downloadURI() {
 	    delete link;
 }
 }
+function downloadURI2(uri,uriName) {
+	if(uri != null && uri != undefined){
+	  var link = document.createElement("a");
+	  link.download = uriName + '.png';
+	  link.href = uri;
+	  link.click();
+	  // document.body.removeChild(link);
+	    delete link;
+}
+}
+for(var i = 0;i< 50;i++){
+	eval("var dataTableT"+i+";")
+	// eval("chartPopoutDiv"+i+".id = 'popoutDiv'+i")
+};
+var popoutI = 0;
+var queryPopout = document.createElement('div');
+
+var chartIDDict = {'time':'Year','id':'ID'}
+function openDivInNewTab(dataTableT){
+	// print('Opening: '	+dataTableT);
+	// title = 'test';
+	// xAxisLabel = 'test';
+	// var chartOptions = {
+	// 		title: title,
+	// 		titleTextStyle: { color:chartTextColor},
+	// 		height: 600,
+	// 		width: 1200,
+	// 		legend: { position: 'bottom',textStyle:{color: chartTextColor}},
+	// 		hAxis:{title:chartIDDict[xAxisLabel],titleTextStyle:{color: chartTextColor},textStyle:{color: chartTextColor}},
+	// 		vAxis:{title:'Values',titleTextStyle:{color: chartTextColor},textStyle:{color: chartTextColor}},
+	// 		backgroundColor: { fill: "#333" }
+	// 		}
+						
+	// var popoutDiv = document.createElement('DIV')
+	// var time = (new Date()).getTime();
+	// var id = 'div-' + time;
+	var id = 'query-container'
+	// popoutDiv.id = id;
+	// var chart = new google.visualization.LineChart(popoutDiv);
+	// chart.draw(dataTableT, chartOptions);
+
+	
+  	var wi = window.open();
+  	var html = $('#'+id).html();
+  	$(wi.document.body).html(html);
+}
+function clone(obj) {
+    if (null == obj || "object" != typeof obj) return obj;
+    var copy = obj.constructor();
+    for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
+    }
+    return copy;
+}
+
+
 var  getQueryImages = function(lng,lat){
 	var lngLat = [lng, lat];
+	popoutI = 0;
 	var outDict = {};
+	var coordNameEnd = ' lng: '+lng.toFixed(3).toString() + ' lat: '+lat.toFixed(3).toString()
 	$('#query-container').text('');
-	$('#query-container').append('Queried values for lng: '+lng.toFixed(3).toString() + ' lat: '+lat.toFixed(3).toString());
+	$('#query-container').append('Queried values for'+coordNameEnd);
 	var keys = Object.keys(queryObj);
 	var keysToShow = [];
 	keys.map(function(k){
@@ -42,41 +101,168 @@ var  getQueryImages = function(lng,lat){
 	
 
 		if(q[0]){
-			var img = ee.Image(q[1]);
-			var value = ee.Feature(img.sampleRegions(ee.FeatureCollection([ee.Feature(ee.Geometry.Point(lngLat))]), null, 30, 'EPSG:5070').first()).evaluate(function(value){
-				if(value != null){
-				value = value['properties'];
+			print('type');
+			// var eeType = q[1].getInfo().type;
+			q[1].evaluate(function(eeType){
+				eeType = eeType.type;
+			
+			print(eeType);
+			if(eeType === 'Image'){
+				var img = ee.Image(q[1]);
+				var value = ee.Feature(img.sampleRegions(ee.FeatureCollection([ee.Feature(ee.Geometry.Point(lngLat))]), null, 30, 'EPSG:4326').first()).evaluate(function(value){
+					if(value != null){
+						// console.log(value)
+					value = value['properties'];
 
-				// if(Object.keys(value).length > 1){value = null;show = false;}
-				// else{value = Object.values(value)[0];}
+					// if(Object.keys(value).length > 1){value = null;show = false;}
+					// else{value = Object.values(value)[0];}
+					
+				};
 				
-			};
-			
-				if(value === null){
-				$('#query-container').append("<div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>" +k+ ': null <br>');
-				}
-				else if(Object.keys(value).length === 1 ){
-				$('#query-container').append("<div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>" +k+ ': '+JSON.stringify(Object.values(value)[0]) + "<br>");
-				}
-				else{
-					$('#query-container').append("<div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>" +k+ ':<br>');
-					Object.keys(value).map(function(kt){
-						var v = value[kt].toFixed(2).toString();
-						$('#query-container').append( kt+ ': '+v + "<br>");
-					})
-				}
+					if(value === null){
+					$('#query-container').append("<div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>" +k+ ': null <br>');
+					}
+					else if(Object.keys(value).length === 1 ){
+					$('#query-container').append("<div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>" +k+ ': '+JSON.stringify(Object.values(value)[0]) + "<br>");
+					}
+					else{
+						$('#query-container').append("<div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>" +k+ ':<br>');
+						Object.keys(value).map(function(kt){
+							var v = value[kt].toFixed(2).toString();
+							$('#query-container').append( kt+ ': '+v + "<br>");
+						})
+					}
 
+				
+				
+				if(k == lastKey){
+					map.setOptions({draggableCursor:'help'});
+	 			map.setOptions({cursor:'help'});
+				}
+				})
 			
-			print(k + lastKey);
-			if(k == lastKey){
-				map.setOptions({draggableCursor:'help'});
- 			map.setOptions({cursor:'help'});
+			
 			}
-			})
+			else if(eeType === 'ImageCollection'){
+				var img = ee.ImageCollection(q[1]);
+				
+				img.getRegion(ee.Geometry.Point(lngLat), 30, 'EPSG:4326').evaluate(function(values){
+					if(values.length > 1){
+						var dataTableT = values;
+
+						var bandNames = ee.Image(img.first()).bandNames().getInfo()
+						var header = values[0]
+						values = values.slice(1,values.length);
+						
+						var xAxisLabel = 'time';
+						if(values[0][header.indexOf('time')] === null){
+							xAxisLabel = 'id';	
+						}
+						
+						var bandIndices = bandNames.map(function(bn){return header.indexOf(bn)});
+
+						var pullIndices = [header.indexOf(xAxisLabel)];
+						pullIndices = pullIndices.concat(bandIndices)
+						dataTableT = dataTableT.map(function(row){
+							var outLine = pullIndices.map(function(i){return row[i]})
+							
+							return outLine})
+						if(xAxisLabel === 'time'){
+							dataTableT = dataTableT.map(function(row){
+								var t = row[0];
+								row[0] = new Date(t);
+								return row
+							})
+						}
+					
+						
+						var data = google.visualization.arrayToDataTable(dataTableT);
+						var time = (new Date()).getTime();
+		     			var id = 'div-' + time;
+		     			var popout_id ='div-popout-' + time; 
+		     			
+		     			
+		     			
+		     			var chartOptions = {
+								title: k + coordNameEnd,
+								titleTextStyle: { color:chartTextColor},
+								height: '500',
+								width: '100%',
+								chartArea: {width:'85%',height:'80%'},
+								legend: { position: 'bottom',textStyle:{color: chartTextColor}},
+								hAxis:{title:chartIDDict[xAxisLabel],titleTextStyle:{color: chartTextColor},textStyle:{color: chartTextColor}},
+								vAxis:{title:'Values',titleTextStyle:{color: chartTextColor},textStyle:{color: chartTextColor}},
+								backgroundColor: { fill: "#333" }
+								}
+						// var chartOptionsPopout= clone(chartOptions);
+						// chartOptionsPopout.height = 600;
+						// chartOptionsPopout.width = 1200;
+		     			
+						$('#query-container').append("<div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>");
+						// $('#query-popout-container').append("<div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>");
+		     	// 		$('#query-container').append('<a href="https://earthengine.google.com/" target="_blank">\
+							 // <img src="images/popout.png" alt="Powered by Google Earth Engine" style="height:20px;width:20px;right:0%;background-color:rgba(200,200,200,0.7);border-radius: 5px;"\
+							 //      href="#" class "dual-range-slider-container" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click to learn more about Google Earth Engine">\
+							 //    </a>')
+						var popoutDivID = 'popoutDiv'+popoutI
+						eval('dataTableT'+popoutI + ' = dataTableT');
+						// eval('var chartPopout = new google.visualization.LineChart(chartPopoutDiv'+popoutI+');');
+						// chartPopout.draw(data, chartOptionsPopout);
+						var funString = 'openDivInNewTab()';
+						print(funString	);
+						$("#query-container").append('<input type="image" onclick = "'+funString	+'" style="height:20px;width:20px;" src="images/popout.png" alt="Powered by Google Earth Engine" />');
+		     			
+		     			// $("#query-container").append('<button class="button" onclick="openDivInNewTab('+id+');" style= "position:inline-block;float:right;">Close Chart')
+		     			var chartDiv = document.getElementById('query-container').appendChild(document.createElement('DIV'));
+		     			chartDiv.id = id
+		     			// var chartPopoutDiv = document.getElementById('query-popout-container').appendChild(document.createElement('DIV'));
+		     			// chartPopoutDiv.id = popout_id
+		     			$('#query-container').append("<div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>");
+		     			// $('#query-popout-container').append("<div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>");
+		     			
+		     			
+		     			
+		     			
+
+						var chart = new google.visualization.LineChart(chartDiv);
+						chart.draw(data, chartOptions);
+						$(window).resize(function(){
+  						drawChart();
+							});
+						// var chartPopout = new google.visualization.LineChart(chartPopoutDiv);
+						// chartPopout.draw(data, chartOptions);
+						
+						popoutI ++;
+						// var uriT = 'uri'+time;
+		    //  			var uriNameT = 'uriName'+time;
+		    //  			var csvNameT = 'csvName'+time;
+		    //  			var dataTableNameT = 'dataTableT' + time;
+		    //  			eval("var "+uriT+" = chart.getImageURI();");
+						// eval("var "+uriNameT+" = k+' ' +lng.toFixed(4).toString() + ' ' + lat.toFixed(4).toString() ;");
+						// eval("var "+csvNameT+" = uriName + '.csv';");
+						// eval("var "+dataTableNameT+ " = dataTableT;");
+
+						// $('#query-container').append('<br><br>')
+
+	 	   //     			$('#query-container').append('<button class="button" onclick="downloadURI2('+uriT+','+uriNameT+');" style= "position:inline-block;">Download PNG')
+	 	   //     			$('#query-container').append('<button class="button" onclick="exportToCsv('+csvNameT+', '+dataTableNameT+');" style= "position:inline-block;">Download CSV')
+	        			
+		        // document.getElementById('curve_chart').style.display = 'inline-block';
+		       
+		        // eval("var chart = new google.visualization."+chartType+"(document.getElementById('curve_chart'));")
+	    			}
+					// if(k == lastKey){
+					// 	map.setOptions({draggableCursor:'help'});
+		 		// 		map.setOptions({cursor:'help'});
+					// }
+				})
+				
+			}
 			
-			// outDict[k] = value;
+			})
 
 		}
+
 	})
 	
 	
@@ -85,7 +271,7 @@ var  getQueryImages = function(lng,lat){
 }
 function startQuery(){
 	map.setOptions({draggableCursor:'help'});
- 			map.setOptions({cursor:'help'});
+ 	map.setOptions({cursor:'help'});
 	google.maps.event.addDomListener(mapDiv,"dblclick", function (e) {
 			map.setOptions({draggableCursor:'progress'});
 			map.setOptions({cursor:'progress'});
@@ -104,16 +290,20 @@ function startQuery(){
   				});
 
 			marker.setMap(map);
+			sleep(2000);
 			getQueryImages(center.lng(),center.lat());
+
 
 		})
 	document.getElementById('query-container').style.display = 'block';
+
 }
 function stopQuery(){
 	print('stopping');
 	map.setOptions({draggableCursor:'hand'});
 	map.setOptions({cursor:'hand'});
 	$('#query-container').text('');
+
 	google.maps.event.clearListeners(mapDiv, 'dblclick');
 	map.setOptions({cursor:'hand'});
 	document.getElementById('query-container').style.display = 'none';
@@ -188,7 +378,7 @@ function Chart(){
 	document.getElementById('curve_chart').style.display = 'none';
 
 	// updateProgress(75);
-	var chartTextColor = '#FFF';
+	
 	var cssClassNames = {
     'headerRow': 'googleChartTable',
     'tableRow': 'googleChartTable',
@@ -198,7 +388,7 @@ function Chart(){
     'headerCell': 'googleChartTable',
     'tableCell': 'googleChartTable',
     'rowNumberCell': 'googleChartTable'};
-	
+
 	var chartOptions = {
 	          title: uriName,
 	          titleTextStyle: {
