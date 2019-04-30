@@ -30,6 +30,17 @@ def trackTasks():
         time.sleep(10)
         x+=1
 
+# Standard task tracker - prints number of ready and running tasks each 10 seconds
+def failedTasks():
+    tasks = ee.data.getTaskList()
+    failed = [i for i in tasks if i['state'] == 'FAILED']
+    failed_names = [[str(i['description']),str(timedelta(seconds = int(((time.time()*1000)-int(i['start_timestamp_ms']))/1000)))] for i in failed]
+    now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    print 'Failed names:'
+    for rn in failed: print rn
+
+
+
 #------------------------------------------------------------------------------
 #                  Cancel Tasks
 #------------------------------------------------------------------------------
