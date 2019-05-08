@@ -550,15 +550,21 @@ function addSerializedRasterToMap(item,viz,name,visible,label,fontColor,helpBox,
        var legendList = document.querySelector("legend-list");
       legendList.insertBefore(legendBreak,legendList.firstChild);
 
-      var legendKeys = Object.keys(viz.classLegendDict).reverse();
-      legendKeys.map(function(lk){
+      var legendLabels = viz.labels;
+      if(typeof(legendLabels) === 'string'){legendLabels  = legendLabels.split(',')};
+      var legendColors = viz.palette  
+      if(typeof(legendColors) === 'string'){legendColors  = legendColors.split(',')}
+      var zipped  = legendLabels.map(function(e, i) {
+          return [e, legendColors[i]];
+        }).reverse();
+      zipped.map(function(lc){
 
         var legend = document.createElement("ee-class-legend");
         legend.name = name;
         legend.helpBoxMessage = helpBox;
 
-        legend.classColor = viz.classLegendDict[lk];
-        legend.className = lk;
+        legend.classColor = lc[1];
+        legend.className = lc[0];
 
         var legendList = document.querySelector("legend-list");
         legendList.insertBefore(legend,legendList.firstChild);
@@ -581,8 +587,13 @@ function addSerializedRasterToMap(item,viz,name,visible,label,fontColor,helpBox,
     
     
     layerList.insertBefore(layer,layerList.firstChild);
+    var vizT = {};
+    ['bands', 'gain', 'bias', 'min', 'max', 'gamma', 'opacity', 'palette'].map(function(k){
+      if(viz[k] != undefined){vizT[k] = viz[k]}})
+    console.log(vizT)
+
     layerCount ++;
-    item.getMap(viz,function(eeLayer){
+    ee.ImageCollection(item).getMap(vizT,function(eeLayer){
         layer.setLayer(eeLayer);layer.setOpacity(layer.opacity,item);
     });
 }

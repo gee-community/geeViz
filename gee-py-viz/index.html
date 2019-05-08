@@ -34,7 +34,7 @@
     <!-- <title>Climate Viz</title> -->
     <title>GEE Python Visualization</title>
     <!-- <title>Forest Change Detection</title> -->
-    <link rel="icon" href="images/usfslogo.png">
+    <link rel="icon" href="images/RCR-logo.jpg">
 
     <!-- <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" /> -->
     <!-- <meta http-equiv="Pragma" content="no-cache" /> -->
@@ -189,7 +189,7 @@
     <script type="text/javascript" src="js/map-manager2.js"></script><!--Module for managing EE, area and distance calculation etc-->
 
     <script type="text/javascript" src="ee/run2.js"></script><!--Module for general EE code- place all EE code here to run on refresh-->
-    <script type="text/javascript" src="metadata/metadata-parser.js"></script><!--For parsing metadata-->
+ 
     <script type="text/javascript" src="js/chart-manager2.js"></script><!--Module for charting-->
     <script type="text/javascript" src="js/export-manager2.js"></script><!--Module for creating EE images for exporting- Place all EE code here for exporting EE objects-->
      
@@ -219,7 +219,7 @@
     Tools
   </button>
 
-  <div id="basic-tools-tab" class="collapse">
+  <div id="basic-tools-tab" class="collapse in">
         <div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>
         <input style='display:inline-block;' id="box1" name='cb' value='none' type="radio" checked=t rue onclick="toggleRadio(this.value);" />
         <label for="box1" style='display: inline-block;float: center;margin: 1px 0 2px 2px;color:#fff;font-weight: normal'>None</label>
@@ -247,7 +247,8 @@
         <label style='display: inline-block;float: center;margin: 1px 0 2px 2px;color:#fff;font-weight: normal;'
         href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Double click to inspect values of layers that are currently visible.  After double-clicking, panning can continue.   WARNING!!!- Extracting the data can take time, and re-double-clicking will just add to the queque"
         >Pixel Inspector (double-click)</label>
-        <div id = 'query-container' style = 'display:none;background-color:#333' ></div> 
+        <div id = 'query-container' style = 'display:none;background-color:#333;width:800px;' ></div> 
+
         <div style='width:100%;height:2px;border-radius:5px;margin:2px;background-color:#fff'></div>
 
         <div id = 'charting-container' style = 'display: none;width:100%;font-weight: normal;'>
@@ -345,14 +346,7 @@
     
     
     <div style="position:absolute;height:3%;left:70px;bottom:1%;right:0px">
-       <a href="http://www.fs.fed.us//" target="_blank">
-      <img src="images/usfslogo.png" alt="FS Logo" style="height:100%;background-color:rgba(200,200,200,0.7);border-radius: 5px;"
-      href="#" class 'dual-range-slider-container' rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click to learn more the US Forest Service">
-    </a>
-      <a href="https://www.fs.fed.us/gstc/" target="_blank">
-      <img src="images/GTAC_Logo.png" alt="GTAC Logo" style="height:100%;background-color:rgba(200,200,200,0.7);border-radius: 5px;"
-      href="#" class 'dual-range-slider-container' rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click to learn more about the Geospatial Technology and Applications Center (GTAC)">
-    </a>
+       
       <a href="https://www.redcastleresources.com/" target="_blank">
       <img src="images/RCR-logo.jpg" alt="RedCastle Inc. Logo" style="height:100%;background-color:rgba(200,200,200,0.7);border-radius: 5px;"
       href="#" class 'dual-range-slider-container' rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click to learn more about RedCastle Resources Inc.">
@@ -687,6 +681,6 @@
   </body>
 
 
-
+    
 
 </html>

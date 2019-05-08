@@ -1,60 +1,65 @@
+#Example of how to utilize the Python visualization tools
+#Uses the stock GEE NLCD assets and extracts the palette, names, and values
+#Then uses those to color the raster and create a legend using the addToClassLegend option
+
+#Import modules
 import os,sys
 sys.path.append(os.getcwd())
 
 from getImagesLib import *
-
+###########################################################
+#Bring in NLCD 2011
 nlcd = ee.Image('USGS/NLCD/NLCD2011')
+
+#Get the values, names, and palette
 landcover_class_values = nlcd.get('landcover_class_values').getInfo();
 landcover_class_names = nlcd.get('landcover_class_names').getInfo();
-name_values_zipped = [str(i[0]) + ' ' + i[1] for i in zip(landcover_class_values,landcover_class_names)]
 landcover_class_palette = nlcd.get('landcover_class_palette').getInfo();
+
+#Zip the names and values together for the final legend names
+name_values_zipped = [str(i[0]) + ' ' + i[1] for i in zip(landcover_class_values,landcover_class_names)]
+
+#Fill any missing values in the NLCD classes so stretch is applied correctly 
 landcover_class_palette_filled = []
+landcover_class_labels_filled = []
 for i in range(landcover_class_values[0],landcover_class_values[-1]+1):
 	if i in landcover_class_values:
 		landcover_class_palette_filled.append(landcover_class_palette[landcover_class_values.index(i)])
-	else:landcover_class_palette_filled.append('000')
+		landcover_class_labels_filled.append(name_values_zipped[landcover_class_values.index(i)])
+	else:
+		landcover_class_palette_filled.append('000')
+		landcover_class_labels_filled.append('NA')
 
+#Add the layers to the map
+#For classes to show up in legend, need to set the min and max values in the palette
+#Then provide a list of labels of the same length as palette
+#Then set 'addToClassLegend' to 'true'
+#If nothing is to be added to the legend, set 'addToLegend' to 'false'
+Map.addLayer(nlcd.select([0]),{'min':landcover_class_values[0],'max':landcover_class_values[-1],'palette':landcover_class_palette_filled,'labels':landcover_class_labels_filled,'addToClassLegend':'true'},'NLCD 2011 Landcover/Landuse',False)
 
-classLegendDict = dict(zip(name_values_zipped, landcover_class_palette))
+# Continuous data automatically have a legend added
+Map.addLayer(nlcd.select([2]),{'min':20,'max':80,'palette':'555,0A0'},'NLCD 2011 TCC',False)
 
-
+#Another example
 mtbs = ee.ImageCollection('projects/USFS/LCMS-NFS/CONUS-Ancillary-Data/MTBS')
-# print(landcover_class_values[0],landcover_class_values[-1])
-Map.addLayer(nlcd.select([0]),{'min':landcover_class_values[0],'max':landcover_class_values[-1],'palette':','.join(landcover_class_palette_filled),'addToClassLegend':'true','classLegendDict':classLegendDict},'NLCD 2016 Landcover/Landuse',True)
-Map.addLayer(nlcd.select([2]),{'min':20,'max':80,'palette':'555,0A0'},'NLCD 2016 TCC',True)
-
-# print(nlcd.getInfo())
-# tcc = ee.Image('USGS/NLCD/NLCD2011').select([2])
-# tcc = tcc.add(10).divide(10).divide(2)
-studyArea = ee.Geometry.Polygon(\
-        [[[-111.7654963662082, 41.06903449786562],\
-          [-111.7654963662082, 40.18520498309448],\
-          [-111.0074397255832, 40.18520498309448],\
-          [-111.0074397255832, 41.06903449786562]]])
-# studyArea = ee.Geometry.Point([-142.99413098899095, 60.1571492360815])
-
-startYear = 2016
-endYear = 2018
-# tsNear  = ee.ImageCollection(getLandsatWrapper(studyArea,startYear,endYear,190,250,1,[1],performCloudScoreOffset = False,resampleMethod = 'near')[1])
-# tsBilinear  = ee.ImageCollection(getLandsatWrapper(studyArea,startYear,endYear,190,250,1,[1],performCloudScoreOffset = False,resampleMethod = 'bilinear')[1])
-# tsCubic  = ee.ImageCollection(getLandsatWrapper(studyArea,startYear,endYear,190,250,1,[1],performCloudScoreOffset = False,resampleMethod = 'bicubic')[1])
+mtbs = mtbs.map(lambda img: img.updateMask(img.neq(0)).select([0],['Burn Severity']).byte())
 
 
-tsNear  = getModisData(startYear,endYear,190,250,resampleMethod = 'near')
-tsBilinear  = getModisData(startYear,endYear,190,250,resampleMethod = 'bilinear')
-tsCubic  = getModisData(startYear,endYear,190,250,resampleMethod = 'bicubic')
+mtbsColors = ['006400','7fffd4','ffff00','ff0000','7fff00','ffffff']
+mtbsLabels = ['1 Unburned to Low','2 Low','3 Moderate','4 High','5 Increased Greenness','6 Non-Processing Area Mask']
 
-# out =  getSentinel2Wrapper(studyArea,startYear,endYear,190,250,1,[1,5,1],performCloudScoreOffset = False,resampleMethod = 'near')
-# ts = ee.ImageCollection(out[1])
+severityViz = {'min':1,'max':6,'palette':mtbsColors	,'labels':mtbsLabels, 'addToClassLegend': 'true'}
 
 
-for yr in range(startYear,endYear+1):
-    near = tsNear.filter(ee.Filter.calendarRange(yr,yr,'year')).median()
-    bilinear = tsBilinear.filter(ee.Filter.calendarRange(yr,yr,'year')).median().reproject('EPSG:5070',None,250)
-    cubic = tsCubic.filter(ee.Filter.calendarRange(yr,yr,'year')).median().reproject('EPSG:5070',None,250)
-    # Map.addLayer(ee.Image(tcc),{},str(yr),False)
-    Map.addLayer(near,vizParamsFalse,'Near Raw ' +str(yr),False)
-    Map.addLayer(near.reproject('EPSG:5070',None,250),vizParamsFalse,'Near ' +str(yr),False)
-    Map.addLayer(bilinear,vizParamsFalse,'Bilinear ' +str(yr),False)
-    Map.addLayer(cubic,vizParamsFalse,'Cubic ' +str(yr),False)
+Map.addLayer(mtbs.max(),severityViz,'MTBS 1984-2016 Highest Severity',False)
+
+
+#Bring in the JRS Surface water data
+water = ee.ImageCollection('JRC/GSW1_0/YearlyHistory')
+
+waterColors = ['ffffff','99d9ea','0000ff']
+waterLabels = ['1 Not Water','2 Seasonal Water','3 Permanent Water']
+
+Map.addLayer(water,{'min':1,'max':3,'palette':waterColors,'labels':waterLabels	,'addToClassLegend': 'true'},'JRC Surface Water',False)
+
 Map.launchGEEVisualization()

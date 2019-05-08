@@ -232,6 +232,13 @@ def addYearJulianDayBand(img):
   yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian'])
   
   return img.addBands(yj).float()
+def addFullYearJulianDayBand(img):
+  d = ee.Date(img.get('system:time_start'));
+  julian = ee.Number(d.getRelative('day','year')).add(1).format('%03d')
+  y = ee.String(d.get('year'))
+  yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian']).int64();
+  
+  return img.addBands(yj).float()
 
 
 ################################################################
@@ -1077,7 +1084,7 @@ def compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer = 
 
     yearsTT = z.map(zipper).flatten()
 
-    print('Weighted composite years for year:',year,yearsTT.getInfo())
+    # print('Weighted composite years for year:',year,yearsTT.getInfo())
     
     #Iterate across each year in list
     def yrGetter(yr):
@@ -1847,7 +1854,7 @@ def getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,\
 def getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,\
   toaOrSR = 'SR',includeSLCOffL7 = False,defringeL5 = False,applyCloudScore = False,applyFmaskCloudMask = True,applyTDOM = False,\
   applyFmaskCloudShadowMask = True,applyFmaskSnowMask = False,\
-  cloudoudScoreThresh = 10,cloudScorePctl = 10,\
+  cloudoudScoreThresh = 10,performCloudScoreOffset = True,cloudScorePctl = 10,\
   zScoreThresh = -1,shadowSumThresh = 0.35,\
   contractPixels = 1.5,dilatePixels = 3.5,resampleMethod = 'near'):
   
@@ -1908,10 +1915,10 @@ def getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
   
   
   #Add zenith and azimuth
-  if correctIllumination:
-    def zAzAdder(img):
-      return addZenithAzimuth(img,toaOrSR)
-    ls = ls.map(addZenithAzimuth)
+  # if correctIllumination:
+  #   def zAzAdder(img):
+  #     return addZenithAzimuth(img,toaOrSR)
+  #   ls = ls.map(addZenithAzimuth)
   
   #Add common indices- can use addIndices for comprehensive indices 
   #or simpleAddIndices for only common indices
@@ -2046,7 +2053,7 @@ def getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,\
     exportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2']
     exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,\
     ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,'TOA',weights,\
-                  applyCloudScore, 'NA',applyTDOM,'NA','NA','NA',correctIllumination,null)
+                  applyCloudScore, 'NA',applyTDOM,'NA','NA','NA',correctIllumination,None)
   
   
   return [s2s,ts]
