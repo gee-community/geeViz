@@ -262,3 +262,4 @@ __pycache__/
 
 # template's run.js
 template/ee/run.js
+gee-py-viz/ee/run2.js
