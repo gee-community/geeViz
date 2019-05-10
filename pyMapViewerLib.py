@@ -13,9 +13,20 @@ ee.Initialize()
 #Do not change
 cwd = os.getcwd()
 
-template = cwd+'/gee-py-viz/index.html'
-ee_run = cwd +'/gee-py-viz/ee/run2.js'
-local_server_port = 8004
+paths = sys.path
+
+gee_py_modules_dir = ''
+for path in paths:
+    if path.find('lib\\site-packages')> -1:
+        if os.path.exists(path +'/gee_py_modules/'):
+                gee_py_modules_dir = path
+
+py_viz_dir = gee_py_modules_dir+'/gee_py_modules/'
+os.chdir(py_viz_dir)
+print(os.getcwd())
+template = py_viz_dir + 'gee-py-viz/index.html'
+ee_run =  py_viz_dir+'gee-py-viz/ee/run2.js'
+local_server_port = 8003
 
 
 
@@ -88,7 +99,6 @@ class mapper:
         oo = open(ee_run,'w')
         oo.writelines(lines)
         oo.close()
-        # print 'Open web browser to http://localhost:'+str(local_server_port) + '/template/'
         if not isPortActive(local_server_port):
             print('Starting local web server at: http://localhost:'+str(local_server_port)+ '/gee-py-viz/')
             # run_local_server(local_server_port)

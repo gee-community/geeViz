@@ -6,7 +6,7 @@
 import os,sys
 sys.path.append(os.getcwd())
 
-from getImagesLib import *
+from gee_py_modules.getImagesLib import *
 ###########################################################
 #Bring in NLCD 2011
 nlcd = ee.Image('USGS/NLCD/NLCD2011')

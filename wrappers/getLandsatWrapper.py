@@ -2,7 +2,7 @@ import os,sys
 sys.path.append(os.getcwd())
 
 #Module imports
-from  getImagesLib import *
+from  gee_py_modules.getImagesLib import *
 ####################################################################################################
 #Define user parameters:
 

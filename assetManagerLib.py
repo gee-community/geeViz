@@ -93,7 +93,7 @@ def upload_to_gcs(image_dir,gs_bucket,image_extension = '.tif',copy_or_sync = 'c
         call_str = 'gsutil.cmd -m cp "' + image_dir + '*'+image_extension+'" '+gs_bucket
     else:
         call_str = 'gsutil.cmd -m  rsync "' +   image_dir  + '" ' + gs_bucket
-    print call_str
+    print(call_str)
     call = subprocess.Popen(call_str)
     call.wait()
     
@@ -126,7 +126,7 @@ def upload_to_gee(image_dir, gs_bucket,asset_dir,image_extension = '.tif', resam
         asset_name = asset_dir + base(gs_file)
         if not ee_asset_exists(asset_name):
 
-            print 'Importing asset:',asset_name
+            print('Importing asset:',asset_name)
             properties = property_list[i]
 
             #Set up sources
@@ -142,23 +142,23 @@ def upload_to_gee(image_dir, gs_bucket,asset_dir,image_extension = '.tif', resam
                           'properties':properties,
                           "pyramidingPolicy": resample_method
                           }
-            print request
+            print(request)
             #Get a task id
             taskid = ee.data.newTaskId(1)[0]
-            print taskid
+            print(taskid)
             #Submit task
             message =ee.data.startIngestion(taskid, request)
-            print 'Task message:',message
+            print('Task message:',message)
         else:
-            print asset_name,'already exists'
+            print(asset_name,'already exists')
         i+=1
 
     #Keep track of tasks once they are all submitted
     task_count = countTasks(False)
     while task_count >= 1:
         running,ready = countTasks(True)
-        print running, 'tasks running at:',now()
-        print ready, 'tasks ready at:',now()
+        print(running, 'tasks running at:',now())
+        print(ready, 'tasks ready at:',now())
         task_count = running+ready
         time.sleep(5)
 
@@ -201,15 +201,15 @@ def walkFolders(folder,images = []):
     assets = ee.data.getList({'id':folder})
     folders = [str(i['id']) for i in assets if i['type'] == 'Folder']
     imagesT = [str(i['id']) for i in assets if i['type'] == 'Image']
-    print imagesT
+    print(imagesT)
     for i in imagesT:
         if i not in images:
             images.append(i)
     iteration = 2
     while len(folders)>0:
-        print 'Starting iteration',iteration
+        print('Starting iteration',iteration)
         for folder in folders:
-            print folder
+            print(folder)
             assets = ee.data.getList({'id':folder})
             folders = [str(i['id']) for i in assets if i['type'] == 'Folder']
             imagesT = [str(i['id']) for i in assets if i['type'] == 'Image']
@@ -227,15 +227,15 @@ def walkFoldersTables(folder, tables = []):
     assets = ee.data.getList({'id':folder})
     folders = [str(i['id']) for i in assets if i['type'] == 'Folder']
     tablesT = [str(i['id']) for i in assets if i['type'] == 'Table']
-    print tablesT
+    print(tablesT)
     for i in tablesT:
         if i not in tables:
             tables.append(i)
     iteration = 2
     while len(folders)>0:
-        print 'Starting iteration',iteration
+        print('Starting iteration',iteration)
         for folder in folders:
-            print folder
+            print(folder)
             assets = ee.data.getList({'id':folder})
             folders = [str(i['id']) for i in assets if i['type'] == 'Folder']
             tablesT = [str(i['id']) for i in assets if i['type'] == 'Table']
@@ -251,7 +251,7 @@ def walkFoldersTables(folder, tables = []):
 #Make sure the directory exists
 def check_dir(in_path):
     if os.path.exists(in_path) == False:
-        print 'Making dir:', in_path
+        print('Making dir:', in_path)
         os.makedirs(in_path)
 ##############################################################################################
 def year_month_day_to_seconds(year_month_day):
@@ -263,8 +263,8 @@ def limitTasks(taskLimit):
     taskCount = countTasks()
     while taskCount > taskLimit:
         running,ready = countTasks(True)
-        print running, 'tasks running at:',now()
-        print ready, 'tasks ready at:',now()
+        print(running, 'tasks running at:',now())
+        print(ready, 'tasks ready at:',now())
         taskCount = running+ready
         time.sleep(10)
 #######################################################################################
@@ -287,10 +287,10 @@ def ee_asset_exists(path):
 #Author: Lukasz Tracewski
 def create_image_collection(full_path_to_collection):
     if ee_asset_exists(full_path_to_collection):
-        print "Collection "+full_path_to_collection+" already exists",
+        print("Collection "+full_path_to_collection+" already exists")
     else:
         ee.data.createAsset({'type': ee.data.ASSET_TYPE_IMAGE_COLL}, full_path_to_collection)
-        print 'New collection '+full_path_to_collection+' created'
+        print('New collection '+full_path_to_collection+' created')
 
 def verify_path(path):
     response = ee.data.getInfo(path)

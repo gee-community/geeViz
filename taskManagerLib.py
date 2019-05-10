@@ -21,12 +21,12 @@ def trackTasks():
         running = [i for i in tasks if i['state'] == 'RUNNING']
         running_names = [[str(i['description']),str(timedelta(seconds = int(((time.time()*1000)-int(i['start_timestamp_ms']))/1000)))] for i in running]
         now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-        print len(ready),'tasks ready',now
-        print len(running),'tasks running',now
-        print 'Running names:'
-        for rn in running_names:print rn
-        print
-        print
+        print(len(ready),'tasks ready',now)
+        print(len(running),'tasks running',now)
+        print('Running names:')
+        for rn in running_names:print(rn)
+        print()
+        print()
         time.sleep(10)
         x+=1
 
@@ -36,8 +36,8 @@ def failedTasks():
     failed = [i for i in tasks if i['state'] == 'FAILED']
     failed_names = [[str(i['description']),str(timedelta(seconds = int(((time.time()*1000)-int(i['start_timestamp_ms']))/1000)))] for i in failed]
     now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-    print 'Failed names:'
-    for rn in failed: print rn
+    print('Failed names:')
+    for rn in failed: print(rn)
 
 
 
@@ -84,7 +84,7 @@ def timeTaskList(starttime, endtime):
 def jobCompletionTracker(starttime, endtime, check_interval):
     thisTasklist = timeTaskList(starttime,endtime)
     for i in thisTasklist:
-        print i['description'], i['state']
+        print(i['description'], i['state'])
     currentJobs = 1
     while currentJobs > 0:
         time.sleep(check_interval)
@@ -97,9 +97,9 @@ def jobCompletionTracker(starttime, endtime, check_interval):
         currentJobs = len(ready) + len(running)
         
         print(' ')
-        print datetime.now(), ':'
-        print len(ready),' tasks ready'
-        print len(running), ' tasks running'
+        print(datetime.now(), ':')
+        print(len(ready),' tasks ready')
+        print(len(running), ' tasks running')
                
     return [ready, running, completed, failed, cancelled, thisTasklist]
 

@@ -5,7 +5,7 @@
 # Adapted from changeDetectionLib.js
 # I have only been converting functions as I use them. Unconverted functions are included at the bottom of this file.
 
-import getImagesLib as getImageLib
+import gee_py_modules.getImagesLib as getImageLib
 import sys, math, ee
 
 #-------------------------------------------------------------------------
