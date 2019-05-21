@@ -1,4 +1,4 @@
-from gee_py_modules.pyMapViewerLib import *
+from gee_viz.pyMapViewerLib import *
 import math
 ######################################################################
 #Module for getting Landsat, Sentinel 2 and MODIS images/composites

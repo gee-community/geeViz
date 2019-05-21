@@ -1,5 +1,5 @@
-
-__version__ = '2019.5.4'
+#Version format yyyy.mm.n
+__version__ = '2019.05.0'
 
 
 # import getImagesLib

@@ -18,14 +18,14 @@ paths = sys.path
 gee_py_modules_dir = ''
 for path in paths:
     if path.find('lib\\site-packages')> -1:
-        if os.path.exists(path +'/gee_py_modules/'):
+        if os.path.exists(path +'/gee_viz/'):
                 gee_py_modules_dir = path
 
-py_viz_dir = gee_py_modules_dir+'/gee_py_modules/'
+py_viz_dir = gee_py_modules_dir+'/gee_viz/'
 os.chdir(py_viz_dir)
 print(os.getcwd())
-template = py_viz_dir + 'gee-py-viz/index.html'
-ee_run =  py_viz_dir+'gee-py-viz/ee/run2.js'
+template = py_viz_dir + 'geeViz/index.html'
+ee_run =  py_viz_dir+'geeViz/ee/run2.js'
 local_server_port = 8003
 
 
@@ -100,16 +100,16 @@ class mapper:
         oo.writelines(lines)
         oo.close()
         if not isPortActive(local_server_port):
-            print('Starting local web server at: http://localhost:'+str(local_server_port)+ '/gee-py-viz/')
+            print('Starting local web server at: http://localhost:'+str(local_server_port)+ '/geeViz/')
             # run_local_server(local_server_port)
             # subprocess.Popen('python -m SimpleHTTPServer '+str(local_server_port),shell = True)
             t = Thread(target = run_local_server,args = (local_server_port,))
             t.start()
 
         else:
-            print('Local web server at: http://localhost:'+str(local_server_port)+'/gee-py-viz/ already serving.')
+            print('Local web server at: http://localhost:'+str(local_server_port)+'/geeViz/ already serving.')
             print('Refresh browser instance')
-        webbrowser.open('http://localhost:'+str(local_server_port)+'/gee-py-viz/',new = 1)
+        webbrowser.open('http://localhost:'+str(local_server_port)+'/geeViz/',new = 1)
         
     def clearMap(self):
         self.idDictList = []
