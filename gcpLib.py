@@ -1,3 +1,33 @@
+"""
+   Copyright 2019 Leah Campbell
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+"""
+   Copyright 2019 Leah Campbell
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
 ###################################################################################
 #                   GCPLIB.PY
 ####################################################################################
@@ -9,9 +39,6 @@ import os, subprocess
 #------------------------------------------------------------------------------
 #                   USING GSUTIL
 #------------------------------------------------------------------------------
-#gsutil_dir = e.g., 'C:/Users/leahcampbell/home/scripts' - where gsutil.cmd lives
-#bucket_name = 'training_data_tables'
-
 # download training tables from google cloud storage to local directory
 def download_to_local(gsutil_dir, bucket_name, trainingDataPath, exportNamePrefix = ''):
     currentDir = os.getcwd()
@@ -26,22 +53,3 @@ def clearBucket(gsutil_dir, bucket_name):
     os.chdir(gsutil_dir)
     subprocess.Popen('gsutil.cmd rm -v gs://'+bucket_name+'/*').wait()
     os.chdir(currentDir)
-#------------------------------------------------------------------------------
-#                   USING GOOGLE-CLOUD-STORAGE
-#------------------------------------------------------------------------------
-#localPath = 'Z:/Projects/06_LCMS_4_NFS/R4/08_BridgerTetonNF/01_TrainingData'
-#bucket_name = 'training_data_tables'
-#table_id='LCMS-BT-Export'
-#jsonPath = 'C:\Users\leahcampbell\home\scripts\gcloud_service_accounts\LCMS-17c672d969ba.json'
-
-## Download training tables from Cloud Storage to the NAS using google-cloud-storage module
-def downloadFromBucket(jsonPath, localPath, bucket_name, table_id = None):
-    from google.cloud import storage
-    
-    storage_client = storage.Client.from_service_account_json(jsonPath)
-    bucket=storage_client.get_bucket(bucket_name)
-    blobs=bucket.list_blobs()
-    blobs=bucket.list_blobs(prefix=table_id, delimiter='/') #List all objects that satisfy the filter.
-    for blob in blobs:
-        print(blob.name)
-        blob.download_to_filename(localPath+'/'+blob.name)

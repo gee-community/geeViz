@@ -1,7 +1,9 @@
-#Version format yyyy.mm.n
-__version__ = '2019.05.0'
+
+__author__ = 'Ian Housman'
+__email__ = 'ian.housman@gmail.com'
+
+#Version format yyyy.m.n
+__version__ = '2019.5.1'
 
 
-# import getImagesLib
-# import pyMapViewerLib
-# import changeDetectionLib
+

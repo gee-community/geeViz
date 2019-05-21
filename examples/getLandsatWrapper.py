@@ -1,8 +1,11 @@
+#Example of how to get Landsat data using the getImagesLib and view outputs using the Python visualization tools
+#Acquires Landsat data and then adds them to the viewer
+####################################################################################################
 import os,sys
 sys.path.append(os.getcwd())
 
 #Module imports
-from  gee_viz.getImagesLib import *
+from  geeViz.getImagesLib import *
 ####################################################################################################
 #Define user parameters:
 
@@ -199,4 +202,4 @@ outline = empty.paint(**paintArgs);
 Map.addLayer(outline, {'palette': '0000FF','addToLegend':'false'}, "Study Area", False)
 ####################################################################################################
 ####################################################################################################
-Map.launchGEEVisualization()
+Map.view()

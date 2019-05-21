@@ -1,4 +1,22 @@
-from gee_viz.pyMapViewerLib import *
+"""
+   Copyright 2019 Ian Housman
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+#Script to help with data prep, analysis, and delivery from GEE
+#Intended to work within the geeViz package
+######################################################################
+from geeViz.geeView import *
 import math
 ######################################################################
 #Module for getting Landsat, Sentinel 2 and MODIS images/composites
@@ -2059,23 +2077,6 @@ def getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,\
   return [s2s,ts]
 
 
-# g = ee.Geometry.Polygon(\
-#         [[[-107.65431394109078, 39.088573472024486],\
-#            [-109.36818112859078, 35.5781084059458],\
-#            [-108.64308347234078, 35.16602548916899],\
-#            [-107.08302487859078, 38.575083190487966]]])
-# s2s, ts = getSentinel2Wrapper(g,2016,2018,190,250,\
-#   timebuffer = 1,weights = [1,5,1],compositingMethod = 'medoid',\
-#   applyQABand = False,applyCloudScore = True,applyShadowShift = False,applyTDOM = True,\
-#   cloudScoreThresh = 10,performCloudScoreOffset = True,cloudScorePctl = 10,\
-#   cloudHeights =ee.List.sequence(500,10000,500),\
-#   zScoreThresh = -1,shadowSumThresh = 0.35,\
-#   contractPixels = 1.5,dilatePixels = 3.5,\
-#   correctIllumination = False,correctScale = 250,\
-#   exportComposites = False,outputName = 'Sentinel2-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = 'None',scale = 30)
-# print(ts.size().getInfo())
-# Map.addLayer(ee.Image(ts.first()),vizParamsFalse,'s2')
-# Map.launchGEEVisualization()
 
 #########################################################################
 #########################################################################
