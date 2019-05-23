@@ -1,9 +1,9 @@
-# GTAC GEE Python Modules
-> A repository of GEE Python code modules for general data processing and analysis
+# GEE Visualization Python Modules
+> A repository of GEE Python code modules for general data processing, analysis, and visualization
 
-> [Can be accessed in Bitbucket](https://ihousman@bitbucket.org/ihousman/gee-py-modules.git)
+> [Can be accessed in Bitbucket](https://bitbucket.org/ihousman/gee-viz)
 
-> [Or within the FS GitHub instance](https://code.fs.usda.gov/Geospatial/gee-py-modules.git)
+> [Or within the FS GitHub instance](https://code.fs.usda.gov/Geospatial/gee-viz)
 ## Primary POCs
 
 Ian Housman- ihousman@fs.fed.us
@@ -16,10 +16,10 @@ Bonnie Ruefenacht- bruefenacht@fs.fed.us
 1. Become a trusted Google Earth Engine (GEE) tester (<https://signup.earthengine.google.com/#!/>)
 2. Install the Python GEE package (`pip install earthengine-api`)
 3. Authenticate using the GEE cli in a cmd prompt (`earthengine authenticate`)
-4. Clone this repository (`git clone https://ihousman@bitbucket.org/ihousman/gee-py-modules.git`)
+4. Clone this repository (`git clone https://bitbucket.org/ihousman/gee-viz`)
 5. To stay up to date, pull the latest commit (`git pull origin master`)
-6. This repository is also available within the FS gitHub instance (<https://code.fs.usda.gov/Geospatial/gee-py-modules.git>)
-   * To add this instance to your local git instance execute `remote add github https://code.fs.usda.gov/Geospatial/gee-py-modules.git` in a git bash
+6. This repository is also available within the FS gitHub instance (<https://code.fs.usda.gov/Geospatial/gee-viz>)
+   * To add this instance to your local git instance execute `remote add https://code.fs.usda.gov/Geospatial/gee-viz` in a git bash
    * Now you can pull the latest from your origin (`git pull origin master`) or github (`git pull github master`)
 
 

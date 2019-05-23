@@ -1,13 +1,13 @@
 #Example of how to utilize the Python visualization tools
 #Uses the stock GEE NLCD assets and extracts the palette, names, and values
 #Then uses those to color the raster and create a legend using the addToClassLegend option
-
+####################################################################################################
 #Import modules
 import os,sys
 sys.path.append(os.getcwd())
 
-from getImagesLib import *
-###########################################################
+from geeViz.getImagesLib import *
+####################################################################################################
 #Bring in NLCD 2011
 nlcd = ee.Image('USGS/NLCD/NLCD2011')
 
@@ -44,13 +44,13 @@ Map.addLayer(nlcd.select([2]),{'min':20,'max':80,'palette':'555,0A0'},'NLCD 2011
 mtbs = ee.ImageCollection('projects/USFS/LCMS-NFS/CONUS-Ancillary-Data/MTBS')
 mtbs = mtbs.map(lambda img: img.updateMask(img.neq(0)).select([0],['Burn Severity']).byte())
 
-
+#Set up MTBS legend and color properties
 mtbsColors = ['006400','7fffd4','ffff00','ff0000','7fff00','ffffff']
 mtbsLabels = ['1 Unburned to Low','2 Low','3 Moderate','4 High','5 Increased Greenness','6 Non-Processing Area Mask']
 
 severityViz = {'min':1,'max':6,'palette':mtbsColors	,'labels':mtbsLabels, 'addToClassLegend': 'true'}
 
-
+#Add it to the map
 Map.addLayer(mtbs.max(),severityViz,'MTBS 1984-2016 Highest Severity',False)
 
 
@@ -62,4 +62,5 @@ waterLabels = ['1 Not Water','2 Seasonal Water','3 Permanent Water']
 
 Map.addLayer(water,{'min':1,'max':3,'palette':waterColors,'labels':waterLabels	,'addToClassLegend': 'true'},'JRC Surface Water',False)
 
-Map.launchGEEVisualization()
+#Final step is to launch the viewer
+Map.view()
