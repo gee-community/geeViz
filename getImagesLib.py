@@ -2286,7 +2286,7 @@ def getPhaseAmplitudePeak(coeffs,t0 = 0,t1 = 1):
     intercept = modelCoeffs.select('.*_intercept')
     harmCoeffs = modelCoeffs.select('.*_200_year')
     outName = ee.String(ee.String(pm.get(1)).split('_').get(0))
-    sign = ee.Dictionary(changeDirDict).get(outName)
+    sign = ee.Number(ee.Dictionary(changeDirDict).get(outName)).multiply(-1)
   
     amplitude = harmCoeffs.select([1]).hypot(harmCoeffs.select([0]))\
               .multiply(2)\

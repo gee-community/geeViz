@@ -1,3 +1,6 @@
+#Example of how to get Sentinel 2 data using the getImagesLib and view outputs using the Python visualization tools
+#Acquires Sentinel 2 data and then adds them to the viewer
+####################################################################################################
 import os,sys
 sys.path.append(os.getcwd())
 
