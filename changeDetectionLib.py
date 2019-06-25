@@ -31,6 +31,20 @@ def multBands(img,distDir,by):
   out  = ee.Image(out.copyProperties(img,['system:time_start']).copyProperties(img))
   return out
 
+# Helper to multiply new baselearner format values (LandTrendr & Verdet) by the appropriate amount when importing
+# Duration is the only band that does not get multiplied by 0.0001 upon import.
+def LT_VT_multBands(img):
+    fitted = img.select('.*_fitted').multiply(0.0001)
+    slope = img.select('.*_slope').multiply(0.0001)
+    diff = img.select('.*_diff').multiply(0.0001)
+    mag = img.select('.*_mag').multiply(0.0001)
+    dur = img.select('.*_dur')
+    out = dur.addBands(fitted).addBands(slope).addBands(diff).addBands(mag)
+    out  = out.copyProperties(img,['system:time_start'])\
+              .copyProperties(img)
+    return out
+
+
 def addToImage(img,howMuch):
   out = img.add(ee.Image(howMuch))
   out  = ee.Image(out.copyProperties(img,['system:time_start']).copyProperties(img))
