@@ -5,7 +5,7 @@
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+       http:#www.apache.org/licenses/LICENSE-2.0
 
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
@@ -203,6 +203,41 @@ def getLTvertStack(LTresult,run_params):
     
   return ltVertStack                               # return the stack
 
+
+#Adapted version for converting sorted array to image
+def getLTStack(LTresult, maxVertices, bandNames):
+  
+  nBands = len(bandNames)
+  emptyArray = []                              # make empty array to hold another array whose length will vary depending on maxSegments parameter    
+  vertLabels = []                              # make empty array to hold band names whose length will vary depending on maxSegments parameter 
+  for i in range(1, maxVertices+1):              # loop through the maximum number of vertices in segmentation and fill empty arrays
+    vertLabels.append(str(i))            # make a band name for given vertex
+    emptyArray.append(-32768)                  # fill in emptyArray
+
+  #Set up empty array list
+  emptyArrayList = []
+  for i in range(1, nBands+1):
+    emptyArrayList.append(emptyArray)
+
+  zeros = ee.Image(ee.Array(emptyArrayList))        # make an image to fill holes in result 'LandTrendr' array where vertices found is not equal to maxSegments parameter plus 1
+                               
+  
+  lbls = [bandNames, vertLabels] # labels for 2 dimensions of the array that will be cast to each other in the final step of creating the vertice output 
+  
+          # slices out the 4th row of a 4 row x N col (N = number of years in annual stack) matrix, which identifies vertices - contains only 0s and 1s, where 1 is a vertex (referring to spectral-temporal segmentation) year and 0 is not
+  
+  ltVertStack = LTresult.addBands(zeros)\
+                        .toArray(1)\
+                        .arraySlice(1, 0, maxVertices)\
+                        .arrayFlatten(lbls, '')      
+  # Line by line comments taken from call above
+  # LTresult:                       # uses the sliced out isVert row as a mask to only include vertice in this data - after this a pixel will only contain as many "bands" are there are vertices for that pixel - min of 2 to max of 7. 
+  # .addBands(zeros):               # ...adds the 3 row x 7 col 'zeros' matrix as a band to the vertOnly array - this is an intermediate step to the goal of filling in the vertOnly data so that there are 7 vertice slots represented in the data - right now there is a mix of lengths from 2 to 7
+  # .toArray(1):                    # ...concatenates the 3 row x 7 col 'zeros' matrix band to the vertOnly data so that there are at least 7 vertice slots represented - in most cases there are now > 7 slots filled but those will be truncated in the next step
+  # .arraySlice(1, 0, maxVertices): # ...before this line runs the array has 3 rows and between 9 and 14 cols depending on how many vertices were found during segmentation for a given pixel. this step truncates the cols at 7 (the max verts allowed) so we are left with a 3 row X 7 col array
+  # .arrayFlatten(lbls, ''):        # ...this takes the 2-d array and makes it 1-d by stacking the unique sets of rows and cols into bands. there will be 7 bands (vertices) for vertYear, followed by 7 bands (vertices) for rawVert, followed by 7 bands (vertices) for fittedVert, according to the 'lbls' list
+  return ltVertStack.updateMask(ltVertStack.neq(-32768))
+
 #Function to wrap landtrendr processing
 def landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,run_params,distParams,mmu):
   # startYear = 1984#ee.Date(ee.Image(processedComposites.first()).get('system:time_start')).get('year').getInfo()
@@ -243,10 +278,318 @@ def landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,ru
   #Convert to single image
   vertStack = getLTvertStack(rawLT,run_params)
   return [lt,distImg,fittedCollection,vertStack]
+#############################################/
+#Function to parse stack from LANDTRENDR or VERDET into image collection
+def fitStackToCollection(stack, maxSegments,startYear,endYear,distDir):
+  #Parse into annual fitted, duration, magnitude, and slope images
+  #Iterate across each possible segment and find its fitted end value, duration, magnitude, and slope
+  def segmentLooper(i):
+    i = ee.Number(i)
+    
+    #Set up slector for left and right side of segments
+    stringSelectLeft = ee.String('.*_').cat(i.byte().format())
+    stringSelectRight = ee.String('.*_').cat((i.add(1)).byte().format())
+    
+    #Get the left and right bands into separate images
+    stackLeft = stack.select([stringSelectLeft])
+    stackRight = stack.select([stringSelectRight])
+    
+    #Select off the year bands
+    segYearsLeft = stackLeft.select(['yrs_.*']).rename(['year_left'])
+    segYearsRight = stackRight.select(['yrs_.*']).rename(['year_right'])
+    
+    #Select off the fitted bands and flip them if they were flipped for use in LT
+    segFitLeft = stackLeft.select(['fit_.*']).rename(['fitted']).multiply(distDir*10000)
+    segFitRight = stackRight.select(['fit_.*']).rename(['fitted']).multiply(distDir*10000)
+    
+    
+    #Comput duration, magnitude, and then slope
+    segDur = segYearsRight.subtract( segYearsLeft).rename(['dur'])
+    segMag = segFitRight.subtract( segFitLeft).rename(['mag'])
+    segSlope = segMag.divide(segDur).rename(['slope'])
+    
+    #Iterate across each year to see if the year is within a given segment
+    #All annualizing is done from the right vertex backward
+    #The first year of the time series is inserted manually with an if statement
+    #Ex: If the first segment goes from 1984-1990 and the second from 1990-1997, the duration, magnitude,and slope
+    #values from the first segment will be given to 1984-1990, while the second segment (and any subsequent segment)
+    #the duration, magnitude, and slope values will be given from 1991-1997    
+    def annualizer(yr):
+      yr = ee.Number(yr)
+      yrImage = ee.Image(yr)
+      
+      #Find if the year is the first and include the left year if it is
+      #Otherwise, do not include the left year
+      yrImage = ee.Algorithms.If(yr.eq(startYear),
+                  yrImage.updateMask(segYearsLeft.lte(yr).And(segYearsRight.gte(yr))),
+                  yrImage.updateMask(segYearsLeft.lt(yr).And(segYearsRight.gte(yr))))
+    
+      yrImage = ee.Image(yrImage).rename(['yr']).int16()
+      
+      #Mask out the duration, magnitude, slope, and fit raster for the given year mask
+      yrDur = segDur.updateMask(yrImage)
+      yrMag = segMag.updateMask(yrImage)
+      yrSlope = segSlope.updateMask(yrImage)
+      yrFit = segFitRight.subtract(yrSlope.multiply(segYearsRight.subtract(yr))).updateMask(yrImage)
+      
+      #Get the difference from the 
+      diffFromLeft =yrFit.subtract(segFitLeft).updateMask(yrImage).rename(['diff'])
+      # relativeDiffFromLeft = diffFromLeft.divide(segMag.abs()).updateMask(yrImage).rename(['rel_yr_diff_left']).multiply(10000)
+      
+      # diffFromRight =yrFit.subtract(segFitRight).updateMask(yrImage).rename(['yr_diff_right'])
+      # relativeDiffFromRight = diffFromRight.divide(segMag.abs()).updateMask(yrImage).rename(['rel_yr_diff_right']).multiply(10000)
+      #Stack it up
+      out = yrDur.addBands(yrFit).addBands(yrMag).addBands(yrSlope)\
+                .addBands(diffFromLeft)\
+                .int16()
+      out = out.set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())
+      return out
+
+    annualCollection = ee.FeatureCollection(ee.List.sequence(startYear,endYear).map(lambda yr: annualizer(yr)))
+    return annualCollection  
+
+  yrDurMagSlope = ee.FeatureCollection(ee.List.sequence(1,maxSegments).map(lambda i: segmentLooper(i)))
+
+  #Convert to an image collection
+  yrDurMagSlope = ee.ImageCollection(yrDurMagSlope.flatten())
   
+  #Collapse each given year to the single segment with data  
+  def cleaner(yrDurMagSlope, yr):
+    yrDurMagSlopeT = yrDurMagSlope.filter(ee.Filter.calendarRange(yr,yr,'year')).mosaic()
+    yrDurMagSlopeT = yrDurMagSlopeT.set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())
+    return yrDurMagSlopeT
+  yrDurMagSlopeCleaned = ee.ImageCollection.fromImages(ee.List.sequence(startYear,endYear).map(lambda yr: cleaner(yrDurMagSlope, yr)))
+
+  return yrDurMagSlopeCleaned
+
+#############################################/
+#Function for running LANDTRENDR and converting output to annual image collection
+#with the fitted value, duration, magnitude, slope, and diff for the segment for each given year
+def LANDTRENDRFitMagSlopeDiffCollection(ts,indexName, run_params):
+  startYear = ee.Date(ts.first().get('system:time_start')).get('year')
+  endYear = ee.Date(ts.sort('system:time_start',False).first().get('system:time_start')).get('year')
+
+   #Get single band time series and set its direction so that a loss in veg is going up
+  ts = ts.select([indexName])
+  distDir = changeDirDict[indexName]
+  tsT = ts.map(lambda img: multBands(img,distDir,1))
+  
+  #Find areas with insufficient data to run LANDTRENDR
+  countMask = tsT.count().unmask().gte(6)
+
+  def nullFinder(img):
+    m = img.mask()
+    #Allow areas with insufficient data to be included, but then set to a dummy value for later masking
+    m = m.Or(countMask.Not())
+    img = img.mask(m)
+    img = img.where(countMask.Not(), -32768)
+    return img
+  tsT = tsT.map(lambda img: nullFinder(img))
+
+  run_params['timeSeries'] = tsT
+  
+  #Run LANDTRENDR
+  rawLt = ee.Algorithms.TemporalSegmentation.LandTrendr(**run_params)
+  
+  #Get LT output and convert to image stack
+  lt = rawLt.select([0])
+  ltStack = getLTvertStack(lt, run_params)
+  
+  #Convert to image collection
+  yrDurMagSlopeCleaned = fitStackToCollection(ltStack, run_params['maxSegments'], startYear, endYear, distDir)
+  yrDurMagSlopeCleaned = yrDurMagSlopeCleaned.map(lambda img: img.updateMask(countMask))
+  #Rename
+  bns = ee.Image(yrDurMagSlopeCleaned.first()).bandNames()
+  outBns = bns.map(lambda bn: ee.String(indexName).cat('_LT_').cat(bn))
+  
+  return yrDurMagSlopeCleaned.select(bns,outBns)
+
+#--------------------------------------------------------------------------
+#                 Linear Interpolation
+#--------------------------------------------------------------------------
+#Adapted from: https:#code.earthengine.google.com/?accept_repo=users/kongdd/public
+#To work with multi-band images
+def replace_mask(img, newimg, nodata = 0):
+    # con = img.mask()
+    # res = img., NODATA
+    mask = img.mask()
+    
+    '''** 
+     * This solution lead to interpolation fails | 2018-07-12
+     * Good vlaues can become NA.
+     *'''
+    # img = img.expression("img*mask + newimg*(!mask)", {
+    #     img    : img.unmask(),  # default unmask value is zero
+    #     newimg : newimg, 
+    #     mask   : mask
+    # })
+
+    #** The only nsolution is unmask & updatemask */
+    img = img.unmask(nodata)
+    img = img.where(mask.Not(), newimg)
+    # 
+    # error 2018-07-13 : mask already in newimg, so it's unnecessary to updateMask again
+    # either test or image is masked, values will not be changed. So, newimg 
+    # mask can transfer to img. 
+    # 
+    img = img.updateMask(img.neq(nodata))
+    return img
+
+#** Interpolation not considering weights */
+def addMillisecondsTimeBand(img):
+    #** make sure mask is consistent */
+    mask = img.mask().reduce(ee.Reducer.min())
+    time = img.metadata('system:time_start').rename("time").mask(mask)
+    return img.addBands(time)
+
+def linearInterp(imgcol, frame = 32, nodata = 0):
+    bns = ee.Image(imgcol.first()).bandNames()
+    # frame = 32
+    time   = 'system:time_start'
+    imgcol = imgcol.map(addMillisecondsTimeBand)
+   
+    # We'll look for all images up to 32 days away from the current image.
+    maxDiff = ee.Filter.maxDifference(frame * (1000*60*60*24), time, None, time)
+    cond    = {'leftField':time, 'rightField':time}
+    
+    # Images after, sorted in descending order (so closest is last).
+    #f1 = maxDiff.and(ee.Filter.lessThanOrEquals(time, null, time))
+    f1 = ee.Filter.And(maxDiff, ee.Filter.lessThanOrEquals(**cond))
+    c1 = ee.Join.saveAll(**{'matchesKey':'after', 'ordering':time, 'ascending':False})\
+        .apply(imgcol, imgcol, f1)
+    
+    # Images before, sorted in ascending order (so closest is last).
+    #f2 = maxDiff.and(ee.Filter.greaterThanOrEquals(time, null, time))
+    f2 = ee.Filter.And(maxDiff, ee.Filter.greaterThanOrEquals(**cond))
+    c2 = ee.Join.saveAll(**{'matchesKey':'before', 'ordering':time, 'ascending':True})\
+        .apply(c1, imgcol, f2)
+  
+    # print(c2, 'c2')
+    # img = ee.Image(c2.toList(1, 15).get(0))
+    # mask   = img.select([0]).mask()
+    # Map.addLayer(img , {}, 'img')
+    # Map.addLayer(mask, {}, 'mask')
+    def interpolator(img):
+        img = ee.Image(img)
+      
+        before = ee.ImageCollection.fromImages(ee.List(img.get('before'))).mosaic()
+        after  = ee.ImageCollection.fromImages(ee.List(img.get('after'))).mosaic()
+        
+        img = img.set('before', None).set('after', None)
+        # constrain after or before no NA values, confirm linear Interp having result
+        before = replace_mask(before, after, nodata)
+        after  = replace_mask(after , before, nodata)
+        
+        # Compute the ratio between the image times.
+        x1 = before.select('time').double()
+        x2 = after.select('time').double()
+        now = ee.Image.constant(img.date().millis()).double()
+        ratio = now.subtract(x1).divide(x2.subtract(x1))  # this is zero anywhere x1 = x2
+        # Compute the interpolated image.
+        before = before.select(bns) #remove time band now
+        after  = after.select(bns)
+        img    = img.select(bns) 
+        
+        interp = after.subtract(before).multiply(ratio).add(before)
+        # mask   = img.select([0]).mask()
+        
+        qc = img.mask().Not()#.rename('qc')
+        interp = replace_mask(img, interp, nodata)
+        # Map.addLayer(interp, {}, 'interp')
+        return interp.copyProperties(img, img.propertyNames())
+    interpolated = ee.ImageCollection(c2.map(lambda img: interpolator(img)))
+
+    return interpolated
+
 #--------------------------------------------------------------------------
 #                 VERDET
 #--------------------------------------------------------------------------
+#Function for running VERDET and converting output to annual image collection
+#with the fitted value, duration, magnitude, slope, and diff for the segment for each given year
+def VERDETFitMagSlopeDiffCollection(ts, indexName, run_params = {'tolerance':0.0001, 'alpha': 0.1}, maxSegments = 10, correctionFactor = 1):
+
+  #Get the start and end years
+  startYear = ee.Date(ts.first().get('system:time_start')).get('year')
+  endYear = ee.Date(ts.sort('system:time_start',False).first().get('system:time_start')).get('year')
+
+   #Get single band time series and set its direction so that a loss in veg is going up
+  ts = ts.select([indexName])
+
+  distDir = changeDirDict[indexName]
+  tsT = ts.map(lambda img: multBands(img,-distDir,correctionFactor))
+  tsT = tsT.map(lambda img: addToImage(img,1))
+  
+  #Find areas with insufficient data to run VERDET
+  #VERDET currently requires all pixels have a value
+  countMask = tsT.count().unmask().gte(endYear.subtract(startYear).add(1))
+
+  def nullFinder(img):
+    m = img.mask()
+    #Allow areas with insufficient data to be included, but then set to a dummy value for later masking
+    m = m.Or(countMask.Not())
+    img = img.mask(m)
+    img = img.where(countMask.Not(), -32768)
+    return img
+  tsT = tsT.map(lambda img: nullFinder(img))
+
+  run_params['timeSeries'] = tsT
+  
+  #Run VERDET
+  verdet =   ee.Algorithms.TemporalSegmentation.Verdet(**run_params).arraySlice(0, 1, None)
+  
+  #Get all possible years
+  tsYearRight = ee.Image(ee.Array.cat([ee.Array([startYear]),ee.Array(ee.List.sequence(startYear.add(2),endYear))]))
+  
+  #Slice off right and left slopes
+  vLeft = verdet.arraySlice(0,1,-1)
+  vRight = verdet.arraySlice(0,2,None)
+  
+  #Find whether its a vertex (abs of curvature !== 0)
+  vCurvature = vLeft.subtract(vRight)
+  vVertices = vCurvature.abs().gte(0.00001)
+  
+  #Append vertices to the start and end of the time series al la LANDTRENDR
+  vVertices = ee.Image(ee.Array([1])).arrayCat(vVertices,0).arrayCat(ee.Image(ee.Array([1])),0)
+
+  #Mask out vertex years
+  tsYearRight = tsYearRight.arrayMask(vVertices)
+  
+  #Find the duration of each segment
+  dur = tsYearRight.arraySlice(0,1,None).subtract(tsYearRight.arraySlice(0,0,-1))
+  dur = ee.Image(ee.Array([0])).arrayCat(dur,0)
+  
+  
+  #Mask out vertex slopes
+  verdet = verdet.arrayMask(vVertices)
+  
+  #Get the magnitude of change for each segment
+  mag = verdet.multiply(dur)
+  
+  #Get the fitted values
+  fitted = ee.Image(tsT.limit(3).mean()).toArray().arrayCat(mag,0)
+  fitted = fitted.arrayAccum(0, ee.Reducer.sum()).arraySlice(0,1,None).subtract(1).divide(correctionFactor)
+  
+  #Get the bands needed to convert to image stack
+  forStack = tsYearRight.addBands(fitted).toArray(1)
+  
+
+  #Convert to stack and mask out any pixels that didn't have an observation in every image
+  stack = getLTStack(forStack.arrayTranspose(),maxSegments+1,['yrs_','fit_']).updateMask(countMask)
+
+  #Convert to a collection
+  yrDurMagSlopeCleaned = fitStackToCollection(stack, maxSegments, startYear, endYear, -distDir)
+  
+  #Give meaningful band names
+  bns = ee.Image(yrDurMagSlopeCleaned.first()).bandNames()
+  outBns = bns.map(lambda bn: ee.String(indexName).cat('_VT_').cat(bn))
+  yrDurMagSlopeCleaned = yrDurMagSlopeCleaned.select(bns,outBns)
+    
+  # fitted = yrDurMagSlopeCleaned.select(['.*_fitted']).map(function(img){return multBands(img,1,0.0001)})
+  # forViz = getImagesLib.joinCollections(ts,fitted)
+  # Map.addLayer(forViz,{},'fitted',False)
+  
+  return yrDurMagSlopeCleaned
+
 #Wrapper for applying VERDET slightly more simply
 #Returns annual collection of verdet slope
 def verdetAnnualSlope(tsIndex, indexName, startYear, endYear, alpha): #tolerance = 0.0001,alpha = 1/3.0):
