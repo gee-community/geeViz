@@ -474,7 +474,7 @@ def getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR
         .filter(ee.Filter.lte('WRS_ROW',120))\
         .select(sensorBandDict['L7'+ toaOrSR],sensorBandNameDict[ toaOrSR])
     else:
-      print('Only including SLC On Landat 7');
+      print('Only including SLC On Landsat 7');
       l7s = ee.ImageCollection(collectionDict['L7'+toaOrSR])\
         .filterDate(ee.Date.fromYMD(1998,1,1),ee.Date.fromYMD(2003,5,31))\
         .filterDate(startDate,endDate)\
