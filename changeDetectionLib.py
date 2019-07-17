@@ -238,6 +238,31 @@ def getLTStack(LTresult, maxVertices, bandNames):
   # .arrayFlatten(lbls, ''):        # ...this takes the 2-d array and makes it 1-d by stacking the unique sets of rows and cols into bands. there will be 7 bands (vertices) for vertYear, followed by 7 bands (vertices) for rawVert, followed by 7 bands (vertices) for fittedVert, according to the 'lbls' list
   return ltVertStack.updateMask(ltVertStack.neq(-32768))
 
+# Function to prep data following our workflows. Will have to run Landtrendr and convert to stack after.
+def prepTimeSeriesForLandTrendr(ts,indexName, run_params):
+  startYear = ee.Date(ts.first().get('system:time_start')).get('year')
+  endYear = ee.Date(ts.sort('system:time_start',False).first().get('system:time_start')).get('year')
+
+  #Get single band time series and set its direction so that a loss in veg is going up
+  ts = ts.select([indexName])
+  distDir = changeDirDict[indexName]
+  tsT = ts.map(lambda img: multBands(img,distDir,1))
+  
+  #Find areas with insufficient data to run LANDTRENDR
+  countMask = tsT.count().unmask().gte(6)
+  def maskInsuffData(img):
+    m = img.mask()
+    #Allow areas with insufficient data to be included, but then set to a dummy value for later masking
+    m = m.Or(countMask.Not())
+    img = img.mask(m)
+    img = img.where(countMask.Not(),-32768)
+    return img
+  tsT = tsT.map(lambda img: maskInsuffData(img))
+
+  run_params['timeSeries'] = tsT
+  
+  return run_params 
+
 #Function to wrap landtrendr processing
 def landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,run_params,distParams,mmu):
   # startYear = 1984#ee.Date(ee.Image(processedComposites.first()).get('system:time_start')).get('year').getInfo()
