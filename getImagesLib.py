@@ -16,8 +16,9 @@
 #Script to help with data prep, analysis, and delivery from GEE
 #Intended to work within the geeViz package
 ######################################################################
-from geeViz.geeView import *
-import math
+#from geeViz.geeView import *
+import math, ee, json
+ee.Initialize()
 ######################################################################
 #Module for getting Landsat, Sentinel 2 and MODIS images/composites
 #Define visualization parameters
@@ -36,7 +37,7 @@ vizParamsTrue = { \
 
 #Direction of  a decrease in photosynthetic vegetation- add any that are missing
 changeDirDict = {\
-"blue":1,"green":-1,"red":1,"nir":-1,"swir1":1,"swir2":1,"temp":1,\
+"blue":1,"green":1,"red":1,"nir":-1,"swir1":1,"swir2":1,"temp":1,\
 "NDVI":-1,"NBR":-1,"NDMI":-1,"NDSI":1,\
 "brightness":1,"greenness":-1,"wetness":-1,"fourth":-1,"fifth":1,"sixth":-1,\
 "ND_blue_green":-1,"ND_blue_red":-1,"ND_blue_nir":1,"ND_blue_swir1":-1,"ND_blue_swir2":-1,\
