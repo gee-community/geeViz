@@ -96,12 +96,14 @@ def timeTaskList(starttime, endtime):
 # Starttime and endtime must be python datetimes, in UTC, e.g. datetime.datetime.utcnow()
 # check_interval = seconds between status checks
 def jobCompletionTracker(starttime, endtime, check_interval):
+    timeStart = datetime.utcnow()
     thisTasklist = timeTaskList(starttime,endtime)
     for i in thisTasklist:
         print(i['description'], i['state'])
     currentJobs = 1
-    while currentJobs > 0:
-        time.sleep(check_interval)
+    
+    while currentJobs > 0:   
+        time.sleep(check_interval) 
         thisTasklist = timeTaskList(starttime,endtime)
         ready = [i for i in thisTasklist if (i['state'] == 'READY')]
         running = [i for i in thisTasklist if (i['state'] == 'RUNNING')]
@@ -113,8 +115,14 @@ def jobCompletionTracker(starttime, endtime, check_interval):
         print(' ')
         print(datetime.now(), ':')
         print(len(ready),' tasks ready')
-        print(len(running), ' tasks running')
-               
+        #print(len(running), ' tasks running')
+        running_names = [[str(i['description']),str(timedelta(seconds = int(((time.time()*1000)-int(i['start_timestamp_ms']))/1000)))] for i in running]
+        for rn in running_names:
+            print(rn)
+
+    timeEnd = datetime.utcnow()
+    print('Process Time:')
+    print(timeEnd - timeStart)          
     return [ready, running, completed, failed, cancelled, thisTasklist]
 
 #------------------------------------------------------------------------------

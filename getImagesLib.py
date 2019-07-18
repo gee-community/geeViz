@@ -16,8 +16,9 @@
 #Script to help with data prep, analysis, and delivery from GEE
 #Intended to work within the geeViz package
 ######################################################################
-from geeViz.geeView import *
-import math
+#from geeViz.geeView import *
+import math, ee, json
+ee.Initialize()
 ######################################################################
 #Module for getting Landsat, Sentinel 2 and MODIS images/composites
 #Define visualization parameters
