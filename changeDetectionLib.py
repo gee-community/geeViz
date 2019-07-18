@@ -260,8 +260,13 @@ def prepTimeSeriesForLandTrendr(ts,indexName, run_params):
   tsT = tsT.map(lambda img: maskInsuffData(img))
 
   run_params['timeSeries'] = tsT
-  
-  return run_params 
+  runMask = countMask.rename('insufficientDataMask')
+  prepDict = {\
+    'run_params': run_params,\
+    'runMask':    runMask\
+  }
+
+  return prepDict 
 
 #Function to wrap landtrendr processing
 def landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,run_params,distParams,mmu):
