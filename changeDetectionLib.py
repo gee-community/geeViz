@@ -21,6 +21,7 @@
 
 from geeViz.getImagesLib import *
 import sys, math, ee
+from datetime import datetime
 
 #-------------------------------------------------------------------------
 #             Image and array manipulation
@@ -268,6 +269,42 @@ def prepTimeSeriesForLandTrendr(ts,indexName, run_params):
 
   return prepDict 
 
+# This function outputs Landtrendr as a vertical stack and adds properties about the run.
+def makeLandtrendrStack(composites, indexName, run_params, startYear, endYear):
+  creationDate = datetime.strftime(datetime.now(),'%Y%m%d')
+
+  # Prep Time Series and put into run parameters
+  prepDict = prepTimeSeriesForLandTrendr(composites, indexName, run_params)
+  run_params = prepDict['run_params']
+  runMask = prepDict['runMask']
+
+  # Run LANDTRENDR
+  rawLt = ee.Algorithms.TemporalSegmentation.LandTrendr(**run_params)
+  
+  # Convert to image stack
+  lt = rawLt.select([0])
+  ltStack = ee.Image(getLTvertStack(lt, run_params))
+  ltStack = ltStack.select('yrs.*').addBands(ltStack.select('fit.*')).int16()
+  rmse = rawLt.select([1]).rename('rmse')    
+  ltStack = ltStack.addBands(runMask.byte()).addBands(rmse.int16())
+
+  # Set Properties
+  ltStack = ltStack.set({\
+    'startYear': startYear,\
+    'endYear': endYear,\
+    'band': indexName,\
+    'creationDate': creationDate,\
+    'maxSegments': run_params['maxSegments'],\
+    'spikeThreshold': run_params['spikeThreshold'],\
+    'vertexCountOvershoot': run_params['vertexCountOvershoot'],\
+    'recoveryThreshold': run_params['recoveryThreshold'],\
+    'pvalThreshold': run_params['pvalThreshold'],\
+    'bestModelProportion': run_params['bestModelProportion'],\
+    'minObservationsNeeded': run_params['minObservationsNeeded']\
+  })
+
+  return ltStack
+
 #Function to wrap landtrendr processing
 def landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,run_params,distParams,mmu):
   # startYear = 1984#ee.Date(ee.Image(processedComposites.first()).get('system:time_start')).get('year').getInfo()
@@ -391,6 +428,45 @@ def fitStackToCollection(stack, maxSegments,startYear,endYear,distDir):
   yrDurMagSlopeCleaned = ee.ImageCollection.fromImages(ee.List.sequence(startYear,endYear).map(lambda yr: cleaner(yrDurMagSlope, yr)))
 
   return yrDurMagSlopeCleaned
+
+# Convert image collection created using makeLandtrendrStack() to the same format as that created by
+# LANDTRENDRFitMagSlopeDiffCollection()
+def convertLTStack_To_DurFitMagSlope(ltStackCollection):
+  #insufficientDataMask = ltStackCollection.first().select('insufficientDataMask') 
+  #ltStackCollection = ltStackCollection.select(ltStackCollection.first().bandNames().remove('insufficientDataMask'))
+
+  # Prep parameters for fitStackToCollection
+  maxSegments = ltStackCollection.first().get('maxSegments')
+  startYear = ltStackCollection.first().get('startYear')
+  endYear = ltStackCollection.first().get('endYear')
+  indexList = ee.Dictionary(ltStackCollection.aggregate_histogram('band')).keys().getInfo()
+  
+  #Set up output collection to populate
+  outputCollection = []
+  #Iterate across indices
+  for indexName in indexList: 
+    ltStack = ltStackCollection.filter(ee.Filter.eq('band',indexName)).first();
+  
+    #Convert to image collection
+    yrDurMagSlopeCleaned = fitStackToCollection(ltStack, \
+      maxSegments, \
+      startYear, \
+      endYear,\
+      changeDirDict[indexName]\
+    ) 
+    #yrDurMagSlopeCleaned = yrDurMagSlopeCleaned.map(lambda img: img.updateMask(insufficientDataMask))
+    
+    # Rename
+    bns = ee.Image(yrDurMagSlopeCleaned.first()).bandNames()
+    outBns = bns.map(lambda bn: ee.String(indexName).cat('_LT_').cat(bn))  
+    yrDurMagSlopeCleaned = yrDurMagSlopeCleaned.select(bns,outBns)
+  
+    if outputCollection == []:
+      outputCollection = yrDurMagSlopeCleaned
+    else:
+      outputCollection = getImagesLib.joinCollections(outputCollection, yrDurMagSlopeCleaned, False)
+
+  return outputCollection
 
 #############################################/
 #Function for running LANDTRENDR and converting output to annual image collection
