@@ -616,15 +616,43 @@ def linearInterp(imgcol, frame = 32, nodata = 0):
 # Add 1 before and subtract 1 after
 def applyVerdetScaling(ts, indexName, correctionFactor):
   distDir = changeDirDict[indexName]
-  tsT = ts.map(lambda img: addToImage(img, 1))
-  tsT = tsT.map(lambda img: multBands(img, -distDir, correctionFactor))  
+  tsT = ts.map(lambda img: multBands(img, 1, -distDir)) # Apply change in direction first
+  tsT = ts.map(lambda img: addToImage(img, 1))            # Then add 1 to image to get rid of any negatives
+  tsT = tsT.map(lambda img: multBands(img, -distDir, correctionFactor))  # Finally we can apply scaling.
   return tsT
 
 def undoVerdetScaling(fitted, indexName, correctionFactor):
   distDir = changeDirDict[indexName]
-  fitted = ee.Image(multBands(fitted, -distDir, 1.0/correctionFactor))
-  fitted = addToImage(fitted, -1)
+  fitted = ee.Image(multBands(fitted, -distDir, 1.0/correctionFactor)) # Undo scaling first
+  fitted = addToImage(fitted, -1) # Undo getting rid of negatives
+  fitted = multBands(fitted, 1, -distDir) #Finally, undo change in direction
   return fitted
+
+# Function to apply linear interpolation for Verdet
+def applyLinearInterp(composites, nYearsInterpolate):      
+    
+    # Start with just the basic bands
+    composites = composites.select(['red','green','blue','nir','swir1','swir2'])
+    
+    # Find pixels/years with no data
+    masks = composites.map(lambda img: img.mask().reduce(ee.Reducer.min()).byte().copyProperties(img, img.propertyNames())).select([0])
+    masks = masks.map(lambda img: img.rename([ee.Date(img.get('system:time_start')).format('YYYY')]))
+    masks = masks.toBands()
+    # rename bands to better names
+    origNames = masks.bandNames()
+    newNames = origNames.map(lambda bandName: ee.String(bandName).replace('null','mask'))
+    masks = masks.select(origNames, newNames).set('creationDate',ee.Date(Date.now()).format('YYYYMMdd')).set('mask',true)
+    
+    # Perform linear interpolation        
+    composites = linearInterp(composites, 365*nYearsInterpolate, -32768)\
+            .map(getImagesLib.simpleAddIndices)\
+            .map(getImagesLib.getTasseledCap)\
+            .map(getImagesLib.simpleAddTCAngles)
+            
+    outDict = {'composites': composites,\
+                   'masks':      masks\
+    }
+    return outDict
 
 # Function to prep data for Verdet. Will have to run Verdet and convert to stack after.
 def prepTimeSeriesForVerdet(ts, indexName, run_params, correctionFactor):
