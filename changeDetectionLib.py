@@ -21,6 +21,7 @@
 
 from geeViz.getImagesLib import *
 import sys, math, ee
+from datetime import datetime
 
 #-------------------------------------------------------------------------
 #             Image and array manipulation
@@ -49,6 +50,15 @@ def addToImage(img,howMuch):
   out = img.add(ee.Image(howMuch))
   out  = ee.Image(out.copyProperties(img,['system:time_start']).copyProperties(img))
   return out
+
+# Used when masking out pixels that don't have sufficient data for Landtrendr and Verdet
+def nullFinder(img, countMask):
+    m = img.mask()
+    #Allow areas with insufficient data to be included, but then set to a dummy value for later masking
+    m = m.Or(countMask.Not())
+    img = img.mask(m)
+    img = img.where(countMask.Not(), -32768)
+    return img
 
 #Function to convert an image array object to collection
 def arrayToTimeSeries(tsArray,yearsArray,possibleYears,bandName):
@@ -238,31 +248,6 @@ def getLTStack(LTresult, maxVertices, bandNames):
   # .arrayFlatten(lbls, ''):        # ...this takes the 2-d array and makes it 1-d by stacking the unique sets of rows and cols into bands. there will be 7 bands (vertices) for vertYear, followed by 7 bands (vertices) for rawVert, followed by 7 bands (vertices) for fittedVert, according to the 'lbls' list
   return ltVertStack.updateMask(ltVertStack.neq(-32768))
 
-# Function to prep data following our workflows. Will have to run Landtrendr and convert to stack after.
-def prepTimeSeriesForLandTrendr(ts,indexName, run_params):
-  startYear = ee.Date(ts.first().get('system:time_start')).get('year')
-  endYear = ee.Date(ts.sort('system:time_start',False).first().get('system:time_start')).get('year')
-
-  #Get single band time series and set its direction so that a loss in veg is going up
-  ts = ts.select([indexName])
-  distDir = changeDirDict[indexName]
-  tsT = ts.map(lambda img: multBands(img,distDir,1))
-  
-  #Find areas with insufficient data to run LANDTRENDR
-  countMask = tsT.count().unmask().gte(6)
-  def maskInsuffData(img):
-    m = img.mask()
-    #Allow areas with insufficient data to be included, but then set to a dummy value for later masking
-    m = m.Or(countMask.Not())
-    img = img.mask(m)
-    img = img.where(countMask.Not(),-32768)
-    return img
-  tsT = tsT.map(lambda img: maskInsuffData(img))
-
-  run_params['timeSeries'] = tsT
-  
-  return run_params 
-
 #Function to wrap landtrendr processing
 def landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,run_params,distParams,mmu):
   # startYear = 1984#ee.Date(ee.Image(processedComposites.first()).get('system:time_start')).get('year').getInfo()
@@ -303,11 +288,144 @@ def landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,ru
   #Convert to single image
   vertStack = getLTvertStack(rawLT,run_params)
   return [lt,distImg,fittedCollection,vertStack]
+
+# Function to prep data following our workflows. Will have to run Landtrendr and convert to stack after.
+def prepTimeSeriesForLandTrendr(ts,indexName, run_params):
+  maxSegments = ee.Number(run_params['maxSegments'])
+  startYear = ee.Date(ts.first().get('system:time_start')).get('year')
+  endYear = ee.Date(ts.sort('system:time_start',False).first().get('system:time_start')).get('year')
+
+  # Get single band time series and set its direction so that a loss in veg is going up
+  ts = ts.select([indexName])
+  distDir = changeDirDict[indexName]
+  tsT = ts.map(lambda img: multBands(img, 1, distDir))
+  
+  # Find areas with insufficient data to run LANDTRENDR
+  countMask = tsT.count().unmask().gte(maxSegments.add(1))
+
+  # Mask areas identified by countMask
+  tsT = tsT.map(lambda img: nullFinder(img, countMask))
+
+  run_params['timeSeries'] = tsT
+  countMask = countMask.rename('insufficientDataMask')
+  prepDict = {\
+    'run_params': run_params,\
+    'countMask':    countMask\
+  }
+
+  return prepDict 
+
+# This function outputs Landtrendr as a vertical stack and adds properties about the run.
+def LANDTRENDRVertStack(composites, indexName, run_params, startYear, endYear):
+  creationDate = datetime.strftime(datetime.now(),'%Y%m%d')
+
+  # Prep Time Series and put into run parameters
+  prepDict = prepTimeSeriesForLandTrendr(composites, indexName, run_params)
+  run_params = prepDict['run_params']
+  countMask = prepDict['countMask']
+
+  # Run LANDTRENDR
+  rawLt = ee.Algorithms.TemporalSegmentation.LandTrendr(**run_params)
+  
+  # Convert to image stack
+  lt = rawLt.select([0])
+  ltStack = ee.Image(getLTvertStack(lt, run_params)).updateMask(countMask)
+  ltStack = ltStack.select('yrs.*').addBands(ltStack.select('fit.*'))
+  rmse = rawLt.select([1]).rename('rmse')    
+  ltStack = ltStack.addBands(rmse) 
+
+  # Undo distdir change done in prepTimeSeriesForLandtrendr()
+  ltStack = applyDistDir_vertStack(ltStack, changeDirDict[indexName], 'landtrendr')
+
+  # Set Properties
+  ltStack = ltStack.set({\
+    'startYear': startYear,\
+    'endYear': endYear,\
+    'band': indexName,\
+    'creationDate': creationDate,\
+    'maxSegments': run_params['maxSegments'],\
+    'spikeThreshold': run_params['spikeThreshold'],\
+    'vertexCountOvershoot': run_params['vertexCountOvershoot'],\
+    'recoveryThreshold': run_params['recoveryThreshold'],\
+    'pvalThreshold': run_params['pvalThreshold'],\
+    'bestModelProportion': run_params['bestModelProportion'],\
+    'minObservationsNeeded': run_params['minObservationsNeeded']\
+  })
+
+  return ee.Image(ltStack)
+
 #############################################/
-#Function to parse stack from LANDTRENDR or VERDET into image collection
-def fitStackToCollection(stack, maxSegments,startYear,endYear,distDir):
-  #Parse into annual fitted, duration, magnitude, and slope images
-  #Iterate across each possible segment and find its fitted end value, duration, magnitude, and slope
+#Function for running LANDTRENDR and converting output to annual image collection
+#with the fitted value, duration, magnitude, slope, and diff for the segment for each given year
+def LANDTRENDRFitMagSlopeDiffCollection(ts, indexName, run_params):
+
+  startYear = ee.Date(ts.first().get('system:time_start')).get('year')
+  endYear = ee.Date(ts.sort('system:time_start',False).first().get('system:time_start')).get('year')
+  
+  # Run LandTrendr and convert to VertStack format
+  ltStack = ee.Image(LANDTRENDRVertStack(ts, indexName, run_params, startYear, endYear))
+  ltStack = ee.Image(LT_VT_vertStack_multBands(ltStack, 'landtrendr', 10000))
+  
+  # Convert to durFitMagSlope format
+  durFitMagSlope = convertStack_To_DurFitMagSlope(ltStack, 'LT')
+  
+  return durFitMagSlope
+
+#----------------------------------------------------------------------------------------------------
+#        Functions for both Verdet and Landtrendr
+#----------------------------------------------------------------------------------------------------
+# Helper to multiply new baselearner format values (LandTrendr & Verdet) by the appropriate amount when importing
+# Duration is the only band that does not get multiplied by 0.0001 upon import.
+# img = landtrendr or verdet image in fitMagDurSlope format
+# multBy = 10000 (to prep for export) or 0.0001 (after import)
+def LT_VT_multBands(img, multBy):
+    fitted = img.select('.*_fitted').multiply(multBy)
+    slope = img.select('.*_slope').multiply(multBy)
+    diff = img.select('.*_diff').multiply(multBy)
+    mag = img.select('.*_mag').multiply(multBy)
+    dur = img.select('.*_dur')
+    out = dur.addBands(fitted).addBands(slope).addBands(diff).addBands(mag)
+    out  = out.copyProperties(img,['system:time_start'])\
+              .copyProperties(img)
+    return out
+
+# Function to apply the Direction of  a decrease in photosynthetic vegetation to Landtrendr or Verdet vertStack format
+# img = vertStack image for one band, e.g. "NBR"
+# verdet_or_landtrendr = 'verdet' or 'landtrendr'
+# distDir = from getImagesLib.changeDirDict
+def applyDistDir_vertStack(stack, distDir, verdet_or_landtrendr):
+  years = stack.select('yrs.*')
+  fitted = stack.select('fit.*').multiply(distDir)
+  out = years.addBands(fitted)
+  if verdet_or_landtrendr == 'landtrendr':
+    rmse = stack.select('rmse')
+    out = out.addBands(rmse) 
+  out  = out.copyProperties(stack,['system:time_start'])\
+            .copyProperties(stack)
+  return out
+
+# Helper to multiply vertStack bands by the appropriate amount before exporting (multBy = 10000)
+# or after importing (multBy = 0.0001)
+# img = vertStack image for one band, e.g. "NBR"
+# verdet_or_landtrendr = 'verdet' or 'landtrendr'
+# multBy = 10000 or 0.0001
+def LT_VT_vertStack_multBands(img, verdet_or_landtrendr, multBy):
+    years = img.select('yrs.*')
+    fitted = img.select('fit.*').multiply(multBy)
+    out = years.addBands(fitted)
+    if verdet_or_landtrendr == 'landtrendr':
+      rmse = img.select('rmse').multiply(multBy)
+      out = out.addBands(rmse) 
+    out  = out.copyProperties(img,['system:time_start'])\
+              .copyProperties(img)
+    return out
+
+# Function to parse stack from LANDTRENDR or VERDET into image collection
+# July 2019 LSC: multiply(distDir) and multiply(10000) now take place outside of this function,
+# but must be done BEFORE stack is passed to this function
+def fitStackToCollection(stack, maxSegments, startYear, endYear):
+  # Parse into annual fitted, duration, magnitude, and slope images
+  # Iterate across each possible segment and find its fitted end value, duration, magnitude, and slope
   def segmentLooper(i):
     i = ee.Number(i)
     
@@ -324,9 +442,8 @@ def fitStackToCollection(stack, maxSegments,startYear,endYear,distDir):
     segYearsRight = stackRight.select(['yrs_.*']).rename(['year_right'])
     
     #Select off the fitted bands and flip them if they were flipped for use in LT
-    segFitLeft = stackLeft.select(['fit_.*']).rename(['fitted']).multiply(distDir*10000)
-    segFitRight = stackRight.select(['fit_.*']).rename(['fitted']).multiply(distDir*10000)
-    
+    segFitLeft = stackLeft.select(['fit_.*']).rename(['fitted'])
+    segFitRight = stackRight.select(['fit_.*']).rename(['fitted'])
     
     #Comput duration, magnitude, and then slope
     segDur = segYearsRight.subtract( segYearsLeft).rename(['dur'])
@@ -365,8 +482,8 @@ def fitStackToCollection(stack, maxSegments,startYear,endYear,distDir):
       # relativeDiffFromRight = diffFromRight.divide(segMag.abs()).updateMask(yrImage).rename(['rel_yr_diff_right']).multiply(10000)
       #Stack it up
       out = yrDur.addBands(yrFit).addBands(yrMag).addBands(yrSlope)\
-                .addBands(diffFromLeft)\
-                .int16()
+                .addBands(diffFromLeft)
+
       out = out.set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())
       return out
 
@@ -387,50 +504,51 @@ def fitStackToCollection(stack, maxSegments,startYear,endYear,distDir):
 
   return yrDurMagSlopeCleaned
 
+# Convert image collection created using LANDTRENDRVertStack() to the same format as that created by
+# LANDTRENDRFitMagSlopeDiffCollection(). Also works for Verdet Stack.
+# VTorLT is the string that is put in the band names, 'LT' or 'VT'
+def convertStack_To_DurFitMagSlope(ltStackCollection, VTorLT):
+  stackList = ltStackCollection.first().bandNames()
+  if 'rmse' in stackList.getInfo():
+    stackList.remove('rmse')
+    ltStackCollection = ltStackCollection.select(stackList)
+
+  # Prep parameters for fitStackToCollection
+  maxSegments = ltStackCollection.first().get('maxSegments')
+  startYear = ltStackCollection.first().get('startYear')
+  endYear = ltStackCollection.first().get('endYear')
+  indexList = ee.Dictionary(ltStackCollection.aggregate_histogram('band')).keys().getInfo()
+  
+  #Set up output collection to populate
+  outputCollection = []
+  #Iterate across indices
+  for indexName in indexList: 
+    stack = stackCollection.filter(ee.Filter.eq('band',indexName)).first()
+  
+    #Convert to image collection
+    yrDurMagSlopeCleaned = fitStackToCollection(stack, \
+      maxSegments, \
+      startYear, \
+      endYear\
+    ) 
+    
+    # Rename
+    bns = ee.Image(yrDurMagSlopeCleaned.first()).bandNames()
+    outBns = bns.map(lambda bn: ee.String(indexName).cat('_'+VTorLT+'_').cat(bn))  
+    yrDurMagSlopeCleaned = yrDurMagSlopeCleaned.select(bns,outBns)
+  
+    if outputCollection == []:
+      outputCollection = yrDurMagSlopeCleaned
+    else:
+      outputCollection = joinCollections(outputCollection, yrDurMagSlopeCleaned, False)
+
+  return outputCollection
+
 #############################################/
-#Function for running LANDTRENDR and converting output to annual image collection
-#with the fitted value, duration, magnitude, slope, and diff for the segment for each given year
-def LANDTRENDRFitMagSlopeDiffCollection(ts,indexName, run_params):
-  startYear = ee.Date(ts.first().get('system:time_start')).get('year')
-  endYear = ee.Date(ts.sort('system:time_start',False).first().get('system:time_start')).get('year')
 
-   #Get single band time series and set its direction so that a loss in veg is going up
-  ts = ts.select([indexName])
-  distDir = changeDirDict[indexName]
-  tsT = ts.map(lambda img: multBands(img,distDir,1))
-  
-  #Find areas with insufficient data to run LANDTRENDR
-  countMask = tsT.count().unmask().gte(6)
-
-  def nullFinder(img):
-    m = img.mask()
-    #Allow areas with insufficient data to be included, but then set to a dummy value for later masking
-    m = m.Or(countMask.Not())
-    img = img.mask(m)
-    img = img.where(countMask.Not(), -32768)
-    return img
-  tsT = tsT.map(lambda img: nullFinder(img))
-
-  run_params['timeSeries'] = tsT
-  
-  #Run LANDTRENDR
-  rawLt = ee.Algorithms.TemporalSegmentation.LandTrendr(**run_params)
-  
-  #Get LT output and convert to image stack
-  lt = rawLt.select([0])
-  ltStack = getLTvertStack(lt, run_params)
-  
-  #Convert to image collection
-  yrDurMagSlopeCleaned = fitStackToCollection(ltStack, run_params['maxSegments'], startYear, endYear, distDir)
-  yrDurMagSlopeCleaned = yrDurMagSlopeCleaned.map(lambda img: img.updateMask(countMask))
-  #Rename
-  bns = ee.Image(yrDurMagSlopeCleaned.first()).bandNames()
-  outBns = bns.map(lambda bn: ee.String(indexName).cat('_LT_').cat(bn))
-  
-  return yrDurMagSlopeCleaned.select(bns,outBns)
 
 #--------------------------------------------------------------------------
-#                 Linear Interpolation
+#                 Linear Interpolation functions
 #--------------------------------------------------------------------------
 #Adapted from: https:#code.earthengine.google.com/?accept_repo=users/kongdd/public
 #To work with multi-band images
@@ -526,45 +644,104 @@ def linearInterp(imgcol, frame = 32, nodata = 0):
 
     return interpolated
 
+# Function to apply linear interpolation for Verdet
+def applyLinearInterp(composites, nYearsInterpolate):      
+    
+    # Start with just the basic bands
+    composites = composites.select(['red','green','blue','nir','swir1','swir2'])
+    
+    # Find pixels/years with no data
+    masks = composites.map(lambda img: img.mask().reduce(ee.Reducer.min()).byte().copyProperties(img, img.propertyNames())).select([0])
+    masks = masks.map(lambda img: img.rename([ee.Date(img.get('system:time_start')).format('YYYY')]))
+    masks = masks.toBands()
+
+    # rename bands to better names
+    origNames = masks.bandNames()
+    print('mask bandNames', origNames.getInfo())
+    newNames = origNames.map(lambda bandName: ee.String(bandName).replace('null','mask'))
+    masks = masks.select(origNames, newNames).set('creationDate',datetime.strftime(datetime.now(),'%Y%m%d')).set('mask',True)
+    
+    # Perform linear interpolation        
+    composites = linearInterp(composites, 365*nYearsInterpolate, -32768)\
+            .map(simpleAddIndices)\
+            .map(getTasseledCap)\
+            .map(simpleAddTCAngles)
+            
+    outDict = {'composites': composites,\
+                   'masks':      masks\
+    }
+    return outDict
+
 #--------------------------------------------------------------------------
 #                 VERDET
 #--------------------------------------------------------------------------
-#Function for running VERDET and converting output to annual image collection
-#with the fitted value, duration, magnitude, slope, and diff for the segment for each given year
-def VERDETFitMagSlopeDiffCollection(ts, indexName, run_params = {'tolerance':0.0001, 'alpha': 0.1}, maxSegments = 10, correctionFactor = 1):
+# Functions to apply our scaling work arounds for Verdet
+# Multiply by a predetermined factor beforehand and divide after
+# Add 1 before and subtract 1 after
+def applyVerdetScaling(ts, indexName, correctionFactor):
+  distDir = changeDirDict[indexName]
+  tsT = ts.map(lambda img: multBands(img, 1, -distDir)) # Apply change in direction first
+  tsT = ts.map(lambda img: addToImage(img, 1))            # Then add 1 to image to get rid of any negatives
+  tsT = tsT.map(lambda img: multBands(img, 1, correctionFactor))  # Finally we can apply scaling.
+  return tsT
 
-  #Get the start and end years
+def undoVerdetScaling(fitted, indexName, correctionFactor):
+  distDir = changeDirDict[indexName]
+  fitted = ee.Image(multBands(fitted, 1, 1.0/correctionFactor)) # Undo scaling first
+  fitted = addToImage(fitted, -1) # Undo getting rid of negatives
+  fitted = multBands(fitted, 1, -distDir) #Finally, undo change in direction
+  return fitted
+
+# Function to prep data for Verdet. Will have to run Verdet and convert to stack after.
+# This step applies the Verdet Scaling. The scaling is undone in VERDETVertStack().
+def prepTimeSeriesForVerdet(ts, indexName, run_params, correctionFactor):
+  # Get the start and end years
   startYear = ee.Date(ts.first().get('system:time_start')).get('year')
   endYear = ee.Date(ts.sort('system:time_start',False).first().get('system:time_start')).get('year')
 
-   #Get single band time series and set its direction so that a loss in veg is going up
+  # Get single band time series and set its direction so that a loss in veg is going up
   ts = ts.select([indexName])
-
-  distDir = changeDirDict[indexName]
-  tsT = ts.map(lambda img: multBands(img,-distDir,correctionFactor))
-  tsT = tsT.map(lambda img: addToImage(img,1))
+  tsT = applyVerdetScaling(ts, indexName, correctionFactor)
   
-  #Find areas with insufficient data to run VERDET
-  #VERDET currently requires all pixels have a value
+  # Find areas with insufficient data to run VERDET
+  # VERDET currently requires all pixels have a value
   countMask = tsT.count().unmask().gte(endYear.subtract(startYear).add(1))
-
-  def nullFinder(img):
-    m = img.mask()
-    #Allow areas with insufficient data to be included, but then set to a dummy value for later masking
-    m = m.Or(countMask.Not())
-    img = img.mask(m)
-    img = img.where(countMask.Not(), -32768)
-    return img
-  tsT = tsT.map(lambda img: nullFinder(img))
+  
+  # Mask areas identified by countMask
+  tsT = tsT.map(lambda img: nullFinder(img, countMask))
 
   run_params['timeSeries'] = tsT
   
-  #Run VERDET
-  verdet =   ee.Algorithms.TemporalSegmentation.Verdet(**run_params).arraySlice(0, 1, None)
+  countMask = countMask.rename('insufficientDataMask')
+  prepDict = {\
+    'run_params': run_params,\
+    'countMask':  countMask,\
+    'startYear':  startYear,\
+    'endYear':    endYear\
+  }
+  
+  return prepDict  
+
+# Function to run Verdet and reformat as vertex stack in the same format as landtrendr
+def VERDETVertStack(ts,indexName,run_params = {'tolerance': 0.0001, 'alpha': 0.1}, maxSegments = 10, correctionFactor = 1, doLinearInterp = 'false'):
+  # linearInterp is applied outside this function. This parameter is just to set the properties (true/false)
+  
+  # Get today's date for properties
+  creationDate = datetime.strftime(datetime.now(),'%Y%m%d')
+  
+  # Extract composite time series and apply relevant masking & scaling
+  prepDict = prepTimeSeriesForVerdet(ts, indexName, run_params, correctionFactor)
+  run_params = prepDict['run_params']
+  countMask = prepDict['countMask']
+  startYear = prepDict['startYear']
+  endYear = prepDict['endYear']
+  
+  # Run VERDET
+  verdet =   ee.Algorithms.TemporalSegmentation.Verdet(**run_params).arraySlice(0,1,None)
   
   #Get all possible years
   tsYearRight = ee.Image(ee.Array.cat([ee.Array([startYear]),ee.Array(ee.List.sequence(startYear.add(2),endYear))]))
-  
+  print('tsYearRight',tsYearRight.getInfo())
   #Slice off right and left slopes
   vLeft = verdet.arraySlice(0,1,-1)
   vRight = verdet.arraySlice(0,2,None)
@@ -575,15 +752,14 @@ def VERDETFitMagSlopeDiffCollection(ts, indexName, run_params = {'tolerance':0.0
   
   #Append vertices to the start and end of the time series al la LANDTRENDR
   vVertices = ee.Image(ee.Array([1])).arrayCat(vVertices,0).arrayCat(ee.Image(ee.Array([1])),0)
-
+  print('vVertices',vVertices.getInfo())
   #Mask out vertex years
   tsYearRight = tsYearRight.arrayMask(vVertices)
-  
+  print('tsYearRightVertices',tsYearRight.getInfo())
   #Find the duration of each segment
   dur = tsYearRight.arraySlice(0,1,None).subtract(tsYearRight.arraySlice(0,0,-1))
   dur = ee.Image(ee.Array([0])).arrayCat(dur,0)
-  
-  
+  print('dur',dur.getInfo())
   #Mask out vertex slopes
   verdet = verdet.arrayMask(vVertices)
   
@@ -591,29 +767,60 @@ def VERDETFitMagSlopeDiffCollection(ts, indexName, run_params = {'tolerance':0.0
   mag = verdet.multiply(dur)
   
   #Get the fitted values
-  fitted = ee.Image(tsT.limit(3).mean()).toArray().arrayCat(mag,0)
-  fitted = fitted.arrayAccum(0, ee.Reducer.sum()).arraySlice(0,1,None).subtract(1).divide(correctionFactor)
+  fitted = ee.Image(run_params['timeSeries'].limit(3).mean()).toArray().arrayCat(mag,0)
+  fitted = fitted.arrayAccum(0, ee.Reducer.sum()).arraySlice(0,1,None)
+  print('fitted',fitted.getInfo())
+  # Undo scaling of fitted values
+  fitted = undoVerdetScaling(fitted, indexName, correctionFactor)
   
   #Get the bands needed to convert to image stack
-  forStack = tsYearRight.addBands(fitted).toArray(1)
-  
+  forStack = tsYearRight.addBands(fitted).toArray(1)  
 
   #Convert to stack and mask out any pixels that didn't have an observation in every image
   stack = getLTStack(forStack.arrayTranspose(),maxSegments+1,['yrs_','fit_']).updateMask(countMask)
 
-  #Convert to a collection
-  yrDurMagSlopeCleaned = fitStackToCollection(stack, maxSegments, startYear, endYear, -distDir)
+  # Set Properties
+  stack = stack.set({\
+    'startYear': startYear,\
+    'endYear': endYear,\
+    'band': indexName,\
+    'creationDate': creationDate,\
+    'maxSegments': maxSegments,\
+    'correctionFactor': correctionFactor,\
+    'tolerance': run_params['tolerance'],\
+    'alpha': run_params['alpha'],\
+    'linearInterpApplied': doLinearInterp\
+  })
+
+  return ee.Image(stack)
+
+# Update Mask from LinearInterp step
+def updateVerdetMasks(img):
+  thisYear = ee.Date(img.get('system:time_start')).format('YYYY')
+  thisYear_maskName = ee.String('mask_').cat(thisYear)
+  thisMask = masks.select(thisYear_maskName)
+  img = img.updateMask(thisMask)
+  return img
+
+# Function for running VERDET and converting output to annual image collection
+# with the fitted value, duration, magnitude, slope, and diff for the segment for each given year
+# Linear Interpolation has to be done beforehand, and the masks collection passed in to this function
+def VERDETFitMagSlopeDiffCollection(composites, indexName, run_params = {'tolerance':0.0001, 'alpha': 0.1}, maxSegments = 10, correctionFactor = 1, doLinearInterp = 'false', masks = None):
   
-  #Give meaningful band names
-  bns = ee.Image(yrDurMagSlopeCleaned.first()).bandNames()
-  outBns = bns.map(lambda bn: ee.String(indexName).cat('_VT_').cat(bn))
-  yrDurMagSlopeCleaned = yrDurMagSlopeCleaned.select(bns,outBns)
-    
-  # fitted = yrDurMagSlopeCleaned.select(['.*_fitted']).map(function(img){return multBands(img,1,0.0001)})
-  # forViz = getImagesLib.joinCollections(ts,fitted)
-  # Map.addLayer(forViz,{},'fitted',False)
+  # Run Verdet and convert to vertStack format
+  vtStack = VERDETVertStack(composites, indexName, run_params, maxSegments, correctionFactor, doLinearInterp)
+  vtStack = ee.Image(LT_VT_vertStack_multBands(vtStack, 'verdet', 10000)) # This needs to happen before the fitStackToCollection() step
   
-  return yrDurMagSlopeCleaned
+  # Convert to durFitMagSlope format
+  durFitMagSlope = convertStack_To_DurFitMagSlope(vtStack, 'VT')
+
+  # Prep data types for export
+  durFitMagSlope = durFitMagSlope.map(lambda img: img.int16())
+
+  if doLinearInterp:
+    durFitMagSlope = durFitMagSlope.map(lambda img: updateVerdetMasks(img))
+
+  return durFitMagSlope
 
 #Wrapper for applying VERDET slightly more simply
 #Returns annual collection of verdet slope
