@@ -1024,7 +1024,7 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicy = '
   imageForExport = imageForExport.clip(roi)
   assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
   print(assetName,assetPath)
-  if transform != None and str(type(transform)) == "<type 'list'>":
+  if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
     transform = str(transform)
 
   t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath ,  json.dumps({'.default': pyramidingPolicy}), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
@@ -1035,7 +1035,7 @@ def exportToAssetWrapper2(imageForExport,assetName,assetPath,pyramidingPolicyObj
   imageForExport = imageForExport.clip(roi)
   assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
 
-  if transform != None and str(type(transform)) == "<type 'list'>":
+  if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
     transform = str(transform)
     
   if pyramidingPolicyObject == None:
