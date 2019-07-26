@@ -507,17 +507,17 @@ def fitStackToCollection(stack, maxSegments, startYear, endYear):
 # Convert image collection created using LANDTRENDRVertStack() to the same format as that created by
 # LANDTRENDRFitMagSlopeDiffCollection(). Also works for Verdet Stack.
 # VTorLT is the string that is put in the band names, 'LT' or 'VT'
-def convertStack_To_DurFitMagSlope(ltStackCollection, VTorLT):
-  stackList = ltStackCollection.first().bandNames()
+def convertStack_To_DurFitMagSlope(stackCollection, VTorLT):
+  stackList = stackCollection.first().bandNames()
   if 'rmse' in stackList.getInfo():
     stackList.remove('rmse')
-    ltStackCollection = ltStackCollection.select(stackList)
+    stackCollection = stackCollection.select(stackList)
 
   # Prep parameters for fitStackToCollection
-  maxSegments = ltStackCollection.first().get('maxSegments')
-  startYear = ltStackCollection.first().get('startYear')
-  endYear = ltStackCollection.first().get('endYear')
-  indexList = ee.Dictionary(ltStackCollection.aggregate_histogram('band')).keys().getInfo()
+  maxSegments = stackCollection.first().get('maxSegments')
+  startYear = stackCollection.first().get('startYear')
+  endYear = stackCollection.first().get('endYear')
+  indexList = ee.Dictionary(stackCollection.aggregate_histogram('band')).keys().getInfo()
   
   #Set up output collection to populate
   outputCollection = []
@@ -795,10 +795,10 @@ def VERDETVertStack(ts,indexName,run_params = {'tolerance': 0.0001, 'alpha': 0.1
   return ee.Image(stack)
 
 # Update Mask from LinearInterp step
-def updateVerdetMasks(img):
+def updateVerdetMasks(img, linearInterpMasks):
   thisYear = ee.Date(img.get('system:time_start')).format('YYYY')
   thisYear_maskName = ee.String('mask_').cat(thisYear)
-  thisMask = masks.select(thisYear_maskName)
+  thisMask = linearInterpMasks.select(thisYear_maskName)
   img = img.updateMask(thisMask)
   return img
 
