@@ -741,7 +741,6 @@ def VERDETVertStack(ts,indexName,run_params = {'tolerance': 0.0001, 'alpha': 0.1
   
   #Get all possible years
   tsYearRight = ee.Image(ee.Array.cat([ee.Array([startYear]),ee.Array(ee.List.sequence(startYear.add(2),endYear))]))
-  print('tsYearRight',tsYearRight.getInfo())
   #Slice off right and left slopes
   vLeft = verdet.arraySlice(0,1,-1)
   vRight = verdet.arraySlice(0,2,None)
@@ -752,14 +751,11 @@ def VERDETVertStack(ts,indexName,run_params = {'tolerance': 0.0001, 'alpha': 0.1
   
   #Append vertices to the start and end of the time series al la LANDTRENDR
   vVertices = ee.Image(ee.Array([1])).arrayCat(vVertices,0).arrayCat(ee.Image(ee.Array([1])),0)
-  print('vVertices',vVertices.getInfo())
   #Mask out vertex years
   tsYearRight = tsYearRight.arrayMask(vVertices)
-  print('tsYearRightVertices',tsYearRight.getInfo())
   #Find the duration of each segment
   dur = tsYearRight.arraySlice(0,1,None).subtract(tsYearRight.arraySlice(0,0,-1))
   dur = ee.Image(ee.Array([0])).arrayCat(dur,0)
-  print('dur',dur.getInfo())
   #Mask out vertex slopes
   verdet = verdet.arrayMask(vVertices)
   
@@ -769,7 +765,6 @@ def VERDETVertStack(ts,indexName,run_params = {'tolerance': 0.0001, 'alpha': 0.1
   #Get the fitted values
   fitted = ee.Image(run_params['timeSeries'].limit(3).mean()).toArray().arrayCat(mag,0)
   fitted = fitted.arrayAccum(0, ee.Reducer.sum()).arraySlice(0,1,None)
-  print('fitted',fitted.getInfo())
   # Undo scaling of fitted values
   fitted = undoVerdetScaling(fitted, indexName, correctionFactor)
   
