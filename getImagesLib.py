@@ -19,6 +19,7 @@
 #from geeViz.geeView import *
 import math, ee, json
 ee.Initialize()
+from datetime import datetime
 ######################################################################
 #Module for getting Landsat, Sentinel 2 and MODIS images/composites
 #Define visualization parameters
@@ -1697,6 +1698,8 @@ def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform
   collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
   applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,nonDivideBands = ['temp']):
 
+  creationDate = datetime.strftime(datetime.now(),'%Y%m%d')
+
   collection = collection.select(exportBands)
   for year in ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo():
     #Set up dates
@@ -1723,6 +1726,7 @@ def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform
     #Add metadata, cast to integer, and export composite
     composite = composite.set({\
       'system:time_start': ee.Date.fromYMD(year,6,1).millis(),\
+      'creationDate': creationDate, \
       'source': toaOrSR,\
       'yearBuffer':timebuffer,\
       'yearWeights': listToString(weights),\

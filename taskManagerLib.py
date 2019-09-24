@@ -61,11 +61,14 @@ def failedTasks():
 # Cancels all running tasks
 def batchCancel():
     tasks = ee.data.getTaskList()
-    ready = [str(i['id']) for i in tasks if i['state'] == 'READY']
-    running = [str(i['id']) for i in tasks if i['state'] == 'RUNNING']
-    print(ready)
-    map(ee.data.cancelTask,running)
-    map(ee.data.cancelTask,ready)
+    cancelledTasks = []
+    for ind, i in enumerate(tasks):
+        if i['state'] == 'READY' or i['state'] == 'RUNNING':
+            cancelledTasks.append(ind)
+            ee.data.cancelTask(i['id'])
+    tasks2 = ee.data.getTaskList()
+    for ind in cancelledTasks:
+        print(tasks2[ind]['state']+': '+tasks2[ind]['description'])
 
 # Cancels all running tasks with identifier in their name
 def cancelByName(nameIdentifier):

@@ -792,7 +792,8 @@ def VERDETVertStack(ts,indexName,run_params = {'tolerance': 0.0001, 'alpha': 0.1
 # Update Mask from LinearInterp step
 def updateVerdetMasks(img, linearInterpMasks):
   thisYear = ee.Date(img.get('system:time_start')).format('YYYY')
-  thisYear_maskName = ee.String('mask_').cat(thisYear)
+  #thisYear_maskName = ee.String('mask_').cat(thisYear)
+  thisYear_maskName = ee.String('.*_').cat(thisYear)
   thisMask = linearInterpMasks.select(thisYear_maskName)
   img = img.updateMask(thisMask)
   return img
