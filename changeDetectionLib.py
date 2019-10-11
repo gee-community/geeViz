@@ -701,7 +701,8 @@ def prepTimeSeriesForVerdet(ts, indexName, run_params, correctionFactor):
 
   # Get single band time series and set its direction so that a loss in veg is going up
   ts = ts.select([indexName])
-  tsT = applyVerdetScaling(ts, indexName, correctionFactor)
+  tsT = ts
+  #tsT = applyVerdetScaling(ts, indexName, correctionFactor)
   
   # Find areas with insufficient data to run VERDET
   # VERDET currently requires all pixels have a value
@@ -766,7 +767,7 @@ def VERDETVertStack(ts,indexName,run_params = {'tolerance': 0.0001, 'alpha': 0.1
   fitted = ee.Image(run_params['timeSeries'].limit(3).mean()).toArray().arrayCat(mag,0)
   fitted = fitted.arrayAccum(0, ee.Reducer.sum()).arraySlice(0,1,None)
   # Undo scaling of fitted values
-  fitted = undoVerdetScaling(fitted, indexName, correctionFactor)
+  #fitted = undoVerdetScaling(fitted, indexName, correctionFactor)
   
   #Get the bands needed to convert to image stack
   forStack = tsYearRight.addBands(fitted).toArray(1)  
@@ -792,8 +793,8 @@ def VERDETVertStack(ts,indexName,run_params = {'tolerance': 0.0001, 'alpha': 0.1
 # Update Mask from LinearInterp step
 def updateVerdetMasks(img, linearInterpMasks):
   thisYear = ee.Date(img.get('system:time_start')).format('YYYY')
-  #thisYear_maskName = ee.String('mask_').cat(thisYear)
-  thisYear_maskName = ee.String('.*_').cat(thisYear)
+  thisYear_maskName = ee.String('mask_').cat(thisYear)
+  #thisYear_maskName = ee.String('.*_').cat(thisYear)
   thisMask = linearInterpMasks.select(thisYear_maskName)
   img = img.updateMask(thisMask)
   return img
