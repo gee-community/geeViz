@@ -17,7 +17,7 @@
 #Intended to work within the geeViz package
 ######################################################################
 #from geeViz.geeView import *
-import math, ee, json
+import math, ee, json, pdb
 ee.Initialize()
 from datetime import datetime
 ######################################################################
@@ -1041,8 +1041,9 @@ def exportToAssetWrapper2(imageForExport,assetName,assetPath,pyramidingPolicyObj
     
   if pyramidingPolicyObject == None:
     pyramidingPolicyObject = {'.default':'mean'}
-
-  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath,  json.dumps(pyramidingPolicyObject), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
+  #pdb.set_trace()
+  #t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath,  json.dumps(pyramidingPolicyObject), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
+  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath,  pyramidingPolicyObject, None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
   t.start()
 
 #########################################################################
