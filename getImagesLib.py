@@ -2087,14 +2087,14 @@ def getHarmonicList(yearDateImg,transformBandName,harmonicList):
     
   def sinCat(h):
     ht = h*100
-    return ee.String('sin_').cat(ht.toString()).cat('_').cat(transformBandName)
-  sinNames = harmonicList.map(sinCat)
+    return ee.String('sin_').cat(str(ht)).cat('_').cat(transformBandName)
+  sinNames = [sinCat(h) for h in harmonicList]
 
   def cosCat(h):
-    ht =h*100;
-    return ee.String('cos_').cat(ht.toString()).cat('_').cat(transformBandName)
+    ht =h*100
+    return ee.String('cos_').cat(str(ht)).cat('_').cat(transformBandName)
     
-  cosNames = harmonicList.map(cosCat)
+  cosNames = [cosCat(h) for h in harmonicList]
       
     
   
