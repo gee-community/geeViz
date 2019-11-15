@@ -255,8 +255,8 @@ def addYearJulianDayBand(img):
 def addFullYearJulianDayBand(img):
   d = ee.Date(img.get('system:time_start'));
   julian = ee.Number(d.getRelative('day','year')).add(1).format('%03d')
-  y = ee.String(d.get('year'))
-  yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian']).int64();
+  y = ee.Number.format(d.get('year'))
+  yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian']).int64()
   
   return img.addBands(yj).float()
 
@@ -993,7 +993,6 @@ def medoidMosaicMSD(inCollection,medoidIncludeBands = None):
   #Find band names in first image
   f = ee.Image(inCollection.first())
   bandNames = f.bandNames()
-  bandNumbers = ee.List.sequence(1,bandNames.length())
   
   if medoidIncludeBands == None:
     medoidIncludeBands = bandNames
@@ -1004,15 +1003,21 @@ def medoidMosaicMSD(inCollection,medoidIncludeBands = None):
   #Find the squared difference from the median for each image
   def msdGetter(img):
     diff = ee.Image(img).select(medoidIncludeBands).subtract(median).pow(ee.Image.constant(2))
+    img = addFullYearJulianDayBand(img)
+
     return diff.reduce('sum').addBands(img)
   
   medoid = inCollection.map(msdGetter)
     
   
   #Minimize the distance across all bands
+  bandNames = bandNames.cat(['yearJulian'])
+  bandNumbers = ee.List.sequence(1,bandNames.length())
+
   medoid = ee.ImageCollection(medoid)\
     .reduce(ee.Reducer.min(bandNames.length().add(1)))\
     .select(bandNumbers,bandNames)
+  
 
   return medoid
 
@@ -1028,7 +1033,7 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicy = '
   if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
     transform = str(transform)
 
-  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath ,  json.dumps({'.default': pyramidingPolicy}), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
+  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath ,  {'.default': pyramidingPolicy}, None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
   t.start()
 
 def exportToAssetWrapper2(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
@@ -1718,9 +1723,8 @@ def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform
     #Reformat data for export
     compositeBands = composite.bandNames()
     if nonDivideBands != None:
-      composite10k = composite.select(compositeBands.removeAll(nonDivideBands)).multiply(10000)
-      composite = composite10k.addBands(composite.select(nonDivideBands)).select(compositeBands).int16()
-    
+      composite10k = composite.select(compositeBands.removeAll(nonDivideBands)).multiply(10000).int16()
+      composite = composite10k.addBands(composite.select(nonDivideBands).int32()).select(compositeBands)
     else:
       composite = composite.multiply(10000).int16()
     
@@ -1852,13 +1856,12 @@ def getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,\
 #     var f = ee.Image(ts.first());
 #     Map.addLayer(f,vizParamsFalse,'First-illuminated',false);
 #   }
-  
   #Export composites
   if exportComposites:
     exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp']
     exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,\
-    ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
-                  applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination)
+                  ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
+                  applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,nonDivideBands = ['temp'])
   
   
   return [ls,ts]
@@ -1881,7 +1884,7 @@ def getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
   
   startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day')
   endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day')
-  print('Start and end dates:', startDate, endDate);
+  print('Start and end dates:', startDate.getInfo(), endDate.getInfo());
 
   #Do some error checking
   toaOrSR = toaOrSR.upper()
