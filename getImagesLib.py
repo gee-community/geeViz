@@ -257,7 +257,7 @@ def addFullYearJulianDayBand(img):
   d = ee.Date(img.get('system:time_start'));
   julian = ee.Number(d.getRelative('day','year')).add(1).format('%03d')
   y = ee.String(d.get('year'))
-  yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian']).int64();
+  yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian']);
   
   return img.addBands(yj).float()
 
@@ -1018,16 +1018,17 @@ def medoidMosaicMSD(inCollection,medoidIncludeBands = None):
   #Find the squared difference from the median for each image
   def msdGetter(img):
     diff = ee.Image(img).select(medoidIncludeBands).subtract(median).pow(ee.Image.constant(2))
+    img = addYearBand(img)
+    img = addJulianDayBand(img)
     return diff.reduce('sum').addBands(img)
   
   medoid = inCollection.map(msdGetter)
-    
-  
+  bandNames = bandNames.cat(['year','julianDay'])
+  bandNumbers = ee.List.sequence(1,bandNames.length())
   #Minimize the distance across all bands
   medoid = ee.ImageCollection(medoid)\
     .reduce(ee.Reducer.min(bandNames.length().add(1)))\
     .select(bandNumbers,bandNames)
-
   return medoid
 
 
@@ -1894,17 +1895,17 @@ def getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,\
   
   #Export composites
   if exportComposites:
-    # if compositingMethod == 'medoid':
-    #   exportBands = ['blue', 'green', 'red', 'nir', 'swir1','swir2','temp','yearJulian']
-    #   exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,\
-    #   ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
-    #               applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,['temp','yearJulian'])
-    # else:
-    exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp']
-    exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,\
-    ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
-                applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination)
-  
+    if compositingMethod == 'medoid':
+      exportBands = ['blue', 'green', 'red', 'nir', 'swir1','swir2','temp','year','julianDay']
+      exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,\
+      ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
+                  applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,['temp','year','julianDay'])
+    else:
+      exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp']
+      exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,\
+      ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
+                  applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination)
+    
 
   
   return [ls,ts]
