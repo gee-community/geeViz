@@ -44,8 +44,9 @@ print('geeViz package folder:', os.getcwd())
 
 #Specify location of files to run
 template = py_viz_dir +geeViewFolder +'/index.html'
-ee_run =  py_viz_dir+ geeViewFolder +'/ee/run2.js'
-
+ee_run_dir =  py_viz_dir+ geeViewFolder +'/ee/'
+if os.path.exists(ee_run_dir) == False:os.makedirs(ee_run_dir)
+ee_run = ee_run_dir + 'run2.js'
 
 #Specify port to run on
 local_server_port = 8003
