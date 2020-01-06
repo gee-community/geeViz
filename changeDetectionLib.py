@@ -25,6 +25,11 @@ from datetime import datetime
 #-------------------------------------------------------------------------
 #             Image and array manipulation
 #------------------------------------------------------------------------
+lossYearPalette =  'ffffe5,fff7bc,fee391,fec44f,fe9929,ec7014,cc4c02'
+lossMagPalette = 'D00,F5DEB3'
+gainYearPalette =  '54A247,AFDEA8,80C476,308023,145B09'
+gainMagPalette = 'F5DEB3,006400'
+changeDurationPalette = 'BD1600,E2F400,0C2780'
 #Helper to multiply image
 def multBands(img,distDir,by):
   out = img.multiply(ee.Image(distDir).multiply(by))
@@ -287,7 +292,118 @@ def landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,ru
   #Convert to single image
   vertStack = getLTvertStack(rawLT,run_params)
   return [lt,distImg,fittedCollection,vertStack]
+#########################################################################################################
+#########################################################################################################
+#Function to join raw time series with fitted time series from LANDTRENDR
+#Takes the rawTs as an imageCollection, lt is the first band of the output from LANDTRENDR, and the distDir
+#is the direction of change for a loss in vegeation for the chosen band/index
+def getRawAndFittedLT(rawTs,lt,startYear,endYear,indexName = 'Band',distDir = -1):
 
+  #Pop off years and fitted values
+  ltYear = lt.arraySlice(0,0,1).arrayProject([1])
+  ltFitted = lt.arraySlice(0,2,3).arrayProject([1])
+  
+  #Flip fitted values if needed
+  if distDir == -1:ltFitted = ltFitted.multiply(-1)
+  
+  #Convert array to an imageCollection
+  fittedCollection = arrayToTimeSeries(ltFitted,ltYear,ee.List.sequence(startYear,endYear),'LT_Fitted_'+indexName)
+  
+  #Join raw time series with fitted
+  joinedTS = joinCollections(rawTs,fittedCollection)
+  
+  return joinedTS
+  
+#########################################################################################################
+#Function for running LT, thresholding the segments for both loss and gain, sort them, and convert them to an image stack
+# July 2019 LSC: replaced some parts of workflow with functions in changeDetectionLib
+def simpleLANDTRENDR(ts,startYear,endYear,indexName = 'NBR', run_params = None,lossMagThresh = -0.15,lossSlopeThresh = -0.1,gainMagThresh = 0.1,gainSlopeThresh = 0.1,slowLossDurationThresh = 3,chooseWhichLoss = 'largest',chooseWhichGain = 'largest',addToMap = True,howManyToPull = 2):
+  
+  if run_params == None:
+    run_params = {'maxSegments':6,\
+      'spikeThreshold':         0.9,\
+      'vertexCountOvershoot':   3,\
+      'preventOneYearRecovery': True,\
+      'recoveryThreshold':      0.25,\
+      'pvalThreshold':          0.05,\
+      'bestModelProportion':    0.75,\
+      'minObservationsNeeded':  6\
+    }
+  
+  
+  
+  prepDict = prepTimeSeriesForLandTrendr(ts, indexName, run_params)
+
+  run_params = prepDict['run_params']# added composite time series prepped above
+  countMask = prepDict['countMask']# count mask for pixels without enough data
+  distDir = changeDirDict[indexName]
+
+
+  #Run LANDTRENDR
+  rawLt = ee.Algorithms.TemporalSegmentation.LandTrendr(**run_params)
+  
+  lt = rawLt.select([0])
+  #Remask areas with insufficient data that were given dummy values
+  lt = lt.updateMask(countMask)
+  
+  #Get joined raw and fitted LANDTRENDR for viz
+  joinedTS = getRawAndFittedLT(ts, lt, startYear, endYear, indexName, distDir)
+ 
+  #Convert LandTrendr to Loss & Gain space
+  lossGainDict = convertToLossGain(lt, 'rawLandTrendr', lossMagThresh, lossSlopeThresh, gainMagThresh, gainSlopeThresh,slowLossDurationThresh, chooseWhichLoss, chooseWhichGain, howManyToPull)
+  lossStack = lossGainDict['lossStack']
+  gainStack = lossGainDict['gainStack']
+
+  #Convert to byte/int16 to save space
+  lossThematic = lossStack.select(['.*_yr_.*']).int16().addBands(lossStack.select(['.*_dur_.*']).byte())
+  lossContinuous = lossStack.select(['.*_mag_.*','.*_slope_.*']).multiply(10000).int16()
+  lossStack = lossThematic.addBands(lossContinuous)
+
+  gainThematic = gainStack.select(['.*_yr_.*']).int16().addBands(gainStack.select(['.*_dur_.*']).byte())
+  gainContinuous = gainStack.select(['.*_mag_.*','.*_slope_.*']).multiply(10000).int16()
+  gainStack = gainThematic.addBands(gainContinuous)
+  
+  if addToMap:
+    #Set up viz params
+    vizParamsLossYear = {'min':startYear,'max':endYear,'palette':lossYearPalette}
+    vizParamsLossMag = {'min':-0.8*10000 ,'max':lossMagThresh*10000,'palette':lossMagPalette}
+    
+    vizParamsGainYear = {'min':startYear,'max':endYear,'palette':gainYearPalette}
+    vizParamsGainMag = {'min':gainMagThresh*10000,'max':0.8*10000,'palette':gainMagPalette}
+    
+    vizParamsDuration = {'min':1,'max':5,'palette':changeDurationPalette}
+  
+    # Map.addLayer(lt,{},'Raw LT',False);
+    Map.addLayer(joinedTS.select(['.*'+indexName]),{},'Time Series',False);
+  
+    for i in ee.List.sequence(1,howManyToPull).getInfo():
+      i = int(i)
+      lossStackI = lossStack.select(['.*_'+str(i)])
+      gainStackI = gainStack.select(['.*_'+str(i)])
+      # print(lossStackI.select(['loss_yr.*']).getInfo())
+      showLossYear = False
+      if i == 1: showLossYear = True
+      Map.addLayer(lossStackI.select(['loss_yr.*']),vizParamsLossYear,str(i)+' '+indexName +' Loss Year',showLossYear)
+      Map.addLayer(lossStackI.select(['loss_mag.*']),vizParamsLossMag,str(i)+' '+indexName +' Loss Magnitude',False)
+      Map.addLayer(lossStackI.select(['loss_dur.*']),vizParamsDuration,str(i)+' '+indexName +' Loss Duration',False)
+      
+      Map.addLayer(gainStackI.select(['gain_yr.*']),vizParamsGainYear,str(i)+' '+indexName +' Gain Year',False)
+      Map.addLayer(gainStackI.select(['gain_mag.*']),vizParamsGainMag,str(i)+' '+indexName +' Gain Magnitude',False)
+      Map.addLayer(gainStackI.select(['gain_dur.*']),vizParamsDuration,str(i)+' '+indexName +' Gain Duration',False)
+  
+  
+  outStack = lossStack.addBands(gainStack)
+  
+  #Add indexName to bandnames
+  bns = outStack.bandNames()
+  outBns = bns.map(lambda bn: ee.String(indexName).cat('_LT_').cat(bn))
+  outStack = outStack.select(bns,outBns)
+  
+  return [rawLt,outStack]
+
+
+#########################################################################################################
+#########################################################################################################
 # Function to prep data following our workflows. Will have to run Landtrendr and convert to stack after.
 def prepTimeSeriesForLandTrendr(ts,indexName, run_params):
   maxSegments = ee.Number(run_params['maxSegments'])
@@ -543,7 +659,110 @@ def convertStack_To_DurFitMagSlope(stackCollection, VTorLT):
 
   return outputCollection
 
-#############################################/
+#########################################################################################################
+#Function to convert from raw Landtrendr Output OR Landtrendr/VerdetVertStack output to Loss & Gain Space
+#format = 'rawLandtrendr' (Landtrendr only) or 'vertStack' (Verdet or Landtrendr)
+#If using vertStack format, this will not work if there are masked values in the vertStack. Must use getImagesLib.setNoData prior to 
+#calling this function
+#Have to apply LandTrendr changeDirection to both Verdet and Landtrendr before applying convertToLossGain()
+def convertToLossGain(ltStack, format = 'rawLandtrendr', lossMagThresh = -0.15, lossSlopeThresh = -0.1, gainMagThresh = 0.1, gainSlopeThresh = 0.1, 
+                            slowLossDurationThresh = 3, chooseWhichLoss = 'largest', chooseWhichGain = 'largest', howManyToPull = 2):
+
+  if format == 'rawLandTrendr':
+    print('Converting LandTrendr from raw output to Gain & Loss')
+    #Pop off vertices
+    vertices = ltStack.arraySlice(0,3,4)
+    
+    #Mask out any non-vertex values
+    ltStack = ltStack.arrayMask(vertices)
+    ltStack = ltStack.arraySlice(0,0,3)
+    
+    #Get the pair-wise difference and slopes of the years
+    left = ltStack.arraySlice(1,0,-1)
+    right = ltStack.arraySlice(1,1,None)
+    diff  = left.subtract(right)
+    slopes = diff.arraySlice(0,2,3).divide(diff.arraySlice(0,0,1)).multiply(-1)  
+    duration = diff.arraySlice(0,0,1).multiply(-1)
+    fittedMag = diff.arraySlice(0,2,3)
+    #Set up array for sorting
+    forSorting = right.arraySlice(0,0,1).arrayCat(duration,0).arrayCat(fittedMag,0).arrayCat(slopes,0)
+    
+  elif format == 'vertStack':
+    print('Converting LandTrendr OR Verdet from vertStack format to Gain & Loss')
+    
+    baseMask = ltStack.select([0]).mask()#Will fail on completely masked pixels. Have to work around and then remask later.
+    ltStack = ltStack.unmask(255)#Set masked pixels to 255
+    
+    yrs = ltStack.select('yrs.*').toArray();
+    yrMask = yrs.eq(-32768).Or(yrs.eq(32767)).Or(yrs.eq(0)).Not()
+    yrs = yrs.arrayMask(yrMask)
+    fit = ltStack.select('fit.*').toArray().arrayMask(yrMask)
+    both = yrs.arrayCat(fit,1).matrixTranspose()
+
+    left = both.arraySlice(1,0,-1)
+    right = both.arraySlice(1,1,None)
+    diff = left.subtract(right)
+    fittedMag = diff.arraySlice(0,1,2)
+    duration = diff.arraySlice(0,0,1).multiply(-1)
+    slopes = fittedMag.divide(duration)
+    forSorting = right.arraySlice(0,0,1).arrayCat(duration,0).arrayCat(fittedMag,0).arrayCat(slopes,0)
+    forSorting = forSorting.updateMask(baseMask)
+
+  
+  
+  #Apply thresholds
+  magLossMask =  forSorting.arraySlice(0,2,3).lte(lossMagThresh)
+  slopeLossMask = forSorting.arraySlice(0,3,4).lte(lossSlopeThresh)
+  lossMask = magLossMask.Or(slopeLossMask)
+  magGainMask =  forSorting.arraySlice(0,2,3).gte(gainMagThresh)
+  slopeGainMask = forSorting.arraySlice(0,3,4).gte(gainSlopeThresh)
+  gainMask = magGainMask.Or(slopeGainMask)
+  
+  #Mask any segments that do not meet thresholds
+  forLossSorting = forSorting.arrayMask(lossMask)
+  forGainSorting = forSorting.arrayMask(gainMask)
+  
+  #Dictionaries for choosing the column and direction to multiply the column for sorting
+  #Loss and gain are handled differently for sorting magnitude and slope (largest/smallest and steepest/mostgradual)
+  lossColumnDict = {'newest':[0,-1],\
+                    'oldest':[0,1],\
+                    'largest':[2,1],\
+                    'smallest':[2,-1],\
+                    'steepest':[3,1],\
+                    'mostGradual':[3,-1],\
+                    'shortest':[1,1],\
+                    'longest':[1,-1]\
+                  }
+  gainColumnDict = {'newest':[0,-1],\
+                    'oldest':[0,1],\
+                    'largest':[2,-1],\
+                    'smallest':[2,1],\
+                    'steepest':[3,-1],\
+                    'mostGradual':[3,1],\
+                    'shortest':[1,1],\
+                    'longest':[1,-1]\
+                  }
+  #Pull the respective column and direction
+  lossSortValue = lossColumnDict[chooseWhichLoss]
+  gainSortValue = gainColumnDict[chooseWhichGain]
+
+  #Pull the sort column and multiply it
+  lossSortBy = forLossSorting.arraySlice(0,lossSortValue[0],lossSortValue[0]+1).multiply(lossSortValue[1])
+  gainSortBy = forGainSorting.arraySlice(0,gainSortValue[0],gainSortValue[0]+1).multiply(gainSortValue[1])
+
+  #Sort the loss and gain and slice off the first column
+  lossAfterForSorting = forLossSorting.arraySort(lossSortBy)
+  gainAfterForSorting = forGainSorting.arraySort(gainSortBy)
+
+  #Convert array to image stck
+  lossStack = getLTStack(lossAfterForSorting,howManyToPull,['loss_yr_','loss_dur_','loss_mag_','loss_slope_'])
+  gainStack = getLTStack(gainAfterForSorting,howManyToPull,['gain_yr_','gain_dur_','gain_mag_','gain_slope_'])
+  
+  lossGainDict = {  'lossStack': lossStack,\
+                        'gainStack': gainStack\
+  }
+  
+  return lossGainDict
 
 
 #--------------------------------------------------------------------------
