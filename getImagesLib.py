@@ -16,10 +16,9 @@
 #Script to help with data prep, analysis, and delivery from GEE
 #Intended to work within the geeViz package
 ######################################################################
-#from geeViz.geeView import *
-import math, ee, json, pdb
+from geeViz.geeView import *
+import math, ee, json
 ee.Initialize()
-from datetime import datetime
 ######################################################################
 #Module for getting Landsat, Sentinel 2 and MODIS images/composites
 #Define visualization parameters
@@ -80,12 +79,14 @@ def sieve(image,mmu):
 def harmonizationRoy(oli):
   slopes = ee.Image.constant([0.9785, 0.9542, 0.9825, 1.0073, 1.0171, 0.9949])#create an image of slopes per band for L8 TO L7 regression line - David Roy
   itcp = ee.Image.constant([-0.0095, -0.0016, -0.0022, -0.0021, -0.0030, 0.0029])#create an image of y-intercepts per band for L8 TO L7 regression line - David Roy
-  y = oli.select(['B2','B3','B4','B5','B6','B7'],['B1', 'B2', 'B3', 'B4', 'B5', 'B7']).resample('bicubic').subtract(itcp.multiply(10000)).divide(slopes).set('system:time_start', oli.get('system:time_start'))
-   #select OLI bands 2-7 and rename them to match L7 band names
-   #...resample the L8 bands using bicubic
-   #...multiply the y-intercept bands by 10000 to match the scale of the L7 bands then apply the line equation - subtract the intercept and divide by the slope
-   # ...set the output system:time_start metadata to the input image time_start otherwise it is null
-  return y.toShort()  #return the image as short to match the type of the other data
+  bns = oli.bandNames()
+  includeBns = ['blue','green','red','nir','swir1','swir2' ]
+  otherBns = bns.removeAll(includeBns)
+
+  #create an image of y-intercepts per band for L8 TO L7 regression line - David Roy
+  y = oli.select(includeBns).float().subtract(itcp).divide(slopes).set('system:time_start', oli.get('system:time_start'))
+  y = y.addBands(oli.select(otherBns)).select(bns);
+  return y.float()
 
 
 ####################################################################
@@ -255,8 +256,8 @@ def addYearJulianDayBand(img):
 def addFullYearJulianDayBand(img):
   d = ee.Date(img.get('system:time_start'));
   julian = ee.Number(d.getRelative('day','year')).add(1).format('%03d')
-  y = ee.Number.format(d.get('year'))
-  yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian']).int64()
+  y = ee.String(d.get('year'))
+  yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian']).int64();
   
   return img.addBands(yj).float()
 
@@ -367,21 +368,33 @@ def dailyMosaics(imgs):
   return imgs
 
 ################################################################
-def getS2(studyArea,startDate,endDate,startJulian,endJulian,resampleMethod = 'near'):
+def getS2(studyArea,startDate,endDate,startJulian,endJulian,resampleMethod = 'near',toaOrSR = 'TOA',convertToDailyMosaics = True):
+  toaOrSR = toaOrSR.upper()
+
+  s2CollectionDict = {'TOA':'COPERNICUS/S2','SR':'COPERNICUS/S2_SR'}
+  sensorBandDict = {\
+      'SR': ['B1','B2','B3','B4','B5','B6','B7','B8','B8A', 'B9', 'B11','B12'],\
+      'TOA': ['B1','B2','B3','B4','B5','B6','B7','B8','B8A', 'B9', 'B10', 'B11','B12']\
+  }
+  sensorBandNameDict = {\
+      'SR': ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'swir1', 'swir2'],\
+      'TOA': ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2']\
+  }
 
   def multS2(img):
-    t = img.select([ 'B1','B2','B3','B4','B5','B6','B7','B8','B8A', 'B9','B10', 'B11','B12']).divide(10000)#Rescale to 0-1
+    t = img.select(sensorBandDict[toaOrSR]).divide(10000);
     t = t.addBands(img.select(['QA60']))
     out = t.copyProperties(img).copyProperties(img,['system:time_start'])
     return out
 
   #Get some s2 data
-  s2s = ee.ImageCollection('COPERNICUS/S2')\
+  print('Using S2 Collection:',s2CollectionDict[toaOrSR])
+  s2s = ee.ImageCollection(s2CollectionDict[toaOrSR])\
             .filterDate(startDate,endDate)\
             .filter(ee.Filter.calendarRange(startJulian,endJulian))\
             .filterBounds(studyArea)\
-            .map(multS2).select(['QA60', 'B1','B2','B3','B4','B5','B6','B7','B8','B8A', 'B9','B10', 'B11','B12'],['QA60','cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2'])\
-  
+            .map(multS2)\
+            .select(['QA60']+sensorBandDict[toaOrSR],['QA60']+sensorBandNameDict[toaOrSR])
   
   def setResample(img):
     return img.resample(resampleMethod)
@@ -390,7 +403,8 @@ def getS2(studyArea,startDate,endDate,startJulian,endJulian,resampleMethod = 'ne
     print('Setting resample method to ',resampleMethod)
     s2s = s2s.map(setResample)
   #Convert to daily mosaics to avoid redundent observations in MGRS overlap areas and edge artifacts for shadow masking
-  s2s = dailyMosaics(s2s)
+  if convertToDailyMosaics:
+    s2s = dailyMosaics(s2s)
   return s2s
 
 
@@ -677,7 +691,7 @@ fmaskBitDict = {'cloud' : 32, 'shadow': 8,'snow':16}
 # Supported fmaskClass options: 'cloud', 'shadow', 'snow', 'high_confidence_cloud', 'med_confidence_cloud'
 def cFmask(img,fmaskClass):
   
-  qa = img.select('pixel_qa')
+  qa = img.select('pixel_qa').int16()
   if fmaskClass == 'high_confidence_cloud':
      m = qa.bitwiseAnd(1 << 6).neq(0).And(qa.bitwiseAnd(1 << 7).neq(0))
   elif fmaskClass == 'med_confidence_cloud':
@@ -856,7 +870,7 @@ def addSoilIndices(img):
       'SWIR1': img.select('swir1'),\
       'SWIR2': img.select('swir2')\
     }).float()
-  img = img.addBands(hi.rename(['HI']))  
+  img = img.addBands(hi.rename(['HI'])).float()  
   return img
 
 #########################################################################
@@ -993,6 +1007,7 @@ def medoidMosaicMSD(inCollection,medoidIncludeBands = None):
   #Find band names in first image
   f = ee.Image(inCollection.first())
   bandNames = f.bandNames()
+  bandNumbers = ee.List.sequence(1,bandNames.length())
   
   if medoidIncludeBands == None:
     medoidIncludeBands = bandNames
@@ -1003,21 +1018,15 @@ def medoidMosaicMSD(inCollection,medoidIncludeBands = None):
   #Find the squared difference from the median for each image
   def msdGetter(img):
     diff = ee.Image(img).select(medoidIncludeBands).subtract(median).pow(ee.Image.constant(2))
-    img = addFullYearJulianDayBand(img)
-
     return diff.reduce('sum').addBands(img)
   
   medoid = inCollection.map(msdGetter)
     
   
   #Minimize the distance across all bands
-  bandNames = bandNames.cat(['yearJulian'])
-  bandNumbers = ee.List.sequence(1,bandNames.length())
-
   medoid = ee.ImageCollection(medoid)\
     .reduce(ee.Reducer.min(bandNames.length().add(1)))\
     .select(bandNumbers,bandNames)
-  
 
   return medoid
 
@@ -1033,7 +1042,7 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicy = '
   if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
     transform = str(transform)
 
-  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath ,  {'.default': pyramidingPolicy}, None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
+  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath ,  json.dumps({'.default': pyramidingPolicy}), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
   t.start()
 
 def exportToAssetWrapper2(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
@@ -1046,9 +1055,8 @@ def exportToAssetWrapper2(imageForExport,assetName,assetPath,pyramidingPolicyObj
     
   if pyramidingPolicyObject == None:
     pyramidingPolicyObject = {'.default':'mean'}
-  #pdb.set_trace()
-  #t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath,  json.dumps(pyramidingPolicyObject), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
-  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath,  pyramidingPolicyObject, None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
+
+  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath,  json.dumps(pyramidingPolicyObject), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
   t.start()
 
 #########################################################################
@@ -1342,7 +1350,7 @@ def sentinel2CloudScore(img):
   #Use .max as a pseudo OR conditional
   blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.blue', [0.1, 0.5]))
   blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.cb', [0.1, 0.5]))
-  blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.cirrus', [0.1, 0.3]))
+  # blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.cirrus', [0.1, 0.3]))
 
   reSum = rescale(img,'(img.re1+img.re2+img.re3)/3',[0.5, 0.7])
 
@@ -1443,17 +1451,11 @@ def smartJoin(primary,secondary,hourDiff):
   millis = hourDiff * 60 * 60 * 1000
   
   #Create a time filter to define a match as overlapping timestamps.
-  maxDiffFilter = ee.Filter.Or(\
-  ee.Filter.maxDifference({\
+  maxDiffFilter = ee.Filter.maxDifference({\
     'difference': millis,\
     'leftField': 'system:time_start',\
-    'rightField': 'system:time_end'\
-  }),\
-  ee.Filter.maxDifference({\
-    'difference': millis,\
-    'leftField': 'system:time_end',\
     'rightField': 'system:time_start'\
-  }))
+  })
   #Define the join.
   saveBestJoin = ee.Join.saveBest({\
     'matchKey': 'bestImage',\
@@ -1466,6 +1468,40 @@ def smartJoin(primary,secondary,hourDiff):
       
   #Apply the join.
   joined = saveBestJoin.apply(primary, secondary, maxDiffFilter)
+  joined = joined.map(MergeBands)
+  return joined
+#########################################################################
+#Join collections by space (intersection) and time (specified by user)
+def spatioTemporalJoin(primary,secondary,hourDiff = 24,outKey = 'secondary'):
+  time = hourDiff* 60 * 60 * 1000;
+  
+  outBns = ee.Image(secondary.first()).bandNames().map(lambda bn: ee.String(bn).cat('_').cat(outKey))
+  #Define a spatial filter as geometries that intersect.
+  spatioTemporalFilter = ee.Filter.And(\
+    ee.Filter.maxDifference({\
+      'difference': time,\
+      'leftField': 'system:time_start',\
+      'rightField': 'system:time_start'\
+    }),\
+    ee.Filter.intersects({\
+    'leftField': '.geo',\
+    'rightField': '.geo',\
+    'maxError': 10\
+  })\
+  )
+  #Define a save all join.
+  saveBestJoin = ee.Join.saveBest({\
+    'matchKey': outKey,\
+    'measureKey': 'timeDiff'\
+  })
+  
+  #Apply the join.
+  joined = saveBestJoin.apply(primary, secondary, spatioTemporalFilter)
+  def MergeBands(element):
+    #A function to merge the bands together.
+    #After a join, results are in 'primary' and 'secondary' properties.
+    return ee.Image.cat(element, ee.Image(element.get(outKey)).rename(outBns))
+
   joined = joined.map(MergeBands)
   return joined
 #########################################################################
@@ -1704,8 +1740,6 @@ def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform
   collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
   applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,nonDivideBands = ['temp']):
 
-  creationDate = datetime.strftime(datetime.now(),'%Y%m%d')
-
   collection = collection.select(exportBands)
   for year in ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo():
     #Set up dates
@@ -1723,15 +1757,15 @@ def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform
     #Reformat data for export
     compositeBands = composite.bandNames()
     if nonDivideBands != None:
-      composite10k = composite.select(compositeBands.removeAll(nonDivideBands)).multiply(10000).int16()
-      composite = composite10k.addBands(composite.select(nonDivideBands).int32()).select(compositeBands)
+      composite10k = composite.select(compositeBands.removeAll(nonDivideBands)).multiply(10000)
+      composite = composite10k.addBands(composite.select(nonDivideBands)).select(compositeBands).int16()
+    
     else:
       composite = composite.multiply(10000).int16()
     
     #Add metadata, cast to integer, and export composite
     composite = composite.set({\
       'system:time_start': ee.Date.fromYMD(year,6,1).millis(),\
-      'creationDate': creationDate, \
       'source': toaOrSR,\
       'yearBuffer':timebuffer,\
       'yearWeights': listToString(weights),\
@@ -1819,6 +1853,7 @@ def getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,\
     ls = ls.map(fmShadowWrapper)
   
   if applyFmaskSnowMask:
+    print('Applying Fmask snow mask')
     def fmSnowWrapper(img):
       return cFmask(img,'snow')
 
@@ -1856,13 +1891,21 @@ def getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,\
 #     var f = ee.Image(ts.first());
 #     Map.addLayer(f,vizParamsFalse,'First-illuminated',false);
 #   }
+  
   #Export composites
   if exportComposites:
+    # if compositingMethod == 'medoid':
+    #   exportBands = ['blue', 'green', 'red', 'nir', 'swir1','swir2','temp','yearJulian']
+    #   exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,\
+    #   ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
+    #               applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,['temp','yearJulian'])
+    # else:
     exportBands = ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp']
     exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,\
-                  ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
-                  applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,nonDivideBands = ['temp'])
+    ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
+                applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination)
   
+
   
   return [ls,ts]
 
@@ -1884,7 +1927,7 @@ def getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
   
   startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day')
   endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day')
-  print('Start and end dates:', startDate.getInfo(), endDate.getInfo());
+  print('Start and end dates:', startDate, endDate);
 
   #Do some error checking
   toaOrSR = toaOrSR.upper()
@@ -1927,6 +1970,7 @@ def getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian,
   
   if applyFmaskSnowMask:
     def fmSnowWrapper(img):
+      print('Applying Fmask snow mask')
       return cFmask(img,'snow')
 
     ls = ls.map(fmSnowWrapper)
@@ -1958,7 +2002,7 @@ def getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulia
   cloudScoreThresh = 10,performCloudScoreOffset = True,cloudScorePctl = 10,\
   cloudHeights = ee.List.sequence(500,10000,500),\
   zScoreThresh = -1,shadowSumThresh = 0.35,\
-  contractPixels = 1.5,dilatePixels = 3.5,resampleMethod = 'near'):
+  contractPixels = 1.5,dilatePixels = 3.5,resampleMethod = 'near',toaOrSR = 'TOA',convertToDailyMosaics = True):
   
   #Prepare dates
   #Wrap the dates if needed
@@ -1972,7 +2016,7 @@ def getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulia
 
   
   #Get Sentinel2 image collection
-  s2s = getS2(studyArea,startDate,endDate,startJulian,endJulian,resampleMethod)
+  s2s = getS2(studyArea,startDate,endDate,startJulian,endJulian,resampleMethod,toaOrSR,convertToDailyMosaics)
 
   # Map.addLayer(ee.Image(s2s.first()),{'min':0.05,'max':0.4,'bands':'swir1,nir,red'},'No masking')
   
@@ -2022,14 +2066,14 @@ def getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,\
   zScoreThresh = -1,shadowSumThresh = 0.35,\
   contractPixels = 1.5,dilatePixels = 3.5,\
   correctIllumination = False,correctScale = 250,\
-  exportComposites = False,outputName = 'Sentinel2-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = None,scale = 30,resampleMethod = 'near'):
+  exportComposites = False,outputName = 'Sentinel2-Composite',exportPathRoot = 'users/ianhousman/test',crs = 'EPSG:5070',transform = None,scale = 20,resampleMethod = 'near',toaOrSR = 'TOA',convertToDailyMosaics = True):
   
   s2s = getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,\
   applyQABand,applyCloudScore,applyShadowShift,applyTDOM,\
   cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,\
   cloudHeights,\
   zScoreThresh,shadowSumThresh,\
-  contractPixels,dilatePixels,resampleMethod\
+  contractPixels,dilatePixels,resampleMethod,toaOrSR,convertToDailyMosaics\
   )
   
   
@@ -2067,10 +2111,13 @@ def getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,\
   
   #port composites
   if exportComposites:
-  
-    exportBands = ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2']
+    exportBandDict = {\
+      'SR':['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'swir1', 'swir2'],\
+      'TOA':['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus', 'swir1', 'swir2']\
+    }
+    exportBands = exportBandDict[toaOrSR]
     exportCompositeCollection(exportPathRoot,outputName,studyArea,crs,transform,scale,\
-    ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,'TOA',weights,\
+    ts,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
                   applyCloudScore, 'NA',applyTDOM,'NA','NA','NA',correctIllumination,None)
   
   
@@ -2091,13 +2138,13 @@ def getHarmonicList(yearDateImg,transformBandName,harmonicList):
   def sinCat(h):
     ht = h*100
     return ee.String('sin_').cat(str(ht)).cat('_').cat(transformBandName)
-  sinNames = [sinCat(h) for h in harmonicList]
+  sinNames = map(lambda i:sinCat(i),harmonicList)
 
   def cosCat(h):
-    ht =h*100
+    ht =h*100;
     return ee.String('cos_').cat(str(ht)).cat('_').cat(transformBandName)
     
-  cosNames = [cosCat(h) for h in harmonicList]
+  cosNames = map(lambda i : cosCat(i),harmonicList)
       
     
   
@@ -2458,8 +2505,37 @@ def getHarmonicCoefficientsAndFit(allImages,indexNames,whichHarmonics = [2],detr
   #Map.addLayer(coeffs,{},'Harmonic Regression Coefficients',False)
   predicted = newPredict(coeffs,withHarmonics)
   return [coeffs,predicted]
+#########################################################################
+#########################################################################
+#Simple predict function for harmonic coefficients
+#Expects coeffs from getHarmonicCoefficientsAndFit function
+#Date image is expected to be yyyy.dd where dd is the day of year / 365 (proportion of year)
+#ex. synthImage(coeffs,ee.Image([2019.6]),['blue','green','red','nir','swir1','swir2','NBR','NDVI'],[2,4],true)
+def synthImage(coeffs,dateImage,indexNames,harmonics,detrend):
+  #Set up constant image to multiply coeffs by
+  constImage = ee.Image(1)
+  if detrend:constImage = constImage.addBands(dateImage)
+  for harm in harmonics:
+    constImage = constImage.addBands(ee.Image([dateImage.multiply(harm*Math.PI).sin()]))\
+                           .addBands(ee.Image([dateImage.multiply(harm*Math.PI).cos()]))
 
-# ///////////////////////////////////////////////////////////////
+  
+  #Predict values for each band                    
+  out = ee.Image(1);
+  def predictWrapper(bn,out):
+    bn = ee.String(bn)
+    #Select coeffs for that band
+    coeffssBn = coeffs.select(ee.String(bn).cat('.*'))
+    predicted = constImage.multiply(coeffssBn).reduce('sum').rename(bn)
+    return ee.Image(out).addBands(predicted)
+  
+  out = ee.Image(ee.List(indexNames).iterate(predictWrapper,out));
+  
+  out = out.select(ee.List.sequence(1, out.bandNames().size().subtract(1)))
+ 
+  return out
+#########################################################################
+#########################################################################
 # // function getHarmonicFit(allImages,indexNames,whichHarmonics){
 # //   getHarmonicCoefficients(allImages,indexNames,whichHarmonics)
 # //   // newPredict(coeffs,withHarmonics)

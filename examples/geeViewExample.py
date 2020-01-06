@@ -12,12 +12,12 @@ from geeViz.getImagesLib import *
 nlcd = ee.Image('USGS/NLCD/NLCD2011')
 
 #Get the values, names, and palette
-landcover_class_values = nlcd.get('landcover_class_values').getInfo();
+landcover_class_values = [int(i) for i in nlcd.get('landcover_class_values').getInfo()];
 landcover_class_names = nlcd.get('landcover_class_names').getInfo();
 landcover_class_palette = nlcd.get('landcover_class_palette').getInfo();
 
 #Zip the names and values together for the final legend names
-name_values_zipped = [str(i[0]) + ' ' + i[1] for i in zip(landcover_class_values,landcover_class_names)]
+name_values_zipped = [str(i[0]) + ' ' + str(i[1]) for i in zip(landcover_class_values,landcover_class_names)]
 
 #Fill any missing values in the NLCD classes so stretch is applied correctly 
 landcover_class_palette_filled = []
@@ -35,10 +35,10 @@ for i in range(landcover_class_values[0],landcover_class_values[-1]+1):
 #Then provide a list of labels of the same length as palette
 #Then set 'addToClassLegend' to 'true'
 #If nothing is to be added to the legend, set 'addToLegend' to 'false'
-Map.addLayer(nlcd.select([0]),{'min':landcover_class_values[0],'max':landcover_class_values[-1],'palette':landcover_class_palette_filled,'labels':landcover_class_labels_filled,'addToClassLegend':'true'},'NLCD 2011 Landcover/Landuse',False)
+Map.addLayer(nlcd.select(['landcover']),{'min':landcover_class_values[0],'max':landcover_class_values[-1],'palette':landcover_class_palette_filled,'labels':landcover_class_labels_filled,'addToClassLegend':'true'},'NLCD 2011 Landcover/Landuse',False)
 
 # Continuous data automatically have a legend added
-Map.addLayer(nlcd.select([2]),{'min':20,'max':80,'palette':'555,0A0'},'NLCD 2011 TCC',False)
+Map.addLayer(nlcd.select(['percent_tree_cover']),{'min':20,'max':80,'palette':'555,0A0'},'NLCD 2011 TCC',False)
 
 #Another example
 mtbs = ee.ImageCollection('projects/USFS/LCMS-NFS/CONUS-Ancillary-Data/MTBS')

@@ -13,11 +13,11 @@ from  geeViz.getImagesLib import *
 #1. Specify study area: Study area
 #Can specify a country, provide a fusion table  or asset table (must add 
 #.geometry() after it), or draw a polygon and make studyArea = drawnPolygon
-studyArea = ee.Geometry.Polygon(\
-        [[[-124.02812499999999, 43.056605431434335],\
-          [-124.02812499999999, 38.259489368377466],\
-          [-115.94218749999999, 38.259489368377466],\
-          [-115.94218749999999, 43.056605431434335]]])
+studyArea =  ee.Geometry.Polygon(\
+        [[[-121.72925686636518, 39.25666609688575],\
+          [-121.72925686636518, 39.00526300299732],\
+          [-121.09204983511518, 39.00526300299732],\
+          [-121.09204983511518, 39.25666609688575]]])
 
 #2. Update the startJulian and endJulian variables to indicate your seasonal 
 #constraints. This supports wrapping for tropics and southern hemisphere.
@@ -30,8 +30,8 @@ endJulian = 250
 #More than a 3 year span should be provided for time series methods to work 
 #well. If using Fmask as the cloud/cloud shadow masking method, this does not 
 #matter
-startYear = 2016
-endYear = 2018
+startYear = 2017
+endYear = 2019
 
 #4. Specify an annual buffer to include imagery from the same season 
 #timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -56,12 +56,14 @@ compositingMethod = 'medoid'
 
 #7. Choose Top of Atmospheric (TOA) or Surface Reflectance (SR) 
 #Specify TOA or SR
-#Current implementation does not support Fmask for TOA
-#toaOrSR = 'SR'
+#SR S2 data also has a terrain correction applied which may or may not be best depending on how you are using the data
+#If using data from humid climates, terrain correction can be useful. Since vegetation types differ with respect to slope/aspect 
+#in dryer climates, terrain correction can remove some of the signal in dryer climates.  In higher latitudes terrain correction can fail.
+toaOrSR = 'TOA'
 
-#8. Choose whether to include Landat 7
-#Generally only included when data are limited
-includeSLCOffL7 = False
+#Whether to convert S2 images from the military grid reference system(MGRS) tiles to daily mosaics to avoid arbitrary
+#MGRS tile artifacts or not. In most cases, it is best to set this to true.
+convertToDailyMosaics = True
 
 
 # 10. Choose cloud/cloud shadow masking method
@@ -143,21 +145,21 @@ correctScale = 250#Choose a scale to reduce on- 250 generally works well
 
 #13. Export params
 #Whether to export composites
-exportComposites = False
+exportComposites = True
 
 #Set up Names for the export
 outputName = 'S2_'
 
 #Provide location composites will be exported to
 #This should be an asset folder, or more ideally, an asset imageCollection
-exportPathRoot = 'users/ianhousman/test/changeCollection'
+exportPathRoot = 'users/iwhousman/test/ChangeCollection'
 
 
 
 #CRS- must be provided.  
 #Common crs codes: Web mercator is EPSG:4326, USGS Albers is EPSG:5070, 
 #WGS84 UTM N hemisphere is EPSG:326+ zone number (zone 12 N would be EPSG:32612) and S hemisphere is EPSG:327+ zone number
-crs = 'EPSG:32611'
+crs = 'EPSG:5070'
 
 #Specify transform if scale is null and snapping to known grid is needed
 transform = None#[30,0,-2361915.0,0,-30,3177735.0]
@@ -173,7 +175,7 @@ s2sAndTs =getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
   zScoreThresh,shadowSumThresh,\
   contractPixels,dilatePixels,\
   correctIllumination,correctScale,\
-  exportComposites,outputName,exportPathRoot,crs,transform,scale,resampleMethod)
+  exportComposites,outputName,exportPathRoot,crs,transform,scale,resampleMethod,toaOrSR,convertToDailyMosaics)
   
 #Separate into scenes and composites for subsequent analysis
 processedScenes = s2sAndTs[0]
