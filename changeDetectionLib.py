@@ -839,6 +839,62 @@ def verdetAnnualSlope(tsIndex, indexName, startYear, endYear, alpha, tolerance =
   return verdetC
 
 #--------------------------------------------------------------------------
+#                 CCDC FUNCTIONS
+#--------------------------------------------------------------------------
+#Function for getting CCDC coefficients for a given date raster
+#Date raster is expected to be decimal year (e.g. 2000.5  or 1999.25...etc)
+def getSegmentParamsForYear(ccdc,yearImg):
+  
+  #Get the start and end and convert to decimal years
+  start = ccdc.select('.*tStart').divide(365.25).selfMask() #segment start data
+  end = ccdc.select('.*tEnd').divide(365.25).selfMask()    #segment end date
+
+  #Get the band names and set up a blank raster with the indices of the segments
+  bandNames = start.bandNames().map(lambda bn: ee.String(bn).split('_').get(0))
+  segIndices = bandNames.map(lambda bn: ee.Number.parse(ee.String(bn).slice(1,None)))
+  blankRaster = ee.Image.constant(segIndices)
+  firstBandName = ee.String(bandNames.get(0))
+  outBandNames = ccdc.select([firstBandName.cat('.*coef.*'), firstBandName.cat('.*RMSE')]).bandNames().map(lambda bn: ee.String(bn).split('S1_').get(1))
+
+  #Find areas where the date is less than the end of the segment
+  yearMask  = end.gte(yearImg) #start.lte(yearImg).and(end.gte(yearImg));
+
+  #Handle no segments at target date
+  #If date is after latest segment, force to use last segment coeffs
+  validPixels = yearMask.reduce(ee.Reducer.max())
+  yearMask = yearMask.where(end.eq(end.reduce(ee.Reducer.max())).And(validPixels.Not()),1)
+
+  #Apply mask to blank raster and then pull the first valid value (earliest segment that ends after target date)
+  blankRaster = blankRaster.updateMask(yearMask)
+  firstValid = blankRaster.reduce(ee.Reducer.min())
+  blankRaster = blankRaster.updateMask(blankRaster.eq(firstValid))
+  yearMask = yearMask.updateMask(blankRaster)
+
+
+  #Set up blank raster
+  out = ee.Image.constant(ee.List.repeat(0,outBandNames.length())).rename(outBandNames)
+  #Iterate across each segment and unmask coefficients if they're the valid segment 
+  def unmaskValidCoefficients(bn, out):
+    out = ee.Image(out)
+    bn = ee.String(bn)
+
+    #Include both the coefficients and RMSE
+    coeffs = ccdc.select([bn.cat('.*coef.*'),bn.cat('.*RMSE')])
+
+    #Select the year mask corresponding to the relevant segment
+    yearMaskT = yearMask.select(bn.cat('.*'))
+
+    #Apply mask
+    coeffs = coeffs.updateMask(yearMaskT)
+    out = out.where(coeffs.mask(),coeffs)
+    return out
+  out = ee.Image(bandNames.iterate(lambda bn, out: unmaskValidCoefficients(bn, out), out))
+
+  return out
+
+
+
+#--------------------------------------------------------------------------
 #          UNCONVERTED JAVASCRIPT FUNCTIONS BELOW HERE
 #--------------------------------------------------------------------------
 
