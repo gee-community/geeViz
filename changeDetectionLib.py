@@ -17,7 +17,6 @@
 #Intended to work within the geeViz package
 ######################################################################
 # Adapted from changeDetectionLib.js
-# I have only been converting functions as I use them. Unconverted functions are included at the bottom of this file.
 
 from geeViz.getImagesLib import *
 import sys, math, ee
@@ -692,6 +691,15 @@ def undoVerdetScaling(fitted, indexName, correctionFactor):
   #fitted = multBands(fitted, 1, -distDir) #Finally, undo change in direction # LSC 10/19, this is not working as intended. Decided to just comment it out as I believe it is an unnecessary step.
   return fitted
 
+# Update Mask from LinearInterp step
+def updateVerdetMasks(img, linearInterpMasks):
+  thisYear = ee.Date(img.get('system:time_start')).format('YYYY')
+  #thisYear_maskName = ee.String('mask_').cat(thisYear)
+  thisYear_maskName = ee.String('.*_').cat(thisYear)
+  thisMask = linearInterpMasks.select(thisYear_maskName)
+  img = img.updateMask(thisMask)
+  return img
+
 # Function to prep data for Verdet. Will have to run Verdet and convert to stack after.
 # This step applies the Verdet Scaling. The scaling is undone in VERDETVertStack().
 def prepTimeSeriesForVerdet(ts, indexName, run_params, correctionFactor):
@@ -789,14 +797,7 @@ def VERDETVertStack(ts,indexName,run_params = {'tolerance': 0.0001, 'alpha': 0.1
 
   return ee.Image(stack)
 
-# Update Mask from LinearInterp step
-def updateVerdetMasks(img, linearInterpMasks):
-  thisYear = ee.Date(img.get('system:time_start')).format('YYYY')
-  #thisYear_maskName = ee.String('mask_').cat(thisYear)
-  thisYear_maskName = ee.String('.*_').cat(thisYear)
-  thisMask = linearInterpMasks.select(thisYear_maskName)
-  img = img.updateMask(thisMask)
-  return img
+
 
 # Function for running VERDET and converting output to annual image collection
 # with the fitted value, duration, magnitude, slope, and diff for the segment for each given year
@@ -820,10 +821,10 @@ def VERDETFitMagSlopeDiffCollection(composites, indexName, run_params = {'tolera
 
 #Wrapper for applying VERDET slightly more simply
 #Returns annual collection of verdet slope
-def verdetAnnualSlope(tsIndex, indexName, startYear, endYear, alpha): #tolerance = 0.0001,alpha = 1/3.0):
+def verdetAnnualSlope(tsIndex, indexName, startYear, endYear, alpha, tolerance = 0.0001):#,alpha = 1/3.0):
   #Apply VERDET
   run_params = {'timeSeries': tsIndex,
-                'tolerance': 0.0001, # default = 0.0001
+                'tolerance': tolerance, # default = 0.0001
                 'alpha': alpha} # default = 1/3.0
   verdet =   ee.Algorithms.TemporalSegmentation.Verdet(**run_params).arraySlice(0,1,None)
   print('indexName: '+indexName)
