@@ -13,11 +13,11 @@ from  geeViz.getImagesLib import *
 #1. Specify study area: Study area
 #Can specify a country, provide a fusion table  or asset table (must add 
 #.geometry() after it), or draw a polygon and make studyArea = drawnPolygon
-studyArea = ee.Geometry.Polygon(\
-        [[[-124.02812499999999, 43.056605431434335],\
-          [-124.02812499999999, 38.259489368377466],\
-          [-115.94218749999999, 38.259489368377466],\
-          [-115.94218749999999, 43.056605431434335]]])
+studyArea =  ee.Geometry.Polygon(\
+        [[[-121.72925686636518, 39.25666609688575],\
+          [-121.72925686636518, 39.00526300299732],\
+          [-121.09204983511518, 39.00526300299732],\
+          [-121.09204983511518, 39.25666609688575]]])
 
 #2. Update the startJulian and endJulian variables to indicate your seasonal 
 #constraints. This supports wrapping for tropics and southern hemisphere.
@@ -152,11 +152,17 @@ scale = None
 whichHarmonics = [2]
 
 #Which bands/indices to run harmonic regression across
-indexNames =['NBR','NDVI','brightness']#'swir2','nir','red','NDVI'];#,'NBR','NDMI','nir','swir1','swir2','tcAngleBG'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
+indexNames =['swir2','nir','red','NDVI'];#,'NBR','NDMI','nir','swir1','swir2','tcAngleBG'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];
+
+#Choose which band/index to use for visualizing seasonality in hue, saturation, value color space (generally NDVI works best)
+seasonalityVizIndexName = 'NDVI'
+
 
 #Whether to apply a linear detrending of data.  Can be useful if long-term change is not of interest
 detrend = True
 ####################################################################################################
+#Ensure seasonalityVizIndexName is included in the indexNames
+if seasonalityVizIndexName not in indexNames:indexNames.append(seasonalityVizIndexName)
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
@@ -188,7 +194,7 @@ for yr in ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo():
   composite = allScenesT.median()
   Map.addLayer(composite,{'min':0.1,'max':0.4},nameStart+'_median_composite',False)
 
-  ndvi = allScenesT.select(['NDVI']).median()
+  seasonalityMedian = composite.select([seasonalityVizIndexName])
  
   #Fit harmonic model
   coeffsPredicted =getHarmonicCoefficientsAndFit(allScenesT,indexNames,whichHarmonics,detrend)
@@ -224,9 +230,9 @@ for yr in ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo():
     Map.addLayer(peakJulians,{'min':0,'max':365},nameStart+ '_peakJulians',False)
 
     #Turn the HSV data into an RGB image and add it to the map.
-    seasonality = ee.Image.cat(phases.select(['NDVI.*']).clamp(0,1),amplitudes.select(['NDVI.*']).unitScale(0,0.5).clamp(0,1),ndvi.unitScale(0,0.8).clamp(0,1)).hsvToRgb()
+    seasonality = ee.Image.cat(phases.select([seasonalityVizIndexName+'.*']).clamp(0,1),amplitudes.select([seasonalityVizIndexName+'.*']).unitScale(0,0.5).clamp(0,1),seasonalityMedian.unitScale(0,0.8).clamp(0,1)).hsvToRgb()
   
-    Map.addLayer(seasonality, {'min':0,'max':1}, nameStart+ '_Seasonality',True);
+    Map.addLayer(seasonality, {'min':0,'max':1}, nameStart+ '_'+seasonalityVizIndexName+'_Seasonality',True);
 
 #   }
 
@@ -244,12 +250,23 @@ for yr in ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo():
     outPath = exportPathRoot + '/' + outName
     exportToAssetWrapper(coeffs,outName,outPath,'mean',studyArea,scale,crs,transform)
   coeffCollection.append(coeffs)
-
+####################################################################################################
+#Load the study region, with a blue outline.
+#Create an empty image into which to paint the features, cast to byte.
+#Paint all the polygon edges with the same number and width, display.
+empty = ee.Image().byte()
+paintArgs ={\
+  'featureCollection': studyArea,\
+  'color': 1,\
+  'width': 3\
+} 
+outline = empty.paint(**paintArgs);
+Map.addLayer(outline, {'palette': '0000FF','addToLegend':'false'}, "Study Area", False)
+####################################################################################################
 Map.view()  
 
 # Map.setOptions('HYBRID');
 coeffCollection = ee.ImageCollection(coeffCollection)
-print(coeffCollection.size().getInfo())
 # // // Map.addLayer(coeffCollection);
 
 # ///////////////////////////////////////////////////////////////////////

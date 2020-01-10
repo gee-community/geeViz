@@ -145,7 +145,7 @@ correctScale = 250#Choose a scale to reduce on- 250 generally works well
 
 #13. Export params
 #Whether to export composites
-exportComposites = True
+exportComposites = False
 
 #Set up Names for the export
 outputName = 'S2_'

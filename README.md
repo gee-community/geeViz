@@ -4,6 +4,7 @@
 > [Can be accessed in Bitbucket](https://bitbucket.org/ihousman/geeviz)
 
 > [Or within the FS GitHub instance](https://code.fs.usda.gov/forest-service/geeViz)
+
 ## Primary POCs
 
 Ian Housman- ian.housman@usda.gov
@@ -16,11 +17,12 @@ Bonnie Ruefenacht- bonnie.ruefenacht@usda.gov
 1. Become a trusted Google Earth Engine (GEE) tester (<https://signup.earthengine.google.com/#!/>)
 2. Install the Python GEE package (`pip install earthengine-api`)
 3. Authenticate using the GEE cli in a cmd prompt (`earthengine authenticate`)
-4. Clone this repository (`git clone https://bitbucket.org/ihousman/geeviz`)
+4. Install package using pip (`pip install geeViz`) or clone this repository (`git clone https://bitbucket.org/ihousman/geeviz`) into your Python's site-packages folder
 5. To stay up to date, pull the latest commit (`git pull origin master`)
 6. This repository is also available within the FS gitHub instance (<https://code.fs.usda.gov/forest-service/geeViz>)
    * To add this instance to your local git instance execute `remote add https://code.fs.usda.gov/forest-service/geeViz` in a git bash
    * Now you can pull the latest from your origin (`git pull origin master`) or github (`git pull github master`)
+7. Several examples are available to help you get started within the examples module. To test use enter the following command within the Python build you installed geeViz in: `from geeViz.examples import getLandsatWrapper`
 
 
 ## Contributing
