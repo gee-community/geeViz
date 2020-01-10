@@ -22,7 +22,7 @@ Bonnie Ruefenacht- bonnie.ruefenacht@usda.gov
 6. This repository is also available within the FS gitHub instance (<https://code.fs.usda.gov/forest-service/geeViz>)
    * To add this instance to your local git instance execute `remote add https://code.fs.usda.gov/forest-service/geeViz` in a git bash
    * Now you can pull the latest from your origin (`git pull origin master`) or github (`git pull github master`)
-7. Several examples are available to help you get started within the examples module. To test use enter the following command within the Python build you installed geeViz in: `from geeViz.examples import getLandsatWrapper`
+7. Several examples are available within the examples module to help you get started. To test use enter the following command within the Python build you installed geeViz in: `from geeViz.examples import getLandsatWrapper`
 
 
 ## Contributing
