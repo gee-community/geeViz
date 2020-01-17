@@ -44,9 +44,9 @@ print('geeViz package folder:', os.getcwd())
 
 #Specify location of files to run
 template = py_viz_dir +geeViewFolder +'/index.html'
-ee_run_dir =  py_viz_dir+ geeViewFolder +'/ee/'
+ee_run_dir =  py_viz_dir+ geeViewFolder +'/js/'
 if os.path.exists(ee_run_dir) == False:os.makedirs(ee_run_dir)
-ee_run = ee_run_dir + 'run2.js'
+ee_run = ee_run_dir + 'runGeeViz.js'
 
 #Specify port to run on
 local_server_port = 8003
@@ -76,6 +76,7 @@ class mapper:
     def __init__(self):
         self.layerNumber = 1
         self.idDictList = []
+        self.mapCommandList  = []
     #Function for adding a layer to the map
     def addLayer(self,image,viz = {},name= None,visible= True):
        
@@ -88,24 +89,31 @@ class mapper:
         idDict['item'] = image.serialize()
         idDict['name'] = name 
         idDict['visible'] = str(visible).lower()
-        idDict['viz'] = json.dumps(viz)
+        idDict['viz'] = json.dumps(viz, sort_keys=True)
         self.idDictList.append(idDict)
 
-
+    def centerObject(self,feature):
+        bounds = json.dumps(feature.geometry().bounds().getInfo())
+        command = 'synchronousCenterObject('+bounds+')'
+        
+        self.mapCommandList.append(command)
     #Function for launching the web map after all adding to the map has been completed
     def view(self):
         print('Starting webmap')
 
         #Set up js code to populate
-        lines = "function run(){\n"
+        lines = "function runGeeViz(){\n"
 
 
         #Iterate across each map layer to add js code to
         for idDict in self.idDictList:
-            t ="addSerializedRasterToMap('"+idDict['item']+"',"+idDict['viz']+",'"+idDict['name']+"',"+str(idDict['visible']).lower()+");\n"
+            t ="Map2.addSerializedLayer('"+idDict['item']+"',"+idDict['viz']+",'"+idDict['name']+"',"+str(idDict['visible']).lower()+");\n"
             lines += t
         lines += "}"
 
+        #Iterate across each map command
+        for mapCommand in self.mapCommandList:
+            lines += mapCommand + '\n'
         #Write out js file
         oo = open(ee_run,'w')
         oo.writelines(lines)

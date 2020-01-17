@@ -7,17 +7,19 @@ sys.path.append(os.getcwd())
 #Module imports
 from  geeViz.getImagesLib import *
 from geeViz.changeDetectionLib import *
+Map.clearMap()
 ####################################################################################################
 #Define user parameters:
 
 #1. Specify study area: Study area
 #Can specify a country, provide a fusion table  or asset table (must add 
 #.geometry() after it), or draw a polygon and make studyArea = drawnPolygon
-studyArea = ee.Geometry.Polygon(\
+studyArea = ee.Feature(ee.Geometry.Polygon(\
         [[[-124.02812499999999, 43.056605431434335],\
           [-124.02812499999999, 38.259489368377466],\
           [-115.94218749999999, 38.259489368377466],\
-          [-115.94218749999999, 43.056605431434335]]])
+          [-115.94218749999999, 43.056605431434335]]]))
+
 
 #2. Update the startJulian and endJulian variables to indicate your seasonal 
 #constraints. This supports wrapping for tropics and southern hemisphere.
@@ -113,7 +115,7 @@ Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':lossYearPalette},'H
 
 ####################################################################################################
 #Call on master wrapper function to get Landat scenes and composites
-allImages = getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian)
+allImages = getLandsatWrapper(studyArea.geometry(),startYear,endYear,startJulian,endJulian)
 
 #Separate into scenes and composites for subsequent analysis
 images = allImages[0]
@@ -149,17 +151,8 @@ if exportLTStack:
   #Export output
   exportToAssetWrapper2(ltOutStack,exportName,exportPath,outObj,studyArea,scale,crs,transform)
 ####################################################################################################
-#Load the study region, with a blue outline.
-#Create an empty image into which to paint the features, cast to byte.
-#Paint all the polygon edges with the same number and width, display.
-empty = ee.Image().byte()
-paintArgs ={\
-  'featureCollection': studyArea,\
-  'color': 1,\
-  'width': 3\
-} 
-outline = empty.paint(**paintArgs);
-Map.addLayer(outline, {'palette': '0000FF','addToLegend':'false'}, "Study Area", False)
-####################################################################################################
+#Load the study region
+Map.addLayer(studyArea, {'palette': '0000FF'}, "Study Area", False)
+Map.centerObject(studyArea)
 ####################################################################################################
 Map.view()

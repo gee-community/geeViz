@@ -6,6 +6,7 @@ sys.path.append(os.getcwd())
 
 #Module imports
 from  geeViz.getImagesLib import *
+Map.clearMap()
 ####################################################################################################
 ####################################################################################################
 #Define user parameters:
@@ -13,11 +14,11 @@ from  geeViz.getImagesLib import *
 #1. Specify study area: Study area
 #Can specify a country, provide a fusion table  or asset table (must add 
 #.geometry() after it), or draw a polygon and make studyArea = drawnPolygon
-studyArea =  ee.Geometry.Polygon(\
+studyArea =  ee.Feature(ee.Geometry.Polygon(\
         [[[-121.72925686636518, 39.25666609688575],\
           [-121.72925686636518, 39.00526300299732],\
           [-121.09204983511518, 39.00526300299732],\
-          [-121.09204983511518, 39.25666609688575]]])
+          [-121.09204983511518, 39.25666609688575]]]))
 
 #2. Update the startJulian and endJulian variables to indicate your seasonal 
 #constraints. This supports wrapping for tropics and southern hemisphere.
@@ -167,7 +168,7 @@ transform = None#[30,0,-2361915.0,0,-30,3177735.0]
 #Specify scale if transform is null
 scale = 20
 ####################################################################################################
-s2sAndTs =getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,\
+s2sAndTs =getSentinel2Wrapper(studyArea.geometry(),startYear,endYear,startJulian,endJulian,\
   timebuffer,weights,compositingMethod,\
   applyQABand,applyCloudScore,applyShadowShift,applyTDOM,\
   cloudScoreThresh,performCloudScoreOffset,cloudScorePctl,\
@@ -186,17 +187,9 @@ for year in range(startYear + timebuffer      ,endYear + 1 - timebuffer ):
      t = processedComposites.filter(ee.Filter.calendarRange(year,year,'year')).mosaic()
      Map.addLayer(t,vizParamsFalse,str(year),'False')
 ####################################################################################################
-#Load the study region, with a blue outline.
-#Create an empty image into which to paint the features, cast to byte.
-#Paint all the polygon edges with the same number and width, display.
-empty = ee.Image().byte()
-paintArgs ={\
-  'featureCollection': studyArea,\
-  'color': 1,\
-  'width': 3\
-} 
-outline = empty.paint(**paintArgs);
-Map.addLayer(outline, {'palette': '0000FF','addToLegend':'false'}, "Study Area", False)
+#Load the study region
+Map.addLayer(studyArea, {'palette': '0000FF'}, "Study Area", False)
+Map.centerObject(studyArea)
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
