@@ -29,7 +29,6 @@ Bonnie Ruefenacht- bonnie.ruefenacht@usda.gov
 	*  `from geeViz.examples import harmonicRegressionWrapper`
 	*  `from geeViz.examples import LANDTRENDRWrapper`
 9. When these examples are run, a viewer should open in your default browser.  It will show any data that was added to the map.
-![image info](./geeView/images/geeViewExampleThumb.png)
 
 
 ## Contributing
