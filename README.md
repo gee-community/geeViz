@@ -30,13 +30,16 @@ folder
    * Now you can pull the latest from your origin (`git pull origin master`) or github (`git pull github master`)
 
 ## Using
-> Several examples are available within the examples module to help you get started. To test, enter the following command within the Python build you installed geeViz in: `from geeViz.examples import geeViewExample`
-> Other examples are:
-	*  `from geeViz.examples import getLandsatWrapper`
-	*  `from geeViz.examples import getSentinel2Wrapper`
-	*  `from geeViz.examples import harmonicRegressionWrapper`
-	*  `from geeViz.examples import LANDTRENDRWrapper`
-> When these examples are run, a viewer should open in your default browser.  It will show any data that was added to the map.
+* Several examples are available within the examples module to help you get started. To test, enter the following command within the Python build you installed geeViz in: 
+	* `from geeViz.examples import geeViewExample`
+
+* Other examples are:
+	* `from geeViz.examples import getLandsatWrapper`
+	* `from geeViz.examples import getSentinel2Wrapper`
+	* `from geeViz.examples import harmonicRegressionWrapper`
+	* `from geeViz.examples import LANDTRENDRWrapper`
+
+* When these examples are run, a viewer should open in your default browser.  It will show any data that was added to the map.
 
 
 ## Contributing
