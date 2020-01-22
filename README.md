@@ -1,9 +1,9 @@
 # GEE Visualization Python Modules
 > A repository of GEE Python code modules for general data processing, analysis, and visualization
 
-> [Can be accessed in Bitbucket](https://bitbucket.org/ihousman/geeviz)
+> [Can be accessed in GitHub](https://github.com/rcr-usfs/geeViz)
 
-> [Or within the FS GitHub instance](https://code.fs.usda.gov/forest-service/geeViz)
+> [Or within the Forest Service GitHub instance](https://code.fs.usda.gov/forest-service/geeViz)
 
 ## Primary POCs
 

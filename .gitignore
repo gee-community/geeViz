@@ -261,7 +261,7 @@ __pycache__/
 *.pyc
 
 #GEE run file
-*run2.js
+*runGeeViz.js
 # template's run.js
 template/ee/run.js
 gee-py-viz/ee/run2.js
