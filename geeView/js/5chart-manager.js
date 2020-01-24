@@ -20,7 +20,7 @@ function clearSelectedAreas(){
     $('.selected-features-list').empty();
     Object.keys(selectedFeaturesJSON).map(function(k){
         selectedFeaturesJSON[k].geoJSON.forEach(function(f){
-        	var name = f.h.selectionTrackingName;
+        	var name = f.i.selectionTrackingName;
 			console.log(name);
             delete selectedFeaturesJSON[k].rawGeoJSON[name]
         	selectedFeaturesJSON[k].geoJSON.remove(f)
@@ -401,9 +401,15 @@ var  getQueryImages = function(lng,lat){
 				})
 				// c.reduceRegion(ee.Reducer.first(),clickPt,null,'EPSG:5070',[30,0,-2361915.0,0,-30,3177735.0]).evaluate(function(value){keyI++;makeQueryTable(value,q,k);})
 			}else if(q.type === 'geeVectorImage' || q.type === 'geeVector'){
-				var features = q.queryItem.filterBounds(clickPt);
+				try{
+					var features = q.queryItem.filterBounds(clickPt);
+				}
+				catch(err){
+					// console.log(err);
+					var features = ee.FeatureCollection([q.queryItem]).filterBounds(clickPt);
+				}
 				features.evaluate(function(values){
-					console.log(values);
+					// console.log(values);
 					keyI++;
 					
 		            queryGeoJSON.addGeoJson(values);
@@ -981,10 +987,11 @@ function startQuery(){
 			getQueryImages(center.lng(),center.lat());
 
 		})
-   		mapHammer.on("tap",function(e){
-   		// 	infowindow.setMap(null);
-   			clearQueryGeoJSON();
-   		})
+   		// mapHammer.on("tap",function(e){
+   		// // 	infowindow.setMap(null);
+   		// 	clearQueryGeoJSON();
+   		// })
+   		map.addListener("click", function(){infowindow.setMap(null);clearQueryGeoJSON();});
 	// document.getElementById('query-container').style.display = 'block';
 }
 function stopQuery(){
@@ -995,6 +1002,7 @@ function stopQuery(){
 		map.setOptions({cursor:'hand'});
 		// $('#query-container').text('Double click on map to query values of displayed layers at a location');
 		google.maps.event.clearListeners(mapDiv, 'dblclick');
+		google.maps.event.clearInstanceListeners(map);
 		map.setOptions({cursor:'hand'});
 		infowindow.setMap(null);
 		marker.setMap(null);

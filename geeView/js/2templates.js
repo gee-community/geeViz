@@ -1212,7 +1212,7 @@ function addLayer(layer){
                 
                 selectedFeaturesJSON[layer.name].geoJSON.addListener('click',function(event){
                     console.log(event);
-                    var name = event.feature.h.selectionTrackingName;
+                    var name = event.feature.i.selectionTrackingName;
                     delete selectedFeaturesJSON[layer.name].rawGeoJSON[name]
                     selectedFeaturesJSON[layer.name].geoJSON.remove(event.feature);
                     updateSelectedAreasNameList();

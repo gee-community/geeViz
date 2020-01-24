@@ -402,13 +402,16 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
             viz.canQuery = false;
           }
           //Check if its a feature or featureCollection
-          try{
-            var t = item.size().getInfo();
-            // console.log('featureCollection')
-          }catch(err5){
-            // console.log('feature')
-            item = ee.FeatureCollection([item])
-          }
+          // try{
+          //   var n = item.limit(501).size().getInfo();
+          //   if(n > 500){
+          //     viz.layerType = 'geeVectorImage';
+          //   }
+          //   // console.log('featureCollection')
+          // }catch(err5){
+          //   // console.log('feature')
+          //   item = ee.FeatureCollection([item])
+          // }
           viz.layerType = 'geeVector';
         }
         
