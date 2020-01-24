@@ -2141,13 +2141,13 @@ def getHarmonicList(yearDateImg,transformBandName,harmonicList):
   def sinCat(h):
     ht = h*100
     return ee.String('sin_').cat(str(ht)).cat('_').cat(transformBandName)
-  sinNames = map(lambda i:sinCat(i),harmonicList)
+  sinNames = list(map(lambda i:sinCat(i),harmonicList))
 
   def cosCat(h):
     ht =h*100;
     return ee.String('cos_').cat(str(ht)).cat('_').cat(transformBandName)
     
-  cosNames = map(lambda i : cosCat(i),harmonicList)
+  cosNames = list(map(lambda i : cosCat(i),harmonicList))
       
     
   
@@ -2172,7 +2172,7 @@ def getHarmonics2(collection,transformBandName,harmonicList,detrend = False):
     .copyProperties(img,['system:time_start','system:time_end'])
     return outT
   out = collection.map(harmWrap)
-  
+
   if not detrend:
     outBandNames = ee.Image(out.first()).bandNames().removeAll(['year'])
     out = out.select(outBandNames)
@@ -2519,8 +2519,8 @@ def synthImage(coeffs,dateImage,indexNames,harmonics,detrend):
   constImage = ee.Image(1)
   if detrend:constImage = constImage.addBands(dateImage)
   for harm in harmonics:
-    constImage = constImage.addBands(ee.Image([dateImage.multiply(harm*Math.PI).sin()]))\
-                           .addBands(ee.Image([dateImage.multiply(harm*Math.PI).cos()]))
+    constImage = constImage.addBands(ee.Image([dateImage.multiply(harm*math.pi).sin()]))\
+                           .addBands(ee.Image([dateImage.multiply(harm*math.pi).cos()]))
 
   
   #Predict values for each band                    

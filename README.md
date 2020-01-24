@@ -1,4 +1,4 @@
-# GEE Visualization Python Modules
+#GTAC GEE Visualization Python Modules
 > A repository of GEE Python code modules for general data processing, analysis, and visualization
 
 > [Can be accessed in GitHub](https://github.com/rcr-usfs/geeViz)
@@ -40,6 +40,7 @@ folder
 	* `from geeViz.examples import LANDTRENDRWrapper`
 
 * When these examples are run, a viewer should open in your default browser.  It will show any data that was added to the map.
+* Layers can be toggled on/off and opacity changed.  They can also be queried
 
 
 ## Contributing

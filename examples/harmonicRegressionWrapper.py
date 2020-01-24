@@ -191,7 +191,7 @@ for yr in ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo():
   
   #Get scenes for those dates
   allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT,endYearT,'year'))
-  
+  print(allScenesT.size().getInfo())
   composite = allScenesT.median()
   Map.addLayer(composite,{'min':0.1,'max':0.4},nameStart+'_median_composite',False)
 
@@ -230,6 +230,11 @@ for yr in ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo():
     Map.addLayer(AUCs,{'min':0,'max':0.3},nameStart+ '_AUCs',False)
     Map.addLayer(peakJulians,{'min':0,'max':365},nameStart+ '_peakJulians',False)
 
+    #Create synthetic image for peak julian day according the the seasonalityVizIndexName band
+    dateImage = ee.Image(yr).add(peakJulians.select([seasonalityVizIndexName + '_peakJulianDay']).divide(365))
+    synth = synthImage(coeffs,dateImage,indexNames,whichHarmonics,detrend);
+    Map.addLayer(synth,{'min':0.1,'max':0.4},nameStart + '_Date_of_Max_'+seasonalityVizIndexName+'_Synth_Image',False);
+    
     #Turn the HSV data into an RGB image and add it to the map.
     seasonality = ee.Image.cat(phases.select([seasonalityVizIndexName+'.*']).clamp(0,1),amplitudes.select([seasonalityVizIndexName+'.*']).unitScale(0,0.5).clamp(0,1),seasonalityMedian.unitScale(0,0.8).clamp(0,1)).hsvToRgb()
   
@@ -253,13 +258,13 @@ for yr in ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo():
   coeffCollection.append(coeffs)
 ####################################################################################################
 #Load the study region
-Map.addLayer(studyArea, {'palette': '0000FF'}, "Study Area", False)
+Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", False)
 Map.centerObject(studyArea)
 ####################################################################################################
 Map.view()  
 
-# Map.setOptions('HYBRID');
-coeffCollection = ee.ImageCollection(coeffCollection)
+# # Map.setOptions('HYBRID');
+# coeffCollection = ee.ImageCollection(coeffCollection)
 # // // Map.addLayer(coeffCollection);
 
 # ///////////////////////////////////////////////////////////////////////

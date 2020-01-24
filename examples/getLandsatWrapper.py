@@ -191,7 +191,7 @@ for year in range(startYear + timebuffer      ,endYear + 1 - timebuffer ):
 
 ####################################################################################################
 #Load the study region
-Map.addLayer(studyArea, {'palette': '0000FF'}, "Study Area", False)
+Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", False)
 Map.centerObject(studyArea)
 ####################################################################################################
 ####################################################################################################

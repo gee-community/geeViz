@@ -15,10 +15,10 @@ Map.clearMap()
 #Can specify a country, provide a fusion table  or asset table (must add 
 #.geometry() after it), or draw a polygon and make studyArea = drawnPolygon
 studyArea = ee.Feature(ee.Geometry.Polygon(\
-        [[[-124.02812499999999, 43.056605431434335],\
-          [-124.02812499999999, 38.259489368377466],\
-          [-115.94218749999999, 38.259489368377466],\
-          [-115.94218749999999, 43.056605431434335]]]))
+        [[[-123.53450840669882, 41.751213516390415],\
+          [-123.53450840669882, 40.47660005854701],\
+          [-121.66683262544882, 40.47660005854701],\
+          [-121.66683262544882, 41.751213516390415]]]))
 
 
 #2. Update the startJulian and endJulian variables to indicate your seasonal 
@@ -152,7 +152,7 @@ if exportLTStack:
   exportToAssetWrapper2(ltOutStack,exportName,exportPath,outObj,studyArea,scale,crs,transform)
 ####################################################################################################
 #Load the study region
-Map.addLayer(studyArea, {'palette': '0000FF'}, "Study Area", False)
+Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", False)
 Map.centerObject(studyArea)
 ####################################################################################################
 Map.view()

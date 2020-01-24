@@ -300,7 +300,7 @@ function addSelectLayerToMap(item,viz,name,visible,label,fontColor,helpBox,which
   viz.canQuery = false;
   viz.isSelectLayer = true;
   // selectLayers[name] = {'item':item,'viz':viz,'features':[]}
-  var id = name.replaceAll(' ','-');
+  // var id = name.replaceAll(' ','-');
   addToMap(item,viz,name,visible,label,fontColor,helpBox,'area-charting-select-layer-list',queryItem);
  
 }
@@ -391,7 +391,24 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
           viz.layerType = 'geeImageCollection';
         
         }
+        //Check if its a geometry
         catch(err3){
+          try{
+             var t = item.geometry().getInfo();
+            
+          }catch(err4){
+            // console.log('geo');
+            item = ee.FeatureCollection(item);
+            viz.canQuery = false;
+          }
+          //Check if its a feature or featureCollection
+          try{
+            var t = item.size().getInfo();
+            // console.log('featureCollection')
+          }catch(err5){
+            // console.log('feature')
+            item = ee.FeatureCollection([item])
+          }
           viz.layerType = 'geeVector';
         }
         
@@ -888,7 +905,9 @@ function mp(){
   };
   this.addPlot = function(nameLngLat){
     addPlot(nameLngLat);
-
+  }
+  this.centerObject = function(fc){
+    centerObject(fc);
   }
 }
 var Map2 = new mp();

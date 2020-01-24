@@ -1076,6 +1076,10 @@ function addLayer(layer){
             $('#' + spinnerID+'2').hide();
             // geeTileLayersDownloading = 0;
             // updateGEETileLayersLoading();
+            if(layer.layerType === 'geeVector' && layer.canQuery){
+                queryObj[queryID].visible = layer.visible;
+            }
+            
         }
         vizToggleCleanup();
     }
@@ -1099,12 +1103,16 @@ function addLayer(layer){
              queryObj[queryID].visible = layer.visible;
             }
         }else{
+
            layer.visible = true;
             layer.percent = 100;
             updateProgress();
             $('#'+layer.legendDivID).show();
             layer.layer.setMap(layer.map);
             layer.rangeOpacity = layer.opacity;
+            if(layer.layerType === 'geeVector' && layer.canQuery){
+                queryObj[queryID].visible = layer.visible;
+            }
         }
         vizToggleCleanup();
     }
@@ -1178,7 +1186,7 @@ function addLayer(layer){
             var bandNames = ee.Image(layer.item.first()).bandNames();
             layer.item = ee.ImageCollection(layer.item).reduce(layer.viz.reducer).rename(bandNames);
             
-        } else if(layer.layerType === 'geeVectorImage'){
+        } else if(layer.layerType === 'geeVectorImage' || layer.layerType === 'geeVector'){
             if(layer.viz.isSelectLayer){
                 
                 selectedFeaturesJSON[layer.name] = {'geoJSON':new google.maps.Data(),'id':layer.id,'rawGeoJSON':{}}
@@ -1192,11 +1200,13 @@ function addLayer(layer){
                 $('.select-layer-checkbox').on('turnOffAll',function(){turnOffAll()});
                 $('.select-layer-checkbox').on('turnOnAll',function(){turnOnAll()});
             }
-            
             layer.queryItem = layer.item;
-            layer.item = ee.Image().paint(layer.item,null,layer.viz.strokeWeight);
-
-            layer.viz.palette = layer.viz.strokeColor;
+            if(layer.layerType === 'geeVectorImage'){
+                layer.item = ee.Image().paint(layer.item,null,layer.viz.strokeWeight);
+                layer.viz.palette = layer.viz.strokeColor;
+            }
+            
+            
             
             if(layer.viz.isSelectLayer){
                 
@@ -1346,6 +1356,9 @@ function addLayer(layer){
 		
 
 	}else if(layer.layerType === 'geeVector' || layer.layerType === 'geoJSONVector'){
+        if(layer.canQuery){
+          queryObj[queryID] = {'visible':layer.visible,'queryItem':layer.queryItem,'queryDict':layer.viz.queryDict,'type':layer.layerType,'name':layer.name};  
+        }
 		incrementOutstandingGEERequests();
 		function addGeoJsonToMap(v){
 			decrementOutstandingGEERequests();

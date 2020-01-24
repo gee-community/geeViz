@@ -37,9 +37,9 @@ function getSelectedAreasNameList(includeFeatureCollectionName){
 	Object.keys(selectedFeaturesJSON).map(function(k){
 		selectedFeaturesJSON[k].geoJSON.forEach(function(f){
 			if(includeFeatureCollectionName){
-				var n = k+' - ' +f.h.selectionTrackingName;
+				var n = k+' - ' +f.i.selectionTrackingName;
 			}else{
-				var n = f.h.selectionTrackingName;
+				var n = f.i.selectionTrackingName;
 			}
 			nameList.push(n)
 		})
@@ -266,7 +266,7 @@ var  getQueryImages = function(lng,lat){
 				}
 			Plotly.newPlot(containerID, value.table,plotLayout,buttonOptions);
 
-		}else if(q.type === 'geeVectorImage'){
+		}else if(q.type === 'geeVectorImage' || q.type === 'geeVector'){
 			$('#query-list-container').append(`<table class="table table-hover bg-white">
 												<tbody id = '${containerID}'></tbody>
 											  </table>`);
@@ -400,10 +400,10 @@ var  getQueryImages = function(lng,lat){
 					
 				})
 				// c.reduceRegion(ee.Reducer.first(),clickPt,null,'EPSG:5070',[30,0,-2361915.0,0,-30,3177735.0]).evaluate(function(value){keyI++;makeQueryTable(value,q,k);})
-			}else if(q.type === 'geeVectorImage'){
+			}else if(q.type === 'geeVectorImage' || q.type === 'geeVector'){
 				var features = q.queryItem.filterBounds(clickPt);
 				features.evaluate(function(values){
-					// console.log(values);
+					console.log(values);
 					keyI++;
 					
 		            queryGeoJSON.addGeoJson(values);
@@ -981,10 +981,10 @@ function startQuery(){
 			getQueryImages(center.lng(),center.lat());
 
 		})
-   		// mapHammer.on("tap",function(e){
+   		mapHammer.on("tap",function(e){
    		// 	infowindow.setMap(null);
-   		// 	clearQueryGeoJSON();
-   		// })
+   			clearQueryGeoJSON();
+   		})
 	// document.getElementById('query-container').style.display = 'block';
 }
 function stopQuery(){
