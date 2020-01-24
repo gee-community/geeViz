@@ -109,11 +109,13 @@ class mapper:
         for idDict in self.idDictList:
             t ="Map2.addSerializedLayer('"+idDict['item']+"',"+idDict['viz']+",'"+idDict['name']+"',"+str(idDict['visible']).lower()+");\n"
             lines += t
-        lines += "}"
+        
 
         #Iterate across each map command
         for mapCommand in self.mapCommandList:
             lines += mapCommand + '\n'
+
+        lines += "}"
         #Write out js file
         oo = open(ee_run,'w')
         oo.writelines(lines)

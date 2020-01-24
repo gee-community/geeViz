@@ -335,24 +335,24 @@ var  getQueryImages = function(lng,lat){
 				var c = ee.ImageCollection(q.queryItem);
 				var plotBounds = clickPt.buffer(plotRadius).bounds();
 				function getCollectionValues(values){
+					// console.log(values);
 					keyI++;
-					var expectedLength = c.size().getInfo()+1
-					
-					if(values.length > expectedLength){
-					console.log('reducing number of inputs');
-					// console.log(expectedLength);
-					
-					values = values.slice(0,expectedLength);
-					}
-
-					if(values.length >1){// && values[1][values[1].length-1] !== null){
-						// console.log(values);
+					if(values.length >1){
 						var header = values[0];
 						values = values.slice(1);
 						
 						var hasTime = false;
 						var timeColumnN = header.indexOf('time');
 						var idColumnN = header.indexOf('id');
+						
+
+						var ids = arrayColumn(values,idColumnN).filter((v, i, a) => a.indexOf(v) === i);
+						var expectedLength = ids.length;
+						if(values.length > expectedLength){
+							console.log('reducing number of inputs');
+							values = values.slice(0,expectedLength);
+						}
+						
 						hasTime =values[0][timeColumnN] !== null;
 
 						var xColumn;
@@ -387,7 +387,7 @@ var  getQueryImages = function(lng,lat){
 					}else{console.log('no data');makeQueryTable(null,q,k);}
 					
 				}
-				var getRegionCall = c.sort('system:time_start',false).getRegion(plotBounds,plotScale)
+				var getRegionCall = c.sort('system:time_start',false).getRegion(plotBounds,plotScale);
 				getRegionCall.evaluate(function(values){
 					// console.log('values');
 					// console.log(values);
