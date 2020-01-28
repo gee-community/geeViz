@@ -40,10 +40,8 @@ folder
 	* `from geeViz.examples import LANDTRENDRWrapper`
 
 * When these examples are run, a viewer should open in your default browser.  It will show any data that was added to the map.
-<<<<<<< HEAD
-* Layers can be toggled on/off and opacity changed.  They can also be queried
-=======
->>>>>>> 9bfdd0af619c80f1e5b6b795054a165b7f607ee2
+* Layers can be toggled on/off and opacity changed.  They can also be measured and queried under the TOOLS pane.
+
 
 
 ## Contributing
