@@ -1043,7 +1043,8 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicy = '
   if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
     transform = str(transform)
 
-  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath ,  json.dumps({'.default': pyramidingPolicy}), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
+  # LSC 2/4/20 was getting error: "ee.ee_exception.EEException: JSON provided for reductionPolicy must be an object." Getting rid of json.dumps() seemed to fix the problem
+  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath ,  {'.default': pyramidingPolicy}, None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
   t.start()
 
 def exportToAssetWrapper2(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
