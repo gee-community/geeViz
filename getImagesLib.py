@@ -651,22 +651,26 @@ def landsatCloudScore(img):
 #########################################################################
 #########################################################################
 #Wrapper for applying cloudScore function
-def applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh = 10,cloudScorePctl = 10,contractPixels = 1.5,dilatePixels = 2.5,performCloudScoreOffset = True):
-  #Add cloudScore
+def applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh = 10,cloudScorePctl = 10,contractPixels = 1.5,dilatePixels = 2.5,
+                            performCloudScoreOffset = True, preComputedCloudScoreOffset = None):
   
+  #Add cloudScore  
   def cloudScoreWrapper(img):
     img = ee.Image(img)
     cs = cloudScoreFunction(img).rename(["cloudScore"])
     return img.addBands(cs)
-
   collection = collection.map(cloudScoreWrapper)
  
   if performCloudScoreOffset:
     print('Computing cloudScore offset')
-    #Find low cloud score pctl for each pixel to avoid comission errors
-    minCloudScore = collection.select(['cloudScore'])\
-      .reduce(ee.Reducer.percentile([cloudScorePctl]))
-    # Map.addLayer(minCloudScore,{'min':0,'max':30},'minCloudScore',False)
+    if preComputedCloudScoreOffset == None:
+      #Find low cloud score pctl for each pixel to avoid commission errors
+      print('Computing cloudScore offset')
+      minCloudScore = collection.select(['cloudScore'])\
+        .reduce(ee.Reducer.percentile([cloudScorePctl]))
+    else:
+      print('Using pre-computed cloudScore offset')
+      minCloudScore = preComputedCloudScoreOffset.rename(['cloudScore'])
   else:
     print('Not computing cloudScore offset')
     minCloudScore = ee.Image(0).rename(['cloudScore'])
