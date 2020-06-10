@@ -721,9 +721,11 @@ def simpleTDOM2(collection,zScoreThresh = -1,shadowSumThresh = 0.35,contractPixe
 
   #Get some pixel-wise stats for the time series
   if irStdDev == None:
+    print('Computing irMean for TDOM')
     irStdDev = collection.select(shadowSumBands).reduce(ee.Reducer.stdDev())
 
   if irMean == None:
+    print('Computing irStdDev for TDOM')
     irMean = collection.select(shadowSumBands).mean()
   
   def zThresholder(img):
@@ -1149,7 +1151,7 @@ def compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer = 
                         'startJulian':startJulian,\
                         'endJulian':endJulian,\
                         'yearBuffer':timebuffer,\
-                        'yearWeights': '[1,2,1]',\
+                        'yearWeights': listToString(weights),\
                         'yrOriginal':year,\
                         'yrUsed': year + yearWithMajority})
 
