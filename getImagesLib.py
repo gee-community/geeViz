@@ -1748,7 +1748,8 @@ def exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,co
 #Function to export composite collection
 def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,\
   collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
-  applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,nonDivideBands = ['temp']):
+  applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,
+  nonDivideBands = ['temp'],includeSentinel2=False):
 
   collection = collection.select(exportBands)
   for year in ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo():
@@ -1788,6 +1789,7 @@ def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform
       'applyFmaskSnowMask': str(applyFmaskSnowMask),\
       'compositingMethod': compositingMethod,\
       'includeSLCOffL7': str(includeSLCOffL7),\
+      'includeSentinel2': str(includeSentinel2),
       'correctIllumination':str(correctIllumination)})
   
     #Export the composite 
