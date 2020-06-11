@@ -511,7 +511,7 @@ def getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR
     lsTOAFMASK = getLandsat('SR').select(['pixel_qa']) 
     #Join the TOA with SR QA bands
     print('Joining TOA with SR QA bands')
-    ls = joinCollections(ls.select([0,1,2,3,4,5,6]),lsTOAFMASK)
+    ls = joinCollections(ls.select([0,1,2,3,4,5,6]),lsTOAFMASK,False,'system:index')
     
 
   def dataInAllBands(img):
@@ -651,7 +651,7 @@ def landsatCloudScore(img):
 #########################################################################
 #########################################################################
 #Wrapper for applying cloudScore function
-def applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh = 10,cloudScorePctl = 10,contractPixels = 1.5,dilatePixels = 2.5,performCloudScoreOffset = True):
+def applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh = 10,cloudScorePctl = 10,contractPixels = 1.5,dilatePixels = 2.5,performCloudScoreOffset = True,preComputedCloudScoreOffset = None):
   #Add cloudScore
   
   def cloudScoreWrapper(img):
@@ -662,11 +662,15 @@ def applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh = 10
   collection = collection.map(cloudScoreWrapper)
  
   if performCloudScoreOffset:
-    print('Computing cloudScore offset')
-    #Find low cloud score pctl for each pixel to avoid comission errors
-    minCloudScore = collection.select(['cloudScore'])\
-      .reduce(ee.Reducer.percentile([cloudScorePctl]))
-    # Map.addLayer(minCloudScore,{'min':0,'max':30},'minCloudScore',False)
+    if preComputedCloudScoreOffset == None:
+      print('Computing cloudScore offset')
+      #Find low cloud score pctl for each pixel to avoid comission errors
+      minCloudScore = collection.select(['cloudScore'])\
+        .reduce(ee.Reducer.percentile([cloudScorePctl]))
+      # Map.addLayer(minCloudScore,{'min':0,'max':30},'minCloudScore',False)
+    else:
+      print('Using pre-computed cloudScore offset')
+      minCloudScore = preComputedCloudScoreOffset.rename(['cloudScore'])
   else:
     print('Not computing cloudScore offset')
     minCloudScore = ee.Image(0).rename(['cloudScore'])
@@ -1431,7 +1435,7 @@ multModisDict = {\
 #########################################################################
 #########################################################################
 #Helper function to join two collections- Source: code.earthengine.google.com
-def joinCollections(c1,c2, maskAnyNullValues = True):
+def joinCollections(c1,c2, maskAnyNullValues = True,property = 'system:time_start'):
   def MergeBands(element):
     #A function to merge the bands together.
     #After a join, results are in 'primary' and 'secondary' properties.
@@ -1439,7 +1443,7 @@ def joinCollections(c1,c2, maskAnyNullValues = True):
 
 
   join = ee.Join.inner()
-  filter = ee.Filter.equals('system:time_start', None, 'system:time_start')
+  filter = ee.Filter.equals(property, None, property)
   joined = ee.ImageCollection(join.apply(c1, c2, filter))
      
   joined = ee.ImageCollection(joined.map(MergeBands))
@@ -2049,9 +2053,9 @@ def getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulia
   
 #   // Add common indices- can use addIndices for comprehensive indices 
 #   //or simpleAddIndices for only common indices
-#   // s2s = s2s.map(simpleAddIndices)
-#   //         .map(getTasseledCap)
-#   //         .map(simpleAddTCAngles);
+  s2s = s2s.map(simpleAddIndices)
+  s2s = s2s.map(getTasseledCap)
+  s2s = s2s.map(simpleAddTCAngles)
   
   
   
@@ -2090,9 +2094,9 @@ def getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,\
  
   #Add common indices- can use addIndices for comprehensive indices 
   #or simpleAddIndices for only common indices
-  s2s = s2s.map(simpleAddIndices)
-  s2s = s2s.map(getTasseledCap)
-  s2s = s2s.map(simpleAddTCAngles)
+  # s2s = s2s.map(simpleAddIndices)
+  # s2s = s2s.map(getTasseledCap)
+  # s2s = s2s.map(simpleAddTCAngles)
   
   #Create composite time series
   ts = compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod)

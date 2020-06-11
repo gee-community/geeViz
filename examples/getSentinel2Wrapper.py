@@ -96,14 +96,14 @@ cloudScoreThresh = 20
 #For bright areas that may always have a high cloudScore
 #but not actually be cloudy, this will result in a reduction of commission errors
 #This procedure needs at least 5 years of data to work well
-performCloudScoreOffset = False
+performCloudScoreOffset = True
 
 #If performCloudScoreOffset = true:
 #ercentile of cloud score to pull from time series to represent a minimum for 
 #the cloud score over time for a given pixel. Reduces comission errors over 
 #cool bright surfaces. Generally between 5 and 10 works well. 0 generally is a
 #bit noisy but may be necessary in persistently cloudy areas
-cloudScorePctl = 0
+cloudScorePctl = 5
 
 #Height of clouds to use to project cloud shadows
 cloudHeights = ee.List.sequence(500,10000,500)
@@ -189,7 +189,7 @@ for year in range(startYear + timebuffer      ,endYear + 1 - timebuffer ):
 ####################################################################################################
 #Load the study region
 Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", False)
-Map.centerObject(studyArea)
+# Map.centerObject(studyArea)
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################

@@ -304,7 +304,563 @@ function addSelectLayerToMap(item,viz,name,visible,label,fontColor,helpBox,which
   addToMap(item,viz,name,visible,label,fontColor,helpBox,'area-charting-select-layer-list',queryItem);
  
 }
+var intervalPeriod = 666.6666666666666;
+var timeLapseID;
+var timeLapseFrame = 0;
+var cumulativeMode = true;
+function pauseTimeLapse(id){
+  if(id === null || id === undefined){id = timeLapseID}
+    timeLapseID = id;
+  if(timeLapseObj[timeLapseID].isReady){
+      pauseAll();
+      clearActiveButtons();
+      $('#'+timeLapseID+'-pause-button').addClass('time-lapse-active');
+    }
+  } 
+function setFrameOpacity(frame,opacity){
+  var s = $('#'+frame).slider();
+  s.slider('option', 'value',opacity);
+  s.slider('option','slide').call(s,null,{ handle: $('.ui-slider-handle', s), value: opacity });
+}
 
+function selectFrame(id,fromYearSlider,advanceOne){
+
+  if(id === null || id === undefined){id = timeLapseID}
+  if(fromYearSlider === null || fromYearSlider === undefined){fromYearSlider = false}
+  if(advanceOne === null || advanceOne === undefined){advanceOne = true}
+  timeLapseID = id
+  
+  if(timeLapseID !== undefined && timeLapseObj[timeLapseID].isReady){
+    turnOffLayers();
+    turnOnTimeLapseLayers();
+    var slidersT = timeLapseObj[timeLapseID].sliders;
+    if(timeLapseFrame > slidersT.length-1){timeLapseFrame = 0}
+    else if(timeLapseFrame < 0){timeLapseFrame = slidersT.length-1}
+
+    if(!eval(cumulativeMode) || timeLapseFrame === 0){
+      slidersT.map(function(s){
+        try{
+          setFrameOpacity(s,0)
+        }catch(err){}
+        
+      });
+    }else{
+      slidersT.slice(0,timeLapseFrame).map(function(s){
+        try{
+          setFrameOpacity(s,timeLapseObj[timeLapseID].opacity)
+        }catch(err){}
+        
+      })
+    }
+    
+    var frame = slidersT[timeLapseFrame];
+    
+    try{
+        setFrameOpacity(frame,timeLapseObj[timeLapseID].opacity);
+        if(!fromYearSlider){
+          Object.keys(timeLapseObj).map(function(k){
+            var s = $('#'+k+'-year-slider').slider();
+            s.slider('option', 'value',timeLapseObj[k].years[timeLapseFrame]);
+            $('#'+k+'-year-slider-handle-label').text( timeLapseObj[k].years[timeLapseFrame])
+
+          })
+        }
+        
+        
+        
+      }catch(err){}
+    $('#'+timeLapseID+'-year-label').show();
+    // $('#'+timeLapseID+'-year-label').html(timeLapseObj[timeLapseID].years[timeLapseFrame])
+    $('#time-lapse-year-label').show();
+    $('#time-lapse-year-label').html(`Time lapse year: ${timeLapseObj[timeLapseID].years[timeLapseFrame]}`)
+    // if(advanceOne){timeLapseFrame++};
+  }
+  
+}
+function advanceOneFrame(){
+  timeLapseFrame++;
+  selectFrame()
+}
+function pauseButtonFunction(id){
+  if(id === null || id === undefined){id = timeLapseID}
+  
+  timeLapseID = id;
+  if(timeLapseID !== undefined && timeLapseObj[timeLapseID].isReady){
+    // timeLapseFrame--;
+    clearAllFrames();
+    pauseTimeLapse();
+    // year++;
+    selectFrame();
+    alignTimeLapseCheckboxes();
+    timeLapseObj[timeLapseID].state = 'paused';
+  }
+
+}
+function pauseAll(){
+  Object.keys(timeLapseObj).map(function(k){
+    if(timeLapseObj[k].intervalValue !== null && timeLapseObj[k].intervalValue !== undefined){
+      window.clearInterval(timeLapseObj[k].intervalValue);
+    }
+    timeLapseObj[k].intervalValue = null;
+  })
+}
+function forwardOneFrame(id){
+    timeLapseID = id;
+    if(timeLapseObj[timeLapseID].isReady){
+      clearAllFrames();
+      pauseTimeLapse();
+      // year++;
+      advanceOneFrame();
+      alignTimeLapseCheckboxes();
+    }
+  };
+function backOneFrame(id){
+    timeLapseID = id;
+    if(timeLapseObj[timeLapseID].isReady){
+      clearAllFrames();
+      pauseTimeLapse();
+
+      timeLapseFrame--;
+      selectFrame();
+      alignTimeLapseCheckboxes();
+    }
+  };
+function clearActiveButtons(){
+   Object.keys(timeLapseObj).map(function(k){
+    $('#'+k+'-pause-button').removeClass('time-lapse-active');
+    $('#'+k+'-play-button').removeClass('time-lapse-active');
+    if(k === timeLapseID){
+      $('#'+k+'-stop-button').removeClass('time-lapse-active');
+    }
+    
+   })
+};
+function clearAllFrames(){
+  turnOffAllNonActiveTimeLapseLayers(); 
+  
+  Object.keys(timeLapseObj).map(function(k){
+    var slidersT = timeLapseObj[k].sliders;
+    $('#'+k+'-year-label').hide();
+    $('#'+k+'-stop-button').addClass('time-lapse-active');
+    $('#'+k+'-pause-button').removeClass('time-lapse-active');
+    $('#'+k+'-play-button').removeClass('time-lapse-active');
+    timeLapseObj[k].state = 'inactive';
+    slidersT.map(function(s){
+      try{setFrameOpacity(s,0)}
+      catch(err){}
+      
+    })
+  })
+}
+function setSpeed(id,speed){
+  timeLapseID = id;
+  intervalPeriod = speed;
+  if(timeLapseObj[timeLapseID].isReady){
+    pauseAll();
+    playTimeLapse(id);
+  }
+}
+function playTimeLapse(id){
+   if(id === null || id === undefined){id = timeLapseID}
+  
+  timeLapseID = id;
+  if(timeLapseID !== undefined && timeLapseObj[timeLapseID].isReady){
+    clearAllFrames();
+    pauseAll();
+    timeLapseObj[timeLapseID].state = 'play';
+    selectFrame(null,null,false);
+    if(timeLapseObj[id].intervalValue === null || timeLapseObj[id].intervalValue === undefined){
+        timeLapseObj[id].intervalValue =window.setInterval(advanceOneFrame, intervalPeriod);
+      }
+      $('#'+id+'-stop-button').removeClass('time-lapse-active');
+      $('#'+id+'-pause-button').removeClass('time-lapse-active');
+      $('#'+id+'-play-button').addClass('time-lapse-active');
+      alignTimeLapseCheckboxes();
+  }
+}
+function stopTimeLapse(id){
+  $('#time-lapse-year-label').empty();
+  $('#time-lapse-year-label').hide();
+  timeLapseID = null;
+  // turnOffAllTimeLapseLayers();
+  pauseAll();
+  clearAllFrames();
+}
+function toggleTimeLapseLayers(id){
+  if(id === null || id === undefined){id = timeLapseID}
+  var visibleToggles = timeLapseObj[k].layerVisibleIDs;
+  visibleToggles.map(function(i){$('#'+i).click()});
+}
+function toggleAllTimeLapseLayers(){
+  Object.keys(timeLapseObj).map(function(k){
+    toggleTimeLapseLayers(k)
+  })
+}
+// function turnOnAllTimeLapseLayers(){
+//   Object.keys(timeLapseObj).map(function(k){
+//     turnOnTimeLapseLayers(k)
+//   })
+// };
+function turnOffAllTimeLapseLayers(){
+  Object.keys(timeLapseObj).map(function(k){
+    turnOffTimeLapseLayers(k)
+  })
+}
+function turnOffAllNonActiveTimeLapseLayers(){
+  Object.keys(timeLapseObj).map(function(k){
+    if(k !== timeLapseID){
+      turnOffTimeLapseLayers(k);
+    }
+  })
+}
+function toggleTimeLapseLayers(id){
+  if(id === null || id === undefined){id = timeLapseID}
+  if(timeLapseObj[id].isReady){
+    timeLapseObj[id].layerVisibleIDs.map(function(i){$('#'+i).click()});
+    if(timeLapseObj[id].visible){
+      timeLapseObj[id].visible = false
+    }else{timeLapseObj[id].visible = true}
+  }
+}
+function turnOnTimeLapseLayers(id){
+  if(id === null || id === undefined){id = timeLapseID}
+  if(timeLapseObj[id].isReady){
+    
+    if(timeLapseObj[id].visible === false){
+      timeLapseObj[id].visible = true;
+      timeLapseObj[id].layerVisibleIDs.map(function(i){$('#'+i).click()});
+    }
+  }
+}
+function turnOffTimeLapseLayers(id){
+  if(id === null || id === undefined){id = timeLapseID}
+  if(timeLapseObj[id].isReady){
+    
+    if(timeLapseObj[id].visible === true){
+      timeLapseObj[id].visible = false;
+      timeLapseObj[id].layerVisibleIDs.map(function(i){$('#'+i).click()});
+    }
+  }
+}
+var lastJitter;
+function jitterZoom(){
+  if(lastJitter === null || lastJitter === undefined){
+    lastJitter = new Date();
+  }
+  var tDiff = new Date() - lastJitter;
+  var jittered = false;
+  if((tDiff > 3000 && geeTileLayersDownloading === 0) || tDiff > 10000){
+    console.log(tDiff)
+    console.log('jittering zoom')
+    var z = map.getZoom();
+    map.setZoom(z-1);
+    map.setZoom(z);
+    jittered = true;
+    lastJitter = new Date();
+  }
+  
+  return jittered
+  
+}
+function alignTimeLapseCheckboxes(){
+  Object.keys(timeLapseObj).map(function(k){
+    if(timeLapseObj[k].isReady){
+      var checked = false;
+      if(timeLapseObj[k].visible){
+        checked = true;
+        $('#'+k+'-time-lapse-layer-range-container').slideDown();
+        $('#'+k+'-icon-bar').slideDown();
+        $('#'+k+'-collapse-label').addClass('time-lapse-label-container');
+      }
+      else{
+        $('#'+k+'-collapse-label').css('background',`-webkit-linear-gradient(left, #FFF, #FFF ${0}%, transparent ${0}%, transparent 100%)`);
+        $('#'+k+'-time-lapse-layer-range-container').slideUp();
+        $('#'+k+'-icon-bar').slideUp();
+        $('#'+k+'-collapse-label').removeClass('time-lapse-label-container');
+        $('#'+k+'-loading-spinner').hide();
+        $('#'+k+'-loading-gear').hide();
+      }
+        
+      $('#'+k+'-toggle-checkbox').prop('checked', checked);
+    }
+  })
+}
+function timeLapseCheckbox(id){
+  var v = timeLapseObj[id].visible;
+  if(!v){
+    pauseButtonFunction(id);
+
+  }else{
+    stopTimeLapse(id);
+  }
+  alignTimeLapseCheckboxes();
+}
+function toggleFrames(id){
+  $('#'+id+'-collapse-div').toggle();
+}
+function turnOffTimeLapseCheckboxes(){
+  Object.keys(timeLapseObj).map(function(k){
+    if(timeLapseObj[k].isReady){
+      if(timeLapseObj[k].visible){
+        stopTimeLapse(k);
+      }
+    }
+    
+  });
+  alignTimeLapseCheckboxes();
+}
+function toggleCumulativeMode(){
+  if(cumulativeMode){
+    $('.cumulativeToggler').removeClass('time-lapse-active');
+    cumulativeMode = false;
+  }else{
+    $('.cumulativeToggler').addClass('time-lapse-active');
+    cumulativeMode = true;
+  }
+  // timeLapseFrame--;
+  selectFrame();
+  
+}
+function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem){
+  if(viz !== null && viz !== undefined && viz.serialized !== null && viz.serialized !== undefined && viz.serialized === true){
+        item = ee.Deserializer.fromJSON(JSON.parse(JSON.stringify(item)));
+        viz.serialized = false;
+    }
+  if(viz.cumulativeMode === null || viz.cumulativeMode === undefined){viz.cumulativeMode = true}
+  // if(visible === undefined || visible === null){
+    var visible = false;
+  // };
+  if(viz.opacity === undefined || viz.opacity === null){viz.opacity = 1}
+   
+  var checked = '';
+  if(visible){checked = 'checked'}
+  var legendDivID = name.replaceAll(' ','-')+ '-' +NEXT_LAYER_ID.toString() ;
+  legendDivID = legendDivID.replaceAll('/','-');
+  legendDivID = legendDivID.replaceAll('(','-');
+  legendDivID = legendDivID.replaceAll(')','-');
+  viz.canQuery = true;
+  viz.isSelectLayer = false;
+  viz.isTimeLapse = true;
+  viz.timeLapseID = legendDivID;
+  viz.layerType = 'geeImage';
+  
+
+  timeLapseObj[legendDivID] = {}
+  if(whichLayerList === null || whichLayerList === undefined){whichLayerList = "layer-list"}  
+
+  if(viz.years === null || viz.years === undefined){
+    console.log('start computing years')
+    viz.years = item.sort('system:time_start',true).toList(10000,0).map(function(img){return ee.Date(ee.Image(img).get('system:time_start')).get('year')}).getInfo();
+    console.log('done computing years')
+  }
+  
+  var startYearT = viz.years[0];
+  var endYearT = viz.years[viz.years.length-1]
+  timeLapseObj[legendDivID].years = viz.years;
+  timeLapseObj[legendDivID].frames = ee.List.sequence(0,viz.years.length-1).getInfo();
+  timeLapseObj[legendDivID].nFrames = viz.years.length;
+  timeLapseObj[legendDivID].loadingLayerIDs = [];
+  timeLapseObj[legendDivID].loadingTilesLayerIDs = [];
+  timeLapseObj[legendDivID].layerVisibleIDs = [];
+  timeLapseObj[legendDivID].sliders = [];
+  timeLapseObj[legendDivID].intervalValue = null;
+  timeLapseObj[legendDivID].isReady = false;
+  timeLapseObj[legendDivID].visible = visible;
+  timeLapseObj[legendDivID].state = 'inactive';
+  timeLapseObj[legendDivID].opacity = viz.opacity*100;
+  var layerContainerTitle = 'Time lapse layers load multiple map layers throughout time. Once loaded, you can play the time lapse as an animation, or advance through single years using the buttons and sliders provided.  The layers can be displayed as a single year or as a cumulative mosaic of all preceding years using the right-most button.'
+  $('#'+whichLayerList).append(`
+                                <li   title = '${layerContainerTitle}' id = '${legendDivID}-collapse-label' class = 'layer-container'>
+                                 
+                                  
+
+                                  <div class = 'time-lapse-layer-range-container' >
+                                    <div title = 'Opacity' id='${legendDivID}-opacity-slider' class = 'simple-time-lapse-layer-range-first'>
+                                      <div id='${legendDivID}-opacity-slider-handle' class=" time-lapse-slider-handle ui-slider-handle">
+                                        <div style = 'display:none;' id='${legendDivID}-opacity-slider-handle-label' class = 'time-lapse-slider-handle-label'>${timeLapseObj[legendDivID].opacity/100}</div>
+                                      </div>
+                                    </div>
+                                    <div id='${legendDivID}-time-lapse-layer-range-container' style = 'display:none;'>
+                                      <div title = 'Frame Year' id='${legendDivID}-year-slider' class = 'simple-time-lapse-layer-range'>
+                                        <div id='${legendDivID}-year-slider-handle' class=" time-lapse-slider-handle ui-slider-handle">
+                                          <div id='${legendDivID}-year-slider-handle-label' class = 'time-lapse-slider-handle-label'>${viz.years[0]}</div>
+                                        </div>
+                                      </div>
+                                    
+                                      <div title = 'Frame Rate' id='${legendDivID}-speed-slider' class = 'simple-time-lapse-layer-range'>
+                                        <div id='${legendDivID}-speed-slider-handle' class=" time-lapse-slider-handle ui-slider-handle">
+                                          <div id='${legendDivID}-speed-slider-handle-label' class = 'time-lapse-slider-handle-label'>${(1/(intervalPeriod/1000)).toFixed(1)}fps</div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                    
+                                  <input  id="${legendDivID}-toggle-checkbox" onchange = 'timeLapseCheckbox("${legendDivID}")' type="checkbox" ${checked}  />
+                                  <label  title = 'Activate/deactivate time lapse' id="${legendDivID}-toggle-checkbox-label" style = 'margin-bottom:0px;display:none;'  for="${legendDivID}-toggle-checkbox"></label>
+                                  <i style = 'display:none;' id = '${legendDivID}-loading-gear' title = '${name} time lapse tiles loading' class="text-dark fa fa-gear fa-spin layer-spinner"></i>
+                                  <i id = '${legendDivID}-loading-spinner' title = '${name} time lapse layers loading' class="text-dark fa fa-spinner fa-spin layer-spinner"></i>
+
+                                  <span  id = '${legendDivID}-name-span'  class = 'layer-span'>${name}</span>
+
+                                  <div id = "${legendDivID}-icon-bar" class = 'icon-bar pl-4 pt-3' style = 'display:none;'>
+                                    <button class = 'btn' title = 'Back one frame' id = '${legendDivID}-backward-button' onclick = 'backOneFrame("${legendDivID}")'><i class="fa fa-backward fa-xs"></i></button>
+                                    <button class = 'btn' title = 'Pause animation' id = '${legendDivID}-pause-button' onclick = 'pauseButtonFunction("${legendDivID}")'><i class="fa fa-pause"></i></button>
+                                    <button style = 'display:none;' class = 'btn time-lapse-active' title = 'Clear animation' id = '${legendDivID}-stop-button' onclick = 'stopTimeLapse("${legendDivID}")'><i class="fa fa-stop"></i></button>
+                                    <button class = 'btn' title = 'Play animation' id = '${legendDivID}-play-button'  onclick = 'playTimeLapse("${legendDivID}")'><i class="fa fa-play"></i></button>
+                                    <button class = 'btn' title = 'Forward one frame' id = '${legendDivID}-forward-button' onclick = 'forwardOneFrame("${legendDivID}")'><i class="fa fa-forward"></i></button>
+                                    <button style = '' class = 'btn' title = 'Refresh layers if tiles failed to load' id = '${legendDivID}-refresh-tiles-button' onclick = 'jitterZoom()'><i class="fa fa-refresh"></i></button>
+                                    <button style = 'display:none;' class = 'btn' title = 'Toggle frame visiblity' id = '${legendDivID}-toggle-frames-button' onclick = 'toggleFrames("${legendDivID}")'><i class="fa fa-eye"></i></button>
+                                    <button class = 'btn cumulativeToggler time-lapse-active' onclick = 'toggleCumulativeMode()' title = 'Click to toggle whether to show a single year or all years in the past along with current year'><img style = 'width:1.4em;filter: invert(100%) brightness(500%)'  src="images/cumulative_icon.png"></button>
+                                    <div id = "${legendDivID}-cumulative-radio-container" class = 'pt-2'></div>
+                                  </div>
+
+                                </li>
+                                
+                                <li id = '${legendDivID}-collapse-div' style = 'display:none;'></li>`)
+  
+  
+ 
+  // addMultiRadio(legendDivID+'-collapse-label',legendDivID+'-cumulative-radio','',legendDivID'-cumulativeMode',{"Single-Year":!viz.cumulativeMode,"Cumulative":viz.cumulativeMode})
+  // addRadio(legendDivID+'-cumulative-radio-container',legendDivID+'-cumulative-radio','','Single Year','Cumulative','cumulativeMode',false,true,'setCumulativeMode()','setCumulativeMode()','Toggle whether to show a single year or all years in the past along with current year')
+  // $('#'+legendDivID+'-cumulative-radio-first_toggle_label').addClass('cumulative-off');
+  // $('#'+legendDivID+'-cumulative-radio-second_toggle_label').addClass('cumulative-on');
+  // $('#'+legendDivID+'-cumulative-radio').addClass('pt-4');
+  $('#time-lapse-legend-list').append(`<div id="legend-${legendDivID}-collapse-div"></div>`);
+  onclick = 'timeLapseCheckbox("${legendDivID}")'
+  var prevent = false;
+  var delay = 200;
+  $('#'+ legendDivID + '-name-span').click(function(){
+    // showMessage('test')
+    setTimeout(function(){
+      if(!prevent){
+        timeLapseCheckbox(legendDivID);
+      }
+    },delay)
+    
+  });
+  $('#'+ legendDivID + '-name-span').dblclick(function(){
+    showMessage('test')
+      // zoomFunction();
+      // prevent = true;
+      // zoomFunction();
+      // if(!timeLapseObj[legendDivID].visible){$('#'+legendDivID+'-toggle-checkbox').click();}
+      // setTimeout(function(){prevent = false},delay)
+    })
+  // viz.opacity = 0;
+  viz.layerType = 'geeImage';
+  viz.legendTitle = name;
+  viz.opacity = 0;
+
+  if(viz.timeLapseType === 'tileMapService'){
+    viz.layerType = 'tileMapService';
+    viz.years.map(function(yr){
+      if(yr !== viz.years[0]){
+        viz.addToLegend = false;
+        viz.addToClassLegend = false;
+        
+      }
+        addToMap(standardTileURLFunction(item + yr.toString()+'/',true,''),viz,name +' '+   yr.toString(),visible,label ,fontColor,helpBox,legendDivID+'-collapse-div',queryItem)
+      
+     }) 
+  }else{
+    viz.years.map(function(yr){
+      var img = ee.Image(item.filter(ee.Filter.calendarRange(yr,yr,'year')).first()).set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
+      
+
+      if(yr !== viz.years[0]){
+        viz.addToLegend = false;
+        viz.addToClassLegend = false;
+        
+      }
+      // console.log(viz);
+      
+        
+        addToMap(img,viz,name +' '+   yr.toString(),visible,label ,fontColor,helpBox,legendDivID+'-collapse-div',queryItem);
+     
+    })
+  }
+  if(viz.timeLapseType === 'tileMapService'){
+    timeLapseObj[legendDivID].isReady = true;
+    $('#'+legendDivID+'-toggle-checkbox-label').show();
+    $('#'+legendDivID+'-loading-spinner').hide();
+  }
+  // timeLapseObj[legendDivID].years = timeLapseObj[legendDivID].years;
+    timeLapseObj[legendDivID].sliders = timeLapseObj[legendDivID].sliders;
+     $('#'+legendDivID+'-opacity-slider').slider({
+        
+        min: 0,
+        max: 1,
+        step: 0.05,
+        value: timeLapseObj[legendDivID].opacity/100,
+        slide: function(e,ui){
+          // console.log(e);
+          var opacity = ui.value;
+          var k = legendDivID;
+          // Object.keys(timeLapseObj).map(function(k){
+            var s = $('#'+k+'-opacity-slider').slider();
+            s.slider('option', 'value',ui.value);
+            $('#'+k+'-opacity-slider-handle-label').text(opacity);
+            timeLapseObj[k].opacity = opacity*100
+          // });
+          selectFrame(null,null,false)
+          // if(timeLapseObj[legendDivID].isReady){
+          //   clearAllFrames();
+          //   pauseTimeLapse(legendDivID);
+          //   selectFrame(legendDivID,true);
+          //   alignTimeLapseCheckboxes();
+          // }
+        }
+      });
+    $('#'+legendDivID+'-year-slider').slider({
+        
+        min: startYearT,
+        max: endYearT,
+        step: 1,
+        value: startYearT,
+        slide: function(e,ui){
+          // console.log(e);
+          var yr = ui.value;
+          var i = viz.years.indexOf(yr);
+          timeLapseFrame = i;
+          Object.keys(timeLapseObj).map(function(k){
+            var s = $('#'+k+'-year-slider').slider();
+            s.slider('option', 'value',ui.value);
+            $('#'+k+'-year-slider-handle-label').text( ui.value )
+          })
+          if(timeLapseObj[legendDivID].isReady){
+            clearAllFrames();
+            pauseTimeLapse(legendDivID);
+            selectFrame(legendDivID,true,false);
+            alignTimeLapseCheckboxes();
+          }
+        }
+      });
+    $('#'+legendDivID+'-speed-slider').slider({
+        min: 0.5,
+        max: 3.0  ,
+        step: 0.5,
+        value: 1.5,
+        slide: function(e,ui){
+          // console.log(e);
+          var speed = 1/ui.value*1000;
+          Object.keys(timeLapseObj).map(function(k){
+            var s = $('#'+k+'-speed-slider').slider();
+            s.slider('option', 'value',ui.value);
+            $('#'+k+'-speed-slider-handle-label').text(`${ui.value.toFixed(1)}fps`)
+          })
+           
+    // sliders = sliders.map(function(s){return sliders[s].id})
+          if(timeLapseObj[legendDivID].isReady){
+            setSpeed(legendDivID,speed)
+          }
+        }
+      });
+
+   
+ 
+  
+}
 /////////////////////////////////////
 function addExport(eeImage,name,res,Export,metadataParams){
 
@@ -360,10 +916,7 @@ function addImageDownloads(imagePathJson){
 //Function to add ee object ot map
 function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem){
     if(viz !== null && viz !== undefined && viz.serialized !== null && viz.serialized !== undefined && viz.serialized === true){
-        // console.log('its serialized');
-        // console.log(item);
         item = ee.Deserializer.fromJSON(JSON.parse(JSON.stringify(item)));
-        // console.log(item.getInfo());
     }
     var currentGEERunID = geeRunID;
     if(whichLayerList === null || whichLayerList === undefined){whichLayerList = "layer-list"}
@@ -418,7 +971,7 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
        
         }
     }
-
+    if(viz.layerType === 'geoJSONVector'){viz.canQuery = false;}
     // console.log(viz.layerType);
     // console.log(viz.layerType);console.log(name);
     //Take care of vector option
@@ -449,7 +1002,7 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
     if(viz.layerType === 'geeVector' || viz.layerType === 'geoJSONVector'){
       if(viz.strokeOpacity === undefined || viz.strokeOpacity === null){viz.strokeOpacity = 1};
       if(viz.fillOpacity === undefined || viz.fillOpacity === null){viz.fillOpacity = 0.2};
-      if(viz.fillColor === undefined || viz.fillColor === null){viz.fillColor = '222'};
+      if(viz.fillColor === undefined || viz.fillColor === null){viz.fillColor = '222222'};
       if(viz.strokeColor === undefined || viz.strokeColor === null){viz.strokeColor = getColor()};
       if(viz.strokeWeight === undefined || viz.strokeWeight === null){viz.strokeWeight = 3};
       viz.opacityRatio = viz.strokeOpacity/viz.fillOpacity;
@@ -462,7 +1015,7 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
     }else if(viz.layerType === 'geeVectorImage' ){
       if(viz.strokeOpacity === undefined || viz.strokeOpacity === null){viz.strokeOpacity = 1};
       viz.fillOpacity = 0;
-      if(viz.fillColor === undefined || viz.fillColor === null){viz.fillColor = '222'};
+      if(viz.fillColor === undefined || viz.fillColor === null){viz.fillColor = '222222'};
       if(viz.strokeColor === undefined || viz.strokeColor === null){viz.strokeColor = getColor()};
       if(viz.strokeWeight === undefined || viz.strokeWeight === null){viz.strokeWeight = 2};
       if(viz.fillColor.indexOf('#') == -1){viz.fillColor = '#' + viz.fillColor};
@@ -474,7 +1027,7 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
     }
 
 
-    var legendDivID = name.replaceAll(' ','-');
+    var legendDivID = name.replaceAll(' ','-')+ '-' +NEXT_LAYER_ID.toString() ;
     
     legendDivID = legendDivID.replaceAll('/','-');
     legendDivID = legendDivID.replaceAll('(','-');
@@ -515,7 +1068,7 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
     layer.label = label;
     layer.fontColor = fontColor;
     layer.helpBox = helpBox;
-    layer.legendDivID = legendDivID;
+    layer.legendDivID = legendDivID ;
     if(queryItem === null || queryItem === undefined){queryItem = item};
     if(viz.canQuery === null || viz.canQuery === undefined){viz.canQuery = true};
     layer.canQuery = viz.canQuery;
@@ -533,6 +1086,7 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
     // else{layer.min = 0;}
     
     if(viz != null && viz.bands == null && viz.addToLegend != false && viz.addToClassLegend != true){
+      // console.log('legend-'+whichLayerList)
       addLegendContainer(legendDivID,'legend-'+whichLayerList,false,helpBox)
         // var legendItemContainer = document.createElement("legend-item");
 
@@ -545,7 +1099,14 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
       // legendItemContainer.insertBefore(legendBreak,legendItemContainer.firstChild);
 
         var legend ={};// document.createElement("ee-legend");
-        legend.name = name;
+         // console.log('here');console.log(viz)
+        if(viz.legendTitle !== null && viz.legendTitle !== undefined){
+         
+          legend.name = viz.legendTitle
+        }else{
+          legend.name = name;
+        }
+        
         legend.helpBoxMessage = helpBox
         if(viz.palette != null){
             var palette = viz.palette;
@@ -574,6 +1135,9 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
         } else if(label == null && viz.max != null){
             legend.max = viz.max;
         } 
+
+        if(viz.legendLabelLeft !== null && viz.legendLabelLeft !== undefined){legend.min = viz.legendLabelLeft + ' ' + viz.min}
+        if(viz.legendLabelRight !== null && viz.legendLabelRight !== undefined){legend.max = viz.legendLabelRight + ' ' + viz.max}
         if(legend.min ==null){legend.min = 'min'};
         if(legend.max ==null){legend.max = 'max'};
     
@@ -588,9 +1152,17 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
     }
 
     else if(viz != null && viz.bands == null && viz.addToClassLegend == true){
+
       addLegendContainer(legendDivID,'legend-'+whichLayerList,false,helpBox)
-      var classLegendContainerID = legendDivID + '-class-container'
-      addClassLegendContainer(classLegendContainerID,legendDivID,name)
+      var classLegendContainerID = legendDivID + '-class-container';
+      var legendClassContainerName;
+      if(viz.legendTitle !== null && viz.legendTitle !== undefined){
+         
+          legendClassContainerName = viz.legendTitle
+        }else{
+          legendClassContainerName = name;
+        }
+      addClassLegendContainer(classLegendContainerID,legendDivID,legendClassContainerName)
       // var legendItemContainer = document.createElement("legend-item");
       // legendItemContainer.setAttribute("id", legendDivID);
       // var legendBreak = document.createElement("legend-break");
@@ -604,6 +1176,7 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
 
           var legend = {};//document.createElement("ee-class-legend");
           legend.name = name;
+          
           legend.helpBoxMessage = helpBox;
 
 
@@ -682,8 +1255,12 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
 }
 
 //////////////////////////////////////////////////////
-function standardTileURLFunction(url,xThenY){
-              if(xThenY === null || xThenY === undefined  ){xThenY  = false;}
+function standardTileURLFunction(url,xThenY,fileExtension,token){
+              if(xThenY === null || xThenY === undefined  ){xThenY  = false;};
+              if(token === null || token === undefined  ){token  = '';}
+              else{token = '?token='+token};
+              if(fileExtension === null || fileExtension === undefined  ){fileExtension  = '.png';}
+              
               return function(coord, zoom) {
                     // "Wrap" x (logitude) at 180th meridian properly
                     // NB: Don't touch coord.x because coord param is by reference, and changing its x property breakes something in Google's lib 
@@ -695,9 +1272,9 @@ function standardTileURLFunction(url,xThenY){
                     // Wrap y (latitude) in a like manner if you want to enable vertical infinite scroll
                     // return "https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/" + zoom + "/" + x + "/" + coord.y + "?access_token=pk.eyJ1IjoiaWhvdXNtYW4iLCJhIjoiY2ltcXQ0cnljMDBwNHZsbTQwYXRtb3FhYiJ9.Sql6G9QR_TQ-OaT5wT6f5Q"
                     if(xThenY ){
-                        return url+ zoom + "/" + x + "/" + coord.y +".png?";
+                        return url+ zoom + "/" + x + "/" + coord.y +fileExtension+token;
                     }
-                    else{return url+ zoom + "/" + coord.y + "/" +x  +".png?";}//+ (new Date()).getTime();
+                    else{return url+ zoom + "/" + coord.y + "/" +x  +fileExtension+token;}//+ (new Date()).getTime();
                     
                 }
             }
@@ -900,6 +1477,13 @@ function mp(){
     addSelectLayerToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem);
     
   };
+  this.addTimeLapse = function(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem){
+    addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem);
+  };
+  this.addSerializedTimeLapse = function(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem){
+    viz.serialized = true;
+    addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem);
+  };
   this.addREST = function(tileURLFunction,name,visible,maxZoom,helpBox,whichLayerList){
     addRESTToMap(tileURLFunction,name,visible,maxZoom,helpBox,whichLayerList);
   };
@@ -938,7 +1522,14 @@ function reRun(){
   layerChildID = 0;
   geeTileLayersDownloading = 0;
   updateGEETileLayersLoading();
-  queryObj = {};areaChartCollections = {};
+
+  stopTimeLapse();
+  queryObj = {};areaChartCollections = {};pixelChartCollections = {};timeLapseObj = {};
+  intervalPeriod = 666.6666666;
+  timeLapseID = null;
+  timeLapseFrame = 0;
+  cumulativeMode = true;
+
   // if(analysisMode === 'advanced'){
   //   document.getElementById('threshold-container').style.display = 'inline-block';
   //   document.getElementById('advanced-radio-container').style.display = 'inline';
@@ -958,7 +1549,7 @@ function reRun(){
   // }
   clearSelectedAreas();
   selectedFeaturesGeoJSON = {};
-  ['layer-list','reference-layer-list','area-charting-select-layer-list'].map(function(l){
+  ['layer-list','reference-layer-list','area-charting-select-layer-list','fhp-div','time-lapse-legend-list'].map(function(l){
     $('#'+l).empty();
     $('#legend-'+l).empty();
   })
@@ -968,7 +1559,7 @@ function reRun(){
 	
   Object.values(featureObj).map(function(f){f.setMap(null)});
   featureObj = {};
-  map.overlayMapTypes.g.forEach(function(element,index){
+  map.overlayMapTypes.i.forEach(function(element,index){
                      map.overlayMapTypes.setAt(index,null);
                    
                 });
@@ -984,7 +1575,7 @@ function reRun(){
   clearDownloadDropdown();
   google.maps.event.clearListeners(mapDiv, 'click');
 	run();
-  setupFSB();
+  // setupFSB();
 
 
 //     var whileCount = 0;
@@ -1073,6 +1664,10 @@ var chartColorsDict = {
   'standard':['#050','#0A0','#e6194B','#14d4f4'],
   'advanced':['#050','#0A0','#9A6324','#6f6f6f','#e6194B','#14d4f4'],
   'advancedBeta':['#050','#0A0','#9A6324','#6f6f6f','#e6194B','#14d4f4','#808','#f58231'],
+  'coreLossGain':['#050','#0A0','#e6194B','#14d4f4'],
+  'allLossGain':['#050','#0A0','#e6194B','#808','#f58231','#14d4f4'],
+  'test':['#9A6324','#6f6f6f','#e6194B','#14d4f4','#880088','#f58231'],
+  'testArea':['#e6194B','#14d4f4','#880088','#f58231'],
   'ancillary':['#cc0066','#660033','#9933ff','#330080','#ff3300','#47d147','#00cc99','#ff9966','#b37700']
   }
 
@@ -1109,8 +1704,33 @@ function getColor(){
   colorMod++;
   return currentColor
 }
+//Taken from: https://stackoverflow.com/questions/5560248/programmatically-lighten-or-darken-a-hex-color-or-rgb-and-blend-colors
+function LightenDarkenColor(col,amt) {
+    var usePound = false;
+    if ( col[0] == "#" ) {
+        col = col.slice(1);
+        usePound = true;
+    }
 
+    var num = parseInt(col,16);
 
+    var r = (num >> 16) + amt;
+
+    if ( r > 255 ) r = 255;
+    else if  (r < 0) r = 0;
+
+    var b = ((num >> 8) & 0x00FF) + amt;
+
+    if ( b > 255 ) b = 255;
+    else if  (b < 0) b = 0;
+
+    var g = (num & 0x0000FF) + amt;
+
+    if ( g > 255 ) g = 255;
+    else if  ( g < 0 ) g = 0;
+
+    return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
+}
 function startArea(){
   
   if(polyOn === false){
@@ -1154,9 +1774,12 @@ function startArea(){
         function areaWrapper(key){
           // console.log('key');console.log(key);
         // print('Adding in: '+key.toString());
-        var pathT = areaPolygonObj[key].getPath().g
+        var pathT = areaPolygonObj[key].getPath().j
         if(pathT.length > 0){
-          clickCoords = pathT[pathT.length-1];
+
+          clickCoords =clickLngLat;//pathT[pathT.length-1];
+           console.log(clickCoords)
+           console.log(pathT)
           // console.log(clickCoords);console.log(pathT.length);
           area = google.maps.geometry.spherical.computeArea(areaPolygonObj[key].getPath());
           
@@ -1544,8 +2167,8 @@ function resetPolyline(e){
 // }
 updateDistance = function(){
     distance = google.maps.geometry.spherical.computeLength(distancePolyline.getPath());
-    var pathT = distancePolyline.getPath().g;
-    clickCoords = pathT[pathT.length-1];
+    var pathT = distancePolyline.getPath().j;
+    clickCoords = clickLngLat;//pathT[pathT.length-1];
     // console.log(clickCoords)
     
     var unitNames = unitNameDict[metricOrImperialDistance].distance;
@@ -1680,20 +2303,46 @@ var resetStudyArea = function(whichOne){
     console.log('changing study area');
     console.log(whichOne);
     lowerThresholdDecline =  studyAreaDict[whichOne].lossThresh;
+    if(studyAreaDict[whichOne].lossSlowThresh !== undefined  && studyAreaDict[whichOne].lossSlowThresh !== null){
+      lowerThresholdSlowLoss = studyAreaDict[whichOne].lossSlowThresh;
+    }else{
+      lowerThresholdSlowLoss = lowerThresholdDecline;
+    }
+    if(studyAreaDict[whichOne].lossFastThresh !== undefined  && studyAreaDict[whichOne].lossFastThresh !== null){
+      lowerThresholdFastLoss = studyAreaDict[whichOne].lossFastThresh;
+    }else{
+      lowerThresholdFastLoss = lowerThresholdDecline;
+    }
+   
     upperThresholdDecline = 1;
+    upperThresholdSlowLoss = 1;
+    upperThresholdFastLoss = 1;
     lowerThresholdRecovery = studyAreaDict[whichOne].gainThresh;
     upperThresholdRecovery = 1;
     
     startYear = studyAreaDict[whichOne].startYear;
     endYear = studyAreaDict[whichOne].endYear;
-    setUpRangeSlider('lowerThresholdDecline','upperThresholdDecline',0,1,lowerThresholdDecline,upperThresholdDecline,0.05,'decline-threshold-slider','decline-threshold-slider-update','null')
-    setUpRangeSlider('lowerThresholdRecovery','upperThresholdRecovery',0,1,lowerThresholdRecovery,upperThresholdRecovery,0.05,'recovery-threshold-slider','recovery-threshold-slider-update','null')
-    setUpRangeSlider('startYear','endYear',startYear,endYear,startYear,endYear,1,'analysis-year-slider','analysis-year-slider-update','null')
+   
+    setUpRangeSlider('lowerThresholdDecline',0,1,lowerThresholdDecline,0.05,'decline-threshold-slider','null');
+    setUpRangeSlider('lowerThresholdRecovery',0,1,lowerThresholdRecovery,0.05,'recovery-threshold-slider','null');
+    
+    setUpRangeSlider('lowerThresholdSlowLoss',0,1,lowerThresholdSlowLoss,0.05,'slow-loss-threshold-slider','null');
+    setUpRangeSlider('lowerThresholdFastLoss',0,1,lowerThresholdFastLoss,0.05,'fast-loss-threshold-slider','null');
+    
+    setUpDualRangeSlider('startYear','endYear',startYear,endYear,startYear,endYear,1,'analysis-year-slider','analysis-year-slider-update','null')
     
 
     var coords = studyAreaDict[whichOne].center;
     studyAreaName = studyAreaDict[whichOne].name;
-    if(studyAreaName === 'CONUS'){run = runCONUS}else{run = runUSFS};
+    if(studyAreaName === 'CONUS'){run = runCONUS;}
+    else{run = runUSFS;};
+    // console.log(studyAreaDict[whichOne].addFastSlow)
+    if(studyAreaDict[whichOne].addFastSlow){
+      $('#fast-slow-threshold-container').show();
+    }else{$('#fast-slow-threshold-container').hide();}
+    if(studyAreaDict[whichOne].addGainThresh){
+      $('#recovery-threshold-slider-container').show();
+    }else{$('#recovery-threshold-slider-container').hide();}
     $('#export-crs').val(studyAreaDict[whichOne].crs)
     // exportCRS = studyAreaDict[whichOne][2];
     // $('#export-crs').val(exportCRS);
@@ -1776,7 +2425,225 @@ function getInfoWindow(xOffset,yOffset){
   });
 } 
 function initialize() {
-  
+  // Create a new StyledMapType object, passing it an array of styles,
+        // and the name to be displayed on the map type control.
+        var styledMapType = new google.maps.StyledMapType(
+            [
+  {
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#212121"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.icon",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#212121"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.country",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#9e9e9e"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.land_parcel",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  },
+  {
+    "featureType": "administrative.locality",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#bdbdbd"
+      }
+    ]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#181818"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "geometry.fill",
+    "stylers": [
+      {
+        "color": "#004000"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.icon",
+    "stylers": [
+      {
+        "color": "#004000"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text",
+    "stylers": [
+      {
+        "color": "#004000"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#616161"
+      }
+    ]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.stroke",
+    "stylers": [
+      {
+        "color": "#1b1b1b"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry.fill",
+    "stylers": [
+      {
+        "color": "#2c2c2c"
+      }
+    ]
+  },
+  {
+    "featureType": "road",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#8a8a8a"
+      }
+    ]
+  },
+  {
+    "featureType": "road.arterial",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#373737"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#3c3c3c"
+      }
+    ]
+  },
+  {
+    "featureType": "road.highway.controlled_access",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#4e4e4e"
+      }
+    ]
+  },
+  {
+    "featureType": "road.local",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#616161"
+      }
+    ]
+  },
+  {
+    "featureType": "transit",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#757575"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "geometry",
+    "stylers": [
+      {
+        "color": "#000000"
+      }
+    ]
+  },
+  {
+    "featureType": "water",
+    "elementType": "labels.text.fill",
+    "stylers": [
+      {
+        "color": "#3d3d3d"
+      }
+    ]
+  }
+],
+            {name: 'Dark Mode'});
+
+     
   var mapOptions = {
     center: null,
     zoom: null,
@@ -1787,7 +2654,8 @@ function initialize() {
     mapTypeId: google.maps.MapTypeId.HYBRID,
     streetViewControl: true,
     fullscreenControl: false,
-    mapTypeControlOptions :{position: google.maps.ControlPosition.TOP_RIGHT},
+    mapTypeControlOptions :{position: google.maps.ControlPosition.TOP_RIGHT,mapTypeIds: ['roadmap', 'satellite', 'hybrid', 'terrain',
+                    'dark_mode']},
     // fullscreenControlOptions:{position: google.maps.ControlPosition.RIGHT_TOP},
     streetViewControlOptions:{position: google.maps.ControlPosition.RIGHT_TOP},
     scaleControlOptions:{position: google.maps.ControlPosition.RIGHT_TOP},
@@ -1795,8 +2663,12 @@ function initialize() {
     tilt:0,
     controlSize: 25,
     scaleControl: true,
-    clickableIcons:false
+    clickableIcons:false,
   };
+   
+
+       
+  // console.log(initialCenter)
   var center = new google.maps.LatLng(initialCenter[0],initialCenter[1]);
   var zoom = initialZoomLevel;//8;
 
@@ -1805,9 +2677,23 @@ function initialize() {
 
   // var randomID = null;
   if(typeof(Storage) !== "undefined"){
-    settings = JSON.parse(localStorage.getItem("settings"));
-    layerObj =  null;//JSON.parse(localStorage.getItem("layerObj"));
     cachedStudyAreaName = localStorage.getItem("cachedStudyAreaName");
+    if(cachedStudyAreaName === null || cachedStudyAreaName === undefined){
+      cachedStudyAreaName = defaultStudyArea;
+    }
+    studyAreaName = studyAreaDict[cachedStudyAreaName].name;
+    longStudyAreaName = cachedStudyAreaName;
+    $('#study-area-label').text(longStudyAreaName);
+    $('#study-area-label').fitText(1.8);
+    
+    if(studyAreaSpecificPage == true){
+      cachedSettingskey =  studyAreaName +"-settings";
+      
+    }
+    settings = JSON.parse(localStorage.getItem(cachedSettingskey));
+    
+    layerObj =  null;//JSON.parse(localStorage.getItem("layerObj"));
+    
   }
 
   if(settings != null && settings.center != null && settings.zoom != null){
@@ -1820,12 +2706,15 @@ function initialize() {
 
  
 
-	
+	 // console.log(center);console.log(zoom);
     mapOptions.center = center;
     mapOptions.zoom = zoom;
      
     map = new google.maps.Map(document.getElementById("map"),
                                   mapOptions);
+     //Associate the styled map with the MapTypeId and set it to display.
+    map.mapTypes.set('dark_mode', styledMapType);
+        
     marker=new google.maps.Circle({
     center:{lat:45,lng:-111},
     radius:5
@@ -1981,7 +2870,8 @@ function initialize() {
       eeBoundsPoly = ee.Geometry.Rectangle([bounds[keys[1]][keysX[0]],bounds[keys[0]][keysY[0]],bounds[keys[1]][keysX[1]],bounds[keys[0]][keysY[1]]]);
 
         if(typeof(Storage) == "undefined") return;
-        localStorage.setItem("settings",JSON.stringify({center:{lat:map.getCenter().lat(),lng:map.getCenter().lng()},zoom:map.getZoom()}));
+        
+        localStorage.setItem(cachedSettingskey,JSON.stringify({center:{lat:map.getCenter().lat(),lng:map.getCenter().lng()},zoom:map.getZoom()}));
     });
 
     
@@ -1997,7 +2887,9 @@ function initialize() {
     ee.initialize(authProxyAPIURL,geeAPIURL,function(){
     
     // ee.initialize("http://localhost:8080/api","https://earthengine.googleapis.com/map",function(){
-      
+    if(cachedStudyAreaName === null){
+      $('#study-area-label').text(defaultStudyArea);
+    }
     if(mode === 'Ancillary'){
       run = runSimple;
     } else if( mode === 'LT'){
@@ -2006,22 +2898,26 @@ function initialize() {
       run = runMTBS;
     }else if(mode === 'TEST'){
       run = runTest;
+    }else if(mode === 'FHP'){
+      run = runFHP;
     }else if(mode === 'geeViz'){
       run = runGeeViz;
     }else if(mode === 'lcms-base-learner'){
       run = runBaseLearner
     }else if(studyAreaName === 'CONUS'){
+      longStudyAreaName = cachedStudyAreaName;
       run = runCONUS;
     
     }else if(cachedStudyAreaName != null){
+      longStudyAreaName = cachedStudyAreaName;
       resetStudyArea(cachedStudyAreaName)
-    }
+    } 
     else{run = runUSFS}
 
    
   setGEERunID();
   run();
-  setupFSB();
+  // setupFSB();
 
   if(plotsOn){
     addPlotCollapse();

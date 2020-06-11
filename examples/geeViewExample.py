@@ -86,7 +86,7 @@ waterQueryDict =  {str(i+1): waterLabels[i] for i in range(len(waterLabels))}
 #The lookup table is applied to the image, but only a graph is created when querying the imageCollection
 Map.addLayer(water,{'min':1,'max':3,'palette':waterColors,'addToClassLegend': True,'classLegendDict':waterDict,'queryDict':waterQueryDict},'JRC Surface Water Time Series',False)
 Map.addLayer(water.mode(),{'min':1,'max':3,'palette':waterColors,'addToClassLegend': True,'classLegendDict':waterDict,'queryDict':waterQueryDict},'JRC Surface Water Mode',False)
-
+Map.addTimeLapse(water,{'min':1,'max':3,'palette':waterColors,'addToClassLegend': True,'classLegendDict':waterDict,'queryDict':waterQueryDict},'JRC Surface Water Time Lapse',False)
 #The Map can be centered on featureCollections or features
 Map.centerObject(nps)
 #Final step is to launch the viewer
