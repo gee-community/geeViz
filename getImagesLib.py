@@ -511,7 +511,7 @@ def getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR
     lsTOAFMASK = getLandsat('SR').select(['pixel_qa']) 
     #Join the TOA with SR QA bands
     print('Joining TOA with SR QA bands')
-    ls = joinCollections(ls.select([0,1,2,3,4,5,6]),lsTOAFMASK,False,'system:index')
+    ls = joinCollections(ls.select([0,1,2,3,4,5,6]),lsTOAFMASK)
     
 
   def dataInAllBands(img):
@@ -651,23 +651,22 @@ def landsatCloudScore(img):
 #########################################################################
 #########################################################################
 #Wrapper for applying cloudScore function
-def applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh = 10,cloudScorePctl = 10,contractPixels = 1.5,dilatePixels = 2.5,performCloudScoreOffset = True,preComputedCloudScoreOffset = None):
-  #Add cloudScore
+def applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh = 10,cloudScorePctl = 10,contractPixels = 1.5,dilatePixels = 2.5,
+                            performCloudScoreOffset = True, preComputedCloudScoreOffset = None):
   
+  #Add cloudScore  
   def cloudScoreWrapper(img):
     img = ee.Image(img)
     cs = cloudScoreFunction(img).rename(["cloudScore"])
     return img.addBands(cs)
-
   collection = collection.map(cloudScoreWrapper)
  
   if performCloudScoreOffset:
     if preComputedCloudScoreOffset == None:
+      #Find low cloud score pctl for each pixel to avoid commission errors
       print('Computing cloudScore offset')
-      #Find low cloud score pctl for each pixel to avoid comission errors
       minCloudScore = collection.select(['cloudScore'])\
         .reduce(ee.Reducer.percentile([cloudScorePctl]))
-      # Map.addLayer(minCloudScore,{'min':0,'max':30},'minCloudScore',False)
     else:
       print('Using pre-computed cloudScore offset')
       minCloudScore = preComputedCloudScoreOffset.rename(['cloudScore'])
@@ -721,9 +720,11 @@ def simpleTDOM2(collection,zScoreThresh = -1,shadowSumThresh = 0.35,contractPixe
 
   #Get some pixel-wise stats for the time series
   if irStdDev == None:
+    print('Computing irMean for TDOM')
     irStdDev = collection.select(shadowSumBands).reduce(ee.Reducer.stdDev())
 
   if irMean == None:
+    print('Computing irStdDev for TDOM')
     irMean = collection.select(shadowSumBands).mean()
   
   def zThresholder(img):
@@ -1047,7 +1048,8 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicy = '
   if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
     transform = str(transform)
 
-  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath ,  json.dumps({'.default': pyramidingPolicy}), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
+  # LSC 2/4/20 was getting error: "ee.ee_exception.EEException: JSON provided for reductionPolicy must be an object." Getting rid of json.dumps() seemed to fix the problem
+  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath ,  {'.default': pyramidingPolicy}, None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
   t.start()
 
 def exportToAssetWrapper2(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
@@ -1148,7 +1150,7 @@ def compositeTimeSeries(ls,startYear,endYear,startJulian,endJulian,timebuffer = 
                         'startJulian':startJulian,\
                         'endJulian':endJulian,\
                         'yearBuffer':timebuffer,\
-                        'yearWeights': '[1,2,1]',\
+                        'yearWeights': listToString(weights),\
                         'yrOriginal':year,\
                         'yrUsed': year + yearWithMajority})
 
@@ -1435,7 +1437,7 @@ multModisDict = {\
 #########################################################################
 #########################################################################
 #Helper function to join two collections- Source: code.earthengine.google.com
-def joinCollections(c1,c2, maskAnyNullValues = True,property = 'system:time_start'):
+def joinCollections(c1,c2, maskAnyNullValues = True):
   def MergeBands(element):
     #A function to merge the bands together.
     #After a join, results are in 'primary' and 'secondary' properties.
@@ -1443,7 +1445,7 @@ def joinCollections(c1,c2, maskAnyNullValues = True,property = 'system:time_star
 
 
   join = ee.Join.inner()
-  filter = ee.Filter.equals(property, None, property)
+  filter = ee.Filter.equals('system:time_start', None, 'system:time_start')
   joined = ee.ImageCollection(join.apply(c1, c2, filter))
      
   joined = ee.ImageCollection(joined.map(MergeBands))
@@ -1745,7 +1747,8 @@ def exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,co
 #Function to export composite collection
 def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,\
   collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
-  applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,nonDivideBands = ['temp']):
+  applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,
+  nonDivideBands = ['temp'],includeSentinel2=False):
 
   collection = collection.select(exportBands)
   for year in ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo():
@@ -1785,6 +1788,7 @@ def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform
       'applyFmaskSnowMask': str(applyFmaskSnowMask),\
       'compositingMethod': compositingMethod,\
       'includeSLCOffL7': str(includeSLCOffL7),\
+      'includeSentinel2': str(includeSentinel2),
       'correctIllumination':str(correctIllumination)})
   
     #Export the composite 
@@ -2053,9 +2057,9 @@ def getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulia
   
 #   // Add common indices- can use addIndices for comprehensive indices 
 #   //or simpleAddIndices for only common indices
-  s2s = s2s.map(simpleAddIndices)
-  s2s = s2s.map(getTasseledCap)
-  s2s = s2s.map(simpleAddTCAngles)
+#   // s2s = s2s.map(simpleAddIndices)
+#   //         .map(getTasseledCap)
+#   //         .map(simpleAddTCAngles);
   
   
   
@@ -2094,9 +2098,9 @@ def getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,\
  
   #Add common indices- can use addIndices for comprehensive indices 
   #or simpleAddIndices for only common indices
-  # s2s = s2s.map(simpleAddIndices)
-  # s2s = s2s.map(getTasseledCap)
-  # s2s = s2s.map(simpleAddTCAngles)
+  s2s = s2s.map(simpleAddIndices)
+  s2s = s2s.map(getTasseledCap)
+  s2s = s2s.map(simpleAddTCAngles)
   
   #Create composite time series
   ts = compositeTimeSeries(s2s,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod)

@@ -24,17 +24,13 @@ import os, subprocess
 #------------------------------------------------------------------------------
 #                   USING GSUTIL
 #------------------------------------------------------------------------------
+# You must have gsutil set up so that the gsutil path is added to your system environment variables in order for this to work.
 # download training tables from google cloud storage to local directory
-def download_to_local(gsutil_dir, bucket_name, trainingDataPath, exportNamePrefix = ''):
-    currentDir = os.getcwd()
-    os.chdir(gsutil_dir)
+def download_to_local(bucket_name, trainingDataPath, exportNamePrefix = ''):
     syncCommand = 'gsutil.cmd -m cp -n -r gs://'+bucket_name+'/'+exportNamePrefix+'* '+trainingDataPath
     subprocess.Popen(syncCommand, shell=True).wait()
-    os.chdir(currentDir)
     
 # delete all contents of GCS Bucket
-def clearBucket(gsutil_dir, bucket_name):
-    currentDir = os.getcwd()
-    os.chdir(gsutil_dir)
+def clearBucket(bucket_name):
     subprocess.Popen('gsutil.cmd rm -v gs://'+bucket_name+'/*').wait()
-    os.chdir(currentDir)
+
