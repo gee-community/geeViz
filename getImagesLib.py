@@ -396,6 +396,8 @@ def getS2(studyArea,startDate,endDate,startJulian,endJulian,resampleMethod = 'ne
             .map(multS2)\
             .select(['QA60']+sensorBandDict[toaOrSR],['QA60']+sensorBandNameDict[toaOrSR])
   
+  s2s = s2s.map(lambda img: img.updateMask(img.mask().reduce(ee.Reducer.min())))
+
   def setResample(img):
     return img.resample(resampleMethod)
 
@@ -662,7 +664,6 @@ def applyCloudScoreAlgorithm(collection,cloudScoreFunction,cloudScoreThresh = 10
   collection = collection.map(cloudScoreWrapper)
  
   if performCloudScoreOffset:
-    print('Computing cloudScore offset')
     if preComputedCloudScoreOffset == None:
       #Find low cloud score pctl for each pixel to avoid commission errors
       print('Computing cloudScore offset')
