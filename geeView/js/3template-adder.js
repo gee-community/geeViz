@@ -1,3 +1,5 @@
+/*This script constructs the page depending on the chosen mode*/
+/*Put main elements on body*/
 $('body').append(staticTemplates.map);
 
 $('body').append(staticTemplates.mainContainer);
@@ -12,12 +14,9 @@ $('#main-container').append(staticTemplates.sidebarLeftToggler);
 
 $('#sidebar-left-header').append(staticTemplates.topBanner);
 
-// $('#title-banner').fitText(1.2);
-// $('#studyAreaDropdownLabel').fitText(0.5);
-
-
 $('#main-container').append(staticTemplates.introModal[mode]);
-
+/////////////////////////////////////////////////////////////////////
+/*Check to see if modals should be shown*/
 if(localStorage.showIntroModal == undefined){
   localStorage.showIntroModal = 'true';
   }
@@ -26,10 +25,18 @@ $('#dontShowAgainCheckbox').change(function(){
   console.log(this.checked)
   localStorage.showIntroModal  = !this.checked;
 });
+/////////////////////////////////////////////////////////////////////
+/*Add study area dropdown if LCMS*/
 if(mode === 'LCMS'){
   $('#title-banner').append(staticTemplates.studyAreaDropdown);
-  Object.keys(studyAreaDict).map(function(k){addStudyAreaToDropdown(k,studyAreaDict[k].popOver);});
+  if(studyAreaSpecificPage){
+    $('#study-area-label').removeClass('dropdown-toggle');
+  }else{
+    Object.keys(studyAreaDict).map(function(k){addStudyAreaToDropdown(k,studyAreaDict[k].popOver);});
+  }
+
 }
+
 $('#title-banner').append(staticTemplates.placesSearchDiv);
 $('#title-banner').fitText(1.2);
 $('#study-area-label').fitText(1.8);
@@ -43,15 +50,16 @@ function toggleAdvancedOff(){
     $("#threshold-container").slideUp();
     $("#advanced-radio-container").slideUp();  
 }
-
+/////////////////////////////////////////////////////////////////////
+/*Start adding elements to page based on chosen mode*/
 if(mode === 'LCMS'){
 
-
+  /*Construct panes in left sidebar*/
   addCollapse('sidebar-left','parameters-collapse-label','parameters-collapse-div','PARAMETERS','<i class="fa fa-sliders mr-1" aria-hidden="true"></i>',false,null,'Adjust parameters used to filter and sort LCMS products');
   addCollapse('sidebar-left','layer-list-collapse-label','layer-list-collapse-div','LCMS DATA',`<img style = 'width:1.1em;' class='image-icon mr-1' src="images/layer_icon.png">`,true,null,'LCMS DATA layers to view on map');
-  
+  // $('#layer-list-collapse-label').append(`<button class = 'btn' title = 'Refresh layers if tiles failed to load' id = 'refresh-tiles-button' onclick = 'jitterZoom()'><i class="fa fa-refresh"></i></button>`)
   addCollapse('sidebar-left','reference-layer-list-collapse-label','reference-layer-list-collapse-div','REFERENCE DATA',`<img style = 'width:1.1em;' class='image-icon mr-1' src="images/layer_icon.png">`,false,null,'Additional relevant layers to view on map intended to provide context for LCMS DATA');
-
+  
   addCollapse('sidebar-left','tools-collapse-label','tools-collapse-div','TOOLS',`<i class="fa fa-gear mr-1" aria-hidden="true"></i>`,false,'','Tools to measure and chart data provided on the map');
 
   addCollapse('sidebar-left','download-collapse-label','download-collapse-div','DOWNLOAD DATA',`<i class="fa fa-cloud-download mr-1" aria-hidden="true"></i>`,false,``,'Download LCMS products for further analysis');
@@ -67,19 +75,28 @@ if(mode === 'LCMS'){
   $('#parameters-collapse-div').append(`<div class="dropdown-divider"></div>
                                           <div id='threshold-container' style="display:none;width:100%"></div>
                                           <div id='advanced-radio-container' style="display: none;"></div>`)
-  addDualRangeSlider('threshold-container','Choose loss threshold:','lowerThresholdDecline','upperThresholdDecline',0, 1, lowerThresholdDecline, upperThresholdDecline, 0.05,'decline-threshold-slider','null',"Threshold window for detecting loss.  Any loss probability within the specified window will be flagged as loss ")
+  // console.log('here')
+  // addRangeSlider('threshold-container','Choose loss threshold:','lowerThresholdDecline',0,1,lowerThresholdRecovery,0.05,'decline-threshold-slider','','The CCDC probabibility threshold to detect change.  Any probability for a given break greater than this threshold will be flagged as change') 
+  
+  // addRangeSlider('threshold-container','Choose loss threshold:','lowerThresholdDecline',0,1,lowerThresholdDecline,0.05,'decline-threshold-slider','null',"Threshold window for detecting loss.  Any loss probability greater than the specified threshold will be flagged as loss ") 
+  // containerDivID,title,variable,min,max,defaultValue,step,sliderID,mode,tooltip
+  addRangeSlider('threshold-container','Choose loss threshold:','lowerThresholdDecline',0, 1, lowerThresholdDecline, 0.05,'decline-threshold-slider','null',"Threshold window for detecting loss.  Any loss probability greater than or equal to this value will be flagged as loss ")
   $('#threshold-container').append(`<div class="dropdown-divider" ></div>`);
-  addDualRangeSlider('threshold-container','Choose gain threshold:','lowerThresholdRecovery','upperThresholdRecovery',0, 1, lowerThresholdRecovery, upperThresholdRecovery, 0.05,'recovery-threshold-slider','null',"Threshold window for detecting gain.  Any gain probability within the specified window will be flagged as gain ")
+  addRangeSlider('threshold-container','Choose gain threshold:','lowerThresholdRecovery',0, 1, lowerThresholdRecovery, 0.05,'recovery-threshold-slider','null',"Threshold window for detecting gain.  Any gain probability greater than or equal to this value will be flagged as gain ")
   $('#advanced-radio-container').append(`<div class="dropdown-divider" ></div>`);
-
+  $('#advanced-radio-container').append(`<div id = 'fast-slow-threshold-container' ></div>`);
+  addRangeSlider('fast-slow-threshold-container','Choose slow loss threshold:','lowerThresholdSlowLoss',0, 1, lowerThresholdSlowLoss , 0.05,'slow-loss-threshold-slider','null',"Threshold window for detecting loss.  Any loss probability greater than or equal to this value will be flagged as loss ")
+  $('#fast-slow-threshold-container').append(`<div class="dropdown-divider" ></div>`);
+  addRangeSlider('fast-slow-threshold-container','Choose fast loss threshold:','lowerThresholdFastLoss',0, 1, lowerThresholdFastLoss, 0.05,'fast-loss-threshold-slider','null',"Threshold window for detecting loss.  Any loss probability greater than or equal to this value will be flagged as loss ")
+  $('#advanced-radio-container').append(`<div class="dropdown-divider" ></div>`);
   addRadio('advanced-radio-container','treemask-radio','Constrain analysis to areas with trees:','Yes','No','applyTreeMask','yes','no','','','Whether to constrain LCMS products to only treed areas. Any area LCMS classified as tree cover 2 or more years will be considered tree. Will reduce commission errors typical in agricultural and water areas, but may also reduce changes of interest in these areas.')
   $('#advanced-radio-container').append(`<div class="dropdown-divider" ></div>`);
-  addRadio('advanced-radio-container','viewBeta-radio','View beta outputs:','No','Yes','viewBeta','no','yes','','','Whether to view products that are currently in beta development')
-  $('#advanced-radio-container').append(`<div class="dropdown-divider" ></div>`);
+ 
+  
   addRadio('advanced-radio-container','summaryMethod-radio','Summary method:','Most recent year','Highest probability','summaryMethod','year','prob','','','How to choose which value for loss and gain to display/export.  Choose the value with the highest probability or from the most recent year above the specified threshold')
   $('#advanced-radio-container').append(`<div class="dropdown-divider" ></div>`);
-  addRadio('advanced-radio-container','whichIndex-radio','Index for charting:','NDVI','NBR','whichIndex','NDVI','NBR','','','The vegetation index that will be displayed in the "Query LCMS Time Series" tool')
-  $('#advanced-radio-container').append(`<div class="dropdown-divider" ></div>`);
+  // addRadio('advanced-radio-container','whichIndex-radio','Index for charting:','NDVI','NBR','whichIndex','NDVI','NBR','','','The vegetation index that will be displayed in the "Query LCMS Time Series" tool')
+  // $('#advanced-radio-container').append(`<div class="dropdown-divider" ></div>`);
   $('#parameters-collapse-div').append(staticTemplates.reRunButton);
 
   //Set up layer lists
@@ -98,9 +115,12 @@ if(mode === 'LCMS'){
   addSubCollapse('parameters-collapse-div','lt-params-label','lt-params-div','LANDTRENDR Params', '',false,'')
   addSubCollapse('parameters-collapse-div','ccdc-params-label','ccdc-params-div','CCDC Params', '',false,'')
   
-  addRangeSlider('lt-params-div','Loss Magnitude Threshold','lossMagThresh',-0.8,0,-0.2,0.01,'loss-mag-thresh-slider','','The threshold to detect loss for each LANDTRENDR segment.  Any difference for a given segement less than this threshold will be flagged as loss') 
-  addRangeSlider('lt-params-div','Gain Magnitude Threshold','gainMagThresh',0,0.8,0.1,0.01,'gain-mag-thresh-slider','','The threshold to detect gain for each LANDTRENDR segment.  Any difference for a given segement greater than this threshold will be flagged as gain') 
-   addCheckboxes('lt-params-div','index-choice-checkboxes','Choose which indices to analyze','whichIndices',{'B1':false,'B2':false,'B3':false,'B4':false,'B5':false,'B7':false,'NBR':true,'NDVI':false,'NDMI':false,'TCB':false,'TCG':false,'TCW':false,'TCA':false})
+  addRangeSlider('lt-params-div','Loss Magnitude Threshold','lossMagThresh',-0.8,0,-0.2,0.05,'loss-mag-thresh-slider','','The threshold to detect loss for each LANDTRENDR segment.  Any difference for a given segement less than this threshold will be flagged as loss') 
+  addRangeSlider('lt-params-div','Gain Magnitude Threshold','gainMagThresh',0,0.8,0.1,0.05,'gain-mag-thresh-slider','','The threshold to detect gain for each LANDTRENDR segment.  Any difference for a given segement greater than this threshold will be flagged as gain') 
+  addCheckboxes('lt-params-div','index-choice-checkboxes','Choose which indices to analyze','whichIndices',{'B1':false,'B2':false,'B3':false,'B4':false,'B5':false,'B7':false,'NBR':true,'NDVI':false,'NDMI':false,'TCB':false,'TCG':false,'TCW':false,'TCA':false})
+  
+  addRangeSlider('ccdc-params-div','Change Probability Threshold','ccdcChangeProbThresh',0,1,0.8,0.1,'ccdc-change-prob-thresh-slider','','The CCDC probabibility threshold to detect change.  Any probability for a given break greater than this threshold will be flagged as change') 
+  
   // $('#lt-params-div').append(`<div class="dropdown-divider" ></div>`);
   $('#parameters-collapse-div').append(`<div class="dropdown-divider" ></div>`);
   $('#parameters-collapse-div').append(staticTemplates.reRunButton);
@@ -201,9 +221,10 @@ if(mode === 'LCMS'){
   $('#support-collapse-div').append(`<a href="https://www.mtbs.gov/contact" target="_blank" title = 'If you have any questions or comments, feel free to contact us'>Contact Us</a>`)
   $('#support-collapse-div').append(`<div class="dropdown-divider mb-2"</div>`);
   $('#introModal-body').append(staticTemplates.walkThroughButton);
-}else if(mode === 'TEST'){
+}else if(mode === 'TEST' || mode === 'FHP'){
   addCollapse('sidebar-left','layer-list-collapse-label','layer-list-collapse-div',mode+' DATA',`<img style = 'width:1.1em;' class='image-icon mr-1' src="images/layer_icon.png">`,true,null,mode+' DATA layers to view on map');
   $('#layer-list-collapse-div').append(`<div id="layer-list"></div>`);
+
   addCollapse('sidebar-left','tools-collapse-label','tools-collapse-div','TOOLS',`<i class="fa fa-gear mr-1" aria-hidden="true"></i>`,false,'','Tools to measure and chart data provided on the map');
 
 }else if(mode === 'geeViz'){
@@ -250,20 +271,26 @@ addColorPicker('measure-area-div-icon-bar','area-color-picker','updateAreaColor'
 // addAccordianContainer('pixel-tools-collapse-div','pixel-tools-accordian');
 $('#tools-accordian').append(`<h5 class = 'pt-2' style = 'border-top: 0.1em solid black;'>Pixel Tools</h5>`);
 addSubAccordianCard('tools-accordian','query-label','query-div','Query Visible Map Layers',staticTemplates.queryDiv,false,`toggleTool(toolFunctions.pixel.query)`,staticTemplates.queryTipHover);
-addSubAccordianCard('tools-accordian','pixel-chart-label','pixel-chart-div','Query '+mode+' Time Series',staticTemplates.pixelChartDiv,false,`toggleTool(toolFunctions.pixel.chart)`,staticTemplates.pixelChartTipHover);
+// if(mode !== 'TEST'){
+  addSubAccordianCard('tools-accordian','pixel-chart-label','pixel-chart-div','Query '+mode+' Time Series',staticTemplates.pixelChartDiv,false,`toggleTool(toolFunctions.pixel.chart)`,staticTemplates.pixelChartTipHover);
+  addDropdown('pixel-chart-div','pixel-collection-dropdown','Choose which '+mode+' time series to chart','whichPixelChartCollection','Choose which '+mode+' time series to chart.');
+ 
+// }
 // $('#pixel-chart-div').append(staticTemplates.showChartButton);
 // addAccordianContainer('area-tools-collapse-div','area-tools-accordian');
 if(mode === 'geeViz'){
   $('#pixel-chart-label').remove();
 }
 
-if(mode === 'LCMS' || mode === 'MTBS' ){
+if(mode === 'LCMS' || mode === 'MTBS'|| mode === 'TEST' || mode === 'lcms-base-learner' || mode === 'FHP'){
   $('#tools-accordian').append(`<h5 class = 'pt-2' style = 'border-top: 0.1em solid black;'>Area Tools</h5>`);
-  $('#tools-accordian').append(`<div class="dropdown-divider" ></div>`);
-  addDropdown('tools-accordian','area-collection-dropdown','Choose which '+mode+' product to summarize','whichAreaChartCollection','Choose which '+mode+' time series to summarize.');
-  $('#tools-accordian').append(`<div class="dropdown-divider" ></div>`);
+  addSubCollapse('tools-accordian','area-chart-params-label','area-chart-params-div','Area Tools Params', '',false,'')
+  
+  // $('#tools-accordian').append(`<div class="dropdown-divider" ></div>`);
+  addDropdown('area-chart-params-div','area-collection-dropdown','Choose which '+mode+' product to summarize','whichAreaChartCollection','Choose which '+mode+' time series to summarize.');
+  // $('#area-chart-params-div').append(`<div class="dropdown-divider" ></div>`);
   $('#parameters-collapse-div').append(`<div class="dropdown-divider" ></div>`);
-  addMultiRadio('tools-accordian','area-summary-format','Area Units','areaChartFormat',{"Percentage":true,"Acres":false,"Hectares":false})
+  addMultiRadio('area-chart-params-div','area-summary-format','Area Units','areaChartFormat',{"Percentage":true,"Acres":false,"Hectares":false})
   $('#area-summary-format').prop('title','Choose how to summarize area- as a percentage of the area, acres, or hectares.')
   addSubAccordianCard('tools-accordian','user-defined-area-chart-label','user-defined-area-chart-div','User-Defined Area',staticTemplates.userDefinedAreaChartDiv,false,`toggleTool(toolFunctions.area.userDefined)`,staticTemplates.userDefinedAreaChartTipHover);
   addSubAccordianCard('tools-accordian','upload-area-chart-label','upload-area-chart-div','Upload an Area',staticTemplates.uploadAreaChartDiv,false,'toggleTool(toolFunctions.area.shpDefined)',staticTemplates.uploadAreaChartTipHover);
@@ -307,33 +334,4 @@ if(canExport){
 // $('#sidebar-left').append(`<button onclick="getLocation()">Try It</button><p id="demo"></p>`)
 // var x = document.getElementById("demo");
 
-function getLocation() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(showPosition, showError);
-  } else { 
-    x.innerHTML = "Geolocation is not supported by this browser.";
-  }
-}
-
-function showPosition(position) {
-  x.innerHTML = "Latitude: " + position.coords.latitude + 
-  "<br>Longitude: " + position.coords.longitude;
-}
-
-function showError(error) {
-  switch(error.code) {
-    case error.PERMISSION_DENIED:
-      x.innerHTML = "User denied the request for Geolocation."
-      break;
-    case error.POSITION_UNAVAILABLE:
-      x.innerHTML = "Location information is unavailable."
-      break;
-    case error.TIMEOUT:
-      x.innerHTML = "The request to get user location timed out."
-      break;
-    case error.UNKNOWN_ERROR:
-      x.innerHTML = "An unknown error occurred."
-      break;
-  }
-}
 

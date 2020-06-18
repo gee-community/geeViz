@@ -77,9 +77,9 @@ class mapper:
         self.layerNumber = 1
         self.idDictList = []
         self.mapCommandList  = []
+
     #Function for adding a layer to the map
     def addLayer(self,image,viz = {},name= None,visible= True):
-       
         if name == None:
             name = 'Layer '+str(self.layerNumber)
             self.layerNumber+=1
@@ -90,10 +90,29 @@ class mapper:
         idDict['name'] = name 
         idDict['visible'] = str(visible).lower()
         idDict['viz'] = json.dumps(viz, sort_keys=True)
+        idDict['function'] = 'addSerializedLayer'
+        self.idDictList.append(idDict)
+
+    #Function for adding a layer to the map
+    def addTimeLapse(self,image,viz = {},name= None,visible= True):
+        if name == None:
+            name = 'Layer '+str(self.layerNumber)
+            self.layerNumber+=1
+        print('Adding layer: ' +name)
+        #Get the id and populate dictionary
+        idDict = {}#image.getMapId()
+        idDict['item'] = image.serialize()
+        idDict['name'] = name 
+        idDict['visible'] = str(visible).lower()
+        idDict['viz'] = json.dumps(viz, sort_keys=True)
+        idDict['function'] = 'addSerializedTimeLapse'
         self.idDictList.append(idDict)
 
     def centerObject(self,feature):
-        bounds = json.dumps(feature.geometry().bounds().getInfo())
+        try:
+            bounds = json.dumps(feature.geometry().bounds().getInfo())
+        except Exception as e:
+            bounds = json.dumps(feature.bounds().getInfo())
         command = 'synchronousCenterObject('+bounds+')'
         
         self.mapCommandList.append(command)
@@ -107,7 +126,7 @@ class mapper:
 
         #Iterate across each map layer to add js code to
         for idDict in self.idDictList:
-            t ="Map2.addSerializedLayer('"+idDict['item']+"',"+idDict['viz']+",'"+idDict['name']+"',"+str(idDict['visible']).lower()+");\n"
+            t ="Map2."+idDict['function']+"('"+idDict['item']+"',"+idDict['viz']+",'"+idDict['name']+"',"+str(idDict['visible']).lower()+");\n"
             lines += t
         
 
