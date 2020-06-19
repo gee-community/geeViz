@@ -1794,7 +1794,7 @@ def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform
       'correctIllumination':str(correctIllumination)})
   
     if additionalPropertyDict != None:
-      composite = composite.set(additionPropertyDict)
+      composite = composite.set(additionalPropertyDict)
 
     #Export the composite 
     #Set up export name and path
