@@ -1750,7 +1750,7 @@ def exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,co
 def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,\
   collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
   applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,
-  nonDivideBands = ['temp'],includeSentinel2=False),studyAreaName = None:
+  nonDivideBands = ['temp'],includeSentinel2=False,studyAreaName = None):
 
   collection = collection.select(exportBands)
   for year in ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo():
