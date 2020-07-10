@@ -17,7 +17,7 @@
 #Intended to work within the geeViz package
 ######################################################################
 from geeViz.geeView import *
-import math, ee, json
+import math, ee, json, pdb
 ee.Initialize()
 ######################################################################
 #Module for getting Landsat, Sentinel 2 and MODIS images/composites
@@ -1070,6 +1070,32 @@ def exportToAssetWrapper2(imageForExport,assetName,assetPath,pyramidingPolicyObj
   t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath, pyramidingPolicyObject, None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
   t.start()
 
+def exportToAssetWrapper3(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
+  #Make sure image is clipped to roi in case it's a multi-part polygon
+  imageForExport = imageForExport.clip(roi)
+  assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
+
+  if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
+    transform = str(transform)
+    
+  if pyramidingPolicyObject == None:
+    pyramidingPolicyObject = {'.default':'mean'}
+
+  outRegion = roi.bounds(100,crs).transform('EPSG:4326', 100).getInfo()['coordinates'][0]
+  
+  #t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath,  json.dumps(pyramidingPolicyObject), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
+  # LSC 1/6/20 was getting error: "ee.ee_exception.EEException: JSON provided for reductionPolicy must be an object." Getting rid of json.dumps() seemed to fix the problem
+  t = ee.batch.Export.image.toAsset(imageForExport, 
+                    description = assetName, 
+                    assetId = assetPath, 
+                    pyramidingPolicy = pyramidingPolicyObject, 
+                    dimensions = None, 
+                    #region = outRegion, 
+                    scale = scale, 
+                    crs = crs, 
+                    crsTransform = transform, 
+                    maxPixels = 1e13)
+  t.start()
 #########################################################################
 #########################################################################
 #Function for wrapping dates when the startJulian < endJulian
