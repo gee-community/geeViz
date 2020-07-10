@@ -1773,10 +1773,33 @@ def exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,co
 #########################################################################
 #########################################################################
 #Function to export composite collection
-def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,\
-  collection,startYear,endYear,startJulian,endJulian,compositingMethod,timebuffer,exportBands,toaOrSR,weights,\
-  applyCloudScore, applyFmaskCloudMask,applyTDOM,applyFmaskCloudShadowMask,applyFmaskSnowMask,includeSLCOffL7,correctIllumination,
-  nonDivideBands = ['temp'],includeSentinel2=False,additionalPropertyDict = None):
+def exportCompositeCollection(
+  exportPathRoot, 
+  outputName,
+  studyArea, 
+  crs,
+  transform,
+  scale,
+  collection,
+  startYear,
+  endYear,
+  startJulian,
+  endJulian,
+  compositingMethod = None,
+  timebuffer = 0,
+  exportBands = ['blue', 'green', 'red','nir','swir1', 'swir2'],
+  toaOrSR = None,
+  weights = None,
+  applyCloudScore = None, 
+  applyFmaskCloudMask  = None,
+  applyTDOM = None,
+  applyFmaskCloudShadowMask = None,
+  applyFmaskSnowMask = None,
+  includeSLCOffL7 = None,
+  correctIllumination = None,
+  nonDivideBands = ['temp'],
+  resampleMethod = False,
+  additionalPropertyDict = None):
 
   collection = collection.select(exportBands)
   for year in ee.List.sequence(startYear+timebuffer,endYear-timebuffer).getInfo():
@@ -1787,10 +1810,6 @@ def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform
     #Get yearly composite
     composite = collection.filter(ee.Filter.calendarRange(year,year,'year'))
     composite = ee.Image(composite.first())
-    
-    #Display the Landsat composite
-    #Map.addLayer(composite, vizParamsTrue, str(year) + ' True Color ' + toaOrSR, False);
-    #Map.addLayer(composite, vizParamsFalse, str(year) + ' False Color ' + toaOrSR, False);
   
     #Reformat data for export
     compositeBands = composite.bandNames()
@@ -1803,20 +1822,20 @@ def exportCompositeCollection(exportPathRoot,outputName,studyArea, crs,transform
     
     #Add metadata, cast to integer, and export composite
     composite = composite.set({\
-      'system:time_start': ee.Date.fromYMD(year,6,1).millis(),\
-      'source': toaOrSR,\
-      'yearBuffer':timebuffer,\
-      'yearWeights': listToString(weights),\
-      'startJulian': startJulian,\
-      'endJulian': endJulian,\
-      'applyCloudScore':str(applyCloudScore),\
-      'applyFmaskCloudMask' :str(applyFmaskCloudMask),\
-      'applyTDOM' :str(applyTDOM),\
-      'applyFmaskCloudShadowMask' :str(applyFmaskCloudShadowMask),\
-      'applyFmaskSnowMask': str(applyFmaskSnowMask),\
-      'compositingMethod': compositingMethod,\
-      'includeSLCOffL7': str(includeSLCOffL7),\
-      'includeSentinel2': str(includeSentinel2),
+      'system:time_start': ee.Date.fromYMD(year,6,1).millis(),
+      'source': toaOrSR,
+      'yearBuffer':timebuffer,
+      'yearWeights': listToString(weights),
+      'startJulian': startJulian,
+      'endJulian': endJulian,
+      'applyCloudScore':str(applyCloudScore),
+      'applyFmaskCloudMask' :str(applyFmaskCloudMask),
+      'applyTDOM' :str(applyTDOM),
+      'applyFmaskCloudShadowMask' :str(applyFmaskCloudShadowMask),
+      'applyFmaskSnowMask': str(applyFmaskSnowMask),
+      'compositingMethod': compositingMethod,
+      'includeSLCOffL7': str(includeSLCOffL7),
+      'resampleMethod': str(resampleMethod),
       'correctIllumination':str(correctIllumination)})
   
     if additionalPropertyDict != None:
@@ -2165,7 +2184,187 @@ def getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,\
   
   return [s2s,ts]
 
+def getLandsatAndSentinel2HybridWrapper(\
+          studyArea = None,
+          startYear = None,
+          endYear = None,
+          startJulian = None,
+          endJulian = None,
+          timebuffer =  0,
+          weights =  [1],
+          compositingMethod = 'medoid',
+          toaOrSR = 'TOA',
+          includeSLCOffL7 = False,
+          defringeL5 = False,
+          applyQABand = False,
+          applyCloudProbability = True,
+          applyShadowShift = False,
+          applyCloudScore = False,
+          applyTDOM = True,
+          applyFmaskCloudMask = True,
+          applyFmaskCloudShadowMask = True,
+          applyFmaskSnowMask = False,
+          cloudHeights = ee.List.sequence(500,10000,500),
+          cloudScoreThresh = 20,
+          performCloudScoreOffset = True,
+          cloudScorePctl = 10,
+          zScoreThresh = -1,
+          shadowSumThresh = 0.35,
+          contractPixels = 1.5,
+          dilatePixels = 0.35,
+          landsatResampleMethod = 'near',
+          sentinel2ResampleMethod = 'aggregate',
+          convertToDailyMosaics = True,
+          runChastainHarmonization = True,
+          correctIllumination = False,
+          correctScale = 250,
+          exportComposites = False,
+          outputName = 'Landsat-Sentinel2-Hybrid',
+          exportPathRoot = 'users/iwhousman/test/compositeCollection',
+          crs = 'EPSG:5070',
+          transform = None,
+          scale = None,
+          preComputedLandsatCloudScoreOffset = None,
+          preComputedLandsatTDOMIRMean = None,
+          preComputedLandsatTDOMIRStdDev = None,
+          preComputedSentinel2CloudScoreOffset = None,
+          preComputedSentinel2TDOMIRMean = None,
+          preComputedSentinel2TDOMIRStdDev = None):
+        
+  ls = getProcessedLandsatScenes(studyArea, startYear, endYear, startJulian, endJulian,
+    toaOrSR = toaOrSR, 
+    includeSLCOffL7 = includeSLCOffL7,
+    defringeL5 = defringeL5,
+    applyCloudScore = applyCloudScore,
+    applyFmaskCloudMask = applyFmaskCloudMask,
+    applyTDOM = applyTDOM,
+    applyFmaskCloudShadowMask = applyFmaskCloudShadowMask,
+    applyFmaskSnowMask = applyFmaskSnowMask,
+    cloudScoreThresh = cloudScoreThresh,
+    performCloudScoreOffset = performCloudScoreOffset,
+    cloudScorePctl = cloudScorePctl,
+    zScoreThresh = zScoreThresh,
+    shadowSumThresh = shadowSumThresh,
+    contractPixels = contractPixels,
+    dilatePixels = dilatePixels,
+    resampleMethod = landsatResampleMethod)
+    # harmonizeOLI  = False,
+    # preComputedCloudScoreOffset = preComputedLandsatCloudScoreOffset,
+    # preComputedLandsatTDOMMeans = preComputedTDOMIRMean,
+    # preComputedLandsatTDOMStdDevs = preComputedTDOMIRStdDev)
 
+  s2s = getProcessedSentinel2Scenes(studyArea,startYear,endYear,startJulian,endJulian,
+    applyQABand = applyQABand,
+    applyCloudScore = applyCloudScore,
+    applyShadowShift = applyShadowShift,
+    applyTDOM = applyTDOM,
+    cloudScoreThresh = cloudScoreThresh,
+    performCloudScoreOffset = performCloudScoreOffset,
+    cloudScorePctl = cloudScorePctl,
+    cloudHeights = cloudHeights,
+    zScoreThresh = zScoreThresh,
+    shadowSumThresh = shadowSumThresh,
+    contractPixels = contractPixels,
+    dilatePixels = dilatePixels,
+    resampleMethod = sentinel2ResampleMethod,
+    toaOrSR = toaOrSR,
+    convertToDailyMosaics = convertToDailyMosaics)
+    # preComputedCloudScoreOffset = preComputedSentinel2CloudScoreOffset,
+    # preComputedTDOMIRMean = preComputedSentinel2TDOMMeans,
+    # preComputedTDOMIRStdDev = preComputedSentinel2TDOMStdDevs)
+
+  #Select off common bands between Landsat and Sentinel 2
+  commonBands =  ['blue', 'green', 'red','nir','swir1', 'swir2']
+  ls = ls.select(commonBands)
+  s2s = s2s.select(commonBands)
+
+  #Separate each sensor
+  tm = ls.filter(ee.Filter.eq('SENSOR_ID','TM'))
+  etm = ls.filter(ee.Filter.eq('SENSOR_ID','ETM'))
+  oli = ls.filter(ee.Filter.eq('SENSOR_ID','OLI_TIRS'))
+  msi = s2s;
+
+  #Fill if no images exist for particular Landsat sensor
+  #Allow it to fail of no images exist for Sentinel 2 since the point
+  #of this method is to include S2
+  tm = fillEmptyCollections(tm, ee.Image(ls.first()))
+  etm = fillEmptyCollections(etm, ee.Image(ls.first()))
+  oli = fillEmptyCollections(oli, ee.Image(ls.first()))
+
+  if runChastainHarmonization:
+    print('Running Chastain et al 2019 harmonization')
+
+    #Apply correction
+    #Currently coded to go to ETM+
+    
+    #No need to correct ETM to ETM
+    # tm = tm.map(function(img){return getImagesLib.harmonizationChastain(img, 'ETM','ETM')});
+    # etm = etm.map(function(img){return getImagesLib.harmonizationChastain(img, 'ETM','ETM')});
+    
+    #Harmonize the other two
+    oli = oli.map(lambda img: harmonizationChastain(img, 'OLI','ETM'))
+    msi = msi.map(lambda img: harmonizationChastain(img, 'MSI','ETM'))
+
+  #Set sensor band number
+  tm = tm.map(lambda img: img.addBands(ee.Image(5).rename(['sensor'])))
+  etm = etm.map(lambda img: img.addBands(ee.Image(7).rename(['sensor'])))
+  oli = oli.map(lambda img: img.addBands(ee.Image(8).rename(['sensor'])))
+  msi = msi.map(lambda img: img.addBands(ee.Image(2).rename(['sensor'])))
+  s2s = msi
+
+  #Merge Landsat back together
+  tm = ee.ImageCollection(tm.merge(etm))
+  ls = ee.ImageCollection(tm.merge(oli))
+
+  # Merge Landsat and S2
+  merged = ls.merge(s2s)
+
+  #Create hybrid composites
+  composites = compositeTimeSeries(merged,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingMethod)
+
+  # Export composite collection
+  if exportComposites:
+    
+    exportBandDict = {
+      'medoid':['blue', 'green', 'red','nir','swir1', 'swir2','sensor','year','julianDay'],
+      'median':['blue', 'green', 'red','nir','swir1', 'swir2']
+    };
+    nonDivideBandDict = {
+      'medoid':['sensor','year','julianDay'],
+      'median':[]
+    };
+    exportBands = exportBandDict[compositingMethod]
+    nonDivideBands = nonDivideBandDict[compositingMethod]
+
+    exportCompositeCollection(
+      exportPathRoot, 
+      outputName,
+      studyArea, 
+      crs,
+      transform,
+      scale,
+      composites,
+      startYear,
+      endYear,
+      startJulian,
+      endJulian,
+      compositingMethod = compositingMethod,
+      timebuffer = timebuffer,
+      exportBands = exportBands,
+      toaOrSR = toaOrSR,
+      weights = weights,
+      applyCloudScore = applyCloudScore, # Need to make these properties work for Sentinel and Landsat also
+      applyFmaskCloudMask  = applyFmaskCloudMask,
+      applyTDOM = applyTDOM,
+      applyFmaskCloudShadowMask = applyFmaskCloudShadowMask,
+      applyFmaskSnowMask = applyFmaskSnowMask,
+      includeSLCOffL7 = includeSLCOffL7,
+      correctIllumination = correctIllumination,
+      nonDivideBands = nonDivideBands,
+      #resampleMethod = 'Landsat: '+landsatResampleMethod+' Sentinel2: '+sentinel2ResampleMethod,
+      additionalPropertyDict = {resampleMethod: 'Landsat: '+landsatResampleMethod+' Sentinel2: '+sentinel2ResampleMethod}
+
+  return [merged,composites]
 
 #########################################################################
 #########################################################################
