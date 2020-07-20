@@ -55,22 +55,19 @@ changeDirDict = {\
 ######################################################################
 #Function to set null value for export or conversion to arrays
 def setNoData(image,noDataValue):
-  m = image.mask()
-  image = image.mask(ee.Image(1))
-  image = image.where(m.Not(),noDataValue)
-  return image
+  return image.unmask(noDataValue, False).set('noDataValue', noDataValue)
 
 ######################################################################
 ######################################################################
 #Functions to perform basic clump and elim
-def sieve(image,mmu):
+def sieve(image, mmu):
   connected = image.connectedPixelCount(mmu+20)
-  Map.addLayer(connected,{'min':1,'max':mmu},'connected')
+  #Map.addLayer(connected,{'min':1,'max':mmu},'connected')
   elim = connected.gt(mmu)
   mode = image.focal_mode(mmu/2,'circle')
   mode = mode.mask(image.mask())
   filled = image.where(elim.Not(),mode)
-  return filled
+  return filled.set('mmu', mmu)
 
 
 #Written by Yang Z.
@@ -130,14 +127,24 @@ chastainCoeffDict = {'MSI_OLI':[msiOLISlopes,msiOLIIntercepts,1],\
 
 #Function to apply model in one direction
 def dir0Regression(img,slopes,intercepts):
-  return img.select(chastainBandNames).multiply(slopes).add(intercepts)
+  bns = img.bandNames()
+  nonCorrectBands = bns.removeAll(chastainBandNames)
+  nonCorrectedBands = img.select(nonCorrectBands)
+  corrected = img.select(chastainBandNames).multiply(slopes).add(intercepts)
+  out = corrected.addBands(nonCorrectedBands).select(bns)
+  return out
 
 #Applying the model in the opposite direction
 def dir1Regression(img,slopes,intercepts):
-  return img.select(chastainBandNames).subtract(intercepts).divide(slopes)
+  bns = img.bandNames()
+  nonCorrectBands = bns.removeAll(chastainBandNames)
+  nonCorrectedBands = img.select(nonCorrectBands)
+  corrected = img.select(chastainBandNames).subtract(intercepts).divide(slopes)
+  out = corrected.addBands(nonCorrectedBands).select(bns)
+  return out
 
 #Function to correct one sensor to another
-def harmonizationChastain(img, fromSensor,toSensor):
+def harmonizationChastain(img, fromSensor, toSensor):
   #Get the model for the given from and to sensor
   comboKey = fromSensor.upper()+'_'+toSensor.upper()
   coeffList = chastainCoeffDict[comboKey]
@@ -146,8 +153,10 @@ def harmonizationChastain(img, fromSensor,toSensor):
   direction = ee.Number(coeffList[2])
   
   #Apply the model in the respective direction
-  out = ee.Algorithms.If(direction.eq(0),dir0Regression(img,slopes,intercepts),dir1Regression(img,slopes,intercepts))
-  return ee.Image(out).copyProperties(img).copyProperties(img,['system:time_start'])
+  out = ee.Algorithms.If(direction.eq(0), dir0Regression(img,slopes,intercepts), dir1Regression(img,slopes,intercepts))
+  out = ee.Image(out).copyProperties(img).copyProperties(img,['system:time_start'])
+  out = out.set({'fromSensor': fromSensor, 'toSensor': toSensor})
+  return ee.Image(out)
 
 
 ####################################################################
@@ -165,7 +174,7 @@ def collectionToImage(collection):
 #Will work on composites computed with methods that include different dates across different bands
 #such as the median.  For something like a medoid, only a single bands needs passed through
 #A known bug is that if the same value occurs twice, it will choose only a single date
-def compositeDates(images,composite,bandNames = None):
+def compositeDates(images, composite, bandNames = None):
   if bandNames == None:
     bandNames = ee.Image(images.first()).bandNames()
   else:
@@ -194,14 +203,14 @@ def compositeDates(images,composite,bandNames = None):
     return t.select(['year']).rename(['YYYYDD'])
   out = bandNames.map(bnCat2)
 
-  #Convert to ann image and rename
-  out  = collectionToImage(ee.ImageCollection(out))
+  #Convert to an image and rename
+  out = collectionToImage(ee.ImageCollection(out))
   #var outBns = bandNames.map(function(bn){return ee.String(bn).cat('YYYYDD')});
   #out = out.rename(outBns);
   
   return out
 
-# ///////////////////////////////////////////////////////////////////////////
+############################################################################
 #Function to handle empty collections that will cause subsequent processes to fail
 #If the collection is empty, will fill it with an empty image
 def fillEmptyCollections(inCollection,dummyImage):                       
@@ -209,27 +218,62 @@ def fillEmptyCollections(inCollection,dummyImage):
   imageCount = inCollection.toList(1).length()
   return ee.ImageCollection(ee.Algorithms.If(imageCount.gt(0),inCollection,dummyCollection))
 
+############################################################################
+# Add sensor band function
+sensorDict = {'LANDSAT_4': 4,
+              'LANDSAT_5': 5,
+              'LANDSAT_7': 7,
+              'LANDSAT_8': 8,
+              'Sentinel-2A': 21,
+              'Sentinel-2B': 22,
+              'Sentinel-2C': 23,
+              }
+sensorPropDict = {'landsat':
+                        {'TOA':'SPACECRAFT_ID',
+                          'SR':'SATELLITE'\
+                        },
+                  'sentinel2':
+                        {'TOA':'SPACECRAFT_NAME',
+                         'SR':'SPACECRAFT_NAME'\
+                        }\
+                  }
+
+def addSensorBand(img, whichProgram, toaOrSR):
+  toaOrSR = toaOrSR.upper()
+  sensorProp = sensorPropDict[whichProgram][toaOrSR]
+  sensorName = img.get(sensorProp);
+  return img.addBands(ee.Image.constant(sensorDict[sensorName]).rename(['sensor']).byte()).set('sensor',sensorName)
+
 
 ############################################################################
 ############################################################################
 #Adds the float year with julian proportion to image
-def addDateBand(img,maskTime = False):
+def addDateBand(img, maskTime = False):
   d = ee.Date(img.get('system:time_start'))
   y = d.get('year')
   d = y.add(d.getFraction('year'))
   #d=d.getFraction('year')
   db = ee.Image.constant(d).rename(['year']).float()
-  if(maskTime):db = db.updateMask(img.select([0]).mask())
-  
+  if maskTime:
+    db = db.updateMask(img.select([0]).mask())  
   return img.addBands(db)
 
 def addYearFractionBand(img):
   d = ee.Date(img.get('system:time_start'))
   y = d.get('year')
   #d = y.add(d.getFraction('year'));
-  d=d.getFraction('year')
+  d = d.getFraction('year')
   db = ee.Image.constant(d).rename(['year']).float()
-  db = db#.updateMask(img.select([0]).mask())
+  db = db #.updateMask(img.select([0]).mask())
+  return img.addBands(db)
+
+def addYearYearFractionBand(img):
+  d = ee.Date(img.get('system:time_start'))
+  y = d.get('year')
+  #d = y.add(d.getFraction('year'));
+  d = d.getFraction('year')
+  db = ee.Image.constant(y).add(ee.Image.constant(d)).rename(['year']).float()
+  db = db #.updateMask(img.select([0]).mask())
   return img.addBands(db)
 
 def addYearBand(img):
@@ -239,6 +283,7 @@ def addYearBand(img):
   db = ee.Image.constant(y).rename(['year']).float()
   db = db#.updateMask(img.select([0]).mask())
   return img.addBands(db)
+
 def addJulianDayBand(img):
   d = ee.Date(img.get('system:time_start'))
   julian = ee.Image(ee.Number(d.getRelative('day','year')).add(1)).rename(['julianDay'])
@@ -253,14 +298,20 @@ def addYearJulianDayBand(img):
   yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian'])
   
   return img.addBands(yj).float()
+
 def addFullYearJulianDayBand(img):
   d = ee.Date(img.get('system:time_start'));
   julian = ee.Number(d.getRelative('day','year')).add(1).format('%03d')
-  y = ee.String(d.get('year'))
-  yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian']);
+  y = d.get('year').format('%04d')
+  yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian']).int64()
   
   return img.addBands(yj).float()
 
+def offsetImageDate(img, n, unit):
+  date = ee.Date(img.get('system:time_start'))
+  date = date.advance(n, unit)
+  # date = ee.Date.fromYMD(100,date.get('month'),date.get('day'))
+  return img.set('system:time_start', date.millis())
 
 ################################################################
 ################################################################
@@ -318,13 +369,13 @@ def defringeLandsat(img):
   m = img.mask().reduce(ee.Reducer.min())
   
   #Apply kernel
-  sum = m.reduceNeighborhood(ee.Reducer.sum(), k, 'kernel')
+  kernelSum = m.reduceNeighborhood(ee.Reducer.sum(), k, 'kernel')
   #Map.addLayer(img,vizParams,'with fringes')
   #Map.addLayer(sum,{'min':20,'max':241},'sum41',false)
   
   #Mask pixels w/o sufficient obs
-  sum = sum.gte(fringeCountThreshold);
-  img = img.mask(sum);
+  kernelSum = kernelSum.gte(fringeCountThreshold)
+  img = img.mask(kernelSum)
   #Map.addLayer(img,vizParams,'defringed')
   return img
 
@@ -332,7 +383,7 @@ def defringeLandsat(img):
 ################################################################
 #Function to find unique values of a field in a collection
 def uniqueValues(collection,field):
-  values  =ee.Dictionary(collection.reduceColumns(ee.Reducer.frequencyHistogram(),[field]).get('histogram')).keys();
+  values = ee.Dictionary(collection.reduceColumns(ee.Reducer.frequencyHistogram(),[field]).get('histogram')).keys()
   return values
 
 ###############################################################
@@ -368,51 +419,87 @@ def dailyMosaics(imgs):
   return imgs
 
 ################################################################
-def getS2(studyArea,startDate,endDate,startJulian,endJulian,resampleMethod = 'near',toaOrSR = 'TOA',convertToDailyMosaics = True):
+def getS2(studyArea, 
+          startDate, 
+          endDate, 
+          startJulian, 
+          endJulian,
+          resampleMethod = 'aggregate',
+          toaOrSR = 'TOA',
+          convertToDailyMosaics = True,
+          addCloudProbability = True):
+
   toaOrSR = toaOrSR.upper()
 
   s2CollectionDict = {'TOA':'COPERNICUS/S2','SR':'COPERNICUS/S2_SR'}
   sensorBandDict = {\
-      'SR': ['B1','B2','B3','B4','B5','B6','B7','B8','B8A', 'B9', 'B11','B12'],\
+      'SR': ['B1','B2','B3','B4','B5','B6','B7','B8','B8A', 'B9', 'B11','B12'],
       'TOA': ['B1','B2','B3','B4','B5','B6','B7','B8','B8A', 'B9', 'B10', 'B11','B12']\
   }
   sensorBandNameDict = {\
-      'SR': ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'swir1', 'swir2'],\
+      'SR': ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'swir1', 'swir2'],
       'TOA': ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2']\
   }
 
   def multS2(img):
-    t = img.select(sensorBandDict[toaOrSR]).divide(10000);
+    t = img.select(sensorBandDict[toaOrSR]).divide(10000)
     t = t.addBands(img.select(['QA60']))
     out = t.copyProperties(img).copyProperties(img,['system:time_start'])
     return out
 
   #Get some s2 data
-  print('Using S2 Collection:',s2CollectionDict[toaOrSR])
+  print('Using S2 Collection:', s2CollectionDict[toaOrSR])
   s2s = ee.ImageCollection(s2CollectionDict[toaOrSR])\
-            .filterDate(startDate,endDate)\
-            .filter(ee.Filter.calendarRange(startJulian,endJulian))\
+            .filterDate(startDate, endDate)\
+            .filter(ee.Filter.calendarRange(startJulian, endJulian))\
             .filterBounds(studyArea)\
             .map(multS2)\
             .select(['QA60']+sensorBandDict[toaOrSR],['QA60']+sensorBandNameDict[toaOrSR])
   
   s2s = s2s.map(lambda img: img.updateMask(img.mask().reduce(ee.Reducer.min())))
 
-  def setResample(img):
-    return img.resample(resampleMethod)
+  if addCloudProbability:
+    print('Joining pre-computed cloud probabilities from: COPERNICUS/S2_CLOUD_PROBABILITY')
+    cloudProbabilities = ee.ImageCollection("COPERNICUS/S2_CLOUD_PROBABILITY")\
+                    .filterDate(startDate, endDate)\
+                    .filter(ee.Filter.calendarRange(startJulian, endJulian))\
+                    .filterBounds(studyArea)\
+                    .select(['probability'],['cloud_probability'])
+                    
+    cloudProbabilitiesIds = ee.List(ee.Dictionary(cloudProbabilities.aggregate_histogram('system:index')).keys())
+    s2sIds = ee.List(ee.Dictionary(s2s.aggregate_histogram('system:index')).keys())
+    missing = s2sIds.removeAll(cloudProbabilitiesIds)
+    print('Missing cloud probability ids:', missing)
+    print('N s2 images before joining with cloud prob:', s2s.size())
+    s2s = joinCollections(s2s, cloudProbabilities, False,'system:index')
+    print('N s2 images after joining with cloud prob:', s2s.size())    
 
-  if  resampleMethod in ['bilinear','bicubic']:
-    print('Setting resample method to ',resampleMethod)
-    s2s = s2s.map(setResample)
-  #Convert to daily mosaics to avoid redundent observations in MGRS overlap areas and edge artifacts for shadow masking
+  if resampleMethod == 'bilinear' or resampleMethod == 'bicubic':
+    print('Setting resample method to ', resampleMethod)
+    s2s = s2s.map(lambda img: img.resample(resampleMethod))
+  elif resampleMethod == 'aggregate':
+    print('Setting to aggregate instead of resample ')
+    s2s = s2s.map(lambda img: img.reduceResolution(ee.Reducer.mean(), True, 64))
+
+  #Convert to daily mosaics to avoid redundant observations in MGRS overlap areas and edge artifacts for shadow masking
   if convertToDailyMosaics:
     s2s = dailyMosaics(s2s)
+
   return s2s
 
 
 ##################################################################
 #Function for acquiring Landsat TOA image collection
-def getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR,includeSLCOffL7,defringeL5 = False,addPixelQA = False,resampleMethod = 'near'):
+def getLandsat(studyArea,
+              startDate,
+              endDate,
+              startJulian,
+              endJulian,
+              toaOrSR = 'SR',
+              includeSLCOffL7 = False,
+              defringeL5 = False,
+              addPixelQA = False,
+              resampleMethod = 'near'):
   
   #Set up bands and corresponding band names
   sensorBandDict = {\
@@ -461,8 +548,6 @@ def getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR
       .filter(ee.Filter.lte('WRS_ROW',120))\
       .select(sensorBandDict['L4'+ toaOrSR],sensorBandNameDict[toaOrSR])
       
-    
-
     l5s = ee.ImageCollection(collectionDict['L5'+ toaOrSR])\
       .filterDate(startDate,endDate)\
       .filter(ee.Filter.calendarRange(startJulian,endJulian))\
@@ -505,17 +590,61 @@ def getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR
     #Merge collections
     ls = ee.ImageCollection(l4s.merge(l5s).merge(l7s).merge(l8s))
     return ls
+
   ls = getLandsat(toaOrSR)
   #If TOA and Fmask need to merge Fmask qa bits with toa- this gets the qa band from the sr collections
   if toaOrSR.lower() == 'toa' and addPixelQA:
     print('Acquiring SR qa bands for applying Fmask to TOA data')
+    l4sTOAFMASK = ee.ImageCollection(collectionDict['L4SR'])\
+              .filterDate(startDate, endDate)\
+              .filter(ee.Filter.calendarRange(startJulian, endJulian))\
+              .filterBounds(studyArea)\
+              .filter(ee.Filter.lte('WRS_ROW',120))\
+              .select(sensorBandDict['L4SRFMASK'], sensorBandNameDict['SRFMASK'])
+              
+    l5sTOAFMASK = ee.ImageCollection(collectionDict['L5SR'])\
+              .filterDate(startDate, endDate)\
+              .filter(ee.Filter.calendarRange(startJulian, endJulian))\
+              .filterBounds(studyArea)\
+              .filter(ee.Filter.lte('WRS_ROW',120))\
+              .select(sensorBandDict['L5SRFMASK'], sensorBandNameDict['SRFMASK'])
+
+    l8sTOAFMASK = ee.ImageCollection(collectionDict['L8SR'])\
+              .filterDate(startDate, endDate)\
+              .filter(ee.Filter.calendarRange(startJulian, endJulian))\
+              .filterBounds(studyArea)\
+              .filter(ee.Filter.lte('WRS_ROW',120))\
+              .select(sensorBandDict['L8SRFMASK'], sensorBandNameDict['SRFMASK'])
     
-    lsTOAFMASK = getLandsat('SR').select(['pixel_qa']) 
+    if includeSLCOffL7: 
+      print('Including All Landsat 7 for TOA QA')
+      l7sTOAFMASK = ee.ImageCollection(collectionDict['L7SR'])\
+              .filterDate(startDate, endDate)\
+              .filter(ee.Filter.calendarRange(startJulian, endJulian))\
+              .filterBounds(studyArea)\
+              .filter(ee.Filter.lte('WRS_ROW',120))\
+              .select(sensorBandDict['L7SRFMASK'], sensorBandNameDict['SRFMASK'])    
+    else:
+      print('Only including SLC On Landsat 7 for TOA QA');
+      l7sTOAFMASK =  ee.ImageCollection(collectionDict['L7SR'])\
+              .filterDate(ee.Date.fromYMD(1998,1,1), ee.Date.fromYMD(2003,5,31))\
+              .filterDate(startDate, endDate)\
+              .filter(ee.Filter.calendarRange(startJulian, endJulian))\
+              .filterBounds(studyArea)\
+              .filter(ee.Filter.lte('WRS_ROW',120))\
+              .select(sensorBandDict['L7SRFMASK'],sensorBandNameDict['SRFMASK'])
+    
+    lsTOAFMASK = ee.ImageCollection(l4sTOAFMASK.merge(l5sTOAFMASK).merge(l7sTOAFMASK).merge(l8sTOAFMASK))
+    
     #Join the TOA with SR QA bands
     print('Joining TOA with SR QA bands')
-    ls = joinCollections(ls.select([0,1,2,3,4,5,6]),lsTOAFMASK)
+    print(ls.size(), lsTOAFMASK.size())
+    ls = joinCollections(ls.select([0,1,2,3,4,5,6]), lsTOAFMASK, False, 'system:index')
+    # lsTOAFMASK = getLandsat('SR').select(['pixel_qa']) 
+    # #Join the TOA with SR QA bands
+    # print('Joining TOA with SR QA bands')
+    # ls = joinCollections(ls.select([0,1,2,3,4,5,6]),lsTOAFMASK)
     
-
   def dataInAllBands(img):
     img = img.updateMask(img.mask().reduce(ee.Reducer.min()))
     return img.multiply(multImageDict[toaOrSR]).copyProperties(img,['system:time_start']).copyProperties(img)
@@ -526,11 +655,16 @@ def getImageCollection(studyArea,startDate,endDate,startJulian,endJulian,toaOrSR
   def setResample(img):
     return img.resample(resampleMethod)
 
-  if  resampleMethod in ['bilinear','bicubic']:
+  if resampleMethod in ['bilinear','bicubic']:
     print('Setting resample method to ',resampleMethod)
-    ls = ls.map(setResample)
-  
-  return ls;
+    ls = ls.map(lambda img: img.resample(resampleMethod))
+  elif resampleMethod == 'aggregate':
+    print('Setting to aggregate instead of resample ')
+    ls = ls.map(lambda img: img.reduceResolution(ee.Reducer.mean(), true, 64))
+      
+  return ls
+
+getImageCollection = getLandsat
 
 ###########################################################################
 #Helper function to apply an expression and linearly rescale the output.
@@ -2184,12 +2318,7 @@ def getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,\
   
   return [s2s,ts]
 
-def getLandsatAndSentinel2HybridWrapper(\
-          studyArea = None,
-          startYear = None,
-          endYear = None,
-          startJulian = None,
-          endJulian = None,
+def getLandsatAndSentinel2HybridWrapper(studyArea, startYear, endYear, startJulian, endJulian,
           timebuffer =  0,
           weights =  [1],
           compositingMethod = 'medoid',
@@ -2220,7 +2349,7 @@ def getLandsatAndSentinel2HybridWrapper(\
           correctScale = 250,
           exportComposites = False,
           outputName = 'Landsat-Sentinel2-Hybrid',
-          exportPathRoot = 'users/iwhousman/test/compositeCollection',
+          exportPathRoot = None,
           crs = 'EPSG:5070',
           transform = None,
           scale = None,
@@ -2361,8 +2490,8 @@ def getLandsatAndSentinel2HybridWrapper(\
       includeSLCOffL7 = includeSLCOffL7,
       correctIllumination = correctIllumination,
       nonDivideBands = nonDivideBands,
-      #resampleMethod = 'Landsat: '+landsatResampleMethod+' Sentinel2: '+sentinel2ResampleMethod,
-      additionalPropertyDict = {resampleMethod: 'Landsat: '+landsatResampleMethod+' Sentinel2: '+sentinel2ResampleMethod}
+      resampleMethod = 'Landsat: '+str(landsatResampleMethod)+' Sentinel2: '+str(sentinel2ResampleMethod),
+      additionalPropertyDict = {})
 
   return [merged,composites]
 
