@@ -7,7 +7,10 @@ $('body').append(staticTemplates.sidebarLeftContainer);
 
 $('body').append(staticTemplates.geeSpinner);
 $('body').append(staticTemplates.bottomBar);
+if(mode !== 'geeViz'){
+  $('#contributor-logos').prepend(staticTemplates.shareButtons);
 
+}
 $('#summary-spinner').show();
 
 $('#main-container').append(staticTemplates.sidebarLeftToggler);
@@ -247,8 +250,8 @@ $('body').append(`<div class = 'legendDiv flexcroll col-sm-5 col-md-4 col-lg-3 c
 $('.legendDiv').css('bottom',$('.bottombar').height());
 $('.sidebar').css('max-height',$('body').height()-$('.bottombar').height());
 addLegendCollapse();
-
-//Add tool tabs
+/////////////////////////////////////////////////////////////////
+//Construct tool options for different modes
  
 
 addAccordianContainer('tools-collapse-div','tools-accordian')
@@ -300,15 +303,9 @@ if(mode === 'LCMS' || mode === 'MTBS'|| mode === 'TEST' || mode === 'lcms-base-l
   addShapeEditToolbar('user-defined-edit-toolbar', 'user-defined-area-icon-bar','undoUserDefinedAreaCharting()','restartUserDefinedAreaCarting()')
   addColorPicker('user-defined-area-icon-bar','user-defined-color-picker','updateUDPColor',udpOptions.strokeColor);
 
-  addShapeEditToolbar('select-features-edit-toolbar', 'select-area-interactive-chart-icon-bar','removeLastSelectArea()','clearSelectedAreas()','Click to unselect most recently selected polyogn','Click to clear all selected polygons')
-  
-  // $('#user-defined-area-chart-div').append(staticTemplates.showChartButton);
-  // $('#upload-area-chart-div').append(staticTemplates.showChartButton);
-  // $('#select-area-dropdown-chart-div').append(staticTemplates.showChartButton);
-  // $('#select-area-interactive-chart-div').append(staticTemplates.showChartButton);
-  // $('#tools-accordian').append(staticTemplates.showChartButton);
-
+  addShapeEditToolbar('select-features-edit-toolbar', 'select-area-interactive-chart-icon-bar','removeLastSelectArea()','clearSelectedAreas()','Click to unselect most recently selected polyogn','Click to clear all selected polygons');
 }
+//Add some logos for different modes
 if(mode === 'MTBS' || mode === 'Ancillary'){
   $('#contributor-logos').prepend(`<a href="https://www.usgs.gov/" target="_blank" >
                                     <img src="images/usgslogo.png" class = 'image-icon-bar'  href="#"  rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click to learn more about the US Geological Survey">
@@ -317,6 +314,7 @@ if(mode === 'MTBS' || mode === 'Ancillary'){
                                     <img src="images/mtbs-logo.png" class = 'image-icon-bar'  href="#"  rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click to learn more about the US Geological Survey">
                                   </a>`)
 }
+//Handle exporting if chosen
 if(canExport){
    $('#download-collapse-div').append(staticTemplates.exportContainer);
    if(localStorage.export_crs !== undefined && localStorage.export_crs !== null && localStorage.export_crs.indexOf('EPSG') > -1){
@@ -327,11 +325,5 @@ if(canExport){
    }
 }
 
-// addToggle('measure-distance-div','toggler-distance-units','Toggle imperial or metric units: ',"Imperial",'Metric','true','metricOrImperialDistance','imperial','metric','updateDistance()');
-// addToggle('measure-area-div','toggler-area-units','Toggle imperial or metric units: ',"Imperial",'Metric','true','metricOrImperialArea','imperial','metric','updateArea()');
-
-
-// $('#sidebar-left').append(`<button onclick="getLocation()">Try It</button><p id="demo"></p>`)
-// var x = document.getElementById("demo");
 
 

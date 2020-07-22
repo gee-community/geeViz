@@ -3,61 +3,61 @@
 //Set up some globals
 var mapDiv = document.getElementById('map');
 
-tableConverter = function(dataTableT){
+// tableConverter = function(dataTableT){
 
-  // var x = [dataTableT[0]]
-  // x[0][0] = 'Year'
-  // dataTableT.slice(1).map(function(i){
+//   // var x = [dataTableT[0]]
+//   // x[0][0] = 'Year'
+//   // dataTableT.slice(1).map(function(i){
     
-  //   i[0] = (i[0].getYear()+1900).toString()
-  //   x.push(i)
-  // })
-  // dataTableT   = x
-var lcDict = {
-  '0': 'No data',
-'1': 'Barren',
-'2': 'Grass/forb/herb',
-'3': 'Impervious',
-'4': 'Shrubs',
-'5': 'Snow/ice',
-'6': 'Trees',
-'7': 'Water'
-};
+//   //   i[0] = (i[0].getYear()+1900).toString()
+//   //   x.push(i)
+//   // })
+//   // dataTableT   = x
+// var lcDict = {
+//   '0': 'No data',
+// '1': 'Barren',
+// '2': 'Grass/forb/herb',
+// '3': 'Impervious',
+// '4': 'Shrubs',
+// '5': 'Snow/ice',
+// '6': 'Trees',
+// '7': 'Water'
+// };
 
-var luDict = {
-  '0': 'No data',
-'1': 'Agriculture',
-'2': 'Developed',
-'3': 'Forest',
-'4': 'Non-forest wetland',
-'5': 'Other',
-'6': 'Rangeland'
-};
+// var luDict = {
+//   '0': 'No data',
+// '1': 'Agriculture',
+// '2': 'Developed',
+// '3': 'Forest',
+// '4': 'Non-forest wetland',
+// '5': 'Other',
+// '6': 'Rangeland'
+// };
 
-var cpDict = {
-  '0': 'No Data',
-  '1': 'Stable',
-  '2':'Growth/recovery',
-  '3': 'Fire',
-  '4': 'Harvest',
-  '5': 'Other'
-}
+// var cpDict = {
+//   '0': 'No Data',
+//   '1': 'Stable',
+//   '2':'Growth/recovery',
+//   '3': 'Fire',
+//   '4': 'Harvest',
+//   '5': 'Other'
+// }
 
-  // if(dataTableT[0].length > 5){
-  if(analysisMode === 'advanced'){
-    // console.log('convertinggggggg tabbbbbbbble' );
-    var isFirst = true;
-    dataTableT = dataTableT.map(function(i){if(isFirst === false){i[3] = lcDict[Math.round(i[3]*10)]};isFirst = false;return i});
-    var isFirst = true;
-    dataTableT = dataTableT.map(function(i){if(isFirst === false){i[4] = luDict[Math.round(i[4]*10)]};isFirst = false;return i});
-    var isFirst = true;
-    // dataTableT = dataTableT.map(function(i){if(isFirst === false){i[5] = cpDict[parseInt(i[5]*10)]};isFirst = false;return i});
-//       dataTableT = dataTableT.map(function(i){i[2] = cdlDict[i[2]];return i})
-  }
+//   // if(dataTableT[0].length > 5){
+//   if(analysisMode === 'advanced'){
+//     // console.log('convertinggggggg tabbbbbbbble' );
+//     var isFirst = true;
+//     dataTableT = dataTableT.map(function(i){if(isFirst === false){i[3] = lcDict[Math.round(i[3]*10)]};isFirst = false;return i});
+//     var isFirst = true;
+//     dataTableT = dataTableT.map(function(i){if(isFirst === false){i[4] = luDict[Math.round(i[4]*10)]};isFirst = false;return i});
+//     var isFirst = true;
+//     // dataTableT = dataTableT.map(function(i){if(isFirst === false){i[5] = cpDict[parseInt(i[5]*10)]};isFirst = false;return i});
+// //       dataTableT = dataTableT.map(function(i){i[2] = cdlDict[i[2]];return i})
+//   }
   
 
-      return dataTableT
-    };
+//       return dataTableT
+//     };
 
 
 
@@ -84,7 +84,8 @@ function range(start, stop, step){
     }
     return result;
 }
-
+///////////////////////////////////////////////////////////////////
+//Convert lng, lat to nad 83 code
 function llToNAD83(x,y){
       var vertex = [x,y];
       var smRadius = 6378136.98;
@@ -115,10 +116,13 @@ function llToNAD83(x,y){
       }
       return {'x':vertex[0],'y':vertex[1]}
     }
+///////////////////////////////////////////////////////////////////
+//Make an object out of to lists of keys and values
 //From:https://stackoverflow.com/questions/12199051/merge-two-arrays-of-keys-and-values-to-an-object-using-underscore answer 6
 var toObj = (ks, vs) => ks.reduce((o,k,i)=> {o[k] = vs[i]; return o;}, {});
 var toDict = toObj;
 ////////////////////////////////////////
+//Copy an array
 function CopyAnArray (ari1) {
    var mxx4 = [];
    for (var i=0;i<ari1.length;i++) {
@@ -130,7 +134,11 @@ function CopyAnArray (ari1) {
    }
    return mxx4;
 }
+///////////////////////////////////////////////////////////////////
+//Get a column of a 2-d array
 function arrayColumn(arr,i){return arr.map(function(r){return r[i]})};
+///////////////////////////////////////////////////////////////////
+//Convert xyz coords to quad key for map services such as Bing
 //Source: http://bcdcspatial.blogspot.com/2012/01/onlineoffline-mapping-map-tiles-and.html
 function tileXYZToQuadKey(x, y, z){
         var quadKey = '';
@@ -153,68 +161,46 @@ function tileXYZToQuadKey(x, y, z){
             }
                 return quadKey
        }
-
-//Function for centering map
+///////////////////////////////////////////////////////////////////
+//Functions for centering map
 function centerMap(lng,lat,zoom){
     map.setCenter({lat:lat,lng:lng});
     map.setZoom(zoom);
 }
 function synchronousCenterObject(feature){
-
     var bounds = new google.maps.LatLngBounds(); 
-    
     feature.coordinates[0].map(function(latlng){
      bounds.extend({lng:latlng[0], lat:latlng[1]});
     });
-
     map.fitBounds(bounds);
 }
-
 function centerObject(fc){
   try{
-    // Map2.addLayer(ee.FeatureCollection([ee.Feature(fc.geometry())]))
-    // $('#summary-spinner').show();
     fc.geometry().bounds().evaluate(function(feature){synchronousCenterObject(feature);
-      // $('#summary-spinner').hide();
     });
   }
   catch(err){
-    // alert('Bad Fusion Table');
     console.log(err);
-   
   }
-  
 }
-
-
-
-
+///////////////////////////////////////////////////////////////////
 //Function for creating color ramp generally for a map legend
 function createColorRamp(styleName, colorList, width,height){
-    var myCss = 
-        
-        "background-image:linear-gradient(to right, ";
-     
+    var myCss ="background-image:linear-gradient(to right, ";
     for(var i = 0; i< colorList.length;i++){myCss = myCss + '#'+colorList[i].toLowerCase() + ',';}
     myCss = myCss.slice(0,-1) + ");";
-
-
-
-return myCss
+  return myCss
 }
-//////////////////////////////////////////////////////
-//Function to convert csv, kml, shp to geoJSON
+///////////////////////////////////////////////////////////////////
+//Function to convert csv, kml, shp to geoJSON using ogre.adc4gis.com
 function convertToGeoJSON(formID){
   var url = 'https://ogre.adc4gis.com/convert'
 
   var data = new FormData();
   data.append("targetSrs","EPSG:4326");
-// data.append("sourceSrs",'');
   jQuery.each(jQuery('#'+formID)[0].files, function (i, file) {
-   
     data.append("upload", file);
   });
-  
   var out= $.ajax({
     type: 'POST',
     url: url,
@@ -222,8 +208,6 @@ function convertToGeoJSON(formID){
     processData: false,
     contentType: false
   });
-  // console.log('out');console.log(out);
-  
   return out;
 }
 
@@ -234,10 +218,14 @@ function print(message){
     console.log(message)
 }
 /////////////////////////////////////////////////////
+//Get random number within specified range
 function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
 }
-    function clearPlots(){
+/////////////////////////////////////////////////////
+//Plot manager functions
+//Clear plots from plot list
+function clearPlots(){
 var plotElements = document.getElementById("pt-list");;
                 print(plotElements);
                 while(plotElements.firstChild){
@@ -248,7 +236,6 @@ var plotElements = document.getElementById("pt-list");;
     plotIDList = [];
     plotID =1;
 }
-
 function addPlotProject(plotProjectName,plotProjectPts){
   
   var projectElement = document.createElement("ee-pt-project");
@@ -260,19 +247,7 @@ function addPlotProject(plotProjectName,plotProjectPts){
   plotProjectID++;
 
 }
-// function addPlot(latLng){
-//   // plotDict[plotDictID] = false;
- 
-//   var ptElement = document.createElement("ee-pt");
-  
-//   ptElement.name = latLng;
-//   // print(latLng);
-//   ptElement.ID = plotDictID;
-//   // ptElement.isOn = false;
-//   var ptList = document.querySelector("pt-list");
-//     ptList.insertBefore(ptElement,ptList.firstChild);
-//    plotDictID ++;
-// }
+
 function setPlotColor(ID){
     var plotElements = document.getElementsByTagName("ee-pt");
       
@@ -295,15 +270,15 @@ function setPlotProjectColor(ID){
   plotElements[plotElements.length-ID].style.outline = '#FFF dotted';
    
 }
-
+/////////////////////////////////////////////////////
+//Wrapper function to add a select layer
 function addSelectLayerToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem){
   viz.canQuery = false;
   viz.isSelectLayer = true;
-  // selectLayers[name] = {'item':item,'viz':viz,'features':[]}
-  // var id = name.replaceAll(' ','-');
   addToMap(item,viz,name,visible,label,fontColor,helpBox,'area-charting-select-layer-list',queryItem);
- 
 }
+/////////////////////////////////////////////////////
+//Functions to manage time lapses
 var intervalPeriod = 666.6666666666666;
 var timeLapseID;
 var timeLapseFrame = 0;
@@ -317,12 +292,13 @@ function pauseTimeLapse(id){
       $('#'+timeLapseID+'-pause-button').addClass('time-lapse-active');
     }
   } 
+
 function setFrameOpacity(frame,opacity){
   var s = $('#'+frame).slider();
   s.slider('option', 'value',opacity);
   s.slider('option','slide').call(s,null,{ handle: $('.ui-slider-handle', s), value: opacity });
 }
-
+//Function to shoe a specific frame
 function selectFrame(id,fromYearSlider,advanceOne){
 
   if(id === null || id === undefined){id = timeLapseID}
@@ -354,7 +330,6 @@ function selectFrame(id,fromYearSlider,advanceOne){
     }
     
     var frame = slidersT[timeLapseFrame];
-    
     try{
         setFrameOpacity(frame,timeLapseObj[timeLapseID].opacity);
         if(!fromYearSlider){
@@ -365,9 +340,6 @@ function selectFrame(id,fromYearSlider,advanceOne){
 
           })
         }
-        
-        
-        
       }catch(err){}
     $('#'+timeLapseID+'-year-label').show();
     // $('#'+timeLapseID+'-year-label').html(timeLapseObj[timeLapseID].years[timeLapseFrame])
@@ -386,10 +358,8 @@ function pauseButtonFunction(id){
   
   timeLapseID = id;
   if(timeLapseID !== undefined && timeLapseObj[timeLapseID].isReady){
-    // timeLapseFrame--;
     clearAllFrames();
     pauseTimeLapse();
-    // year++;
     selectFrame();
     alignTimeLapseCheckboxes();
     timeLapseObj[timeLapseID].state = 'paused';
@@ -486,26 +456,25 @@ function stopTimeLapse(id){
   pauseAll();
   clearAllFrames();
 }
+//Toggle all layers within a specific time lapse layer
 function toggleTimeLapseLayers(id){
   if(id === null || id === undefined){id = timeLapseID}
   var visibleToggles = timeLapseObj[k].layerVisibleIDs;
   visibleToggles.map(function(i){$('#'+i).click()});
 }
+//Toggle all layers within all time lapse layers
 function toggleAllTimeLapseLayers(){
   Object.keys(timeLapseObj).map(function(k){
     toggleTimeLapseLayers(k)
   })
 }
-// function turnOnAllTimeLapseLayers(){
-//   Object.keys(timeLapseObj).map(function(k){
-//     turnOnTimeLapseLayers(k)
-//   })
-// };
+//Turn off all layers within all time lapse layers
 function turnOffAllTimeLapseLayers(){
   Object.keys(timeLapseObj).map(function(k){
     turnOffTimeLapseLayers(k)
   })
 }
+//Turn off all layers within non active time lapses
 function turnOffAllNonActiveTimeLapseLayers(){
   Object.keys(timeLapseObj).map(function(k){
     if(k !== timeLapseID){
@@ -542,15 +511,18 @@ function turnOffTimeLapseLayers(id){
     }
   }
 }
+//Function to handle tiles getting stuck when requested from GEE
+//Currently the best method seems to be to jitter the zoom to re-request the tiles from GEE
 var lastJitter;
-function jitterZoom(){
+function jitterZoom(fromButton){
+  if(fromButton === null || fromButton === undefined){fromButton = false}
   if(lastJitter === null || lastJitter === undefined){
     lastJitter = new Date();
   }
   var tDiff = new Date() - lastJitter;
   var jittered = false;
-  if((tDiff > 3000 && geeTileLayersDownloading === 0) || tDiff > 10000){
-    console.log(tDiff)
+  if((tDiff > 5000 && geeTileLayersDownloading === 0) || tDiff > 20000 || fromButton){
+    // console.log(tDiff)
     console.log('jittering zoom')
     var z = map.getZoom();
     map.setZoom(z-1);
@@ -562,6 +534,7 @@ function jitterZoom(){
   return jittered
   
 }
+//Tidy up time lapse checkboxes
 function alignTimeLapseCheckboxes(){
   Object.keys(timeLapseObj).map(function(k){
     if(timeLapseObj[k].isReady){
@@ -598,6 +571,7 @@ function timeLapseCheckbox(id){
 function toggleFrames(id){
   $('#'+id+'-collapse-div').toggle();
 }
+//Turn off all time lapses
 function turnOffTimeLapseCheckboxes(){
   Object.keys(timeLapseObj).map(function(k){
     if(timeLapseObj[k].isReady){
@@ -609,6 +583,7 @@ function turnOffTimeLapseCheckboxes(){
   });
   alignTimeLapseCheckboxes();
 }
+//Toggle whether to show all layers prior to the current layer or just a single layer
 function toggleCumulativeMode(){
   if(cumulativeMode){
     $('.cumulativeToggler').removeClass('time-lapse-active');
@@ -621,15 +596,16 @@ function toggleCumulativeMode(){
   selectFrame();
   
 }
+//////////////////////////////////////////////////////////////////////////
+//Wrapper function to add a time lapse to the map
 function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem){
   if(viz !== null && viz !== undefined && viz.serialized !== null && viz.serialized !== undefined && viz.serialized === true){
         item = ee.Deserializer.fromJSON(JSON.parse(JSON.stringify(item)));
         viz.serialized = false;
     }
   if(viz.cumulativeMode === null || viz.cumulativeMode === undefined){viz.cumulativeMode = true}
-  // if(visible === undefined || visible === null){
+    //Force time lapses to be turned off on load to speed up loading
     var visible = false;
-  // };
   if(viz.opacity === undefined || viz.opacity === null){viz.opacity = 1}
    
   var checked = '';
@@ -638,6 +614,7 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
   legendDivID = legendDivID.replaceAll('/','-');
   legendDivID = legendDivID.replaceAll('(','-');
   legendDivID = legendDivID.replaceAll(')','-');
+  
   viz.canQuery = true;
   viz.isSelectLayer = false;
   viz.isTimeLapse = true;
@@ -648,12 +625,16 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
   timeLapseObj[legendDivID] = {}
   if(whichLayerList === null || whichLayerList === undefined){whichLayerList = "layer-list"}  
 
+  //Pull out years if not provided
+  //Years need to be client-side
+  //Assumes the provided image collection has time property under system:time_start property
   if(viz.years === null || viz.years === undefined){
     console.log('start computing years')
     viz.years = item.sort('system:time_start',true).toList(10000,0).map(function(img){return ee.Date(ee.Image(img).get('system:time_start')).get('year')}).getInfo();
     console.log('done computing years')
   }
   
+  //Set up time laps object entry
   var startYearT = viz.years[0];
   var endYearT = viz.years[viz.years.length-1]
   timeLapseObj[legendDivID].years = viz.years;
@@ -669,11 +650,10 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
   timeLapseObj[legendDivID].state = 'inactive';
   timeLapseObj[legendDivID].opacity = viz.opacity*100;
   var layerContainerTitle = 'Time lapse layers load multiple map layers throughout time. Once loaded, you can play the time lapse as an animation, or advance through single years using the buttons and sliders provided.  The layers can be displayed as a single year or as a cumulative mosaic of all preceding years using the right-most button.'
+  
+  //Set up container for time lapse
   $('#'+whichLayerList).append(`
                                 <li   title = '${layerContainerTitle}' id = '${legendDivID}-collapse-label' class = 'layer-container'>
-                                 
-                                  
-
                                   <div class = 'time-lapse-layer-range-container' >
                                     <div title = 'Opacity' id='${legendDivID}-opacity-slider' class = 'simple-time-lapse-layer-range-first'>
                                       <div id='${legendDivID}-opacity-slider-handle' class=" time-lapse-slider-handle ui-slider-handle">
@@ -694,9 +674,7 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
                                       </div>
                                     </div>
                                   </div>
-
-                                    
-                                  <input  id="${legendDivID}-toggle-checkbox" onchange = 'timeLapseCheckbox("${legendDivID}")' type="checkbox" ${checked}  />
+                                  <input  id="${legendDivID}-toggle-checkbox" onchange = 'timeLapseCheckbox("${legendDivID}")' type="checkbox" ${checked}/>
                                   <label  title = 'Activate/deactivate time lapse' id="${legendDivID}-toggle-checkbox-label" style = 'margin-bottom:0px;display:none;'  for="${legendDivID}-toggle-checkbox"></label>
                                   <i style = 'display:none;' id = '${legendDivID}-loading-gear' title = '${name} time lapse tiles loading' class="text-dark fa fa-gear fa-spin layer-spinner"></i>
                                   <i id = '${legendDivID}-loading-spinner' title = '${name} time lapse layers loading' class="text-dark fa fa-spinner fa-spin layer-spinner"></i>
@@ -709,10 +687,10 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
                                     <button style = 'display:none;' class = 'btn time-lapse-active' title = 'Clear animation' id = '${legendDivID}-stop-button' onclick = 'stopTimeLapse("${legendDivID}")'><i class="fa fa-stop"></i></button>
                                     <button class = 'btn' title = 'Play animation' id = '${legendDivID}-play-button'  onclick = 'playTimeLapse("${legendDivID}")'><i class="fa fa-play"></i></button>
                                     <button class = 'btn' title = 'Forward one frame' id = '${legendDivID}-forward-button' onclick = 'forwardOneFrame("${legendDivID}")'><i class="fa fa-forward"></i></button>
-                                    <button style = '' class = 'btn' title = 'Refresh layers if tiles failed to load' id = '${legendDivID}-refresh-tiles-button' onclick = 'jitterZoom()'><i class="fa fa-refresh"></i></button>
+                                    <button style = '' class = 'btn' title = 'Refresh layers if tiles failed to load' id = '${legendDivID}-refresh-tiles-button' onclick = 'jitterZoom(true)'><i class="fa fa-refresh"></i></button>
                                     <button style = 'display:none;' class = 'btn' title = 'Toggle frame visiblity' id = '${legendDivID}-toggle-frames-button' onclick = 'toggleFrames("${legendDivID}")'><i class="fa fa-eye"></i></button>
                                     <button class = 'btn cumulativeToggler time-lapse-active' onclick = 'toggleCumulativeMode()' title = 'Click to toggle whether to show a single year or all years in the past along with current year'><img style = 'width:1.4em;filter: invert(100%) brightness(500%)'  src="images/cumulative_icon.png"></button>
-                                    <div id = "${legendDivID}-cumulative-radio-container" class = 'pt-2'></div>
+                                    <div id = "${legendDivID}-message-div" class = 'pt-2'></div>
                                   </div>
 
                                 </li>
@@ -720,12 +698,7 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
                                 <li id = '${legendDivID}-collapse-div' style = 'display:none;'></li>`)
   
   
- 
-  // addMultiRadio(legendDivID+'-collapse-label',legendDivID+'-cumulative-radio','',legendDivID'-cumulativeMode',{"Single-Year":!viz.cumulativeMode,"Cumulative":viz.cumulativeMode})
-  // addRadio(legendDivID+'-cumulative-radio-container',legendDivID+'-cumulative-radio','','Single Year','Cumulative','cumulativeMode',false,true,'setCumulativeMode()','setCumulativeMode()','Toggle whether to show a single year or all years in the past along with current year')
-  // $('#'+legendDivID+'-cumulative-radio-first_toggle_label').addClass('cumulative-off');
-  // $('#'+legendDivID+'-cumulative-radio-second_toggle_label').addClass('cumulative-on');
-  // $('#'+legendDivID+'-cumulative-radio').addClass('pt-4');
+  //Add legend
   $('#time-lapse-legend-list').append(`<div id="legend-${legendDivID}-collapse-div"></div>`);
   onclick = 'timeLapseCheckbox("${legendDivID}")'
   var prevent = false;
@@ -741,13 +714,9 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
   });
   $('#'+ legendDivID + '-name-span').dblclick(function(){
     showMessage('test')
-      // zoomFunction();
-      // prevent = true;
-      // zoomFunction();
-      // if(!timeLapseObj[legendDivID].visible){$('#'+legendDivID+'-toggle-checkbox').click();}
-      // setTimeout(function(){prevent = false},delay)
     })
-  // viz.opacity = 0;
+
+  //Add in layers
   viz.layerType = 'geeImage';
   viz.legendTitle = name;
   viz.opacity = 0;
@@ -758,68 +727,58 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
       if(yr !== viz.years[0]){
         viz.addToLegend = false;
         viz.addToClassLegend = false;
-        
       }
-        addToMap(standardTileURLFunction(item + yr.toString()+'/',true,''),viz,name +' '+   yr.toString(),visible,label ,fontColor,helpBox,legendDivID+'-collapse-div',queryItem)
-      
+      var vizT = Object.assign({},viz);
+      vizT.year = yr
+        addToMap(standardTileURLFunction(item + yr.toString()+'/',true,''),vizT,name +' '+   yr.toString(),visible,label ,fontColor,helpBox,legendDivID+'-collapse-div',queryItem);
      }) 
   }else{
     viz.years.map(function(yr){
       var img = ee.Image(item.filter(ee.Filter.calendarRange(yr,yr,'year')).first()).set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
-      
-
       if(yr !== viz.years[0]){
         viz.addToLegend = false;
         viz.addToClassLegend = false;
         
       }
-      // console.log(viz);
-      
-        
-        addToMap(img,viz,name +' '+   yr.toString(),visible,label ,fontColor,helpBox,legendDivID+'-collapse-div',queryItem);
-     
+      var vizT = Object.assign({},viz);
+      vizT.year = yr
+      addToMap(img,vizT,name +' '+   yr.toString(),visible,label ,fontColor,helpBox,legendDivID+'-collapse-div',queryItem);
     })
   }
+  //If its a tile map service, don't wait
   if(viz.timeLapseType === 'tileMapService'){
     timeLapseObj[legendDivID].isReady = true;
     $('#'+legendDivID+'-toggle-checkbox-label').show();
     $('#'+legendDivID+'-loading-spinner').hide();
   }
-  // timeLapseObj[legendDivID].years = timeLapseObj[legendDivID].years;
-    timeLapseObj[legendDivID].sliders = timeLapseObj[legendDivID].sliders;
-     $('#'+legendDivID+'-opacity-slider').slider({
-        
+  //Get all the individual layers' sliders
+  timeLapseObj[legendDivID].sliders = timeLapseObj[legendDivID].sliders;
+
+  //Handle the sliders for that time lapse
+  //Start with the opacity slider
+  //Controls the opacity of all layers within that time lapse
+  $('#'+legendDivID+'-opacity-slider').slider({
         min: 0,
         max: 1,
         step: 0.05,
         value: timeLapseObj[legendDivID].opacity/100,
         slide: function(e,ui){
-          // console.log(e);
           var opacity = ui.value;
           var k = legendDivID;
-          // Object.keys(timeLapseObj).map(function(k){
-            var s = $('#'+k+'-opacity-slider').slider();
-            s.slider('option', 'value',ui.value);
-            $('#'+k+'-opacity-slider-handle-label').text(opacity);
-            timeLapseObj[k].opacity = opacity*100
-          // });
+          var s = $('#'+k+'-opacity-slider').slider();
+          s.slider('option', 'value',ui.value);
+          $('#'+k+'-opacity-slider-handle-label').text(opacity);
+          timeLapseObj[k].opacity = opacity*100
           selectFrame(null,null,false)
-          // if(timeLapseObj[legendDivID].isReady){
-          //   clearAllFrames();
-          //   pauseTimeLapse(legendDivID);
-          //   selectFrame(legendDivID,true);
-          //   alignTimeLapseCheckboxes();
-          // }
         }
       });
-    $('#'+legendDivID+'-year-slider').slider({
-        
+  //The year slider
+  $('#'+legendDivID+'-year-slider').slider({
         min: startYearT,
         max: endYearT,
         step: 1,
         value: startYearT,
         slide: function(e,ui){
-          // console.log(e);
           var yr = ui.value;
           var i = viz.years.indexOf(yr);
           timeLapseFrame = i;
@@ -836,32 +795,27 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
           }
         }
       });
-    $('#'+legendDivID+'-speed-slider').slider({
+  //The speed slider
+  $('#'+legendDivID+'-speed-slider').slider({
         min: 0.5,
         max: 3.0  ,
         step: 0.5,
         value: 1.5,
         slide: function(e,ui){
-          // console.log(e);
           var speed = 1/ui.value*1000;
           Object.keys(timeLapseObj).map(function(k){
             var s = $('#'+k+'-speed-slider').slider();
             s.slider('option', 'value',ui.value);
             $('#'+k+'-speed-slider-handle-label').text(`${ui.value.toFixed(1)}fps`)
           })
-           
-    // sliders = sliders.map(function(s){return sliders[s].id})
           if(timeLapseObj[legendDivID].isReady){
             setSpeed(legendDivID,speed)
           }
         }
       });
-
-   
- 
-  
 }
-/////////////////////////////////////
+/////////////////////////////////////////////////////
+//Wrapper to add an export
 function addExport(eeImage,name,res,Export,metadataParams){
 
   var exportElement = {};
@@ -906,37 +860,24 @@ function addExport(eeImage,name,res,Export,metadataParams){
    
     exportImageDict[exportElement.ID].shouldExport = this.checked
   })
-    // exportList.insertBefore(exportElement,exportList.firstChild);
   exportID ++;
 }
-function addImageDownloads(imagePathJson){
-  
-}
+
 /////////////////////////////////////////////////////
-//Function to add ee object ot map
+//Function to add ee object as well as client-side objects to map
 function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem){
     if(viz !== null && viz !== undefined && viz.serialized !== null && viz.serialized !== undefined && viz.serialized === true){
         item = ee.Deserializer.fromJSON(JSON.parse(JSON.stringify(item)));
     }
     var currentGEERunID = geeRunID;
     if(whichLayerList === null || whichLayerList === undefined){whichLayerList = "layer-list"}
-    // print(item.getInfo().type)
-    // if(item.getInfo().type === 'ImageCollection'){print('It is a collection')}
     if(viz === null || viz === undefined){viz = {}}
     if(name == null){
-        name = "Layer "+NEXT_LAYER_ID;
-        
+        name = "Layer "+NEXT_LAYER_ID;  
     }
     //Possible layerType: geeVector,geoJSONVector,geeImage,geeImageCollection,tileMapService,dynamicMapService
-
     if(viz.layerType === null || viz.layerType === undefined){
       try{var t = item.bandNames();viz.layerType = 'geeImage'}
-    // catch(err){
-      // try{
-      //   var t = ee.Image(item.first()).bandNames().getInfo();
-      //   item = item.mosaic();
-      //   // isImageCollection = true;
-      // }
       catch(err2){
         try{
           var t = ee.Image(item.first()).bandNames().getInfo();
@@ -972,33 +913,7 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
         }
     }
     if(viz.layerType === 'geoJSONVector'){viz.canQuery = false;}
-    // console.log(viz.layerType);
-    // console.log(viz.layerType);console.log(name);
-    //Take care of vector option
-    // var isVector = false;
-    // var isImageCollection = false;
-    // var isTileMapService = false;
-    // var isDynamicMapService = false;
-    // if(viz.isTileMapService === true){isTileMapService = true}
-    // else if(viz.isDynamicMapService === true){isDynamicMapService = true;}
-    // else if(viz.)
-    // else if(!isTileMapService && !isDynamicMapService ){
-    //   try{var t = item.bandNames();}
-    // // catch(err){
-    //   // try{
-    //   //   var t = ee.Image(item.first()).bandNames().getInfo();
-    //   //   item = item.mosaic();
-    //   //   // isImageCollection = true;
-    //   // }
-    //   catch(err2){
-    //     if(!isTileMapService){ isVector = true;}
-       
-    //     }
-    // }
     
-
-      // };
-    // console.log(name + ' ' + isVector + isImageCollection+isTileMapService)
     if(viz.layerType === 'geeVector' || viz.layerType === 'geoJSONVector'){
       if(viz.strokeOpacity === undefined || viz.strokeOpacity === null){viz.strokeOpacity = 1};
       if(viz.fillOpacity === undefined || viz.fillOpacity === null){viz.fillOpacity = 0.2};
@@ -1026,9 +941,8 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
       }
     }
 
-
+    //Handle legend
     var legendDivID = name.replaceAll(' ','-')+ '-' +NEXT_LAYER_ID.toString() ;
-    
     legendDivID = legendDivID.replaceAll('/','-');
     legendDivID = legendDivID.replaceAll('(','-');
     legendDivID = legendDivID.replaceAll(')','-');
@@ -1040,12 +954,12 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
     }
     
     var layerObjKeys = Object.keys(layerObj);
-    var nameIndex = layerObjKeys.indexOf(name);
+    var nameIndex = layerObjKeys.indexOf(legendDivID);
     if(nameIndex   != -1){
-      visible = layerObj[name][0];
-      viz.opacity = layerObj[name][1];
+      visible = layerObj[legendDivID].visible;
+      viz.opacity = layerObj[legendDivID].opacity;
       if(viz.layerType === 'geeVector' || viz.layerType === 'geoJSONVector'){
-        viz.strokeOpacity =  layerObj[name][1];
+        viz.strokeOpacity =  layerObj[legendDivID].opacity;
         viz.fillOpacity = viz.strokeOpacity / viz.opacityRatio;
 
       }
@@ -1075,31 +989,12 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
     layer.queryItem = queryItem;
     layer.layerType = viz.layerType;
 
-    // layer.isTileMapService = isTileMapService;
-    // layer.isDynamicMapService = isDynamicMapService;
-    // layer.viz = JSON.stringify(viz);
-    // layer.viz  = viz;
-
-    // if(viz.min !== null && viz.min !== undefined){
-    //   layer.min = viz.min;
-    // }
-    // else{layer.min = 0;}
-    
+    //Construct legend
     if(viz != null && viz.bands == null && viz.addToLegend != false && viz.addToClassLegend != true){
-      // console.log('legend-'+whichLayerList)
       addLegendContainer(legendDivID,'legend-'+whichLayerList,false,helpBox)
-        // var legendItemContainer = document.createElement("legend-item");
-
-        // legendItemContainer.setAttribute("id", legendDivID);
-
-
-        // var legendBreak = document.createElement("legend-break");
-     
- 
-      // legendItemContainer.insertBefore(legendBreak,legendItemContainer.firstChild);
-
-        var legend ={};// document.createElement("ee-legend");
-         // console.log('here');console.log(viz)
+      
+      var legend ={};
+    
         if(viz.legendTitle !== null && viz.legendTitle !== undefined){
          
           legend.name = viz.legendTitle
@@ -1144,11 +1039,6 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
     if(fontColor != null){legend.fontColor = "color:#" +fontColor + ";" }
         else{legend.fontColor    = "color:#DDD;"}
      addColorRampLegendEntry(legendDivID,legend)
-    // var legendList = document.querySelector("legend-list");
-    // legendItemContainer.insertBefore(legend,legendItemContainer.firstChild);
-    // legendList.insertBefore(legendItemContainer,legendList.firstChild);
-
-    
     }
 
     else if(viz != null && viz.bands == null && viz.addToClassLegend == true){
@@ -1163,13 +1053,6 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
           legendClassContainerName = name;
         }
       addClassLegendContainer(classLegendContainerID,legendDivID,legendClassContainerName)
-      // var legendItemContainer = document.createElement("legend-item");
-      // legendItemContainer.setAttribute("id", legendDivID);
-      // var legendBreak = document.createElement("legend-break");
-     
-       // var legendList = document.querySelector("legend-list");
-      // legendItemContainer.insertBefore(legendBreak,legendItemContainer.firstChild);
-
       if(viz.layerType !== 'geeVector' && viz.layerType !== 'geoJSONVector' && viz.layerType !== 'geeVectorImage'){
         var legendKeys = Object.keys(viz.classLegendDict);//.reverse();
         legendKeys.map(function(lk){
@@ -1185,11 +1068,9 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
           legend.classStrokeWeight = 1;
           legend.className = lk;
           addClassLegendEntry(classLegendContainerID,legend)
-          // var legendList = document.querySelector("legend-list");
-          // legendItemContainer.insertBefore(legend,legendItemContainer.firstChild);
         })
       }else{
-        var legend = {};//document.createElement("ee-class-legend");
+        var legend = {};
         legend.name = name;
         legend.helpBoxMessage = helpBox;
         var strokeColor = viz.strokeColor.slice(1);
@@ -1204,18 +1085,13 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
         legend.className = '';
    
         addClassLegendEntry(classLegendContainerID,legend)
-        // legendItemContainer.insertBefore(legend,legendItemContainer.firstChild);
       }
 
       
 
-      var title = {};//document.createElement("ee-class-legend-title");
+      var title = {};
       title.name = name;
       title.helpBoxMessage = helpBox;
-      // var legendList = document.querySelector("legend-list");
-      // legendItemContainer.insertBefore(title,legendItemContainer.firstChild);
-      // legendList.insertBefore(legendItemContainer,legendList.firstChild);
-     
     }
 
    
@@ -1226,35 +1102,13 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
     layer.whichLayerList = whichLayerList;
     layer.layerId = layerCount;
     layer.currentGEERunID = currentGEERunID;
-    // console.log(whichLayerList);
+    //Add the layer
     addLayer(layer);
-    // var layerList = document.querySelector(whichLayerList);
-    // layerList.insertBefore(layer,layerList.firstChild);
-    layerCount ++;
-   
-    // print(item)
-    
-    // if(isVector){item.evaluate(function(v){
-    //   if(currentGEERunID === geeRunID){
-    //     layer.addToLayerObj(name,visible);
-    //     layer.setFeatureLayer(v);
-    //     layer.setOpacity();
-    //   };
-    // })}else{
-    //   layer.addToLayerObj(name,visible);
-    //   layer.addToQueryObj(name,visible,queryItem,viz.queryDict);
-    //   item.getMap(viz,function(eeLayer){
-    //       if(currentGEERunID === geeRunID){
-    //         layer.setLayer(eeLayer);
-    //         layer.setOpacity();
-    //       };
-    //      });};
-
-    
-    
+    layerCount ++;   
 }
 
 //////////////////////////////////////////////////////
+//Wrapper for bringing in a tile map service
 function standardTileURLFunction(url,xThenY,fileExtension,token){
               if(xThenY === null || xThenY === undefined  ){xThenY  = false;};
               if(token === null || token === undefined  ){token  = '';}
@@ -1326,6 +1180,7 @@ function addRESTToMap(tileURLFunction,name,visible,maxZoom,helpBox,whichLayerLis
     });
 }
 //////////////////////////////////////////////////////
+//Function to convert xy space in the dom to the map
 function point2LatLng(x,y) {
   
   var m = document.getElementById('map');
@@ -1340,6 +1195,7 @@ function point2LatLng(x,y) {
   return out;
 }
 //////////////////////////////////////////////////////
+//Wrapper function to get a dynamic map service
 function getGroundOverlay(baseUrl,minZoom){
   if(map.getZoom()>=minZoom){
 
@@ -1362,12 +1218,9 @@ function getGroundOverlay(baseUrl,minZoom){
   
   ulxyMercator.x.toString()+'%2C'+lrxyMercator.y.toString()+
   '%2C'+
-  
-  
   lrxyMercator.x.toString()+'%2C'+ulxyMercator.y.toString()+
   '&bboxSR=3857&imageSR=3857&size='+mapWidth.toString()+'%2C'+mapHeight.toString()+'&f=image'
 
-  // console.log('url '+url)
   overlay = new google.maps.GroundOverlay(url,bounds);
   return overlay
 }
@@ -1382,20 +1235,13 @@ else{
 //Function to add dynamic object mapping service to map
 function addDynamicToMap(baseUrl1,baseUrl2, minZoom1,minZoom2,name,visible,helpBox,whichLayerList){
   if(whichLayerList === null || whichLayerList === undefined){whichLayerList = "layer-list"}
-var viz = {};var item = ee.Image();
-    // print(item.getInfo().type)
-    // if(item.getInfo().type === 'ImageCollection'){print('It is a collection')}
+    var viz = {};var item = ee.Image();
     if(name === null || name === undefined){
-        name = "Layer "+NEXT_LAYER_ID;
-        
+        name = "Layer "+NEXT_LAYER_ID;   
     }
-
     if(visible === null || visible === undefined){
         visible = true;
     }
-    // if(minZoom === null || minZoom === undefined){
-    //     minZoom = 8;
-    // }
     if(helpBox == null){helpBox = ''};
     function groundOverlayWrapper(){
       if(map.getZoom() > minZoom2){
@@ -1431,40 +1277,18 @@ var viz = {};var item = ee.Image();
     layer.startUp();
    
 }
+//Function to add a gee feature to the map
 function addFeatureToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem){
   console.log('adding feature: '+name);
   item.evaluate(function(v){
     var layer = new google.maps.Data({fillOpacity: 0,strokeColor:'#F00'});
     layer.addGeoJson(v);
-    
-   
     layer.setMap(map);
     // map.overlayMapTypes.setAt(this.layerId, v);
   })
 }
-//////////////////////////////////////////////////////
-//Function for adding ee object to map
-//Will handle vectors by converting them to rasters
-// function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem){
-//     if(canAddToMap){
-//     // try{var t = item.bandNames();
-        
-//         // addRasterToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem);
-//       // }
-//     // catch(err){
-//         // try{
-//         // item = ee.Image().paint(item,3,3);
-//         addGEEToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem)
-//         // addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList)
-//       // }
-//     // catch(err){
-//     //   item = ee.Image().paint(ee.FeatureCollection([item]),3,3);
-//     //     addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList)
-//     // }
-//     // };
-// }
-    
-// }
+/////////////////////////////////////////////////////////////////////////////////////
+//Set up Map2 object
 function mp(){
   this.addLayer = function(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem){
     addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem);
@@ -1498,7 +1322,8 @@ function mp(){
   }
 }
 var Map2 = new mp();
-
+////////////////////////////////////////////////////////////////////////
+//Some helper functions
 function sleep(delay) {
         var start = new Date().getTime();
         while (new Date().getTime() < start + delay);
@@ -1510,13 +1335,18 @@ function stringToBoolean(string){
         default: return Boolean(string);
     }
 }
+////////////////////////////////////////////////////////////////////////
 function setGEERunID(){
   geeRunID = new Date().getTime();
 }
-// function refreshLayerToMap()
+////////////////////////////////////////////////////////////////////////
+//Function to rerun all GEE code
+//Clears out current map, exports, and legends and then reruns
 function reRun(){
   $('#summary-spinner').show();
   setGEERunID();
+
+  //Clean out current map, legend, etc
   clearSelectedAreas();
 
   layerChildID = 0;
@@ -1529,24 +1359,7 @@ function reRun(){
   timeLapseID = null;
   timeLapseFrame = 0;
   cumulativeMode = true;
-
-  // if(analysisMode === 'advanced'){
-  //   document.getElementById('threshold-container').style.display = 'inline-block';
-  //   document.getElementById('advanced-radio-container').style.display = 'inline';
-  //   // document.getElementById('charting-container').style.display = 'inline-block';
-    
-  // }
-  // else{
-  //   document.getElementById('threshold-container').style.display = 'none';
-  //   document.getElementById('advanced-radio-container').style.display = 'none';
-  //   // document.getElementById('charting-container').style.display = 'none';
-  //   viewBeta = 'no';
-  //   lowerThresholdDecline = 0.35;
-  //   upperThresholdDecline = 1;
-  //   lowerThresholdRecovery = 0.35;
-  //   upperThresholdRecovery = 1;
-  //   summaryMethod = 'year';
-  // }
+  NEXT_LAYER_ID = 1;
   clearSelectedAreas();
   selectedFeaturesGeoJSON = {};
   ['layer-list','reference-layer-list','area-charting-select-layer-list','fhp-div','time-lapse-legend-list'].map(function(l){
@@ -1560,65 +1373,22 @@ function reRun(){
   Object.values(featureObj).map(function(f){f.setMap(null)});
   featureObj = {};
   map.overlayMapTypes.i.forEach(function(element,index){
-                     map.overlayMapTypes.setAt(index,null);
-                   
+                     map.overlayMapTypes.setAt(index,null);   
                 });
 
-  // map.overlayMapTypes.g = {};
- 
-    // console.log(layerCount);
-    // console.log(refreshNumber);
-  
-    refreshNumber   ++;
-    // layerCount = 0;
+  refreshNumber   ++;
+
   exportImageDict = {};
   clearDownloadDropdown();
   google.maps.event.clearListeners(mapDiv, 'click');
+
+  //Rerun the GEE code
 	run();
-  // setupFSB();
-
-
-//     var whileCount = 0;
-//     while(whileCount < 5000){
-    // while(map.overlayMapTypes.b.length < layerCount*(refreshNumber+1)){}
-  //   interval2(function(){
-  //     var layerCountN = layerCount;
-  //     console.log('cleaning ' +layerCountN.toString());
-  //     map.overlayMapTypes.g.slice(0,map.overlayMapTypes.g.length-layerCountN).forEach(function(element,index){
-                    
-  //                   // if(element !== undefined && element !== null){
-  //                   //     console.log('remooooooving');
-  //                   // console.log(index);
-  //                   // console.log(element)
-  //                   map.overlayMapTypes.setAt(index,null);
-  //               // };
-                    
-  //               });  
-  // },5000,5)
-    
-//     whileCount++;
-// }
-    // processFeatures(fc);
+  
   $('#summary-spinner').hide(); 
 }
-
-// function toggleUnits(){
-//   if(metricOrImperial === 'metric'){metricOrImperial = 'imperial'}
-//     else{metricOrImperial = 'metric'};
-// }
-// function toggleAreaUnits(){
-  
-//   // toggleUnits();
-//   updateArea();
-  
-// }
-// function toggleDistanceUnits(){
-//   // console.log(value);
-//   // toggleUnits();
-//   updateDistance();
-  
-  
-// }
+////////////////////////////////////////////////////////////////////////
+//Helper functions
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -1659,21 +1429,6 @@ function randomColor(){
   var c = rgbToHex(r,g,b)
   return c
 }
-var chartColorI = 0;
-var chartColorsDict = {
-  'standard':['#050','#0A0','#e6194B','#14d4f4'],
-  'advanced':['#050','#0A0','#9A6324','#6f6f6f','#e6194B','#14d4f4'],
-  'advancedBeta':['#050','#0A0','#9A6324','#6f6f6f','#e6194B','#14d4f4','#808','#f58231'],
-  'coreLossGain':['#050','#0A0','#e6194B','#14d4f4'],
-  'allLossGain':['#050','#0A0','#e6194B','#808','#f58231','#14d4f4'],
-  'test':['#9A6324','#6f6f6f','#e6194B','#14d4f4','#880088','#f58231'],
-  'testArea':['#e6194B','#14d4f4','#880088','#f58231'],
-  'ancillary':['#cc0066','#660033','#9933ff','#330080','#ff3300','#47d147','#00cc99','#ff9966','#b37700']
-  }
-
-var chartColors = chartColorsDict.standard;
-
-// ['#111','#808','#fb9a99','#33a02c','#e31a1c','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#b15928'];
 function getChartColor(){
   var color = chartColors[chartColorI%chartColors.length]
   chartColorI++;
@@ -1711,7 +1466,6 @@ function LightenDarkenColor(col,amt) {
         col = col.slice(1);
         usePound = true;
     }
-
     var num = parseInt(col,16);
 
     var r = (num >> 16) + amt;
@@ -1731,38 +1485,18 @@ function LightenDarkenColor(col,amt) {
 
     return (usePound?"#":"") + (g | (b << 8) | (r << 16)).toString(16);
 }
+/////////////////////////////////////////////////////
+//Area measurement
 function startArea(){
-  
   if(polyOn === false){
-    // $( "#area-measurement" ).html( 'Click on map to start measuring<br>Press "Delete" or "d" button to clear<br>Press "u" to undo last vertex placement<br>Press "None" radio button to stop measuring');
     polyOn = true;
   }
-  // 
-   // $( "#distance-area-measurement" ).style.width = '0px';
-  // document.getElementById('area-measurement').style.display = 'block';
-  // document.getElementById('area-measurement').value = 'a';
-  // currentColor =  colorList[colorMod%colorList.length];
-    // areaPolygonOptions = {
-    //           strokeColor:currentColor,
-    //             fillOpacity:0.2,
-    //           strokeOpacity: 1,
-    //           strokeWeight: 3,
-    //           draggable: true,
-    //           editable: true,
-    //           geodesic:true,
-    //           polyNumber: polyNumber
-    //         };
-        areaPolygonOptions.polyNumber = polyNumber;
-        // colorMod++;
+    areaPolygonOptions.polyNumber = polyNumber;
     map.setOptions({draggableCursor:'crosshair'});
     map.setOptions({disableDoubleClickZoom: true });
-
     // Construct the polygon.
-        areaPolygonObj[polyNumber] = new google.maps.Polyline(areaPolygonOptions);
-        areaPolygonObj[polyNumber].setMap(map);
-
-        // areaPolygon = new google.maps.Polygon(areaPolygonOptions);
-        // areaPolygon.setMap(map);
+    areaPolygonObj[polyNumber] = new google.maps.Polyline(areaPolygonOptions);
+    areaPolygonObj[polyNumber].setMap(map);
 
     updateArea = function(){
       var unitName;var unitMultiplier;
@@ -1785,23 +1519,8 @@ function startArea(){
           
           var unitNames = unitNameDict[metricOrImperialArea].area;
           var unitMultipliers = unitMultiplierDict[metricOrImperialArea].area;
-          
-
-          
-          // if(area >= 1){
-          //   var unitNameT = unitNames[1];
-          //   var unitMultiplierT = unitMultipliers[1];
-          // }
-          // else{
-          //   var unitNameT = unitNames[0];
-          //   var unitMultiplierT = unitMultipliers[0];
-          //   };
-          // area = area;//*unitMultiplier
-          // console.log(unitName);
-          // console.log(unitMultiplier);
           if(area>0){
             totalWithArea++;
-            // outString  = outString + area*unitMultiplier.toFixed(4).toString() + ' ' + unitName + '<br>'
           }
           totalArea = totalArea + area
 
@@ -1820,49 +1539,25 @@ function startArea(){
           console.log(unitName);
           console.log(unitMultiplier)
         }
-        // console.log(totalArea);
       }
       keys.map(areaWrapper)
       var pixelProp = totalArea/9;
 
       totalArea = totalArea*unitMultiplier;
-        // if(infowindow != undefined){infowindow.close()}
-        // if(totalArea > 0){
-            // infowindow = new google.maps.InfoWindow({
-            // content: area.toFixed(2) + unit,
-            // position: clickCoords
-            // });
-            // infowindow.open(map);
-             totalArea = totalArea.formatNumber();
-
-          var polyString = 'polygon';
-          if(keys.length>1){
-            polyString = 'polygons';
-          }
-          var areaContent = totalWithArea.toString()+' '+polyString+' <br>'+totalArea +' '+unitName ;
-          if(mode === 'Ancillary'){areaContent += '<br>'+pixelProp.formatNumber() + ' % pixel'}
-          // $( "#area-measurement" ).html(areaContent);//+' <br>' +pixelProp.toFixed(2) + '%pixel');
-          infowindow.setContent(areaContent);
-          infowindow.setPosition(clickCoords);
-          
-          infowindow.open(map);
-          $('.gm-ui-hover-effect').hide();
-          // $('#tool-message-box').empty();
-          // $('#tool-message-box').show();
-          // $('#tool-message-box').append(areaContent);
-          
-            // }       
+        totalArea = totalArea.formatNumber();
+        var polyString = 'polygon';
+        if(keys.length>1){
+          polyString = 'polygons';
+        }
+        var areaContent = totalWithArea.toString()+' '+polyString+' <br>'+totalArea +' '+unitName ;
+        if(mode === 'Ancillary'){areaContent += '<br>'+pixelProp.formatNumber() + ' % pixel'}
+        infowindow.setContent(areaContent);
+        infowindow.setPosition(clickCoords);
+        
+        infowindow.open(map);
+        $('.gm-ui-hover-effect').hide();         
     }
-    // function newPoly(){
-    //   areaPolygonObj[polyNumber].setMap(null);
-    //   areaPolygonObj[polyNumber] = new google.maps.Polygon(areaPolygonOptions);
-    //   areaPolygonObj[polyNumber].setMap(map);
-    //   google.maps.event.addListener(areaPolygon, 'dblclick', function() {
-    //     console.log('doubleClicked');
-    //     newPoly();
-    //     // resetPolygon();
-    // });
-    // }
+
   startListening();
 }
 function setToPolygon(id){
@@ -1885,30 +1580,8 @@ function setToPolyline(id){
         areaPolygonObj[id].setMap(map);
 }
 
-
+//Start listening for area measuring
 function startListening(){
-    // google.maps.event.addDomListener(map, 'click', function(event) {
-    //     // console.log(event)
-    //     // var path = areaPolygonObj[polyNumber].getPath();
-    //     // path.push(event.latLng);
-    //     // updateArea();
-    //     console.log(event.latLng)
-   
-    
-    // });
-    // google.maps.event.addDomListener(mapDiv, 'click', function(event) {
-        
-        
-
-    //     var path = areaPolygonObj[polyNumber].getPath();
-    //     var x =event.clientX;
-    //     var y = event.clientY;
-    //     clickLngLat =point2LatLng(x,y)
-    //     path.push(clickLngLat);
-    //     updateArea();
-    
-    // });
-    // google.maps.event.addDomListener(mapDiv, 'dblclick', function() {
     mapHammer = new Hammer(document.getElementById('map'));
 
     mapHammer.on("tap", function(event) {
@@ -1918,31 +1591,16 @@ function startListening(){
         var x =event.center.x;
         var y = event.center.y;
         clickLngLat =point2LatLng(x,y);
-        // udpList.push([clickLngLat.lng(),clickLngLat.lat()])
         path.push(clickLngLat);
         updateArea();
     
     });
     mapHammer.on("doubletap",function(){
-        // console.log('doubleClicked');
-        // newPoly();
-        // startArea();
-        
-   
-        
         setToPolygon()
-        
         resetPolygon();
-
     });
 
-
-    // var thisPoly = areaPolygonObj[polyNumber]
-    // if(thisPoly.getPath().length > 2){
-      // google.maps.event.addListener(thisPoly, "click", function(){activatePoly(thisPoly)});
-    // }
     google.maps.event.addListener(areaPolygonObj[polyNumber], "click", updateArea);
- 
     google.maps.event.addListener(areaPolygonObj[polyNumber], "mouseup", updateArea);
     google.maps.event.addListener(areaPolygonObj[polyNumber], "dragend", updateArea);
     google.maps.event.addListener(areaPolygonObj[polyNumber].getPath(), 'set_at',  updateArea);
@@ -1951,21 +1609,20 @@ function startListening(){
     window.addEventListener("keydown", deleteLastAreaVertex);
 
 }
+//Clear and restart area measuring
 function resetPolys(e){
- 
-     
-      if( e === undefined || e.key === 'Delete'|| e.key === 'd'|| e.key === 'Backspace' ){
+    if( e === undefined || e.key === 'Delete'|| e.key === 'd'|| e.key === 'Backspace' ){
         stopArea();
         startArea();
       }
     }
+//Undo last vertex
 function undoAreaMeasuring(){
   if(areaPolygonObj[polyNumber].getPath().length >0){
           areaPolygonObj[polyNumber].getPath().pop(1);
           updateArea();
         }
-
-        else if(polyNumber > 1){
+  else if(polyNumber > 1){
           stopListening();
           polyNumber = polyNumber -1;
           setToPolyline()
@@ -1989,46 +1646,19 @@ function deleteLastDistanceVertex(e){
       }
     }
 function activatePoly(poly){
-  // stopListening();
-  // var keys = Object.keys(areaPolygonObj);
-  // keys.map(function(k){
-  //   setToPolygon(k)
-  //   areaPolygonObj[k].setEditable(false);
-  //   areaPolygonObj[k].setDraggable(false);
-    
-
-  // })
-  // polyNumber = poly.polyNumber;
-  // areaPolygonObj[poly.polyNumber].setEditable(true);
-  // areaPolygonObj[poly.polyNumber].setDraggable(true);
-  // setToPolyline()
-  // startListening();
- 
- 
-  
   console.log(poly.polyNumber)
 }
 function stopListening(){
-    // areaPolygonObj[polyNumber].setEditable(false);
-    // areaPolygonObj[polyNumber].setDraggable(false);
     try{
     mapHammer.destroy();
-    // console.log(areaPolygonObj[polyNumber].polyNumber);
     google.maps.event.clearListeners(areaPolygonObj[polyNumber], 'dblclick');
     google.maps.event.clearListeners(areaPolygonObj[polyNumber], 'click');
     google.maps.event.clearListeners(mapDiv, 'click');
     google.maps.event.clearListeners(areaPolygonObj[polyNumber], 'mouseup');
     google.maps.event.clearListeners(areaPolygonObj[polyNumber], 'dragend');
-    // if(infowindow != undefined){infowindow.close()}
     window.removeEventListener('keydown',resetPolys);
     window.removeEventListener('keydown',deleteLastAreaVertex);
-    // var thisPoly = areaPolygonObj[polyNumber]
-    // if(thisPoly.getPath().length > 2){
-    //   google.maps.event.addListener(thisPoly, "click", function(){activatePoly(thisPoly)});
-    // }
     }catch(err){}
-    
-    
 }
 function clearPoly(id){
 
@@ -2047,25 +1677,16 @@ function clearPolys(){
 
 }
 function stopArea(){
-  // google.maps.event.clearListeners(mapDiv, 'dblclick');
   try{
     mapHammer.destroy();
   }catch(err){}
-  
-    // google.maps.event.clearListeners(mapDiv, 'click');
-  // $( "#area-measurement" ).html( '');
-  // document.getElementById('area-measurement').style.display = 'none';
   map.setOptions({disableDoubleClickZoom: true });
   
   clearPolys();
   infowindow.setMap(null);
   map.setOptions({draggableCursor:'hand'});
-   // $('#tool-message-box').empty();
-    // $('#tool-message-box').hide();
-  // map.setOptions({draggableCursor:'hand'});
-  
 }
-//
+
 function resetPolygon(){
     stopListening();
     var keys = Object.keys(areaPolygonObj);
@@ -2081,35 +1702,21 @@ function newPolygon(){
 
 }
 ///////////////////////////////////////////////////////////////////////////////////
+//Distance measuring functions
 function startDistance(){
-  // showTip("DISTANCE MEASURING","Click on map to measure distance. Double click on map to clear")
-  // $( "#distance-measurement" ).html( 'Click on map to start measuring<br>Double click to finish measurement');
-  
-  // document.getElementById('distance-measurement').style.display = 'inline-block';
-  // document.getElementById('distance-measurement').value = 'd';
-    
-    map.setOptions({draggableCursor:'crosshair'});
-    // console.log(distancePolylineOptions);
+  map.setOptions({draggableCursor:'crosshair'});
     try{
       distancePolyline.destroy();
     }catch(err){};
     
     distancePolyline = new google.maps.Polyline(distancePolylineOptions);
     distancePolyline.setMap(map);
-
-
-    
-
-
     map.setOptions({disableDoubleClickZoom: true });
-
-
 
     google.maps.event.addListener(distancePolyline, "click", updateDistance);
     mapHammer = new Hammer(document.getElementById('map'));
     mapHammer.on("doubletap", resetPolyline);
     mapHammer.on("tap", function(event) {
-        // console.log('clicked');
         var x =event.center.x;
         var y = event.center.y;
         var path = distancePolyline.getPath();
@@ -2117,166 +1724,120 @@ function startDistance(){
         path.push(clickLngLat);
         updateDistance();
     });
-    // google.maps.event.addDomListener(mapDiv, "dblclick", resetPolyline);
     google.maps.event.addListener(distancePolyline, "mouseup", updateDistance);
     google.maps.event.addListener(distancePolyline, "dragend", updateDistance);
     google.maps.event.addListener(distancePolyline.getPath(), 'set_at',  updateDistance);
     window.addEventListener('keydown',deleteLastDistanceVertex);
     window.addEventListener('keydown',resetPolyline);
-    // distanceUpdater = setInterval(function(){updateMarkerPositionList();updateDistance();},500);
-
     }
 
 function stopDistance(){
-  // $( "#distance-measurement" ).html( '');
-  // document.getElementById('distance-measurement').style.display = 'none';
   try{
     window.removeEventListener('keydown',deleteLastDistanceVertex);
     window.removeEventListener('keydown',resetPolyline);
     mapHammer.destroy();
     map.setOptions({disableDoubleClickZoom: true });
-    // google.maps.event.clearListeners(mapDiv, 'dblclick');
     google.maps.event.clearListeners(distancePolyline, 'click');
     google.maps.event.clearListeners(mapDiv, 'click');
     google.maps.event.clearListeners(distancePolyline, 'mouseup');
     google.maps.event.clearListeners(distancePolyline, 'dragend');
     if(infowindow != undefined){infowindow.setMap(null);}
     distancePolyline.setMap(null);
-    // clearInterval(distanceUpdater);
     map.setOptions({draggableCursor:'hand'});
     infowindow.setMap(null);
-    // $('#tool-message-box').empty();
-    // $('#tool-message-box').hide();
-  }catch(err){}
-    
+  }catch(err){}  
 }
-
 function resetPolyline(e){
-  // console.log(e.key);
   if(e === undefined || e.key === undefined ||  e.key == 'Delete'|| e.key == 'd'|| e.key == 'Backspace'){
     stopDistance();startDistance();
   }    
 }
-    
-// function updateMarkerPositionList(){
-//     var distance = google.maps.geometry.spherical.computeLength(distancePolyline.getPath());
-//     console.log(distance);
-//     var pathT = distancePolyline.getPath().b
-//     markerPositionList = pathT.map(function(xy){return [xy.lat(),xy.lng()]})
-//     clickCoords = distancePolyline.getPath().b[pathT.length-1]
-// }
 updateDistance = function(){
-    distance = google.maps.geometry.spherical.computeLength(distancePolyline.getPath());
-    var pathT = distancePolyline.getPath().j;
-    clickCoords = clickLngLat;//pathT[pathT.length-1];
-    // console.log(clickCoords)
-    
-    var unitNames = unitNameDict[metricOrImperialDistance].distance;
-    var unitMultipliers = unitMultiplierDict[metricOrImperialDistance].distance;
-    // console.log(unitNames);
-    // console.log(unitMultipliers);
-    // console.log(area)
-        
-    if(distance >= 1000){
-      var unitName = unitNames[1];
-      var unitMultiplier = unitMultipliers[1];
+  distance = google.maps.geometry.spherical.computeLength(distancePolyline.getPath());
+  var pathT = distancePolyline.getPath().j;
+  clickCoords = clickLngLat;//pathT[pathT.length-1];
+  var unitNames = unitNameDict[metricOrImperialDistance].distance;
+  var unitMultipliers = unitMultiplierDict[metricOrImperialDistance].distance;
+  if(distance >= 1000){
+    var unitName = unitNames[1];
+    var unitMultiplier = unitMultipliers[1];
+  }
+  else{
+    var unitName = unitNames[0];
+    var unitMultiplier = unitMultipliers[0];
     }
-    else{
-      var unitName = unitNames[0];
-      var unitMultiplier = unitMultipliers[0];
-      }
-    distance = distance*unitMultiplier
-    // console.log(unitName);
-    // console.log(unitMultiplier);
+  distance = distance*unitMultiplier
+  if(distance >= 0){
+   
+        var distanceContent = distance.formatNumber() + ' ' + unitName 
+        infowindow.setContent(distanceContent);
+        infowindow.setPosition(clickCoords);
 
-    if(distance >= 0){
-     
-          var distanceContent = distance.formatNumber() + ' ' + unitName 
-          // $( "#distance-measurement" ).html(distanceContent);
-    
-          infowindow.setContent(distanceContent);
-          infowindow.setPosition(clickCoords);
-
-          infowindow.open(map);
-          // $('#tool-message-box').empty();
-          // $('#tool-message-box').show();
-          // $('#tool-message-box').append(distanceContent);
-          $('.gm-ui-hover-effect').hide();
-
-
-    }
-
+        infowindow.open(map);
+        $('.gm-ui-hover-effect').hide();
+  }
 }
-function getDistance(lat1,lon1,lat2,lon2){
-    var R = 6371e3; // metres
-    var phi1 = lat1* Math.PI / 180;
-    var phi2 = lat2* Math.PI / 180;
-    var deltaPhi = (lat2-lat1)* Math.PI / 180;
-    var deltaLambda = (lon2-lon1)* Math.PI / 180;
+// function getDistance(lat1,lon1,lat2,lon2){
+//     var R = 6371e3; // metres
+//     var phi1 = lat1* Math.PI / 180;
+//     var phi2 = lat2* Math.PI / 180;
+//     var deltaPhi = (lat2-lat1)* Math.PI / 180;
+//     var deltaLambda = (lon2-lon1)* Math.PI / 180;
 
-    var a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
-            Math.cos(phi1) * Math.cos(phi2) *
-            Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+//     var a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
+//             Math.cos(phi1) * Math.cos(phi2) *
+//             Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
+//     var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+//     var d = R * c;
+//     return d
+// }
 
-    var d = R * c;
-    return d
-}
 
-
-function addFusionTable1(id){
-var layer1 = new google.maps.FusionTablesLayer({
-          query: {
-            select: 'geometry',
-            from: id
-          },
-          styles: [{
-      polygonOptions: {
-        // fillColor: '#00FF00',
-        fillOpacity: 0.0000000000001,
-        strokeColor:'#FF0000',
-        strokeWeight : 2
-      }
-    }]
-    // map:map
-        });
-    layer1.setMap(map);
-    }
-function addFusionTable2(id){
-var layer2 = new google.maps.FusionTablesLayer({
-          query: {
-            select: 'geometry',
-            from: id
-          },
-          styles: [{
-      polygonOptions: {
-        // fillColor: '#00FF00',
-        fillOpacity: 0.0000000000001,
-        strokeColor:'#FF0000',
-        strokeWeight : 2
-      }
-    }]
-        });
-layer2.setMap(map);
+// function addFusionTable1(id){
+// var layer1 = new google.maps.FusionTablesLayer({
+//           query: {
+//             select: 'geometry',
+//             from: id
+//           },
+//           styles: [{
+//       polygonOptions: {
+//         // fillColor: '#00FF00',
+//         fillOpacity: 0.0000000000001,
+//         strokeColor:'#FF0000',
+//         strokeWeight : 2
+//       }
+//     }]
+//     // map:map
+//         });
+//     layer1.setMap(map);
+//     }
+// function addFusionTable2(id){
+// var layer2 = new google.maps.FusionTablesLayer({
+//           query: {
+//             select: 'geometry',
+//             from: id
+//           },
+//           styles: [{
+//       polygonOptions: {
+//         // fillColor: '#00FF00',
+//         fillOpacity: 0.0000000000001,
+//         strokeColor:'#FF0000',
+//         strokeWeight : 2
+//       }
+//     }]
+//         });
+// layer2.setMap(map);
     
-    }
+//     }
 
 
-
+////////////////////////////////////////////////////////////////
+//Setup study areas and run functions
 function dropdownUpdateStudyArea(whichOne){
   $('#summary-spinner').show();
-   
   resetStudyArea(whichOne);
-
-   // localStorage.setItem("cachedStudyAreaName",this.innerHTML)
-   //  $('.status').text(this.innerHTML);
-   //  $('#study-area-label').text(this.innerHTML);
-    var coords = studyAreaDict[whichOne].center;
-
-    // studyAreaName = studyAreaDict[this.innerHTML][0];
-   //  // exportCRS = studyAreaDict[this.innerHTML][2];
-   //  // $('input[name = "Export crs"]').val(exportCRS);
-    centerMap(coords[1],coords[0],coords[2]);
+  var coords = studyAreaDict[whichOne].center;
+  centerMap(coords[1],coords[0],coords[2]);
     if(mode === 'Ancillary'){
       run = runSimple;
     } else if( mode === 'LT'){
@@ -2287,17 +1848,11 @@ function dropdownUpdateStudyArea(whichOne){
       else if(studyAreaName === 'CONUS'){
       run = runCONUS
     }else{run = runUSFS};
-
-    
-    
-
     reRun();
-    // $('#summary-spinner').hide();
 };
+//Function to set study area
 var resetStudyArea = function(whichOne){
-
-    localStorage.setItem("cachedStudyAreaName",whichOne)
-   
+    localStorage.setItem("cachedStudyAreaName",whichOne);
     $('#studyAreaDropdown').val(whichOne);
     $('#study-area-label').text(whichOne);
     console.log('changing study area');
@@ -2330,13 +1885,11 @@ var resetStudyArea = function(whichOne){
     setUpRangeSlider('lowerThresholdFastLoss',0,1,lowerThresholdFastLoss,0.05,'fast-loss-threshold-slider','null');
     
     setUpDualRangeSlider('startYear','endYear',startYear,endYear,startYear,endYear,1,'analysis-year-slider','analysis-year-slider-update','null')
-    
 
     var coords = studyAreaDict[whichOne].center;
     studyAreaName = studyAreaDict[whichOne].name;
     if(studyAreaName === 'CONUS'){run = runCONUS;}
     else{run = runUSFS;};
-    // console.log(studyAreaDict[whichOne].addFastSlow)
     if(studyAreaDict[whichOne].addFastSlow){
       $('#fast-slow-threshold-container').show();
     }else{$('#fast-slow-threshold-container').hide();}
@@ -2344,76 +1897,72 @@ var resetStudyArea = function(whichOne){
       $('#recovery-threshold-slider-container').show();
     }else{$('#recovery-threshold-slider-container').hide();}
     $('#export-crs').val(studyAreaDict[whichOne].crs)
-    // exportCRS = studyAreaDict[whichOne][2];
-    // $('#export-crs').val(exportCRS);
-    // centerMap(coords[1],coords[0],8);
-    // reRun();
-
 }
+///////////////////////////////////////////////////////////
+//Taken from https://developers.google.com/maps/documentation/javascript/examples/places-searchbox
 function initSearchBox() {
-     
+  // Create the search box and link it to the UI element.
+  var input = document.getElementById('pac-input');
+  var searchBox = new google.maps.places.SearchBox(input);
+  // map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
 
-        // Create the search box and link it to the UI element.
-        var input = document.getElementById('pac-input');
-        var searchBox = new google.maps.places.SearchBox(input);
-        // map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+  // Bias the SearchBox results towards current map's viewport.
+  map.addListener('bounds_changed', function() {
+    searchBox.setBounds(map.getBounds());
+  });
 
-        // Bias the SearchBox results towards current map's viewport.
-        map.addListener('bounds_changed', function() {
-          searchBox.setBounds(map.getBounds());
-        });
+  var markers = [];
+  // Listen for the event fired when the user selects a prediction and retrieve
+  // more details for that place.
+  searchBox.addListener('places_changed', function() {
+    var places = searchBox.getPlaces();
 
-        var markers = [];
-        // Listen for the event fired when the user selects a prediction and retrieve
-        // more details for that place.
-        searchBox.addListener('places_changed', function() {
-          var places = searchBox.getPlaces();
+    if (places.length == 0) {
+      return;
+    }
 
-          if (places.length == 0) {
-            return;
-          }
+    // Clear out the old markers.
+    markers.forEach(function(marker) {
+      marker.setMap(null);
+    });
+    markers = [];
 
-          // Clear out the old markers.
-          markers.forEach(function(marker) {
-            marker.setMap(null);
-          });
-          markers = [];
-
-          // For each place, get the icon, name and location.
-          var bounds = new google.maps.LatLngBounds();
-          places.forEach(function(place) {
-            if (!place.geometry) {
-              console.log("Returned place contains no geometry");
-              return;
-            }
-            var icon = {
-              url: place.icon,
-              size: new google.maps.Size(71, 71),
-              origin: new google.maps.Point(0, 0),
-              anchor: new google.maps.Point(17, 34),
-              scaledSize: new google.maps.Size(25, 25)
-            };
-
-            // Create a marker for each place.
-            markers.push(new google.maps.Marker({
-              map: map,
-              icon: icon,
-              title: place.name,
-              position: place.geometry.location
-            }));
-
-            if (place.geometry.viewport) {
-              // Only geocodes have viewport.
-              bounds.union(place.geometry.viewport);
-            } else {
-              bounds.extend(place.geometry.location);
-            }
-          });
-          map.fitBounds(bounds);
-        });
+    // For each place, get the icon, name and location.
+    var bounds = new google.maps.LatLngBounds();
+    places.forEach(function(place) {
+      if (!place.geometry) {
+        console.log("Returned place contains no geometry");
+        return;
       }
-var infoWindowXOffset = 30;
+      var icon = {
+        url: place.icon,
+        size: new google.maps.Size(71, 71),
+        origin: new google.maps.Point(0, 0),
+        anchor: new google.maps.Point(17, 34),
+        scaledSize: new google.maps.Size(25, 25)
+      };
 
+      // Create a marker for each place.
+      markers.push(new google.maps.Marker({
+        map: map,
+        icon: icon,
+        title: place.name,
+        position: place.geometry.location
+      }));
+
+      if (place.geometry.viewport) {
+        // Only geocodes have viewport.
+        bounds.union(place.geometry.viewport);
+      } else {
+        bounds.extend(place.geometry.location);
+      }
+    });
+    map.fitBounds(bounds);
+  });
+  }
+/////////////////////////////////////////////////////////////////
+//Set up info window
+var infoWindowXOffset = 30;
 function getInfoWindow(xOffset,yOffset){
   if(xOffset == null || xOffset === undefined){xOffset = 30};
   if(yOffset == null || yOffset === undefined){yOffset = -30};
@@ -2424,231 +1973,234 @@ function getInfoWindow(xOffset,yOffset){
     close:false
   });
 } 
+////////////////////////////////////////////////////////////////
+//Initialize map
 function initialize() {
   // Create a new StyledMapType object, passing it an array of styles,
-        // and the name to be displayed on the map type control.
-        var styledMapType = new google.maps.StyledMapType(
-            [
-  {
-    "elementType": "geometry",
-    "stylers": [
+  // and the name to be displayed on the map type control.
+
+  //Created with: https://mapstyle.withgoogle.com/
+  var styledMapType = new google.maps.StyledMapType(
+    [
       {
-        "color": "#212121"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.icon",
-    "stylers": [
+        "elementType": "geometry",
+        "stylers": [
+          {
+            "color": "#212121"
+          }
+        ]
+      },
       {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.text.fill",
-    "stylers": [
+        "elementType": "labels.icon",
+        "stylers": [
+          {
+            "visibility": "off"
+          }
+        ]
+      },
       {
-        "color": "#757575"
-      }
-    ]
-  },
-  {
-    "elementType": "labels.text.stroke",
-    "stylers": [
+        "elementType": "labels.text.fill",
+        "stylers": [
+          {
+            "color": "#757575"
+          }
+        ]
+      },
       {
-        "color": "#212121"
-      }
-    ]
-  },
-  {
-    "featureType": "administrative",
-    "elementType": "geometry",
-    "stylers": [
+        "elementType": "labels.text.stroke",
+        "stylers": [
+          {
+            "color": "#212121"
+          }
+        ]
+      },
       {
-        "color": "#757575"
-      }
-    ]
-  },
-  {
-    "featureType": "administrative.country",
-    "elementType": "labels.text.fill",
-    "stylers": [
+        "featureType": "administrative",
+        "elementType": "geometry",
+        "stylers": [
+          {
+            "color": "#757575"
+          }
+        ]
+      },
       {
-        "color": "#9e9e9e"
-      }
-    ]
-  },
-  {
-    "featureType": "administrative.land_parcel",
-    "stylers": [
+        "featureType": "administrative.country",
+        "elementType": "labels.text.fill",
+        "stylers": [
+          {
+            "color": "#9e9e9e"
+          }
+        ]
+      },
       {
-        "visibility": "off"
-      }
-    ]
-  },
-  {
-    "featureType": "administrative.locality",
-    "elementType": "labels.text.fill",
-    "stylers": [
+        "featureType": "administrative.land_parcel",
+        "stylers": [
+          {
+            "visibility": "off"
+          }
+        ]
+      },
       {
-        "color": "#bdbdbd"
-      }
-    ]
-  },
-  {
-    "featureType": "poi",
-    "elementType": "labels.text.fill",
-    "stylers": [
+        "featureType": "administrative.locality",
+        "elementType": "labels.text.fill",
+        "stylers": [
+          {
+            "color": "#bdbdbd"
+          }
+        ]
+      },
       {
-        "color": "#757575"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "geometry",
-    "stylers": [
+        "featureType": "poi",
+        "elementType": "labels.text.fill",
+        "stylers": [
+          {
+            "color": "#757575"
+          }
+        ]
+      },
       {
-        "color": "#181818"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "geometry.fill",
-    "stylers": [
+        "featureType": "poi.park",
+        "elementType": "geometry",
+        "stylers": [
+          {
+            "color": "#181818"
+          }
+        ]
+      },
       {
-        "color": "#004000"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "labels.icon",
-    "stylers": [
+        "featureType": "poi.park",
+        "elementType": "geometry.fill",
+        "stylers": [
+          {
+            "color": "#004000"
+          }
+        ]
+      },
       {
-        "color": "#004000"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "labels.text",
-    "stylers": [
+        "featureType": "poi.park",
+        "elementType": "labels.icon",
+        "stylers": [
+          {
+            "color": "#004000"
+          }
+        ]
+      },
       {
-        "color": "#004000"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "labels.text.fill",
-    "stylers": [
+        "featureType": "poi.park",
+        "elementType": "labels.text",
+        "stylers": [
+          {
+            "color": "#004000"
+          }
+        ]
+      },
       {
-        "color": "#616161"
-      }
-    ]
-  },
-  {
-    "featureType": "poi.park",
-    "elementType": "labels.text.stroke",
-    "stylers": [
+        "featureType": "poi.park",
+        "elementType": "labels.text.fill",
+        "stylers": [
+          {
+            "color": "#616161"
+          }
+        ]
+      },
       {
-        "color": "#1b1b1b"
-      }
-    ]
-  },
-  {
-    "featureType": "road",
-    "elementType": "geometry.fill",
-    "stylers": [
+        "featureType": "poi.park",
+        "elementType": "labels.text.stroke",
+        "stylers": [
+          {
+            "color": "#1b1b1b"
+          }
+        ]
+      },
       {
-        "color": "#2c2c2c"
-      }
-    ]
-  },
-  {
-    "featureType": "road",
-    "elementType": "labels.text.fill",
-    "stylers": [
+        "featureType": "road",
+        "elementType": "geometry.fill",
+        "stylers": [
+          {
+            "color": "#2c2c2c"
+          }
+        ]
+      },
       {
-        "color": "#8a8a8a"
-      }
-    ]
-  },
-  {
-    "featureType": "road.arterial",
-    "elementType": "geometry",
-    "stylers": [
+        "featureType": "road",
+        "elementType": "labels.text.fill",
+        "stylers": [
+          {
+            "color": "#8a8a8a"
+          }
+        ]
+      },
       {
-        "color": "#373737"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway",
-    "elementType": "geometry",
-    "stylers": [
+        "featureType": "road.arterial",
+        "elementType": "geometry",
+        "stylers": [
+          {
+            "color": "#373737"
+          }
+        ]
+      },
       {
-        "color": "#3c3c3c"
-      }
-    ]
-  },
-  {
-    "featureType": "road.highway.controlled_access",
-    "elementType": "geometry",
-    "stylers": [
+        "featureType": "road.highway",
+        "elementType": "geometry",
+        "stylers": [
+          {
+            "color": "#3c3c3c"
+          }
+        ]
+      },
       {
-        "color": "#4e4e4e"
-      }
-    ]
-  },
-  {
-    "featureType": "road.local",
-    "elementType": "labels.text.fill",
-    "stylers": [
+        "featureType": "road.highway.controlled_access",
+        "elementType": "geometry",
+        "stylers": [
+          {
+            "color": "#4e4e4e"
+          }
+        ]
+      },
       {
-        "color": "#616161"
-      }
-    ]
-  },
-  {
-    "featureType": "transit",
-    "elementType": "labels.text.fill",
-    "stylers": [
+        "featureType": "road.local",
+        "elementType": "labels.text.fill",
+        "stylers": [
+          {
+            "color": "#616161"
+          }
+        ]
+      },
       {
-        "color": "#757575"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "geometry",
-    "stylers": [
+        "featureType": "transit",
+        "elementType": "labels.text.fill",
+        "stylers": [
+          {
+            "color": "#757575"
+          }
+        ]
+      },
       {
-        "color": "#000000"
-      }
-    ]
-  },
-  {
-    "featureType": "water",
-    "elementType": "labels.text.fill",
-    "stylers": [
+        "featureType": "water",
+        "elementType": "geometry",
+        "stylers": [
+          {
+            "color": "#000000"
+          }
+        ]
+      },
       {
-        "color": "#3d3d3d"
+        "featureType": "water",
+        "elementType": "labels.text.fill",
+        "stylers": [
+          {
+            "color": "#3d3d3d"
+          }
+        ]
       }
-    ]
-  }
-],
+    ],
             {name: 'Dark Mode'});
 
-     
+  //Set up map options
   var mapOptions = {
     center: null,
     zoom: null,
     minZoom: 2,
-    // gestureHandling: 'greedy',
     disableDoubleClickZoom: true,
     // maxZoom: 15,
     mapTypeId: google.maps.MapTypeId.HYBRID,
@@ -2666,16 +2218,13 @@ function initialize() {
     clickableIcons:false,
   };
    
-
-       
-  // console.log(initialCenter)
   var center = new google.maps.LatLng(initialCenter[0],initialCenter[1]);
   var zoom = initialZoomLevel;//8;
 
   var settings = null;
 
 
-  // var randomID = null;
+  //Set up caching of study area
   if(typeof(Storage) !== "undefined"){
     cachedStudyAreaName = localStorage.getItem("cachedStudyAreaName");
     if(cachedStudyAreaName === null || cachedStudyAreaName === undefined){
@@ -2687,13 +2236,10 @@ function initialize() {
     $('#study-area-label').fitText(1.8);
     
     if(studyAreaSpecificPage == true){
-      cachedSettingskey =  studyAreaName +"-settings";
-      
+      cachedSettingskey =  studyAreaName +"-settings"; 
     }
     settings = JSON.parse(localStorage.getItem(cachedSettingskey));
-    
-    layerObj =  null;//JSON.parse(localStorage.getItem("layerObj"));
-    
+    layerObj =  null;
   }
 
   if(settings != null && settings.center != null && settings.zoom != null){
@@ -2704,18 +2250,14 @@ function initialize() {
     layerObj = {};
   }
 
- 
-
-	 // console.log(center);console.log(zoom);
-    mapOptions.center = center;
-    mapOptions.zoom = zoom;
+  mapOptions.center = center;
+  mapOptions.zoom = zoom;
      
-    map = new google.maps.Map(document.getElementById("map"),
-                                  mapOptions);
-     //Associate the styled map with the MapTypeId and set it to display.
-    map.mapTypes.set('dark_mode', styledMapType);
+  map = new google.maps.Map(document.getElementById("map"),mapOptions);
+  //Associate the styled map with the MapTypeId and set it to display.
+  map.mapTypes.set('dark_mode', styledMapType);
         
-    marker=new google.maps.Circle({
+  marker=new google.maps.Circle({
     center:{lat:45,lng:-111},
     radius:5
   });
@@ -2725,140 +2267,117 @@ function initialize() {
   queryGeoJSON = new google.maps.Data();
   queryGeoJSON.setMap(map);
   queryGeoJSON.setStyle({strokeColor:'#FF0'});
-    initSearchBox();
-    
-       
-   //  var testUrl = 'https://ecos.fws.gov/arcgis/rest/services/cap/cap/MapServer/0?f=pjson'
-   // var ctaLayer = new google.maps.KmlLayer({
-   //        url: '../layers/change_no_change_shp2_k.kml',
-   //        map: map
-   //      });
-            placeholderID = 1;
+  
+
+  //Add search box
+  initSearchBox();
+  
+  placeholderID = 1;
 
 
-            function addWMS(url,name,maxZoom,xThenY){
-              if(maxZoom === null || maxZoom === undefined  ){
-                maxZoom = 19;
-              }
-              if(xThenY === null || xThenY === undefined  ){
-                xThenY = false;
-              }
-                var imageMapType =  new google.maps.ImageMapType({
-                getTileUrl: function(coord, zoom) {
-                    // "Wrap" x (logitude) at 180th meridian properly
-                    // NB: Don't touch coord.x because coord param is by reference, and changing its x property breakes something in Google's lib 
-                    var tilesPerGlobe = 1 << zoom;
-                    var x = coord.x % tilesPerGlobe;
-                    if (x < 0) {
-                        x = tilesPerGlobe+x;
-                    }
-                    // Wrap y (latitude) in a like manner if you want to enable vertical infinite scroll
-                    // return "https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/" + zoom + "/" + x + "/" + coord.y + "?access_token=pk.eyJ1IjoiaWhvdXNtYW4iLCJhIjoiY2ltcXQ0cnljMDBwNHZsbTQwYXRtb3FhYiJ9.Sql6G9QR_TQ-OaT5wT6f5Q"
-                    if(xThenY ){
-                        return url+ zoom + "/" + x + "/" + coord.y +".png?";
-                    }
-                    else{return url+ zoom + "/" + coord.y + "/" +x  +".png?";}//+ (new Date()).getTime();
-                    
-                },
-                tileSize: new google.maps.Size(256, 256),
-                name: name,
-                maxZoom: maxZoom
-            
-            })
+  // function addWMS(url,name,maxZoom,xThenY){
+  //   if(maxZoom === null || maxZoom === undefined  ){
+  //     maxZoom = 19;
+  //   }
+  //   if(xThenY === null || xThenY === undefined  ){
+  //     xThenY = false;
+  //   }
+  //     var imageMapType =  new google.maps.ImageMapType({
+  //     getTileUrl: function(coord, zoom) {
+  //         // "Wrap" x (logitude) at 180th meridian properly
+  //         // NB: Don't touch coord.x because coord param is by reference, and changing its x property breakes something in Google's lib 
+  //         var tilesPerGlobe = 1 << zoom;
+  //         var x = coord.x % tilesPerGlobe;
+  //         if (x < 0) {
+  //             x = tilesPerGlobe+x;
+  //         }
+  //         // Wrap y (latitude) in a like manner if you want to enable vertical infinite scroll
+  //         // return "https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/" + zoom + "/" + x + "/" + coord.y + "?access_token=pk.eyJ1IjoiaWhvdXNtYW4iLCJhIjoiY2ltcXQ0cnljMDBwNHZsbTQwYXRtb3FhYiJ9.Sql6G9QR_TQ-OaT5wT6f5Q"
+  //         if(xThenY ){
+  //             return url+ zoom + "/" + x + "/" + coord.y +".png?";
+  //         }
+  //         else{return url+ zoom + "/" + coord.y + "/" +x  +".png?";}//+ (new Date()).getTime();
+          
+  //     },
+  //     tileSize: new google.maps.Size(256, 256),
+  //     name: name,
+  //     maxZoom: maxZoom
+  
+  // })
 
-                   
-                map.mapTypes.set('Placeholder' + placeholderID.toString(),imageMapType )
-                placeholderID  ++;
-            }
+         
+  //     map.mapTypes.set('Placeholder' + placeholderID.toString(),imageMapType )
+  //     placeholderID  ++;
+  // }
               
 
         
-        var zoomDict = {20 : '1,128.49',
-                        19 : '2,256.99',
-                        18 : '4,513.98',
-                        17 : '9,027.97',
-                        16 : '18,055.95',
-                        15 : '36,111.91',
-                        14 : '72,223.82',
-                        13 : '144,447.64',
-                        12 : '288,895.28',
-                        11 : '577,790.57',
-                        10 : '1,155,581.15',
-                        9  : '2,311,162.30',
-                        8  : '4,622,324.61',
-                        7  : '9,244,649.22',
-                        6  : '18,489,298.45',
-                        5  : '36,978,596.91',
-                        4  : '73,957,193.82',
-                        3  : '147,914,387.60',
-                        2  : '295,828,775.30',
-                        1  : '591,657,550.50'}
 
-        
-        function updateMousePositionAndZoom(cLng,cLat,zoom,elevation){
-                $('.legendDiv').css('bottom',$('.bottombar').height());
-                $( "#current-mouse-position" ).html( 'Lng: ' +cLng + ', Lat: ' + cLat +', '+elevation+ 'Zoom: ' +zoom +', 1:'+zoomDict[zoom]);
-        }
-        
-        // var elevationAPIKey = 'AIzaSyBiTunmJOy6JFGYWy2ms4_ScCOqK4rFf3w';
-        // var elevationAPIKey = 'AIzaSyCXwPx9_pOQsvd-b_bG8ueGI82JnJO2mess';
-        var elevator = new google.maps.ElevationService;
-        var lastElevation = 0;
-        var elevationCheckTime = 0
-        function getElevation(center){
-        mouseLat = center.lat().toFixed(4).toString();
-        elevator.getElevationForLocations({
-        'locations': [center]
-        }, function(results, status) {
-            // console.log(status);
+    //Set up cursor info in bottom bar
+    function updateMousePositionAndZoom(cLng,cLat,zoom,elevation){
+            $('.legendDiv').css('bottom',$('.bottombar').height());
+            $( "#current-mouse-position" ).html( 'Lng: ' +cLng + ', Lat: ' + cLat +', '+elevation+ 'Zoom: ' +zoom +', 1:'+zoomDict[zoom]);
+    }
+     
+    //Set up elevation api
+    // var elevationAPIKey = 'AIzaSyBiTunmJOy6JFGYWy2ms4_ScCOqK4rFf3w';
+    // var elevationAPIKey = 'AIzaSyCXwPx9_pOQsvd-b_bG8ueGI82JnJO2mess';
+    var elevator = new google.maps.ElevationService;
+    var lastElevation = 0;
+    var elevationCheckTime = 0
+    function getElevation(center){
+    mouseLat = center.lat().toFixed(4).toString();
+    elevator.getElevationForLocations({
+    'locations': [center]
+    }, function(results, status) {
         if(status === 'OVER_QUERY_LIMIT'){
           lastElevation = '';
           updateMousePositionAndZoom(mouseLng,mouseLat,zoom,'');
         }
         else if (status === 'OK') {
-          // Retrieve the first result
-          if (results[0]) {
-            // Open the infowindow indicating the elevation at the clicked position.
-                var thisElevation = results[0].elevation.toFixed(1);
-                var thisElevationFt = (thisElevation*3.28084).toFixed(1);
-                lastElevation = 'Elevation: '+thisElevation.toString()+'(m),'+thisElevationFt.toString()+'(ft),';
-                updateMousePositionAndZoom(mouseLng,mouseLat,zoom,lastElevation)
-                
-          } else {
-            updateMousePositionAndZoom(mouseLng,mouseLat,zoom,'No results found');
-          }
-        } 
-        else {
-          updateMousePositionAndZoom(mouseLng,mouseLat,zoom,lastElevation);
+        // Retrieve the first result
+        if (results[0]) {
+          // Open the infowindow indicating the elevation at the clicked position.
+          var thisElevation = results[0].elevation.toFixed(1);
+          var thisElevationFt = (thisElevation*3.28084).toFixed(1);
+          lastElevation = 'Elevation: '+thisElevation.toString()+'(m),'+thisElevationFt.toString()+'(ft),';
+          updateMousePositionAndZoom(mouseLng,mouseLat,zoom,lastElevation)
+        } else {
+          updateMousePositionAndZoom(mouseLng,mouseLat,zoom,'No results found');
         }
-        });
+      } 
+      else {
+      updateMousePositionAndZoom(mouseLng,mouseLat,zoom,lastElevation);
+      }
+    });
+    }
+    //Listen for mouse movement and update bottom bar
+    google.maps.event.addDomListener(mapDiv,'mousemove',function(event){
+        var x =event.clientX;
+        var y = event.clientY;
+        var center =point2LatLng(x,y);
+        var zoom = map.getZoom();
+        // var center = event.latLng;
+        mouseLat = center.lat().toFixed(4).toString();
+        mouseLng = center.lng().toFixed(4).toString();
+        var now = new Date().getTime()
+        var dt = now - elevationCheckTime  ;
+        
+        if(dt > 2000){
+          getElevation(center);
+          elevationCheckTime = now;
         }
-        google.maps.event.addDomListener(mapDiv,'mousemove',function(event){
-            var x =event.clientX;
-            var y = event.clientY;
-            var center =point2LatLng(x,y);
-            var zoom = map.getZoom();
-            // var center = event.latLng;
-            mouseLat = center.lat().toFixed(4).toString();
-            mouseLng = center.lng().toFixed(4).toString();
-            var now = new Date().getTime()
-            var dt = now - elevationCheckTime  ;
-            
-            if(dt > 2000){
-              getElevation(center);
-              elevationCheckTime = now;
-            }
-            else{updateMousePositionAndZoom(mouseLng,mouseLat,zoom,lastElevation)}
-            
-        })
-        google.maps.event.addListener(map,'zoom_changed',function(){
-            var zoom = map.getZoom();
-            
-            console.log('zoom changed')
-            
-            updateMousePositionAndZoom(mouseLng,mouseLat,zoom,lastElevation)
-        })
+        else{updateMousePositionAndZoom(mouseLng,mouseLat,zoom,lastElevation)}
+        
+    })
+    //Listen for zoom change and update bottom bar
+    google.maps.event.addListener(map,'zoom_changed',function(){
+        var zoom = map.getZoom();
+        console.log('zoom changed')
+        updateMousePositionAndZoom(mouseLng,mouseLat,zoom,lastElevation)
+    })
 
+    //Keep track of map bounds for eeBoundsPoly object 
     google.maps.event.addListener(map,'bounds_changed',function(){
       zoom = map.getZoom();
       // console.log('bounds changed');
@@ -2868,81 +2387,66 @@ function initialize() {
       var keysY = Object.keys(bounds[keys[1]]);
       // console.log('b');console.log(bounds);
       eeBoundsPoly = ee.Geometry.Rectangle([bounds[keys[1]][keysX[0]],bounds[keys[0]][keysY[0]],bounds[keys[1]][keysX[1]],bounds[keys[0]][keysY[1]]]);
-
         if(typeof(Storage) == "undefined") return;
-        
         localStorage.setItem(cachedSettingskey,JSON.stringify({center:{lat:map.getCenter().lat(),lng:map.getCenter().lng()},zoom:map.getZoom()}));
-    });
-
-    
-    
-        
-    // if(randomID === null){randomID = parseInt(Math.random()*1000000)}
-    // localStorage.setItem("randomID",JSON.stringify(randomID));
+      });
 
     //Specify proxy server location
     //Proxy server used for EE and GCS auth
     //RCR appspot proxy costs $$
-	// ee.initialize("https://rcr-ee-proxy-server2.appspot.com/api","https://earthengine.googleapis.com/map",function(){
+	 // ee.initialize("https://rcr-ee-proxy-server2.appspot.com/api","https://earthengine.googleapis.com/map",function(){
+    //Initialize GEE
     ee.initialize(authProxyAPIURL,geeAPIURL,function(){
-    
-    // ee.initialize("http://localhost:8080/api","https://earthengine.googleapis.com/map",function(){
-    if(cachedStudyAreaName === null){
-      $('#study-area-label').text(defaultStudyArea);
+      //Set up the correct GEE run function
+      if(cachedStudyAreaName === null){
+        $('#study-area-label').text(defaultStudyArea);
+      }
+      if(mode === 'Ancillary'){
+        run = runSimple;
+      } else if( mode === 'LT'){
+        run  = runLT;
+      } else if(mode === 'MTBS'){
+        run = runMTBS;
+      }else if(mode === 'TEST'){
+        run = runTest;
+      }else if(mode === 'FHP'){
+        run = runFHP;
+      }else if(mode === 'geeViz'){
+        run = runGeeViz;
+      }else if(mode === 'lcms-base-learner'){
+        run = runBaseLearner
+      }else if(studyAreaName === 'CONUS'){
+        longStudyAreaName = cachedStudyAreaName;
+        run = runCONUS;
+      }else if(cachedStudyAreaName != null){
+        longStudyAreaName = cachedStudyAreaName;
+        resetStudyArea(cachedStudyAreaName)
+      } 
+      else{run = runUSFS}
+
+     
+    setGEERunID();
+    run();
+    // setupFSB();
+    //Bring in plots of they're turned on
+    if(plotsOn){
+      addPlotCollapse();
+      loadAllPlots();
     }
-    if(mode === 'Ancillary'){
-      run = runSimple;
-    } else if( mode === 'LT'){
-      run  = runLT;
-    } else if(mode === 'MTBS'){
-      run = runMTBS;
-    }else if(mode === 'TEST'){
-      run = runTest;
-    }else if(mode === 'FHP'){
-      run = runFHP;
-    }else if(mode === 'geeViz'){
-      run = runGeeViz;
-    }else if(mode === 'lcms-base-learner'){
-      run = runBaseLearner
-    }else if(studyAreaName === 'CONUS'){
-      longStudyAreaName = cachedStudyAreaName;
-      run = runCONUS;
     
-    }else if(cachedStudyAreaName != null){
-      longStudyAreaName = cachedStudyAreaName;
-      resetStudyArea(cachedStudyAreaName)
-    } 
-    else{run = runUSFS}
-
-   
-  setGEERunID();
-  run();
-  // setupFSB();
-
-  if(plotsOn){
-    addPlotCollapse();
-    loadAllPlots();
-  }
-  
-  $('#summary-spinner').hide();
-  if(localStorage.showIntroModal === 'true'){
-    $('#introModal').modal().show();
-  }
-	});
+    $('#summary-spinner').hide();
+    if(localStorage.showIntroModal === 'true'){
+      $('#introModal').modal().show();
+    }
+  	});
 
 }
 ///////////////////////////////////////////////////////////////
 //Wait to initialize
-// $(document).ready(function(){
-
- // document.addEventListener("DOMContentLoaded", function(event) { 
-  // initialize();
-  
-  // });
 //Taken from: https://stackoverflow.com/questions/32808613/how-to-wait-till-the-google-maps-api-has-loaded-before-loading-a-google-maps-ove
 var mapWaitCount = 0;
 var mapWaitMax = 20;
-
+//Handle failed attempts to load gmaps api
 function map_load() { // if you need any param
     mapWaitCount++;
     // if api is loaded

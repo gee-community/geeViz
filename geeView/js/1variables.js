@@ -384,14 +384,50 @@ var center;var globalChartValues;
 
 
 
+//Chart color properties
+var chartColorI = 0;
+var chartColorsDict = {
+  'standard':['#050','#0A0','#e6194B','#14d4f4'],
+  'advanced':['#050','#0A0','#9A6324','#6f6f6f','#e6194B','#14d4f4'],
+  'advancedBeta':['#050','#0A0','#9A6324','#6f6f6f','#e6194B','#14d4f4','#808','#f58231'],
+  'coreLossGain':['#050','#0A0','#e6194B','#14d4f4'],
+  'allLossGain':['#050','#0A0','#e6194B','#808','#f58231','#14d4f4'],
+  'test':['#9A6324','#6f6f6f','#e6194B','#14d4f4','#880088','#f58231'],
+  'testArea':['#e6194B','#14d4f4','#880088','#f58231'],
+  'ancillary':['#cc0066','#660033','#9933ff','#330080','#ff3300','#47d147','#00cc99','#ff9966','#b37700']
+  }
+
+var chartColors = chartColorsDict.standard;
 
 
+//Dictionary of zoom level map scales
+var zoomDict = {20 : '1,128.49',
+                19 : '2,256.99',
+                18 : '4,513.98',
+                17 : '9,027.97',
+                16 : '18,055.95',
+                15 : '36,111.91',
+                14 : '72,223.82',
+                13 : '144,447.64',
+                12 : '288,895.28',
+                11 : '577,790.57',
+                10 : '1,155,581.15',
+                9  : '2,311,162.30',
+                8  : '4,622,324.61',
+                7  : '9,244,649.22',
+                6  : '18,489,298.45',
+                5  : '36,978,596.91',
+                4  : '73,957,193.82',
+                3  : '147,914,387.60',
+                2  : '295,828,775.30',
+                1  : '591,657,550.50'}
 
 
-
-
-var authProxyAPIURL = "https://rcr-ee-proxy.herokuapp.com/api";
-var geeAPIURL = "https://earthengine.googleapis.com/map";
+var authProxyAPIURL = "https://rcr-ee-proxy-2.herokuapp.com";
+// var geeAPIURL = "https://earthengine.googleapis.com/map";
+// var geeAPIURL = "https://earthengine.googleapis.com/map";
+var geeAPIURL = "https://earthengine.googleapis.com";
+// https://earthengine.googleapis.com/v1alpha/projects/earthengine-legacy/maps/
 // var widgetsOn = true;
 // var layersOn = true;
 // var legendOn = true;
