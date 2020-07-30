@@ -500,7 +500,7 @@ def getS2(studyArea,
     print('N s2 images after joining with cloud prob:', s2s.size().getInfo())    
 
   if resampleMethod == 'bilinear' or resampleMethod == 'bicubic':
-    print('Setting resample method to ', resampleMethod.getInfo())
+    print('Setting resample method to ', resampleMethod)
     s2s = s2s.map(lambda img: img.resample(resampleMethod))
   elif resampleMethod == 'aggregate':
     print('Setting to aggregate instead of resample ')
@@ -825,7 +825,7 @@ def landsatCloudScore(img):
 #Wrapper for applying cloudScore function
 def applyCloudScoreAlgorithm(\
     collection,
-    cloudScoreFunction,
+    cloudScoreFunction, 
     cloudScoreThresh = 20,
     cloudScorePctl = 10,
     contractPixels = 1.5,
@@ -836,7 +836,7 @@ def applyCloudScoreAlgorithm(\
   #Add cloudScore  
   def cloudScoreWrapper(img):
     img = ee.Image(img)
-    cs = cloudScoreFunction(img).rename(["cloudScore"])
+    cs = cloudScoreFunction(img).rename(["cloudScore"]) 
     return img.addBands(cs)
   collection = collection.map(cloudScoreWrapper)
  
@@ -2024,7 +2024,7 @@ def exportCompositeCollection(
     if additionalPropertyDict != None:
       if 'args' in additionalPropertyDict.keys():
         del additionalPropertyDict['args']
-      composite = composite.set(additionalPropertyDict)
+      composite = composite.set(formatArgs(additionalPropertyDict))
 
     #Export the composite 
     #Set up export name and path
