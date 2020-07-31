@@ -508,6 +508,7 @@ def getS2(studyArea,
 
   #Convert to daily mosaics to avoid redundant observations in MGRS overlap areas and edge artifacts for shadow masking
   if convertToDailyMosaics:
+    print('Converting S2 data to daily mosaics')
     s2s = dailyMosaics(s2s)
 
   return s2s.set(args)
