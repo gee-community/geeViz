@@ -416,7 +416,7 @@ def prepTimeSeriesForLandTrendr(ts,indexName, run_params):
   tsT = ts.map(lambda img: multBands(img, 1, distDir))
   
   # Find areas with insufficient data to run LANDTRENDR
-  countMask = tsT.count().unmask().gte(maxSegments.add(1))
+  countMask = tsT.count().unmask().gte(run_params['minObservationsNeeded']) #tsT.count().unmask().gte(maxSegments.add(1))
 
   # Mask areas identified by countMask
   tsT = tsT.map(lambda img: nullFinder(img, countMask))

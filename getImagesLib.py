@@ -500,7 +500,7 @@ def getS2(studyArea,
     print('N s2 images after joining with cloud prob:', s2s.size().getInfo())    
 
   if resampleMethod == 'bilinear' or resampleMethod == 'bicubic':
-    print('Setting resample method to ', resampleMethod.getInfo())
+    print('Setting resample method to ', resampleMethod)
     s2s = s2s.map(lambda img: img.resample(resampleMethod))
   elif resampleMethod == 'aggregate':
     print('Setting to aggregate instead of resample ')
@@ -826,7 +826,7 @@ def landsatCloudScore(img):
 #Wrapper for applying cloudScore function
 def applyCloudScoreAlgorithm(\
     collection,
-    cloudScoreFunction,
+    cloudScoreFunction, 
     cloudScoreThresh = 20,
     cloudScorePctl = 10,
     contractPixels = 1.5,
@@ -837,7 +837,7 @@ def applyCloudScoreAlgorithm(\
   #Add cloudScore  
   def cloudScoreWrapper(img):
     img = ee.Image(img)
-    cs = cloudScoreFunction(img).rename(["cloudScore"])
+    cs = cloudScoreFunction(img).rename(["cloudScore"]) 
     return img.addBands(cs)
   collection = collection.map(cloudScoreWrapper)
  
@@ -1325,6 +1325,8 @@ def compositeTimeSeries(
       compositingReducer = None):
   
   args = locals()
+  if 'args' in args.keys():
+    del args['args']
 
   dummyImage = ee.Image(ls.first())
   
@@ -1962,33 +1964,23 @@ def exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,co
 #########################################################################
 #Function to export composite collection
 def exportCompositeCollection(
+  collection,
   exportPathRoot, 
   outputName,
+  origin,
   studyArea, 
   crs,
   transform,
   scale,
-  collection,
   startYear,
   endYear,
   startJulian,
   endJulian,
   compositingMethod,
   timebuffer,
-  exportBands,
   toaOrSR,
-  weights,
-  applyCloudScore, 
-  applyFmaskCloudMask,
-  applyTDOM,
-  applyFmaskCloudShadowMask,
-  applyFmaskSnowMask,
-  includeSLCOffL7,
-  correctIllumination,
-  nonDivideBands = ['temp'],
-  resampleMethod = 'near',
-  origin = 'Landsat',
-  applyCloudProbability = False,
+  nonDivideBands,
+  exportBands,
   additionalPropertyDict = None):
 
   args = locals()
@@ -2026,24 +2018,21 @@ def exportCompositeCollection(
     systemTimeStartYear = year+yearWithMajority
     yearOriginal = year
     yearUsed = systemTimeStartYear
-    #args['system:time_start'] = ee.Date.fromYMD(args.systemTimeStartYear,6,1).millis()
-
-    #Add metadata, cast to integer, and export composite
-    # for key in args.keys():
-    #   if type(args[key]) == bool or type(args[key]) == list:
-    #     args[key] = str(args[key])
     args['system:time_start'] = ee.Date.fromYMD(systemTimeStartYear, 6, 1).millis()
 
     composite = composite.set(formatArgs(args))
   
     if additionalPropertyDict != None:
-      composite = composite.set(additionalPropertyDict)
+      if 'args' in additionalPropertyDict.keys():
+        del additionalPropertyDict['args']
+      composite = composite.set(formatArgs(additionalPropertyDict))
 
     #Export the composite 
     #Set up export name and path
     exportName = outputName  + '_' + toaOrSR + '_' + compositingMethod + '_'  + str(int(startYearT)) + '_' + str(int(endYearT))+'_' + str(int(startJulian)) + '_' + str(int(endJulian))
-    exportPath = os.path.join(exportPathRoot, exportName)
-  
+    exportPath = exportPathRoot+'/'+exportName
+
+    print(exportName)
     exportToAssetWrapper3(\
       imageForExport = composite,
       assetName = exportName,
@@ -2100,6 +2089,8 @@ def getLandsatWrapper(
   toaOrSR = toaOrSR.upper()
   origin = 'Landsat'
   args = locals()
+  if 'args' in args.keys():
+    del args['args']
 
   #Prepare dates
   wrapOffset = 0
@@ -2110,31 +2101,31 @@ def getLandsatWrapper(
 
   # Get Landsat image collection and apply cloud masking
   ls = getProcessedLandsatScenes(
-        studyArea = studyArea,
-        startYear = startYear,
-        endYear = endYear,
-        startJulian = startJulian,
-        endJulian = endJulian,
-        toaOrSR = toaOrSR,
-        includeSLCOffL7 = includeSLCOffL7,
-        defringeL5 = defringeL5,
-        applyCloudScore = applyCloudScore,
-        applyFmaskCloudMask = applyFmaskCloudMask,
-        applyTDOM = applyTDOM,
-        applyFmaskCloudShadowMask = applyFmaskCloudShadowMask,
-        applyFmaskSnowMask = applyFmaskSnowMask,
-        cloudScoreThresh = cloudScoreThresh,
-        performCloudScoreOffset = performCloudScoreOffset,
-        cloudScorePctl = cloudScorePctl,
-        zScoreThresh = zScoreThresh,
-        shadowSumThresh = shadowSumThresh,
-        contractPixels = contractPixels,
-        dilatePixels = dilatePixels,
-        resampleMethod = resampleMethod,
-        harmonizeOLI = harmonizeOLI,
-        preComputedCloudScoreOffset = preComputedCloudScoreOffset,
-        preComputedTDOMIRMean = preComputedTDOMIRMean,
-        preComputedTDOMIRStdDev = preComputedTDOMIRStdDev)
+    studyArea = studyArea,
+    startYear = startYear,
+    endYear = endYear,
+    startJulian = startJulian,
+    endJulian = endJulian,
+    toaOrSR = toaOrSR,
+    includeSLCOffL7 = includeSLCOffL7,
+    defringeL5 = defringeL5,
+    applyCloudScore = applyCloudScore,
+    applyFmaskCloudMask = applyFmaskCloudMask,
+    applyTDOM = applyTDOM,
+    applyFmaskCloudShadowMask = applyFmaskCloudShadowMask,
+    applyFmaskSnowMask = applyFmaskSnowMask,
+    cloudScoreThresh = cloudScoreThresh,
+    performCloudScoreOffset = performCloudScoreOffset,
+    cloudScorePctl = cloudScorePctl,
+    zScoreThresh = zScoreThresh,
+    shadowSumThresh = shadowSumThresh,
+    contractPixels = contractPixels,
+    dilatePixels = dilatePixels,
+    resampleMethod = resampleMethod,
+    harmonizeOLI = harmonizeOLI,
+    preComputedCloudScoreOffset = preComputedCloudScoreOffset,
+    preComputedTDOMIRMean = preComputedTDOMIRMean,
+    preComputedTDOMIRStdDev = preComputedTDOMIRStdDev)
 
   #Add zenith and azimuth
   if correctIllumination:
@@ -2143,21 +2134,20 @@ def getLandsatWrapper(
   
   #Create composite time series
   ts = compositeTimeSeries(\
-            ls = ls,
-            startYear = startYear,
-            endYear = endYear,
-            startJulian = startJulian,
-            endJulian = endJulian,
-            timebuffer = timebuffer,
-            weights = weights,
-            compositingMethod = compositingMethod,
-            compositingReducer = compositingReducer)
+    ls = ls,
+    startYear = startYear,
+    endYear = endYear,
+    startJulian = startJulian,
+    endJulian = endJulian,
+    timebuffer = timebuffer,
+    weights = weights,
+    compositingMethod = compositingMethod,
+    compositingReducer = compositingReducer)
   
   # Correct illumination
   if correctIllumination:
     print('Correcting illumination');
     ts = ts.map(illuminationCondition).map(lambda img: illuminationCorrection(img, correctScale, studyArea))
-  args['collection'] = ts 
 
   #Export composites
   if exportComposites:
@@ -2169,34 +2159,50 @@ def getLandsatWrapper(
       nonDivideBands = ['temp', 'compositeObsCount']
     
     exportCompositeCollection(\
-        exportPathRoot = exportPathRoot, 
-        outputName = outputName,
-        studyArea = studyArea, 
-        crs = crs,
-        transform = transform,
-        scale = scale,
-        collection = ts,
-        startYear = startYear,
-        endYear = endYear,
-        startJulian = startJulian,
-        endJulian = endJulian,
-        compositingMethod = compositingMethod,
-        timebuffer = timebuffer,
-        exportBands = exportBands,
-        toaOrSR = toaOrSR,
-        weights = weights,
-        applyCloudScore = applyCloudScore, 
-        applyFmaskCloudMask = applyFmaskCloudMask,
-        applyTDOM = applyTDOM,
-        applyFmaskCloudShadowMask = applyFmaskCloudShadowMask,
-        applyFmaskSnowMask = applyFmaskSnowMask,
-        includeSLCOffL7 = includeSLCOffL7,
-        correctIllumination = correctIllumination,
-        nonDivideBands = nonDivideBands,
-        resampleMethod = resampleMethod,
-        origin = origin,
-        applyCloudProbability = 'NA',
-        additionalPropertyDict = None)
+      collection = ts,
+      exportPathRoot = exportPathRoot, 
+      outputName = outputName,
+      origin = origin,
+      studyArea = studyArea, 
+      crs = crs,
+      transform = transform,
+      scale = scale,
+      startYear = startYear,
+      endYear = endYear,
+      startJulian = startJulian,
+      endJulian = endJulian,
+      compositingMethod = compositingMethod,
+      timebuffer = timebuffer,
+      toaOrSR = toaOrSR,
+      nonDivideBands = nonDivideBands,
+      exportBands = exportBands,
+      # weights = weights,
+      # defringeL5 = False,
+      # includeSLCOffL7 = includeSLCOffL7,
+      # convertToDailyMosaics = 'NA',
+      # applyQABand = False,
+      # applyCloudScore = applyCloudScore, 
+      # applyFmaskCloudMask = applyFmaskCloudMask,
+      # applyCloudProbability = 'NA',
+      # applyTDOM = applyTDOM,
+      # applyFmaskCloudShadowMask = applyFmaskCloudShadowMask,
+      # applyFmaskSnowMask = applyFmaskSnowMask,
+      # applyShadowShift = 'NA',
+      # cloudHeights = cloudHeights,
+      # cloudScoreThresh = cloudScoreThresh,
+      # performCloudScoreOffset = performCloudScoreOffset,
+      # cloudScorePctl = cloudScorePctl,
+      # zScoreThresh = zScoreThresh,
+      # shadowSumThresh = shadowSumThresh,
+      # contractPixels = contractPixels,
+      # dilatePixels = dilatePixels,      
+      # correctIllumination = correctIllumination,
+      # correctScale = correctScale,
+      # nonDivideBands = nonDivideBands,
+      # exportBands = exportBands,
+      # resampleMethod = resampleMethod,
+      # runChastainHarmonization = 'NA',
+      additionalPropertyDict = args)
 
   args['processedScenes'] = ls
   args['processedComposites'] = ts
@@ -2227,6 +2233,7 @@ def getProcessedLandsatScenes(
   shadowSumThresh = 0.35,
   contractPixels = 1.5,
   dilatePixels = 3.5,
+  shadowSumBands = ['nir','swir1'],
   resampleMethod = 'near',
   harmonizeOLI = False,
   preComputedCloudScoreOffset = None,
@@ -2247,11 +2254,14 @@ def getProcessedLandsatScenes(
     wrapOffset = 365  
   startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day')
   endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day')
+
   args = locals()
+  if 'args' in args.keys():
+    del args['args']
 
   print('Get Processed Landsat: ')
   print('Start date:', startDate.format('MMM dd yyyy').getInfo(),', End date:', endDate.format('MMM dd yyyy').getInfo())
-  for arg in args:
+  for arg in args.keys():
     print(arg, ': ', args[arg])
 
   #Get Landsat image collection
@@ -2292,7 +2302,7 @@ def getProcessedLandsatScenes(
       shadowSumThresh = shadowSumThresh,
       contractPixels = contractPixels,
       dilatePixels = dilatePixels,
-      #shadowSumBands = ['nir','swir1'],
+      shadowSumBands = ['nir','swir1'],
       preComputedTDOMIRMean = preComputedTDOMIRMean,
       preComputedTDOMIRStdDev = preComputedTDOMIRStdDev)
 
@@ -2335,6 +2345,7 @@ def getProcessedSentinel2Scenes(\
   shadowSumThresh = 0.35,
   contractPixels = 1.5,
   dilatePixels = 3.5,
+  shadowSumBands = ['nir','swir1'],
   resampleMethod = 'aggregate',
   toaOrSR = 'TOA',
   convertToDailyMosaics = True,
@@ -2353,7 +2364,10 @@ def getProcessedSentinel2Scenes(\
     wrapOffset = 365  
   startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day')
   endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day')
+
   args = locals()
+  if 'args' in args.keys():
+    del args['args']
   
   print('Get Processed Sentinel2: ')
   print('Start date:', startDate.format('MMM dd yyyy').getInfo(),', End date:', endDate.format('MMM dd yyyy').getInfo())
@@ -2410,7 +2424,7 @@ def getProcessedSentinel2Scenes(\
       shadowSumThresh = shadowSumThresh,
       contractPixels = contractPixels,
       dilatePixels = dilatePixels,
-      #shadowSumBands = ['nir','swir1'],
+      shadowSumBands = ['nir','swir1'],
       preComputedTDOMIRMean = preComputedTDOMIRMean,
       preComputedTDOMIRStdDev = preComputedTDOMIRStdDev)
   
@@ -2449,6 +2463,7 @@ def getSentinel2Wrapper(\
   shadowSumThresh = 0.35,
   contractPixels = 1.5,
   dilatePixels = 3.5,
+  shadowSumBands = ['nir','swir1'],
   correctIllumination = False,
   correctScale = 250,
   exportComposites = False,
@@ -2467,7 +2482,10 @@ def getSentinel2Wrapper(\
   
   origin = 'Sentinel2'
   toaOrSR = toaOrSR.upper()
+
   args = locals()
+  if 'args' in args.keys():
+    del args['args']
 
   s2s = getProcessedSentinel2Scenes(\
     studyArea = studyArea,
@@ -2487,6 +2505,7 @@ def getSentinel2Wrapper(\
     shadowSumThresh = shadowSumThresh,
     contractPixels = contractPixels,
     dilatePixels = dilatePixels,
+    shadowSumBands = shadowSumBands,
     resampleMethod = resampleMethod,
     toaOrSR = toaOrSR,
     convertToDailyMosaics = convertToDailyMosaics,
@@ -2504,14 +2523,14 @@ def getSentinel2Wrapper(\
   
   #Create composite time series
   ts = compositeTimeSeries(\
-            ls = s2s,
-            startYear = startYear,
-            endYear = endYear,
-            startJulian = startJulian,
-            endJulian = endJulian,
-            timebuffer = timebuffer,
-            weights = weights,
-            compositingMethod = compositingMethod)
+    ls = s2s,
+    startYear = startYear,
+    endYear = endYear,
+    startJulian = startJulian,
+    endJulian = endJulian,
+    timebuffer = timebuffer,
+    weights = weights,
+    compositingMethod = compositingMethod)
   
   #Correct illumination
   # if (correctIllumination){
@@ -2542,34 +2561,24 @@ def getSentinel2Wrapper(\
     nonDivideBands = nonDivideBandDict[compositingMethod]
     
     exportCompositeCollection(\
+      collection = ts,
       exportPathRoot = exportPathRoot, 
       outputName = outputName,
+      origin = origin,
       studyArea = studyArea, 
       crs = crs,
       transform = transform,
       scale = scale,
-      collection = ts,
       startYear = startYear,
       endYear = endYear,
       startJulian = startJulian,
       endJulian = endJulian,
       compositingMethod = compositingMethod,
       timebuffer = timebuffer,
-      exportBands = exportBands,
       toaOrSR = toaOrSR,
-      weights = weights,
-      applyCloudScore = applyCloudScore, 
-      applyFmaskCloudMask = 'NA',
-      applyTDOM = applyTDOM,
-      applyFmaskCloudShadowMask = 'NA',
-      applyFmaskSnowMask = 'NA',
-      includeSLCOffL7 = 'NA',
-      correctIllumination = correctIllumination,
       nonDivideBands = nonDivideBands,
-      resampleMethod = resampleMethod,
-      origin = origin,
-      applyCloudProbability = applyCloudProbability,
-      additionalPropertyDict = None)
+      exportBands = exportBands,
+      additionalPropertyDict = args)
 
   args['processedScenes'] = s2s
   args['processedComposites'] = ts
@@ -2605,6 +2614,7 @@ def getProcessedLandsatAndSentinel2Scenes(
       shadowSumThresh = 0.35,
       contractPixels = 1.5,
       dilatePixels = 0.35,
+      shadowSumBands = ['nir','swir1'],
       landsatResampleMethod = 'near',
       sentinel2ResampleMethod = 'aggregate',
       convertToDailyMosaics = True,
@@ -2628,7 +2638,10 @@ def getProcessedLandsatAndSentinel2Scenes(
     wrapOffset = 365  
   startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day')
   endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day')
+
   args = locals()
+  if 'args' in args.keys():
+    del args['args']
 
   print('Get Processed Landsat and Sentinel2 Scenes: ')
   print('Start date:', startDate.format('MMM dd yyyy').getInfo(),', End date:', endDate.format('MMM dd yyyy').getInfo())
@@ -2657,6 +2670,7 @@ def getProcessedLandsatAndSentinel2Scenes(
     shadowSumThresh = shadowSumThresh,
     contractPixels = contractPixels,
     dilatePixels = dilatePixels,
+    shadowSumBands = shadowSumBands,
     resampleMethod = landsatResampleMethod,
     #harmonizeOLI = harmonizeOLI,
     preComputedCloudScoreOffset = preComputedLandsatCloudScoreOffset,
@@ -2682,6 +2696,7 @@ def getProcessedLandsatAndSentinel2Scenes(
     shadowSumThresh = shadowSumThresh,
     contractPixels = contractPixels,
     dilatePixels = dilatePixels,
+    shadowSumBands = shadowSumBands,
     resampleMethod = sentinel2ResampleMethod,
     toaOrSR = toaOrSR,
     convertToDailyMosaics = convertToDailyMosaics,
@@ -2766,6 +2781,7 @@ def getLandsatAndSentinel2HybridWrapper(\
   shadowSumThresh = 0.35,
   contractPixels = 1.5,
   dilatePixels = 0.35,
+  shadowSumBands = ['nir','swir1'],
   landsatResampleMethod = 'near',
   sentinel2ResampleMethod = 'aggregate',
   convertToDailyMosaics = True,
@@ -2787,7 +2803,10 @@ def getLandsatAndSentinel2HybridWrapper(\
   
   origin = 'Landsat-Sentinel2-Hybrid'
   toaOrSR = toaOrSR.upper()
+
   args = locals()
+  if 'args' in args.keys():
+    del args['args']
 
   merged = getProcessedLandsatAndSentinel2Scenes(\
     studyArea = studyArea,
@@ -2795,7 +2814,7 @@ def getLandsatAndSentinel2HybridWrapper(\
     endYear = endYear,
     startJulian = startJulian,
     endJulian = endJulian,
-    toaOrSR = 'TOA',
+    toaOrSR = toaOrSR,
     includeSLCOffL7 = includeSLCOffL7,
     defringeL5 = defringeL5,
     applyQABand = applyQABand,
@@ -2816,6 +2835,7 @@ def getLandsatAndSentinel2HybridWrapper(\
     shadowSumThresh = shadowSumThresh,
     contractPixels = contractPixels,
     dilatePixels = dilatePixels,
+    shadowSumBands = shadowSumBands,
     landsatResampleMethod = landsatResampleMethod,
     sentinel2ResampleMethod = sentinel2ResampleMethod,
     convertToDailyMosaics = convertToDailyMosaics,
@@ -2831,14 +2851,14 @@ def getLandsatAndSentinel2HybridWrapper(\
 
   #Create hybrid composites
   composites = compositeTimeSeries(\
-            ls = merged,
-            startYear = startYear,
-            endYear = endYear,
-            startJulian = startJulian,
-            endJulian = endJulian,
-            timebuffer = timebuffer,
-            weights = weights,
-            compositingMethod = compositingMethod)
+    ls = merged,
+    startYear = startYear,
+    endYear = endYear,
+    startJulian = startJulian,
+    endJulian = endJulian,
+    timebuffer = timebuffer,
+    weights = weights,
+    compositingMethod = compositingMethod)
 
   # Export composite collection
   if exportComposites:
@@ -2855,34 +2875,24 @@ def getLandsatAndSentinel2HybridWrapper(\
     nonDivideBands = nonDivideBandDict[compositingMethod]
 
     exportCompositeCollection(\
+      collection = composites,
       exportPathRoot = exportPathRoot, 
       outputName = outputName,
+      origin = origin,
       studyArea = studyArea, 
       crs = crs,
       transform = transform,
       scale = scale,
-      collection = composites,
       startYear = startYear,
       endYear = endYear,
       startJulian = startJulian,
       endJulian = endJulian,
       compositingMethod = compositingMethod,
       timebuffer = timebuffer,
-      exportBands = exportBands,
       toaOrSR = toaOrSR,
-      weights = weights,
-      applyCloudScore = 'Landsat: '+str(applyCloudScoreLandsat)+', Sentinel2: '+str(applyCloudScoreSentinel2), 
-      applyFmaskCloudMask = applyFmaskCloudMask,
-      applyTDOM = 'Landsat: '+str(applyTDOMLandsat)+', Sentinel2: '+str(applyTDOMSentinel2),
-      applyFmaskCloudShadowMask = applyFmaskCloudShadowMask,
-      applyFmaskSnowMask = applyFmaskSnowMask,
-      includeSLCOffL7 = includeSLCOffL7,
-      correctIllumination = correctIllumination,
       nonDivideBands = nonDivideBands,
-      resampleMethod = 'Landsat: '+str(landsatResampleMethod)+', Sentinel2: '+str(sentinel2ResampleMethod),
-      origin = origin,
-      applyCloudProbability = applyCloudProbability,
-      additionalPropertyDict = None)
+      exportBands = exportBands,
+      additionalPropertyDict = args)
 
   args['processedScenes'] = merged
   args['processedComposites'] = composites
