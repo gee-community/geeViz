@@ -1231,55 +1231,24 @@ def medoidMosaicMSD(inCollection, medoidIncludeBands = None):
 #########################################################################
 #########################################################################
 #Function to export a provided image to an EE asset
-def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicy = 'mean',roi = None,scale = None,crs = None,transform = None):
-  #Make sure image is clipped to roi in case it's a multi-part polygon
-  imageForExport = imageForExport.clip(roi)
-  assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
-  print(assetName,assetPath)
-  if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
-    transform = str(transform)
-
-  # LSC 2/4/20 was getting error: "ee.ee_exception.EEException: JSON provided for reductionPolicy must be an object." Getting rid of json.dumps() seemed to fix the problem
-  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath ,  {'.default': pyramidingPolicy}, None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
-  t.start()
-
-def exportToAssetWrapper2(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
-  #Make sure image is clipped to roi in case it's a multi-part polygon
-  imageForExport = imageForExport.clip(roi)
-  assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
-
-  if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
-    transform = str(transform)
-    
-  if pyramidingPolicyObject == None:
-    pyramidingPolicyObject = {'.default':'mean'}
-
-  #t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath,  json.dumps(pyramidingPolicyObject), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
-  # LSC 1/6/20 was getting error: "ee.ee_exception.EEException: JSON provided for reductionPolicy must be an object." Getting rid of json.dumps() seemed to fix the problem
-  t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath, pyramidingPolicyObject, None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
-  t.start()
-
 # For earthengine-api version 0.1.226
 # There was an issue with the region with this new version.
 #From earthengine-api batch.Export.toAsset documentation: "region: The lon,lat coordinates for a LinearRing or Polygon specifying the region to export. 
 #     Can be specified as a nested lists of numbers or a serialized string. Defaults to the image's region."
-def exportToAssetWrapper3(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
+def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
   #Make sure image is clipped to roi in case it's a multi-part polygon
   imageForExport = imageForExport.clip(roi)
   assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
 
   if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
     transform = str(transform)
-  #pdb.set_trace()
+  
   if pyramidingPolicyObject == None:
     pyramidingPolicyObject = {'.default':'mean'}
   elif type(pyramidingPolicyObject) == str:
     pyramidingPolicyObject = {'.default': pyramidingPolicyObject}
 
-  # This was Ian's solution but Leah couldn't get it to work:
-  outRegion = roi.bounds(100,crs).transform('EPSG:4326', 100).getInfo()['coordinates'][0]
   
-  #t = ee.batch.Export.image.toAsset(imageForExport, assetName, assetPath,  json.dumps(pyramidingPolicyObject), None, roi.bounds().getInfo()['coordinates'][0], scale, crs, transform, 1e13)
   # LSC 1/6/20 was getting error: "ee.ee_exception.EEException: JSON provided for reductionPolicy must be an object." Getting rid of json.dumps() seemed to fix the problem
   t = ee.batch.Export.image.toAsset(imageForExport, 
                     description = assetName, 
@@ -1292,7 +1261,29 @@ def exportToAssetWrapper3(imageForExport,assetName,assetPath,pyramidingPolicyObj
                     crsTransform = transform, 
                     maxPixels = 1e13)
   t.start()
+exportToAssetWrapper3 = exportToAssetWrapper
+exportToAssetWrapper2 = exportToAssetWrapper
+#########################################################################
+def exportToDriveWrapper(imageForExport,outputName,driveFolderName,roi= None,scale= None,crs = None,transform = None,outputNoData = -32768):
+  #Make sure image is clipped to roi in case it's a multi-part polygon
+  imageForExport = imageForExport.clip(roi).unmask(outputNoData,False)
 
+  outputName = outputName.replace("/\s+/g",'-')#Get rid of any spaces
+  try:
+    roi = roi.geometry()
+  except Exception as e:
+    x = e
+
+  if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
+    transform = str(transform)
+ 
+ 
+  #Ensure bounds are in web mercator
+  outRegion = roi.bounds().transform('EPSG:4326', 100).getInfo()['coordinates'][0]
+  
+  # Map.addLayer(imageForExport,{},outputName,False)
+  t = ee.batch.Export.image.toDrive(imageForExport, outputName, driveFolderName, outputName, None, outRegion, scale, crs, transform, 1e13)
+  t.start()
 #########################################################################
 #########################################################################
 #Function for wrapping dates when the startJulian < endJulian
