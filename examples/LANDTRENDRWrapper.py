@@ -10,30 +10,30 @@ from geeViz.changeDetectionLib import *
 Map.clearMap()
 ####################################################################################################
 #Define user parameters:
+# Define user parameters:
 
-#1. Specify study area: Study area
-#Can specify a country, provide a fusion table  or asset table (must add 
-#.geometry() after it), or draw a polygon and make studyArea = drawnPolygon
-studyArea = ee.Feature(ee.Geometry.Polygon(\
-        [[[-123.53450840669882, 41.751213516390415],\
-          [-123.53450840669882, 40.47660005854701],\
-          [-121.66683262544882, 40.47660005854701],\
-          [-121.66683262544882, 41.751213516390415]]]))
+# Specify study area: Study area
+# Can be a featureCollection, feature, or geometry
+studyArea = testAreas['CA']
 
-
-#2. Update the startJulian and endJulian variables to indicate your seasonal 
-#constraints. This supports wrapping for tropics and southern hemisphere.
-#startJulian: Starting Julian date 
-#endJulian: Ending Julian date
+# Update the startJulian and endJulian variables to indicate your seasonal 
+# constraints. This supports wrapping for tropics and southern hemisphere.
+# If using wrapping and the majority of the days occur in the second year, the system:time_start will default 
+# to June 1 of that year.Otherwise, all system:time_starts will default to June 1 of the given year
+# startJulian: Starting Julian date 
+# endJulian: Ending Julian date
 startJulian = 190
 endJulian = 250
 
-#3. Specify start and end years for all analyses
-#More than a 3 year span should be provided for time series methods to work 
-#well. If using Fmask as the cloud/cloud shadow masking method, this does not 
-#matter
-startYear = 2000
+# Specify start and end years for all analyses
+# More than a 3 year span should be provided for time series methods to work 
+# well. If using Fmask as the cloud/cloud shadow masking method, or providing
+# pre-computed stats for cloudScore and TDOM, this does not 
+# matter
+startYear = 1990
 endYear = 2019
+
+
 
 #Choose band or index
 #NBR, NDMI, and NDVI tend to work best
@@ -44,7 +44,7 @@ indexName = 'NBR'
 #Do not make less than 1
 #If you only want the first loss and/or gain, choose 1
 #Generally any past 2 are noise
-howManyToPull = 2
+howManyToPull = 1
 
 #Parameters to identify suitable LANDTRENDR segments
 
@@ -111,15 +111,12 @@ scale = None
 ####################################################################################################
 hansen = ee.Image('UMD/hansen/global_forest_change_2018_v1_6').select(['lossyear']).add(2000).int16()
 hansen = hansen.updateMask(hansen.neq(2000).And(hansen.gte(startYear)).And(hansen.lte(endYear)))
-Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':lossYearPalette},'Hansen Change Year',False);
+Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':lossYearPalette},'Hansen Loss Year',False);
 
 ####################################################################################################
 #Call on master wrapper function to get Landat scenes and composites
-allImages = getLandsatWrapper(studyArea.geometry(),startYear,endYear,startJulian,endJulian)
-
-#Separate into scenes and composites for subsequent analysis
-images = allImages[0]
-composites = allImages[1]
+allImages = getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian).select([indexName])
+composites = ee.ImageCollection(ee.List.sequence(startYear,endYear).map(lambda yr: allImages.filter(ee.Filter.calendarRange(yr,yr,'year')).median().set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())))
 
 # for year in range(startYear      ,endYear + 1  ):
 #      t = processedComposites.filter(ee.Filter.calendarRange(year,year,'year')).mosaic()
@@ -131,7 +128,7 @@ if exportLTStack:
   ltOutStack = ltOut[1]
 
   #Export  stack
-  exportName = outputName + '_Stack_'+indexName
+  exportName = outputName + '_Stack_'+indexName + '_'+str(startYear) + '_' + str(endYear) + '_' + str(startJulian) + '_' + str(endJulian)
   exportPath = exportPathRoot + '/'+ exportName
 
   #Set up proper resampling for each band
@@ -149,7 +146,7 @@ if exportLTStack:
 
   
   #Export output
-  exportToAssetWrapper2(ltOutStack,exportName,exportPath,outObj,studyArea,scale,crs,transform)
+  exportToAssetWrapper(ltOutStack,exportName,exportPath,outObj,studyArea,scale,crs,transform)
 ####################################################################################################
 #Load the study region
 Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", False)

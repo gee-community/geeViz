@@ -697,8 +697,8 @@ getImageCollection = getLandsat
 ###########################################################################
 #Helper function to apply an expression and linearly rescale the output.
 #Used in the landsatCloudScore function below.
-def rescale(img, exp, thresholds):
-    return img.expression(exp, {'img': img}).subtract(thresholds[0]).divide(thresholds[1] - thresholds[0])
+def rescale(img, thresholds):
+    return img.subtract(thresholds[0]).divide(thresholds[1] - thresholds[0])
 ###########################################################################
 # /***
 #  * Implementation of Basic cloud shadow shift
@@ -799,27 +799,29 @@ def landsatCloudScore(img):
   #Compute several indicators of cloudiness and take the minimum of them.
   score = ee.Image(1.0)
   #Clouds are reasonably bright in the blue band.
-  score = score.min(rescale(img, 'img.blue', [0.1, 0.3]))
+  score = score.min(rescale(img.select(['blue']), [0.1, 0.3]))
  
   #Clouds are reasonably bright in all visible bands.
-  score = score.min(rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8]))
+  score = score.min(rescale(img.select(['red','green','blue']).reduce(ee.Reducer.sum()), [0.2, 0.8]))
    
   #Clouds are reasonably bright in all infrared bands.
-  score = score.min(rescale(img, 'img.nir + img.swir1 + img.swir2', [0.3, 0.8]))
+  score = score.min(rescale(img.select(['swir1','swir2','nir']).reduce(ee.Reducer.sum()), [0.3, 0.8]))
+  
+  
 
   #Clouds are reasonably cool in temperature.
-  score = score.min(rescale(img,'img.temp', [300, 290]))
+  score = score.min(rescale(img.select(['temp']), [300, 290]))
 
   #However, clouds are not snow.
   ndsi = img.normalizedDifference(['green', 'swir1'])
-  score = score.min(rescale(ndsi, 'img', [0.8, 0.6]))
+  score = score.min(rescale(ndsi, [0.8, 0.6]))
   
   #ss = snowScore(img).select(['snowScore'])
   #score = score.min(rescale(ss, 'img', [0.3, 0]))
   
   score = score.multiply(100).byte()
   score = score.clamp(0,100)
-  return score
+  return score.rename(['cloudScore'])
 
 #########################################################################
 #########################################################################
@@ -1260,6 +1262,7 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicyObje
                     crs = crs, 
                     crsTransform = transform, 
                     maxPixels = 1e13)
+  print('Exporting:',assetName)
   t.start()
 exportToAssetWrapper3 = exportToAssetWrapper
 exportToAssetWrapper2 = exportToAssetWrapper
@@ -1283,6 +1286,7 @@ def exportToDriveWrapper(imageForExport,outputName,driveFolderName,roi= None,sca
   
   # Map.addLayer(imageForExport,{},outputName,False)
   t = ee.batch.Export.image.toDrive(imageForExport, outputName, driveFolderName, outputName, None, outRegion, scale, crs, transform, 1e13)
+  print('Exporting:',outputName)
   t.start()
 #########################################################################
 #########################################################################
@@ -1530,17 +1534,17 @@ def modisCloudScore(img):
   #Clouds are reasonably bright in the blue band.
   # score = score.min(rescale(img, 'img.blue', [0.1, 0.3]))
   #Clouds are reasonably bright in all visible bands.
-  vizSum = rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8])
+  vizSum = rescale(img.select(['red','green','blue']).reduce(ee.Reducer.sum()), [0.2, 0.8])
   score = score.min(vizSum)
 
   #Clouds are reasonably bright in all infrared bands.
   # irSum =rescale(img, 'img.nir + img.swir2', [0.3, 0.7])
-  irSum =rescale(img, 'img.nir  + img.swir2 + img.swir2', [0.3, 0.8])
+  irSum =rescale(img.select(['nir','swir1','swir2']).reduce(ee.Reducer.sum()), [0.3, 0.8])
   score = score.min(irSum)
 
   #However, clouds are not snow.
   ndsi = img.normalizedDifference(['green', 'swir2'])
-  snowScore = rescale(ndsi, 'img', [0.8, 0.6])
+  snowScore = rescale(ndsi,  [0.8, 0.6])
   score =score.min(snowScore)
 
   #For MODIS, provide the option of not using thermal since it introduces
@@ -1569,8 +1573,8 @@ def sentinel2CloudScore(img):
 
   #Clouds are reasonably bright in the blue or cirrus bands.
   #Use .max as a pseudo OR conditional
-  blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.blue', [0.1, 0.5]))
-  blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.cb', [0.1, 0.5]))
+  blueCirrusScore = blueCirrusScore.max(rescale(img.select(['blue']), [0.1, 0.5]))
+  blueCirrusScore = blueCirrusScore.max(rescale(img.select(['cb']), [0.1, 0.5]))
   # blueCirrusScore = blueCirrusScore.max(rescale(img, 'img.cirrus', [0.1, 0.3]))
 
   #reSum = rescale(img,'(img.re1+img.re2+img.re3)/3',[0.5, 0.7])
@@ -1578,14 +1582,14 @@ def sentinel2CloudScore(img):
   score = score.min(blueCirrusScore)
 
   #Clouds are reasonably bright in all visible bands.
-  score = score.min(rescale(img, 'img.red + img.green + img.blue', [0.2, 0.8]))
+  score = score.min(rescale(img.select(['red','green','blue']).reduce(ee.Reducer.sum()), [0.2, 0.8]))
 
   #Clouds are reasonably bright in all infrared bands.
-  score = score.min(rescale(img, 'img.nir + img.swir1 + img.swir2', [0.3, 0.8]))
+  score = score.min(rescale(img.select(['nir','swir1','swir2']).reduce(ee.Reducer.sum()), [0.3, 0.8]))
 
   #However, clouds are not snow.
   ndsi =  img.normalizedDifference(['green', 'swir1'])
-  score=score.min(rescale(ndsi, 'img', [0.8, 0.6]))
+  score=score.min(rescale(ndsi, [0.8, 0.6]))
 
   score = score.multiply(100).byte().clamp(0,100).rename(['cloudScore'])
   return score
@@ -2023,8 +2027,8 @@ def exportCompositeCollection(
     exportName = outputName  + '_' + toaOrSR + '_' + compositingMethod + '_'  + str(int(startYearT)) + '_' + str(int(endYearT))+'_' + str(int(startJulian)) + '_' + str(int(endJulian))
     exportPath = exportPathRoot+'/'+exportName
 
-    print(exportName)
-    exportToAssetWrapper3(\
+    
+    exportToAssetWrapper(\
       imageForExport = composite,
       assetName = exportName,
       assetPath = exportPath,
@@ -2251,9 +2255,9 @@ def getProcessedLandsatScenes(
     del args['args']
 
   print('Get Processed Landsat: ')
-  print('Start date:', startDate.format('MMM dd yyyy').getInfo(),', End date:', endDate.format('MMM dd yyyy').getInfo())
-  for arg in args.keys():
-    print(arg, ': ', args[arg])
+  # print('Start date:', startDate.format('MMM dd yyyy').getInfo(),', End date:', endDate.format('MMM dd yyyy').getInfo())
+  # for arg in args.keys():
+  #   print(arg, ': ', args[arg])
 
   #Get Landsat image collection
   ls = getLandsat(\
@@ -2325,7 +2329,7 @@ def getProcessedSentinel2Scenes(\
   startJulian,
   endJulian,
   applyQABand = False,
-  applyCloudScore = True,
+  applyCloudScore = False,
   applyShadowShift = False,
   applyTDOM = True,
   cloudScoreThresh = 20,
@@ -3400,3 +3404,20 @@ def synthImage(coeffs,dateImage,indexNames,harmonics,detrend):
 # ////////////////////////////////////////////////////////////////////////////////
 
 
+testAreas = {};
+testAreas['CO'] = ee.Geometry.Polygon(
+        [[[-108.28630509064759, 38.085343638120925],
+          [-108.28630509064759, 37.18051220092945],
+          [-106.74821915314759, 37.18051220092945],
+          [-106.74821915314759, 38.085343638120925]]], None, False)
+testAreas['CA'] =ee.Geometry.Polygon(
+        [[[-119.96383760287506, 37.138150574108714],
+          [-119.96383760287506, 36.40774412106424],
+          [-117.95333955600006, 36.40774412106424],
+          [-117.95333955600006, 37.138150574108714]]], None, False)
+
+testAreas['CA_Small'] = ee.Geometry.Polygon(
+        [[[-123.22566968374625, 39.677209599269155],
+          [-123.22566968374625, 38.993179504697586],
+          [-122.60494214468375, 38.993179504697586],
+          [-122.60494214468375, 39.677209599269155]]], None, False)

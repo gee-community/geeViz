@@ -1379,7 +1379,10 @@ function reRun(){
   refreshNumber   ++;
 
   exportImageDict = {};
-  clearDownloadDropdown();
+  try{
+    clearDownloadDropdown();
+  }catch(err){}
+  
   google.maps.event.clearListeners(mapDiv, 'click');
 
   //Rerun the GEE code

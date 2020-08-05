@@ -1363,6 +1363,7 @@ function addLayer(layer){
 		},delay)
 		
 	});
+    $('#'+ spinnerID + '2').click(function(){$('#'+visibleID).click();});
     //Try to zoom to layer if double clicked
 	$('#'+ spanID).dblclick(function(){
             zoomFunction();
@@ -1690,10 +1691,12 @@ function addLayer(layer){
                     if(layer.visible){
                         layer.map.overlayMapTypes.setAt(layer.layerId, layer.layer);
                         layer.rangeOpacity = layer.opacity; 
-                        layer.layer.setOpacity(layer.opacity); 
+                        layer.layer.setOpacity(layer.opacity);
+                        $('#'+layer.legendDivID).show();
                          }else{layer.rangeOpacity = 0;}
                          $('#' + spinnerID).hide();
                         $('#' + visibleLabelID).show();
+
                         setRangeSliderThumbOpacity();
                 }
             }

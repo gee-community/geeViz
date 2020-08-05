@@ -27,7 +27,7 @@ from datetime import datetime
 #------------------------------------------------------------------------
 lossYearPalette =  'ffffe5,fff7bc,fee391,fec44f,fe9929,ec7014,cc4c02'
 lossMagPalette = 'D00,F5DEB3'
-gainYearPalette =  '54A247,AFDEA8,80C476,308023,145B09'
+gainYearPalette =  'AFDEA8,80C476,308023,145B09'
 gainMagPalette = 'F5DEB3,006400'
 changeDurationPalette = 'BD1600,E2F400,0C2780'
 #Helper to multiply image

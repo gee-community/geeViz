@@ -49,7 +49,7 @@ if os.path.exists(ee_run_dir) == False:os.makedirs(ee_run_dir)
 ee_run = ee_run_dir + 'runGeeViz.js'
 
 #Specify port to run on
-local_server_port = 8003
+local_server_port = 8005    
 ######################################################################
 ######################################################################
 #Functions
