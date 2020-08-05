@@ -407,8 +407,6 @@ def simpleLANDTRENDR(ts,startYear,endYear,indexName = 'NBR', run_params = None,l
 # Function to prep data following our workflows. Will have to run Landtrendr and convert to stack after.
 def prepTimeSeriesForLandTrendr(ts,indexName, run_params):
   maxSegments = ee.Number(run_params['maxSegments'])
-  startYear = ee.Date(ts.first().get('system:time_start')).get('year')
-  endYear = ee.Date(ts.sort('system:time_start',False).first().get('system:time_start')).get('year')
 
   # Get single band time series and set its direction so that a loss in veg is going up
   ts = ts.select([indexName])
@@ -416,7 +414,7 @@ def prepTimeSeriesForLandTrendr(ts,indexName, run_params):
   tsT = ts.map(lambda img: multBands(img, 1, distDir))
   
   # Find areas with insufficient data to run LANDTRENDR
-  countMask = tsT.count().unmask().gte(run_params['minObservationsNeeded']) #tsT.count().unmask().gte(maxSegments.add(1))
+  countMask = tsT.count().unmask().gte(run_params['minObservationsNeeded']) 
 
   # Mask areas identified by countMask
   tsT = tsT.map(lambda img: nullFinder(img, countMask))

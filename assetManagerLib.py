@@ -102,6 +102,16 @@ def batchDelete(Collection, type = 'imageCollection'):
         print('Deleting: '+ Collection +'/'+ base(image))
         ee.data.deleteAsset(image)
 
+def deleteByName(Collection, nameIdentifier, type='imageCollection'):
+    if type == 'imageCollection':
+        images = walkFolders(Collection)
+    elif type == 'tables':
+        images = walkFoldersTables(Collection) 
+
+    for image in images:
+        if nameIdentifier in image:
+            print('Deleting: '+ Collection +'/'+ base(image))
+            ee.data.deleteAsset(image)
 #############################################################################################
 #       Asset Info Queries
 #############################################################################################
