@@ -2347,7 +2347,8 @@ def getProcessedSentinel2Scenes(\
   applyCloudProbability = True,
   preComputedCloudScoreOffset = None,
   preComputedTDOMIRMean = None,
-  preComputedTDOMIRStdDev = None):
+  preComputedTDOMIRStdDev = None,
+  cloudProbThresh = 40):
   
   origin = 'Sentinel2'
   toaOrSR = toaOrSR.upper()
@@ -2399,7 +2400,7 @@ def getProcessedSentinel2Scenes(\
 
   if applyCloudProbability:
     print('Apply Cloud Probability')
-    s2s = s2s.map(lambda img: img.updateMask(img.select(['cloud_probability']).lte(cloudScoreThresh)))
+    s2s = s2s.map(lambda img: img.updateMask(img.select(['cloud_probability']).lte(cloudProbThresh)))
 
   if applyShadowShift:
     print('Applying Shadow Shift')
@@ -2473,7 +2474,8 @@ def getSentinel2Wrapper(\
   applyCloudProbability = True,
   preComputedCloudScoreOffset = None,
   preComputedTDOMIRMean = None,
-  preComputedTDOMIRStdDev = None):
+  preComputedTDOMIRStdDev = None,
+  cloudProbThresh = 40):
   
   origin = 'Sentinel2'
   toaOrSR = toaOrSR.upper()
@@ -2507,7 +2509,8 @@ def getSentinel2Wrapper(\
     applyCloudProbability = applyCloudProbability,
     preComputedCloudScoreOffset = preComputedCloudScoreOffset,
     preComputedTDOMIRMean = preComputedTDOMIRMean,
-    preComputedTDOMIRStdDev = preComputedTDOMIRStdDev)
+    preComputedTDOMIRStdDev = preComputedTDOMIRStdDev,
+    cloudProbThresh = cloudProbThresh)
  
   #Add zenith and azimuth
   #if correctIllumination:
@@ -2621,7 +2624,8 @@ def getProcessedLandsatAndSentinel2Scenes(
       preComputedLandsatTDOMIRStdDev = None,
       preComputedSentinel2CloudScoreOffset = None,
       preComputedSentinel2TDOMIRMean = None,
-      preComputedSentinel2TDOMIRStdDev = None):
+      preComputedSentinel2TDOMIRStdDev = None,
+      cloudProbThresh = 40):
         
   origin = 'Landsat-Sentinel2-Hybrid'
   toaOrSR = toaOrSR.upper()
@@ -2698,7 +2702,8 @@ def getProcessedLandsatAndSentinel2Scenes(
     applyCloudProbability = applyCloudProbability,
     preComputedCloudScoreOffset = preComputedSentinel2CloudScoreOffset,
     preComputedTDOMIRMean = preComputedSentinel2TDOMIRMean,
-    preComputedTDOMIRStdDev = preComputedSentinel2TDOMIRStdDev)
+    preComputedTDOMIRStdDev = preComputedSentinel2TDOMIRStdDev,
+    cloudProbThresh = cloudProbThresh)
 
   #Select off common bands between Landsat and Sentinel 2
   commonBands =  ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'sensor']
@@ -2800,7 +2805,8 @@ def getLandsatAndSentinel2HybridWrapper(\
   preComputedLandsatTDOMIRStdDev = None,
   preComputedSentinel2CloudScoreOffset = None,
   preComputedSentinel2TDOMIRMean = None,
-  preComputedSentinel2TDOMIRStdDev = None):
+  preComputedSentinel2TDOMIRStdDev = None,
+  cloudProbThresh = 40):
   
   origin = 'Landsat-Sentinel2-Hybrid'
   toaOrSR = toaOrSR.upper()
@@ -2848,7 +2854,8 @@ def getLandsatAndSentinel2HybridWrapper(\
     preComputedLandsatTDOMIRStdDev = preComputedLandsatTDOMIRStdDev,
     preComputedSentinel2CloudScoreOffset = preComputedSentinel2CloudScoreOffset,
     preComputedSentinel2TDOMIRMean = preComputedSentinel2TDOMIRMean,
-    preComputedSentinel2TDOMIRStdDev = preComputedSentinel2TDOMIRStdDev)
+    preComputedSentinel2TDOMIRStdDev = preComputedSentinel2TDOMIRStdDev,
+    cloudProbThresh = cloudProbThresh)
 
   #Create hybrid composites
   composites = compositeTimeSeries(\
