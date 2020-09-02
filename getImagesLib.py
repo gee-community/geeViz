@@ -2705,6 +2705,12 @@ def getProcessedLandsatAndSentinel2Scenes(
   ls = ls.select(commonBands)
   s2s = s2s.select(commonBands)
 
+  #Fill in any empty collections
+  #If they're both empty, this will not work
+  dummyImage =ee.Image(ee.ImageCollection(ee.Algorithms.If(ls.toList(1).length().gt(0),ls,s2s)).first())
+  ls = fillEmptyCollections(ls,dummyImage)
+  s2s = fillEmptyCollections(s2s,dummyImage)
+
   if runChastainHarmonization:
     
     # Separate each sensor

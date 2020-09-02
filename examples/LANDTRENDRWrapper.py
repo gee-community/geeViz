@@ -1,5 +1,7 @@
-#Example of how to get Landsat data using the getImagesLib and view outputs using the Python visualization tools
-#Acquires Landsat data and then adds them to the viewer
+#Example of how to run the LANDTRENDR temporal segmentation algorithm and view outputs using the Python visualization tools
+#LANDTRENDR original paper: https://www.sciencedirect.com/science/article/pii/S0034425710002245
+#LANDTRENDR in GEE paper: https://www.mdpi.com/2072-4292/10/5/691
+#Acquires Landsat data, runs LANDTRENDR, and then adds some outputs to the viewer
 ####################################################################################################
 import os,sys
 sys.path.append(os.getcwd())
@@ -30,8 +32,8 @@ endJulian = 250
 # well. If using Fmask as the cloud/cloud shadow masking method, or providing
 # pre-computed stats for cloudScore and TDOM, this does not 
 # matter
-startYear = 1990
-endYear = 2019
+startYear = 1990  
+endYear = 2020
 
 
 
@@ -79,7 +81,8 @@ run_params = { \
 
 #Whether to add outputs to map
 addToMap = True
-#13. Export params
+
+#Export params
 #Whether to export LANDTRENDR outputs
 exportLTStack = False
 
@@ -118,9 +121,7 @@ Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':lossYearPalette},'H
 allImages = getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian).select([indexName])
 composites = ee.ImageCollection(ee.List.sequence(startYear,endYear).map(lambda yr: allImages.filter(ee.Filter.calendarRange(yr,yr,'year')).median().set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())))
 
-# for year in range(startYear      ,endYear + 1  ):
-#      t = processedComposites.filter(ee.Filter.calendarRange(year,year,'year')).mosaic()
-#      Map.addLayer(t,vizParamsFalse,str(year),'False')
+#Run LANDTRENDR
 ltOut = simpleLANDTRENDR(composites,startYear,endYear,indexName, run_params,lossMagThresh,lossSlopeThresh,\
                                                 gainMagThresh,gainSlopeThresh,slowLossDurationThresh,chooseWhichLoss,\
                                                 chooseWhichGain,addToMap,howManyToPull)
