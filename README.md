@@ -1,8 +1,9 @@
-#GTAC GEE Visualization Python Modules
+# GTAC GEE Visualization Python Modules
 > A repository of GEE Python code modules for general data processing, analysis, and visualization
 
 > [Can be accessed in GitHub](https://github.com/rcr-usfs/geeViz)
-> [Or within the Forest Service GitHub instance](https://code.fs.usda.gov/forest-service/geeViz)
+> [Or within the internal Forest Service GitHub instance](https://code.fs.usda.gov/forest-service/geeViz)
+> [Or within the GEE Community Repository](https://github.com/gee-community/geeViz)
 
 > [A javaScript equivalent can be accessed in the GEE Playground](https://earthengine.googlesource.com/users/USFS_GTAC/modules)
 > [on GitHub](https://github.com/rcr-usfs/gtac-rcr-gee-js-modules.git)
@@ -38,6 +39,7 @@ folder
 	* `from geeViz.examples import getSentinel2Wrapper`
 	* `from geeViz.examples import harmonicRegressionWrapper`
 	* `from geeViz.examples import LANDTRENDRWrapper`
+	* `from geeViz.examples import CCDCViz`
 
 * When these examples are run, a viewer should open in your default browser.  It will show any data that was added to the map.
 * Layers can be toggled on/off and opacity changed.  They can also be measured and queried under the TOOLS pane.
