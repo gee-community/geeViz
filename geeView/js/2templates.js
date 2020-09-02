@@ -63,7 +63,7 @@ var staticTemplates = {
 	map:`<div onclick = "$('#study-area-list').hide();" class = 'map' id = 'map'> </div>`,
 
 	mainContainer: `<div class = 'container main-container' id = 'main-container'></div>`,
-	sidebarLeftToggler:`<div href="#" class="fa fa-bars m-0 px-1 py-2 m-0 sidebar-toggler " onclick = "$('#sidebar-left').toggle('collapse')"></div>`,
+	sidebarLeftToggler:`<div href="#" class="fa fa-bars m-0 px-1 py-2 m-0 sidebar-toggler " onclick = 'toggleSidebar()'></div>`,
 
     sidebarLeftContainer: `
 						<div onclick = "$('#study-area-list').hide();" class = 'col-sm-7 col-md-5 col-lg-4 col-xl-3 sidebar  p-0 m-0 flexcroll  ' id = 'sidebar-left-container' >
@@ -118,8 +118,12 @@ var staticTemplates = {
 			    `,
 	placesSearchDiv:`<div class="input-group px-4 pb-2 text-center"">
 			            <div class="input-group-prepend">
-                            <button onclick = 'getLocation()' title = 'Click to center map at your location' class=" btn input-group-text bg-white search-box pr-1 pl-2" id="basic-addon1"><i class="fa fa-map-marker text-black "></i></button>
-	    					<span class="input-group-text bg-white search-box" id="basic-addon1"><i class="fa fa-search text-black "></i></span>
+
+
+                            <button onclick = 'getLocation()' title = 'Click to center map at your location' class=" btn input-group-text bg-white search-box pr-1 pl-2" id="get-location-button"><i class="fa fa-map-marker text-black "></i></button>
+	    					<button onclick = 'TweetThis()' title = 'Click to share your current view' class=" btn input-group-text bg-white search-box pr-1 pl-2" id="share-button"><i class="fa fa-share-alt teal "></i></button>
+                            
+                            <span class="input-group-text bg-white search-box" id="search-icon"><i class="fa fa-search text-black "></i></span>
 	  					</div>
 
 			            <input id = 'pac-input' class="form-control bg-white search-box" type="text" placeholder="Search Places">
@@ -335,31 +339,28 @@ var staticTemplates = {
                                         <button class = 'btn' onclick = 'chartSelectedAreas()'>Chart Selected Areas</button>
                                         <div class = 'dropdown-divider'></div>`,
         selectAreaInteractiveChartTip : 'Select from pre-defined areas on map to summarize products across.',
-        shareButtons : `<!-- LinkedIn -->
-                        <a title = 'Share on LinkedIn' href="http://www.linkedin.com/shareArticle?mini=true&amp;url=${document.URL}" target="_blank">
-                            <img class = 'image-icon-bar' src="./images/linkedin.png" alt="LinkedIn" />
-                        </a>
+        shareButtons : `    
                         
                         <!-- Email -->
-                        <a title = 'Share via E-mail' href="mailto:?Subject=USDA Forest Service Landscape Change Monitoring System&amp;Body=I%20saw%20this%20and%20thought%20you%20might%20be%20interested.%20 ${document.URL}">
+                        <a title = 'Share via E-mail' onclick = 'TweetThis("mailto:?Subject=USDA Forest Service Landscape Change Monitoring System&amp;Body=I%20saw%20this%20and%20thought%20you%20might%20be%20interested.%20 ","",true)'>
                             <img class = 'image-icon-bar' src="./images/email.png" alt="Email" />
                         </a>
 
                         <!-- Reddit -->
-                        <a title = 'Share on Reddit' href="http://reddit.com/submit?url=${document.URL}&amp;title=USDA Forest Service Landscape Change Monitoring System" target="_blank">
+                        <a title = 'Share on Reddit' onclick = 'TweetThis("http://reddit.com/submit?url=","&amp;title=USDA Forest Service Landscape Change Monitoring System",true)' >
                             <img class = 'image-icon-bar' src="./images/reddit.png" alt="Reddit" />
                         </a>
 
                          <!-- Twitter -->
-                        <a title = 'Share on Twitter' href="https://twitter.com/share?url=${document.URL}&amp;text=USDA Forest Service Landscape Change Monitoring System&amp;hashtags=USFSLCMS" target="_blank">
+                        <a title = 'Share on Twitter' onclick = 'TweetThis("https://twitter.com/share?url=","&amp;text=USDA Forest Service Landscape Change Monitoring System&amp;hashtags=USFSLCMS",true)' >
                             <img class = 'image-icon-bar' src="./images/twitter.png" alt="Twitter" />
                         </a>
 
                         <!-- Facebook -->
-                        <a  title = 'Share on Facebook' href="http://www.facebook.com/sharer.php?u=${document.URL}" target="_blank">
+                        <a  title = 'Share on Facebook' onclick = 'TweetThis("http://www.facebook.com/sharer.php?u=","",true)' >
                             <img class = 'image-icon-bar' src="./images/facebook.png" alt="Facebook" />
                         </a>
-                         
+                            
                         
                         `
 
@@ -1161,6 +1162,7 @@ function addLayer(layer){
     layerObj[id] = layer;
     layer.wasJittered = false;
     layer.loading = false;
+    layer.refreshNumber = refreshNumber;
 	if(layer.visible){checked = 'checked'}
     
     if(layer.viz.isTimeLapse){
@@ -1340,7 +1342,7 @@ function addLayer(layer){
         }
             
 	}
-    function turnOffAll(){
+    function turnOffAll(){  
         if(layer.visible){
             $('#'+visibleID).click();
         }
@@ -1388,6 +1390,8 @@ function addLayer(layer){
         $('#'+visibleLabelID).addClass('vector-layer-checkbox');
         $('.vector-layer-checkbox').on('turnOffAll',function(){turnOffAll()});
         $('.vector-layer-checkbox').on('turnOnAll',function(){turnOnAll()});
+        $('.vector-layer-checkbox').on('turnOffAllVectors',function(){turnOffAll()});
+        $('.vector-layer-checkbox').on('turnOnAllVectors',function(){turnOnAll()});
     }
     //Handle different object types
 	if(layer.layerType === 'geeImage' || layer.layerType === 'geeVectorImage' || layer.layerType === 'geeImageCollection'){
@@ -1828,4 +1832,5 @@ function addLayer(layer){
 			setRangeSliderThumbOpacity();
 	}
 }
+
 

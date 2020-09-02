@@ -1856,6 +1856,7 @@ function dropdownUpdateStudyArea(whichOne){
 //Function to set study area
 var resetStudyArea = function(whichOne){
     localStorage.setItem("cachedStudyAreaName",whichOne);
+    urlParams.studyAreaName = whichOne;
     $('#studyAreaDropdown').val(whichOne);
     $('#study-area-label').text(whichOne);
     console.log('changing study area');
@@ -1887,7 +1888,7 @@ var resetStudyArea = function(whichOne){
     setUpRangeSlider('lowerThresholdSlowLoss',0,1,lowerThresholdSlowLoss,0.05,'slow-loss-threshold-slider','null');
     setUpRangeSlider('lowerThresholdFastLoss',0,1,lowerThresholdFastLoss,0.05,'fast-loss-threshold-slider','null');
     
-    setUpDualRangeSlider('startYear','endYear',startYear,endYear,startYear,endYear,1,'analysis-year-slider','analysis-year-slider-update','null')
+    setUpDualRangeSlider('urlParams.startYear','urlParams.endYear',minYear,maxYear,urlParams.startYear,urlParams.endYear,1,'analysis-year-slider','analysis-year-slider-update','null')
 
     var coords = studyAreaDict[whichOne].center;
     studyAreaName = studyAreaDict[whichOne].name;
@@ -2198,7 +2199,10 @@ function initialize() {
       }
     ],
             {name: 'Dark Mode'});
-
+  var mapTypeIds = ['roadmap', 'satellite', 'hybrid', 'terrain'];
+  if(urlParams.mapTypeId  === undefined || urlParams.mapTypeId  === null &&urlParams.mapTypeId.indexOf(urlParams.mapTypeIds)  === -1 ){
+    urlParams.mapTypeId = 'hybrid'
+  }
   //Set up map options
   var mapOptions = {
     center: null,
@@ -2206,11 +2210,10 @@ function initialize() {
     minZoom: 2,
     disableDoubleClickZoom: true,
     // maxZoom: 15,
-    mapTypeId: google.maps.MapTypeId.HYBRID,
+    mapTypeId:urlParams.mapTypeId,
     streetViewControl: true,
     fullscreenControl: false,
-    mapTypeControlOptions :{position: google.maps.ControlPosition.TOP_RIGHT,mapTypeIds: ['roadmap', 'satellite', 'hybrid', 'terrain',
-                    'dark_mode']},
+    mapTypeControlOptions :{position: google.maps.ControlPosition.TOP_RIGHT,mapTypeIds: mapTypeIds},
     // fullscreenControlOptions:{position: google.maps.ControlPosition.RIGHT_TOP},
     streetViewControlOptions:{position: google.maps.ControlPosition.RIGHT_TOP},
     scaleControlOptions:{position: google.maps.ControlPosition.RIGHT_TOP},
@@ -2230,11 +2233,16 @@ function initialize() {
   //Set up caching of study area
   if(typeof(Storage) !== "undefined"){
     cachedStudyAreaName = localStorage.getItem("cachedStudyAreaName");
-    if(cachedStudyAreaName === null || cachedStudyAreaName === undefined){
+    console.log(urlParams.studyAreaName)
+
+    if(urlParams.studyAreaName !== null && urlParams.studyAreaName !== undefined){
+      cachedStudyAreaName = decodeURIComponent(urlParams.studyAreaName);
+    }else if(cachedStudyAreaName === null || cachedStudyAreaName === undefined){
       cachedStudyAreaName = defaultStudyArea;
     }
     studyAreaName = studyAreaDict[cachedStudyAreaName].name;
     longStudyAreaName = cachedStudyAreaName;
+   
     $('#study-area-label').text(longStudyAreaName);
     $('#study-area-label').fitText(1.8);
     
@@ -2253,8 +2261,19 @@ function initialize() {
     layerObj = {};
   }
 
-  mapOptions.center = center;
-  mapOptions.zoom = zoom;
+  if(urlParams.lng !== undefined && urlParams.lng !== null && urlParams.lat !== undefined && urlParams.lat !== null ){
+    print('Setting center from URL')
+    mapOptions.center = {lng:parseFloat(urlParams.lng),lat:parseFloat(urlParams.lat)};
+  }else{
+    mapOptions.center = center;
+  }
+  if(urlParams.zoom !== undefined && urlParams.zoom !== null ){
+    print('Setting zoom from URL')
+    mapOptions.zoom = parseInt(urlParams.zoom);
+  }else{
+    mapOptions.zoom = zoom;
+  }
+  
      
   map = new google.maps.Map(document.getElementById("map"),mapOptions);
   //Associate the styled map with the MapTypeId and set it to display.
@@ -2319,6 +2338,7 @@ function initialize() {
     //Set up cursor info in bottom bar
     function updateMousePositionAndZoom(cLng,cLat,zoom,elevation){
             $('.legendDiv').css('bottom',$('.bottombar').height());
+            
             $( "#current-mouse-position" ).html( 'Lng: ' +cLng + ', Lat: ' + cLat +', '+elevation+ 'Zoom: ' +zoom +', 1:'+zoomDict[zoom]);
     }
      
@@ -2379,10 +2399,19 @@ function initialize() {
         console.log('zoom changed')
         updateMousePositionAndZoom(mouseLng,mouseLat,zoom,lastElevation)
     })
+    google.maps.event.addListener(map,'maptypeid_changed',function(){
+        console.log('map type id changed')
+        urlParams.mapTypeId = map.mapTypeId;
+    })
 
     //Keep track of map bounds for eeBoundsPoly object 
     google.maps.event.addListener(map,'bounds_changed',function(){
       zoom = map.getZoom();
+      var mapCenter = map.getCenter();
+      var mapCenterLng = mapCenter.lng();
+      var mapCenterLat = mapCenter.lat();
+      urlParams.lng = mapCenterLng;urlParams.lat = mapCenterLat;urlParams.zoom= zoom;
+      
       // console.log('bounds changed');
       var bounds = map.getBounds();
       var keys = Object.keys(bounds);
@@ -2391,7 +2420,7 @@ function initialize() {
       // console.log('b');console.log(bounds);
       eeBoundsPoly = ee.Geometry.Rectangle([bounds[keys[1]][keysX[0]],bounds[keys[0]][keysY[0]],bounds[keys[1]][keysX[1]],bounds[keys[0]][keysY[1]]]);
         if(typeof(Storage) == "undefined") return;
-        localStorage.setItem(cachedSettingskey,JSON.stringify({center:{lat:map.getCenter().lat(),lng:map.getCenter().lng()},zoom:map.getZoom()}));
+        localStorage.setItem(cachedSettingskey,JSON.stringify({center:{lat:mapCenter.lat(),lng:mapCenter.lng()},zoom:zoom}));
       });
 
     //Specify proxy server location
