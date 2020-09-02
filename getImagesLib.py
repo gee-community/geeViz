@@ -481,7 +481,7 @@ def getS2(studyArea,
             .map(multS2)\
             .select(['QA60']+sensorBandDict[toaOrSR],['QA60']+sensorBandNameDict[toaOrSR])
   
-  s2s = s2s.map(lambda img: img.updateMask(img.mask().reduce(ee.Reducer.min())))
+  
 
   if addCloudProbability:
     print('Joining pre-computed cloud probabilities from: COPERNICUS/S2_CLOUD_PROBABILITY')
@@ -510,6 +510,9 @@ def getS2(studyArea,
   if convertToDailyMosaics:
     print('Converting S2 data to daily mosaics')
     s2s = dailyMosaics(s2s)
+
+  # This needs to occur AFTER the mosaicking to remove remaining edge artifacts.
+  s2s = s2s.map(lambda img: img.updateMask(img.mask().reduce(ee.Reducer.min())))
 
   return s2s.set(args)
 

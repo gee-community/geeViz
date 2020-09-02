@@ -873,7 +873,7 @@ def applyLinearInterp(composites, nYearsInterpolate):
 
     # rename bands to better names
     origNames = masks.bandNames()
-    print('mask bandNames', origNames.getInfo())
+    #print('mask bandNames', origNames.getInfo())
     newNames = origNames.map(lambda bandName: ee.String(bandName).replace('null','mask'))
     masks = masks.select(origNames, newNames).set('creationDate',datetime.strftime(datetime.now(),'%Y%m%d')).set('mask',True)
     
