@@ -25,19 +25,19 @@ studyArea = testAreas['CA_Small']
 #to June 1 of that year.Otherwise, all system:time_starts will default to June 1 of the given year
 #startJulian: Starting Julian date 
 #endJulian: Ending Julian date
-startJulian = 190
-endJulian = 250 
+startJulian = 1
+endJulian = 365 
 
 #Specify start and end years for all analyses
 #More than a 3 year span should be provided for time series methods to work 
 #well. If providing pre-computed stats for cloudScore and TDOM, this does not 
 #matter
-startYear = 2017
+startYear = 1984
 endYear = 2020
 
 #Choose whether to include Landat 7
 #Generally only included when data are limited
-includeSLCOffL7 = False
+includeSLCOffL7 = True
 
 #Choose whether to use the Chastain et al 2019(https://www.sciencedirect.com/science/article/pii/S0034425718305212)
 #harmonization method

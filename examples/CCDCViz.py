@@ -34,6 +34,9 @@ endJulian = ccdcImg.get('endJulian').getInfo()
 startYear = ccdcImg.get('startYear').getInfo()
 endYear = ccdcImg.get('endYear').getInfo()
 
+#Add the raw array image
+Map.addLayer(ccdcImg,{},'Raw CCDC Output',False)
+
 #Extract the change years and magnitude
 changeObj = ccdcChangeDetection(ccdcImg,changeDetectionBandName);
 Map.addLayer(changeObj['highestMag']['loss']['year'],{'min':startYear,'max':endYear,'palette':lossYearPalette},'Loss Year')

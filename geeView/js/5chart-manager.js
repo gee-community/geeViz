@@ -224,12 +224,14 @@ var  getQueryImages = function(lng,lat){
 				$('#'+containerID).append(`<tr><th>${q.name}</th><th>Multi band</th></tr>`);
 				
 				Object.keys(value).map(function(kt){
-
+					try{
 					var v = value[kt]
 					if(v !== null){v = v.toFixed(2).toString();}
 					// var queryLine =  kt+ ': '+v + "<br>";
 					$('#'+containerID).append(`<tr><td>${kt}</td><td>${v}</td></tr>`);
-			
+					}catch(err){
+						$('#'+containerID).append(`<tr><td>${kt}</td><td>${JSON.stringify(v)}</td></tr>`);
+					}
 				});
 				
 			}	
@@ -336,7 +338,7 @@ var  getQueryImages = function(lng,lat){
 				var img = ee.Image(q.queryItem);
 				img.reduceRegion(ee.Reducer.first(),clickPt,null,'EPSG:5070',[30,0,-2361915.0,0,-30,3177735.0]).evaluate(function(values){
 					keyI++;
-					// console.log(values)
+					
 					makeQueryTable(values,q,k);
 				})
 			}else if(q.type === 'geeImageCollection'){

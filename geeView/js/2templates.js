@@ -1706,13 +1706,24 @@ function addLayer(layer){
             }
         }
         //Asynchronous wrapper function to get GEE map service
+        layer.mapServiceTryNumber = 0;
         function getGEEMapService(){
             // layer.item.getMap(layer.viz,function(eeLayer){getGEEMapServiceCallback(eeLayer)});
-            layer.item.getMap(layer.viz,function(eeLayer){geeAltService(eeLayer)});
+            layer.item.getMap(layer.viz,function(eeLayer){
+                if(eeLayer === undefined && layer.mapServiceTryNumber <=1){
+                    queryObj[queryID].queryItem = layer.item;
+                    layer.item = layer.item.visualize();
+                        getGEEMapService();
+                }else{
+                    geeAltService(eeLayer);
+                }  
+            });
+
             // layer.item.getMap(layer.viz,function(eeLayer){
                 // console.log(eeLayer)
                 // console.log(ee.data.getTileUrl(eeLayer))
             // })
+            layer.mapServiceTryNumber++;
         };
         getGEEMapService();
 

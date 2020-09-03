@@ -875,7 +875,7 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
     if(name == null){
         name = "Layer "+NEXT_LAYER_ID;  
     }
-    //Possible layerType: geeVector,geoJSONVector,geeImage,geeImageCollection,tileMapService,dynamicMapService
+    //Possible layerType: geeVector,geoJSONVector,geeImage,geeImageArray,geeImageCollection,tileMapService,dynamicMapService
     if(viz.layerType === null || viz.layerType === undefined){
       try{var t = item.bandNames();viz.layerType = 'geeImage'}
       catch(err2){
@@ -912,6 +912,7 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
        
         }
     }
+  
     if(viz.layerType === 'geoJSONVector'){viz.canQuery = false;}
     
     if(viz.layerType === 'geeVector' || viz.layerType === 'geoJSONVector'){
