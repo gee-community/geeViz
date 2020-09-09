@@ -7,10 +7,7 @@ $('body').append(staticTemplates.sidebarLeftContainer);
 
 $('body').append(staticTemplates.geeSpinner);
 $('body').append(staticTemplates.bottomBar);
-if(mode !== 'geeViz'){
-  $('#contributor-logos').prepend(staticTemplates.shareButtons);
 
-}
 $('#summary-spinner').show();
 
 $('#main-container').append(staticTemplates.sidebarLeftToggler);
@@ -56,7 +53,16 @@ function toggleAdvancedOff(){
 /////////////////////////////////////////////////////////////////////
 /*Start adding elements to page based on chosen mode*/
 if(mode === 'LCMS'){
-
+  var minYear = startYear;var maxYear = endYear;
+  // console.log(urlParams)  
+  if(urlParams.startYear == null || urlParams.startYear == undefined){
+      urlParams.startYear = startYear;
+  }
+  if(urlParams.endYear == null || urlParams.endYear == undefined){
+     urlParams.endYear = endYear;
+  }
+  // console.log(urlParams)
+ 
   /*Construct panes in left sidebar*/
   addCollapse('sidebar-left','parameters-collapse-label','parameters-collapse-div','PARAMETERS','<i class="fa fa-sliders mr-1" aria-hidden="true"></i>',false,null,'Adjust parameters used to filter and sort LCMS products');
   addCollapse('sidebar-left','layer-list-collapse-label','layer-list-collapse-div','LCMS DATA',`<img style = 'width:1.1em;' class='image-icon mr-1' src="images/layer_icon.png">`,true,null,'LCMS DATA layers to view on map');
@@ -71,9 +77,17 @@ if(mode === 'LCMS'){
   // $('#parameters-collapse-div').append(staticTemplates.paramsDiv);
 
   //Construct parameters form
-  addRadio('parameters-collapse-div','analysis-mode-radio','Choose which mode:','Standard','Advanced','analysisMode','standard','advanced','toggleAdvancedOff()','toggleAdvancedOn()','Standard mode provides the core LCMS products based on carefully selected parameters. Advanced mode provides additional LCMS products and parameter options')
+ 
+  if(['standard','advanced'].indexOf(urlParams.analysisMode) === -1){
+    urlParams.analysisMode = 'standard'
+  }
+  var tAnalysisMode = urlParams.analysisMode;
+  addRadio('parameters-collapse-div','analysis-mode-radio','Choose which mode:','Standard','Advanced','urlParams.analysisMode','standard','advanced','toggleAdvancedOff()','toggleAdvancedOn()','Standard mode provides the core LCMS products based on carefully selected parameters. Advanced mode provides additional LCMS products and parameter options')
+
+  urlParams.analysisMode = tAnalysisMode ;
   $('#parameters-collapse-div').append(`<div class="dropdown-divider" ></div>`);
-  addDualRangeSlider('parameters-collapse-div','Choose analysis year range:','startYear','endYear',startYear, endYear, startYear, endYear, 1,'analysis-year-slider','null','Years of LCMS data to include for land cover, land use, loss, and gain')
+
+  addDualRangeSlider('parameters-collapse-div','Choose analysis year range:','urlParams.startYear','urlParams.endYear',minYear, maxYear, urlParams.startYear, urlParams.endYear, 1,'analysis-year-slider','null','Years of LCMS data to include for land cover, land use, loss, and gain')
 
   $('#parameters-collapse-div').append(`<div class="dropdown-divider"></div>
                                           <div id='threshold-container' style="display:none;width:100%"></div>
@@ -110,6 +124,10 @@ if(mode === 'LCMS'){
   $('#download-collapse-div').append(staticTemplates.downloadDiv);
   $('#support-collapse-div').append(staticTemplates.supportDiv);
 
+  if(tAnalysisMode === 'advanced'){
+    $('#analysis-mode-radio-second_toggle_label').click();
+  }
+
 }else if(mode === 'lcms-base-learner'){
   canExport = true;
   addCollapse('sidebar-left','parameters-collapse-label','parameters-collapse-div','PARAMETERS','<i class="fa fa-sliders mr-1" aria-hidden="true"></i>',false,null,'Adjust parameters used to filter and sort LCMS products');
@@ -135,12 +153,28 @@ if(mode === 'LCMS'){
   
 }else if(mode === 'LT'){
   canExport = true;
+  startYear = 1984;endYear = 2020;startJulian = 152;endJulian = 273;
+
+  var minYear = startYear;var maxYear = endYear;
+  if(urlParams.startYear == null || urlParams.startYear == undefined){
+      urlParams.startYear = startYear;// = parseInt(urlParams.startYear);
+  }
+  if(urlParams.endYear == null || urlParams.endYear == undefined){
+     urlParams.endYear = endYear;// = parseInt(urlParams.endYear);
+  }
+  if(urlParams.startJulian == null || urlParams.startJulian == undefined){
+      urlParams.startJulian = startJulian;// = parseInt(urlParams.startYear);
+  }
+  if(urlParams.endJulian == null || urlParams.endJulian == undefined){
+     urlParams.endJulian = endJulian;// = parseInt(urlParams.endYear);
+  }
   addCollapse('sidebar-left','parameters-collapse-label','parameters-collapse-div','PARAMETERS','<i class="fa fa-sliders mr-1" aria-hidden="true"></i>',false,null,'Adjust parameters used to filter and sort '+mode+' products');
   
-  addSubCollapse('parameters-collapse-div','comp-params-label','comp-params-div','Landsat Composite Params', '',false,'')
-  addDualRangeSlider('comp-params-div','Choose analysis year range:','startYear','endYear',startYear, endYear, startYear, endYear, 1,'analysis-year-slider','null','Years of '+mode+' data to include.')
+  addSubCollapse('parameters-collapse-div','comp-params-label','comp-params-div','Landsat Composite Params', '',false,'');
   $('#comp-params-div').append(`<div class="dropdown-divider" ></div>`);
-  addDualRangeSlider('comp-params-div','Choose analysis date range:','startJulian','endJulian',1, 365, startJulian, endJulian, 1,'julian-day-slider','julian','Days of year of '+mode+' data to include for land cover, land use, loss, and gain')
+  addDualRangeSlider('comp-params-div','Choose analysis year range:','urlParams.startYear','urlParams.endYear',minYear, maxYear, urlParams.startYear, urlParams.endYear, 1,'analysis-year-slider2','null','Years of '+mode+' data to include.')
+  
+  addDualRangeSlider('comp-params-div','Choose analysis date range:','urlParams.startJulian','urlParams.endJulian',1, 365, urlParams.startJulian, urlParams.endJulian, 1,'julian-day-slider','julian','Days of year of '+mode+' data to include for land cover, land use, loss, and gain')
     $('#comp-params-div').append(`<div class="dropdown-divider" ></div>`);
     addCheckboxes('comp-params-div','which-sensor-method-radio','Choose which Landsat platforms to include','whichPlatforms',{"L5":true,"L7-SLC-On":true,'L7-SLC-Off':false,'L8':true});
     $('#comp-params-div').append(`<div class="dropdown-divider" ></div>`);
@@ -283,6 +317,7 @@ addSubAccordianCard('tools-accordian','query-label','query-div','Query Visible M
 // addAccordianContainer('area-tools-collapse-div','area-tools-accordian');
 if(mode === 'geeViz'){
   $('#pixel-chart-label').remove();
+  $('#share-button').remove();
 }
 
 if(mode === 'LCMS' || mode === 'MTBS'|| mode === 'TEST' || mode === 'lcms-base-learner' || mode === 'FHP'){
@@ -325,5 +360,20 @@ if(canExport){
    }
 }
 
+if(urlParams.showSidebar === undefined || urlParams.showSidebar === null){
+  urlParams.showSidebar = 'true'
+}
+
+function toggleSidebar(){
+  $('#sidebar-left').toggle('collapse');
+  if(urlParams.showSidebar === 'false'){
+    urlParams.showSidebar = 'true'
+  }else{
+    urlParams.showSidebar = 'false'
+  }
+};
+if(urlParams.showSidebar === 'false'){
+  $('#sidebar-left').hide();
+}
 
 

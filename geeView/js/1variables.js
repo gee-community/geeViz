@@ -1,5 +1,144 @@
 /*List global variables in this script for use throughout the viewers*/
+var urlParamsObj = {};
+var pageUrl = document.URL;
+var tinyURL = '';
+var urlParams = {};
+function setUrl(url){
+  var obj = { Title: 'test', Url: url };
+  history.pushState(obj, obj.Title, obj.Url);
+}
+function baseUrl(){
+  return window.location.protocol + "//" + window.location.host  + window.location.pathname
+}
+function eliminateSearchUrl(){
+  setUrl(baseUrl())
+}
+function updatePageUrl(){
+  pageUrl = window.location.protocol + "//" + window.location.host  + window.location.pathname + constructUrlSearch();
+}
+// new Proxy(urlParamsObj, {
+//   set: function (target, key, value) {
+//       // console.log(`${key} set to ${value}`);
+//       //
+//       target[key] = value;
+//       // console.log(urlParams);
+//        // var deepLink = [window.location.pathname,constructUrlSearch()].join('');
+//        pageUrl = window.location.protocol + "//" + window.location.host  + window.location.pathname + constructUrlSearch()
+//             // console.log(deepLink)
+//             // var obj = { Title: 'test', Url: deepLink };
+//             // history.pushState(obj, obj.Title, obj.Url);
+//             // pageUrl = document.URL;
+//             // console.log(pageUrl)
+//       return true;
+//   }
+// }); 
+function TweetThis(preURL,postURL,openInNewTab,showMessageBox){
+    updatePageUrl();
+    if(openInNewTab === undefined || openInNewTab === null){
+        openInNewTab = false;
+    };
+    if(showMessageBox === undefined || showMessageBox === null){
+        showMessageBox = true;
+    };
+    if(preURL === undefined || preURL === null){
+        preURL = '';
+    };
+    if(postURL === undefined || postURL === null){
+        postURL = '';
+    }
+    $.get(
+        "https://tinyurl.com/api-create.php",
+        {url: pageUrl},
+        function(tinyURL){
+            var key = tinyURL.split('https://tinyurl.com/')[1];
+            var shareURL = pageUrl.split('?')[0] + '?id='+key;
+            var fullURL = preURL+shareURL+postURL ;
 
+            
+            if(openInNewTab){
+               var win = window.open(fullURL, '_blank');
+               win.focus(); 
+            }else if(showMessageBox){
+                var message = `<div class="input-group-prepend" id = 'shareLinkMessageBox'>
+                                <button onclick = 'copyText("shareLinkText","copiedMessageBox")'' title = 'Click to copy link to clipboard' class="py-0  fa fa-copy btn input-group-text bg-white"></button>
+                                <input type="text" value="${fullURL}" id="shareLinkText" style = "max-width:70%;" class = "form-control mx-1">
+                                
+                                
+                               </div>
+                               <div id = 'copiedMessageBox' class = 'pl-4'</div>
+                               `
+               showMessage('Share link',message); 
+               if(mode !== 'geeViz'){
+                $('#shareLinkMessageBox').append(staticTemplates.shareButtons);
+
+                }
+               
+
+            }
+            if(openInNewTab === false){
+              setUrl(fullURL);
+            }
+            
+            
+        }
+    );
+}
+//Adapted from W3 Schools
+function copyText(id,messageBoxId){
+     /* Get the text field */
+  var copyText = document.getElementById(id);
+
+  /* Select the text field */
+  copyText.select();
+  copyText.setSelectionRange(0, 99999); /*For mobile devices*/
+
+  /* Copy the text inside the text field */
+  document.execCommand("copy");
+
+    /* Alert the copied text */
+  if(messageBoxId !== null && messageBoxId !== undefined){
+    $('#'+messageBoxId).html("Copied text to clipboard")
+  }
+ 
+}
+function parseUrlSearch(){
+  // console.log(window.location.search == '')
+    var urlParamsStr = window.location.search;
+   
+    if(urlParamsStr !== ''){
+      urlParamsStr = urlParamsStr.split('?')[1].split('&');
+    
+    urlParamsStr.map(function(str){
+        urlParams[str.split('=')[0]] = str.split('=')[1]
+    })}
+    if(urlParams.id !== undefined){
+      
+      window.open("https://tinyurl.com/"+urlParams.id,"_self");
+       if(typeof(Storage) !== "undefined"){
+        localStorage.setItem("cachedID",urlParams.id);
+      }
+    }
+    else{
+      // TweetThis(null,null,false,false);
+      if(typeof(Storage) !== "undefined"){
+        var id = localStorage.getItem("cachedID");
+        if(id !== null && id !== undefined && id !== 'null'){
+          setUrl(baseUrl() + '?id='+id);
+          localStorage.setItem("cachedID",null)
+        }
+        
+      }
+    }
+   
+}
+function constructUrlSearch(){
+  var outURL = '?';
+  Object.keys(urlParams).map(function(p){
+    outURL += p+'='+urlParams[p] + '&'
+  })
+  outURL = outURL.slice(0,outURL.length-1)
+  return outURL
+}
 /*Load global variables*/
 var cachedSettingskey = 'settings';
 var startYear = 1985;
@@ -8,6 +147,7 @@ var startJulian = 153;//190;
 var endJulian = 274;//250;
 var layerObj = null;
 var queryObj = {};var timeLapseObj = {};
+parseUrlSearch()
 var initialCenter = [37.5334105816903,-105.6787109375];
 var initialZoomLevel = 5;
 var studyAreaSpecificPage = false;

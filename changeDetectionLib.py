@@ -1521,56 +1521,188 @@ def thresholdZAndTrend(zAndTrendCollection,zThresh,slopeThresh,startYear,endYear
   return [zChange,trendChange]
   
  
+###################################################################################
+#------------------- BEGIN CCDC Helper Functions -------------------#
+###################################################################################
+#Function to predict a CCDC harmonic model at a given time
+#The whichHarmonics options are [1,2,3] - denoting which harmonics to include
+#Which bands is a list of the names of the bands to predict across
+def simpleCCDCPrediction(img,timeBandName,whichHarmonics,whichBands):
+  #Unit of each harmonic (1 cycle)
+  omega = ee.Number(2.0).multiply(math.pi)
 
+  #Pull out the time band in the yyyy.ff format
+  tBand = img.select([timeBandName])
+  
+  #Pull out the intercepts and slopes
+  intercepts = img.select(['.*_INTP'])
+  slopes = img.select(['.*_SLP']).multiply(tBand)
+  
+  #Set up the omega for each harmonic for the given time band
+  tOmega = ee.Image(whichHarmonics).multiply(omega).multiply(tBand)
+  cosHarm = tOmega.cos()
+  sinHarm = tOmega.sin()
+  
+  #Set up which harmonics to select
 
-# function thresholdZAndTrendSubtle(zAndTrendCollection,zThreshLow,zThreshHigh,slopeThreshLow,slopeThreshHigh,startYear,endYear,negativeOrPositiveChange){
-#   if(negativeOrPositiveChange === null || negativeOrPositiveChange === undefined){negativeOrPositiveChange = 'negative'}
-#   dir;colorRamp;
-#   if(negativeOrPositiveChange === 'negative'){dir = -1;colorRamp = 'FF0,F00';}
-#   else{dir = 1; colorRamp = 'BBB,080';}
-#   zCollection = zAndTrendCollection.select('.*_Z');
-#   trendCollection = zAndTrendCollection.select('.*_slope');
+  harmSelect = ee.List(whichHarmonics).map(lambda n: ee.String('.*').cat(ee.Number(n).format()))
   
-#   zChange = thresholdSubtleChange(zCollection,-zThreshLow,-zThreshHigh,dir).select('.*_change');
-#   trendChange = thresholdSubtleChange(trendCollection,-slopeThreshLow,-slopeThreshHigh,dir).select('.*_change');
+  #Select the harmonics specified
+  sins = img.select(['.*_SIN.*'])
+  sins = sins.select(harmSelect)
+  coss = img.select(['.*_COS.*'])
+  coss = coss.select(harmSelect)
   
+  #Set up final output band names
+  outBns = ee.List(whichBands).map(lambda bn: ee.String(bn).cat('_predicted'))
   
-  
-#   Map.addLayer(zChange.max().select([0]),{'min':startYear,'max':endYear,'palette':colorRamp},'Z Most Recent Change Year '+negativeOrPositiveChange,false);
-#   Map.addLayer(trendChange.max().select([0]),{'min':startYear,'max':endYear,'palette':colorRamp},'Trend Most Recent Change Year '+negativeOrPositiveChange,false);
-  
-# }
+  #Iterate across each band and predict value
+  def predHelper(bn):
+    bn = ee.String(bn);
+    return ee.Image([intercepts.select(bn.cat('.*')),
+                    slopes.select(bn.cat('.*')),
+                    sins.select(bn.cat('.*')).multiply(sinHarm),
+                    coss.select(bn.cat('.*')).multiply(cosHarm)
+                    ]).reduce(ee.Reducer.sum());
+  predicted = ee.ImageCollection(list(map(predHelper,whichBands))).toBands().rename(outBns)
+  return img.addBands(predicted)
 
+###################################################################################
+#Wrapper to predict CCDC values from a collection containing a time image and ccdc coeffs
+#It is also assumed that the time format is yyyy.ff where the .ff is the proportion of the year
+#The whichHarmonics options are [1,2,3] - denoting which harmonics to include
+def simpleCCDCPredictionWrapper(c,timeBandName,whichHarmonics):
+  whichBands = ee.Image(c.first()).select(['.*_INTP']).bandNames().map(lambda bn: ee.String(bn).split('_').get(0))
+  whichBands = ee.Dictionary(whichBands.reduce(ee.Reducer.frequencyHistogram())).keys().getInfo()
+  out = c.map(lambda img: simpleCCDCPrediction(img,timeBandName,whichHarmonics,whichBands))
+  return out
 
-# function exportZAndTrend(zAndTrendCollection,dates,exportPathRoot,studyArea,scale,crs,transform){
- 
-# print('Exporting z and trend collection');
-# i = 0;
-# dates.map(function(d){
-#   image = ee.Image(zAndTrendCollection.filterDate(d,d).first());
+###################################################################################
+###################################################################################
+#Function to get the coeffs corresponding to a given date on a pixel-wise basis
+#The raw CCDC image is expected
+#It is also assumed that the time format is yyyy.ff where the .ff is the proportion of the year
+def getCCDCSegCoeffs(timeImg,ccdcImg,fillGaps):
+  coeffKeys = ['.*_coefs']
+  tStartKeys = ['tStart']
+  tEndKeys = ['tEnd']
+  tBreakKeys = ['tBreak']
+  
+  #Get coeffs and find how many bands have coeffs
+  coeffs = ccdcImg.select(coeffKeys)
+  bns = coeffs.bandNames()
+  nBns = bns.length()
+  harmonicTag = ee.List(['INTP','SLP','COS1','SIN1','COS2','SIN2','COS3','SIN3'])
+
    
-#   outPath = exportPathRoot + '/' + i;
-#   getImageLib.exportToAssetWrapper(image,i.toString(),outPath,
-#         'mean',studyArea,scale,crs,transform)
-#     i++;
-#   # image.id().evaluate(function(id){
-#   #     outPath = exportPathRoot + '/' + id;
-#   #     getImageLib.exportToAssetWrapper(image,id,outPath,
-#   #       'mean',studyArea,scale,crs,transform);
-#   #   });
-# })
-# # zAndTrendCollectionL = zAndTrendCollection.toList(100);
-# #   zAndTrendCollection.size().evaluate(function(count){
-# #   ee.List.sequence(0,count-1).getInfo().map(function(i){
-   
-# #     image = ee.Image(zAndTrendCollectionL.get(i));
-    
-# #     image.id().evaluate(function(id){
-# #       outPath = exportPathRoot + '/' + id;
-# #       getImageLib.exportToAssetWrapper(image,id,outPath,
-# #         'mean',studyArea,scale,crs,transform);
-# #     });
-# #   });
-# # }); 
-# }
-#####################################
+  #Get coeffs, start and end times
+  coeffs = coeffs.toArray(2)
+  tStarts = ccdcImg.select(tStartKeys)
+  tEnds = ccdcImg.select(tEndKeys)
+  tBreaks = ccdcImg.select(tBreakKeys)
+  
+  #If filling to the tBreak, use this
+  tStarts = ee.Image(ee.Algorithms.If(fillGaps,tStarts.arraySlice(0,0,1).arrayCat(tBreaks.arraySlice(0,0,-1),0),tStarts))
+  tEnds = ee.Image(ee.Algorithms.If(fillGaps,tBreaks.arraySlice(0,0,-1).arrayCat(tEnds.arraySlice(0,-1,None),0),tEnds))
+  
+  
+  #Set up a mask for segments that the time band intersects
+  tMask = tStarts.lte(timeImg).And(tEnds.gt(timeImg)).arrayRepeat(1,1).arrayRepeat(2,1)
+  coeffs = coeffs.arrayMask(tMask).arrayProject([2,1]).arrayTranspose(1,0).arrayFlatten([bns,harmonicTag])
+  
+  #If time band doesn't intersect any segments, set it to null
+  coeffs = coeffs.updateMask(coeffs.reduce(ee.Reducer.max()).neq(0))
+  
+  return timeImg.addBands(coeffs)
+
+###################################################################################
+#Wrapper function for predicting CCDC across a set of time images
+def predictCCDC(ccdcImg,timeImgs,fillGaps,whichHarmonics):
+  timeBandName = ee.Image(timeImgs.first()).select([0]).bandNames().get(0)
+  #Add the segment-appropriate coefficients to each time image
+  timeImgs = timeImgs.map(lambda img: getCCDCSegCoeffs(img,ccdcImg,fillGaps))
+  
+  #Predict across each time image
+  return simpleCCDCPredictionWrapper(timeImgs,timeBandName,whichHarmonics)
+
+###################################################################################
+#Function for getting a set of time images
+#This is generally used for methods such as CCDC
+def getTimeImageCollection(startYear,endYear,startJulian = 1,endJulian = 365,step = 0.1):
+  def getYrImage(n):
+    n = ee.Number(n)
+    img = ee.Image(n).float().rename(['year'])
+    y = n.int16()
+    fraction = n.subtract(y)
+    d = ee.Date.fromYMD(y,1,1).advance(fraction,'year').millis()
+    return img.set('system:time_start',d);
+  yearImages = ee.ImageCollection(ee.List.sequence(startYear,endYear,step).map(getYrImage))
+  return yearImages.filter(ee.Filter.calendarRange(startYear,endYear,'year'))\
+                      .filter(ee.Filter.calendarRange(startJulian,endJulian))
+
+###################################################################################
+#Function for getting change years and magnitudes for a specified band from CCDC outputs
+#Only change from the breaks is extracted
+#As of now, if a segment has a high slope value, this method will not extract that 
+def ccdcChangeDetection(ccdcImg,bandName):
+  magKeys = ['.*_magnitude']
+  tBreakKeys = ['tBreak']
+  changeProbKeys = ['changeProb']
+  
+  #Pull out pieces from CCDC output
+  magnitudes = ccdcImg.select(magKeys)
+  breaks = ccdcImg.select(tBreakKeys)
+  
+  #Map.addLayer(breaks.arrayLength(0),{'min':1,'max':10});
+  #changeProbs = ccdcImg.select(changeProbKeys);
+  #changeMask = changeProbs.gte(changeProbThresh);
+  magnitudes = magnitudes.select(bandName + '.*')
+
+  
+  #Sort by magnitude and years
+  breaksSortedByMag = breaks.arraySort(magnitudes)
+  magnitudesSortedByMag = magnitudes.arraySort()
+  
+  breaksSortedByYear = breaks.arraySort()
+  magnitudesSortedByYear = magnitudes.arraySort(breaks)
+  
+  #Get the loss and gain years and magnitudes for each sorting method
+  highestMagLossYear = breaksSortedByMag.arraySlice(0,0,1).arrayFlatten([['loss_year']])
+  highestMagLossMag = magnitudesSortedByMag.arraySlice(0,0,1).arrayFlatten([['loss_mag']])
+  highestMagLossYear = highestMagLossYear.updateMask(highestMagLossMag.lt(0))
+  highestMagLossMag = highestMagLossMag.updateMask(highestMagLossMag.lt(0))
+  
+  highestMagGainYear = breaksSortedByMag.arraySlice(0,-1,None).arrayFlatten([['gain_year']])
+  highestMagGainMag = magnitudesSortedByMag.arraySlice(0,-1,None).arrayFlatten([['gain_mag']])
+  highestMagGainYear = highestMagGainYear.updateMask(highestMagGainMag.gt(0));
+  highestMagGainMag = highestMagGainMag.updateMask(highestMagGainMag.gt(0));
+  
+  mostRecentLossYear = breaksSortedByYear.arraySlice(0,0,1).arrayFlatten([['loss_year']])
+  mostRecentLossMag = magnitudesSortedByYear.arraySlice(0,0,1).arrayFlatten([['loss_mag']])
+  mostRecentLossYear = mostRecentLossYear.updateMask(mostRecentLossMag.lt(0))
+  mostRecentLossMag = mostRecentLossMag.updateMask(mostRecentLossMag.lt(0))
+
+  mostRecentGainYear = breaksSortedByYear.arraySlice(0,-1,None).arrayFlatten([['gain_year']])
+  mostRecentGainMag = magnitudesSortedByYear.arraySlice(0,-1,None).arrayFlatten([['gain_mag']])
+  mostRecentGainYear = mostRecentGainYear.updateMask(mostRecentGainMag.gt(0))
+  mostRecentGainMag = mostRecentGainMag.updateMask(mostRecentGainMag.gt(0))
+  
+  return {'mostRecent':{
+    'loss':{'year':mostRecentLossYear,
+          'mag': mostRecentLossMag
+        },
+    'gain':{'year':mostRecentGainYear,
+          'mag': mostRecentGainMag
+        }
+    },
+    'highestMag':{
+    'loss':{'year':highestMagLossYear,
+          'mag': highestMagLossMag
+        },
+    'gain':{'year':highestMagGainYear,
+          'mag': highestMagGainMag
+        }
+    }    
+  }
+  
+
