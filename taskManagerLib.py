@@ -65,8 +65,8 @@ def batchCancel():
     for ind, i in enumerate(tasks):
         if i['state'] == 'READY' or i['state'] == 'RUNNING':
             cancelledTasks.append(ind)
-            #ee.data.cancelTask(i['id'])
-            ee.data.cancelOperation(ee._cloud_api_utils.convert_task_id_to_operation_name(i['id']))
+            ee.data.cancelTask(i['id'])
+            #ee.data.cancelOperation(ee._cloud_api_utils.convert_task_id_to_operation_name(i['id'])) # this was the workaround for a bug with cancelTask in earthengine-api v0.1.225
     tasks2 = ee.data.getTaskList()
     for ind in cancelledTasks:
         print(tasks2[ind]['state']+': '+tasks2[ind]['description'])
@@ -77,8 +77,7 @@ def cancelByName(nameIdentifier):
     if cancelList:
         for task in cancelList:
             print('Cancelling '+task['description'])
-            #ee.data.cancelTask(task['id'])
-            ee.data.cancelOperation(ee._cloud_api_utils.convert_task_id_to_operation_name(i['id']))
+            ee.data.cancelTask(task['id'])
     else:
         print('No Tasks to Cancel')
 #------------------------------------------------------------------------------
