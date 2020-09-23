@@ -73,10 +73,13 @@ def setNoData(image,noDataValue):
 ######################################################################
 # Formats arguments as strings so can be easily set as properties
 def formatArgs(args):
+  formattedArgs = {}
   for key in args.keys():
       if type(args[key]) == bool or type(args[key]) == list:
-        args[key] = str(args[key])
-  return args
+        formattedArgs[key] = str(args[key])
+      elif type(args[key]) in [str, int, type(None)]:
+        formattedArgs[key] = args[key] 
+  return formattedArgs
 ######################################################################
 ######################################################################
 #Functions to perform basic clump and elim

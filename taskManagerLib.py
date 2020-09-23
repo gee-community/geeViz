@@ -77,7 +77,8 @@ def cancelByName(nameIdentifier):
     if cancelList:
         for task in cancelList:
             print('Cancelling '+task['description'])
-            ee.data.cancelTask(task['id'])
+            #ee.data.cancelTask(task['id'])
+            ee.data.cancelOperation(ee._cloud_api_utils.convert_task_id_to_operation_name(i['id']))
     else:
         print('No Tasks to Cancel')
 #------------------------------------------------------------------------------
