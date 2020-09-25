@@ -65,7 +65,7 @@ changeDirDict = {\
 ######################################################################
 #Function to set null value for export or conversion to arrays
 def setNoData(image,noDataValue):
-  args = locals()
+  args = formatArgs(locals())
   image = image.unmask(noDataValue, False).set('noDataValue', noDataValue)
   return image.set(args)
 
@@ -75,16 +75,16 @@ def setNoData(image,noDataValue):
 def formatArgs(args):
   formattedArgs = {}
   for key in args.keys():
-      if type(args[key]) == bool or type(args[key]) == list:
+      if type(args[key]) in [bool, list, dict, type(None)]:
         formattedArgs[key] = str(args[key])
-      elif type(args[key]) in [str, int, type(None)]:
+      elif type(args[key]) in [str, int]:
         formattedArgs[key] = args[key] 
   return formattedArgs
 ######################################################################
 ######################################################################
 #Functions to perform basic clump and elim
 def sieve(image, mmu):
-  args = locals()
+  args = formatArgs(locals())
   connected = image.connectedPixelCount(mmu+20)
   #Map.addLayer(connected,{'min':1,'max':mmu},'connected')
   elim = connected.gt(mmu)
@@ -169,7 +169,7 @@ def dir1Regression(img,slopes,intercepts):
 
 #Function to correct one sensor to another
 def harmonizationChastain(img, fromSensor, toSensor):
-  args = locals()
+  args = formatArgs(locals())
 
   #Get the model for the given from and to sensor
   comboKey = fromSensor.upper()+'_'+toSensor.upper()
@@ -455,7 +455,7 @@ def getS2(studyArea,
           convertToDailyMosaics = True,
           addCloudProbability = True):
 
-  args = locals()
+  args = formatArgs(locals())
 
   toaOrSR = toaOrSR.upper()
 
@@ -533,7 +533,7 @@ def getLandsat(studyArea,
               addPixelQA = False,
               resampleMethod = 'near'):
   
-  args = locals()
+  args = formatArgs(locals())
 
   #Set up bands and corresponding band names
   sensorBandDict = {\
@@ -770,7 +770,7 @@ def projectShadowsWrapper(\
   dilatePixels = 3.5,
   cloudHeights = ee.List.sequence(500,10000,500)):
 
-  args = locals()
+  args = formatArgs(locals())
 
   cloudMask = sentinel2CloudScore(img).gt(cloudThresh)\
     .focal_min(contractPixels).focal_max(dilatePixels)
@@ -914,7 +914,7 @@ def simpleTDOM2(
     preComputedTDOMIRMean = None,
     preComputedTDOMIRStdDev = None):
 
-  args = locals()
+  args = formatArgs(locals())
 
   #Get some pixel-wise stats for the time series
   if preComputedTDOMIRMean == None:
@@ -1325,7 +1325,7 @@ def compositeTimeSeries(
       compositingMethod = None,
       compositingReducer = None):
   
-  args = locals()
+  args = formatArgs(locals())
   if 'args' in args.keys():
     del args['args']
 
@@ -1984,7 +1984,7 @@ def exportCompositeCollection(
   exportBands,
   additionalPropertyDict = None):
 
-  args = locals()
+  args = formatArgs(locals())
 
   pyramidingPolicy = 'mean'
   dateWrapping = wrapDates(startJulian, endJulian)
@@ -2089,7 +2089,7 @@ def getLandsatWrapper(
   
   toaOrSR = toaOrSR.upper()
   origin = 'Landsat'
-  args = locals()
+  args = formatArgs(locals())
   if 'args' in args.keys():
     del args['args']
 
@@ -2256,7 +2256,7 @@ def getProcessedLandsatScenes(
   startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day')
   endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day')
 
-  args = locals()
+  args = formatArgs(locals())
   if 'args' in args.keys():
     del args['args']
 
@@ -2367,7 +2367,7 @@ def getProcessedSentinel2Scenes(\
   startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day')
   endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day')
 
-  args = locals()
+  args = formatArgs(locals())
   if 'args' in args.keys():
     del args['args']
   
@@ -2486,7 +2486,7 @@ def getSentinel2Wrapper(\
   origin = 'Sentinel2'
   toaOrSR = toaOrSR.upper()
 
-  args = locals()
+  args = formatArgs(locals())
   if 'args' in args.keys():
     del args['args']
 
@@ -2644,7 +2644,7 @@ def getProcessedLandsatAndSentinel2Scenes(
   startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day')
   endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day')
 
-  args = locals()
+  args = formatArgs(locals())
   if 'args' in args.keys():
     del args['args']
 
@@ -2817,7 +2817,7 @@ def getLandsatAndSentinel2HybridWrapper(\
   origin = 'Landsat-Sentinel2-Hybrid'
   toaOrSR = toaOrSR.upper()
 
-  args = locals()
+  args = formatArgs(locals())
   if 'args' in args.keys():
     del args['args']
 
