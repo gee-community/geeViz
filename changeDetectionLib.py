@@ -1648,44 +1648,55 @@ def ccdcChangeDetection(ccdcImg,bandName):
   magKeys = ['.*_magnitude']
   tBreakKeys = ['tBreak']
   changeProbKeys = ['changeProb']
-  
+  changeProbThresh = 1
+
   #Pull out pieces from CCDC output
   magnitudes = ccdcImg.select(magKeys)
   breaks = ccdcImg.select(tBreakKeys)
   
   #Map.addLayer(breaks.arrayLength(0),{'min':1,'max':10});
-  #changeProbs = ccdcImg.select(changeProbKeys);
-  #changeMask = changeProbs.gte(changeProbThresh);
+  changeProbs = ccdcImg.select(changeProbKeys)
+  changeMask = changeProbs.gte(changeProbThresh)
   magnitudes = magnitudes.select(bandName + '.*')
 
   
   #Sort by magnitude and years
   breaksSortedByMag = breaks.arraySort(magnitudes)
   magnitudesSortedByMag = magnitudes.arraySort()
+  changeMaskSortedByMag = changeMask.arraySort(magnitudes)
   
   breaksSortedByYear = breaks.arraySort()
   magnitudesSortedByYear = magnitudes.arraySort(breaks)
+  changeMaskSortedByYear = changeMask.arraySort(breaks)
   
   #Get the loss and gain years and magnitudes for each sorting method
   highestMagLossYear = breaksSortedByMag.arraySlice(0,0,1).arrayFlatten([['loss_year']])
   highestMagLossMag = magnitudesSortedByMag.arraySlice(0,0,1).arrayFlatten([['loss_mag']])
-  highestMagLossYear = highestMagLossYear.updateMask(highestMagLossMag.lt(0))
-  highestMagLossMag = highestMagLossMag.updateMask(highestMagLossMag.lt(0))
+  highestMagLossMask = changeMaskSortedByMag.arraySlice(0,0,1).arrayFlatten([['loss_mask']])
+  
+  highestMagLossYear = highestMagLossYear.updateMask(highestMagLossMag.lt(0).And(highestMagLossMask))
+  highestMagLossMag = highestMagLossMag.updateMask(highestMagLossMag.lt(0).And(highestMagLossMask))
   
   highestMagGainYear = breaksSortedByMag.arraySlice(0,-1,None).arrayFlatten([['gain_year']])
   highestMagGainMag = magnitudesSortedByMag.arraySlice(0,-1,None).arrayFlatten([['gain_mag']])
-  highestMagGainYear = highestMagGainYear.updateMask(highestMagGainMag.gt(0));
-  highestMagGainMag = highestMagGainMag.updateMask(highestMagGainMag.gt(0));
+  highestMagGainMask = changeMaskSortedByMag.arraySlice(0,-1,None).arrayFlatten([['gain_mask']]);
+  
+  highestMagGainYear = highestMagGainYear.updateMask(highestMagGainMag.gt(0).And(highestMagGainMask));
+  highestMagGainMag = highestMagGainMag.updateMask(highestMagGainMag.gt(0).And(highestMagGainMask));
   
   mostRecentLossYear = breaksSortedByYear.arraySlice(0,0,1).arrayFlatten([['loss_year']])
   mostRecentLossMag = magnitudesSortedByYear.arraySlice(0,0,1).arrayFlatten([['loss_mag']])
-  mostRecentLossYear = mostRecentLossYear.updateMask(mostRecentLossMag.lt(0))
-  mostRecentLossMag = mostRecentLossMag.updateMask(mostRecentLossMag.lt(0))
+  mostRecentLossMask = changeMaskSortedByYear.arraySlice(0,0,1).arrayFlatten([['loss_mask']])
+  
+  mostRecentLossYear = mostRecentLossYear.updateMask(mostRecentLossMag.lt(0).And(mostRecentLossMask))
+  mostRecentLossMag = mostRecentLossMag.updateMask(mostRecentLossMag.lt(0).And(mostRecentLossMask))
 
   mostRecentGainYear = breaksSortedByYear.arraySlice(0,-1,None).arrayFlatten([['gain_year']])
   mostRecentGainMag = magnitudesSortedByYear.arraySlice(0,-1,None).arrayFlatten([['gain_mag']])
-  mostRecentGainYear = mostRecentGainYear.updateMask(mostRecentGainMag.gt(0))
-  mostRecentGainMag = mostRecentGainMag.updateMask(mostRecentGainMag.gt(0))
+  mostRecentGainMask = changeMaskSortedByYear.arraySlice(0,-1,None).arrayFlatten([['gain_mask']])
+  
+  mostRecentGainYear = mostRecentGainYear.updateMask(mostRecentGainMag.gt(0).And(mostRecentGainMask))
+  mostRecentGainMag = mostRecentGainMag.updateMask(mostRecentGainMag.gt(0).And(mostRecentGainMask))
   
   return {'mostRecent':{
     'loss':{'year':mostRecentLossYear,
