@@ -76,6 +76,30 @@ def batchCopy(fromFolder,toFolder,outType = 'imageCollection'):
         except:
             print( out,'Error: May already exist')
 
+def copyByName(fromFolder, toFolder, nameIdentifier, outType = 'imageCollection'):
+
+    if outType == 'imageCollection':
+        create_image_collection(toFolder)
+    elif outType == 'tables':
+        verify_path(toFolder)
+
+    if toFolder[-1] == '/':
+        toFolder = toFolder[:-1]
+
+    if outType == 'imageCollection':
+        images = walkFolders(fromFolder)
+    elif outType == 'tables':
+        images = walkFoldersTables(fromFolder)
+    #print( images)
+
+    for image in images:
+        if nameIdentifier in image:
+            out = toFolder +'/'+ base(image)
+            print( out)
+            try:
+                ee.data.copyAsset(image,out)
+            except:
+                print( out,'Error: May already exist')
 #---------------------------------------------------------------------------------------------
 
 def moveImages(images,toFolder):

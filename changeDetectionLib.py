@@ -1559,10 +1559,10 @@ def simpleCCDCPrediction(img,timeBandName,whichHarmonics,whichBands):
   #Iterate across each band and predict value
   def predHelper(bn):
     bn = ee.String(bn);
-    return ee.Image([intercepts.select(bn.cat('.*')),
-                    slopes.select(bn.cat('.*')),
-                    sins.select(bn.cat('.*')).multiply(sinHarm),
-                    coss.select(bn.cat('.*')).multiply(cosHarm)
+    return ee.Image([intercepts.select(bn.cat('_.*')),
+                    slopes.select(bn.cat('_.*')),
+                    sins.select(bn.cat('_.*')).multiply(sinHarm),
+                    coss.select(bn.cat('_.*')).multiply(cosHarm)
                     ]).reduce(ee.Reducer.sum());
   predicted = ee.ImageCollection(list(map(predHelper,whichBands))).toBands().rename(outBns)
   return img.addBands(predicted)
@@ -1635,7 +1635,7 @@ def getTimeImageCollection(startYear,endYear,startJulian = 1,endJulian = 365,ste
     y = n.int16()
     fraction = n.subtract(y)
     d = ee.Date.fromYMD(y,1,1).advance(fraction,'year').millis()
-    return img.set('system:time_start',d);
+    return img.set('system:time_start',d)
   yearImages = ee.ImageCollection(ee.List.sequence(startYear,endYear,step).map(getYrImage))
   return yearImages.filter(ee.Filter.calendarRange(startYear,endYear,'year'))\
                       .filter(ee.Filter.calendarRange(startJulian,endJulian))
