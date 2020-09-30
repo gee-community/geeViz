@@ -22,7 +22,7 @@ ccdcImg = ee.Image('users/iwhousman/test/ChangeCollection/CCDC-Test3')
 whichHarmonics = [1,2,3]
 
 #Whether to fill gaps between segments' end year and the subsequent start year to the break date
-fillGaps = True
+fillGaps = False
 
 #Specify which band to use for loss and gain. 
 #This is most important for the loss and gain magnitude since the year of change will be the same for all years
