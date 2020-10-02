@@ -1949,7 +1949,7 @@ def exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,co
     
     #Add metadata, cast to integer, and export composite
     composite = composite.set({\
-      'system:time_start': ee.Date.fromYMD(year,6,1).millis(),\
+      'system:time_start': ee.Date.fromYMD(year+yearWithMajority,6,1).millis(),\
       'yearBuffer':timebuffer\
     })
   
