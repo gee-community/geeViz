@@ -1607,13 +1607,23 @@ def getCCDCSegCoeffs(timeImg,ccdcImg,fillGaps):
   
   
   #Set up a mask for segments that the time band intersects
-  tMask = tStarts.lte(timeImg).And(tEnds.gt(timeImg)).arrayRepeat(1,1).arrayRepeat(2,1)
+  tMask = tStarts.lt(timeImg).And(tEnds.gte(timeImg)).arrayRepeat(1,1).arrayRepeat(2,1)
   coeffs = coeffs.arrayMask(tMask).arrayProject([2,1]).arrayTranspose(1,0).arrayFlatten([bns,harmonicTag])
   
   #If time band doesn't intersect any segments, set it to null
   coeffs = coeffs.updateMask(coeffs.reduce(ee.Reducer.max()).neq(0))
   
   return timeImg.addBands(coeffs)
+
+###################################################################################
+# Function to get yearly ccdc coefficients. 
+#To have any break be contained within the calendar year that it occurred, set yearEndMonth = 12, yearEndDay = 31
+def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, yearEndMonth, yearEndDay):
+  timeImgs = getTimeImageCollection(startYear,endYear,startJulian,endJulian,1,yearEndMonth, yearEndDay)
+  timeBandName = ee.Image(timeImgs.first()).select([0]).bandNames().get(0)
+  timeImgs = timeImgs.map(lambda img: getCCDCSegCoeffs(img,ccdcImg,true))
+  return timeImgs
+
 
 ###################################################################################
 #Wrapper function for predicting CCDC across a set of time images
@@ -1628,15 +1638,19 @@ def predictCCDC(ccdcImg,timeImgs,fillGaps,whichHarmonics):
 ###################################################################################
 #Function for getting a set of time images
 #This is generally used for methods such as CCDC
-def getTimeImageCollection(startYear,endYear,startJulian = 1,endJulian = 365,step = 0.1):
+# yearStartMonth and yearStartDay are the date that you want the CCDC "year" to start at. This is mostly important for Annualized CCDC.
+# For LCMS, this is Sept. 1. So any change that occurs before Sept 1 in that year will be counted in that year, and Sept. 1 and after
+# will be counted in the following year.
+def getTimeImageCollection(startYear, endYear, startJulian = 1, endJulian = 365, step = 0.1, yearStartMonth = 1, yearStartDay = 1):
   def getYrImage(n):
     n = ee.Number(n)
     img = ee.Image(n).float().rename(['year'])
     y = n.int16()
     fraction = n.subtract(y)
-    d = ee.Date.fromYMD(y,1,1).advance(fraction,'year').millis()
+    d = ee.Date.fromYMD(y.subtract(ee.Number(1)),12,31).advance(fraction,'year').millis()
     return img.set('system:time_start',d)
-  yearImages = ee.ImageCollection(ee.List.sequence(startYear,endYear,step).map(getYrImage))
+  monthDayFraction = ee.Number.parse(ee.Date.fromYMD(startYear, yearStartMonth, yearStartDay).format('DDD')).divide(365)
+  yearImages = ee.ImageCollection(ee.List.sequence(ee.Number(startYear).add(monthDayFraction),ee.Number(endYear).add(monthDayFraction),step).map(getYrImage))
   return yearImages.filter(ee.Filter.calendarRange(startYear,endYear,'year'))\
                       .filter(ee.Filter.calendarRange(startJulian,endJulian))
 
