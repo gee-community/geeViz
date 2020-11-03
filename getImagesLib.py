@@ -1735,6 +1735,26 @@ def spatioTemporalJoin(primary, secondary, hourDiff = 24, outKey = 'secondary'):
 
   joined = joined.map(MergeBands)
   return joined
+
+# Simple inner join function for featureCollections
+# Matches features based on an exact match of the fieldName parameter
+# Retains the geometry of the primary, but copies the properties of the secondary collection
+def joinFeatureCollections(primary,secondary,fieldName):
+  # Use an equals filter to specify how the collections match.
+  f = ee.Filter.equals({\
+    'leftField': fieldName,
+    'rightField': fieldName\
+  })
+  
+  # Define the join.
+  innerJoin = ee.Join.inner('primary', 'secondary')
+  
+  # Apply the join.
+  joined = innerJoin.apply(primary, secondary, f)
+  joined = joined.map(lambda f: ee.Feature(f.get('primary')).copyProperties(ee.Feature(f.get('secondary'))))
+
+  return joined
+
 #########################################################################
 #########################################################################
 #Method for removing spikes in time series

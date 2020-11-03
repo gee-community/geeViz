@@ -39,14 +39,27 @@ def updateACL(assetName,writers = [],all_users_can_read = True,readers = []):
 
 #Function for updating all assets under a given folder level in GEE
 def batchUpdateAcl(folder,writers = [],all_users_can_read = True,readers = []):
-    allImages = walkFolders(folder)
-
-    for image in allImages:
-        print( 'Updating acl for:',image)
+    # Update ACL for folders first, then find all images within them.
+    assets = ee.data.listAssets({'parent': folder})['assets']
+    folders = [a for a in assets if a['type'] == 'FOLDER']
+    for subFolder in folders:
+        print( 'Updating acl for:', subFolder)
         try:
-            updateACL(image,writers ,all_users_can_read ,readers)
+            updateACL(subFolder['id'], writers, all_users_can_read, readers)
         except:
-            print( 'Could not update',image)
+            print('Could not update', subFolder)
+    
+    allImages = walkFolders(folder)
+    for image in allImages:
+        print( 'Updating acl for:', image)
+        try:
+            updateACL(image, writers, all_users_can_read, readers)
+        except:
+            print( 'Could not update', image)
+
+    
+       
+   
 
 #############################################################################################
 # Functions for copying, deleting, etc. assets
@@ -67,6 +80,7 @@ def batchCopy(fromFolder,toFolder,outType = 'imageCollection'):
     elif outType == 'tables':
         images = walkFoldersTables(fromFolder)
     #print( images)
+    pdb.set_trace()
 
     for image in images:
         out = toFolder +'/'+ base(image)

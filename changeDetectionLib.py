@@ -1607,13 +1607,72 @@ def getCCDCSegCoeffs(timeImg,ccdcImg,fillGaps):
   
   
   #Set up a mask for segments that the time band intersects
-  tMask = tStarts.lte(timeImg).And(tEnds.gt(timeImg)).arrayRepeat(1,1).arrayRepeat(2,1)
+  tMask = tStarts.lt(timeImg).And(tEnds.gte(timeImg)).arrayRepeat(1,1).arrayRepeat(2,1)
   coeffs = coeffs.arrayMask(tMask).arrayProject([2,1]).arrayTranspose(1,0).arrayFlatten([bns,harmonicTag])
   
   #If time band doesn't intersect any segments, set it to null
   coeffs = coeffs.updateMask(coeffs.reduce(ee.Reducer.max()).neq(0))
   
   return timeImg.addBands(coeffs)
+
+###################################################################################
+# Functions to get yearly ccdc coefficients.
+# 
+# Get CCDC coefficients for each year.
+# yearStartMonth and yearStartDay are the date that you want the CCDC "year" to start at. This is mostly important for Annualized CCDC.
+# For LCMS, this is Sept. 1. So any change that occurs before Sept 1 in that year will be counted in that year, and Sept. 1 and after
+# will be counted in the following year.
+def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, yearStartMonth, yearStartDay):
+  # Create image collection of images with the proper time stamp as well as a 'year' band with the year fraction.
+  timeImgs = getTimeImageCollection(startYear, endYear, startJulian ,endJulian, 1, yearStartMonth, yearStartDay)
+  # Loop through time image collection and grab the correct CCDC coefficients
+  annualSegCoeffs = timeImgs.map(lambda img: getCCDCSegCoeffs(img,ccdcImg,True))
+  return annualSegCoeffs
+
+
+# Using annualized time series, get fitted values and slopes from fitted values.
+def getFitSlopeCCDC(annualSegCoeffs, startYear, endYear):
+  # Predict across each time image
+  whichBands = ee.Image(annualSegCoeffs.first()).select(['.*_INTP']).bandNames().map(lambda bn: ee.String(bn).split('_').get(0))
+  whichBands = ee.Dictionary(whichBands.reduce(ee.Reducer.frequencyHistogram())).keys()
+  fitted = annualSegCoeffs.map(lambda img: simpleCCDCPredictionAnnualized(img,'year',whichBands))
+  
+  # Get back-casted slope using the fitted values
+  diff = ee.ImageCollection(ee.List.sequence(ee.Number(startYear).add(ee.Number(1)), endYear).map(lambda rightYear: yearlySlope(rightYear, fitted)))
+  
+  # Rename bands
+  bandNames = diff.first().bandNames()
+  newBandNames = bandNames.map(lambda name: ee.String(name).replace('coefs','CCDC'))
+  diff = diff.select(bandNames, newBandNames)
+
+  return diff
+
+def yearlySlope(rightYear, fitted):
+  leftYear = ee.Number(rightYear).subtract(1)
+  rightFitted = ee.Image(fitted.filter(ee.Filter.calendarRange(rightYear, rightYear, 'year')).first())
+  leftFitted = ee.Image(fitted.filter(ee.Filter.calendarRange(leftYear, leftYear, 'year')).first())
+  slopeNames = rightFitted.select(['.*_fitted']).bandNames().map(lambda name: ee.String(ee.String(name).split('_fitted').get(0)).cat(ee.String('_fitSlope')))
+  slope = rightFitted.select(['.*_fitted']).subtract(leftFitted.select(['.*_fitted'])).rename(slopeNames)
+  return rightFitted.addBands(slope)
+
+def simpleCCDCPredictionAnnualized(img,timeBandName,whichBands):
+
+  # Pull out the time band in the yyyy.ff format
+  tBand = img.select([timeBandName])
+  
+  # Pull out the intercepts and slopes
+  intercepts = img.select(['.*_INTP'])
+  slopes = img.select(['.*_SLP']).multiply(tBand)
+  
+  # Set up final output band names
+  outBns = whichBands.map(lambda bn: ee.String(bn).cat('_CCDC_fitted'))
+  
+  # Iterate across each band and predict value
+  predicted = ee.ImageCollection(whichBands.map(lambda bn: ee.Image([intercepts.select(ee.String(bn).cat('_.*')),
+                    slopes.select(ee.String(bn).cat('_.*')),
+                    ]).reduce(ee.Reducer.sum())\
+              )).toBands().rename(outBns)
+  return img.addBands(predicted)
 
 ###################################################################################
 #Wrapper function for predicting CCDC across a set of time images
@@ -1628,15 +1687,19 @@ def predictCCDC(ccdcImg,timeImgs,fillGaps,whichHarmonics):
 ###################################################################################
 #Function for getting a set of time images
 #This is generally used for methods such as CCDC
-def getTimeImageCollection(startYear,endYear,startJulian = 1,endJulian = 365,step = 0.1):
+# yearStartMonth and yearStartDay are the date that you want the CCDC "year" to start at. This is mostly important for Annualized CCDC.
+# For LCMS, this is Sept. 1. So any change that occurs before Sept 1 in that year will be counted in that year, and Sept. 1 and after
+# will be counted in the following year.
+def getTimeImageCollection(startYear, endYear, startJulian = 1, endJulian = 365, step = 0.1, yearStartMonth = 1, yearStartDay = 1):
   def getYrImage(n):
     n = ee.Number(n)
     img = ee.Image(n).float().rename(['year'])
     y = n.int16()
     fraction = n.subtract(y)
-    d = ee.Date.fromYMD(y,1,1).advance(fraction,'year').millis()
+    d = ee.Date.fromYMD(y.subtract(ee.Number(1)),12,31).advance(fraction,'year').millis()
     return img.set('system:time_start',d)
-  yearImages = ee.ImageCollection(ee.List.sequence(startYear,endYear,step).map(getYrImage))
+  monthDayFraction = ee.Number.parse(ee.Date.fromYMD(startYear, yearStartMonth, yearStartDay).format('DDD')).divide(365)
+  yearImages = ee.ImageCollection(ee.List.sequence(ee.Number(startYear).add(monthDayFraction),ee.Number(endYear).add(monthDayFraction),step).map(getYrImage))
   return yearImages.filter(ee.Filter.calendarRange(startYear,endYear,'year'))\
                       .filter(ee.Filter.calendarRange(startJulian,endJulian))
 
