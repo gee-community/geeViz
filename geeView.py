@@ -126,7 +126,7 @@ class mapper:
 
         #Iterate across each map layer to add js code to
         for idDict in self.idDictList:
-            t ="Map2."+idDict['function']+"('"+idDict['item']+"',"+idDict['viz']+",'"+idDict['name']+"',"+str(idDict['visible']).lower()+");\n"
+            t ="Map2."+idDict['function']+"("+idDict['item']+","+idDict['viz']+",'"+idDict['name']+"',"+str(idDict['visible']).lower()+");\n"
             lines += t
         
 

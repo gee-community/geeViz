@@ -1592,7 +1592,8 @@ function startPixelChartCollection() {
    
     mapHammer.on("doubletap", function(event) {
     	chartCollection = pixelChartCollections[whichPixelChartCollection].collection;
-    
+    	
+    	
     	// if(pixelChartCollections[whichPixelChartCollection].chartColors !== undefined && pixelChartCollections[whichPixelChartCollection].chartColors !== null){
     	// 	chartColors = pixelChartCollections[whichPixelChartCollection].chartColors;
     	// }
@@ -1616,7 +1617,7 @@ function startPixelChartCollection() {
 		function chartValues(values){
 			
 			if(chartIncludeDate){var startColumn = 3}else{var startColumn = 4};
-			print('Extracted values:');
+			print('Extracted valuessss:');
 			print(values);
 			var header = values[0].slice(startColumn);
 			values = values.slice(1).map(function(v){return v.slice(startColumn)}).sort(sortFunction);
@@ -1625,7 +1626,12 @@ function startPixelChartCollection() {
 				  // var d = [new Date(v[0])];
 				  // v.slice(1).map(function(vt){d.push(vt)})
 				  var d = v[0];
-				  var y = (new Date(d).getYear()+1900).toString();
+				  
+				  if(pixelChartCollections[whichPixelChartCollection].simplifyDate === false){
+				  	var y = new Date(d).toGMTString();
+				  }else{
+				  	var y = (new Date(d).getYear()+1900).toString();
+				  }
 				  // v = v.map(function(i){if(i === null){return i}else{return i.toFixed(3)}})
 				  v[0] = y;
 				  return v;
