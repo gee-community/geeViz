@@ -130,15 +130,30 @@ if(mode === 'LCMS'){
 
 }else if(mode === 'lcms-base-learner'){
   canExport = true;
+  startYear = 1984;endYear = 2020;
+  var minYear = startYear;var maxYear = endYear;
+  if(urlParams.startYear == null || urlParams.startYear == undefined){
+      urlParams.startYear = startYear;// = parseInt(urlParams.startYear);
+  }
+  if(urlParams.endYear == null || urlParams.endYear == undefined){
+     urlParams.endYear = endYear;// = parseInt(urlParams.endYear);
+  }
+  if(urlParams.lossMagThresh == null || urlParams.lossMagThresh == undefined){
+     urlParams.lossMagThresh = -0.2;// = parseInt(urlParams.endYear);
+  }
+  if(urlParams.gainMagThresh == null || urlParams.gainMagThresh == undefined){
+     urlParams.gainMagThresh = 0.1;// = parseInt(urlParams.endYear);
+  }
+  
   addCollapse('sidebar-left','parameters-collapse-label','parameters-collapse-div','PARAMETERS','<i class="fa fa-sliders mr-1" aria-hidden="true"></i>',false,null,'Adjust parameters used to filter and sort LCMS products');
-  addDualRangeSlider('parameters-collapse-div','Choose analysis year range:','startYear','endYear',startYear, endYear, startYear, endYear, 1,'analysis-year-slider','null','Years of LCMS data to include for land cover, land use, loss, and gain')
+  addDualRangeSlider('parameters-collapse-div','Choose analysis year range:','urlParams.startYear','urlParams.endYear',minYear, maxYear, urlParams.startYear, urlParams.endYear, 1,'analysis-year-slider','null','Years of LCMS data to include for land cover, land use, loss, and gain')
 
   addSubCollapse('parameters-collapse-div','lt-params-label','lt-params-div','LANDTRENDR Params', '',false,'')
   addSubCollapse('parameters-collapse-div','ccdc-params-label','ccdc-params-div','CCDC Params', '',false,'')
   
-  addRangeSlider('lt-params-div','Loss Magnitude Threshold','lossMagThresh',-0.8,0,-0.2,0.05,'loss-mag-thresh-slider','','The threshold to detect loss for each LANDTRENDR segment.  Any difference for a given segement less than this threshold will be flagged as loss') 
-  addRangeSlider('lt-params-div','Gain Magnitude Threshold','gainMagThresh',0,0.8,0.1,0.05,'gain-mag-thresh-slider','','The threshold to detect gain for each LANDTRENDR segment.  Any difference for a given segement greater than this threshold will be flagged as gain') 
-  addCheckboxes('lt-params-div','index-choice-checkboxes','Choose which indices to analyze','whichIndices',{'B1':false,'B2':false,'B3':false,'B4':false,'B5':false,'B7':false,'NBR':true,'NDVI':false,'NDMI':false,'TCB':false,'TCG':false,'TCW':false,'TCA':false})
+  addRangeSlider('lt-params-div','Loss Magnitude Threshold','urlParams.lossMagThresh',-0.8,-0.05,urlParams.lossMagThresh,0.05,'loss-mag-thresh-slider','','The threshold to detect loss for each LANDTRENDR segment.  Any difference for a given segement less than this threshold will be flagged as loss') 
+  addRangeSlider('lt-params-div','Gain Magnitude Threshold','urlParams.gainMagThresh',0.05,0.8,urlParams.gainMagThresh,0.05,'gain-mag-thresh-slider','','The threshold to detect gain for each LANDTRENDR segment.  Any difference for a given segement greater than this threshold will be flagged as gain') 
+  addCheckboxes('lt-params-div','index-choice-checkboxes','Choose which indices to analyze','whichIndices2',{'blue':false,'green':false,'red':false,'nir':false,'swir1':false,'swir2':false,'NBR':true,'NDVI':false,'NDMI':false,'brightness':false,'greenness':false,'wetness':false,'tcAngleBG':false})
   
   addRangeSlider('ccdc-params-div','Change Probability Threshold','ccdcChangeProbThresh',0,1,0.8,0.1,'ccdc-change-prob-thresh-slider','','The CCDC probabibility threshold to detect change.  Any probability for a given break greater than this threshold will be flagged as change') 
   
@@ -269,6 +284,207 @@ if(mode === 'LCMS'){
   $('#layer-list-collapse-div').append(`<div id="layer-list"></div>`);
   addCollapse('sidebar-left','tools-collapse-label','tools-collapse-div','TOOLS',`<i class="fa fa-gear mr-1" aria-hidden="true"></i>`,false,'','Tools to measure and chart data provided on the map');
   
+}
+else if(mode === 'STORM'){
+  canExport = true;
+  function refineFeatures(features,interpProps){
+          var left = features.slice(0,features.length-1);
+          var right = features.slice(1,features.length);
+          var f = [left[0]];
+          left.forEach(function(fl,i){
+            var fr = right[i];
+            var coordsL = fl.geometry.coordinates;
+            var coordsR = fr.geometry.coordinates;
+
+            
+            var fm =  JSON.parse(JSON.stringify(fl));
+            fm.geometry.coordinates = [(coordsL[0]+coordsR[0])/2.0,(coordsL[1]+coordsR[1])/2.0];
+            
+            interpProps.map(function(prop){
+
+              var lProp =fl.properties[prop];
+              var rProp = fr.properties[prop];
+              var m = (rProp+lProp)/2.0
+              fm.properties[prop] = m
+            })
+            f.push([fm,fr]);
+          })
+          f = f.flat();
+          // console.log(f);
+          // console.log(left);
+        return f
+        }
+
+  addCollapse('sidebar-left','parameters-collapse-label','parameters-collapse-div','PARAMETERS','<i class="fa fa-sliders mr-1" aria-hidden="true"></i>',true,null,'Adjust parameters used to prepare storm outputs');
+  
+   $('#parameters-collapse-div').append(`
+    <label>Download storm track from <a href="https://www.wunderground.com/hurricane" target="_blank">here</a>. Copy and paste the storm track coordinates into a text editor. Save the table. Then upload that table below. <a href="./geojson/michael.txt" download="michael.txt" >Download test data here.</a></label>
+    <input class = 'file-input my-1' type="file" id="stormTrackUpload" name="upload"  style="display: inline-block;" title = "Download storm track from https://www.wunderground.com/hurricane">
+    <hr>
+    <label>Provide name for storm (optional):</label>
+    <input rel="txtTooltip" title = 'Provide a name for the storm. The name of the provided storm track file will be used if left blank.'  type="user-selected-area-name" class="form-control" id="storm-name"  placeholder="Name your storm!" style='width:80%;'><hr>`)
+   addRangeSlider('parameters-collapse-div','Refinement iterations','refinementIterations',0, 10, 5, 1,'refinement-factor-slider','null',"Specify number of iterations to perform a linear interpolation of provided track. A higher number is needed for tracks with fewer real observations")
+   addRangeSlider('parameters-collapse-div','Max distance (km)','maxDistance',50, 500, 200, 50,'max-distance-slider','null',"Specify max distance in km from storm track to include in output")
+   addRangeSlider('parameters-collapse-div','Min wind (mph)','minWind',0, 75, 30, 5,'min-wind-slider','null',"Specify min wind speed in mph to include in output")
+      $('#parameters-collapse-div').append(`<div class="dropdown-divider" ></div>
+      <button class = 'btn' style = 'margin-bottom: 0.5em!important;' onclick = 'ingestStormTrack()' rel="txtTooltip" title = 'Click to ingest storm track and map damage'>Ingest Storm Track</button>
+      <button class = 'btn' style = 'margin-bottom: 0.5em!important;' onclick = 'reRun()' rel="txtTooltip" title = 'Click to remove existing layers and exports'>Clear All Layers/Exports</button><br>`);
+   
+    function ingestStormTrack() {
+      $('#summary-spinner').show();
+          if(jQuery('#stormTrackUpload')[0].files.length > 0){
+               
+            var fr=new FileReader(); 
+            fr.onload=function(){ 
+                var rows = fr.result.split('\n');
+                rows =rows.filter(row => row.split('\t').length > 5);
+                // console.log(fr.result) 
+                // console.log(rows)
+                rows = rows.map(function(row){
+                  row = row.split('\t');
+                  var out = {};
+                  out.type = "Feature";
+                  out.geometry = {};
+                  out.geometry.type = 'Point';
+                  out.geometry.coordinates = [parseFloat(row[3]), parseFloat(row[2])]
+                  
+                  out.properties = {};
+                  out.properties.lat = parseFloat(row[2]);
+                  out.properties.lon = parseFloat(row[3]);
+                  out.properties.wspd = parseFloat(row[4]);
+                  out.properties.pres = parseFloat(row[5]);
+                  out.properties.category = row[6];
+                  out.properties.date = new Date(row[0] + ' ' + row[1]).getTime();
+                  out.properties.year = new Date(row[0] + ' ' + row[1]).getFullYear()
+                  return out
+                })
+                // var sa = ee.Image('projects/USFS/LCMS-NFS/CONUS-Ancillary-Data/LANDFIRE/LF_US_EVH_200').geometry();
+                // rows = ee.FeatureCollection(rows).filterBounds(sa).getInfo().features;
+                // console.log(rows)
+                // Map2.addLayer(rows)
+                var iterations = refinementIterations;
+                while(iterations > 0 && rows.length < 1000){
+                  console.log('Refining');
+                  console.log(refinementIterations);
+                  rows = refineFeatures(rows,['lat','lon','wspd','pres','date','year']);
+                  console.log(rows.length);
+                  iterations--
+                }
+                showMessage('Refinement finished','Refined '+ (refinementIterations-iterations).toString() +'/'+ refinementIterations.toString()+' iterations.\nTotal number of refined track points is: '+rows.length.toString())
+                // rows = refineFeatures(rows,['lat','lon','wspd','pres','date','year']);
+
+                var rowsLeft = rows.slice(0,rows.length-1);
+                var rowsRight = rows.slice(1);
+                var zipped = ee.List.sequence(0,rowsLeft.length-1).getInfo().map(function(i){
+                  
+                  var out = {};
+                  out.type = "Feature";
+                  out.geometry = rowsLeft[i].geometry;
+
+                  out.properties = {};
+
+                  out.properties.current = rowsLeft[i].properties;
+                  out.properties.future = rowsRight[i].properties;
+                  
+                  return out
+                })
+                // console.log(zipped)
+                // Map2.addLayer(rows)
+                 $('#summary-spinner').slideUp();
+                 // console.log(zipped)
+                createHurricaneDamageWrapper(ee.FeatureCollection(zipped));
+            } 
+              
+            fr.readAsText(jQuery('#stormTrackUpload')[0].files[0]);
+            }else{
+              $('#summary-spinner').hide();
+              showMessage('No storm track provided','Please download storm track from <a href="https://www.wunderground.com/hurricane" target="_blank">here</a> . Copy and paste the storm track coordinates into a text editor. Save the table. Then upload that table above.')}
+
+
+        } 
+  //   $('#parameters-collapse-div').append(`<label>Provide storm track geoJSON:</label>
+  //                                       <input rel="txtTooltip" title = 'Provide storm track geoJSON'  type="user-selected-area-name" class="form-control"  id="storm-track" placeholder="Provide storm track geoJSON" style='width:80%;'>`)
+  
+  
+  // function ingestStormTrak(){
+  //     var months = {
+  //     'JAN' : '01',
+  //     'FEB' : '02',
+  //     'MAR' : '03',
+  //     'APR' : '04',
+  //     'MAY' : '05',
+  //     'JUN' : '06',
+  //     'JUL' : '07',
+  //     'AUG' : '08',
+  //     'SEP' : '09',
+  //     'OCT' : '10',
+  //     'NOV' : '11',
+  //     'DEC' : '12'
+  //     }
+  //   if(jQuery('#stormTrackUpload')[0].files.length > 0){
+  //     $('#summary-spinner').slideDown();
+  //     convertToGeoJSON('stormTrackUpload').done(function(converted){
+
+  //       converted.features = converted.features.map(function(f){
+  //         f.properties.HR = parseFloat(f.properties['HHMM'].slice(0,2));
+  //         f.properties.MN = parseFloat(f.properties['HHMM'].slice(2));
+  //         if(Object.keys(months).indexOf(f.properties.MONTH) > -1){
+  //           f.properties.MONTH = months[f.properties.MONTH]
+  //         }
+  //         return f
+  //       })
+  //       console.log('successfully converted to JSON');
+  //       console.log(converted);
+        
+
+
+  //       var iterations =0;
+  //       // var sa = ee.FeatureCollection("TIGER/2018/States").geometry();
+  //       var sa = ee.Image('projects/USFS/LCMS-NFS/CONUS-Ancillary-Data/LANDFIRE/LF_US_EVH_200').geometry();
+  //       // converted.features = ee.FeatureCollection(converted.features).filterBounds(sa).getInfo().features;
+  //       for(iterations; iterations > 0; iterations--){
+  //         converted.features = refineFeatures(converted.features,['LAT','LON','YEAR','MONTH','DAY','INTENSITY','MSLP','HR','MN']);
+          
+          
+          
+  //         //{"date": "Aug 16:18:00 GMT", "lat": 10.9, "lon": -25.4, "wspd": 20.0, "pres": 0.0, "FO": "O"}
+        
+  //       }
+        
+  //       var rows = converted.features.map(function(f){
+         
+  //         var props = f.properties;
+  //         f.properties.date = new Date(props.YEAR,props.MONTH-1,props.DAY,props.HR,props.MN)
+  //         f.properties.lat = props.LAT;
+  //         f.properties.lon = props.LON;
+  //         f.properties.wspd = props.INTENSITY
+  //         f.properties.pres = props.MSLP
+  //         f.properties.name = props.STORMNAME
+  //         f.properties.year = props.YEAR;
+  //         return f;//ee.Feature(f).buffer(10000)
+  //       });
+        
+        
+  //       createHurricaneDamageWrapper(rows,true);
+  //       $('#summary-spinner').slideUp(); 
+       
+        
+  //         })
+  //   }else{showMessage('No storm track provided','Please select a .zip shapefile or a .geojson file to summarize across')}
+  // }                     
+  // $('#parameters-collapse-div').append(`<label>Provide storm track geoJSON:</label>
+  //                                       <input rel="txtTooltip" title = 'Provide storm track geoJSON'  type="user-selected-area-name" class="form-control" value = '${JSON.stringify(rows)}' id="storm-track" placeholder="Provide storm track geoJSON" style='width:80%;'>`)
+  
+  // $('#parameters-collapse-div').append(`<label>Provide name for storm (optional):</label>
+  //                                       <input rel="txtTooltip" title = 'Provide a name for the storm. A default one will be provided if left blank.'  type="user-selected-area-name" class="form-control" id="storm-name" value = 'Michael' placeholder="Name your storm!" style='width:80%;'>`)
+  // addRangeSlider('parameters-collapse-div','Choose storm year','stormYear',1980, 2030, 2018, 1,'storm-year-slider','null',"Specify year of storm")
+  // $('#parameters-collapse-div').append(`<div class="dropdown-divider" ></div>`);
+  // $('#parameters-collapse-div').append(staticTemplates.reRunButton);
+  addCollapse('sidebar-left','layer-list-collapse-label','layer-list-collapse-div',mode+' DATA',`<img style = 'width:1.1em;' class='image-icon mr-1' src="images/layer_icon.png">`,true,null,mode+' DATA layers to view on map');
+  $('#layer-list-collapse-div').append(`<div id="layer-list"></div>`);
+  addCollapse('sidebar-left','tools-collapse-label','tools-collapse-div','TOOLS',`<i class="fa fa-gear mr-1" aria-hidden="true"></i>`,false,'','Tools to measure and chart data provided on the map');
+  addCollapse('sidebar-left','download-collapse-label','download-collapse-div','DOWNLOAD DATA',`<i class="fa fa-cloud-download mr-1" aria-hidden="true"></i>`,false,``,'Download '+mode+' products for further analysis');
+ 
 }else{
   addCollapse('sidebar-left','layer-list-collapse-label','layer-list-collapse-div','ANCILLARY DATA',`<img style = 'width:1.1em;' class='image-icon mr-1' src="images/layer_icon.png">`,true,null,mode+' DATA layers to view on map');
   addCollapse('sidebar-left','reference-layer-list-collapse-label','reference-layer-list-collapse-div','PLOT DATA',`<img style = 'width:1.1em;' class='image-icon mr-1' src="images/layer_icon.png">`,false,null,'Additional relevant layers to view on map intended to provide context for '+mode+' DATA');
@@ -308,7 +524,7 @@ addColorPicker('measure-area-div-icon-bar','area-color-picker','updateAreaColor'
 // addAccordianContainer('pixel-tools-collapse-div','pixel-tools-accordian');
 $('#tools-accordian').append(`<h5 class = 'pt-2' style = 'border-top: 0.1em solid black;'>Pixel Tools</h5>`);
 addSubAccordianCard('tools-accordian','query-label','query-div','Query Visible Map Layers',staticTemplates.queryDiv,false,`toggleTool(toolFunctions.pixel.query)`,staticTemplates.queryTipHover);
-// if(mode !== 'TEST'){
+// if(mode !== 'STORM'){
   addSubAccordianCard('tools-accordian','pixel-chart-label','pixel-chart-div','Query '+mode+' Time Series',staticTemplates.pixelChartDiv,false,`toggleTool(toolFunctions.pixel.chart)`,staticTemplates.pixelChartTipHover);
   addDropdown('pixel-chart-div','pixel-collection-dropdown','Choose which '+mode+' time series to chart','whichPixelChartCollection','Choose which '+mode+' time series to chart.');
  
@@ -320,7 +536,7 @@ if(mode === 'geeViz'){
   $('#share-button').remove();
 }
 
-if(mode === 'LCMS' || mode === 'MTBS'|| mode === 'TEST' || mode === 'lcms-base-learner' || mode === 'FHP'){
+if(mode === 'LCMS' || mode === 'MTBS'|| mode === 'lcms-base-learner' || mode === 'FHP'){
   $('#tools-accordian').append(`<h5 class = 'pt-2' style = 'border-top: 0.1em solid black;'>Area Tools</h5>`);
   addSubCollapse('tools-accordian','area-chart-params-label','area-chart-params-div','Area Tools Params', '',false,'')
   
@@ -351,12 +567,23 @@ if(mode === 'MTBS' || mode === 'Ancillary'){
 }
 //Handle exporting if chosen
 if(canExport){
+  // console.log('here')
    $('#download-collapse-div').append(staticTemplates.exportContainer);
    if(localStorage.export_crs !== undefined && localStorage.export_crs !== null && localStorage.export_crs.indexOf('EPSG') > -1){
     $('#export-crs').val(localStorage.export_crs)
   }else{localStorage.export_crs = $('#export-crs').val()};
    function cacheCRS(){
     localStorage.export_crs = $('#export-crs').val();
+   }
+   if(mode === 'STORM'){
+     $('#export-area-drawing-div').append(`<hr>
+                                            <button class = 'btn' onclick = 'addTrackBounds()' rel="txtTooltip" title = 'Add bounds of storm track for export area.'><i class="pr-1 fa fa-square-o" aria-hidden="true"></i> Use storm track bound as area to download</button>
+                                            `)
+     $('#export-button-div').append(`<hr>`);
+     addRangeSlider('export-button-div','Quick look spatial resolution','quickLookRes',1200, 6000, 3000, 300,'quick-look-res-slider','null',"Specify spatial resolution for quick look downloads.")
+     $('#export-button-div').append(`<button class = 'btn' onclick = 'downloadQuickLooks()' rel="txtTooltip" title = 'Quickly download outputs at coarse resolution'><i class="pr-1 fa fa-cloud-download" aria-hidden="true"></i>Download Quick Look Outputs</button>
+                                            `)
+     
    }
 }
 

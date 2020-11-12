@@ -49,9 +49,15 @@ var  titles = {
             centerWords: 'DATA',
             rightWords:'Viewer',
             title:'geeViz Data Viewer'
+            },
+    'STORM': {
+            leftWords: 'Storm',
+            centerWords: 'Damage',
+            rightWords:'Viewer',
+            title:'Storm Damage Viewer'
             }     
 }
-/////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 /*Add anything to head not already there*/
 $('head').append(`<title>${titles[mode].title}</title>`);
 $('head').append(`<script type="text/javascript" src="./js/gena-gee-palettes.js"></script>`);
@@ -88,19 +94,23 @@ var staticTemplates = {
                               </div> 
                               
                             </form>
-                            <div class = 'py-2'>
+                            <div class = 'py-2' id = 'export-area-drawing-div'>
                                 <button class = 'btn' onclick = 'selectExportArea()' rel="txtTooltip" title = 'Draw polygon by clicking on map. Double-click to complete polygon, press ctrl+z to undo most recent point, press Delete or Backspace to start over.'><i class="pr-1 fa fa-pencil" aria-hidden="true"></i> Draw area to download</button>
                                 <a href="#" onclick = 'undoExportArea()' rel="txtTooltip" title = 'Click to undo last drawn point (ctrl z)'><i class="btn fa fa-undo"></i></a>
                                 <a href="#" onclick = 'deleteExportArea()' rel="txtTooltip" title = 'Click to clear current drawing'><i class="btn fa fa-trash"></i></a>
                             </div>
-                            <div class = 'dropdown-divider'></div>
-                            <div class = 'pt-1 pb-3'>
-                                <button class = 'btn' onclick = 'exportImages()' rel="txtTooltip" title = 'Click to export selected images across selected area'><i class="pr-1 fa fa-cloud-download" aria-hidden="true"></i>Export Images</button>
-                                <button class = 'btn' onclick = 'cancelAllTasks()' rel="txtTooltip" title = 'Click to cancel all active exports'></i>Cancel All Exports</button>
+                            <div class = 'dropdown-divider'></div>  
+                            <div class = 'pt-1 pb-3' >
+                                <div id = 'export-button-div'>
+                                    <button class = 'btn' onclick = 'exportImages()' rel="txtTooltip" title = 'Click to export selected images across selected area'><i class="pr-1 fa fa-cloud-download" aria-hidden="true"></i>Export Images</button>
+                                    <button class = 'btn' onclick = 'cancelAllTasks()' rel="txtTooltip" title = 'Click to cancel all active exports'></i>Cancel All Exports</button>
+                                </div>
+                                <div class = 'dropdown-divider'></div>
                                 <span style = 'display:none;' class="fa-stack fa-2x py-0" id='export-spinner' data-toggle="tooltip"  title="">
 						    		<img rel="txtTooltip"   class="fa fa-spin fa-stack-2x" src="images/GEE_logo_transparent.png" alt="" style='width:2em;height:2em;'>
 						   			<strong id = 'export-count'  class="fa-stack-1x" style = 'padding-left: 0.2em;padding-top: 0.1em;cursor:pointer;'></strong>
 								</span>
+                                <div id = 'export-count-div'></div>
                             </div>
                             
                         </div>

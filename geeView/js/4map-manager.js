@@ -600,7 +600,7 @@ function toggleCumulativeMode(){
 //Wrapper function to add a time lapse to the map
 function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem){
   if(viz !== null && viz !== undefined && viz.serialized !== null && viz.serialized !== undefined && viz.serialized === true){
-        item = ee.Deserializer.fromJSON(JSON.parse(JSON.stringify(item)));
+        item = ee.Deserializer.decode(item);
         viz.serialized = false;
     }
   if(viz.cumulativeMode === null || viz.cumulativeMode === undefined){viz.cumulativeMode = true}
@@ -629,9 +629,9 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
   //Years need to be client-side
   //Assumes the provided image collection has time property under system:time_start property
   if(viz.years === null || viz.years === undefined){
-    console.log('start computing years')
+    console.log('start computing years');
     viz.years = item.sort('system:time_start',true).toList(10000,0).map(function(img){return ee.Date(ee.Image(img).get('system:time_start')).get('year')}).getInfo();
-    console.log('done computing years')
+    console.log('done computing years');
   }
   
   //Set up time laps object entry
@@ -816,14 +816,19 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
 }
 /////////////////////////////////////////////////////
 //Wrapper to add an export
-function addExport(eeImage,name,res,Export,metadataParams){
+
+function addExport(eeImage,name,res,Export,metadataParams,noDataValue){
 
   var exportElement = {};
   if(metadataParams === null || metadataParams === undefined){
-    metadataParams = {'studyAreaName':studyAreaName,'version':'v2019.1','summaryMethod':summaryMethod,'whichOne':'Gain Year','startYear':startYear,'endYear':endYear,'description':'this is a description'}
+    metadataParams = {};//'studyAreaName':studyAreaName,'version':'v2019.1','summaryMethod':summaryMethod,'whichOne':'Gain Year','startYear':startYear,'endYear':endYear,'description':'this is a description'}
   }
   if(Export === null || Export === undefined){
     Export = true;
+  }
+  if(noDataValue === null || noDataValue === undefined){
+ 
+    noDataValue = -32768;
   }
   var checked = '';
   if(Export){checked = 'checked'}
@@ -843,20 +848,20 @@ function addExport(eeImage,name,res,Export,metadataParams){
   exportElement.Export = Export;
   exportElement.ID = exportID;
   
-  exportImageDict[exportID] = {'eeImage':eeImage,'name':name,'res':res,'shouldExport':Export,'metadataParams':metadataParams}
+  exportImageDict[exportID] = {'eeImage':eeImage,'name':name,'res':res,'shouldExport':Export,'metadataParams':metadataParams,'noDataValue':noDataValue}
   // var exportList = document.querySelector("export-list");
   $('#export-list').append(`<div class = 'input-group'>
                               <span  class="input-group-addon">
-                                <input  id = '${name}-checkbox' type="checkbox" ${checked} >
-                                <label  style = 'margin-bottom:0px;'  for='${name}-checkbox'></label>
+                                <input  id = '${name}-checkbox-${exportID}' type="checkbox" ${checked} >
+                                <label  style = 'margin-bottom:0px;'  for='${name}-checkbox-${exportID}'></label>
                               </span>
                               
-                              <input  id = '${name}-name' class="form-control export-name-input" type="text" value="${exportElement.name}" rel="txtTooltip" title = 'Change export name if needed'>
+                              <input  id = '${name}-name-${exportID}' class="form-control export-name-input" type="text" value="${exportElement.name}" rel="txtTooltip" title = 'Change export name if needed'>
                             </div>`)
-  $('#' + name + '-name').on('input', function() {
+  $('#' + name + '-name-'+exportID.toString()).on('input', function() {
     exportImageDict[exportElement.ID].name = $(this).val()
   })
-  $('#' + name + '-checkbox').on('change', function() {
+  $('#' + name + '-checkbox-'+exportID.toString()).on('change', function() {
    
     exportImageDict[exportElement.ID].shouldExport = this.checked
   })
@@ -867,7 +872,7 @@ function addExport(eeImage,name,res,Export,metadataParams){
 //Function to add ee object as well as client-side objects to map
 function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem){
     if(viz !== null && viz !== undefined && viz.serialized !== null && viz.serialized !== undefined && viz.serialized === true){
-        item = ee.Deserializer.fromJSON(JSON.parse(JSON.stringify(item)));
+        item = ee.Deserializer.decode(item);
     }
     var currentGEERunID = geeRunID;
     if(whichLayerList === null || whichLayerList === undefined){whichLayerList = "layer-list"}
@@ -1034,6 +1039,8 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
 
         if(viz.legendLabelLeft !== null && viz.legendLabelLeft !== undefined){legend.min = viz.legendLabelLeft + ' ' + viz.min}
         if(viz.legendLabelRight !== null && viz.legendLabelRight !== undefined){legend.max = viz.legendLabelRight + ' ' + viz.max}
+        if(viz.legendLabelLeftAfter !== null && viz.legendLabelLeftAfter !== undefined){legend.min =  viz.min + ' '+viz.legendLabelLeftAfter }
+        if(viz.legendLabelRightAfter !== null && viz.legendLabelRightAfter !== undefined){legend.max = viz.max + ' '+ viz.legendLabelRightAfter }
         if(legend.min ==null){legend.min = 'min'};
         if(legend.max ==null){legend.max = 'max'};
     
@@ -1846,7 +1853,10 @@ function dropdownUpdateStudyArea(whichOne){
       run = runSimple;
     } else if( mode === 'LT'){
       run  = runLT;
-    }else if(mode === 'lcms-base-learner'){
+    }else if( mode === 'STORM'){
+      run  = runStorm;
+    }
+    else if(mode === 'lcms-base-learner'){
       run = runBaseLearner
     }
       else if(studyAreaName === 'CONUS'){
@@ -2446,6 +2456,8 @@ function initialize() {
         run = runFHP;
       }else if(mode === 'geeViz'){
         run = runGeeViz;
+      }else if( mode === 'STORM'){
+      run  = runStorm;
       }else if(mode === 'lcms-base-learner'){
         run = runBaseLearner
       }else if(studyAreaName === 'CONUS'){
