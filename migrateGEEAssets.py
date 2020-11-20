@@ -1,8 +1,7 @@
-#--------------------------------------------------------
-#           migrateGEEAssets.py
-#-------------------------------------------------------
-# Leah Campbell, 11/19/2020
-# This script recursively migrates Google Earth Engine assets from one repository to a new one.
+import ee,os,json,re
+ee.Initialize()
+###################################################################################################
+# This script recursively migrates Google Earth Engine assets from one repository to a new one, sets permissions, and deletes old assets if needed.
 # **Important** for this to work you need the following:
 #       - The credential you're using must have editor permissions in both the source and destination repositories
 #                               OR
@@ -10,200 +9,139 @@
 #           change the permissions of all the original assets to "Anyone Can Read" (to do this, set changePermissions = True below)
 #       - The geeViz package installed in your python instance. (https://github.com/gee-community/geeViz)
 
-import ee
-ee.Initialize()
-import os, pdb, sys
-from geeViz import assetManagerLib as assetLib
-
+#Written by:
+#Ian Housman ian.housman@usda.gov ian.housman@gmail.com 
+#Leah Campbell leah.campbell@usda.gov leahs.campbell@gmail.com
+#RedCastle Resources Inc.
+#MIT License
+###################################################################################################
 # Repository you are moving from:
-sourceRoot = 'projects/earthengine-legacy/assets/projects/USFS/LCMS-NFS/Processing_Tiles_Alaska' # Make sure you keep 'projects/earthengine-legacy/assets' in front here.
+sourceRoot = 'users/iwhousman/test'
+# sourceRoot = 'projects/USFS/LCMS-NFS/R1/FNF'
+# sourceRoot = 'projects/lcms-292214/assets/AK-Ancillary-Data'
+
 # Repository you are moving to:
-destinationRoot = 'projects/lcms-tcc-shared/assets/Processing_Tiles/Alaska'
-
-# If there are any assets you DON'T want to move, enter the full path here.
-# Assets = images, imageCollections, featureCollections, etc., NOT folders.
-assetsToSkip = []
-
+# It is assumed this folder already exists and user account has write access to it
+# destinationRoot = 'projects/lcms-292214/assets/migrationTest/FNF'
+# destinationRoot = 'users/usfs-ihousman/migrationTest'
 # If the credential you're using does not have editor permissions in the source repository
-changePermissions = True
+#Must include 'user:' prefix if it is a individual's Email or 'group:' if it is a Google Group
+changeSourcePermissions = True
+sourceReaders = []
+sourceWriters = ['user:ian.housman@usda.gov']
+source_all_users_can_read = False
 
-#-------------------------------------------------------------------
-#                   Functions
-#--------------------------------------------------------------------
+changeDestinationPermissions = True
+destinationReaders = []
+destinationWriters = []
+destination_all_users_can_read = False
+###################################################################################################
+#Function to get all folders, imageCollections, images, and tables under a given folder or imageCollection level
+def getTree(fromRoot,toRoot,treeList = []):
+    pathPrefix = 'projects/earthengine-legacy/assets/'
 
-def sortFolderAssets(assets):
-    imagesAndTables = [a for a in assets if a['type'] == 'IMAGE' or a['type'] == 'TABLE']
-    imageCollections = [a for a in assets if a['type'] == 'IMAGE_COLLECTION']
-    folders = [a for a in assets if a['type'] == 'FOLDER']
-    return imagesAndTables, imageCollections, folders
+    #Clean up the given paths
+    if(fromRoot[-1] != '/'):fromRoot += '/'
+    if(toRoot[-1] != '/'):toRoot += '/'
 
-def createFolders(oldFolders, existingNewFolders, newDirName):
-    existingFolderIDs = [object['name'] for object in existingNewFolders]
-    for oldFolder in oldFolders:
-        newFolder = os.path.join(newDirName, os.path.basename(oldFolder['name'])).replace('\\','/')
-        if newFolder in existingFolderIDs:
-            print('Skipping '+newFolder+': Already Exists')
-        else:
-            print('Creating '+newFolder)
-            ee.data.createAsset({'type': 'FOLDER', 'name': newFolder})
+    #Handle inconsistencies with the earthengine-legacy prefix
+    if re.match("^projects/[^/]+/assets/.*$",fromRoot) == None:
+        fromRoot = pathPrefix + fromRoot
+    if re.match("^projects/[^/]+/assets/.*$",toRoot) == None:
+        toRoot = pathPrefix + toRoot
+    # print(fromRoot,toRoot)
+    #List assets 
+    try:
+        assets = ee.data.listAssets({'parent':fromRoot})['assets']
+    except Exception as e1:
+        print(e1)
+        # try:
+        #     assets = ee.data.listAssets({'parent':fromRoot})['assets']
+        # except Exception as e2:
+        #     print(e2)
 
-def copyImages(oldDirName, oldImages, newDirName, existingNewImages):
-    if len(oldImages) > 0:
-        failedCopies = []
-        existingImageIDs = [object['name'] for object in existingNewImages]
-        for oldImage in oldImages:
-            if oldImage['id'] not in assetsToSkip:
-                newImage = os.path.join(newDirName, os.path.basename(oldImage['name'])).replace('\\','/')
-                if newImage in existingImageIDs:
-                    print(newImage+' Already Exists: Skipping Copy')
-                else:
-                    print('Copying '+oldImage['name']+' to '+newImage)
-                    try:
-                        ee.data.copyAsset(oldImage['id'], newImage)
-                    except Exception as e:
-                        print('Error: ',oldImage['id'])
-                        failedCopies.append([oldImage['id'], e])
-                        
-        if len(failedCopies) > 0:
-            print('')
-            print('FAILED IMAGE/TABLE COPIES: ')
-            for c in failedCopies:
-                print(c[0])
-                print(c[1])
-            print('EXITING BECAUSE OF FAILED COPIES LISTED ABOVE')
-            sys.exit(0)
-        else:
-            print('SUCCESS COPYING IMAGES AND TABLES FROM '+oldDirName)
-    else:
-        print('NO IMAGES OR TABLES TO COPY')
-
-def copyImageCollections(oldDirName, oldImageCollections, newDirName, existingNewImageCollections):
-    if len(oldImageCollections) > 0:
-        failedCopies = []
-        existingImageCollectionIDs = [object['name'] for object in existingNewImageCollections]
-        for oldImageCollection in oldImageCollections:
-            if oldImageCollection['id'] not in assetsToSkip:
-                newImageCollection = os.path.join(newDirName, os.path.basename(oldImageCollection['name'])).replace('\\','/')
-                if newImageCollection in existingImageCollectionIDs:
-                    print(newImageCollection+' Already Exists')
-                    imageCollectionExists = True
-                else:
-                    print('Creating '+newImageCollection)
-                    imageCollectionExists = False
-                    try:
-                        ee.data.createAsset({'type': 'IMAGE_COLLECTION', 'name': newImageCollection})
-                    except:
-                        print('Error creating '+newImageCollection)
-                        failedCopies.append([oldImageCollection['id'], e])
-                        return
-
-                sizeOld = ee.ImageCollection(oldImageCollection['id']).size().getInfo()
-                sizeNew = ee.ImageCollection(newImageCollection).size().getInfo()
-                print('Copying '+oldImageCollection['name']+' to '+newImageCollection)
-                if (imageCollectionExists and sizeOld != sizeNew) or (imageCollectionExists == False):
-                    try:
-                        oldImages = ee.data.listAssets({'parent': oldImageCollection['name']})['assets']
-                        existingImageIDs = [object['name'] for object in ee.data.listAssets({'parent': newImageCollection})['assets']]
-                        for oldImage in oldImages:
-                            newImage = os.path.join(newImageCollection, os.path.basename(oldImage['name'])).replace('\\','/')
-                            if newImage in existingImageIDs:
-                                print(newImage+' Already Exists: Skipping Copy')
-                            else:
-                                print('Copying '+oldImage['name']+' to '+newImage)
-                                try:
-                                    ee.data.copyAsset(oldImage['id'], newImage)
-                                except Exception as e:
-                                    print('Error: ',oldImage['id'])
-                                    failedCopies.append([oldImage['id'], e])
-                                    
-                    except Exception as e:
-                        print('Error Copying Images: ',oldImageCollection['id'])
-                        failedCopies.append([oldImageCollection['id'], e])
-        if len(failedCopies) > 0:
-            print('')
-            print('FAILED IMAGE COLLECTION COPIES: ')
-            for c in failedCopies:
-                print(c[0])
-                print(c[1])
-            print('EXITING BECAUSE OF FAILED COPIES LISTED ABOVE')
-            sys.exit(0)
-        else:
-            print('SUCCESS COPYING IMAGE COLLECTIONS FROM '+oldDirName)
-    else:
-        print('NO IMAGE COLLECTIONS TO COPY')
-
-def copyAndCreate(oldDirName, newDirName):
-    # List assets you want to move over and the existing assets in the new location.
-    oldAssets = ee.data.listAssets({'parent': oldDirName})['assets']
-    existingNewAssets = ee.data.listAssets({'parent': newDirName})['assets']
-
-    # Sort assets to move and existing assets
-    oldImagesAndTables, oldImageCollections, oldFolders = sortFolderAssets(oldAssets)
-    existingNewImagesAndTables, existingNewImageCollections, existingNewFolders = sortFolderAssets(existingNewAssets)
-
-    # Copy over Images and Tables
-    copyImages(oldDirName, oldImagesAndTables, newDirName, existingNewImagesAndTables)
-    copyImageCollections(oldDirName, oldImageCollections, newDirName, existingNewImageCollections) 
-
-    # Create any folders that don't exist already
-    createFolders(oldFolders, existingNewFolders, newDirName)
-
-    return oldFolders
-
-#--------------------------------------------------------------------------------------------
-#            Work Through Hierarchy and Make Sure All Assets Have Proper Permissions
-#--------------------------------------------------------------------------------------------
-if changePermissions:
-    assets = ee.data.listAssets({'parent': sourceRoot})['assets']
-    for assetName in assets:
-        print('Updating ACL For', assetName['id'])
-        assetLib.updateACL(assetName['id'], writers = [], all_users_can_read = True, readers = [])
-    folders = [a['name'] for a in assets if a['type'] == 'FOLDER']
-    for folder in folders:
-        subAssets = ee.data.listAssets({'parent': folder})['assets']
-        for assetName in subAssets:
-            print('Updating ACL For', assetName['id'])
-            assetLib.updateACL(assetName['id'], writers = [], all_users_can_read = True, readers = [])
-        subFolders = [a['name'] for a in subAssets if a['type'] == 'FOLDER']
-        for subFolder in subFolders:
-            subAssets2 = ee.data.listAssets({'parent': subFolder})['assets']
-            for assetName in subAssets2:
-                print('Updating ACL For', assetName['id'])
-                assetLib.updateACL(assetName['id'], writers = [], all_users_can_read = True, readers = [])
-            subFolders2 = [a['name'] for a in subAssets if a['type'] == 'FOLDER']
-            for subFolder2 in subFolders2:
-                subAssets3 = ee.data.listAssets({'parent': subFolder2})['assets']
-                for assetName in subAssets3:
-                    print('Updating ACL For', assetName['id'])
-                    assetLib.updateACL(assetName['name'], writers = [], all_users_can_read = True, readers = [])
-
-#--------------------------------------------------------------------------------------------
-#            Work Through Hierarchy and Copy Over Assets
-#--------------------------------------------------------------------------------------------
-# First create the folders in the new repository
-oldFolders = copyAndCreate(sourceRoot, destinationRoot)
-
-# Then go folder by folder and copy everything over.
-for oldFolder in oldFolders:
-    print(oldFolder)
+    #Reursively walk down the tree
+    nextLevels = []
+    for asset in assets:
+        fromID = asset['name']
+        fromType = asset['type']
+        # fromID = fromID.replace('projects/earthengine-legacy/assets/','')
+        toID = fromID.replace(fromRoot,toRoot)
+        
+        if fromType in ['FOLDER','IMAGE_COLLECTION']:
+            nextLevels.append([fromID,toID])
+        treeList.append([fromType,fromID,toID])  
     
-    sourceSubRoot = oldFolder['name']
-    destinationSubRoot = os.path.join(destinationRoot, sourceSubRoot.split(sourceRoot)[1].split('/')[1]).replace('\\','/') 
+    
+    for i1,i2 in nextLevels:
+        getTree(i1,i2,treeList)
+    return treeList
+###################################################################################################
+#Function for setting permissions for all files under a specified root level
+#Either a list of assets a root to start from can be provided
+def batchChangePermissions(assetList = None,root = None,readers = [],writers = [], all_users_can_read = False):
+    if assetList == None:
+        assetList = [i[1] for i in getTree(root,root)]
 
-    oldSubFolders = copyAndCreate(sourceSubRoot, destinationSubRoot)
-    for oldSubFolder in oldSubFolders:
-        print(oldSubFolder)
-        
-        sourceSubRoot2 = oldSubFolder['name']
-        destinationSubRoot2 = os.path.join(destinationSubRoot, sourceSubRoot2.split(sourceSubRoot)[1].split('/')[1]).replace('\\','/') 
+    for assetID in assetList:
+        print('Changing permissions for: {}'.format(assetID))
+        try:
+            ee.data.setAssetAcl(assetID, json.dumps({u'writers': writers, u'all_users_can_read': all_users_can_read, u'readers': readers}))
+        except Exception as e:
+            print(e)
+###################################################################################################
+#Function to copy all folders, imageCollections, images, and tables under a given folder or imageCollection level
+#Permissions can also be set here 
+def copyAssetTree(fromRoot,toRoot,changePermissions = False,readers = [],writers = [],all_users_can_read = False):
+    treeList = getTree(fromRoot,toRoot)
+    
+    #Iterate across all assets and copy and create when appropriate
+    for fromType,fromID,toID in treeList:
+        if fromType in ['FOLDER','IMAGE_COLLECTION']:
+            try:
+                print('Creating {}: {}'.format(fromType,toID))
+                ee.data.createAsset({'type':'Image_Collection', 'name': toID})
+            except Exception as e:
+                print(e)
+        else:
+            try:
+                print('Copying {}: {}'.format(fromType,toID))
+                ee.data.copyAsset(fromID,toID,False)
 
-        oldSubFolders2 = copyAndCreate(sourceSubRoot2, destinationSubRoot2)
-        for oldSubFolder2 in oldSubFolders2:
-            print(oldSubFolder2)
-        
-            sourceSubRoot3 = oldSubFolder2['name']
-            destinationSubRoot3 = os.path.join(destinationSubRoot2, sourceSubRoot3.split(sourceSubRoot2)[1].split('/')[1]).replace('\\','/') 
+            except Exception as e:
+                print(e)
+        print()
+        print()
 
-            oldSubFolders2 = copyAndCreate(sourceSubRoot3, destinationSubRoot3)
-
-
+    if changePermissions:
+        batchChangePermissions(assetList = [i[2] for i in treeList],root = None,readers = [],writers = [], all_users_can_read = False)
+###################################################################################################
+#Function to delete all folders, imageCollections, images, and tables under a given folder or imageCollection level
+def deleteAssetTree(root):
+    answer = input('Are you sure you want to delete all assets under {}? (y = yes, n = no) '.format(root))
+    print(answer)
+    if answer.lower() == 'y':
+        answer = input('You answered yes. Just double checking. Are you sure you want to delete all assets under {}? (y = yes, n = no) '.format(root))
+        if answer.lower() == 'y':
+            treeList = getTree(root,root)
+            treeList.reverse()
+            for fromType, ID1,ID2 in treeList:
+                print('Deleting {}'.format(ID1))
+                try:
+                    ee.data.deleteAsset(ID1)
+                except Exception as e:
+                    print(e)
+###################################################################################################
+#Step 1: Make sure source has account added as reader (may need to use different credentials for this)
+batchChangePermissions(None, sourceRoot,sourceReaders,sourceWriters, source_all_users_can_read)
+###################################################################################################
+#Step 2: Use this function to copy assets
+# copyAssetTree(sourceRoot,destinationRoot,changeDestinationPermissions,destinationReaders,destinationWriters,destination_all_users_can_read)
+###################################################################################################
+#!!!!!!! DANGER !!!!!!!!!
+#!!!!!!! DANGER !!!!!!!!!
+#!!!!!!! DANGER !!!!!!!!!
+#!!!!!!! DANGER !!!!!!!!!
+#Optional Step 3: Once all assets are copied and inspected, you can use this method to delete all files under the root level
+#This method is final and there is no way to undo this
+# deleteAssetTree(destinationRoot)
