@@ -1,4 +1,4 @@
-import ee,os,json
+import ee,os,json,re
 ee.Initialize()
 ###################################################################################################
 # This script recursively migrates Google Earth Engine assets from one repository to a new one, sets permissions, and deletes old assets if needed.
@@ -16,17 +16,25 @@ ee.Initialize()
 #MIT License
 ###################################################################################################
 # Repository you are moving from:
-sourceRoot = 'projects/USFS/LCMS-NFS/R1/FNF'
+sourceRoot = 'users/iwhousman/test'
+# sourceRoot = 'projects/USFS/LCMS-NFS/R1/FNF'
+# sourceRoot = 'projects/lcms-292214/assets/AK-Ancillary-Data'
 
 # Repository you are moving to:
 # It is assumed this folder already exists and user account has write access to it
-destinationRoot = 'projects/lcms-292214/assets/migrationTest/FNF'
-
+# destinationRoot = 'projects/lcms-292214/assets/migrationTest/FNF'
+# destinationRoot = 'users/usfs-ihousman/migrationTest'
 # If the credential you're using does not have editor permissions in the source repository
-changePermissions = True
-readers = []
-writers = []
-all_users_can_read = True
+#Must include 'user:' prefix if it is a individual's Email or 'group:' if it is a Google Group
+changeSourcePermissions = True
+sourceReaders = []
+sourceWriters = ['user:ian.housman@usda.gov']
+source_all_users_can_read = False
+
+changeDestinationPermissions = True
+destinationReaders = []
+destinationWriters = []
+destination_all_users_can_read = False
 ###################################################################################################
 #Function to get all folders, imageCollections, images, and tables under a given folder or imageCollection level
 def getTree(fromRoot,toRoot,treeList = []):
@@ -35,21 +43,29 @@ def getTree(fromRoot,toRoot,treeList = []):
     #Clean up the given paths
     if(fromRoot[-1] != '/'):fromRoot += '/'
     if(toRoot[-1] != '/'):toRoot += '/'
-    fromRoot = fromRoot.replace(pathPrefix,'')
-    toRoot = toRoot.replace(pathPrefix,'')
-   
-    #List assets - handle inconsistencies with the earthengine-legacy prefix
+
+    #Handle inconsistencies with the earthengine-legacy prefix
+    if re.match("^projects/[^/]+/assets/.*$",fromRoot) == None:
+        fromRoot = pathPrefix + fromRoot
+    if re.match("^projects/[^/]+/assets/.*$",toRoot) == None:
+        toRoot = pathPrefix + toRoot
+    # print(fromRoot,toRoot)
+    #List assets 
     try:
-        assets = ee.data.listAssets({'parent':pathPrefix+fromRoot})['assets']
-    except:
         assets = ee.data.listAssets({'parent':fromRoot})['assets']
+    except Exception as e1:
+        print(e1)
+        # try:
+        #     assets = ee.data.listAssets({'parent':fromRoot})['assets']
+        # except Exception as e2:
+        #     print(e2)
 
     #Reursively walk down the tree
     nextLevels = []
     for asset in assets:
-        fromID = asset['id']
+        fromID = asset['name']
         fromType = asset['type']
-        fromID = fromID.replace('projects/earthengine-legacy/assets/','')
+        # fromID = fromID.replace('projects/earthengine-legacy/assets/','')
         toID = fromID.replace(fromRoot,toRoot)
         
         if fromType in ['FOLDER','IMAGE_COLLECTION']:
@@ -61,20 +77,30 @@ def getTree(fromRoot,toRoot,treeList = []):
         getTree(i1,i2,treeList)
     return treeList
 ###################################################################################################
+#Function for setting permissions for all files under a specified root level
+#Either a list of assets a root to start from can be provided
+def batchChangePermissions(assetList = None,root = None,readers = [],writers = [], all_users_can_read = False):
+    if assetList == None:
+        assetList = [i[1] for i in getTree(root,root)]
+
+    for assetID in assetList:
+        print('Changing permissions for: {}'.format(assetID))
+        try:
+            ee.data.setAssetAcl(assetID, json.dumps({u'writers': writers, u'all_users_can_read': all_users_can_read, u'readers': readers}))
+        except Exception as e:
+            print(e)
+###################################################################################################
 #Function to copy all folders, imageCollections, images, and tables under a given folder or imageCollection level
 #Permissions can also be set here 
-def copyAssetTree(fromRoot,toRoot,changePermissions = False,readers = [],writers = [],all_users_can_read = True):
+def copyAssetTree(fromRoot,toRoot,changePermissions = False,readers = [],writers = [],all_users_can_read = False):
     treeList = getTree(fromRoot,toRoot)
+    
     #Iterate across all assets and copy and create when appropriate
     for fromType,fromID,toID in treeList:
         if fromType in ['FOLDER','IMAGE_COLLECTION']:
             try:
                 print('Creating {}: {}'.format(fromType,toID))
-                ee.data.createAsset({'type':fromType, 'name': toID})
-
-                if changePermissions:
-                    print('Changing permissions for: {}'.format(toID))
-                    ee.data.setAssetAcl(toID, json.dumps({u'writers': writers, u'all_users_can_read': all_users_can_read, u'readers': readers}))
+                ee.data.createAsset({'type':'Image_Collection', 'name': toID})
             except Exception as e:
                 print(e)
         else:
@@ -82,11 +108,13 @@ def copyAssetTree(fromRoot,toRoot,changePermissions = False,readers = [],writers
                 print('Copying {}: {}'.format(fromType,toID))
                 ee.data.copyAsset(fromID,toID,False)
 
-                if changePermissions and fromType != 'IMAGE_COLLECTION':
-                    print('Changing permissions for: {}'.format(toID))
-                    ee.data.setAssetAcl(toID, json.dumps({u'writers': writers, u'all_users_can_read': all_users_can_read, u'readers': readers}))
             except Exception as e:
                 print(e)
+        print()
+        print()
+
+    if changePermissions:
+        batchChangePermissions(assetList = [i[2] for i in treeList],root = None,readers = [],writers = [], all_users_can_read = False)
 ###################################################################################################
 #Function to delete all folders, imageCollections, images, and tables under a given folder or imageCollection level
 def deleteAssetTree(root):
@@ -104,13 +132,16 @@ def deleteAssetTree(root):
                 except Exception as e:
                     print(e)
 ###################################################################################################
-#Use this function to copy assets
-# copyAssetTree(sourceRoot,destinationRoot,changePermissions,readers,writers,all_users_can_read)
+#Step 1: Make sure source has account added as reader (may need to use different credentials for this)
+batchChangePermissions(None, sourceRoot,sourceReaders,sourceWriters, source_all_users_can_read)
+###################################################################################################
+#Step 2: Use this function to copy assets
+# copyAssetTree(sourceRoot,destinationRoot,changeDestinationPermissions,destinationReaders,destinationWriters,destination_all_users_can_read)
 ###################################################################################################
 #!!!!!!! DANGER !!!!!!!!!
 #!!!!!!! DANGER !!!!!!!!!
 #!!!!!!! DANGER !!!!!!!!!
 #!!!!!!! DANGER !!!!!!!!!
-#Once all assets are copied and inspected, you can use this method to delete all files under the root level
+#Optional Step 3: Once all assets are copied and inspected, you can use this method to delete all files under the root level
 #This method is final and there is no way to undo this
-#deleteAssetTree(sourceRoot)
+# deleteAssetTree(destinationRoot)
