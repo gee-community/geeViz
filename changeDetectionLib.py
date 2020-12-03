@@ -533,6 +533,66 @@ def LT_VT_vertStack_multBands(img, verdet_or_landtrendr, multBy):
               .copyProperties(img)
     return out
 
+#Simplified method to convert LANDTRENDR stack to annual collection of
+#Duration, fitted, magnitude, slope, and diff
+#Improved handling of start year delay found in older method
+def simpleLTFit(ltStack,startYear,endYear,indexName = ''):
+  indexName = ee.String(indexName)
+
+  #Separate years and fitted values of vertices
+  yrs = ltStack.select('yrs_.*').selfMask()
+  fit = ltStack.select('fit_.*').updateMask(yrs.mask())
+  
+  #Find the first and last vertex years
+  isStartYear = yrs.reduce(ee.Reducer.firstNonNull())
+  isEndYear = yrs.reduce(ee.Reducer.lastNonNull())  
+  blankMask = yrs.gte(100000)
+  
+  #Iterate across each year to find the values for that year
+  def getYearValues(yr):
+    yr = ee.Number(yr)
+    
+    # Find the segment the year belongs to
+    # Handle whether the year is the same as the first vertex year
+    startYrMask =  blankMask
+    startYrMask = startYrMask.where(isStartYear.eq(yr), yrs.lte(yr))
+    startYrMask = startYrMask.where(isStartYear.lt(yr), yrs.lt(yr))
+    
+    # Handle whether the year is the same as the last vertex year
+    endYrMask =  blankMask
+    endYrMask = endYrMask.where(isStartYear.eq(yr),yrs.gt(yr))
+    endYrMask = endYrMask.where(isStartYear.lt(yr),yrs.gte(yr))
+
+    # Get fitted values for the vertices segment the year is within
+    fitStart = fit.updateMask(startYrMask).reduce(ee.Reducer.lastNonNull())
+    fitEnd = fit.updateMask(endYrMask).reduce(ee.Reducer.firstNonNull())
+    
+    # Get start and end year for the vertices segment the year is within
+    yearStart = yrs.updateMask(startYrMask).reduce(ee.Reducer.lastNonNull())
+    yearEnd = yrs.updateMask(endYrMask).reduce(ee.Reducer.firstNonNull())
+    
+    # Get the difference and duration of the segment
+    segDiff = fitEnd.subtract(fitStart)
+    segDur = yearEnd.subtract(yearStart)
+    
+    #Get the varius annual derivatives
+    tDiff = ee.Image(yr).subtract(yearStart)
+    segSlope = segDiff.divide(segDur)
+    fitDiff = segSlope.multiply(tDiff)
+    fitted = fitStart.add(fitDiff)
+    
+    formatted = segDur.addBands(fitted)\
+                .addBands(segDiff)\
+                .addBands(segSlope)\
+                .addBands(fitDiff)\
+                .rename([indexName.cat('_LT_dur'), indexName.cat('_LT_fitted'), indexName.cat('_LT_mag'), indexName.cat('_LT_slope'), indexName.cat('_LT_diff')])\
+                .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())
+
+    return formatted
+
+  out = ee.ImageCollection(ee.List.sequence(startYear,endYear).map(lambda yr: getYearValues(yr)))
+  return out
+
 # Function to parse stack from LANDTRENDR or VERDET into image collection
 # July 2019 LSC: multiply(distDir) and multiply(10000) now take place outside of this function,
 # but must be done BEFORE stack is passed to this function
