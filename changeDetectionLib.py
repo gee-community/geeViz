@@ -1682,9 +1682,19 @@ def getCCDCSegCoeffs(timeImg,ccdcImg,fillGaps):
 # yearStartMonth and yearStartDay are the date that you want the CCDC "year" to start at. This is mostly important for Annualized CCDC.
 # For LCMS, this is Sept. 1. So any change that occurs before Sept 1 in that year will be counted in that year, and Sept. 1 and after
 # will be counted in the following year.
-def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, yearStartMonth, yearStartDay):
+def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, yearStartMonth, yearStartDay, tEndExtrapolationPeriod):
   # Create image collection of images with the proper time stamp as well as a 'year' band with the year fraction.
   timeImgs = getTimeImageCollection(startYear, endYear, startJulian ,endJulian, 1, yearStartMonth, yearStartDay)
+
+  # If selected, add a constant amount of time to last end segment to make sure the last year is annualized correctly.
+  # tEndExtrapolationPeriod should be a fraction of a year.
+  finalTEnd = ccdcImg.select('tEnd')
+  finalTEnd = finalTEnd.arraySlice(0,-1,null).rename('tEnd').arrayGet(0).add(tEndExtrapolationPeriod).toArray(0)
+  tEnds = ccdcImg.select('tEnd')
+  tEnds = tEnds.arraySlice(0,0,-1).arrayCat(finalTEnd,0).rename('tEnd')
+  keepBands = ccdcImg.bandNames().remove('tEnd')
+  ccdcImg = ccdcImg.select(keepBands).addBands(tEnds)
+
   # Loop through time image collection and grab the correct CCDC coefficients
   annualSegCoeffs = timeImgs.map(lambda img: getCCDCSegCoeffs(img,ccdcImg,True))
   return annualSegCoeffs

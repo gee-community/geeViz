@@ -672,7 +672,7 @@ def getLandsat(studyArea,
     
     #Join the TOA with SR QA bands
     print('Joining TOA with SR QA bands')
-    print(ls.size(), lsTOAFMASK.size())
+    #print(ls.size(), lsTOAFMASK.size())
     ls = joinCollections(ls.select([0,1,2,3,4,5,6]), lsTOAFMASK, False, 'system:index')
     # lsTOAFMASK = getLandsat('SR').select(['pixel_qa']) 
     # #Join the TOA with SR QA bands
