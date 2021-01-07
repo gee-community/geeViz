@@ -1689,7 +1689,7 @@ def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, yearStart
   # If selected, add a constant amount of time to last end segment to make sure the last year is annualized correctly.
   # tEndExtrapolationPeriod should be a fraction of a year.
   finalTEnd = ccdcImg.select('tEnd')
-  finalTEnd = finalTEnd.arraySlice(0,-1,null).rename('tEnd').arrayGet(0).add(tEndExtrapolationPeriod).toArray(0)
+  finalTEnd = finalTEnd.arraySlice(0,-1,None).rename('tEnd').arrayGet(0).add(tEndExtrapolationPeriod).toArray(0)
   tEnds = ccdcImg.select('tEnd')
   tEnds = tEnds.arraySlice(0,0,-1).arrayCat(finalTEnd,0).rename('tEnd')
   keepBands = ccdcImg.bandNames().remove('tEnd')
