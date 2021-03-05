@@ -80,7 +80,6 @@ def batchCopy(fromFolder,toFolder,outType = 'imageCollection'):
     elif outType == 'tables':
         images = walkFoldersTables(fromFolder)
     #print( images)
-    pdb.set_trace()
 
     for image in images:
         out = toFolder +'/'+ base(image)
