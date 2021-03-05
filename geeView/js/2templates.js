@@ -2,14 +2,20 @@
 /////////////////////////////////////////////////////////////////////
 /*Provide titles to be shown for each mode*/
 var  titles = {
-	'LCMS': {
+	'LCMS-pilot': {
 		    leftWords: 'LCMS',
 		    centerWords: 'DATA',
 		    rightWords:'Explorer',
 		    title:'LCMS Data Explorer'
 			},
+    'LCMS': {
+            leftWords: `<img style = 'width:1.0em;height:0.9em;margin-top:-0.2em;margin-left:0.2em' class='image-icon mr-1' src="images/lcms-icon.png">LCMS`,
+            centerWords: 'DATA',
+            rightWords:'Explorer',
+            title:'LCMS Data Explorer'
+            },
     'lcms-base-learner': {
-            leftWords: 'LCMS',
+            leftWords: `<img style = 'width:1.0em;height:0.9em;margin-top:-0.2em;margin-left:0.4em' class='image-icon mr-1' src="images/lcms-icon.png">LCMS`,
             centerWords: 'Base-Learner',
             rightWords:'Explorer',
             title:'LCMS Base Learner Explorer'
@@ -21,16 +27,16 @@ var  titles = {
 		    title:'TimeSync Ancillary Data Viewer'
 			},
     'LT': {
-            leftWords: 'LANDTRENDR',
+            leftWords: `<img style = 'width:1.0em;height:0.9em;margin-top:-0.2em;margin-left:0.2em' class='image-icon mr-1' src="images/lcms-icon.png">LANDTRENDR`,
             centerWords: 'DATA',
             rightWords:'Viewer',
             title:'LANDTRENDR Data Viewer'
             },
     'MTBS': {
-            leftWords: 'MTBS',
+            leftWords: `<img style = 'width:1.0em;height:0.9em;margin-top:-0.2em;margin-left:0.2em' class='image-icon mr-1' src="images/mtbs-logo.png">MTBS`,
             centerWords: 'DATA',
             rightWords:'Explorer',
-            title:'TimeSync Ancillary Data Viewer'
+            title:'MTBS Data Explorer'
             },
     'TEST': {
             leftWords: 'TEST',
@@ -69,7 +75,7 @@ var staticTemplates = {
 	map:`<div onclick = "$('#study-area-list').hide();" class = 'map' id = 'map'> </div>`,
 
 	mainContainer: `<div class = 'container main-container' id = 'main-container'></div>`,
-	sidebarLeftToggler:`<div href="#" class="fa fa-bars m-0 px-1 py-2 m-0 sidebar-toggler " onclick = 'toggleSidebar()'></div>`,
+	sidebarLeftToggler:`<div href="#" class="fa fa-bars  px-1 py-2  sidebar-toggler " style = 'margin-left:-0.2em;margin-top:-0.1em;' onclick = 'toggleSidebar()'></div>`,
 
     sidebarLeftContainer: `
 						<div onclick = "$('#study-area-list').hide();" class = 'col-sm-7 col-md-5 col-lg-4 col-xl-3 sidebar  p-0 m-0 flexcroll  ' id = 'sidebar-left-container' >
@@ -78,7 +84,7 @@ var staticTemplates = {
 					        <div id = 'sidebar-left'></div>
 					    </div>`,
 
-	geeSpinner : `<img rel="txtTooltip" data-toggle="tooltip"  title="Background processing is occurring in Google Earth Engine"id='summary-spinner' class="fa fa-spin" src="images/GEE_logo_transparent.png" alt="" style='position:absolute;display: none;right:40%; bottom:40%;width:8rem;height:8rem;z-index:10000000;'>`,
+	geeSpinner : `<div id='summary-spinner' style='position:absolute;right:40%; bottom:40%;width:8rem;height:8rem;z-index:10000000;display:none;'><img   title="Background processing is occurring in Google Earth Engine" class="fa fa-spin" src="images/GEE_logo_transparent.png"  style='width:100%;height:100%'><span id = 'summary-spinner-message'></span></div>`,
 
 
 	exportContainer:`<div class = 'dropdown-divider'></div>
@@ -121,12 +127,12 @@ var staticTemplates = {
 		        
 		        `,
 	studyAreaDropdown:`<li   id = 'study-area-dropdown' class="nav-item dropdown navbar-dark navbar-nav nav-link p-0 col-12  "  data-toggle="dropdown">
-		                <h5 href = '#' onclick = "$('#sidebar-left').show('fade');$('#study-area-list').toggle();" class = 'teal p-0 caret nav-link dropdown-toggle ' id='study-area-label'  ></h5> 
+		                <h5 href = '#' onclick = "$('#sidebar-left').show('fade');$('#study-area-list').toggle();" class = 'teal-study-area-label p-0 caret nav-link dropdown-toggle ' id='study-area-label'  ></h5> 
 		                <div class="dropdown-menu" id="study-area-list"  >  
 		                </div>
 		            </li>
 			    `,
-	placesSearchDiv:`<div class="input-group px-4 pb-2 text-center"">
+	placesSearchDiv:`<div id = 'search-share-div' class="input-group px-4 pb-2 text-center"">
 			            <div class="input-group-prepend">
 
 
@@ -150,10 +156,18 @@ var staticTemplates = {
                         <div class="modal-body" id = 'introModal-body'>
                             <p class="pb-3 ">LCMS is a landscape change detection program developed by the USDA Forest Service. This application is designed to provide a visualization of the Landscape Change products, related geospatial data, and provide a portal to download the data.</p>
                         	<button class = 'btn' onclick = 'downloadTutorial()' rel="txtTooltip" data-toggle="tooltip" title="Click to launch tutorial that explains how to utilize the Data Explorer">Launch Tutorial</button>
+
                         </div>
                         <div class = 'modal-footer' id = 'introModal-footer'>
-                        
+                        <div class = ' ml-0' id = 'intro-modal-loading-div'>
+                            <p>
+                              <img style="width:1.8em;" class="image-icon fa-spin mr-1" src="images/GEE_logo_transparent.png">
+                                Creating map services within Google Earth Engine. 
+                             </p>
+                        </div>
+                        <hr>
 						<div class="form-check  mr-0">
+
                                 <input type="checkbox" class="form-check-input" id="dontShowAgainCheckbox"   name = 'dontShowAgain' value = 'true'>
                                 <label class=" text-uppercase form-check-label " for="dontShowAgainCheckbox" >Don't show again</label>
                             </div>
@@ -228,6 +242,15 @@ var staticTemplates = {
                 </div>
             </div>`
         },
+    loadingModal:`<p>
+                  <img style="width:2.1em;" class="image-icon fa-spin mr-1" src="images/GEE_logo_transparent.png">
+                    Creating map services within Google Earth Engine. 
+                  <br>
+                   <img style="width:2.1em;" class="image-icon fa-spin mr-1" src="images/GEE_logo_transparent.png">
+                    This can take some time. Thank you for your patience!
+                   <div id = 'loading-number-box'></div>
+                 </p>
+                  `,
 	bottomBar:`<div class = 'bottombar'  id = 'bottombar' >
                    
         			<span class = 'px-2'  id='current-tool-selection' rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Any tool that is currently active is shown here."></span>
@@ -235,17 +258,16 @@ var staticTemplates = {
                     <span class = 'px-2'  rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="The number of outstanding map layers currently loading tiles.">Number of map layers loading tiles: <span id='number-gee-tiles-downloading'>0</span></span>
                     <span class = 'px-2'  id='current-mouse-position'  ></span>
                     <span id = 'contributor-logos' > 
+                        <a href="https://earthengine.google.com/" target="_blank">
+                            <img src="images/GEE.png"   class = 'image-icon-bar' alt="Powered by Google Earth Engine"  href="#" title="Click to learn more about Google Earth Engine">
+                        </a>
+                        
+                       
                         <a href="http://www.fs.fed.us//" target="_blank">
                             <img src="images/usfslogo.png" class = 'image-icon-bar'  href="#"   title="Click to learn more about the US Forest Service">
                         </a>
-                        <a href="https://www.fs.fed.us/gstc/" target="_blank">
-                            <img src="images/GTAC_Logo.png" class = 'image-icon-bar' alt="GTAC Logo"  href="#"  title="Click to learn more about the Geospatial Technology and Applications Center (GTAC)">
-                        </a>
-                        <a href="https://www.redcastleresources.com/" target="_blank">
-                            <img src="images/RCR-logo.jpg"  class = 'image-icon-bar'alt="RedCastle Inc. Logo"  href="#"   title="Click to learn more about RedCastle Resources Inc.">
-                        </a>
-                        <a href="https://earthengine.google.com/" target="_blank">
-                            <img src="images/GEE.png"   class = 'image-icon-bar' alt="Powered by Google Earth Engine"  href="#" title="Click to learn more about Google Earth Engine">
+                        <a href="http://www.usda.gov" target="_blank">
+                            <img src="images/usdalogo.png" class = 'image-icon-bar'  href="#"   title="Click to learn more about the USDA">
                         </a>
                     </span>
 
@@ -274,23 +296,138 @@ var staticTemplates = {
         reRunButtonEnabledTooltip:`Once finished changing parameters, press this button to refresh map layers`,
         reRunButtonDisabledTooltip:`Still waiting on previous map layer requests. Can re-submit once the previous requests are finished.`,
         reRunButton:`<button id = 'reRun-button' onclick = 'reRun()' class = 'mb-1 ml-1 btn ' href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="">Submit</button>`,
+        addTimelapsesButton:`<button id = 'addTimelapses-button' onclick = 'addLCMSTimeLapses()' class = 'mb-1 ml-1 btn ' title="Add interactive time lapse of LCMS Change and Land Cover products. This will slow down the map loading">Add LCMS Time Lapses To Map</button>`,
         downloadDiv :`<div class = 'py-2'>
                         <a id = 'product-descriptions' target = '_blank'>Detailed Product Description</a>
         				<div class = 'dropdown-divider'></div>
                         <label  title = 'Choose from dropdown below to download LCMS products. There can be a small delay before a download will begin, especially over slower networks.' for="downloadDropdown">Select product to download:</label>
     					<select class="form-control" id = "downloadDropdown" onchange = "downloadSelectedArea()""></select>
     				 </div>`,
-        supportDiv :`<div class = 'p-0 pb-2' >
-        				<a style = 'color:var(--deep-brown-100)!important;' rel="txtTooltip" data-toggle="tooltip" title = "Send us an E-mail" href = "mailto: sm.fs.lcms@usda.gov">
-        					<br>
-        					<i class="fa fa-envelope" style = 'color:var(--deep-brown-100)!important;'aria-hidden="true"></i>
-        					Please contact the LCMS help desk <span href = "mailto: sm.fs.lcms@usda.gov">(sm.fs.lcms@usda.gov)</span> if you have questions or comments about LCMS products, the LCMS program, or feedback on the LCMS Data Explorer</a>
-        				<div class="dropdown-divider"></div>
-                        <button class = 'btn' onclick = 'downloadTutorial()' rel="txtTooltip" data-toggle="tooltip" title="Click to launch tutorial that explains how to utilize the Data Explorer">Launch Tutorial</button>
-        				<div class="dropdown-divider"></div>
-                        <label class = 'mt-2'>If you turned off tool tips, but want them back:</label>
-        				<button  class = 'btn  bg-black' onclick = 'showToolTipsAgain()'>Show tooltips</button>
+        lcmsProductionDownloadDiv:`<ul id="downloadTree" class = 'pl-0 mb-0' title = 'Click through available LCMS products. Select which outputs to download, and then click the download button. Hold ctrl key to select multiples or shift to select blocks.'>
+                                          <li class = 'pl-0'><span class="caret caret-down">Conterminous United States</span>
+                                            <ul class="nested active">
+                                              <li><span class="caret">Change</span>
+                                                <ul class="nested">
+                                                  <li><span class="caret" title = 'Single layer summaries of what year change was mapped by LCMS serve as the foundational LCMS product that is easiest to work with in your local GIS. These are the same as the Slow Loss, Fast Loss, and Gain Year layers in the viewer.'>Summary</span>
+                                                    <ul class="nested" id = 'CONUS-change-summary-downloads'></ul>
+                                                  </li>
+                                                  <li><span class="caret" title = 'Annual change layers provide a more flexible product that can suite more customized data analysis. These are the same as the layers shown in the change time lapse.'>Annual</span>
+                                                    <ul class="nested" id = 'CONUS-change-annual-downloads'></ul>
+                                                  </li>
+                                                </ul>
+                                              </li>
+                                              <li><span class="caret" title = 'Annual land cover layers provide a more flexible product that can suite more customized data analysis. These are the same as the layers shown in the land cover time lapse.'>Land Cover</span>
+                                                <ul class="nested" id = 'CONUS-land_cover-annual-downloads'></ul>
+                                              </li>
+                                              <li><span class="caret" title = 'Annual land use layers provide a more flexible product that can suite more customized data analysis. These are the same as the layers shown in the land use time lapse.'>Land Use</span>
+                                                <ul class="nested" id = 'CONUS-land_use-annual-downloads'></ul>
+                                              </li>
+                                            </ul>
+                                          </li>
+                                          <li><span class="caret caret-down">Southeastern Alaska</span>
+                                            <ul class="nested active">
+                                              <li><span class="caret">Change</span>
+                                                <ul class="nested">
+                                                  <li><span class="caret" title = 'Single layer summaries of what year change was mapped by LCMS serve as the foundational LCMS product that is easiest to work with in your local GIS. These are the same as the Slow Loss, Fast Loss, and Gain Year layers in the viewer.'>Summary</span>
+                                                    <ul class="nested" id = 'SEAK-change-summary-downloads'></ul>
+                                                  </li>
+                                                  <li><span class="caret" title = 'Annual change layers provide a more flexible product that can suite more customized data analysis. These are the same as the layers shown in the change time lapse.'>Annual</span>
+                                                    <ul class="nested" id = 'SEAK-change-annual-downloads'></ul>
+                                                  </li>
+                                                </ul>
+                                              </li>
+                                              <li><span class="caret" title = 'Annual land cover layers provide a more flexible product that can suite more customized data analysis. These are the same as the layers shown in the land cover time lapse.'>Land Cover</span>
+                                                <ul class="nested" id = 'SEAK-land_cover-annual-downloads'></ul>
+                                              </li>
+                                              <li><span class="caret" title = 'Annual land use layers provide a more flexible product that can suite more customized data analysis. These are the same as the layers shown in the land use time lapse.'>Land Use</span>
+                                                <ul class="nested" id = 'SEAK-land_use-annual-downloads'></ul>
+                                              </li>
+                                            </ul>
+                                          </li>
+                                        </ul>`,
+        supportDiv :`<div class = 'p-0 pb-2 col-lg-12' >
+                        <div class = 'row pt-2' title = 'Open LCMS Data Explorer tutorial'>
+                            <h3 class = ' text-capitalize'>Tutorial</h3>
+                        </div>
+                        <div class = 'row p-2' title = 'Open LCMS Data Explorer tutorial'>
+                            <div class = 'col-lg-2 p-0 m-0'>
+                                <img class = 'support-icons' src = './images/information--v2.png'></a> 
+                            </div>
+                            <div class = 'col-lg-10'>
+                                <a class = 'support-text' onclick = 'downloadTutorial()'>
+                                Click to launch a tutorial that explains how to utilize the Data Explorer</a>
+                            </div>
+                        </div>
+                        <hr>
+                         <div class = 'row ' title = 'Open in-depth LCMS methods documentation'>
+                            <h3 class = ' text-capitalize'>LCMS Methods</h3>
+                        </div>
+                        <div class = 'row p-2' title = 'Open in-depth LCMS methods documentation'>
+                            <div class = 'col-lg-2 p-0 m-0'>
+                                <img class = 'support-icons' src = './images/methods-icon.png'></a> 
+                            </div>
+                            <div class = 'col-lg-10'>
+                                <a class = 'support-text' onclick = 'downloadMethods()'>
+                                Click to open in-depth LCMS methods document.</a>
+                            </div>
+                        </div>
+                        <hr>
+                        
+                       
+                        <div class = 'row'>
+                            <h3 class = ' text-capitalize'>Acknowledgements</h3>
+                        </div>
+                        <div class = 'row p-2'>
+                            <div class = 'col-lg-2 p-0 m-0'>
+                                <a href="https://www.fs.fed.us/gstc/" target="_blank">
+                            <img src="./images/GTAC_Logo.png" class = 'support-icons' alt="GTAC Logo"  href="#"  title="Click to learn more about the Geospatial Technology and Applications Center (GTAC)">
+                        </a>
+                            </div>
+                            <div class = 'col-lg-10'>
+                                <a href="https://www.fs.fed.us/gstc/" target="_blank">
+                                    <p class = 'support-text'>The Geospatial Technology and Applications Center (GTAC) provides leadership in geospatial science implementation in the USDA Forest Service by delivering vital services, data products, tools, training, and innovation to solve today’s land and resource management challenges. All operational LCMS production and support takes place at GTAC.</p>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        <div class = 'row p-2'>
+                            <div class = 'col-lg-2 p-0 m-0'>
+                                <a href="https://www.redcastleresources.com/" target="_blank">
+                                    <img src="images/RCR-logo.jpg"  class = 'support-icons' alt="RedCastle Inc. Logo"  href="#"   title="Click to learn more about RedCastle Resources Inc.">
+                                    
+                                </a>
+                            </div>
+                            <div class = 'col-lg-10'>
+                                <a href="https://www.redcastleresources.com/" target="_blank">
+                                    <p class = 'support-text'>RedCastle Resources Inc. - transforming images into information. RedCastle Resources is the on-site contractor that has provided the technical expertise for LCMS' operational production, documentation, and delivery at GTAC.</p>
+                                </a>
+                            </div>
+                        </div>
+                        <hr>
+                        
+                        <div class = 'row'>
+                            <h3 class = ' text-capitalize'>Contact</h3>
+                        </div>
+                   
+                        <div class = 'row p-2'>
+                            <div class = 'col-lg-2 p-0 m-0'>
+                                <a title = "Send us an E-mail" href = "mailto: sm.fs.lcms@usda.gov"><img class = 'support-icons' src = './images/email.png'></a> 
+                            </div>
+                            <div class = 'col-lg-10'>
+                                <a class = 'support-text' title = "Send us an E-mail" href = "mailto: sm.fs.lcms@usda.gov">
+                                Please contact the LCMS help desk <span href = "mailto: sm.fs.lcms@usda.gov">(sm.fs.lcms@usda.gov)</span> if you have questions/comments about LCMS or have feedback on the LCMS Data Explorer.</a>
+                            </div>
+                        </div>
+                         
+                        
+                        
+        				
+        			
+                       
         			</div>`,
+                    tooltipToggle:` <label class = 'mt-2'>If you turned off tool tips, but want them back:</label>
+                        <button  class = 'btn  bg-black' onclick = 'showToolTipsAgain()'>Show tooltips</button>`,
         walkThroughButton:`<div class = pb-2>
                             <div class="dropdown-divider"></div>
                             <label class = 'mt-2'>Run a walk-through of the ${mode} Data Explorer's features</label>
@@ -322,8 +459,11 @@ var staticTemplates = {
         userDefinedAreaChartTip : 'Click on map to select an area to summarize '+mode+' products across. Press <kbd>ctrl+z</kbd> to undo most recent point.  Press <kbd>Delete</kbd>, or press <kbd>Backspace</kbd> to start over. Double-click to finish polygon. Any number of polygons can be defined by repeating this process. Once finished defining areas, click on the <kbd>Chart Selected Areas</kbd> button to create chart.',
 
         uploadAreaChartDiv : `<div class = 'dropdown-divider'></div>
-                                <label>Choose a zipped shapefile or geoJSON file to summarize across.  Then hit "Summarize across chosen file" button below to produce chart.</label>
+                                <label title = 'Powered by: https://ogre.adc4gis.com/'>Choose a zipped shapefile or geoJSON file to summarize across.  Then hit "Chart across chosen file" button below to produce chart.</label>
                                 <input class = 'file-input my-1' type="file" id="areaUpload" name="upload" accept=".zip,.geojson,.json" style="display: inline-block;">
+                                <div class = 'dropdown-divider'></div>
+                                <div>Uploaded areas:</div>
+                                <div id="area-charting-shp-layer-list"></div>
                                 <div class = 'dropdown-divider'></div>
                                 <button class = 'btn' style = 'margin-bottom: 0.5em!important;' onclick = 'runShpDefinedCharting()' rel="txtTooltip" title = 'Click to summarize across chosen .zip shapefile or .geojson.'>Chart across chosen file</button>
                                 `,
@@ -339,9 +479,10 @@ var staticTemplates = {
                                         <div class = 'dropdown-divider'></div>  
                                         <div id="area-charting-select-layer-list"></div>
                                         <div class = 'dropdown-divider'></div>
-                                        <div>Selected area names:</div>
+                                        <div>Selected areas:</div>
                                         <i id = "select-features-list-spinner" style = 'display:none;' class="fa fa-spinner fa-spin text-dark"></i>
                                         <li class = 'selected-features-list' id = 'selected-features-list'></li>
+                                        <div id="area-charting-selected-layer-list"></div>
                                         <div class = 'dropdown-divider'></div>
                                         <div>Total area selected: <i id = "select-features-area-spinner" style = 'display:none;' class="fa fa-spinner fa-spin text-dark pl-1"></i></div>
                                         <div id = 'selected-features-area' class = 'select-layer-name'>0 hectares / 0 acres</div>
@@ -397,12 +538,15 @@ Object.keys(staticTemplates).filter(word => word.indexOf('Tip') > -1).map(functi
 function getLocation() {
     if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(showPosition, showLocationError);
+    
   } else { 
     showMessage('Cannot acquire location','Geolocation is not supported by this browser.');
+    ga('send', 'event', mode + '-getLocation', 'failure', 'failure');
   }
 }
 function showPosition(position) {
     var pt = {lng:position.coords.longitude,lat:position.coords.latitude};
+    ga('send', 'event', mode + '-getLocation', 'success', JSON.stringify(pt));
     var locationMarker  = new google.maps.Marker({
               map: map,
               position: pt,
@@ -567,7 +711,7 @@ function addModal(containerID,modalID,bodyOnly){
             		<div class="modal-content bg-white">
             			
 	            		<div style = ' border-bottom: 0 none;'class="modal-header pb-0" id ="${modalID}-header">
-	            			<button style = 'float:right;' type="button" class="close text-dark" data-dismiss="modal">&times;</button>
+	            			<button style = 'float:right;' id = 'close-modal-button' type="button" class="close text-dark" data-dismiss="modal">&times;</button>
 	            		</div>
 	      				<div id ="${modalID}-body" class="modal-body bg-white " ></div>
 			          	
@@ -623,6 +767,7 @@ function showMessage(title,message,modalID,show){
 	if(show){$('#'+modalID).modal();}
 
 };
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 //Show a basic tip BS modal
 function showTip(title,message){
@@ -654,7 +799,7 @@ function addStudyAreaToDropdown(name,toolTip){
 	var id = name.replaceAll(' ','-');
 	$('#study-area-list').append(`<a id = '${id}' name = '${name}' class="dropdown-item "   data-toggle="tooltip" title="${toolTip}">${name}</a>`)
   	$('#'+id).on('click',function(){
-  		$('#summary-spinner').show();
+  		// $('#summary-spinner').show();
   		$('#study-area-list').hide();
         longStudyAreaName = this.name;
     	dropdownUpdateStudyArea(this.name);
@@ -728,8 +873,8 @@ function addCheckboxes(containerID,checkboxID,title,variable,optionList){
     eval(`window.${variable} = []`);
     Object.keys(optionList).map(function(k){
       // console.log(k)
-      var checkboxCheckboxID = k + '-checkbox';
-      var checkboxLabelID = checkboxCheckboxID + '-label'
+      var checkboxCheckboxID = variable+k + '-checkbox';
+      var checkboxLabelID = variable+checkboxCheckboxID + '-label'
       var checked = optionList[k];
       if(checked){checked = 'checked';}
         else{checked = ''};
@@ -977,7 +1122,7 @@ function addCollapse(containerID,collapseLabelID,collapseID,collapseLabel, colla
 	if(show === true || show === 'true' || show === 'show'){show = 'show';collapsed = ''; }else{show = '';collapsed='collapsed'}
 	var collapseTitleDiv = `<div   rel="txtTooltip" data-toggle="tooltip"  title="${toolTip}" class="panel-heading px-3 py-2 " role="tab" id="${collapseLabelID}" onclick = '${onclick}'>
 	<h5 class="p-0 m-0 panel-title  ${collapsed}" data-toggle="collapse"  href="#${collapseID}" aria-expanded="false" aria-controls="${collapseID}"> <a class = 'collapse-title' >
-	${collapseLabelIcon} ${collapseLabel} </a></h5></div>`;
+	${collapseLabelIcon} ${collapseLabel} </a></h5><span id="${collapseLabelID}-message"</span></div>`;
 
 	var collapseDiv =`<div id="${collapseID}" class="panel-collapse collapse panel-body ${show} px-5 py-0" role="tabpanel" aria-labelledby="${collapseLabelID}"></div>`;
 	$('#'+containerID).append(collapseTitleDiv);
@@ -1128,6 +1273,7 @@ function regulateReRunButton(){
 } 
 //Function to help keep track of GEE requests
 function updateOutstandingGEERequests(){
+    // $('#loading-number-box').html(outstandingGEERequests)
 	$('#outstanding-gee-requests').html(outstandingGEERequests);
 	regulateReRunButton();
 }
@@ -1156,6 +1302,7 @@ function updateGEETileLayersDownloading(){
 //Map layers can be ee objects, geojson, dynamic map services, and tile map services
 
 function addLayer(layer){
+
     //Initialize a bunch of variables
     layer.loadError = false;
 	var id = layer.legendDivID;
@@ -1251,15 +1398,16 @@ function addLayer(layer){
 		}
 	}
     //Try to handle load failures
-    function loadFailure(){
+    function loadFailure(failure){
         layer.loadError = true;
         console.log('GEE Tile Service request failed for '+layer.name);
         $('#'+containerID).css('background-color','red');
-        $('#'+containerID).attr('title','Layer failed to load. Try zooming in to a smaller extent and then hitting the "Submit" button in the "PARAMETERS" menu.')
+        $('#'+containerID).attr('title','Layer failed to load. Error message: "'+failure + '"')
         // getGEEMapService();
     }
     //Function to handle turning off of different types of layers
     function turnOff(){
+        ga('send', 'event', 'layer-off', layer.layerType,layer.name);
         if(layer.layerType === 'dynamicMapService'){
             layer.layer.setMap(null);
             layer.visible = false;
@@ -1303,6 +1451,7 @@ function addLayer(layer){
     }
     //Function to handle turning on different layer types
     function turnOn(){
+        ga('send', 'event', 'layer-on', layer.layerType,layer.name);
         if(!layer.viz.isTimeLapse){
             turnOffTimeLapseCheckboxes();
         }
@@ -1402,7 +1551,15 @@ function addLayer(layer){
         $('.vector-layer-checkbox').on('turnOnAll',function(){turnOnAll()});
         $('.vector-layer-checkbox').on('turnOffAllVectors',function(){turnOffAll()});
         $('.vector-layer-checkbox').on('turnOnAllVectors',function(){turnOnAll()});
+
+        if(layer.viz.isUploadedLayer){
+            $('#'+visibleLabelID).addClass('uploaded-layer-checkbox');
+            selectionTracker.uploadedLayerIndices.push(layer.layerId)
+            $('.vector-layer-checkbox').on('turnOffAllUploadedLayers',function(){turnOffAll()});
+            $('.vector-layer-checkbox').on('turnOnAllUploadedLayers',function(){turnOnAll()});
+        }
     }
+
     //Handle different object types
 	if(layer.layerType === 'geeImage' || layer.layerType === 'geeVectorImage' || layer.layerType === 'geeImageCollection'){
         //Handle image colletions
@@ -1416,18 +1573,21 @@ function addLayer(layer){
             layer.item = ee.ImageCollection(layer.item).reduce(layer.viz.reducer).rename(bandNames);
         //Handle vectors
         } else if(layer.layerType === 'geeVectorImage' || layer.layerType === 'geeVector'){
+
             if(layer.viz.isSelectLayer){
                 
-                selectedFeaturesJSON[layer.name] = {'geoJSON':new google.maps.Data(),'id':layer.id,'rawGeoJSON':{},'eeFeatureCollection':ee.FeatureCollection([])}
-                selectedFeaturesJSON[layer.name].geoJSON.setMap(layer.map);
+                selectedFeaturesJSON[layer.name] = {'layerName':layer.name,'filterList':[],'geoJSON':new google.maps.Data(),'id':layer.id,'rawGeoJSON':{},'selection':ee.FeatureCollection([])}
+                // selectedFeaturesJSON[layer.name].geoJSON.setMap(layer.map);
 
                 // layer.infoWindow = getInfoWindow(infoWindowXOffset);
                 // infoWindowXOffset += 30;
-                selectedFeaturesJSON[layer.name].geoJSON.setStyle({strokeColor:invertColor(layer.viz.strokeColor)});
+                // selectedFeaturesJSON[layer.name].geoJSON.setStyle({strokeColor:invertColor(layer.viz.strokeColor)});
                 // layer.queryVector = layer.item;  
                 $('#'+visibleLabelID).addClass('select-layer-checkbox');
-                $('.select-layer-checkbox').on('turnOffAll',function(){turnOffAll()});
-                $('.select-layer-checkbox').on('turnOnAll',function(){turnOnAll()});
+                $('.vector-layer-checkbox').on('turnOffAllSelectLayers',function(){turnOffAll()});
+                $('.vector-layer-checkbox').on('turnOnAllSelectLayers',function(){turnOnAll()});
+                $('.vector-layer-checkbox').on('turnOffAll',function(){turnOffAll()});
+                $('.vector-layer-checkbox').on('turnOnAll',function(){turnOnAll()});
             }
             layer.queryItem = layer.item;
             if(layer.layerType === 'geeVectorImage'){
@@ -1436,62 +1596,101 @@ function addLayer(layer){
             }
             //Add functionality for select layers to be clicked and selected
             if(layer.viz.isSelectLayer){
+                var name;
+                layer.queryItem.first().propertyNames().evaluate(function(propertyNames,failure){
+                    if(failure !== undefined){showMessage('Error',failure)}
+                    else{
+                        propertyNames.map(function(p){
+                            if(p.toLowerCase().indexOf('name') !== -1){name = p}
+                        })
+                        if(name === undefined){name = 'system:index'}
+                        }
+                    selectedFeaturesJSON[layer.name].fieldName = name
+                    selectedFeaturesJSON[layer.name].eeObject = layer.queryItem.select([name],['name'])
+                })
                 
-                selectedFeaturesJSON[layer.name].geoJSON.addListener('click',function(event){
-                    console.log(event);
-                    var name = event.feature.j.selectionTrackingName;
-                    delete selectedFeaturesJSON[layer.name].rawGeoJSON[name]
-                    selectedFeaturesJSON[layer.name].geoJSON.remove(event.feature);
-                    updateSelectedAreasNameList();
-                    updateSelectedAreaArea();
+            }
+            if(layer.viz.isSelectedLayer){
+                $('#'+visibleLabelID).addClass('selected-layer-checkbox');
+                $('.vector-layer-checkbox').on('turnOffAllSelectLayers',function(){turnOffAll()});
+                $('.vector-layer-checkbox').on('turnOnAllSelectLayers',function(){turnOnAll()});
+                $('.vector-layer-checkbox').on('turnOffAllSelectedLayers',function(){turnOffAll()});
+                $('.vector-layer-checkbox').on('turnOnAllSelectedLayers',function(){turnOnAll()});
+                selectionTracker.seletedFeatureLayerIndices.push(layer.layerId)
+            }
+            
+            //     // selectedFeaturesJSON[layer.name].geoJSON.addListener('click',function(event){
+            //     //     console.log(event);
+            //     //     var name = event.feature.j.selectionTrackingName;
+            //     //     delete selectedFeaturesJSON[layer.name].rawGeoJSON[name]
+            //     //     selectedFeaturesJSON[layer.name].geoJSON.remove(event.feature);
+            //     //     updateSelectedAreasNameList();
+            //     //     updateSelectedAreaArea();
 
-                });
-                map.addListener('click',function(event){
-                    // console.log(layer.name);console.log(event);
-                    if(layer.currentGEERunID === geeRunID){
-                            //     layer.infoWindow.setMap(null);
-                        if(layer.visible && toolFunctions.area.selectInteractive.state){
-                            $('#'+spinnerID + '3').show();
-                            $('#select-features-list-spinner').show();
-                            // layer.queryGeoJSON.forEach(function(f){layer.queryGeoJSON.remove(f)});
+            //     // });
+            //     var name;
+            //     layer.queryItem.first().propertyNames().evaluate(function(propertyNames,failure){
+            //         if(failure !== undefined){showMessage('Error',failure)}
+            //         else{
+            //             propertyNames.map(function(p){
+            //                 if(p.toLowerCase().indexOf('name') !== -1){name = p}
+            //             })
+            //             if(name === undefined){name = 'system:index'}
+            //             }
+                    
+            //     })
+            //     printEE(propertyNames);
+            //     // map.addListener('click',function(event){
+            //     //     // console.log(layer.name);console.log(event);
+            //     //     if(layer.currentGEERunID === geeRunID){
+                        
+            //     //         if(layer.visible && toolFunctions.area.selectInteractive.state){
+            //     //             $('#'+spinnerID + '3').show();
+            //     //             $('#select-features-list-spinner').show();
+            //     //             // layer.queryGeoJSON.forEach(function(f){layer.queryGeoJSON.remove(f)});
 
-                            var features = layer.queryItem.filterBounds(ee.Geometry.Point([event.latLng.lng(),event.latLng.lat()]));
-                            selectedFeaturesJSON[layer.name].eeFeatureCollection =selectedFeaturesJSON[layer.name].eeFeatureCollection.merge(features);
-                            
-                            features.evaluate(function(values){
-                                var features = values.features;
-                                var dummyNameI = 1;
-                                features.map(function(f){
-                                    var name;
-                                    // selectedFeatures.features.push(f);
-                                    Object.keys(f.properties).map(function(p){
-                                        if(p.toLowerCase().indexOf('name') !== -1){name = f.properties[p]}
-                                    })
-                                    if(name === undefined){name = dummyNameI.toString();dummyNameI++;}
-                                    // console.log(name)
-                                    if(name !== undefined){
-                                    }
-                                    if(getSelectedAreasNameList(false).indexOf(name) !== -1){
-                                        name += '-'+selectionUNID.toString();
-                                        selectionUNID++;
-                                    }
-                                    f.properties.selectionTrackingName = name
+            //     //             var features = layer.queryItem.filterBounds(ee.Geometry.Point([event.latLng.lng(),event.latLng.lat()]));
+            //     //             selectedFeaturesJSON[layer.name].eeFeatureCollection =selectedFeaturesJSON[layer.name].eeFeatureCollection.merge(features);
+            //     //             var propertyNames = selectedFeaturesJSON[layer.name].eeFeatureCollection.first().propertyNames();
+            //     //             printEE(propertyNames);
+            //     //             // features.evaluate(function(values,failure){
+            //     //             //     if(failure !== undefined){showMessage('Error',failure);}
+            //     //             //     else{
+            //     //             //         console.log
+            //     //             //     }
+            //     //                 // var features = values.features;
+            //     //                 // var dummyNameI = 1;
+            //     //                 // features.map(function(f){
+            //     //                 //     var name;
+            //     //                 //     // selectedFeatures.features.push(f);
+            //     //                 //     Object.keys(f.properties).map(function(p){
+            //     //                 //         if(p.toLowerCase().indexOf('name') !== -1){name = f.properties[p]}
+            //     //                 //     })
+            //     //                 //     if(name === undefined){name = dummyNameI.toString();dummyNameI++;}
+            //     //                 //     // console.log(name)
+            //     //                 //     if(name !== undefined){
+            //     //                 //     }
+            //     //                 //     if(getSelectedAreasNameList(false).indexOf(name) !== -1){
+            //     //                 //         name += '-'+selectionUNID.toString();
+            //     //                 //         selectionUNID++;
+            //     //                 //     }
+            //     //                 //     f.properties.selectionTrackingName = name
                                     
 
-                                    selectedFeaturesJSON[layer.name].geoJSON.addGeoJson(f);
-                                    selectedFeaturesJSON[layer.name].rawGeoJSON[name]= f;
-                                });
-                                updateSelectedAreasNameList();    
+            //     //                 //     selectedFeaturesJSON[layer.name].geoJSON.addGeoJson(f);
+            //     //                 //     selectedFeaturesJSON[layer.name].rawGeoJSON[name]= f;
+            //     //                 // });
+            //     //                 // updateSelectedAreasNameList();    
     
-                                $('#'+spinnerID + '3').hide();
-                                $('#select-features-list-spinner').hide();
-                                updateSelectedAreaArea();
-                            })
-                        }
-                    }
+            //     //                 // $('#'+spinnerID + '3').hide();
+            //     //                 // $('#select-features-list-spinner').hide();
+            //     //                 // updateSelectedAreaArea();
+            //     //             // })
+            //     //         }
+            //     //     }
                 
-                })
-            }   
+            //     // })
+            // }   
         };
         //Add layer to query object if it can be queried
         if(layer.canQuery){
@@ -1636,7 +1835,7 @@ function addLayer(layer){
             }
             }
         //Handle alternative GEE tile service format
-        function geeAltService(eeLayer){
+        function geeAltService(eeLayer,failure){
             decrementOutstandingGEERequests();
             $('#' + spinnerID).hide();
             if(layer.viz.isTimeLapse){
@@ -1663,13 +1862,16 @@ function addLayer(layer){
             $('#' + visibleLabelID).show();
             
             if(layer.currentGEERunID === geeRunID){
-                if(eeLayer === undefined){
-                    loadFailure();
+                if(eeLayer === undefined || failure !== undefined){
+                    loadFailure(failure);
                 }
                 else{
                     const tilesUrl = eeLayer.urlFormat;
                     
                     var getTileUrlFun = function(coord, zoom) {
+                        var t = [coord,zoom];
+                        
+                        
                     let url = tilesUrl
                                 .replace('{x}', coord.x)
                                 .replace('{y}', coord.y)
@@ -1690,9 +1892,12 @@ function addLayer(layer){
                     layer.layer = new google.maps.ImageMapType({
                             getTileUrl:getTileUrlFun
                         })
+
                     layer.layer.addListener('tilesloaded',function(){
                         layer.percent = 100;
                         layer.loading = false;
+                        
+                        
                         $('#' + spinnerID+'2').hide();
                         updateGEETileLayersDownloading();
                         updateProgress();
@@ -1719,13 +1924,14 @@ function addLayer(layer){
         layer.mapServiceTryNumber = 0;
         function getGEEMapService(){
             // layer.item.getMap(layer.viz,function(eeLayer){getGEEMapServiceCallback(eeLayer)});
-            layer.item.getMap(layer.viz,function(eeLayer){
+            layer.item.getMap(layer.viz,function(eeLayer,failure){
+             
                 if(eeLayer === undefined && layer.mapServiceTryNumber <=1){
                     queryObj[queryID].queryItem = layer.item;
                     layer.item = layer.item.visualize();
-                        getGEEMapService();
+                    getGEEMapService();
                 }else{
-                    geeAltService(eeLayer);
+                    geeAltService(eeLayer,failure);
                 }  
             });
 

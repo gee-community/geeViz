@@ -16,111 +16,134 @@ function downloadURI() {
 	  // document.body.removeChild(link);
 	    delete link;
 }}
-function clearSelectedAreas(){
-    $('.selected-features-list').empty();
-    Object.keys(selectedFeaturesJSON).map(function(k){
-        selectedFeaturesJSON[k].geoJSON.forEach(function(f){
-        	var name = f.j.selectionTrackingName;
-			console.log(name);
-            delete selectedFeaturesJSON[k].rawGeoJSON[name]
-        	selectedFeaturesJSON[k].geoJSON.remove(f)
-        });
-    })
-    $('#selected-features-area').html('>0 hectares / 0 acres');
-    selectedFeatures = undefined;
-    selectedFeaturesNames = undefined;
-    updateSelectedAreaArea();
+
+function clearUploadedAreas(){
+	if(selectionTracker.uploadedLayerIndices === undefined || selectionTracker.uploadedLayerIndices === null){
+		selectionTracker.uploadedLayerIndices = [];
+	}
+	// selectionTracker.uploadedLayerIndices.reverse().map(function(index){
+ //    	map.overlayMapTypes.setAt(index,null)
+ //    });
+    turnOffUploadedLayers();
+	$('#area-charting-shp-layer-list').empty();
 }
-function getSelectedAreasNameList(includeFeatureCollectionName){
-	if(includeFeatureCollectionName === null || includeFeatureCollectionName === undefined){includeFeatureCollectionName = true}
-	var nameList = [];
-	Object.keys(selectedFeaturesJSON).map(function(k){
-		selectedFeaturesJSON[k].geoJSON.forEach(function(f){
-			if(includeFeatureCollectionName){
-				var n = k+' - ' +f.j.selectionTrackingName;
-			}else{
-				var n = f.j.selectionTrackingName;
-			}
-			nameList.push(n)
-		})
-	})
-	return nameList
+function clearSelectedAreas(){
+  
+
+    
+    selectionTracker.seletedFeatureLayerIndices.reverse().map(function(index){
+    	map.overlayMapTypes.setAt(index,null)
+    });
+    setupAreaLayerSelection();
+    updateSelectedAreasNameList();updateSelectedAreaArea();
+
+    
+}
+
+
+
+function removeLastSelectArea(){
+	selectionTracker.selectedFeatures = selectionTracker.selectedFeatures.slice(0,selectionTracker.selectedFeatures.length-1);
+	updateSelectedAreasNameList();updateSelectedAreaArea();
+	var lastIndex = selectionTracker.seletedFeatureLayerIndices[selectionTracker.seletedFeatureLayerIndices.length-1]
+	map.overlayMapTypes.setAt(lastIndex,null);
+	selectionTracker.seletedFeatureLayerIndices = selectionTracker.seletedFeatureLayerIndices.slice(0,selectionTracker.seletedFeatureLayerIndices.length-1)
+	$('#area-charting-selected-layer-list li:first-child').remove();
 }
 function updateSelectedAreasNameList(){
-	var nameList = getSelectedAreasNameList();
-	// console.log(nameList);
-	$('#selected-features-list').empty();
-	nameList.map(function(nm){
-		$('#selected-features-list').append(`<ul class = 'select-layer-name'>${nm}</ul>`)
-	})
-	
 
+	var selectedFeatures = ee.FeatureCollection(selectionTracker.selectedFeatures).flatten()
+    
+ //    $('#select-features-list-spinner').show();
+   
+  	// $('#selected-features-list').empty();
+            
+    var namesList = ee.List(ee.Dictionary(selectedFeatures.aggregate_histogram('name')).keys());
+    
+    namesList.evaluate(function(names,failure){
+    	
+        if(failure !== undefined){showMessage('Error',failure)}
+        else{
+        	selectionTracker.selectedNames = names;
+            // names.map(function(nm){
+                // $('#selected-features-list').append(`<ul>${nm}</ul>`);
+            // })
+           }
+ //        $('#select-features-list-spinner').hide();
+       })
 }
-function getSelectedGEEFeatureCollection(){
-	var selectedGEEFeatureCollection = [];
-	Object.keys(selectedFeaturesJSON).map(function(k){
-		Object.keys(selectedFeaturesJSON[k].rawGeoJSON).map(function(kk){
-			var f = selectedFeaturesJSON[k].rawGeoJSON[kk];
-			selectedGEEFeatureCollection.push(ee.Feature(f))
-		})
-	})
-	return ee.FeatureCollection(selectedGEEFeatureCollection)
-}
-function removeLastSelectArea(){
-	try{
-		var k = $('li .select-layer-name').last().html().split(' - ')[0];
-		// $('li .select-layer-name').last().remove();
-		
-		// selectedFeatures = selectedFeatures.limit(selectedFeatures.size().subtract(1));
-
-		var l = 0;var i = 0;
-		selectedFeaturesJSON[k].geoJSON.forEach(function(f){l++});
-		selectedFeaturesJSON[k].geoJSON.forEach(function(f){
-			if(i == l-1){
-				var name = f.j.selectionTrackingName;
-				console.log(name);
-                delete selectedFeaturesJSON[k].rawGeoJSON[name];
-				selectedFeaturesJSON[k].geoJSON.remove(f);
-			}
-			i++
-			});
-		// var selectedFeaturesNamesList = selectedFeaturesNames.split(' - ');
-		var selectedFeaturesNamesList = getSelectedAreasNameList();
-		updateSelectedAreasNameList();
-		// if(selectedFeaturesNamesList.length <2){
-		// 	// selectedFeaturesNames = '';
-		// 	clearSelectedAreas();
-		// }else{
-		// 	// selectedFeaturesNames = selectedFeaturesNames.split(' - ').slice(0,-1).join(' - ');
-		updateSelectedAreaArea();
-		// };
-		
-	}catch(err){
-		console.log(err);
-		// clearSelectedAreas();
-	}
-	
-
-}
-
 function updateSelectedAreaArea(){
-	var selectedFeatures = getSelectedGEEFeatureCollection();
-	if(selectedFeatures === undefined){
-		$('#selected-features-area').html('0 hectares / 0 acres');
-	}else{
-		$('#selected-features-area').html('Updating');
-		$('#select-features-area-spinner').show();
-		// selectedFeatures.evaluate(function(values){console.log(values)})
-		// ee.Array(selectedFeatures.toList(10000,0).map(function(f){return ee.Feature(f).area()})).reduce(ee.Reducer.sum(),[0])
-		ee.Feature(selectedFeatures.union().first()).area(1000)
-		.evaluate(function(values,error){
-			if(values === undefined){values = 0;console.log(error)};
-        	$('#selected-features-area').html((values*0.0001).formatNumber() + ' hectares / '+(values*0.000247105).formatNumber() + ' acres');
-        	$('#select-features-area-spinner').hide();
-    	})
-	}
+	var selectedFeatures = ee.FeatureCollection(selectionTracker.selectedFeatures).flatten()
+    
+    $('#select-features-area-spinner').show();
+    
+    var area =selectedFeatures.geometry().area(1000);
+    area.evaluate(function(values,failure){
+        if(failure !== undefined){showMessage('Error',failure)}
+        else{
+            $('#selected-features-area').html((values*0.0001).formatNumber() + ' hectares / '+(values*0.000247105).formatNumber() + ' acres');
+                
+                $('#select-features-area-spinner').hide();
+            }
+        })
+            
+    }
+
+function setupAreaLayerSelection(){
+	google.maps.event.clearListeners(map, 'click');
+	selectionTracker.selectedFeatures = [];
+	selectionTracker.selectedNames = [];
+	selectionTracker.seletedFeatureLayerIndices = [];
+	// turnOffSelectLayers();
+	$('#selected-features-list').empty();
+	$('#area-charting-selected-layer-list').empty();
 	
+	// Map2.addLayer(allSelectLayers,{layerType:'geeVectorImage'},'all select layers')
+	    map.addListener('click',function(event){
+	        if(getActiveTools().indexOf("Area Tools-Select an Area on map")>-1){
+	            var coords = [event.latLng.lng(),event.latLng.lat()];
+	            
+	            Object.keys(selectedFeaturesJSON).map(function(k){
+	            	if(layerObj[selectedFeaturesJSON[k].id].visible){
+	            		var selectedFeaturesT = selectedFeaturesJSON[k].eeObject
+	            			.filterBounds(ee.Geometry.Point(coords));
+	            		
+	            		var namesList = ee.List(selectedFeaturesT.aggregate_array('name'));
+	            		namesList.evaluate(function(nms,failure){
+	            			if(failure !== undefined){showMessage('Error',failure)}
+        					else{
+        						if(nms.length > 0){
+        							console.log('names '+nms)
+        							selectionTracker.selectedFeatures.push(selectedFeaturesT);
+        							Map2.addLayer(selectedFeaturesT,{layerType:'geeVectorImage',isSelectedLayer :true},'Selected '+selectedFeaturesJSON[k].layerName+' '+ nms.join('-').replaceAll('&','-'),true,null,null,null,'area-charting-selected-layer-list');
+        						}	updateSelectedAreasNameList();updateSelectedAreaArea();
+        					}
+	            		})	
+	            	}
+				})
+	             
+	        }   
+	})
 }
+
+// function updateSelectedAreaArea(){
+// 	var selectedFeatures = getSelectedGEEFeatureCollection();
+// 	if(selectedFeatures === undefined){
+// 		$('#selected-features-area').html('0 hectares / 0 acres');
+// 	}else{
+// 		$('#selected-features-area').html('Updating');
+// 		$('#select-features-area-spinner').show();
+// 		// selectedFeatures.evaluate(function(values){console.log(values)})
+// 		// ee.Array(selectedFeatures.toList(10000,0).map(function(f){return ee.Feature(f).area()})).reduce(ee.Reducer.sum(),[0])
+// 		ee.Feature(selectedFeatures.union().first()).area(1000)
+// 		.evaluate(function(values,error){
+// 			if(values === undefined){values = 0;console.log(error)};
+//         	$('#selected-features-area').html((values*0.0001).formatNumber() + ' hectares / '+(values*0.000247105).formatNumber() + ' acres');
+//         	$('#select-features-area-spinner').hide();
+//     	})
+// 	}
+	
+// }
 function updateUserDefinedAreaArea(){
 	var area = 0;
 	Object.values(udpPolygonObj).map(function(poly){
@@ -138,12 +161,21 @@ function turnOffLayers(){
 }
 
 function turnOffSelectLayers(){
-	$(".select-layer-checkbox").trigger("turnOffAll");
+	$(".vector-layer-checkbox").trigger("turnOffAllSelectLayers");
+}
+function turnOnSelectedLayers(){
+	$(".vector-layer-checkbox").trigger("turnOnAllSelectedLayers");
+}
+function turnOffUploadedLayers(){
+	$(".vector-layer-checkbox").trigger("turnOffAllUploadedLayers");
+}
+function turnOnUploadedLayers(){
+	$(".vector-layer-checkbox").trigger("turnOnAllUploadedLayers");
 }
 function turnOffSelectGeoJSON(){
-	Object.keys(selectedFeaturesJSON).map(function(k){
-        selectedFeaturesJSON[k].geoJSON.forEach(function(f){selectedFeaturesJSON[k].geoJSON.setMap(null)});
-    })
+	// Object.keys(selectedFeaturesJSON).map(function(k){
+ //        selectedFeaturesJSON[k].geoJSON.forEach(function(f){selectedFeaturesJSON[k].geoJSON.setMap(null)});
+ //    })
 }
 function turnOnSelectGeoJSON(){
 	Object.keys(selectedFeaturesJSON).map(function(k){
@@ -155,17 +187,24 @@ function chartSelectedAreas(){
     // Map2.addLayer(selectedFeatures,{layerType :'geeVector'},'Selected Areas');
     // console.log(selectedFeatures);
     // console.log(ee.FeatureCollection(selectedFeatures).getInfo());
-    var selectedFeatures = getSelectedGEEFeatureCollection();
-    if(selectedFeatures !== undefined && selectedFeatures.size().getInfo() !== 0){
-    	var title = $('#user-selected-area-name').val();
-    	if(title === ''){title = getSelectedAreasNameList(false).join(' - ');}
-    	$('#summary-spinner').slideDown();
-        makeAreaChart(selectedFeatures,title + ' ' + mode + ' Summary',true)
-    }else{showMessage('Error!','Please select area to chart. Turn on any of the layers and click on polygons to select them.  Then hit the <kbd>Chart Selected Areas</kbd> button.')}
-    try{}
-    catch(err){
-        console.log(err);console.log(selectedFeatures.size().getInfo())
-    };
+    var selectedFeatures  = ee.FeatureCollection(selectionTracker.selectedFeatures).flatten()
+    $('#summary-spinner').slideDown();
+    selectedFeatures.size().evaluate(function(size,failure){
+    	if(failure !== undefined){showMessage('Error',failure)}
+    	else if(size !== 0){
+    		var title = $('#user-selected-area-name').val();
+	    	if(title === ''){title = selectionTracker.selectedNames.join(' - ');}
+	    	
+	        makeAreaChart(selectedFeatures,title + ' ' + areaChartCollections[whichAreaChartCollection].label + ' Summary',true)
+    	}else{
+    		showMessage('Error!','Please select area to chart. Turn on any of the layers and click on polygons to select them.  Then hit the <kbd>Chart Selected Areas</kbd> button.');
+    		$('#summary-spinner').slideUp();
+    	}
+
+    })
+    	
+    
+    
     
 }
 
@@ -334,9 +373,10 @@ var  getQueryImages = function(lng,lat){
 
 		if(q.visible){
 			var clickPt = ee.Geometry.Point(lngLat);
+			ga('send', 'event', mode, 'pixelQuery-'+q.type, q.name);
 			if(q.type === 'geeImage'){
 				var img = ee.Image(q.queryItem);
-				img.reduceRegion(ee.Reducer.first(),clickPt,null,'EPSG:5070',[30,0,-2361915.0,0,-30,3177735.0]).evaluate(function(values){
+				img.reduceRegion(ee.Reducer.first(),clickPt,30,'EPSG:5070',null,true,1e13,1).evaluate(function(values){
 					keyI++;
 					
 					makeQueryTable(values,q,k);
@@ -398,7 +438,7 @@ var  getQueryImages = function(lng,lat){
 					
 				}
 				var getRegionCall = c.sort('system:time_start',false).getRegion(plotBounds,plotScale);
-				getRegionCall.evaluate(function(values){
+				getRegionCall.evaluate(function(values,failure){
 					// console.log('values');
 					// console.log(values);
 					if(values !== undefined && values !== null){
@@ -407,7 +447,7 @@ var  getQueryImages = function(lng,lat){
 						keyI++;
 						makeQueryTable(null,q,k);
 					}
-					
+					if(failure !== undefined && failure !== null){showMessage('Error',failure)}
 				})
 				// c.reduceRegion(ee.Reducer.first(),clickPt,null,'EPSG:5070',[30,0,-2361915.0,0,-30,3177735.0]).evaluate(function(value){keyI++;makeQueryTable(value,q,k);})
 			}else if(q.type === 'geeVectorImage' || q.type === 'geeVector'){
@@ -693,7 +733,7 @@ function chartUserDefinedArea(){
 		var userArea = [];
 		var anythingToChart = false;
 		Object.values(udpPolygonObj).map(function(v){
-			var coords = v.getPath().i;
+			var coords = v.getPath().getArray();
 			var f = [];
 			coords.map(function(coord){f.push([coord.lng(),coord.lat()])});
 		
@@ -753,7 +793,7 @@ function getAreaSummaryTable(areaChartCollection,area,xAxisProperty,multiplier){
 	return areaChartCollection.toList(10000,0).map(function(img){
 						img = ee.Image(img);
 				    // img = ee.Image(img).clip(area);
-				    var t = img.reduceRegion(ee.Reducer.fixedHistogram(0, 2, 2),area,30,'EPSG:5070',null,true,1e13,2);
+				    var t = img.reduceRegion(ee.Reducer.fixedHistogram(0, 2, 2),area,30,'EPSG:5070',null,true,1e13,1);
 				    var xAxisLabel = img.get(xAxisProperty);
 				    // t = ee.Dictionary(t).toArray().slice(1,1,2).project([0]);
 				    // var lossT = t.slice(0,2,null);
@@ -795,10 +835,7 @@ function makeAreaChart(area,name,userDefined){
 	// closeChart();
 	// document.getElementById('curve_chart_big').style.display = 'none';
 	var fColor = randomColor().slice(1,7);
-	if(userDefined === false){
-		
-		Map2.addLayer(area,{},name,true,null,null,name + ' for area summarizing','reference-layer-list');
-	}
+	
 	
 	// updateProgress(50);
 	area = area.set('source','LCMS_data_explorer');
@@ -832,12 +869,17 @@ function makeAreaChart(area,name,userDefined){
 	
 	var tableT;
 	function evalTable(){
+		console.log('Evaluating area chart table');
 		table.evaluate(function(tableT, failure){
 			print(iteration);
 			print(tableT);
 			print(failure);
 			print(areaChartingCount);
-			if(failure !== undefined && iteration < maxIterations && failure.indexOf('aggregations') > -1){evalTable()}
+			if(failure !== undefined && iteration < maxIterations ){
+				// $('#area-charting-message-box').empty();
+				// $('#area-charting-message-box').html(failure	);
+				evalTable()
+			}
 			else if(failure === undefined) {
 				// tableT.unshift(['year','Loss %','Gain %']);
 				tableT.unshift(bandNames)
@@ -847,18 +889,22 @@ function makeAreaChart(area,name,userDefined){
 				var colors = areaChartCollections[whichAreaChartCollection].colors;
 				var chartType = areaChartCollections[whichAreaChartCollection].chartType
 				if(chartType === null || chartType === undefined){chartType = 'line'}
+				ga('send', 'event', mode, 'areaChart', whichAreaChartCollection);
 				addChartJS(tableT,name,chartType,stackedAreaChart,steppedLine,colors,xAxisLabel,yAxisLabel);
 		
 				// areaChartingTabSelect(whichAreaDrawingMethod);
 				// map.setOptions({draggableCursor:'hand'});
 				// map.setOptions({cursor:'hand'});
 				// if(whichAreaDrawingMethod === '#user-defined'){
-					area.evaluate(function(i){
+					area.evaluate(function(i,failure){
 						areaGeoJson = i;
 						areaGeoJson[name] = tableT;
-						if(areaGeoJson !== undefined && areaGeoJson !== null){
+						if(failure === undefined && areaGeoJson !== undefined && areaGeoJson !== null){
 					    	$('#chart-download-dropdown').append(`<a class="dropdown-item" href="#" onclick = "exportJSON('${name}.geojson', areaGeoJson)">geoJSON</a>`);
-					   }});
+					   }else{
+					   	showMessage('Error','Could not convert summary area to geoJSON '+failure)
+					   }
+					});
 				// }
 				areaChartingCount--;
 			}
@@ -901,7 +947,7 @@ function fixGeoJSONZ(f){
 	return f
 }
 function runShpDefinedCharting(){
-
+		clearUploadedAreas();
 		if(jQuery('#areaUpload')[0].files.length > 0){
 			try{udp.setMap(null);}
 			catch(err){console.log(err)};
@@ -915,6 +961,7 @@ function runShpDefinedCharting(){
 			}
 			map.setOptions({draggableCursor:'progress'});
 			map.setOptions({cursor:'progress'});
+			
 			convertToGeoJSON('areaUpload').done(function(converted){
 				console.log('successfully converted to JSON');
 				console.log(converted);
@@ -938,12 +985,20 @@ function runShpDefinedCharting(){
 				};
 				// var area  =ee.FeatureCollection(converted.features.map(function(t){return ee.Feature(t).dissolve(100,ee.Projection('EPSG:4326'))}));//.geometry()//.dissolve(1000,ee.Projection('EPSG:4326'));
 				
+				Map2.addLayer(area,{isUploadedLayer:true},name,true,null,null,name + ' for area summarizing','area-charting-shp-layer-list');
+	
 				makeAreaChart(area,name);
 			})
 		
 	}else{showMessage('No Summary Area Selected','Please select a .zip shapefile or a .geojson file to summarize across')}
 }
 function startShpDefinedCharting(){
+	// clearUploadedAreas();
+	turnOnUploadedLayers();
+	if(selectionTracker.uploadedLayerIndices === undefined || selectionTracker.uploadedLayerIndices === null){
+		selectionTracker.uploadedLayerIndices = [];
+	}
+	
 	// $('#areaUpload').change(function(){runShpDefinedCharting()})
 };
 function stopAreaCharting(){
@@ -998,7 +1053,7 @@ function startQuery(){
 			var pt = ee.Geometry.Point([center.lng(),center.lat()]);
 			var plotBounds = pt.buffer(plotRadius).bounds();
 	   		addClickMarker(plotBounds)
-
+	   		
 			marker.setMap(map);
 
 			getQueryImages(center.lng(),center.lat());
@@ -1082,17 +1137,17 @@ function getDataTable(pt){
 	return forChart
 }
 
-function changeChartType(newType,showExpanded){
-	if(!showExpanded){showExpanded = false};
-	newType.checked = true;
-	$(newType).checked = true;
-	chartType = newType.value;
-	uriName = mode+'_Product_Time_Series_for_lng_' +center.lng().toFixed(4).toString() + '_' + center.lat().toFixed(4).toString(); //+ ' Res: ' +plotScale.toString() + '(m) Radius: ' + plotRadius	.toString() + '(m)';
-	csvName = uriName + '.csv'
-	document.getElementById('curve_chart').style.display = 'none';
-	// setTimeout(function(){updateProgress(80);},0);
-	Chart(showExpanded);
-}
+// function changeChartType(newType,showExpanded){
+// 	if(!showExpanded){showExpanded = false};
+// 	newType.checked = true;
+// 	$(newType).checked = true;
+// 	chartType = newType.value;
+// 	uriName = mode+'_Product_Time_Series_for_lng_' +center.lng().toFixed(4).toString() + '_' + center.lat().toFixed(4).toString(); //+ ' Res: ' +plotScale.toString() + '(m) Radius: ' + plotRadius	.toString() + '(m)';
+// 	csvName = uriName + '.csv'
+// 	document.getElementById('curve_chart').style.display = 'none';
+// 	// setTimeout(function(){updateProgress(80);},0);
+// 	Chart(showExpanded);
+// }
 
 //////////////////////////////////////////////////////////////////
 //ChartJS code
@@ -1102,8 +1157,8 @@ function downloadChartJS(chart,name){
 	link.href = chart.toBase64Image();
 	link.click();
 	delete link;
+	ga('send', 'event', mode, getActiveTools()[0] +'-chartDownload', 'png');
 }
-
 Chart.pluginService.register({
     beforeDraw: function (chart, easing) {
         if (chart.config.options.chartArea && chart.config.options.chartArea.backgroundColor) {
@@ -1153,14 +1208,16 @@ if(localStorage.tableOrChart === undefined || localStorage.tableOrChart === null
 }
 
 addModal('main-container','chart-modal');//addModalTitle('chart-modal','test');$('#chart-modal-body').append('hello');$('#chart-modal').modal();
-function addChartJS(dt,title,chartType,stacked,steppedLine,colors,xAxisLabel,yAxisLabel){
+function addChartJS(dt,title,chartType,stacked,steppedLine,colors,xAxisLabel,yAxisLabel,fieldsHidden){
 	var displayXAxis = true;var displayYAxis = true;
+	if(fieldsHidden === null || fieldsHidden === undefined){fieldsHidden = null};
 	if(xAxisLabel === null || xAxisLabel === undefined){xAxisLabel = '';displayXAxis = false};
 	if(yAxisLabel === null || yAxisLabel === undefined){yAxisLabel = '';displayYAxis = false};
 	if(colors === null || colors === undefined){colors = chartColors};
 	if(chartType === null || chartType === undefined){chartType = 'line'};
 	if(stacked === null || stacked === undefined){stacked = false};
 	if(steppedLine === undefined || steppedLine == null){steppedLine = false};
+
 	console.log('starting convert to table')
 	dataTable = dataTableNumbersToNames(dt);
 	console.log('finished convert to table')
@@ -1193,6 +1250,10 @@ function addChartJS(dt,title,chartType,stacked,steppedLine,colors,xAxisLabel,yAx
     var columns = range(1,columnN);
     console.log('starting to convert to chart')
     var datasets = columns.map(function(i){
+    	var fieldHidden = false;
+    	if(fieldsHidden !== null){
+    		fieldHidden = fieldsHidden[i-1]
+    	}
         var col = arrayColumn(dt,i);
         var label = col[0];
         var data = col.slice(1);
@@ -1218,7 +1279,10 @@ function addChartJS(dt,title,chartType,stacked,steppedLine,colors,xAxisLabel,yAx
 			        'borderColor':color,
 			        'lineTension':0,
 			        'borderWidth':2,
-			        'steppedLine':steppedLine
+			        'steppedLine':steppedLine,
+			        'showLine':true,
+			        'spanGaps':true,
+			        'hidden': fieldHidden
 			    	};
 		if(stacked){
 			out['fill'] = true;
@@ -1610,7 +1674,9 @@ function startPixelChartCollection() {
    		addClickMarker(plotBounds)
 		var icT = ee.ImageCollection(chartCollection.filterBounds(pt));
 		
-		uriName =  mode+'_Product_Time_Series_for_lng_' +center.lng().toFixed(4).toString() + '_lat_' + center.lat().toFixed(4).toString();
+		uriName =  pixelChartCollections[whichPixelChartCollection].label.replaceAll(' ','_')+'_lng_' +center.lng().toFixed(4).toString() + '_lat_' + center.lat().toFixed(4).toString();
+		chartTitle =  pixelChartCollections[whichPixelChartCollection].label+' (lng: ' +center.lng().toFixed(4).toString() + ' lat: ' + center.lat().toFixed(4).toString() + ')';
+		
 		csvName = uriName + '.csv'
 		
 
@@ -1629,6 +1695,9 @@ function startPixelChartCollection() {
 				  
 				  if(pixelChartCollections[whichPixelChartCollection].simplifyDate === false){
 				  	var y = new Date(d).toGMTString();
+				  }
+				  else if(pixelChartCollections[whichPixelChartCollection].semiSimpleDate === true){
+				  	var y = `${new Date(d).getFullYear()}-${new Date(d).getMonth()+1}-${new Date(d).getDate()}`
 				  }else{
 				  	var y = (new Date(d).getYear()+1900).toString();
 				  }
@@ -1648,7 +1717,8 @@ function startPixelChartCollection() {
 			values.unshift(header);
 			$('#summary-spinner').slideUp();
 			map.setOptions({draggableCursor:'help'});
-			addChartJS(values,uriName,'line',false,false,pixelChartCollections[whichPixelChartCollection].chartColors,pixelChartCollections[whichPixelChartCollection].xAxisLabel,pixelChartCollections[whichPixelChartCollection].yAxisLabel);
+			ga('send', 'event', mode, 'pixelChart', whichPixelChartCollection);
+			addChartJS(values,chartTitle,'line',false,false,pixelChartCollections[whichPixelChartCollection].chartColors,pixelChartCollections[whichPixelChartCollection].xAxisLabel,pixelChartCollections[whichPixelChartCollection].yAxisLabel,pixelChartCollections[whichPixelChartCollection].fieldsHidden);
 		
 			if(pixelChartCollections[whichPixelChartCollection].legends !== null && pixelChartCollections[whichPixelChartCollection].legends !== undefined){
 				makeLegend(pixelChartCollections[whichPixelChartCollection].legends);
@@ -1657,12 +1727,13 @@ function startPixelChartCollection() {
 			
    			}
 
-		icT.getRegion(plotBounds,plotScale).evaluate(function(values){
+		icT.getRegion(plotBounds,plotScale).evaluate(function(values,failure){
 			$('#summary-spinner').slideUp();
-			if(values === undefined ||  values === null){
-				showMessage('<i class="text-dark text-uppercase fa fa-exclamation-triangle"></i> Error! Try again','Error encountered while charting.<br>Most likely clicked outside study area data extent<br>Try charting an area within the selected study area');
-			}
-			else if(values.length > 1){
+			// if(values === undefined ||  values === null){
+			// 	showMessage('<i class="text-dark text-uppercase fa fa-exclamation-triangle"></i> Error! Try again','Error encountered while charting.<br>Most likely clicked outside study area data extent<br>Try charting an area within the selected study area');
+			// }
+			if(failure !== undefined && failure !== null){showMessage('<i class="text-dark text-uppercase fa fa-exclamation-triangle"></i> Error! Try again',failure)}
+			if(values !== undefined && values !== null && values.length > 1){
 				var expectedLength = icT.size().getInfo()+1
 				if(values.length > expectedLength){
 					console.log('reducing number of inputs');
@@ -1734,6 +1805,7 @@ function exportJSON(filename,json){
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        ga('send', 'event', mode, getActiveTools()[0] +'-chartDownload', 'geoJSON');
     }
 }
 function exportToCsv(filename, rows) {
@@ -1774,6 +1846,7 @@ function exportToCsv(filename, rows) {
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                ga('send', 'event', mode, getActiveTools()[0] +'-chartDownload', 'csv');
             }
         }
     }

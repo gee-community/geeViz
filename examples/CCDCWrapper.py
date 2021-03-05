@@ -1,5 +1,5 @@
 #Example of how to run CCDC and view outputs using the Python visualization tools
-#Acquires Landsat and Sentinel 2 data, runs CCDC, and tries to add them to the viewer
+#Acquires Landsat data, runs CCDC, and tries to add them to the viewer
 #Original CCDC paper: https://www.sciencedirect.com/science/article/pii/S0034425714000248
 #Since CCDC doesn't work well on-the-fly, see the CCCDCViz.py example to view outputs created with this script
 #The general workflow for CCDC is to run this script, and then either utilize the harmonic model for a given date
@@ -17,7 +17,7 @@ Map.clearMap()
 
 # Specify study area: Study area
 # Can be a featureCollection, feature, or geometry
-studyArea = testAreas['CA_Small']
+studyArea = testAreas['CA']
 
 #Update the startJulian and endJulian variables to indicate your seasonal 
 #constraints. This supports wrapping for tropics and southern hemisphere.
@@ -39,33 +39,7 @@ endYear = 2020
 #Generally only included when data are limited
 includeSLCOffL7 = True
 
-#Choose whether to use the Chastain et al 2019(https://www.sciencedirect.com/science/article/pii/S0034425718305212)
-#harmonization method
-#All harmonization models apply a rather small correction and are likely not needed
-runChastainHarmonization = False
 
-#If available, bring in preComputed cloudScore offsets and TDOM stats
-#Set to null if computing on-the-fly is wanted
-#These have been pre-computed for all CONUS for Landsat and Setinel 2 (separately)
-#and are appropriate to use for any time period within the growing season
-#The cloudScore offset is generally some lower percentile of cloudScores on a pixel-wise basis
-preComputedCloudScoreOffset = ee.ImageCollection('projects/USFS/TCC/cloudScore_stats').mosaic()
-preComputedLandsatCloudScoreOffset = preComputedCloudScoreOffset.select(['Landsat_CloudScore_p10'])
-preComputedSentinel2CloudScoreOffset = preComputedCloudScoreOffset.select(['Sentinel2_CloudScore_p10'])
-
-#The TDOM stats are the mean and standard deviations of the two bands used in TDOM
-#By default, TDOM uses the nir and swir1 bands
-preComputedTDOMStats = ee.ImageCollection('projects/USFS/TCC/TDOM_stats').mosaic().divide(10000)
-preComputedLandsatTDOMIRMean = preComputedTDOMStats.select(['Landsat_nir_mean','Landsat_swir1_mean'])
-preComputedLandsatTDOMIRStdDev = preComputedTDOMStats.select(['Landsat_nir_stdDev','Landsat_swir1_stdDev'])
-
-preComputedSentinel2TDOMIRMean = preComputedTDOMStats.select(['Sentinel2_nir_mean','Sentinel2_swir1_mean'])
-preComputedSentinel2TDOMIRStdDev = preComputedTDOMStats.select(['Sentinel2_nir_stdDev','Sentinel2_swir1_stdDev'])
-
-
-#List of acceptable sensors
-#Options include: 'LANDSAT_4', 'LANDSAT_5', 'LANDSAT_7','LANDSAT_8','Sentinel-2A', 'Sentinel-2B'
-sensorList = [ 'LANDSAT_4', 'LANDSAT_5', 'LANDSAT_7','LANDSAT_8','Sentinel-2A', 'Sentinel-2B']
 
 #Export params
 #Whether to export CCDC outputs
@@ -131,18 +105,10 @@ ccdcParams ={
 #Start function calls
 ###############################################################
 #Call on master wrapper function to get Landat and Sentinel 2 scenes
-processedScenes = getProcessedLandsatAndSentinel2Scenes(studyArea = studyArea,startYear = startYear, endYear = endYear,
+processedScenes = getProcessedLandsatScenes(studyArea = studyArea,startYear = startYear, endYear = endYear,
                                                         startJulian = startJulian,endJulian = endJulian,
-                                                        includeSLCOffL7 = includeSLCOffL7,runChastainHarmonization = runChastainHarmonization,
-                                                        preComputedLandsatCloudScoreOffset = preComputedLandsatCloudScoreOffset,
-                                                        preComputedSentinel2CloudScoreOffset = preComputedSentinel2CloudScoreOffset,
-                                                        preComputedLandsatTDOMIRMean = preComputedLandsatTDOMIRMean,
-                                                        preComputedLandsatTDOMIRStdDev = preComputedLandsatTDOMIRStdDev,
-                                                        preComputedSentinel2TDOMIRMean = preComputedSentinel2TDOMIRMean,
-                                                        preComputedSentinel2TDOMIRStdDev = preComputedSentinel2TDOMIRStdDev).select(exportBands)
+                                                        includeSLCOffL7 = includeSLCOffL7).select(exportBands)
 
-#Filter to only include wanted sensors
-processedScenes = processedScenes.filter(ee.Filter.inList('sensor',ee.List(sensorList)))
 
 #Remove any extremely high band/index values
 def removeGT1(img):
@@ -155,12 +121,12 @@ Map.addLayer(processedScenes,{},'Processed Input Data',False);
 ccdcParams['collection'] = processedScenes
 
 #Run CCDC
-ccdc = ee.Algorithms.TemporalSegmentation.Ccdc(**ccdcParams)
+ccdc = ee.Image(ee.Algorithms.TemporalSegmentation.Ccdc(**ccdcParams))
 
 #Set properties for asset
-ccdc = ccdc.copyProperties(processedScenes)
-ccdc = ccdc.set(ccdcParams)
-ccdc = ee.Image(ccdc)
+# ccdc = ccdc.copyProperties(processedScenes)
+# ccdc = ccdc.setMulti(ccdcParams)
+# ccdc = ee.Image(ccdc)
 
 Map.addLayer(ccdc,{},'CCDC Output',False);
 

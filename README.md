@@ -40,6 +40,7 @@ folder
 	* `from geeViz.examples import harmonicRegressionWrapper`
 	* `from geeViz.examples import LANDTRENDRWrapper`
 	* `from geeViz.examples import CCDCViz`
+	* `from geeViz.examples import lcmsViewerExample`
 
 * When these examples are run, a viewer should open in your default browser.  It will show any data that was added to the map.
 * Layers can be toggled on/off and opacity changed.  They can also be measured and queried under the TOOLS pane.

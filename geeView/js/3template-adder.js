@@ -8,7 +8,7 @@ $('body').append(staticTemplates.sidebarLeftContainer);
 $('body').append(staticTemplates.geeSpinner);
 $('body').append(staticTemplates.bottomBar);
 
-$('#summary-spinner').show();
+// $('#summary-spinner').show();
 
 $('#main-container').append(staticTemplates.sidebarLeftToggler);
 
@@ -27,7 +27,7 @@ $('#dontShowAgainCheckbox').change(function(){
 });
 /////////////////////////////////////////////////////////////////////
 /*Add study area dropdown if LCMS*/
-if(mode === 'LCMS'){
+if(mode === 'LCMS-pilot' ){
   $('#title-banner').append(staticTemplates.studyAreaDropdown);
   if(studyAreaSpecificPage){
     $('#study-area-label').removeClass('dropdown-toggle');
@@ -52,7 +52,7 @@ function toggleAdvancedOff(){
 }
 /////////////////////////////////////////////////////////////////////
 /*Start adding elements to page based on chosen mode*/
-if(mode === 'LCMS'){
+if(mode === 'LCMS-pilot' || mode === 'LCMS'){
   var minYear = startYear;var maxYear = endYear;
   // console.log(urlParams)  
   if(urlParams.startYear == null || urlParams.startYear == undefined){
@@ -61,11 +61,16 @@ if(mode === 'LCMS'){
   if(urlParams.endYear == null || urlParams.endYear == undefined){
      urlParams.endYear = endYear;
   }
+  if(urlParams.addLCMSTimeLapsesOn == null || urlParams.addLCMSTimeLapsesOn == undefined){
+     urlParams.addLCMSTimeLapsesOn = 'no';
+  }
+
+  
   // console.log(urlParams)
  
   /*Construct panes in left sidebar*/
   addCollapse('sidebar-left','parameters-collapse-label','parameters-collapse-div','PARAMETERS','<i class="fa fa-sliders mr-1" aria-hidden="true"></i>',false,null,'Adjust parameters used to filter and sort LCMS products');
-  addCollapse('sidebar-left','layer-list-collapse-label','layer-list-collapse-div','LCMS DATA',`<img style = 'width:1.1em;' class='image-icon mr-1' src="images/layer_icon.png">`,true,null,'LCMS DATA layers to view on map');
+  addCollapse('sidebar-left','layer-list-collapse-label','layer-list-collapse-div','LCMS DATA',`<img style = 'width:1.2em;height:1.1em;margin-top:-0.2em;margin-left:-0.1em' class='image-icon mr-1' src="images/lcms-icon.png">`,true,null,'LCMS DATA layers to view on map');
   // $('#layer-list-collapse-label').append(`<button class = 'btn' title = 'Refresh layers if tiles failed to load' id = 'refresh-tiles-button' onclick = 'jitterZoom()'><i class="fa fa-refresh"></i></button>`)
   addCollapse('sidebar-left','reference-layer-list-collapse-label','reference-layer-list-collapse-div','REFERENCE DATA',`<img style = 'width:1.1em;' class='image-icon mr-1' src="images/layer_icon.png">`,false,null,'Additional relevant layers to view on map intended to provide context for LCMS DATA');
   
@@ -81,22 +86,35 @@ if(mode === 'LCMS'){
   if(['standard','advanced'].indexOf(urlParams.analysisMode) === -1){
     urlParams.analysisMode = 'standard'
   }
+  if(['year','prob'].indexOf(urlParams.summaryMethod) === -1){
+    urlParams.summaryMethod = 'year'
+  }
+
   var tAnalysisMode = urlParams.analysisMode;
+  var tAddLCMSTimeLapsesOn = urlParams.addLCMSTimeLapsesOn;
+  if(mode === 'LCMS'){
+    $('#parameters-collapse-div').append(`<div class="dropdown-divider" ></div>`);
+    // $('#parameters-collapse-div').append(`<p>Additional Functionality:</p>`);
+  // $('#parameters-collapse-div').append(staticTemplates.addTimelapsesButton);
+  addRadio('parameters-collapse-div','addTimeLapses-radio','Add LCMS Time Lapses:','No','Yes','urlParams.addLCMSTimeLapsesOn','no','yes','','','Add interactive time lapse of LCMS Change, Land Cover, and Land Use products. This will slow down the map loading');
+  $('#parameters-collapse-div').append(`<div class="dropdown-divider" ></div>`);
+  if(tAddLCMSTimeLapsesOn === 'yes'){
+    $('#addTimeLapses-radio-second_toggle_label').click();
+  }
+  }
   addRadio('parameters-collapse-div','analysis-mode-radio','Choose which mode:','Standard','Advanced','urlParams.analysisMode','standard','advanced','toggleAdvancedOff()','toggleAdvancedOn()','Standard mode provides the core LCMS products based on carefully selected parameters. Advanced mode provides additional LCMS products and parameter options')
 
   urlParams.analysisMode = tAnalysisMode ;
   $('#parameters-collapse-div').append(`<div class="dropdown-divider" ></div>`);
 
   addDualRangeSlider('parameters-collapse-div','Choose analysis year range:','urlParams.startYear','urlParams.endYear',minYear, maxYear, urlParams.startYear, urlParams.endYear, 1,'analysis-year-slider','null','Years of LCMS data to include for land cover, land use, loss, and gain')
+  
 
   $('#parameters-collapse-div').append(`<div class="dropdown-divider"></div>
                                           <div id='threshold-container' style="display:none;width:100%"></div>
                                           <div id='advanced-radio-container' style="display: none;"></div>`)
-  // console.log('here')
-  // addRangeSlider('threshold-container','Choose loss threshold:','lowerThresholdDecline',0,1,lowerThresholdRecovery,0.05,'decline-threshold-slider','','The CCDC probabibility threshold to detect change.  Any probability for a given break greater than this threshold will be flagged as change') 
-  
-  // addRangeSlider('threshold-container','Choose loss threshold:','lowerThresholdDecline',0,1,lowerThresholdDecline,0.05,'decline-threshold-slider','null',"Threshold window for detecting loss.  Any loss probability greater than the specified threshold will be flagged as loss ") 
-  // containerDivID,title,variable,min,max,defaultValue,step,sliderID,mode,tooltip
+
+  if( mode === 'LCMS-pilot' ){
   addRangeSlider('threshold-container','Choose loss threshold:','lowerThresholdDecline',0, 1, lowerThresholdDecline, 0.05,'decline-threshold-slider','null',"Threshold window for detecting loss.  Any loss probability greater than or equal to this value will be flagged as loss ")
   $('#threshold-container').append(`<div class="dropdown-divider" ></div>`);
   addRangeSlider('threshold-container','Choose gain threshold:','lowerThresholdRecovery',0, 1, lowerThresholdRecovery, 0.05,'recovery-threshold-slider','null',"Threshold window for detecting gain.  Any gain probability greater than or equal to this value will be flagged as gain ")
@@ -106,26 +124,56 @@ if(mode === 'LCMS'){
   $('#fast-slow-threshold-container').append(`<div class="dropdown-divider" ></div>`);
   addRangeSlider('fast-slow-threshold-container','Choose fast loss threshold:','lowerThresholdFastLoss',0, 1, lowerThresholdFastLoss, 0.05,'fast-loss-threshold-slider','null',"Threshold window for detecting loss.  Any loss probability greater than or equal to this value will be flagged as loss ")
   $('#advanced-radio-container').append(`<div class="dropdown-divider" ></div>`);
+
   addRadio('advanced-radio-container','treemask-radio','Constrain analysis to areas with trees:','Yes','No','applyTreeMask','yes','no','','','Whether to constrain LCMS products to only treed areas. Any area LCMS classified as tree cover 2 or more years will be considered tree. Will reduce commission errors typical in agricultural and water areas, but may also reduce changes of interest in these areas.')
   $('#advanced-radio-container').append(`<div class="dropdown-divider" ></div>`);
- 
-  
-  addRadio('advanced-radio-container','summaryMethod-radio','Summary method:','Most recent year','Highest probability','summaryMethod','year','prob','','','How to choose which value for loss and gain to display/export.  Choose the value with the highest probability or from the most recent year above the specified threshold')
+ }
+  var tSummaryMethod = urlParams.summaryMethod;
+  addRadio('advanced-radio-container','summaryMethod-radio','Summary method:','Most recent year','Highest prob','urlParams.summaryMethod','year','prob','','','How to choose which value for disturbance and growth to display.  Choose the value with the highest model confidence or from the most recent year above the threshold.');
+  urlParams.summaryMethod = tSummaryMethod;
+
   $('#advanced-radio-container').append(`<div class="dropdown-divider" ></div>`);
   // addRadio('advanced-radio-container','whichIndex-radio','Index for charting:','NDVI','NBR','whichIndex','NDVI','NBR','','','The vegetation index that will be displayed in the "Query LCMS Time Series" tool')
   // $('#advanced-radio-container').append(`<div class="dropdown-divider" ></div>`);
   $('#parameters-collapse-div').append(staticTemplates.reRunButton);
+
 
   //Set up layer lists
   $('#layer-list-collapse-div').append(`<div id="layer-list"></div>`);
   $('#reference-layer-list-collapse-div').append(`<div id="reference-layer-list"></div>`);
 
 
-  $('#download-collapse-div').append(staticTemplates.downloadDiv);
+  
+
+  if(mode === 'LCMS'){
+    function populateLCMSDownloads(){
+      var toggler = document.getElementsByClassName("caret");
+    var i;
+
+    for (i = 0; i < toggler.length; i++) {
+      toggler[i].addEventListener("click", function() {
+        // console.log(this)
+        this.parentElement.querySelector(".nested").classList.toggle("active");
+        // this.parentElement.querySelector(".nested").classList.toggle("treeOff");
+        this.classList.toggle("caret-down");
+        // this.classList.toggle("treeOff");
+      });
+    }
+    }
+    $('#download-collapse-div').append(staticTemplates.lcmsProductionDownloadDiv);
+    
+
+
+  }else{
+    $('#download-collapse-div').append(staticTemplates.downloadDiv);
+  }
   $('#support-collapse-div').append(staticTemplates.supportDiv);
 
   if(tAnalysisMode === 'advanced'){
     $('#analysis-mode-radio-second_toggle_label').click();
+  }
+  if(tSummaryMethod === 'prob'){
+    $('#summaryMethod-radio-second_toggle_label').click();
   }
 
 }else if(mode === 'lcms-base-learner'){
@@ -147,21 +195,22 @@ if(mode === 'LCMS'){
   
   addCollapse('sidebar-left','parameters-collapse-label','parameters-collapse-div','PARAMETERS','<i class="fa fa-sliders mr-1" aria-hidden="true"></i>',false,null,'Adjust parameters used to filter and sort LCMS products');
   addDualRangeSlider('parameters-collapse-div','Choose analysis year range:','urlParams.startYear','urlParams.endYear',minYear, maxYear, urlParams.startYear, urlParams.endYear, 1,'analysis-year-slider','null','Years of LCMS data to include for land cover, land use, loss, and gain')
-
+addCheckboxes('parameters-collapse-div','index-choice-checkboxes','Choose which indices to analyze','whichIndices2',{'blue':false,'green':false,'red':false,'nir':false,'swir1':false,'swir2':false,'NBR':true,'NDVI':false,'NDMI':false,'wetness':false})
+  
   addSubCollapse('parameters-collapse-div','lt-params-label','lt-params-div','LANDTRENDR Params', '',false,'')
-  addSubCollapse('parameters-collapse-div','ccdc-params-label','ccdc-params-div','CCDC Params', '',false,'')
+  // addSubCollapse('parameters-collapse-div','ccdc-params-label','ccdc-params-div','CCDC Params', '',false,'')
   
   addRangeSlider('lt-params-div','Loss Magnitude Threshold','urlParams.lossMagThresh',-0.8,-0.05,urlParams.lossMagThresh,0.05,'loss-mag-thresh-slider','','The threshold to detect loss for each LANDTRENDR segment.  Any difference for a given segement less than this threshold will be flagged as loss') 
   addRangeSlider('lt-params-div','Gain Magnitude Threshold','urlParams.gainMagThresh',0.05,0.8,urlParams.gainMagThresh,0.05,'gain-mag-thresh-slider','','The threshold to detect gain for each LANDTRENDR segment.  Any difference for a given segement greater than this threshold will be flagged as gain') 
-  addCheckboxes('lt-params-div','index-choice-checkboxes','Choose which indices to analyze','whichIndices2',{'blue':false,'green':false,'red':false,'nir':false,'swir1':false,'swir2':false,'NBR':true,'NDVI':false,'NDMI':false,'brightness':false,'greenness':false,'wetness':false,'tcAngleBG':false})
   
-  addRangeSlider('ccdc-params-div','Change Probability Threshold','ccdcChangeProbThresh',0,1,0.8,0.1,'ccdc-change-prob-thresh-slider','','The CCDC probabibility threshold to detect change.  Any probability for a given break greater than this threshold will be flagged as change') 
+  // addCheckboxes('ccdc-params-div','ccdc-index-choice-checkboxes','Choose which indices to include in CCDC fitted charts','whichIndices3',{'blue':false,'green':false,'red':false,'nir':false,'swir1':false,'swir2':false,'NBR':true,'NDVI':true,'NDMI':false,'wetness':false})
+  // addRangeSlider('ccdc-params-div','Change Probability Threshold','ccdcChangeProbThresh',0,1,0.8,0.1,'ccdc-change-prob-thresh-slider','','The CCDC probabibility threshold to detect change.  Any probability for a given break greater than this threshold will be flagged as change') 
   
   // $('#lt-params-div').append(`<div class="dropdown-divider" ></div>`);
   $('#parameters-collapse-div').append(`<div class="dropdown-divider" ></div>`);
   $('#parameters-collapse-div').append(staticTemplates.reRunButton);
 
-  addCollapse('sidebar-left','layer-list-collapse-label','layer-list-collapse-div','LCMS BASE LEARNER DATA',`<img style = 'width:1.1em;' class='image-icon mr-1' src="images/layer_icon.png">`,true,null,'LCMS DATA layers to view on map');
+  addCollapse('sidebar-left','layer-list-collapse-label','layer-list-collapse-div','LCMS BASE LEARNER DATA',`<img style = 'width:1.2em;height:1.1em;margin-top:-0.2em;margin-left:-0.1em' class='image-icon mr-1' src="images/lcms-icon.png">`,true,null,'LCMS DATA layers to view on map');
   $('#layer-list-collapse-div').append(`<div id="layer-list"></div>`);
   addCollapse('sidebar-left','tools-collapse-label','tools-collapse-div','TOOLS',`<i class="fa fa-gear mr-1" aria-hidden="true"></i>`,false,'','Tools to measure and chart data provided on the map');
   addCollapse('sidebar-left','download-collapse-label','download-collapse-div','DOWNLOAD DATA',`<i class="fa fa-cloud-download mr-1" aria-hidden="true"></i>`,false,``,'Download '+mode+' products for further analysis');
@@ -237,9 +286,18 @@ if(mode === 'LCMS'){
   
 }else if(mode === 'MTBS'){
   startYear = 1984;
-  endYear = 2017;
-  
-  
+  endYear = 2018;
+  if(urlParams.startYear == null || urlParams.startYear == undefined){
+      urlParams.startYear = startYear;
+  }
+  if(urlParams.endYear == null || urlParams.endYear == undefined){
+     urlParams.endYear = endYear;
+  }
+  addCollapse('sidebar-left','support-collapse-label','support-collapse-div','SUPPORT & FEEDBACK',`<i class="fa fa-question-circle mr-1" aria-hidden="true"></i>`,true,``,'');
+  $('#support-collapse-div').append(staticTemplates.walkThroughButton);
+  $('#support-collapse-div').append(`<div class="dropdown-divider"</div>`);
+  $('#support-collapse-div').append(`<p>If you have any issues with this tool or have suggestions on how it could be improved, please <a href="https://www.mtbs.gov/contact" target="_blank" > contact us</a></p>`)
+  $('#support-collapse-div').append(`<div class="dropdown-divider mb-2"</div>`);
   addCollapse('sidebar-left','parameters-collapse-label','parameters-collapse-div','PARAMETERS','<i class="fa fa-sliders mr-1" aria-hidden="true"></i>',false,null,'Adjust parameters used to filter and sort MTBS products');
   
   var mtbsZoomToDict ={"All":true,"CONUS":false,"Alaska":false,"Hawaii":false,"Puerto-Rico":false};
@@ -252,26 +310,22 @@ if(mode === 'LCMS'){
   });
   $('#parameters-collapse-div').append(`<div class="dropdown-divider" ></div>`);
   
-  addDualRangeSlider('parameters-collapse-div','Choose analysis year range:','startYear','endYear',startYear, endYear, startYear, endYear, 1,'analysis-year-slider','null','Years of MTBS data to include')
+  addDualRangeSlider('parameters-collapse-div','Choose analysis year range:','urlParams.startYear','urlParams.endYear',startYear, endYear, urlParams.startYear, urlParams.endYear, 1,'analysis-year-slider','null','Years of MTBS data to include')
   addMultiRadio('parameters-collapse-div','mtbs-summary-method-radio','How to summarize MTBS data','mtbsSummaryMethod',{"Highest-Severity":true,"Most-Recent":false,"Oldest":false})
 
   $('#mtbs-summary-method-radio').prop('title','Select how to summarize MTBS raster data in areas with multiple fires.  Each summary method is applied on a pixel basis. "Highest-Severity" will show the severity and fire year corresponding to the highest severity. "Most-Recent" will show the severity and fire year corresponding to the most recently mapped fire. "Oldest" will show the severity and fire year corresponding to the oldest mapped fire.')
   $('#parameters-collapse-div').append(`<div class="dropdown-divider" ></div>`);
   $('#parameters-collapse-div').append(staticTemplates.reRunButton);
 
-  addCollapse('sidebar-left','layer-list-collapse-label','layer-list-collapse-div',mode+' DATA',`<img style = 'width:1.1em;' class='image-icon mr-1' src="images/layer_icon.png">`,true,null,mode+' DATA layers to view on map');
+  addCollapse('sidebar-left','layer-list-collapse-label','layer-list-collapse-div',mode+' DATA',`<img style = 'width:1.2em;height:1.1em;margin-top:-0.2em;margin-left:-0.1em' class='image-icon mr-1' src="images/mtbs-logo.png">`,true,null,mode+' DATA layers to view on map');
   addCollapse('sidebar-left','reference-layer-list-collapse-label','reference-layer-list-collapse-div','REFERENCE DATA',`<img style = 'width:1.1em;' class='image-icon mr-1' src="images/layer_icon.png">`,false,null,'Additional relevant layers to view on map intended to provide context for '+mode+' DATA');
   
   addCollapse('sidebar-left','tools-collapse-label','tools-collapse-div','TOOLS',`<i class="fa fa-gear mr-1" aria-hidden="true"></i>`,false,'','Tools to measure and chart data provided on the map');
-  addCollapse('sidebar-left','support-collapse-label','support-collapse-div','SUPPORT',`<i class="fa fa-question-circle mr-1" aria-hidden="true"></i>`,false,``,'If you need any help');
-
+  
   $('#layer-list-collapse-div').append(`<div id="layer-list"></div>`);
   $('#reference-layer-list-collapse-div').append(`<div id="reference-layer-list"></div>`);
   
-  $('#support-collapse-div').append(staticTemplates.walkThroughButton);
-  $('#support-collapse-div').append(`<div class="dropdown-divider"</div>`);
-  $('#support-collapse-div').append(`<a href="https://www.mtbs.gov/contact" target="_blank" title = 'If you have any questions or comments, feel free to contact us'>Contact Us</a>`)
-  $('#support-collapse-div').append(`<div class="dropdown-divider mb-2"</div>`);
+ 
   $('#introModal-body').append(staticTemplates.walkThroughButton);
 }else if(mode === 'TEST' || mode === 'FHP'){
   addCollapse('sidebar-left','layer-list-collapse-label','layer-list-collapse-div',mode+' DATA',`<img style = 'width:1.1em;' class='image-icon mr-1' src="images/layer_icon.png">`,true,null,mode+' DATA layers to view on map');
@@ -326,6 +380,7 @@ else if(mode === 'STORM'){
    addRangeSlider('parameters-collapse-div','Refinement iterations','refinementIterations',0, 10, 5, 1,'refinement-factor-slider','null',"Specify number of iterations to perform a linear interpolation of provided track. A higher number is needed for tracks with fewer real observations")
    addRangeSlider('parameters-collapse-div','Max distance (km)','maxDistance',50, 500, 200, 50,'max-distance-slider','null',"Specify max distance in km from storm track to include in output")
    addRangeSlider('parameters-collapse-div','Min wind (mph)','minWind',0, 75, 30, 5,'min-wind-slider','null',"Specify min wind speed in mph to include in output")
+   addRangeSlider('parameters-collapse-div','Mod of Rupture','modRupture',2000, 20000, 8500, 100,'mod-rupture-slider','null',"Specify the modulus of rupture for the GALES model")
       $('#parameters-collapse-div').append(`<div class="dropdown-divider" ></div>
       <button class = 'btn' style = 'margin-bottom: 0.5em!important;' onclick = 'ingestStormTrack()' rel="txtTooltip" title = 'Click to ingest storm track and map damage'>Ingest Storm Track</button>
       <button class = 'btn' style = 'margin-bottom: 0.5em!important;' onclick = 'reRun()' rel="txtTooltip" title = 'Click to remove existing layers and exports'>Clear All Layers/Exports</button><br>`);
@@ -363,7 +418,7 @@ else if(mode === 'STORM'){
                 // console.log(rows)
                 // Map2.addLayer(rows)
                 var iterations = refinementIterations;
-                while(iterations > 0 && rows.length < 1000){
+                while(iterations > 0 && rows.length*2 < 1500){
                   console.log('Refining');
                   console.log(refinementIterations);
                   rows = refineFeatures(rows,['lat','lon','wspd','pres','date','year']);
@@ -535,11 +590,11 @@ if(mode === 'geeViz'){
   $('#pixel-chart-label').remove();
   $('#share-button').remove();
 }
-
-if(mode === 'LCMS' || mode === 'MTBS'|| mode === 'lcms-base-learner' || mode === 'FHP'){
+if(mode === 'LCMS'){$('#search-share-div').addClass('pt-2')};
+if(mode === 'LCMS-pilot' || mode === 'MTBS'|| mode === 'lcms-base-learner' || mode === 'FHP' || mode === 'LCMS'){
   $('#tools-accordian').append(`<h5 class = 'pt-2' style = 'border-top: 0.1em solid black;'>Area Tools</h5>`);
-  addSubCollapse('tools-accordian','area-chart-params-label','area-chart-params-div','Area Tools Params', '',false,'')
-  
+  addSubCollapse('tools-accordian','area-chart-params-label','area-chart-params-div','Area Tools Parameters', '',false,'')
+  $('#area-chart-params-label').prop('title', 'Click here to select which LCMS products to chart, and change which area units are used. ')
   // $('#tools-accordian').append(`<div class="dropdown-divider" ></div>`);
   addDropdown('area-chart-params-div','area-collection-dropdown','Choose which '+mode+' product to summarize','whichAreaChartCollection','Choose which '+mode+' time series to summarize.');
   // $('#area-chart-params-div').append(`<div class="dropdown-divider" ></div>`);
@@ -562,7 +617,7 @@ if(mode === 'MTBS' || mode === 'Ancillary'){
                                     <img src="images/usgslogo.png" class = 'image-icon-bar'  href="#"  rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click to learn more about the US Geological Survey">
                                   </a>`)
   $('#contributor-logos').prepend(`<a href="https://www.mtbs.gov/" target="_blank" >
-                                    <img src="images/mtbs-logo.png" class = 'image-icon-bar'  href="#"  rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click to learn more about the US Geological Survey">
+                                    <img src="images/mtbs-logo-large.png" class = 'image-icon-bar'  href="#"  rel="txtTooltip" data-toggle="tooltip" data-placement="top" title="Click to learn more about the US Geological Survey">
                                   </a>`)
 }
 //Handle exporting if chosen
@@ -593,6 +648,7 @@ if(urlParams.showSidebar === undefined || urlParams.showSidebar === null){
 
 function toggleSidebar(){
   $('#sidebar-left').toggle('collapse');
+  // $('#title-banner').toggle('collapse');
   if(urlParams.showSidebar === 'false'){
     urlParams.showSidebar = 'true'
   }else{

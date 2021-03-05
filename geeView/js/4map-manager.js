@@ -61,7 +61,26 @@ var mapDiv = document.getElementById('map');
 
 
 
+function copyObj(mainObj) {
+  let objCopy = {}; // objCopy will store a copy of the mainObj
+  let key;
 
+  for (key in mainObj) {
+    objCopy[key] = mainObj[key]; // copies each property to the objCopy object
+  }
+  return objCopy;
+};
+function copyArray(array) {
+  var arrayCopy = []; 
+ 
+
+  array.map(function(i){
+    arrayCopy.push(i)
+  })
+    
+  
+  return arrayCopy;
+};
 ///////////////////////////////////////////////////////////////////
 //Function to compute range list on client side
 function range(start, stop, step){
@@ -217,6 +236,18 @@ function printImage(message){print(message)};
 function print(message){
     console.log(message)
 }
+function printEE(obj){
+  print('Getting info about ee object')
+  console.log(obj.getInfo(function(success,failure){
+    if(success !== undefined){
+      console.log(success);
+    }
+    else{
+      console.log(failure)
+    }
+
+  }))
+}
 /////////////////////////////////////////////////////
 //Get random number within specified range
 function getRandomArbitrary(min, max) {
@@ -282,7 +313,7 @@ function addSelectLayerToMap(item,viz,name,visible,label,fontColor,helpBox,which
 var intervalPeriod = 666.6666666666666;
 var timeLapseID;
 var timeLapseFrame = 0;
-var cumulativeMode = true;
+var cumulativeMode = false;
 function pauseTimeLapse(id){
   if(id === null || id === undefined){id = timeLapseID}
     timeLapseID = id;
@@ -560,6 +591,7 @@ function alignTimeLapseCheckboxes(){
 }
 function timeLapseCheckbox(id){
   var v = timeLapseObj[id].visible;
+  ga('send', 'event', 'time-lapse-toggle', id,v);
   if(!v){
     pauseButtonFunction(id);
 
@@ -603,7 +635,7 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
         item = ee.Deserializer.decode(item);
         viz.serialized = false;
     }
-  if(viz.cumulativeMode === null || viz.cumulativeMode === undefined){viz.cumulativeMode = true}
+  if(viz.cumulativeMode === null || viz.cumulativeMode === undefined){viz.cumulativeMode = false}
     //Force time lapses to be turned off on load to speed up loading
     var visible = false;
   if(viz.opacity === undefined || viz.opacity === null){viz.opacity = 1}
@@ -615,7 +647,7 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
   legendDivID = legendDivID.replaceAll('(','-');
   legendDivID = legendDivID.replaceAll(')','-');
   
-  viz.canQuery = true;
+  viz.canQuery = false;
   viz.isSelectLayer = false;
   viz.isTimeLapse = true;
   viz.timeLapseID = legendDivID;
@@ -689,7 +721,7 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
                                     <button class = 'btn' title = 'Forward one frame' id = '${legendDivID}-forward-button' onclick = 'forwardOneFrame("${legendDivID}")'><i class="fa fa-forward"></i></button>
                                     <button style = '' class = 'btn' title = 'Refresh layers if tiles failed to load' id = '${legendDivID}-refresh-tiles-button' onclick = 'jitterZoom(true)'><i class="fa fa-refresh"></i></button>
                                     <button style = 'display:none;' class = 'btn' title = 'Toggle frame visiblity' id = '${legendDivID}-toggle-frames-button' onclick = 'toggleFrames("${legendDivID}")'><i class="fa fa-eye"></i></button>
-                                    <button class = 'btn cumulativeToggler time-lapse-active' onclick = 'toggleCumulativeMode()' title = 'Click to toggle whether to show a single year or all years in the past along with current year'><img style = 'width:1.4em;filter: invert(100%) brightness(500%)'  src="images/cumulative_icon.png"></button>
+                                    <button class = 'btn cumulativeToggler' onclick = 'toggleCumulativeMode()' title = 'Click to toggle whether to show a single year or all years in the past along with current year'><img style = 'width:1.4em;filter: invert(100%) brightness(500%)'  src="images/cumulative_icon.png"></button>
                                     <div id = "${legendDivID}-message-div" class = 'pt-2'></div>
                                   </div>
 
@@ -712,9 +744,11 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
     },delay)
     
   });
-  $('#'+ legendDivID + '-name-span').dblclick(function(){
-    showMessage('test')
-    })
+  // $('#'+ legendDivID + '-name-span').dblclick(function(){
+  //   // showMessage('test',item.get('bounds').getInfo())
+  //   // printEE(item.get('bounds'))
+  //   // synchronousCenterObject(item.get('bounds'))
+  //   })
 
   //Add in layers
   viz.layerType = 'geeImage';
@@ -871,6 +905,8 @@ function addExport(eeImage,name,res,Export,metadataParams,noDataValue){
 /////////////////////////////////////////////////////
 //Function to add ee object as well as client-side objects to map
 function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,queryItem){
+  
+    // $('#layer-list-collapse-label-message').html(`Loading: ${name}`)
     if(viz !== null && viz !== undefined && viz.serialized !== null && viz.serialized !== undefined && viz.serialized === true){
         item = ee.Deserializer.decode(item);
     }
@@ -952,6 +988,10 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
     legendDivID = legendDivID.replaceAll('/','-');
     legendDivID = legendDivID.replaceAll('(','-');
     legendDivID = legendDivID.replaceAll(')','-');
+    legendDivID = legendDivID.replaceAll('&','-');
+    legendDivID = legendDivID.replaceAll(',','-');
+    legendDivID = legendDivID.replaceAll('.','-');
+
     if(visible == null){
         visible = true;
     }
@@ -972,7 +1012,8 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
     }
 
 
-    if(helpBox == null){helpBox = ''};
+    if(helpBox == null || helpBox === undefined){helpBox = ''};
+    if(viz.title !== null && viz.title !== undefined){helpBox = viz.title};
     var layer = {};//document.createElement("ee-layer");
     
     layer.ID = NEXT_LAYER_ID;
@@ -1351,12 +1392,14 @@ function setGEERunID(){
 //Function to rerun all GEE code
 //Clears out current map, exports, and legends and then reruns
 function reRun(){
-  $('#summary-spinner').show();
+  // $('#summary-spinner').show(); 
+  showMessage('Loading Updated Layers',staticTemplates.loadingModal);
+  // showMessage('Loading',staticTemplates.loadingModal)
   setGEERunID();
 
   //Clean out current map, legend, etc
   clearSelectedAreas();
-
+  clearUploadedAreas();
   layerChildID = 0;
   geeTileLayersDownloading = 0;
   updateGEETileLayersLoading();
@@ -1366,7 +1409,7 @@ function reRun(){
   intervalPeriod = 666.6666666;
   timeLapseID = null;
   timeLapseFrame = 0;
-  cumulativeMode = true;
+  cumulativeMode = false;
   NEXT_LAYER_ID = 1;
   clearSelectedAreas();
   selectedFeaturesGeoJSON = {};
@@ -1380,7 +1423,7 @@ function reRun(){
 	
   Object.values(featureObj).map(function(f){f.setMap(null)});
   featureObj = {};
-  map.overlayMapTypes.i.forEach(function(element,index){
+  map.overlayMapTypes.getArray().forEach(function(element,index){
                      map.overlayMapTypes.setAt(index,null);   
                 });
 
@@ -1390,13 +1433,18 @@ function reRun(){
   try{
     clearDownloadDropdown();
   }catch(err){}
-  
   google.maps.event.clearListeners(mapDiv, 'click');
+  
 
   //Rerun the GEE code
-	run();
+  setTimeout(function() { run();  $('#close-modal-button').click();setupAreaLayerSelection();}, 1500);
+	
   
-  $('#summary-spinner').hide(); 
+  
+  // $('#error-modal').toggleClass('show');
+  // $('#summary-spinner').hide(); 
+
+  
 }
 ////////////////////////////////////////////////////////////////////////
 //Helper functions
@@ -1408,6 +1456,22 @@ function padLeft(nr, n, str){
 }
 function rgbToHex(r,g,b) {
     return "#"+("00000"+(r<<16|g<<8|b).toString(16)).slice(-6);
+}
+//Taken from: https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+function hexToRgb(hex) {
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+}
+function offsetColor(hex,offset){
+  obj = hexToRgb(hex)
+  obj.r = (obj.r+offset)%255
+  obj.g = (obj.g+offset)%255
+  obj.b = (obj.b+offset)%255
+  return rgbToHex(obj.r,obj.g,obj.b) 
 }
 function invertColor(hex) {
     if (hex.indexOf('#') === 0) {
@@ -1434,9 +1498,9 @@ function padZero(str, len) {
     return (zeros + str).slice(-len);
 }
 function randomColor(){
-  var r = getRandomInt(100, 255);
-  var g = getRandomInt(0, 255);
-  var b = getRandomInt(0, 50);
+  var r = getRandomInt(100, 200);
+  var g = getRandomInt(100, 200);
+  var b = getRandomInt(100, 255);
   var c = rgbToHex(r,g,b)
   return c
 }
@@ -1519,7 +1583,8 @@ function startArea(){
         function areaWrapper(key){
           // console.log('key');console.log(key);
         // print('Adding in: '+key.toString());
-        var pathT = areaPolygonObj[key].getPath().j
+        var pathT = areaPolygonObj[key].getPath().getArray();
+
         if(pathT.length > 0){
 
           clickCoords =clickLngLat;//pathT[pathT.length-1];
@@ -1853,6 +1918,10 @@ function dropdownUpdateStudyArea(whichOne){
       run = runSimple;
     } else if( mode === 'LT'){
       run  = runLT;
+    }else if( mode === 'LCMS'|| (mode === 'LCMS-pilot' && studyAreaDict[longStudyAreaName].isPilot == false)){
+      run  = runGTAC;
+    }else if( mode === 'LCMS-pilot'){
+      run  = runUSFS;
     }else if( mode === 'STORM'){
       run  = runStorm;
     }
@@ -1904,6 +1973,9 @@ var resetStudyArea = function(whichOne){
     var coords = studyAreaDict[whichOne].center;
     studyAreaName = studyAreaDict[whichOne].name;
     if(studyAreaName === 'CONUS'){run = runCONUS;}
+    else if( mode === 'LCMS'|| (mode === 'LCMS-pilot' && studyAreaDict[longStudyAreaName].isPilot == false)){
+      run = runGTAC;
+    }
     else{run = runUSFS;};
     if(studyAreaDict[whichOne].addFastSlow){
       $('#fast-slow-threshold-container').show();
@@ -1944,11 +2016,13 @@ function initSearchBox() {
 
     // For each place, get the icon, name and location.
     var bounds = new google.maps.LatLngBounds();
+    var formattedAddresses = [];
     places.forEach(function(place) {
       if (!place.geometry) {
         console.log("Returned place contains no geometry");
         return;
       }
+      formattedAddresses.push(place.formatted_address);
       var icon = {
         url: place.icon,
         size: new google.maps.Size(71, 71),
@@ -1972,6 +2046,26 @@ function initSearchBox() {
         bounds.extend(place.geometry.location);
       }
     });
+    var boundsBounds = {
+      south : [-85,85],
+      west : [-179,179],
+      north : [-85,85],
+      east : [-179,179]
+    }
+    
+    bounds = bounds.toJSON();
+ 
+    Object.keys(bounds).map(function(key){
+      var coord = bounds[key];
+      var min =  boundsBounds[key][0];
+      var max = boundsBounds[key][1];
+      if(coord < min){bounds[key] = min;showMessage('Search coords tip!','Search coords format is lat lng (e.g. 45 -111)')}
+      if(coord > max){bounds[key] = max;showMessage('Search coords tip!','Search coords format is lat lng (e.g. 45 -111)')}
+
+    });
+    console.log(bounds)
+    console.log(formattedAddresses.join(','))
+    ga('send', 'event', 'places-search', JSON.stringify(bounds), formattedAddresses.join(','));
     map.fitBounds(bounds);
   });
   }
@@ -2219,12 +2313,14 @@ function initialize() {
     center: null,
     zoom: null,
     minZoom: 2,
+     disableDefaultUI: false,
     disableDoubleClickZoom: true,
     // maxZoom: 15,
     mapTypeId:urlParams.mapTypeId,
     streetViewControl: true,
     fullscreenControl: false,
-    mapTypeControlOptions :{position: google.maps.ControlPosition.TOP_RIGHT,mapTypeIds: mapTypeIds},
+    mapTypeControlOptions :{position: google.maps.ControlPosition.TOP_RIGHT,
+      mapTypeIds: mapTypeIds},
     // fullscreenControlOptions:{position: google.maps.ControlPosition.RIGHT_TOP},
     streetViewControlOptions:{position: google.maps.ControlPosition.RIGHT_TOP},
     scaleControlOptions:{position: google.maps.ControlPosition.RIGHT_TOP},
@@ -2232,9 +2328,9 @@ function initialize() {
     tilt:0,
     controlSize: 25,
     scaleControl: true,
-    clickableIcons:false,
+    clickableIcons:false
   };
-   
+
   var center = new google.maps.LatLng(initialCenter[0],initialCenter[1]);
   var zoom = initialZoomLevel;//8;
 
@@ -2289,7 +2385,31 @@ function initialize() {
   map = new google.maps.Map(document.getElementById("map"),mapOptions);
   //Associate the styled map with the MapTypeId and set it to display.
   map.mapTypes.set('dark_mode', styledMapType);
-        
+  
+  //Listen for street view use
+  //Adapted from: https://stackoverflow.com/questions/7251738/detecting-google-maps-streetview-mode
+  var thePanorama = map.getStreetView();
+  google.maps.event.addListener(thePanorama, 'visible_changed', function() {
+
+      if (thePanorama.getVisible()) {
+        console.log('street view in use')
+        $('#sidebar-left-container').hide();
+        $('.sidebar-toggler').hide();
+        $('#legendDiv').hide();
+        $('#bottombar').hide();
+          // Display your street view visible UI
+
+      } else {
+        console.log('street view not in use')
+        $('#sidebar-left-container').show();
+        $('.sidebar-toggler').show();
+        $('#legendDiv').show();
+        $('#bottombar').show();
+          // Display your original UI
+
+      }
+
+  });
   marker=new google.maps.Circle({
     center:{lat:45,lng:-111},
     radius:5
@@ -2439,6 +2559,16 @@ function initialize() {
     //RCR appspot proxy costs $$
 	 // ee.initialize("https://rcr-ee-proxy-server2.appspot.com/api","https://earthengine.googleapis.com/map",function(){
     //Initialize GEE
+    
+    setTimeout(function() { 
+      if(localStorage.showIntroModal === 'true'){
+        $('#introModal').modal().show();
+      }else{
+        showMessage('Loading',staticTemplates.loadingModal)
+      }
+      
+    });
+
     ee.initialize(authProxyAPIURL,geeAPIURL,function(){
       //Set up the correct GEE run function
       if(cachedStudyAreaName === null){
@@ -2446,7 +2576,9 @@ function initialize() {
       }
       if(mode === 'Ancillary'){
         run = runSimple;
-      } else if( mode === 'LT'){
+      } else if( mode === 'LCMS'|| (mode === 'LCMS-pilot' && studyAreaDict[longStudyAreaName].isPilot == false)){
+        run  = runGTAC;
+      }else if( mode === 'LT'){
         run  = runLT;
       } else if(mode === 'MTBS'){
         run = runMTBS;
@@ -2469,20 +2601,27 @@ function initialize() {
       } 
       else{run = runUSFS}
 
-     
+    //Bring in downloads if needed
+    if(mode === 'LCMS'){ setupDropdownTreeDownloads(studyAreaName);populateLCMSDownloads();}
+
     setGEERunID();
-    run();
-    // setupFSB();
-    //Bring in plots of they're turned on
-    if(plotsOn){
-      addPlotCollapse();
-      loadAllPlots();
-    }
+
+    setTimeout(function() { 
+       run();
     
-    $('#summary-spinner').hide();
-    if(localStorage.showIntroModal === 'true'){
-      $('#introModal').modal().show();
-    }
+      setupAreaLayerSelection();
+      // setupFSB();
+      //Bring in plots of they're turned on
+      if(plotsOn){
+        addPlotCollapse();
+        loadAllPlots();
+      }
+      $('#close-modal-button').click();
+      $('#intro-modal-loading-div').hide();
+      $('#summary-spinner').hide();
+      
+    }, 1500);
+   
   	});
 
 }

@@ -9,6 +9,8 @@ function stopAllTools(){
   clearQueryGeoJSON();
   // clearQueryGeoJSON();
   // clearSelectedAreas();
+  turnOffUploadedLayers();
+
   turnOffSelectLayers();
   turnOffSelectGeoJSON();
 
@@ -66,13 +68,27 @@ var toolFunctions = {'measuring':
                         'title': 'Area Tools-Select an Area from Dropdown'
                       },
                       'selectInteractive':{
-                        'on':'stopAllTools();turnOffVectorLayers();turnOnSelectGeoJSON();areaChartingTabSelect("#user-selected");showTip("SUMMARIZE BY PRE-DEFINED AREA",staticTemplates.selectAreaInteractiveChartTip);',
+                        'on':'stopAllTools();turnOffVectorLayers();turnOnSelectedLayers();turnOnSelectGeoJSON();areaChartingTabSelect("#user-selected");showTip("SUMMARIZE BY PRE-DEFINED AREA",staticTemplates.selectAreaInteractiveChartTip);',
                         'off':'stopAllTools();turnOffSelectLayers();',
                         'state':false,
                         'title': 'Area Tools-Select an Area on map'
                       },
                     }
                   }
+function getActiveTools(){
+  var out = [];
+
+  Object.keys(toolFunctions).map(function(t){Object.keys(toolFunctions[t]).map(function(tt){
+                                                                        var state = toolFunctions[t][tt]['state'];
+                                                                        var title = toolFunctions[t][tt]['title'];
+                                                                        if(state){
+                                                                          out.push(title)
+                                                                          
+                                                                        } 
+                                                                        
+                                                                      })});
+  return out;
+}
 function updateToolStatusBar(){
   var somethingShown = false;
   $('#current-tool-selection').empty();
@@ -87,6 +103,10 @@ function updateToolStatusBar(){
                                                                         
                                                                       })});
   if(!somethingShown){$('#current-tool-selection').append(`No active tools`)}
+    else{
+    
+      ga('send', 'event','tool-active', mode, $('#current-tool-selection').html().split(': ')[1]);
+    }
 }
 function toggleTool(tool){
 

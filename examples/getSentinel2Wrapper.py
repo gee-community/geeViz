@@ -29,8 +29,8 @@ endJulian = 210
 # well. If using Fmask as the cloud/cloud shadow masking method, or providing
 # pre-computed stats for cloudScore and TDOM, this does not 
 # matter
-startYear = 2016
-endYear = 2019
+startYear = 2017
+endYear = 2020
 
 # Specify an annual buffer to include imagery from the same season 
 # timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -88,6 +88,10 @@ applyTDOM = True
 #clouds for Sentinel 2
 #This method works really well and should be used instead of cloudScore (applyCloudScore)
 applyCloudProbability = True
+
+#If cloudProbability is chosen, choose a threshold 
+#(generally somewhere around 40-60 works well)
+cloudProbThresh = 40;
 
 
 # If applyCloudScore is set to True
@@ -152,13 +156,13 @@ resampleMethod = 'aggregate'
 # These have been pre-computed for all CONUS for Landsat and Setinel 2 (separately)
 # and are appropriate to use for any time period within the growing season
 # The cloudScore offset is generally some lower percentile of cloudScores on a pixel-wise basis
-preComputedCloudScoreOffset = ee.ImageCollection('projects/USFS/TCC/cloudScore_stats').mosaic().select(['Sentinel2_CloudScore_p'+str(cloudScorePctl)])
+preComputedCloudScoreOffset = getPrecomputedCloudScoreOffsets(cloudScorePctl)['sentinel2']
 
-# The TDOM stats are the mean and standard deviations of the two bands used in TDOM
+# The TDOM stats are the mean and standard deviations of the two IR bands used in TDOM
 # By default, TDOM uses the nir and swir1 bands
-preComputedTDOMStats = ee.ImageCollection('projects/USFS/TCC/TDOM_stats').mosaic().divide(10000)
-preComputedTDOMIRMean = preComputedTDOMStats.select(['Sentinel2_nir_mean','Sentinel2_swir1_mean'])
-preComputedTDOMIRStdDev = preComputedTDOMStats.select(['Sentinel2_nir_stdDev','Sentinel2_swir1_stdDev'])
+preComputedTDOMStats = getPrecomputedTDOMStats()
+preComputedTDOMIRMean = preComputedTDOMStats['sentinel2']['mean']
+preComputedTDOMIRStdDev = preComputedTDOMStats['sentinel2']['stdDev']
 
 
 # Export params
@@ -197,7 +201,7 @@ s2sAndTs =getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
   contractPixels,dilatePixels,\
   ['nir','swir1'],False,250,\
   exportComposites,outputName,exportPathRoot,crs,transform,scale,resampleMethod,toaOrSR,convertToDailyMosaics,
-  applyCloudProbability,preComputedCloudScoreOffset,preComputedTDOMIRMean,preComputedTDOMIRStdDev)
+  applyCloudProbability,preComputedCloudScoreOffset,preComputedTDOMIRMean,preComputedTDOMIRStdDev,cloudProbThresh)
   
 #Separate into scenes and composites for subsequent analysis
 processedScenes = s2sAndTs['processedScenes']

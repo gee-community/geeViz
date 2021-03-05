@@ -28,7 +28,7 @@ endJulian = 250
 # well. If providing pre-computed stats for cloudScore and TDOM, this does not 
 # matter
 startYear = 2015
-endYear = 2019
+endYear = 2020
 
 # Specify an annual buffer to include imagery from the same season 
 # timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -136,13 +136,13 @@ resampleMethod = 'near'
 # These have been pre-computed for all CONUS for Landsat and Setinel 2 (separately)
 # and are appropriate to use for any time period within the growing season
 # The cloudScore offset is generally some lower percentile of cloudScores on a pixel-wise basis
-preComputedCloudScoreOffset = ee.ImageCollection('projects/USFS/TCC/cloudScore_stats').mosaic().select(['Landsat_CloudScore_p'+str(cloudScorePctl)])
+preComputedCloudScoreOffset = getPrecomputedCloudScoreOffsets(cloudScorePctl)['landsat']
 
 # The TDOM stats are the mean and standard deviations of the two IR bands used in TDOM
 # By default, TDOM uses the nir and swir1 bands
-preComputedTDOMStats = ee.ImageCollection('projects/USFS/TCC/TDOM_stats').mosaic().divide(10000)
-preComputedTDOMIRMean = preComputedTDOMStats.select(['Landsat_nir_mean','Landsat_swir1_mean'])
-preComputedTDOMIRStdDev = preComputedTDOMStats.select(['Landsat_nir_stdDev','Landsat_swir1_stdDev'])
+preComputedTDOMStats = getPrecomputedTDOMStats()
+preComputedTDOMIRMean = preComputedTDOMStats['landsat']['mean']
+preComputedTDOMIRStdDev = preComputedTDOMStats['landsat']['stdDev']
 
 
 # correctIllumination: Choose if you want to correct the illumination using

@@ -51,7 +51,7 @@ Map.addLayer(ee.ImageCollection('USGS/NLCD').select(['landcover']).sort('system:
 Map.addLayer(nlcd.select(['percent_tree_cover']),{'min':20,'max':80,'palette':'555,0A0'},'NLCD 2011 TCC',False)
 
 #Another example
-mtbs = ee.ImageCollection('projects/USFS/DAS/MTBS/BurnSeverityMosaics')
+mtbs = ee.ImageCollection('projects/gtac-mtbs/assets/burn_severity_mosaics/MTBS')
 mtbs = mtbs.map(lambda img: img.updateMask(img.neq(0)).select([0],['Burn Severity']).byte())
 
 #Set up MTBS legend and color properties
@@ -66,7 +66,7 @@ Map.addLayer(mtbs.max(),severityViz,'MTBS 1984-2017 Highest Severity',True)
 
 #Feature collections can be added to the map as well
 #If they are very large, the geeVectorImage option is needed as the conversion from GEE object to geoJSON is too slow
-perims = ee.FeatureCollection('projects/USFS/DAS/MTBS/mtbs_perims_DD')
+perims = ee.FeatureCollection('projects/gtac-mtbs/assets/perimeters/mtbs_perims_DD')
 Map.addLayer(perims,{'strokeColor':'00F','layerType':'geeVectorImage'},'MTBS Burn Perimeters',True)
 
 #Smaller feature collections can be added to the map as a vector

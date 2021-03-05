@@ -46,6 +46,7 @@ function TweetThis(preURL,postURL,openInNewTab,showMessageBox){
     if(postURL === undefined || postURL === null){
         postURL = '';
     }
+
     $.get(
         "https://tinyurl.com/api-create.php",
         {url: pageUrl},
@@ -53,8 +54,9 @@ function TweetThis(preURL,postURL,openInNewTab,showMessageBox){
             var key = tinyURL.split('https://tinyurl.com/')[1];
             var shareURL = pageUrl.split('?')[0] + '?id='+key;
             var fullURL = preURL+shareURL+postURL ;
-
-            
+            // console.log(fullURL);
+            ga('send', 'event', mode + '-share', pageUrl, shareURL);
+            console.log('shared')
             if(openInNewTab){
                var win = window.open(fullURL, '_blank');
                win.focus(); 
@@ -104,7 +106,7 @@ function copyText(id,messageBoxId){
 function parseUrlSearch(){
   // console.log(window.location.search == '')
     var urlParamsStr = window.location.search;
-   
+      console.log(urlParamsStr)
     if(urlParamsStr !== ''){
       urlParamsStr = urlParamsStr.split('?')[1].split('&');
     
@@ -147,6 +149,7 @@ var startJulian = 153;//190;
 var endJulian = 274;//250;
 var layerObj = null;
 var queryObj = {};var timeLapseObj = {};
+var addLCMSTimeLapsesOn;
 parseUrlSearch()
 var initialCenter = [37.5334105816903,-105.6787109375];
 var initialZoomLevel = 5;
@@ -243,7 +246,7 @@ var studyAreaDict = {
                                                                   'color': '99ff99'},
                                                           6: {'modelName': 'TallShrubs',
                                                                   'legendName': 'Tall Shrubs',
-                                                                  'color': 'b30055'},               
+                                                                  'color': 'b30000'},               
                                                           7: {'modelName': 'Shrubs',
                                                                   'legendName': 'Shrubs',
                                                                   'color': 'e68a00'},//'a33d00'},
@@ -339,8 +342,78 @@ var studyAreaDict = {
                                               compositeCollection:'projects/LCMS/CONUS_MEDOID',
                                               lcmsCollection:'projects/LCMS/CONUS_Products/v20200120',
                                               ltCollection:'projects/LCMS/CONUS_Products/LT20200120'
-                                            }
+                                            },
+                    'USFS LCMS 1984-2020':{
+                      isPilot: false,
+                      name:'USFS LCMS 1984-2020',
+                      center:[37.5334105816903,-105.6787109375,5],
+                      crs:'EPSG:5070',
+                      startYear:1985,
+                      endYear:2020,
+
+                      conusSA : 'projects/lcms-292214/assets/CONUS-Ancillary-Data/conus',
+                      conusComposites:'projects/USFS/LCMS-NFS/CONUS-LCMS/Composites/LCMS-TCC-Composites',
+                      conusChange :'projects/lcms-292214/assets/CONUS-LCMS/Landcover-Landuse-Change/DND-RNR-DNDSlow-DNDFast',//'projects/lcms-292214/assets/CONUS-LCMS/Landcover-Landuse-Change/LC-LU-DND-RNR-DNDSlow-DNDFast_InitialRun',
+                      conusLC : 'projects/lcms-292214/assets/CONUS-LCMS/Landcover-Landuse-Change/Landcover_Probability',
+                      conusLU :   'projects/lcms-292214/assets/CONUS-LCMS/Landcover-Landuse-Change/Landuse_Probability',
+                      conusLT : 'projects/lcms-tcc-shared/assets/LandTrendr/LandTrendr-Collection-yesL7-1984-2020',
+                      conusCCDC : "projects/CCDC/USA_V2",
+
+                      conusChangeFinal : 'projects/lcms-292214/assets/Final_Outputs/2020-5/CONUS/Change',
+                      conusLCFinal : 'projects/lcms-292214/assets/Final_Outputs/2020-5/CONUS/Land_Cover',
+                      conusLUFinal :'projects/lcms-292214/assets/Final_Outputs/2020-5/CONUS/Land_Use',
+
+
+                      conusLossThresh : 0.23,
+                      conusFastLossThresh : 0.29,
+                      conusSlowLossThresh : 0.18,
+                      conusGainThresh : 0.29,
+
+                      hiComposites:'',
+                      otherComposites:'',
+
+                      akSA :  'projects/lcms-292214/assets/R10/CoastalAK/TCC_Boundary',//'projects/lcms-292214/assets/R10/CoastalAK/CoastalAK_Simple_StudyArea',
+                      akComposites:'projects/USFS/LCMS-NFS/R10/CoastalAK/Composites/Composite-Collection',
+                      akChange : 'projects/lcms-292214/assets/R10/CoastalAK/Landcover-Landuse-Change/DND-RNR-DNDSlow-DNDFast-revisedSlowPlots',
+                      akLC : 'projects/lcms-292214/assets/R10/CoastalAK/Landcover-Landuse-Change/Landcover_Probability',
+                      akLU : 'projects/lcms-292214/assets/R10/CoastalAK/Landcover-Landuse-Change/Landuse_Probability',
+                      akLT: 'projects/lcms-292214/assets/R10/CoastalAK/Base-Learners/LANDTRENDR-Collection-1984-2020',
+                      akCCDC: 'projects/USFS/LCMS-NFS/R10/CoastalAK/Base-Learners/CCDC-Collection',
+                      akChangeFinal :'projects/lcms-292214/assets/Final_Outputs/2020-5/SEAK/Change',
+                      akLCFinal : 'projects/lcms-292214/assets/Final_Outputs/2020-5/SEAK/Land_Cover',
+                      akLUFinal : 'projects/lcms-292214/assets/Final_Outputs/2020-5/SEAK/Land_Use',
+                      akLossThresh : 0.26,
+                      akFastLossThresh : 0.34,
+                      akSlowLossThresh : 0.17,
+                      akGainThresh : 0.24,
+
+
+                      lcClassDict :{1: {'modelName': 'TREES','legendName': 'Trees','color': '005e00'},
+                                  2: {'modelName': 'TS-TREES','legendName': 'Tall Shrubs & Trees Mix','color': '008000'},
+                                  3: {'modelName': 'SHRUBS-TRE','legendName': 'Shrubs & Trees Mix','color': '00cc00'},
+                                  4: {'modelName': 'GRASS-TREE','legendName': 'Grass/Forb/Herb & Trees Mix','color': 'b3ff1a'},
+                                  5: {'modelName': 'BARREN-TRE','legendName': 'Barren & Trees Mix','color': '99ff99'},
+                                  6: {'modelName': 'TS','legendName': 'Tall Shrubs','color': 'b30088'},//'b30000'},
+                                  7: {'modelName': 'SHRUBS','legendName': 'Shrubs','color': 'e68a00'},
+                                  8: {'modelName': 'GRASS-SHRU','legendName': 'Grass/Forb/Herb & Shrubs Mix','color': 'ffad33'},
+                                  9: {'modelName': 'BARREN-SHR','legendName': 'Barren & Shrubs Mix','color': 'ffe0b3'},
+                                  10: {'modelName': 'GRASS','legendName': 'Grass/Forb/Herb','color': 'ffff00'},
+                                  11: {'modelName': 'BARREN-GRA','legendName': 'Barren & Grass/Forb/Herb Mix','color': 'AA7700'},
+                                  12: {'modelName': 'BARREN-IMP','legendName': 'Barren or Impervious','color': 'd3bf9b'},
+                                  13: {'modelName': 'SNOW','legendName': 'Snow or Ice','color': 'ffffff'},
+                                  14: {'modelName': 'WATER','legendName': 'Water','color': '4780f3'}},
+
+                      luClassDict :{1: {'modelName': 'Agriculture','legendName': 'Agriculture','color': 'efff6b'},
+                                2: {'modelName': 'Developed','legendName': 'Developed','color': 'ff2ff8'},
+                                3: {'modelName': 'Forest','legendName': 'Forest','color': '1b9d0c'},
+                                4: {'modelName': 'Non_Forest_Wetland','legendName': 'Non-Forest Wetland','color': '97ffff'},
+                                5: {'modelName': 'Other','legendName': 'Other','color': 'a1a1a1'},
+                                6: {'modelName': 'Rangeland','legendName': 'Rangeland or Pasture','color': 'c2b34a'}}
+                 
+                    
+                    }                        
                 };
+
 ////////////////////////////////////////////////////////////////////////////////
 /*Initialize parameters for loading study area when none is chosen or chached*/
 var defaultStudyArea = 'USFS Intermountain Region';
@@ -348,6 +421,7 @@ var studyAreaName = studyAreaDict[defaultStudyArea].name;
 var longStudyAreaName = defaultStudyArea;
 var cachedStudyAreaName = null;
 var viewBeta = 'yes';
+
 var lowerThresholdDecline = studyAreaDict[defaultStudyArea].lossThresh;
 var upperThresholdDecline = 1.0;
 var lowerThresholdRecovery = studyAreaDict[defaultStudyArea].gainThresh;
@@ -371,6 +445,7 @@ var clientBoundsDict = {'All':{"geodesic": false,"type": "Polygon","coordinates"
         [-168.91542059099993, 52.67867842404269],
         [-129.54042059099993, 52.67867842404269],
         [-129.54042059099993, 71.62680009186087]]]},
+                    'CONUS_SEAK':{"type":"Polygon","coordinates":[[[171.00872335506813,59.78242951494817],[171.00872335506813,26.87020622017523],[-53.99127664493189,26.87020622017523],[-53.99127664493189,59.78242951494817],[171.00872335506813,59.78242951494817]]]},
                     'Hawaii':{"geodesic": false,"type": "Polygon","coordinates": [[[-162.7925163471209,18.935659110261664],[-152.2511345111834,18.935659110261664],[-152.2511345111834,22.134763696750557],[-162.7925163471209,22.134763696750557],[-162.7925163471209,18.935659110261664]]]},
                     'Puerto-Rico':{"geodesic": false,"type": "Polygon","coordinates": [[[-67.98169635150003,17.751237971831113],[-65.34635089251566,17.751237971831113],[-65.34635089251566,18.532938160084615],[-67.98169635150003,18.532938160084615],[-67.98169635150003,17.751237971831113]]]},
                     'R4':{
@@ -415,6 +490,8 @@ var uri;var uriName;var csvName;var dataTable;var chartOptions;var infowindow;va
 
 
 var selectedFeaturesJSON = {};
+var selectionTracker = {};
+
 var selectionUNID = 1;
 
 
@@ -532,6 +609,8 @@ var chartColorsDict = {
   'advancedBeta':['#050','#0A0','#9A6324','#6f6f6f','#e6194B','#14d4f4','#808','#f58231'],
   'coreLossGain':['#050','#0A0','#e6194B','#14d4f4'],
   'allLossGain':['#050','#0A0','#e6194B','#808','#f58231','#14d4f4'],
+  'allLossGain2':['#050','#0A0','#0E0','f39268','d54309','00a398'],
+  'allLossGain2Area':['f39268','d54309','00a398','ffbe2e'],
   'test':['#9A6324','#6f6f6f','#e6194B','#14d4f4','#880088','#f58231'],
   'testArea':['#e6194B','#14d4f4','#880088','#f58231'],
   'ancillary':['#cc0066','#660033','#9933ff','#330080','#ff3300','#47d147','#00cc99','#ff9966','#b37700']
@@ -605,4 +684,8 @@ String.prototype.replaceAll = function(str1, str2, ignore)
 Number.prototype.formatNumber = function(n){
   if(n === undefined || n === null){n = 2}
   return this.toFixed(n).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,")
+}
+//Taken from: https://stackoverflow.com/questions/196972/convert-string-to-title-case-with-javascript 
+String.prototype.toTitle = function() {
+  return this.replace(/(^|\s)\S/g, function(t) { return t.toUpperCase() });
 }

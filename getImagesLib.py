@@ -59,15 +59,43 @@ changeDirDict = {\
 }
 
 
+#Precomputed cloudscore offsets and TDOM stats
+#These have been pre-computed for all CONUS for Landsat and Setinel 2 (separately)
+#and are appropriate to use for any time period within the growing season
+#The cloudScore offset is generally some lower percentile of cloudScores on a pixel-wise basis
+#The TDOM stats are the mean and standard deviations of the two bands used in TDOM
+#By default, TDOM uses the nir and swir1 bands
+preComputedCloudScoreOffset = ee.ImageCollection('projects/lcms-tcc-shared/assets/CS-TDOM-Stats/cloudScore').mosaic()
+preComputedTDOMStats = ee.ImageCollection('projects/lcms-tcc-shared/assets/CS-TDOM-Stats/TDOM').mosaic().divide(10000)
+
+
+def getPrecomputedCloudScoreOffsets(cloudScorePctl):
+  return {'landsat': preComputedCloudScoreOffset.select(['Landsat_CloudScore_p{}'.format(cloudScorePctl)]),
+          'sentinel2':preComputedCloudScoreOffset.select(['Sentinel2_CloudScore_p{}'.format(cloudScorePctl)])
+          }
+
+def getPrecomputedTDOMStats():
+  return {'landsat': {
+                      'mean':preComputedTDOMStats.select(['Landsat_nir_mean','Landsat_swir1_mean']),
+                      'stdDev':preComputedTDOMStats.select(['Landsat_nir_stdDev','Landsat_swir1_stdDev'])
+                      },
+          'sentinel2': {
+                      'mean':preComputedTDOMStats.select(['Sentinel2_nir_mean','Sentinel2_swir1_mean']),
+                      'stdDev':preComputedTDOMStats.select(['Sentinel2_nir_stdDev','Sentinel2_swir1_stdDev'])
+                      }
+          }
+
+
+
 ######################################################################
 #FUNCTIONS
 ######################################################################
 ######################################################################
 #Function to set null value for export or conversion to arrays
 def setNoData(image,noDataValue):
-  args = formatArgs(locals())
-  image = image.unmask(noDataValue, False).set('noDataValue', noDataValue)
-  return image.set(args)
+  # args = formatArgs(locals())
+  image = image.unmask(noDataValue, False)#.set('noDataValue', noDataValue)
+  return image#.set(args)
 
 ######################################################################
 ######################################################################
@@ -497,10 +525,10 @@ def getS2(studyArea,
     cloudProbabilitiesIds = ee.List(ee.Dictionary(cloudProbabilities.aggregate_histogram('system:index')).keys())
     s2sIds = ee.List(ee.Dictionary(s2s.aggregate_histogram('system:index')).keys())
     missing = s2sIds.removeAll(cloudProbabilitiesIds)
-    print('Missing cloud probability ids:', missing.getInfo())
-    print('N s2 images before joining with cloud prob:', s2s.size().getInfo())
+    # print('Missing cloud probability ids:', missing.getInfo())
+    # print('N s2 images before joining with cloud prob:', s2s.size().getInfo())
     s2s = joinCollections(s2s, cloudProbabilities, False,'system:index')
-    print('N s2 images after joining with cloud prob:', s2s.size().getInfo())    
+    # print('N s2 images after joining with cloud prob:', s2s.size().getInfo())    
 
   if resampleMethod == 'bilinear' or resampleMethod == 'bicubic':
     print('Setting resample method to ', resampleMethod)
@@ -1245,7 +1273,8 @@ def medoidMosaicMSD(inCollection, medoidIncludeBands = None):
 #     Can be specified as a nested lists of numbers or a serialized string. Defaults to the image's region."
 def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
   #Make sure image is clipped to roi in case it's a multi-part polygon
-  imageForExport = imageForExport.clip(roi)
+  if roi != None:
+    imageForExport = imageForExport.clip(roi)
   assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
 
   if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
@@ -1255,7 +1284,8 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicyObje
     pyramidingPolicyObject = {'.default':'mean'}
   elif type(pyramidingPolicyObject) == str:
     pyramidingPolicyObject = {'.default': pyramidingPolicyObject}
-
+  # pyramidingPolicyObject = json.dumps(pyramidingPolicyObject)
+  print('pyramiding object:',pyramidingPolicyObject)
   
   # LSC 1/6/20 was getting error: "ee.ee_exception.EEException: JSON provided for reductionPolicy must be an object." Getting rid of json.dumps() seemed to fix the problem
   t = ee.batch.Export.image.toAsset(imageForExport, 
@@ -1269,6 +1299,7 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicyObje
                     crsTransform = transform, 
                     maxPixels = 1e13)
   print('Exporting:',assetName)
+  print(t)
   t.start()
 exportToAssetWrapper3 = exportToAssetWrapper
 exportToAssetWrapper2 = exportToAssetWrapper
@@ -2637,7 +2668,7 @@ def getProcessedLandsatAndSentinel2Scenes(
       zScoreThresh = -1,
       shadowSumThresh = 0.35,
       contractPixels = 1.5,
-      dilatePixels = 0.35,
+      dilatePixels = 3.5,
       shadowSumBands = ['nir','swir1'],
       landsatResampleMethod = 'near',
       sentinel2ResampleMethod = 'aggregate',
@@ -2812,7 +2843,7 @@ def getLandsatAndSentinel2HybridWrapper(\
   zScoreThresh = -1,
   shadowSumThresh = 0.35,
   contractPixels = 1.5,
-  dilatePixels = 0.35,
+  dilatePixels = 3.5,
   shadowSumBands = ['nir','swir1'],
   landsatResampleMethod = 'near',
   sentinel2ResampleMethod = 'aggregate',

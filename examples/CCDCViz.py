@@ -13,7 +13,8 @@ Map.clearMap()
 ####################################################################################################
 #Bring in ccdc image asset
 #This is assumed to be an image of arrays that is returned from the ee.Algorithms.TemporalSegmentation.Ccdc method
-ccdcImg = ee.Image('users/iwhousman/test/ChangeCollection/CCDC-Test3')
+ccdcImg = ee.ImageCollection("projects/CCDC/USA_V2")\
+          .filter(ee.Filter.eq('spectral', 'SR')).mosaic()
 
 #Specify which harmonics to use when predicting the CCDC model
 #CCDC exports the first 3 harmonics (1 cycle/yr, 2 cycles/yr, and 3 cycles/yr)
@@ -29,10 +30,10 @@ fillGaps = False
 changeDetectionBandName = 'NDVI'
 ####################################################################################################
 #Pull out some info about the ccdc image
-startJulian = ccdcImg.get('startJulian').getInfo()
-endJulian = ccdcImg.get('endJulian').getInfo()
-startYear = ccdcImg.get('startYear').getInfo()
-endYear = ccdcImg.get('endYear').getInfo()
+startJulian = 1
+endJulian = 365
+startYear = 1984
+endYear = 2020
 
 #Add the raw array image
 Map.addLayer(ccdcImg,{},'Raw CCDC Output',False)
