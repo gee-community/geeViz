@@ -120,9 +120,11 @@ gainYearViz = {'min': startYear, 'max': endYear, 'palette': gainYearPalette};
 durationViz = {'min': 1, 'max': 5, 'palette': durationPalette};
 
 
-#Set up legend and query dictionaries for land cover and land use
-lcDict,lcQueryDict,luDict,luQueryDict =  {},{},{},{}
+#Set up legend and query dictionaries for change,land cover and land use
+changeDict, lcDict,lcQueryDict,luDict,luQueryDict =  {},{},{},{},{}
 
+for i in range(1,len(names_values_colors['Change']['names'])-1):
+  changeDict[names_values_colors['Change']['names'][i]] = names_values_colors['Change']['colors'][i]
 for i in range(0,len(names_values_colors['Land_Cover']['names'])):
 	lcDict[names_values_colors['Land_Cover']['names'][i]] = names_values_colors['Land_Cover']['colors'][i]
 	lcQueryDict[str(i+1)] = names_values_colors['Land_Cover']['names'][i]
@@ -131,9 +133,9 @@ for i in range(0,len(names_values_colors['Land_Use']['names'])):
 	luQueryDict[str(i+1)] = names_values_colors['Land_Use']['names'][i]
 
 
+changeViz = {'min':2,'max':4,'palette':names_values_colors['Change']['colors'][1:-1],'addToClassLegend': True,'classLegendDict':changeDict}
 lcViz = {'min': 1, 'max': 15, 'palette': names_values_colors['Land_Cover']['colors'],'addToClassLegend': True,'classLegendDict':lcDict,'queryDict':lcQueryDict};
 luViz = {'min': 1, 'max': 7, 'palette': names_values_colors['Land_Use']['colors'],'addToClassLegend': True,'classLegendDict':luDict,'queryDict':luQueryDict};
-
 
 
 #############################################################################
@@ -247,6 +249,8 @@ Map.addLayer(slowLossDuration,durationViz, 'Slow Loss Duration', False);
 Map.addLayer(fastLossDuration,durationViz, 'Fast Loss Duration', False);
 Map.addLayer(gainDuration,durationViz, 'Gain Duration', False);
 
+justChange = change.map(lambda img:img.updateMask(img.gt(1).And(img.lt(5))))
+Map.addTimeLapse(justChange,changeViz,'LCMS Change Time Lapse',False)
 
 
 ##############################################################################

@@ -41,6 +41,7 @@ folder
 	* `from geeViz.examples import LANDTRENDRWrapper`
 	* `from geeViz.examples import CCDCViz`
 	* `from geeViz.examples import lcmsViewerExample`
+	* `from geeViz.examples import phEEnoVizWrapper`
 
 * When these examples are run, a viewer should open in your default browser.  It will show any data that was added to the map.
 * Layers can be toggled on/off and opacity changed.  They can also be measured and queried under the TOOLS pane.
@@ -49,10 +50,4 @@ folder
 
 ## Contributing
 1. If contributing, contact a POC
-2. Install git locally (<https://git-scm.com/download/win>)
-3. Make sure you have the latest commit (`git pull origin master`)
-4. Create and checkout a new branch (`git checkout -b branchName')
-5. Make your changes
-6. Add your changes (`git add .`)
-7. Commit your changes (`git commit -m 'Add some fooBar'`)
-8. Push to the branch (`git push origin branchName`)
+

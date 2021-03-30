@@ -1,5 +1,5 @@
 """
-   Copyright 2020 Ian Housman
+   Copyright 2021 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -1073,6 +1073,22 @@ def addSAVIandEVI(img):
   return img
 
 #########################################################################
+###############################################################
+#Apply bloom detection algorithm
+def HoCalcAlgorithm2(image):
+  # Algorithm 2 based on: 
+  # Matthews, M. (2011) A current review of empirical procedures 
+  #  of remote sensing in inland and near-coastal transitional 
+  #  waters, International Journal of Remote Sensing, 32:21, 
+  #  6855-6899, DOI: 10.1080/01431161.2010.512947
+  
+  # Apply algorithm 2: B2/B1
+  bloom2 = image.select('green')\
+              .divide(image.select('blue'))\
+              .rename(['bloom2'])
+  ndgi = image.normalizedDifference(['green','blue']).rename(['NDGI'])
+  return image.addBands(bloom2).addBands(ndgi)
+
 #########################################################################
 #Function for only adding common indices
 def simpleAddIndices(in_image):
@@ -1631,6 +1647,25 @@ def sentinel2CloudScore(img):
   score = score.multiply(100).byte().clamp(0,100).rename(['cloudScore'])
   return score
 #########################################################################
+#Adapted from: https://earth.esa.int/documents/10174/3166008/ESA_Training_Vilnius_07072017_SAR_Optical_Snow_Ice_Exercises.pdf
+def sentinel2SnowMask(img,dilatePixels = 3.5):
+  ndsi =  img.normalizedDifference(['green', 'swir1'])
+
+  #IF NDSI > 0.40 AND ρ(NIR) > 0.11 THEN snow in open land
+  #IF 0.1 < NDSI < 0.4 THEN snow in forest
+  snowOpenLand = ndsi.gt(0.4).And(img.select(['nir']).gt(0.11))
+  snowForest = ndsi.gt(0.1).And(ndsi.lt(0.4))
+
+  # Map.addLayer(snowOpenLand.selfMask(),{'min':1,'max':1,'palette':'88F'},'Snow Open Land')
+  # Map.addLayer(snowForest.selfMask(),{'min':1,'max':1,'palette':'00F'},'Snow Forest')
+  #Fractional snow cover (FSC, 0 % - 100% snow) can be detected by the approach of Salomonson
+  #and Appel (2004, 2006), which was originally developed for MODIS data:
+  #FSC = –0.01 + 1.45 * NDSI
+  fsc = ndsi.multiply(1.45).subtract(0.01)
+  # Map.addLayer(fsc,{'min':0,'max':1,'palette':'080,008'},'Fractional Snow Cover')
+  snowMask = ((snowOpenLand.Or(snowForest)).Not()).focal_min(dilatePixels)
+  return img.updateMask(snowMask)
+#########################################################################
 #########################################################################
 #MODIS processing
 #########################################################################
@@ -1972,6 +2007,47 @@ def getModisData(startYear,endYear,startJulian,endJulian,daily = False,maskWQA =
     
 
 #########################################################################
+#Function to take images and create a median composite every n days
+def nDayComposites(images,startYear,endYear,startJulian,endJulian,compositePeriod):
+  
+  #create dummy image for with no values
+  dummyImage = ee.Image(images.first())
+
+  #convert to composites as defined above
+  def getYrImages(yr):
+    #take the year of the image
+    yr = ee.Number(yr).int16()
+    #filter out images for the year
+    yrImages = images.filter(ee.Filter.calendarRange(yr,yr,'year'))
+  
+    #use dummy image to fill in gaps for GEE processing
+    yrImages = fillEmptyCollections(yrImages,dummyImage)
+    return yrImages
+
+  #Get images for a specified start day
+  def getJdImages(yr,yrImages,start):
+    yr = ee.Number(yr).int16()
+    start = ee.Number(start).int16()
+    index = ee.Date.fromYMD(yr,1,1).advance(start.subtract(1),'day').format('yyyy-MM-dd')
+    end = start.add(compositePeriod-1).int16()
+    jdImages = yrImages.filter(ee.Filter.calendarRange(start,end))
+    jdImages = fillEmptyCollections(jdImages,dummyImage)
+    composite = jdImages.median()
+    return composite.set('system:index',index)
+
+  #Set up wrappers
+  def jdWrapper(yr,yrImages):
+    return ee.FeatureCollection(ee.List.sequence(startJulian,endJulian,compositePeriod).map(lambda start: getJdImages(yr,yrImages,start)))
+  def yrWrapper(yr):
+    yrImages = getYrImages(yr)
+    return jdWrapper(yr,yrImages)
+
+  composites = ee.FeatureCollection(ee.List.sequence(startYear,endYear).map(lambda yr:yrWrapper(yr)))
+  #return the composites as an image collection
+  composites = ee.ImageCollection(composites.flatten());
+
+  return composites
+###############################################################
 #########################################################################
 def exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands):
   
