@@ -9,11 +9,11 @@ from geeViz.phEEnoViz  import *
 output_table_dir = r'Q:\Algal_detection_GEE_work\Viz_Outputs2'
 
 #Define output table name (no extension needed)
-output_table_name ='PR_Trees'
+output_table_name ='VI_Trees'
 #Set up dates
 #Years can range from 1984-present
 #Julian days can range from 1-365
-startYear = 1985
+startYear = 2010
 endYear = 2020
 startJulian =1
 endJulian = 365
@@ -39,7 +39,10 @@ howManyHarmonics = 1
 
 
 #Whether to show the study area and samples
-showGEEViz = True
+showGEEViz = False
+
+#Whether to show charts in an interactive, non-png version as they are being created
+showChart = False
 
 #Whether to overwrite already produced png chargs
 overwriteCharts = True
@@ -122,8 +125,9 @@ wy_shrub = ee.Geometry.Polygon(
           [-110.76053085702868, 41.29732441864774],
           [-110.48037948984118, 41.29732441864774],
           [-110.48037948984118, 41.45704904554832]]], None, False)
-#Get water mask
-#Can set up any mask or really any polygon however you'd like to sample
+
+
+#Can set up any mask or really any polygon you'd like to sample
 #Here are some examples
 
 #If you want to sample water, using the JRC water layers works well
@@ -136,7 +140,7 @@ water_mask = permWater.Or(tempWater).selfMask()
 studyArea = water_mask.clip(dirty_odell_lake).reduceToVectors(scale = 30)
 
 #If you would like to visualize phenology of trees, the LCMS tree layer works well
-#LCMS classes are as follows:
+#LCMS land cover classes are as follows:
 # 1: Trees
 # 2: Tall Shrubs & Trees Mix (SEAK Only)
 # 3: Shrubs & Trees Mix
@@ -173,13 +177,11 @@ studyArea = tccTreeMask.clip(ga_test).reduceToVectors(scale = 30)
 states = ee.FeatureCollection("TIGER/2018/States")
 studyArea = states.filter(ee.Filter.eq('STUSPS','VI'))
 #Or also apply a mask to it as well
-studyArea = tccTreeMask.clip(states.filter(ee.Filter.eq('STUSPS','PR')).geometry()).reduceToVectors(scale = 300)
+studyArea = tccTreeMask.clip(states.filter(ee.Filter.eq('STUSPS','VI')).geometry()).reduceToVectors(scale = 300)
 ######################################################################################
 #Main function calls
 if __name__ == '__main__':
-
-  
-
+  #Set up output directories
   table_dir = os.path.join(output_table_dir,output_table_name,'tables')
   chart_dir = os.path.join(output_table_dir,output_table_name)
   
@@ -194,4 +196,4 @@ if __name__ == '__main__':
   csvs = [i for i in csvs if int(os.path.splitext(os.path.basename(i))[0].split('_')[-5]) in range(startYear,endYear+1)]
 
   #Create plots
-  chartTimeSeriesDistributions(csvs,chart_dir,output_table_name + '_{}-{}_{}-{}_{}_{}'.format(startYear,endYear,startJulian,endJulian,compositePeriod,nSamples),overwrite = overwriteCharts,howManyHarmonics = howManyHarmonics)
+  chartTimeSeriesDistributions(csvs,chart_dir,output_table_name + '_{}-{}_{}-{}_{}_{}'.format(startYear,endYear,startJulian,endJulian,compositePeriod,nSamples),overwrite = overwriteCharts,howManyHarmonics = howManyHarmonics,showChart =showChart)

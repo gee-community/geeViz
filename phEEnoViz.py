@@ -50,8 +50,9 @@ def getTableWrapper(image,fc, outputName,reducer = ee.Reducer.first(),scale = 30
     convert_to_csv(outputName)
   except Exception as e:
     print('Error encountered:',e)
+   
     tryNumber += 1
-    if tryNumber < maxTries:
+    if tryNumber < maxTries and e.args[0].find(" Parameter 'image' is required") == -1:
       print('Trying to convert table again. Try number:',tryNumber)
       getTableWrapper(image,fc, outputName,reducer,scale,crs,transform,tryNumber,maxTries)
 ###############################################################
@@ -88,14 +89,17 @@ def getTimeSeriesSample(startYear,endYear,startJulian,endJulian,compositePeriod,
   randomSample = ee.FeatureCollection.randomPoints(studyArea, nSamples, 0, 50)
   Map.addLayer(randomSample,{},'Samples',True)
 
-  dummyImage = ee.Image(getProcessedLandsatAndSentinel2Scenes(saBounds,\
+  dummyImage = None
+
+  for yr in range(startYear,endYear+1):
+    output_table_nameT = '{}_{}_{}-{}_{}_{}{}'.format(os.path.splitext(output_table_name)[0], yr,startJulian,endJulian,compositePeriod,nSamples,os.path.splitext(output_table_name)[1])
+    if not os.path.exists(output_table_nameT):
+      if dummyImage == None:
+        dummyImage = ee.Image(getProcessedLandsatAndSentinel2Scenes(saBounds,\
             2019,\
             2020,\
             1,\
             365).first())
-  for yr in range(startYear,endYear+1):
-    output_table_nameT = '{}_{}_{}-{}_{}_{}{}'.format(os.path.splitext(output_table_name)[0], yr,startJulian,endJulian,compositePeriod,nSamples,os.path.splitext(output_table_name)[1])
-    if not os.path.exists(output_table_nameT):
       images = getProcessedLandsatAndSentinel2Scenes(saBounds,\
             yr,\
             yr,\
@@ -225,9 +229,9 @@ def convert_to_csv(output_table_name):
 
 ###############################################################
 #Function to take a set of csv tables with yyyy-mm-dd dates on the header row and values of a band/index from an
-#area for each row (some sort of zonal stat or point location value)
+#area for each row (some sort of zonal stat or point location value). Null values are expected to be blank entries in the csv.
 #It produces a time series chart of the histogram for each date in the given table
-def chartTimeSeriesDistributions(tables,output_dir,output_base_name,n_bins = 40,min_pctl = 1,max_pctl = 99,background_color = '#D6D1CA',font_color = '#1B1716',overwrite = False, howManyHarmonics = 3):
+def chartTimeSeriesDistributions(tables,output_dir,output_base_name,n_bins = 40,min_pctl = 1,max_pctl = 99,background_color = '#D6D1CA',font_color = '#1B1716',overwrite = False, howManyHarmonics = 3,showChart = False):
   # print(tables)
   check_dir(output_dir)
 
@@ -244,7 +248,7 @@ def chartTimeSeriesDistributions(tables,output_dir,output_base_name,n_bins = 40,
       index_name = band
 
 
-      print('Creating hovmuller for:',band)
+      print('Creating time series distribution chart for:',band)
       values = []
       data = pd.concat([pd.read_csv(t) for t in tablesT],axis = 1)
       columns = data.columns
@@ -370,7 +374,7 @@ def chartTimeSeriesDistributions(tables,output_dir,output_base_name,n_bins = 40,
 
       # print(list(zip(dates,pred,table_all_xs)))
       harm_line =plt.plot(dates, pred, linestyle = '-', color = background_color, linewidth = 2, label='Harmonic Fit ({})'.format(howManyHarmonics))
-      # plt.plot(dates, percentiles[:,3], linestyle = '--', color = '#880', linewidth = 1.5,label = 'Median')
+      # median_line = plt.plot(dates, percentiles[:,3], linestyle = '--', color = font_color, linewidth = 1.5,label = 'Median')
   
       ax.set_ylim([min, max])
       ax.set_ylabel('{} Value'.format(index_name), fontsize = 10)
@@ -387,14 +391,15 @@ def chartTimeSeriesDistributions(tables,output_dir,output_base_name,n_bins = 40,
 
       cbax = fig.add_axes([0.93, 0.15, 0.01, 0.75])
       plt.legend(handles = harm_line, bbox_to_anchor=(-2.5, 1.08), loc='upper left')
- 
+    
       cb = plt.colorbar(cf, cax = cbax, orientation = 'vertical')
       cb.ax.tick_params(labelsize=10)
       cb.set_label('Percent of Samples (%)', rotation = 270, labelpad = 15, fontsize = 10) 
 
 
       fig.savefig(output_chart_name)
-      plt.show()
+      if showChart:
+        plt.show()
       plt.close()
     else:
       print('Already produced:',output_chart_name)
