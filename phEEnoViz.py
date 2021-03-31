@@ -235,7 +235,7 @@ def chartTimeSeriesDistributions(tables,output_dir,output_base_name,n_bins = 40,
   for table in tables:
     band = os.path.splitext(os.path.basename(table))[0].split('_')[-1]
     if band not in bands:bands.append(band)
-  for band in bands[3:4]:
+  for band in bands:
     output_chart_name = os.path.join(output_dir,output_base_name + '_'+band+'.png')
     if not os.path.exists(output_chart_name) or overwrite:
       title = ' '.join(output_base_name.split('_')) + ' '+band + ' Distrubution Time Series'
