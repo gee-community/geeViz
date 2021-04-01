@@ -154,7 +154,7 @@ def getTimeSeriesSample(startYear,endYear,startJulian,endJulian,compositePeriod,
       # Map.addLayer(images.select(exportBands),{},'Raw Time Series ' + str(yr),True)
 
       #Convert to n day composites
-      composites = nDayComposites(images,yr,yr,startJulian,endJulian,compositePeriod)
+      composites = nDayComposites(images,yr,yr,1,365,compositePeriod)
       # Map.addLayer(composites.select(exportBands),{},str(compositePeriod) +' day composites '+str(yr))
 
       #Convert to a stack

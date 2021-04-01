@@ -9,7 +9,7 @@ from geeViz.phEEnoViz  import *
 output_table_dir = r'Q:\Algal_detection_GEE_work\Viz_Outputs2'
 
 #Define output table name (no extension needed)
-output_table_name ='VI_Trees'
+output_table_name ='GA_Test2'
 #Set up dates
 #Years can range from 1984-present
 #Julian days can range from 1-365
