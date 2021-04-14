@@ -172,7 +172,7 @@ def getTimeSeriesSample(startYear,endYear,startJulian,endJulian,compositePeriod,
   
   if showGEEViz:
     #Vizualize outputs
-    Map.addLayer(studyArea,{},'Study Area')
+    Map.addLayer(studyArea,{'strokeColor':'00F','layerType':'geeVectorImage'},'Study Area')
     Map.centerObject(studyArea)
     Map.view()
   limitThreads(1)
@@ -370,7 +370,7 @@ def chartTimeSeriesDistributions(tables,output_dir,output_base_name,n_bins = 40,
       cmap = plt.get_cmap('viridis')
       cf = plt.pcolormesh(dates, bins, hist, cmap = cmap)#, vmin = 500)
       degrees = 45
-      plt.xticks(rotation=degrees, fontsize = 7)
+      plt.xticks(rotation=degrees, fontsize = 7,ha = 'right')
 
       # print(list(zip(dates,pred,table_all_xs)))
       harm_line =plt.plot(dates, pred, linestyle = '-', color = background_color, linewidth = 2, label='Harmonic Fit ({})'.format(howManyHarmonics))

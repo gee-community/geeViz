@@ -653,6 +653,11 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
   viz.timeLapseID = legendDivID;
   viz.layerType = 'geeImage';
   
+  if(viz.dateFormat  === null || viz.dateFormat  === undefined){
+    viz.dateFormat = 'YYYY';
+    viz.advanceInterval = 'year';
+  }
+  
 
   timeLapseObj[legendDivID] = {}
   if(whichLayerList === null || whichLayerList === undefined){whichLayerList = "layer-list"}  
@@ -662,8 +667,12 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
   //Assumes the provided image collection has time property under system:time_start property
   if(viz.years === null || viz.years === undefined){
     console.log('start computing years');
-    viz.years = item.sort('system:time_start',true).toList(10000,0).map(function(img){return ee.Date(ee.Image(img).get('system:time_start')).get('year')}).getInfo();
+    viz.years = item.sort('system:time_start',true).toList(10000,0).map(function(img){
+      var d = ee.Date(ee.Image(img).get('system:time_start'))
+      return ee.Number.parse(d.format(viz.dateFormat)).int32()
+    }).getInfo();
     console.log('done computing years');
+    console.log(viz.years);
   }
   
   //Set up time laps object entry
@@ -768,7 +777,10 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
      }) 
   }else{
     viz.years.map(function(yr){
-      var img = ee.Image(item.filter(ee.Filter.calendarRange(yr,yr,'year')).first()).set('system:time_start',ee.Date.fromYMD(yr,6,1).millis());
+
+      var d = ee.Date.parse(viz.dateFormat,yr.toString())
+
+      var img = ee.Image(item.filterDate(d,d.advance(1,viz.advanceInterval)).first()).set('system:time_start',d.millis());
       if(yr !== viz.years[0]){
         viz.addToLegend = false;
         viz.addToClassLegend = false;

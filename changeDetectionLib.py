@@ -1106,7 +1106,7 @@ def verdetAnnualSlope(tsIndex, indexName, startYear, endYear, alpha, tolerance =
   verdet =   ee.Algorithms.TemporalSegmentation.Verdet(**run_params).arraySlice(0,1,None)
   print('indexName: '+indexName)
   #Map.addLayer(verdet,{},'verdet '+indexName)
-  tsYear = tsIndex.map(getImageLib.addYearBand).select([1]).toArray().arraySlice(0,1,None).arrayProject([0])
+  tsYear = tsIndex.map(addYearBand).select([1]).toArray().arraySlice(0,1,None).arrayProject([0])
   
   #Find possible years to convert back to collection with
   #possibleYears = ee.List.sequence(startYear+1,endYear)
@@ -1381,7 +1381,7 @@ def toAnnualMedian(images,startYear,endYear):
   dummyImmage = ee.Image(images.first())
   def getMedian(yr):
     imagesT = images.filter(ee.Filter.calendarRange(yr,yr,'year'))
-    imagesT = getImageLib.fillEmptyCollections(imagesT,dummyImmage)
+    imagesT = fillEmptyCollections(imagesT,dummyImmage)
     return imagesT.median().set('system:time_start',ee.Date.fromYMD(yr,6,1))
   out = ee.List.sequence(startYear,endYear).map(getMedian)
   return ee.ImageCollection.fromImages(out)
@@ -1392,8 +1392,8 @@ def toAnnualMedian(images,startYear,endYear):
 def predictModel(c,model,bandNames = None):
   
   #Parse model
-  intercepts = model.select('intercept_.*')
-  slopes = model.select('slope_.*')
+  intercepts = model.select('.*_intercept')
+  slopes = model.select('.*_slope')
   
   #Find band names for raw data if not provided
   if bandNames == None:
@@ -1424,7 +1424,7 @@ def getLinearFit(c,bandNames = None):
   
   #Add date and constant independents
   c = c.map(lambda img: img.addBands(ee.Image(1)))
-  c = c.map(getImageLib.addDateBand)
+  c = c.map(addDateBand)
   selectOrder = ee.List([['constant','year'],bandNames]).flatten()
   
   #Fit model
@@ -1435,11 +1435,11 @@ def getLinearFit(c,bandNames = None):
   
   #Apply model
   predicted = predictModel(c,model,bandNames)
-  
+
   #Return both the model and predicted
   return [model,predicted]
 
-####################################/
+#####################################
 # #Iterate across each time window and do a z-score and trend analysis
 # #This method does not currently support date wrapping
 def zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJulian,endJulian,\
@@ -1483,7 +1483,7 @@ def zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJ
     #Get the baseline images
     blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear,blEndYear,'year'))\
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd))
-    blImages = getImageLib.fillEmptyCollections(blImages,dummyScene);
+    blImages = fillEmptyCollections(blImages,dummyScene);
 
     #Mask out where not enough observations
     blCounts = blImages.count();
@@ -1493,12 +1493,12 @@ def zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJ
     #Get the z analysis images
     analysisImages = allScenes.filter(ee.Filter.calendarRange(yr,yr,'year'))\
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd))
-    analysisImages = getImageLib.fillEmptyCollections(analysisImages,dummyScene)
+    analysisImages = fillEmptyCollections(analysisImages,dummyScene)
     
     #Get the images for the trend analysis
     trendImages = allScenes.filter(ee.Filter.calendarRange(trendStartYear,yr,'year'))\
                             .filter(ee.Filter.calendarRange(jdStart,jdEnd))
-    trendImages = getImageLib.fillEmptyCollections(trendImages,dummyScene)
+    trendImages = fillEmptyCollections(trendImages,dummyScene)
     
     
     #Convert to annual stack if selected
@@ -1514,7 +1514,7 @@ def zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJ
     blMean = blImages.mean()
     blStd = blImages.reduce(ee.Reducer.stdDev())
   
-    analysisImagesZ = analysisImages.map(lambda img:img.subtract(blMean).divide(blStd))\
+    analysisImagesZ = ee.ImageCollection(analysisImages.map(lambda img:img.subtract(blMean).divide(blStd)))\
               .reduce(zReducer).rename(outNames).multiply(10)
     
     # Set up the output
@@ -1555,13 +1555,14 @@ def zAndTrendChangeDetection(allScenes,indexNames,nDays,startYear,endYear,startJ
   for yr in years:
     #Iterate across the julian dates
     for jd in julians:
-      yjdList.append(ee.List([yr,jd]))
+      yjdList.append([yr,jd])
 
-  
+  print(yjdList)
 
-  zAndTrendCollection = ee.ImageCollection.fromImages(ee.List(yjdList).map(processYrJd))
+  zAndTrendCollection = ee.ImageCollection.fromImages([processYrJd(yjd) for yjd in yjdList])
 
-  return zAndTrendCollection
+
+  # return zAndTrendCollection
 
 
 

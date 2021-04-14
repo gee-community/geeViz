@@ -6,7 +6,7 @@ from geeViz.phEEnoViz  import *
 #####################################################################################
 ##Define user parameters:
 #Define location of outputs
-output_table_dir = r'Q:\Algal_detection_GEE_work\Viz_Outputs2'
+output_table_dir = r'C:\PheenoViz_Outputs'
 
 #Define output table name (no extension needed)
 output_table_name ='GA_Test2'
@@ -178,6 +178,8 @@ states = ee.FeatureCollection("TIGER/2018/States")
 studyArea = states.filter(ee.Filter.eq('STUSPS','VI'))
 #Or also apply a mask to it as well
 studyArea = tccTreeMask.clip(states.filter(ee.Filter.eq('STUSPS','VI')).geometry()).reduceToVectors(scale = 300)
+
+studyArea = ga_test
 ######################################################################################
 #Main function calls
 if __name__ == '__main__':

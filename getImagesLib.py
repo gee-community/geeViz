@@ -1342,6 +1342,29 @@ def exportToDriveWrapper(imageForExport,outputName,driveFolderName,roi= None,sca
   print('Exporting:',outputName)
   t.start()
 #########################################################################
+def exportToCloudStorageWrapper(imageForExport,outputName,bucketName,roi= None,scale= None,crs = None,transform = None,outputNoData = -32768):
+  #Make sure image is clipped to roi in case it's a multi-part polygon
+  imageForExport = imageForExport.clip(roi).unmask(outputNoData,False)
+
+  outputName = outputName.replace("/\s+/g",'-')#Get rid of any spaces
+  try:
+    roi = roi.geometry()
+  except Exception as e:
+    x = e
+
+  if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
+    transform = str(transform)
+ 
+ 
+  #Ensure bounds are in web mercator
+  outRegion = roi.bounds().transform('EPSG:4326', 100).getInfo()['coordinates'][0]
+  
+  # Map.addLayer(imageForExport,{},outputName,False)
+  t = ee.batch.Export.image.toCloudStorage(imageForExport, outputName, bucketName, outputName, None, roi.bounds(), scale, crs, transform, 1e13)
+  print('Exporting:',outputName)
+  print(t)
+  t.start()
+#########################################################################
 #########################################################################
 #Function for wrapping dates when the startJulian < endJulian
 #Checks for year with majority of the days and the wrapOffset
@@ -2006,6 +2029,71 @@ def getModisData(startYear,endYear,startJulian,endJulian,daily = False,maskWQA =
   return joined
     
 
+#Function to get cloud, cloud shadow busted modis images
+#Takes care of matching different modis collections as well
+def getProcessedModis(startYear,
+            endYear,
+            startJulian,
+            endJulian,
+            zenithThresh = 90,
+            addLookAngleBands = True,
+            applyCloudScore = False,
+            applyTDOM = False,
+            useTempInCloudMask = True,
+            cloudScoreThresh = 20,
+            performCloudScoreOffset = True,
+            cloudScorePctl = 10,
+            zScoreThresh = -1,
+            shadowSumThresh = 0.35,
+            contractPixels = 0,
+            dilatePixels = 2.5,
+            shadowSumBands = ['nir','swir2'],
+            resampleMethod = 'bicubic',
+            preComputedCloudScoreOffset = None,
+            preComputedTDOMIRMean = None,
+            preComputedTDOMIRStdDev = None,
+            addToMap = False,
+            crs = 'EPSG:4326',
+            scale = 250,
+            transform = None):
+
+  args = formatArgs(locals())
+  if 'args' in args.keys():
+    del args['args']
+  
+  #Get joined modis collection
+  modisImages = getModisData(startYear,endYear,startJulian,endJulian,
+    daily = True,
+    maskWQA = False,
+    zenithThresh = zenithThresh,
+    useTempInCloudMask = useTempInCloudMask,
+    addLookAngleBands = addLookAngleBands,
+    resampleMethod =  resampleMethod)
+
+  if addToMap:
+    Map.addLayer(modisImages.median().reproject(crs,transform,scale),vizParamsFalse,'Raw Median')
+
+
+  if applyCloudScore:
+    print('Applying cloudScore')
+    modisImages = applyCloudScoreAlgorithm(modisImages,modisCloudScore,cloudScoreThresh,cloudScorePctl,contractPixels,dilatePixels,performCloudScoreOffset,preComputedCloudScoreOffset)
+
+    if addToMap:
+      Map.addLayer(modisImages.median().reproject(crs,transform,scale),vizParamsFalse,'Cloud Masked Median',False)
+      Map.addLayer(modisImages.min().reproject(crs,transform,scale),vizParamsFalse,'Cloud Masked Min',False)
+
+  if applyTDOM:
+    print('Applying TDOM')
+    #Find and mask out dark outliers
+    modisImages = simpleTDOM2(modisImages,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels,shadowSumBands,preComputedTDOMIRMean,preComputedTDOMIRStdDev)
+
+    if addToMap:
+      Map.addLayer(modisImages.median().reproject(crs,transform,scale),vizParamsFalse,'Cloud/Cloud Shadow Masked Median',False)
+      Map.addLayer(modisImages.min().reproject(crs,transform,scale),vizParamsFalse,'Cloud/Cloud Shadow Masked Min',False) 
+
+  modisImages = modisImages.map(simpleAddIndices)
+  modisImages = modisImages.map(lambda img: img.float())
+  return modisImages.set(args)
 #########################################################################
 #Function to take images and create a median composite every n days
 def nDayComposites(images,startYear,endYear,startJulian,endJulian,compositePeriod):
