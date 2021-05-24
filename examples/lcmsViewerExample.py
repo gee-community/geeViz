@@ -27,13 +27,15 @@ Based on https://github.com/google/earthengine-community/blob/master/datasets/sc
 import os,sys
 sys.path.append(os.getcwd())
 
-from geeViz.getImagesLib import *
+from  geeViz.geeView import *
+import ee
+ee.Initialize()
+
 Map.clearMap()
 ####################################################################################################
 #############################################################################
 ### Define visualization parameters ###
 #############################################################################
-
 startYear = 1985;
 endYear = 2020;
 lossYearPalette = ['ffffe5', 'fff7bc', 'fee391', 'fec44f', 'fe9929',
@@ -41,103 +43,9 @@ lossYearPalette = ['ffffe5', 'fff7bc', 'fee391', 'fec44f', 'fe9929',
 gainYearPalette = ['c5ee93', '00a398']
 durationPalette = ['BD1600', 'E2F400','0C2780']
 
-names_values_colors = {
-  'Land_Cover': {
-    'names': [
-       'Trees',
-       'Tall Shrubs & Trees Mix',
-       'Shrubs & Trees Mix',
-       'Grass/Forb/Herb & Trees Mix',
-       'Barren & Trees Mix',
-       'Tall Shrubs',
-       'Shrubs',
-       'Grass/Forb/Herb & Shrubs Mix',
-       'Barren & Shrubs Mix',
-       'Grass/Forb/Herb',
-       'Barren & Grass/Forb/Herb Mix',
-       'Barren or Impervious',
-       'Snow or Ice',
-       'Water',
-       'Non-Processing Area Mask'
-    ],
-    'colors': [
-       '005e00',
-       '008000',
-       '00cc00',
-       'b3ff1a',
-       '99ff99',
-       'b30088',
-       'e68a00',
-       'ffad33',
-       'ffe0b3',
-       'ffff00',
-       'AA7700',
-       'd3bf9b',
-       'ffffff',
-       '4780f3',
-       '1B1716'
-    ]
-  },
-  'Land_Use': {
-    'names': [
-       'Agriculture',
-       'Developed',
-       'Forest',
-       'Non-Forest Wetland',
-       'Other',
-       'Rangeland or Pasture',
-       'Non-Processing Area Mask'
-    ],
-    'colors': [
-       'efff6b',
-       'ff2ff8',
-       '1b9d0c',
-       '97ffff',
-       'a1a1a1',
-       'c2b34a',
-       '1B1716'
-    ]
-  },
-  'Change': {
-    'names': [
-       'Stable',
-       'Slow Loss',
-       'Fast Loss',
-       'Gain',
-       'Non-Processing Area Mask'
-    ],
-    'colors': [
-       '3d4551',
-       'f39268',
-       'd54309',
-       '00a398',
-       '1B1716'
-    ]
-  }
-};
 lossYearViz = {'min': startYear, 'max': endYear, 'palette': lossYearPalette};
 gainYearViz = {'min': startYear, 'max': endYear, 'palette': gainYearPalette};
 durationViz = {'min': 1, 'max': 5, 'palette': durationPalette};
-
-
-#Set up legend and query dictionaries for change,land cover and land use
-changeDict, lcDict,lcQueryDict,luDict,luQueryDict =  {},{},{},{},{}
-
-for i in range(1,len(names_values_colors['Change']['names'])-1):
-  changeDict[names_values_colors['Change']['names'][i]] = names_values_colors['Change']['colors'][i]
-for i in range(0,len(names_values_colors['Land_Cover']['names'])):
-	lcDict[names_values_colors['Land_Cover']['names'][i]] = names_values_colors['Land_Cover']['colors'][i]
-	lcQueryDict[str(i+1)] = names_values_colors['Land_Cover']['names'][i]
-for i in range(0,len(names_values_colors['Land_Use']['names'])):
-	luDict[names_values_colors['Land_Use']['names'][i]] = names_values_colors['Land_Use']['colors'][i]
-	luQueryDict[str(i+1)] = names_values_colors['Land_Use']['names'][i]
-
-
-changeViz = {'min':2,'max':4,'palette':names_values_colors['Change']['colors'][1:-1],'addToClassLegend': True,'classLegendDict':changeDict}
-lcViz = {'min': 1, 'max': 15, 'palette': names_values_colors['Land_Cover']['colors'],'addToClassLegend': True,'classLegendDict':lcDict,'queryDict':lcQueryDict};
-luViz = {'min': 1, 'max': 7, 'palette': names_values_colors['Land_Use']['colors'],'addToClassLegend': True,'classLegendDict':luDict,'queryDict':luQueryDict};
-
-
 #############################################################################
 ### Define functions ###
 #############################################################################
@@ -160,6 +68,9 @@ bandNames =  lcms.first().bandNames().getInfo()
 print('Available study areas:', lcms.aggregate_histogram('study_area').keys().getInfo());
 print('Available LCMS products',bandNames);
 print('Learn more about visualization of LCMS products here', 'https://apps.fs.usda.gov/lcms-viewer/')
+
+#Filter out study area
+lcms = lcms.filter(ee.Filter.eq('study_area','CONUS'))
 
 #Set up time periods to compare land cover and land use
 earlySpan = [startYear, startYear+4]
@@ -196,24 +107,24 @@ Map.addLayer(raw_land_use,{'min':0,'max':30,'opacity':0,'addToLegend':False},'Ra
 #############################################################################
 ### Visualize Land Use change ###
 #############################################################################
-
+#Copy properties from original image after reducing collection to retain visualization properties
 lu = lcms.select(['Land_Use'])
-earlyLu = lu.filter(ee.Filter.calendarRange(earlySpan[0], earlySpan[1], 'year')).mode()
-lateLu = lu.filter(ee.Filter.calendarRange(lateSpan[0], lateSpan[1], 'year')).mode()
-Map.addLayer(earlyLu, luViz, 'Early Land Use Mode ({}-{})'.format(earlySpan[0],earlySpan[1]), False)
-Map.addLayer(lateLu, luViz, 'Recent Land Use Mode ({}-{})'.format(lateSpan[0],lateSpan[1]), False);
+earlyLu = lu.filter(ee.Filter.calendarRange(earlySpan[0], earlySpan[1], 'year')).mode().copyProperties(lcms.first())
+lateLu = lu.filter(ee.Filter.calendarRange(lateSpan[0], lateSpan[1], 'year')).mode().copyProperties(lcms.first())
+Map.addLayer(earlyLu, {'autoViz':True}, 'Early Land Use Mode ({}-{})'.format(earlySpan[0],earlySpan[1]), False)
+Map.addLayer(lateLu, {'autoViz':True}, 'Recent Land Use Mode ({}-{})'.format(lateSpan[0],lateSpan[1]), False);
 
 
 
 #############################################################################
 ### Visualize Land Cover change ###
 #############################################################################
-
+#Copy properties from original image after reducing collection to retain visualization properties
 lc = lcms.select(['Land_Cover'])
-earlyLc = lc.filter(ee.Filter.calendarRange(earlySpan[0], earlySpan[1], 'year')).mode()
-lateLc = lc.filter(ee.Filter.calendarRange(lateSpan[0], lateSpan[1], 'year')).mode()
-Map.addLayer(earlyLc, lcViz, 'Early Land Cover Mode ({}-{})'.format(earlySpan[0],earlySpan[1]), False);
-Map.addLayer(lateLc, lcViz, 'Recent Land Cover Mode ({}-{})'.format(lateSpan[0],lateSpan[1]), False);
+earlyLc = lc.filter(ee.Filter.calendarRange(earlySpan[0], earlySpan[1], 'year')).mode().copyProperties(lcms.first())
+lateLc = lc.filter(ee.Filter.calendarRange(lateSpan[0], lateSpan[1], 'year')).mode().copyProperties(lcms.first())
+Map.addLayer(earlyLc, {'autoViz':True}, 'Early Land Cover Mode ({}-{})'.format(earlySpan[0],earlySpan[1]), False);
+Map.addLayer(lateLc, {'autoViz':True}, 'Recent Land Cover Mode ({}-{})'.format(lateSpan[0],lateSpan[1]), False);
 
 
 
@@ -249,12 +160,13 @@ Map.addLayer(slowLossDuration,durationViz, 'Slow Loss Duration', False);
 Map.addLayer(fastLossDuration,durationViz, 'Fast Loss Duration', False);
 Map.addLayer(gainDuration,durationViz, 'Gain Duration', False);
 
-justChange = change.map(lambda img:img.updateMask(img.gt(1).And(img.lt(5))))
-Map.addTimeLapse(justChange,changeViz,'LCMS Change Time Lapse',False)
+justChange = change.map(lambda img:img.updateMask(ee.Image(img.gt(1).And(img.lt(5))).copyProperties(lcms.first())))
+Map.addTimeLapse(justChange,{'autoViz':True},'LCMS Change Time Lapse',False)
 
 
-##############################################################################
-#### Map setup ###
-##############################################################################
-Map.centerObject(lcms.filter(ee.Filter.eq('study_area', 'CONUS')).first().geometry())
+# ##############################################################################
+# #### Map setup ###
+# ##############################################################################
+# Map.centerObject(lcms.filter(ee.Filter.eq('study_area', 'CONUS')).first().geometry())
+Map.turnOnInspector()
 Map.view()

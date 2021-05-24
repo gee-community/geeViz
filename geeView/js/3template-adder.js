@@ -25,6 +25,7 @@ $('#dontShowAgainCheckbox').change(function(){
   console.log(this.checked)
   localStorage.showIntroModal  = !this.checked;
 });
+
 /////////////////////////////////////////////////////////////////////
 /*Add study area dropdown if LCMS*/
 if(mode === 'LCMS-pilot' ){
@@ -169,6 +170,7 @@ if(mode === 'LCMS-pilot' || mode === 'LCMS'){
   }
   $('#support-collapse-div').append(staticTemplates.supportDiv);
 
+ 
   if(tAnalysisMode === 'advanced'){
     $('#analysis-mode-radio-second_toggle_label').click();
   }
@@ -194,6 +196,7 @@ if(mode === 'LCMS-pilot' || mode === 'LCMS'){
   }
   
   addCollapse('sidebar-left','parameters-collapse-label','parameters-collapse-div','PARAMETERS','<i class="fa fa-sliders mr-1" aria-hidden="true"></i>',false,null,'Adjust parameters used to filter and sort LCMS products');
+
   addDualRangeSlider('parameters-collapse-div','Choose analysis year range:','urlParams.startYear','urlParams.endYear',minYear, maxYear, urlParams.startYear, urlParams.endYear, 1,'analysis-year-slider','null','Years of LCMS data to include for land cover, land use, loss, and gain')
 addCheckboxes('parameters-collapse-div','index-choice-checkboxes','Choose which indices to analyze','whichIndices2',{'blue':false,'green':false,'red':false,'nir':false,'swir1':false,'swir2':false,'NBR':true,'NDVI':false,'NDMI':false,'wetness':false})
   
@@ -236,6 +239,8 @@ addCheckboxes('parameters-collapse-div','index-choice-checkboxes','Choose which 
   
   addSubCollapse('parameters-collapse-div','comp-params-label','comp-params-div','Landsat Composite Params', '',false,'');
   $('#comp-params-div').append(`<div class="dropdown-divider" ></div>`);
+
+
   addDualRangeSlider('comp-params-div','Choose analysis year range:','urlParams.startYear','urlParams.endYear',minYear, maxYear, urlParams.startYear, urlParams.endYear, 1,'analysis-year-slider2','null','Years of '+mode+' data to include.')
   
   addDualRangeSlider('comp-params-div','Choose analysis date range:','urlParams.startJulian','urlParams.endJulian',1, 365, urlParams.startJulian, urlParams.endJulian, 1,'julian-day-slider','julian','Days of year of '+mode+' data to include for land cover, land use, loss, and gain')
@@ -286,7 +291,7 @@ addCheckboxes('parameters-collapse-div','index-choice-checkboxes','Choose which 
   
 }else if(mode === 'MTBS'){
   startYear = 1984;
-  endYear = 2018;
+  endYear = 2019;
   if(urlParams.startYear == null || urlParams.startYear == undefined){
       urlParams.startYear = startYear;
   }
@@ -299,7 +304,7 @@ addCheckboxes('parameters-collapse-div','index-choice-checkboxes','Choose which 
   $('#support-collapse-div').append(`<p>If you have any issues with this tool or have suggestions on how it could be improved, please <a href="https://www.mtbs.gov/contact" target="_blank" > contact us</a></p>`)
   $('#support-collapse-div').append(`<div class="dropdown-divider mb-2"</div>`);
   addCollapse('sidebar-left','parameters-collapse-label','parameters-collapse-div','PARAMETERS','<i class="fa fa-sliders mr-1" aria-hidden="true"></i>',false,null,'Adjust parameters used to filter and sort MTBS products');
-  
+ 
   var mtbsZoomToDict ={"All":true,"CONUS":false,"Alaska":false,"Hawaii":false,"Puerto-Rico":false};
 
   addMultiRadio('parameters-collapse-div','mtbs-zoom-to-radio','Zoom to MTBS Mapping Area','mtbsMappingArea',mtbsZoomToDict)
@@ -337,7 +342,8 @@ addCheckboxes('parameters-collapse-div','index-choice-checkboxes','Choose which 
   addCollapse('sidebar-left','layer-list-collapse-label','layer-list-collapse-div',mode+' DATA',`<img style = 'width:1.1em;' class='image-icon mr-1' src="images/layer_icon.png">`,true,null,mode+' DATA layers to view on map');
   $('#layer-list-collapse-div').append(`<div id="layer-list"></div>`);
   addCollapse('sidebar-left','tools-collapse-label','tools-collapse-div','TOOLS',`<i class="fa fa-gear mr-1" aria-hidden="true"></i>`,false,'','Tools to measure and chart data provided on the map');
-  
+ 
+
 }
 else if(mode === 'STORM'){
   canExport = true;
@@ -370,7 +376,7 @@ else if(mode === 'STORM'){
         }
 
   addCollapse('sidebar-left','parameters-collapse-label','parameters-collapse-div','PARAMETERS','<i class="fa fa-sliders mr-1" aria-hidden="true"></i>',true,null,'Adjust parameters used to prepare storm outputs');
-  
+
    $('#parameters-collapse-div').append(`
     <label>Download storm track from <a href="https://www.wunderground.com/hurricane" target="_blank">here</a>. Copy and paste the storm track coordinates into a text editor. Save the table. Then upload that table below. <a href="./geojson/michael.txt" download="michael.txt" >Download test data here.</a></label>
     <input class = 'file-input my-1' type="file" id="stormTrackUpload" name="upload"  style="display: inline-block;" title = "Download storm track from https://www.wunderground.com/hurricane">
@@ -551,7 +557,7 @@ else if(mode === 'STORM'){
   plotsOn = true;
 }
 
-$('body').append(`<div class = 'legendDiv flexcroll col-sm-5 col-md-4 col-lg-3 col-xl-2 p-0 m-0' id = 'legendDiv'></div>`);
+$('body').append(`<div class = 'legendDiv flexcroll col-sm-5 col-md-3 col-lg-3 col-xl-2 p-0 m-0' id = 'legendDiv'></div>`);
 $('.legendDiv').css('bottom',$('.bottombar').height());
 $('.sidebar').css('max-height',$('body').height()-$('.bottombar').height());
 addLegendCollapse();
@@ -589,6 +595,14 @@ addSubAccordianCard('tools-accordian','query-label','query-div','Query Visible M
 if(mode === 'geeViz'){
   $('#pixel-chart-label').remove();
   $('#share-button').remove();
+   $('#tools-accordian').append(`<div class="dropdown-divider" ></div>`);
+   //Sync tooltip toggle
+  var tShowToolTipModal = true
+  if(localStorage.showToolTipModal !== null && localStorage.showToolTipModal !== undefined){
+    tShowToolTipModal = localStorage.showToolTipModal
+  }
+  addRadio('tools-accordian','tooltip-radio','Show tool tips','Yes','No','localStorage.showToolTipModal','true','false','','','Whether to show tool tips to help explain how to use the tools.');
+  if(tShowToolTipModal === 'false'){$('#tooltip-radio-second_toggle_label').click();}
 }
 if(mode === 'LCMS'){$('#search-share-div').addClass('pt-2')};
 if(mode === 'LCMS-pilot' || mode === 'MTBS'|| mode === 'lcms-base-learner' || mode === 'FHP' || mode === 'LCMS'){
@@ -605,11 +619,21 @@ if(mode === 'LCMS-pilot' || mode === 'MTBS'|| mode === 'lcms-base-learner' || mo
   addSubAccordianCard('tools-accordian','upload-area-chart-label','upload-area-chart-div','Upload an Area',staticTemplates.uploadAreaChartDiv,false,'toggleTool(toolFunctions.area.shpDefined)',staticTemplates.uploadAreaChartTipHover);
   // addSubAccordianCard('tools-accordian','select-area-dropdown-chart-label','select-area-dropdown-chart-div','Select an Area from Dropdown',staticTemplates.selectAreaDropdownChartDiv,false,'toggleTool(toolFunctions.area.selectDropdown)',staticTemplates.selectAreaDropdownChartTipHover);
   addSubAccordianCard('tools-accordian','select-area-interactive-chart-label','select-area-interactive-chart-div','Select an Area on Map',staticTemplates.selectAreaInteractiveChartDiv,false,'toggleTool(toolFunctions.area.selectInteractive)',staticTemplates.selectAreaInteractiveChartTipHover);
-
+  addRangeSlider('upload-reduction-factor-container','Vertex Reduction Factor','uploadReductionFactor',1, 5, 1 , 1,'upload-reduction-factor-slider','null',"Every n vertex in uploaded file will be kept for polygons > 100 vertices (E.g. if 3 is chosen, every third vertex remains). This is intended to help enable use of uploaded areas that may have failed due to its size.")
+  
   addShapeEditToolbar('user-defined-edit-toolbar', 'user-defined-area-icon-bar','undoUserDefinedAreaCharting()','restartUserDefinedAreaCarting()')
   addColorPicker('user-defined-area-icon-bar','user-defined-color-picker','updateUDPColor',udpOptions.strokeColor);
 
   addShapeEditToolbar('select-features-edit-toolbar', 'select-area-interactive-chart-icon-bar','removeLastSelectArea()','clearSelectedAreas()','Click to unselect most recently selected polyogn','Click to clear all selected polygons');
+  $('#tools-accordian').append(`<div class="dropdown-divider" ></div>`);
+   //Sync tooltip toggle
+  var tShowToolTipModal = true
+  if(localStorage.showToolTipModal !== null && localStorage.showToolTipModal !== undefined){
+    tShowToolTipModal = localStorage.showToolTipModal
+  }
+  addRadio('tools-accordian','tooltip-radio','Show tool tips','Yes','No','localStorage.showToolTipModal','true','false','','','Whether to show tool tips to help explain how to use the tools.');
+  if(tShowToolTipModal === 'false'){$('#tooltip-radio-second_toggle_label').click();}
+
 }
 //Add some logos for different modes
 if(mode === 'MTBS' || mode === 'Ancillary'){
@@ -658,5 +682,4 @@ function toggleSidebar(){
 if(urlParams.showSidebar === 'false'){
   $('#sidebar-left').hide();
 }
-
 

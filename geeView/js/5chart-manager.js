@@ -777,6 +777,7 @@ function chartChosenArea(){
   makeAreaChart(chosenAreaGeo,chosenAreaName);
   // console.log('Charting ' + chosenArea);
 }
+
 function getAreaSummaryTable(areaChartCollection,area,xAxisProperty,multiplier){
 	if(xAxisProperty === null || xAxisProperty === undefined){xAxisProperty = 'year'};
 	if(multiplier === null || multiplier === undefined){multiplier = 100};
@@ -793,7 +794,7 @@ function getAreaSummaryTable(areaChartCollection,area,xAxisProperty,multiplier){
 	return areaChartCollection.toList(10000,0).map(function(img){
 						img = ee.Image(img);
 				    // img = ee.Image(img).clip(area);
-				    var t = img.reduceRegion(ee.Reducer.fixedHistogram(0, 2, 2),area,30,'EPSG:5070',null,true,1e13,1);
+				    var t = img.reduceRegion(ee.Reducer.fixedHistogram(0, 2, 2),area,30,'EPSG:5070',null,true,1e13,4);
 				    var xAxisLabel = img.get(xAxisProperty);
 				    // t = ee.Dictionary(t).toArray().slice(1,1,2).project([0]);
 				    // var lossT = t.slice(0,2,null);
@@ -826,7 +827,10 @@ function expandChart(){
 	$('#curve_chart_big_modal').modal();
 	closeChart();
 }
+var currentChartID = 0;
 function makeAreaChart(area,name,userDefined){
+	currentChartID++;
+	var thisChartID = currentChartID;
 	areaGeoJson = null;
 	console.log('making chart');//console.log(userDefined);
 	if(userDefined === undefined || userDefined === null){userDefined = false};
@@ -875,7 +879,7 @@ function makeAreaChart(area,name,userDefined){
 			print(tableT);
 			print(failure);
 			print(areaChartingCount);
-			if(failure !== undefined && iteration < maxIterations ){
+			if(failure !== undefined && iteration < maxIterations && currentChartID === thisChartID){
 				// $('#area-charting-message-box').empty();
 				// $('#area-charting-message-box').html(failure	);
 				evalTable()
@@ -936,10 +940,20 @@ function makeAreaChart(area,name,userDefined){
 function fixGeoJSONZ(f){
 	console.log('getting rid of z');
 	f.features = f.features.map(function(f){
-    f.geometry.coordinates = f.geometry.coordinates.map(function(c){
-    															return c.map(function(i){
-    																return i.slice(0,2)})
-																		});
+		if(f.geometry.type.indexOf('Multi') === -1){
+			f.geometry.coordinates = f.geometry.coordinates.map(function(c){
+	    															return c.map(function(i){
+	    																return i.slice(0,2)})
+																			});
+		}else{
+			f.geometry.coordinates = f.geometry.coordinates.map(function(c1){
+	    															return c1.map(function(c2){
+	    																return c2.map(function(i){
+	    																	return i.slice(0,2)})
+																				});
+	    															});
+		}
+    
     return f;
   });
 	console.log(f);
@@ -962,25 +976,56 @@ function runShpDefinedCharting(){
 			map.setOptions({draggableCursor:'progress'});
 			map.setOptions({cursor:'progress'});
 			
-			convertToGeoJSON('areaUpload').done(function(converted){
+			convertToGeoJSON('areaUpload').done(function(convertedRaw){
 				console.log('successfully converted to JSON');
+				console.log(convertedRaw);
+				console.log('compressing geoJSON')
+				var converted = compressGeoJSON(convertedRaw,uploadReductionFactor);
 				console.log(converted);
-					
-
 			//First try assuming the geoJSON has spatial info
 			try{
 				var area =ee.FeatureCollection(converted.features.map(function(t){return ee.Feature(t).dissolve(100,ee.Projection('EPSG:4326'))}));
+				console.log('N features to summarize ');
+				var nFeatures = area.size().getInfo()
+				console.log(nFeatures);
+				if(nFeatures == 0){
+					showMessage('No Features Found','Found '+nFeatures.toString() + ' in provided file. Please select a file with features.');
+					$('#summary-spinner').hide();
+					return
+				}
 				} 
 			//Fix it if not
 			catch(err){
 				err = err.toString();
 				console.log('Error');console.log(err);
 				if(err.indexOf('Error: Invalid GeoJSON geometry:') > -1){
-					var area =ee.FeatureCollection(fixGeoJSONZ(converted).features.map(function(t){return ee.Feature(t).dissolve(100,ee.Projection('EPSG:4326'))}))	
+					try{
+						var area =ee.FeatureCollection(fixGeoJSONZ(converted).features.map(function(t){return ee.Feature(t).dissolve(100,ee.Projection('EPSG:4326'))}))	
+						console.log('N features to summarize ');
+						console.log(area.size().getInfo());
+						}
+					catch(err){
+						err = err.toString();
+						console.log(err)
+						if(err.indexOf('413')>-1){
+							showMessage('<i class="text-dark text-uppercase fa fa-exclamation-triangle"></i> Error Ingesting Study Area!','Provided vector has too many vertices.<br>Try increasing the "Vertex Reduction Factor" slider by one and then rerunning.')
+						}else{
+							showMessage('<i class="text-dark text-uppercase fa fa-exclamation-triangle"></i> Error Ingesting Study Area!',err)
+						}
+						$('#summary-spinner').hide();
+						return;
+						
+					};
 					}
 				else{
 					
-					showMessage('<i class="text-dark text-uppercase fa fa-exclamation-triangle"></i>Error Ingesting Study Area!',err)
+					if(err.indexOf('413')>-1){
+							showMessage('<i class="text-dark text-uppercase fa fa-exclamation-triangle"></i> Error Ingesting Study Area!','Provided vector has too many vertices.<br>Try increasing the "Vertex Reduction Factor" slider by one and then rerunning.')
+						}else{
+							showMessage('<i class="text-dark text-uppercase fa fa-exclamation-triangle"></i> Error Ingesting Study Area!',err)
+						}
+					$('#summary-spinner').hide();
+					return;
 					}
 				};
 				// var area  =ee.FeatureCollection(converted.features.map(function(t){return ee.Feature(t).dissolve(100,ee.Projection('EPSG:4326'))}));//.geometry()//.dissolve(1000,ee.Projection('EPSG:4326'));

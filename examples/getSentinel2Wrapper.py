@@ -21,8 +21,8 @@ studyArea = testAreas['CA']
 # to June 1 of that year.Otherwise, all system:time_starts will default to June 1 of the given year
 # startJulian: Starting Julian date 
 # endJulian: Ending Julian date
-startJulian = 190
-endJulian = 210
+startJulian = 152
+endJulian = 273
 
 # Specify start and end years for all analyses
 # More than a 3 year span should be provided for time series methods to work 
@@ -206,8 +206,8 @@ s2sAndTs =getSentinel2Wrapper(studyArea,startYear,endYear,startJulian,endJulian,
 #Separate into scenes and composites for subsequent analysis
 processedScenes = s2sAndTs['processedScenes']
 processedComposites = s2sAndTs['processedComposites']
-
-Map.addLayer(processedComposites.select(['NDVI','NBR']),{'addToLegend':'false'},'Time Series (NBR and NDVI)',False)
+vizParamsFalse['layerType']= 'geeImage';
+Map.addLayer(processedComposites.select(['NDVI','NBR']),{'addToLegend':False},'Time Series (NBR and NDVI)',False)
 for year in range(startYear + timebuffer      ,endYear + 1 - timebuffer ):
      t = processedComposites.filter(ee.Filter.calendarRange(year,year,'year')).mosaic()
      Map.addLayer(t,vizParamsFalse,str(year),'False')

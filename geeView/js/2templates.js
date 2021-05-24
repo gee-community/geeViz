@@ -78,7 +78,7 @@ var staticTemplates = {
 	sidebarLeftToggler:`<div href="#" class="fa fa-bars  px-1 py-2  sidebar-toggler " style = 'margin-left:-0.2em;margin-top:-0.1em;' onclick = 'toggleSidebar()'></div>`,
 
     sidebarLeftContainer: `
-						<div onclick = "$('#study-area-list').hide();" class = 'col-sm-7 col-md-5 col-lg-4 col-xl-3 sidebar  p-0 m-0 flexcroll  ' id = 'sidebar-left-container' >
+						<div onclick = "$('#study-area-list').hide();" class = 'col-sm-7 col-md-4 col-lg-4 col-xl-3 sidebar  p-0 m-0 flexcroll  ' id = 'sidebar-left-container' >
 					        <div id = 'sidebar-left-header'></div>
                             
 					        <div id = 'sidebar-left'></div>
@@ -393,6 +393,20 @@ var staticTemplates = {
                         <hr>
                         <div class = 'row p-2'>
                             <div class = 'col-lg-2 p-0 m-0'>
+                                <a href="https://www.fs.usda.gov/rmrs/tools/landscape-change-monitoring-system-lcms" target="_blank">
+                            <img src="./images/usfslogo.png" class = 'support-icons' alt="USFS Logo"  href="#"  title="Click to learn more about the Rocky Mountain Research Station (RMRS)">
+                        </a>
+                            </div>
+                            <div class = 'col-lg-10'>
+                                <a href="https://www.fs.usda.gov/rmrs/tools/landscape-change-monitoring-system-lcms" target="_blank">
+                                    <p class = 'support-text'>The Rocky Mountain Research Station provides the scientific foundation LCMS is built upon. They have been instrumental in developing and publishing the original LCMS methodology and continue to provide ongoing research and development to further improve LCMS methods.</p>
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        <div class = 'row p-2'>
+                            <div class = 'col-lg-2 p-0 m-0'>
                                 <a href="https://www.redcastleresources.com/" target="_blank">
                                     <img src="images/RCR-logo.jpg"  class = 'support-icons' alt="RedCastle Inc. Logo"  href="#"   title="Click to learn more about RedCastle Resources Inc.">
                                     
@@ -419,7 +433,6 @@ var staticTemplates = {
                                 Please contact the LCMS help desk <span href = "mailto: sm.fs.lcms@usda.gov">(sm.fs.lcms@usda.gov)</span> if you have questions/comments about LCMS or have feedback on the LCMS Data Explorer.</a>
                             </div>
                         </div>
-                         
                         
                         
         				
@@ -435,7 +448,8 @@ var staticTemplates = {
                           </div>`,
         distanceDiv : `Click on map to measure distance`,
         distanceTip : "Click on map to measure distance. Press <kbd>ctrl+z</kbd> to undo most recent point. Double-click, press <kbd>Delete</kbd>, or press <kbd>Backspace</kbd> to clear measurment and start over.",
-        areaDiv : `Click on map to measure area<variable-radio onclick1 = 'updateArea()' onclick2 = 'updateArea()' var='metricOrImperialArea' title2='' name2='Metric' name1='Imperial' value2='metric' value1='imperial' type='string' href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title='Toggle between imperial or metric units'></variable-radio>`,
+        areaDiv : `Click on map to measure area<variable-radio onclick1 = 'updateArea()' onclick2 = 'updateArea()' var='metricOrImperialArea' title2='' name2='Metric' name1='Imperial' value2='metric' value1='imperial' type='string' href="#" rel="txtTooltip" data-toggle="tooltip" data-placement="top" title='Toggle between imperial or metric units'></variable-radio>
+       `,
         areaTip : "Click on map to measure area. Double-click to complete polygon, press <kbd>ctrl+z</kbd> to undo most recent point, press <kbd>Delete</kbd> or <kbd>Backspace</kbd> to start over. Any number of polygons can be defined by repeating this process.",
         queryDiv : "<div>Double-click on map to query values of displayed layers at that location</div>",
         queryTip : 'Double-click on map to query the values of the visible layers.  Only layers that are turned on will be queried.',
@@ -459,15 +473,17 @@ var staticTemplates = {
         userDefinedAreaChartTip : 'Click on map to select an area to summarize '+mode+' products across. Press <kbd>ctrl+z</kbd> to undo most recent point.  Press <kbd>Delete</kbd>, or press <kbd>Backspace</kbd> to start over. Double-click to finish polygon. Any number of polygons can be defined by repeating this process. Once finished defining areas, click on the <kbd>Chart Selected Areas</kbd> button to create chart.',
 
         uploadAreaChartDiv : `<div class = 'dropdown-divider'></div>
-                                <label title = 'Powered by: https://ogre.adc4gis.com/'>Choose a zipped shapefile or geoJSON file to summarize across.  Then hit "Chart across chosen file" button below to produce chart.</label>
-                                <input class = 'file-input my-1' type="file" id="areaUpload" name="upload" accept=".zip,.geojson,.json" style="display: inline-block;">
+                                <label title = 'Powered by: https://ogre.adc4gis.com/'>Choose a zipped shapefile, kml, kmz, or geoJSON file to summarize across. Then hit "Chart across chosen file" button below to produce chart.</label>
+                                <input class = 'file-input my-1' type="file" id="areaUpload" name="upload" accept=".zip,.geojson,.json,.kmz,.kml" style="display: inline-block;">
+                                <div class = 'dropdown-divider'></div>
+                                <div id = 'upload-reduction-factor-container'></div>
                                 <div class = 'dropdown-divider'></div>
                                 <div>Uploaded areas:</div>
                                 <div id="area-charting-shp-layer-list"></div>
                                 <div class = 'dropdown-divider'></div>
-                                <button class = 'btn' style = 'margin-bottom: 0.5em!important;' onclick = 'runShpDefinedCharting()' rel="txtTooltip" title = 'Click to summarize across chosen .zip shapefile or .geojson.'>Chart across chosen file</button>
+                                <button class = 'btn' style = 'margin-bottom: 0.5em!important;' onclick = 'runShpDefinedCharting()' rel="txtTooltip" title = 'Click to summarize across chosen .zip shapefile, .kmz, .kml, or .geojson.'>Chart across chosen file</button>
                                 `,
-        uploadAreaChartTip : 'Select zipped shapefile (zip into .zip all files related to the shapefile) or a single .geojson file to summarize products across.',
+        uploadAreaChartTip : 'Select zipped shapefile (zip into .zip all files related to the shapefile) or a single .kmz, .kml (If the .kmz or .kml has embedded pngs or any other non vector data, the conversion will likely fail.), or .geojson file to summarize products across.',
         selectAreaDropdownChartDiv : `<i rel="txtTooltip" data-toggle="tooltip"  title="Selecting pre-defined summary areas for chosen study area" id = "select-area-spinner" class="text-dark px-2 fa fa-spin fa-spinner"></i>
                             <select class = 'form-control' style = 'width:100%;'  id='forestBoundaries' onchange='chartChosenArea()'></select>
                             <div class = 'dropdown-divider'></div>`,
@@ -789,9 +805,12 @@ function showTip(title,message){
 	  $('#tip-modal').modal().show();
 	}
 	$('#dontShowTipAgainCheckbox').change(function(){
-	  console.log(this.checked)
-	  localStorage.showToolTipModal  = !this.checked;
+    console.log(this.checked)
+    localStorage.showToolTipModal  = !this.checked;
+    if(localStorage.showToolTipModal === 'false'){$('#tooltip-radio-second_toggle_label').click();}
+    else if(localStorage.showToolTipModal === 'true'){$('#tooltip-radio-first_toggle_label').click();};
     });
+
 }
 //////////////////////////////////////////////////////////////////////////////////////////////
 //Function to add a given study area to the study area dropdown
@@ -1401,7 +1420,8 @@ function addLayer(layer){
     function loadFailure(failure){
         layer.loadError = true;
         console.log('GEE Tile Service request failed for '+layer.name);
-        $('#'+containerID).css('background-color','red');
+        console.log(containerID)
+        $('#'+containerID).css('background','red');
         $('#'+containerID).attr('title','Layer failed to load. Error message: "'+failure + '"')
         // getGEEMapService();
     }
@@ -1567,10 +1587,11 @@ function addLayer(layer){
             layer.imageCollection = layer.item;
 
             if(layer.viz.reducer === null || layer.viz.reducer === undefined){
-                layer.viz.reducer = ee.Reducer.firstNonNull();
+                layer.viz.reducer = ee.Reducer.lastNonNull();
             }
             var bandNames = ee.Image(layer.item.first()).bandNames();
-            layer.item = ee.ImageCollection(layer.item).reduce(layer.viz.reducer).rename(bandNames);
+            layer.item = ee.ImageCollection(layer.item).reduce(layer.viz.reducer).rename(bandNames).copyProperties(layer.imageCollection.first());
+            
         //Handle vectors
         } else if(layer.layerType === 'geeVectorImage' || layer.layerType === 'geeVector'){
 
@@ -1924,8 +1945,20 @@ function addLayer(layer){
         layer.mapServiceTryNumber = 0;
         function getGEEMapService(){
             // layer.item.getMap(layer.viz,function(eeLayer){getGEEMapServiceCallback(eeLayer)});
-            layer.item.getMap(layer.viz,function(eeLayer,failure){
-             
+            
+            //Handle embeded visualization params if available
+            var vizKeys = Object.keys(layer.viz);
+            var possibleVizKeys = ['bands','min','max','gain','bias','gamma','palette'];
+            var vizFound = false;
+            possibleVizKeys.map(function(k){
+                var i = vizKeys.indexOf(k) > -1;
+                if(i){vizFound = true}
+            });
+           
+            if(vizFound == false){layer.usedViz = {}}
+                else{layer.usedViz = layer.viz}
+            // console.log(layer.usedViz);
+            ee.Image(layer.item).getMap(layer.usedViz,function(eeLayer,failure){
                 if(eeLayer === undefined && layer.mapServiceTryNumber <=1){
                     queryObj[queryID].queryItem = layer.item;
                     layer.item = layer.item.visualize();
@@ -1957,6 +1990,12 @@ function addLayer(layer){
 			if(layer.currentGEERunID === geeRunID){
                 if(v === undefined){loadFailure()}
 				layer.layer = new google.maps.Data();
+               //  layer.viz.icon = {
+               //    path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+               //    scale: 5,
+               //    strokeWeight:2,
+               //    strokeColor:"#B40404"
+               // }
 		        layer.layer.setStyle(layer.viz);
 		      
 		      	layer.layer.addGeoJson(v);

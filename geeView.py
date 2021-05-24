@@ -20,6 +20,7 @@
 import ee
 import sys,os,webbrowser,json,socket,subprocess,site
 from threading import Thread
+from IPython.display import IFrame
 if sys.version_info[0] < 3:
     import SimpleHTTPServer, SocketServer
 else:
@@ -56,11 +57,12 @@ local_server_port = 8005
 #Function for running local web server
 def run_local_server(port = 8001):
     if sys.version[0] == '2':
-        subprocess.Popen('"'+sys.executable +'" -m SimpleHTTPServer '+str(local_server_port),shell = True)
+        server_name = 'SimpleHTTPServer'
     else:
+        server_name = 'http.server'
         
-        subprocess.Popen('"'+sys.executable +'" -m http.server '+str(local_server_port),shell = True)
-
+    call = subprocess.Popen('"{}" -m {} {}'.format(sys.executable, server_name,str(local_server_port)),shell = True)
+    call.wait()
 #Function to see if port is active
 def isPortActive(port = 8001):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -89,7 +91,7 @@ class mapper:
         idDict['item'] = image.serialize()
         idDict['name'] = name 
         idDict['visible'] = str(visible).lower()
-        idDict['viz'] = json.dumps(viz, sort_keys=True)
+        idDict['viz'] = json.dumps(viz, sort_keys=False)
         idDict['function'] = 'addSerializedLayer'
         self.idDictList.append(idDict)
 
@@ -104,10 +106,11 @@ class mapper:
         idDict['item'] = image.serialize()
         idDict['name'] = name 
         idDict['visible'] = str(visible).lower()
-        idDict['viz'] = json.dumps(viz, sort_keys=True)
+        idDict['viz'] = json.dumps(viz, sort_keys=False)
         idDict['function'] = 'addSerializedTimeLapse'
         self.idDictList.append(idDict)
 
+    #Function for centering on a GEE object that has a geometry
     def centerObject(self,feature):
         try:
             bounds = json.dumps(feature.geometry().bounds().getInfo())
@@ -117,43 +120,59 @@ class mapper:
         
         self.mapCommandList.append(command)
     #Function for launching the web map after all adding to the map has been completed
-    def view(self):
+    def view(self,open_browser = True, open_iframe = False):
         print('Starting webmap')
 
         #Set up js code to populate
-        lines = "function runGeeViz(){\n"
+        lines = "showMessage('Loading',staticTemplates.loadingModal);\nfunction runGeeViz(){\n"
 
 
         #Iterate across each map layer to add js code to
         for idDict in self.idDictList:
-            t ="Map2."+idDict['function']+"("+idDict['item']+","+idDict['viz']+",'"+idDict['name']+"',"+str(idDict['visible']).lower()+");\n"
+            t ="Map2.{}({},{},'{}',{});\n".format(idDict['function'],idDict['item'],idDict['viz'],idDict['name'],str(idDict['visible']).lower())
             lines += t
         
+        lines += "setTimeout(function(){$('#close-modal-button').click();}, 2500);\n"
 
         #Iterate across each map command
         for mapCommand in self.mapCommandList:
             lines += mapCommand + '\n'
 
-        lines += "}"
+        lines+= "}"
+        
         #Write out js file
         oo = open(ee_run,'w')
         oo.writelines(lines)
         oo.close()
         if not isPortActive(local_server_port):
-            print('Starting local web server at: http://localhost:'+str(local_server_port)+ '/'+geeViewFolder+'/')
+            print('Starting local web server at: http://localhost:{}/{}/'.format(local_server_port,geeViewFolder))
             # run_local_server(local_server_port)
             # subprocess.Popen('python -m SimpleHTTPServer '+str(local_server_port),shell = True)
             t = Thread(target = run_local_server,args = (local_server_port,))
             t.start()
 
         else:
-            print('Local web server at: http://localhost:'+str(local_server_port)+'/'+geeViewFolder+'/ already serving.')
-            print('Refresh browser instance')
-        webbrowser.open('http://localhost:'+str(local_server_port)+'/'+geeViewFolder+'/',new = 1)
+            print('Local web server at: http://localhost:{}/{}/ already serving.'.format(local_server_port,geeViewFolder))
+            # print('Refresh browser instance')
         
+        if open_browser:
+            webbrowser.open('http://localhost:{}/{}/'.format(local_server_port,geeViewFolder),new = 1)
+        if open_iframe:
+            self.IFrame = IFrame(src='http://localhost:{}/{}/'.format(local_server_port,geeViewFolder), width='100%', height='500px')
     def clearMap(self):
+        self.layerNumber = 1
         self.idDictList = []
+        self.mapCommandList  = []
     
-
+    def turnOnInspector(self):
+        # self.mapCommandList.append("$('#tools-collapse-div').addClass('show')")
+        self.mapCommandList.append("$('#query-label').click();")
+        
+    def turnOffAllLayers(self):
+        update = {'visible':'false'}
+        self.idDictList = [{**d,**update} for d in self.idDictList]
+    def turnOnAllLayers(self):
+        update = {'visible':'true'}
+        self.idDictList = [{**d,**update} for d in self.idDictList]
 #Instantiate Map object
 Map = mapper()

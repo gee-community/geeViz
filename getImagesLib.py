@@ -340,24 +340,18 @@ def addYearBand(img):
 
 def addJulianDayBand(img):
   d = ee.Date(img.get('system:time_start'))
-  julian = ee.Image(ee.Number(d.getRelative('day','year')).add(1)).rename(['julianDay'])
+  julian = ee.Image(ee.Number.parse(d.format('DD'))).rename(['julianDay'])
 
   return img.addBands(julian).float()
 
 def addYearJulianDayBand(img):
   d = ee.Date(img.get('system:time_start'))
-  julian = ee.Number(d.getRelative('day','year')).add(1).format('%03d')
-  y = d.get('year').format().slice(2,4)
-
-  yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian'])
-  
+  yj = ee.Image(ee.Number.parse(d.format('YYDD'))).rename(['yearJulian'])
   return img.addBands(yj).float()
 
 def addFullYearJulianDayBand(img):
   d = ee.Date(img.get('system:time_start'));
-  julian = ee.Number(d.getRelative('day','year')).add(1).format('%03d')
-  y = d.get('year').format('%04d')
-  yj = ee.Image(ee.Number.parse(y.cat(julian))).rename(['yearJulian']).int64()
+  yj = ee.Image(ee.Number.parse(d.format('YYYYDD'))).rename(['yearJulian']).int64()
   
   return img.addBands(yj).float()
 
@@ -445,29 +439,24 @@ def uniqueValues(collection,field):
 #This procedure must be used for proper processing of S2 imagery
 def dailyMosaics(imgs):
   #Simplify date to exclude time of day
-  def dateSimplifier(img):
-    d = ee.Date(img.get('system:time_start'))
-    day = d.get('day')
-    m = d.get('month')
-    y = d.get('year')
-    simpleDate = ee.Date.fromYMD(y,m,day)
-    return img.set('simpleTime',simpleDate.millis())
-  
-  imgs = imgs.map(dateSimplifier)
+  def propWrapper(img):
+    d = ee.String(ee.Date(img.get('system:time_start')).format('YYYY-MM-dd_'))
+    orbit = ee.Number(img.get('SENSING_ORBIT_NUMBER')).format()
+    return img.set('date-orbit',d.cat(orbit))
+  imgs = imgs.map(propWrapper)
 
   #Find the unique days
-  days = uniqueValues(imgs,'simpleTime')
+  dayOrbits  = ee.Dictionary(imgs.aggregate_histogram('date-orbit')).keys()
   
   def dayWrapper(d):
-    d = ee.Number.parse(d)
-    d = ee.Date(d)
-    t = imgs.filterDate(d,d.advance(1,'day'))
+    date = ee.Date(ee.String(d).split('_').get(0))
+    t = imgs.filterDate(date,date.advance(1,'day'))
     f = ee.Image(t.first())
     t = t.mosaic()
-    t = t.set('system:time_start',d.millis())
+    t = t.set('system:time_start',date.millis())
     t = t.copyProperties(f)
     return t
-  imgs = days.map(dayWrapper)
+  imgs = dayOrbits.map(dayWrapper)
   imgs = ee.ImageCollection.fromImages(imgs)
     
   return imgs
@@ -492,6 +481,7 @@ def getS2(studyArea,
       'SR': ['B1','B2','B3','B4','B5','B6','B7','B8','B8A', 'B9', 'B11','B12'],
       'TOA': ['B1','B2','B3','B4','B5','B6','B7','B8','B8A', 'B9', 'B10', 'B11','B12']\
   }
+  
   sensorBandNameDict = {\
       'SR': ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'swir1', 'swir2'],
       'TOA': ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2']\
@@ -1344,7 +1334,7 @@ def exportToDriveWrapper(imageForExport,outputName,driveFolderName,roi= None,sca
 #########################################################################
 def exportToCloudStorageWrapper(imageForExport,outputName,bucketName,roi= None,scale= None,crs = None,transform = None,outputNoData = -32768):
   #Make sure image is clipped to roi in case it's a multi-part polygon
-  imageForExport = imageForExport.clip(roi).unmask(outputNoData,False)
+  imageForExport = imageForExport.clip(roi).unmask(ee.Image(outputNoData),False)
 
   outputName = outputName.replace("/\s+/g",'-')#Get rid of any spaces
   try:
@@ -1404,6 +1394,8 @@ def compositeTimeSeries(
   dateWrapping = wrapDates(startJulian,endJulian)
   wrapOffset = dateWrapping[0]
   yearWithMajority = dateWrapping[1]
+  
+
   
   def yearCompositeGetter(year):
    
@@ -2083,7 +2075,7 @@ def getProcessedModis(startYear,
       Map.addLayer(modisImages.min().reproject(crs,transform,scale),vizParamsFalse,'Cloud Masked Min',False)
 
   if applyTDOM:
-    print('Applying TDOM')
+    print('Applying TDOM') 
     #Find and mask out dark outliers
     modisImages = simpleTDOM2(modisImages,zScoreThresh,shadowSumThresh,contractPixels,dilatePixels,shadowSumBands,preComputedTDOMIRMean,preComputedTDOMIRStdDev)
 
@@ -2293,7 +2285,7 @@ def getLandsatWrapper(
   outputName = 'Landsat-Composite',
   exportPathRoot = 'users/ianhousman/test',
   crs = 'EPSG:5070',
-  transform = None,
+  transform = [30,0,-2361915.0,0,-30,3177735.0],
   scale = None,
   resampleMethod = 'near',
   preComputedCloudScoreOffset = None,
@@ -2648,8 +2640,8 @@ def getProcessedSentinel2Scenes(\
   # Add common indices
   s2s = s2s.map(simpleAddIndices)\
            .map(getTasseledCap)\
-           .map(simpleAddTCAngles)
-  
+           .map(simpleAddTCAngles)\
+           .map(lambda img: img.addBands(img.normalizedDifference(['re1', 'red']).select([0],['NDCI'])))
   # Add Sensor Band
   s2s = s2s.map(lambda img: addSensorBand(img, 'sentinel2', toaOrSR))
 
@@ -2687,7 +2679,7 @@ def getSentinel2Wrapper(\
   outputName = 'Sentinel2-Composite',
   exportPathRoot = 'users/ianhousman/test',
   crs = 'EPSG:5070',
-  transform = None,
+  transform = [10,0,-2361915.0,0,-10,3177735.0],
   scale = None,
   resampleMethod = 'aggregate',
   toaOrSR = 'TOA',
@@ -3019,7 +3011,7 @@ def getLandsatAndSentinel2HybridWrapper(\
   outputName = 'Landsat-Sentinel2-Hybrid',
   exportPathRoot = None,
   crs = 'EPSG:5070',
-  transform = None,
+  transform = [30,0,-2361915.0,0,-30,3177735.0],
   scale = None,
   preComputedLandsatCloudScoreOffset = None,
   preComputedLandsatTDOMIRMean = None,

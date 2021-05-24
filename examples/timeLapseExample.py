@@ -14,24 +14,24 @@ from geeViz.getImagesLib import *
 Map.clearMap()
 ####################################################################################################
 #Bring in pre-defined area
-cambodia = ee.Geometry.Polygon(\
+cambodia = ee.Feature(ee.Geometry.Polygon(\
         [[[104.48008284838329, 13.365070792606891],\
           [104.48008284838329, 12.218730827637675],\
           [106.08683333666454, 12.218730827637675],\
-          [106.08683333666454, 13.365070792606891]]], None, False)
-gsl = ee.Geometry.Polygon(\
+          [106.08683333666454, 13.365070792606891]]], None, False))
+gsl = ee.Feature(ee.Geometry.Polygon(\
         [[[-113.2053895191826, 41.82208938845069],\
           [-113.2053895191826, 40.5655604972739],\
           [-111.7002625660576, 40.5655604972739],\
-          [-111.7002625660576, 41.82208938845069]]], None, False)
-rio = ee.Geometry.Polygon(\
+          [-111.7002625660576, 41.82208938845069]]], None, False))
+rio = ee.Feature(ee.Geometry.Polygon(\
         [[[-107.5198171213165, 38.080864394376015],\
           [-107.5198171213165, 37.40759534811328],\
           [-106.6189382150665, 37.40759534811328],\
-          [-106.6189382150665, 38.080864394376015]]], None, False)
-Map.addLayer(gsl,{},'Great Salt Lake Example Area for JRC Water Time Lapse (double click to zoom to)',False);
-Map.addLayer(cambodia,{},'Cambodia Example Area for Hansen Loss Time Lapse (double click to zoom to)',False);
-Map.addLayer(rio,{},'Rio Grande National Forest Example Area for LCMS Loss Time Lapse (double click to zoom to)',True);
+          [-106.6189382150665, 38.080864394376015]]], None, False))
+Map.addLayer(gsl,{'layerType':'geeVector'},'Great Salt Lake Example Area for JRC Water Time Lapse (double click to zoom to)',False);
+Map.addLayer(cambodia,{'layerType':'geeVector'},'Cambodia Example Area for Hansen Loss Time Lapse (double click to zoom to)',False);
+Map.addLayer(rio,{'layerType':'geeVector'},'Rio Grande National Forest Example Area for LCMS Loss Time Lapse (double click to zoom to)',True);
 #The Map can be centered on featureCollections, features, or geometry
 Map.centerObject(rio)
 
@@ -48,11 +48,11 @@ Map.addTimeLapse(water,{'min':1,'max':3,'palette':waterColors,'addToClassLegend'
 
 #Bring in Hansen loss
 declineYearPalette = 'ffffe5,fff7bc,fee391,fec44f,fe9929,ec7014,cc4c02'
-hansen = ee.Image('UMD/hansen/global_forest_change_2018_v1_6')
+hansen = ee.Image("UMD/hansen/global_forest_change_2020_v1_8")
 
 hansenLoss = hansen.select(['lossyear']).add(2000).int16()
 hansenStartYear = 2001
-hansenEndYear = 2018
+hansenEndYear = 2020
 
 hansenYears = ee.List.sequence(hansenStartYear,hansenEndYear)
 
@@ -68,19 +68,20 @@ hansenYearsCli = hansenYears.getInfo()
 Map.addTimeLapse(hansenC,{'min':hansenStartYear,'max':hansenEndYear,'palette':declineYearPalette,'years':hansenYearsCli},'Hansen Loss Time Lapse')
   
 #Bring in LCMS
-lcms = ee.ImageCollection('projects/LCMS/CONUS_Products/v20200120')
+lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2020-5").select(['Change'])
 lcmsStartYear = 1985
-lcmsEndYear = 2019
+lcmsEndYear = 2020
 lcmsYears = ee.List.sequence(lcmsStartYear,lcmsEndYear)
 
 def lcmsFun(yr):
-	yr = ee.Number(yr).int16()
-	lcmsT = lcms.filter(ee.Filter.calendarRange(yr,yr,'year')).mosaic()
-	yrImg = ee.Image.constant(yr).updateMask(lcmsT.gte(30)).int16()
-	return yrImg.set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())
+  yr = ee.Number(yr).int16()
+  lcmsT = lcms.filter(ee.Filter.calendarRange(yr,yr,'year')).mosaic()
+  change = lcmsT.eq(2).Or(lcmsT.eq(3))
+  yrImg = ee.Image.constant(yr).updateMask(change).int16()
+  return yrImg.set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())
 
 lcms = ee.ImageCollection.fromImages(lcmsYears.map(lcmsFun))
-print(lcms.getInfo())
+
 # Map.addLayer(lcms)
 Map.addTimeLapse(lcms,{'min':lcmsStartYear,'max':lcmsEndYear,'palette':declineYearPalette,'years':lcmsYears.getInfo()},'LCMS Loss Time Lapse')
 

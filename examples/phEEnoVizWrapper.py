@@ -9,23 +9,33 @@ from geeViz.phEEnoViz  import *
 output_table_dir = r'C:\PheenoViz_Outputs'
 
 #Define output table name (no extension needed)
-output_table_name ='GA_Test2'
+output_table_name ='Clean_OR2'
 #Set up dates
 #Years can range from 1984-present
 #Julian days can range from 1-365
-startYear = 2010
+startYear = 2015
 endYear = 2020
-startJulian =1
-endJulian = 365
+startJulian =160
+endJulian = 280
 
 #Number of samples to pull (Generally < 3000 or so will work)
-nSamples = 2500
+nSamples = 5000
 
 #Number of days in each median composite
-compositePeriod = 16
+compositePeriod = 30
 
-#Bands to export. Can include: blue, green, red, nir, swir1, swir2, NDVI, NBR, NDMI, brightness, greenness, wetness, bloom2, NDGI
-exportBands = ['NBR','NDVI','brightness','greenness','wetness']#['bloom2','NDGI','NDSI','NBR','NDVI','brightness','greenness','wetness']
+#Which programs to include
+#Options are Landsat and Sentinel 2
+#E.g. ['Landsat','Sentinel2'] will include both Landsat 4-8 and Sentinel 2a and 2b TOA data
+#If choosing both Landsat and Sentinel 2, available bands/indices are limited to those that can be computed
+#Using bands from each (e.g. Sentinel 2 red edge bands would not be available if using only Landsat or Landsat and Sentinel 2)
+programs = ['Landsat','Sentinel2']
+
+#Bands to export. 
+#Landsat and Sentinel2 combined band options include: blue, green, red, nir, swir1, swir2, NDVI, NBR, NDMI, brightness, greenness, wetness, bloom2, NDGI
+#Sentinel 2 only band options include: 'cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2', NDVI, NBR, NDMI, brightness, greenness, wetness, bloom2, NDGI, NDCI
+#Landsat only band options include: blue, green, red, nir, swir1, swir2, temp, NDVI, NBR, NDMI, brightness, greenness, wetness, bloom2, NDG
+exportBands = ['bloom2','NDGI']#['bloom2','NDGI','NDSI','NBR','NDVI','brightness','greenness','wetness']
 
 #Whether to apply snow mask
 maskSnow = True
@@ -37,9 +47,11 @@ maskSnow = True
 # 3 will include the first (1 htz), second (2 htz), and third (3 htz) harmonics - This is best to fit to all regular cycles in the time series
 howManyHarmonics = 1
 
+#Whether to annotate dates of peaks and troughs of harmonic curve on chart
+annotate_harmonic_peaks = True
 
 #Whether to show the study area and samples
-showGEEViz = False
+showGEEViz = True
 
 #Whether to show charts in an interactive, non-png version as they are being created
 showChart = False
@@ -70,19 +82,6 @@ dirty_odell_lake = ee.Geometry.Polygon(\
           [-121.95436897100177, 43.59540724921347]]], None, False)
 
 
-clean_crescent_lake = ee.Geometry.Polygon(\
-        [[[-122.05255927861896, 43.51304992163878],\
-          [-122.05255927861896, 43.446285403511645],\
-          [-121.93308296025958, 43.446285403511645],\
-          [-121.93308296025958, 43.51304992163878]]], None, False)
-
-
-clean_waldo_lake = ee.Geometry.Polygon(\
-        [[[-122.08516666791367, 43.770494425923616],\
-          [-122.08516666791367, 43.67621099378742],\
-          [-122.0041424979918, 43.67621099378742],\
-          [-122.0041424979918, 43.770494425923616]]], None, False)
-
 clean_or_combo = ee.Geometry.MultiPolygon(\
         [[[[-122.16247277538403, 42.98060571118538],\
            [-122.16247277538403, 42.9016878744337],\
@@ -96,6 +95,35 @@ clean_or_combo = ee.Geometry.MultiPolygon(\
            [-122.06863020193826, 43.6812758137654],\
            [-122.00648878348123, 43.6812758137654],\
            [-122.00648878348123, 43.76538659547769]]]], None, False)
+
+wy_clean_lake_combo = ee.Geometry.MultiPolygon(\
+        [[[[-109.56790010304167, 42.96292917782831],\
+           [-109.56790010304167, 42.953161377243354],\
+           [-109.55584089131071, 42.953161377243354],\
+           [-109.55584089131071, 42.96292917782831]]],\
+         [[[-109.70411340565397, 42.94700466781123],\
+           [-109.70411340565397, 42.92224596795357],\
+           [-109.66875116200163, 42.92224596795357],\
+           [-109.66875116200163, 42.94700466781123]]],\
+         [[[-108.95214927727804, 42.591368975972856],\
+           [-108.95214927727804, 42.57948841139656],\
+           [-108.92897499138937, 42.57948841139656],\
+           [-108.92897499138937, 42.591368975972856]]]], None, False)
+
+wa_clean_lake_combo = ee.Geometry.MultiPolygon(\
+        [[[[-121.32593536613808, 47.586467669618045],\
+           [-121.32593536613808, 47.56342205752472],\
+           [-121.27993011711465, 47.56342205752472],\
+           [-121.27993011711465, 47.586467669618045]]],\
+         [[[-121.39322662590371, 47.59920209760001],\
+           [-121.39322662590371, 47.57685691359207],\
+           [-121.37297058342324, 47.57685691359207],\
+           [-121.37297058342324, 47.59920209760001]]],\
+         [[[-121.33949661491738, 47.60695700338792],\
+           [-121.33949661491738, 47.59723425208618],\
+           [-121.32748031853066, 47.59723425208618],\
+           [-121.32748031853066, 47.60695700338792]]]], None, False)
+
 
 uinta_tree = ee.Geometry.Polygon(
         [[[-110.40497889529719, 40.90051259604438],
@@ -131,14 +159,18 @@ wy_shrub = ee.Geometry.Polygon(
 #Here are some examples
 
 #If you want to sample water, using the JRC water layers works well
+startWaterYear = startYear
+endWaterYear = endYear
+if startYear > 2018: startWaterYear = 2018
+if endYear > 2018: endWaterYear = 2018
 permWater = ee.Image("JRC/GSW1_1/GlobalSurfaceWater").select([0]).gte(90).unmask(0)
 tempWater =ee.ImageCollection("JRC/GSW1_1/MonthlyHistory")\
-              .filter(ee.Filter.calendarRange(startYear,endYear,'year'))\
+              .filter(ee.Filter.calendarRange(startWaterYear,endWaterYear,'year'))\
               .filter(ee.Filter.calendarRange(startJulian,endJulian)).mode().eq(2).unmask(0)
 
 water_mask = permWater.Or(tempWater).selfMask()
-studyArea = water_mask.clip(dirty_odell_lake).reduceToVectors(scale = 30)
-
+studyArea = water_mask.clip(clean_or_combo).reduceToVectors(scale = 30)
+# studyArea = dirty_odell_lake
 #If you would like to visualize phenology of trees, the LCMS tree layer works well
 #LCMS land cover classes are as follows:
 # 1: Trees
@@ -156,30 +188,30 @@ studyArea = water_mask.clip(dirty_odell_lake).reduceToVectors(scale = 30)
 # 13: Snow or Ice
 # 14: Water
 # 15: Non-Processing Area Mask
-lcmsLC = ee.ImageCollection("USFS/GTAC/LCMS/v2020-5").select(['Land_Cover']).mode()
-lcmsTreeMask = lcmsLC.eq(1).selfMask()
-studyArea = lcmsTreeMask.clip(uinta_tree).reduceToVectors(scale = 30)
+# lcmsLC = ee.ImageCollection("USFS/GTAC/LCMS/v2020-5").select(['Land_Cover']).mode()
+# lcmsTreeMask = lcmsLC.eq(1).selfMask()
+# studyArea = lcmsTreeMask.clip(uinta_tree).reduceToVectors(scale = 30)
 
-#Can also look at other land cover classes
-#This will look at grasses and shrubs
-lcmsShrubMask = lcmsLC.eq(7).Or(lcmsLC.eq(10)).selfMask()
-studyArea = lcmsShrubMask.clip(wy_shrub).reduceToVectors(scale = 90)
+# #Can also look at other land cover classes
+# #This will look at grasses and shrubs
+# lcmsShrubMask = lcmsLC.eq(7).Or(lcmsLC.eq(10)).selfMask()
+# studyArea = lcmsShrubMask.clip(wy_shrub).reduceToVectors(scale = 90)
 
-#Or you could use the NLCD Tree Canopy Cover layer to get a tree mask
-nlcdTCC =  ee.ImageCollection("USGS/NLCD_RELEASES/2016_REL")\
-              .filter(ee.Filter.calendarRange(2016,2016,'year'))\
-              .select(['percent_tree_cover']).mosaic()
-tccTreeMask = nlcdTCC.gte(30).selfMask()
-studyArea = tccTreeMask.clip(ga_test).reduceToVectors(scale = 30)
+# #Or you could use the NLCD Tree Canopy Cover layer to get a tree mask
+# nlcdTCC =  ee.ImageCollection("USGS/NLCD_RELEASES/2016_REL")\
+#               .filter(ee.Filter.calendarRange(2016,2016,'year'))\
+#               .select(['percent_tree_cover']).mosaic()
+# tccTreeMask = nlcdTCC.gte(30).selfMask()
+# studyArea = tccTreeMask.clip(ga_test).reduceToVectors(scale = 30)
 
 
-#You can also just pass a feature collection (keeping the area relatively small helps ensure it will run)
-states = ee.FeatureCollection("TIGER/2018/States")
-studyArea = states.filter(ee.Filter.eq('STUSPS','VI'))
+# #You can also just pass a feature collection (keeping the area relatively small helps ensure it will run)
+# states = ee.FeatureCollection("TIGER/2018/States")
+# studyArea = states.filter(ee.Filter.eq('STUSPS','VI'))
 #Or also apply a mask to it as well
-studyArea = tccTreeMask.clip(states.filter(ee.Filter.eq('STUSPS','VI')).geometry()).reduceToVectors(scale = 300)
+# studyArea = tccTreeMask.clip(states.filter(ee.Filter.inList('STUSPS',['PR','VI'])).geometry()).reduceToVectors(scale = 300)
 
-studyArea = ga_test
+# studyArea = ga_test#states.filter(ee.Filter.inList('STUSPS',['PR','VI']))
 ######################################################################################
 #Main function calls
 if __name__ == '__main__':
@@ -189,13 +221,13 @@ if __name__ == '__main__':
   
   #Get raw json table of samples of time series across provided area
   if not os.path.exists(output_table_name):
-    getTimeSeriesSample(startYear,endYear,startJulian,endJulian,compositePeriod,exportBands,studyArea,nSamples,os.path.join(table_dir,output_table_name+'.json',),showGEEViz = showGEEViz,maskSnow = maskSnow)
+    getTimeSeriesSample(startYear,endYear,startJulian,endJulian,compositePeriod,exportBands,studyArea,nSamples,os.path.join(table_dir,output_table_name+'.json',),showGEEViz = showGEEViz,maskSnow = maskSnow,programs = programs)
 
 
   #Create plots for each band
   #Get a list of csvs for the specified parameters
-  csvs = glob.glob(os.path.join(table_dir,'*{}-{}_{}_{}*.csv'.format(startJulian,endJulian,compositePeriod,nSamples)))
+  csvs = glob.glob(os.path.join(table_dir,'*{}*_{}-{}_{}_{}*.csv'.format('-'.join(programs),startJulian,endJulian,compositePeriod,nSamples)))
   csvs = [i for i in csvs if int(os.path.splitext(os.path.basename(i))[0].split('_')[-5]) in range(startYear,endYear+1)]
-
+  # print(csvs)
   #Create plots
-  chartTimeSeriesDistributions(csvs,chart_dir,output_table_name + '_{}-{}_{}-{}_{}_{}'.format(startYear,endYear,startJulian,endJulian,compositePeriod,nSamples),overwrite = overwriteCharts,howManyHarmonics = howManyHarmonics,showChart =showChart)
+  chartTimeSeriesDistributions(csvs,chart_dir,output_table_name + '_{}_{}-{}_{}-{}_{}_{}'.format('-'.join(programs),startYear,endYear,startJulian,endJulian,compositePeriod,nSamples),overwrite = overwriteCharts,howManyHarmonics = howManyHarmonics,showChart =showChart,annotate_harmonic_peaks = annotate_harmonic_peaks)

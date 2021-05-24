@@ -3,6 +3,7 @@ var urlParamsObj = {};
 var pageUrl = document.URL;
 var tinyURL = '';
 var urlParams = {};
+
 function setUrl(url){
   var obj = { Title: 'test', Url: url };
   history.pushState(obj, obj.Title, obj.Url);
@@ -688,4 +689,20 @@ Number.prototype.formatNumber = function(n){
 //Taken from: https://stackoverflow.com/questions/196972/convert-string-to-title-case-with-javascript 
 String.prototype.toTitle = function() {
   return this.replace(/(^|\s)\S/g, function(t) { return t.toUpperCase() });
+}
+
+
+//Taken from: https://stackoverflow.com/questions/22015684/how-do-i-zip-two-arrays-in-javascript
+const zip = (a, b) => a.map((k, i) => [k, b[i]]);
+
+//Taken from: https://stackoverflow.com/questions/11688692/how-to-create-a-list-of-unique-items-in-javascript
+function unique(arr) {
+    var u = {}, a = [];
+    for(var i = 0, l = arr.length; i < l; ++i){
+        if(!u.hasOwnProperty(arr[i])) {
+            a.push(arr[i]);
+            u[arr[i]] = 1;
+        }
+    }
+    return a;
 }
