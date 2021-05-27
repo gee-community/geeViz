@@ -440,9 +440,9 @@ def uniqueValues(collection,field):
 def dailyMosaics(imgs):
   #Simplify date to exclude time of day
   def propWrapper(img):
-    d = ee.String(ee.Date(img.get('system:time_start')).format('YYYY-MM-dd_'))
+    d = ee.String(ee.Date(img.get('system:time_start')).format('YYYY-MM-dd'))
     orbit = ee.Number(img.get('SENSING_ORBIT_NUMBER')).format()
-    return img.set('date-orbit',d.cat(orbit))
+    return img.set({'date-orbit':d.cat(ee.String('_')).cat(orbit),'date':d})
   imgs = imgs.map(propWrapper)
 
   #Find the unique days
@@ -450,7 +450,9 @@ def dailyMosaics(imgs):
   
   def dayWrapper(d):
     date = ee.Date(ee.String(d).split('_').get(0))
-    t = imgs.filterDate(date,date.advance(1,'day'))
+    orbit = ee.Number.parse(ee.String(d).split('_').get(1))
+    t = imgs.filterDate(date,date.advance(1,'day'))\
+    .filter(ee.Filter.eq('SENSING_ORBIT_NUMBER',orbit))
     f = ee.Image(t.first())
     t = t.mosaic()
     t = t.set('system:time_start',date.millis())

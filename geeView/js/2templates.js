@@ -1584,6 +1584,7 @@ function addLayer(layer){
 	if(layer.layerType === 'geeImage' || layer.layerType === 'geeVectorImage' || layer.layerType === 'geeImageCollection'){
         //Handle image colletions
         if(layer.layerType === 'geeImageCollection'){
+            // layer.item = ee.ImageCollection(layer.item);
             layer.imageCollection = layer.item;
 
             if(layer.viz.reducer === null || layer.viz.reducer === undefined){
