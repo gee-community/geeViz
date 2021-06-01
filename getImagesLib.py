@@ -2970,8 +2970,42 @@ def getProcessedLandsatAndSentinel2Scenes(
   merged = merged.set(args)
   
   return merged
+#################################################################################
+#Function to register an imageCollection to images within it
+#Always uses the first image as the reference image
+def coRegisterCollection(images,referenceBands = ['nir']):
+    referenceImageIndex = 0
+    referenceImage = ee.Image(images.toList(referenceImageIndex+1).get(referenceImageIndex)).select(referenceBands)
 
-
+    def registerImage(image):
+        #Determine the displacement by matching only the referenceBand bands.
+        displacement_params = {
+            'referenceImage': referenceImage,
+            'maxOffset': 20.0,
+            'projection': None,
+            'patchWidth': 20.0,
+            'stiffness': 5
+            }
+        displacement = image.select(referenceBands).displacement(**displacement_params)
+        return image.displace(displacement)
+        
+    out = ee.ImageCollection(ee.ImageCollection(images.toList(10000,1)).map(registerImage))#(ee.Image(images.toList(10000,0).get(1)),referenceImage)
+    out = ee.ImageCollection(images.limit(1).merge(out))
+    
+    return out
+#################################################################################
+#Function to find a subset of a collection
+#For each group (e.g. tile or orbit or path), all images within that group will be registered
+#As single collection is returned
+def coRegisterGroups(imgs,fieldName = 'SENSING_ORBIT_NUMBER',fieldIsNumeric = True):
+    groups = ee.Dictionary(imgs.aggregate_histogram(fieldName)).keys()
+    if fieldIsNumeric:
+        groups = groups.map(lambda n: ee.Number.parse(n)) 
+        
+    out =ee.ImageCollection(ee.FeatureCollection(groups.map(lambda group:coRegisterCollection(imgs.filter(ee.Filter.eq(fieldName,group))))).flatten())
+    
+    return out
+#################################################################################
 def getLandsatAndSentinel2HybridWrapper(\
   studyArea, 
   startYear, 
