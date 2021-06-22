@@ -20,6 +20,7 @@
 
   --grayy:#6F6259;
   --black:#1B1716DD;
+  --solid-black:#1B1716;
   --black:rgba(27, 23, 22, 0.9);
   --transparent:rgba(0,0,0,0);
   --white:#FFF;
@@ -78,11 +79,17 @@ html, body{
   }
 }
 /*///////////////////////////////////////////////////////*/
+.custom-hidden {display: none;}
 .center {
   display: block;
   margin-left: auto;
   margin-right: auto;
   width: 50%;
+}
+.vcenter {
+    display: inline-block;
+    vertical-align: middle!important;
+    float: none;
 }
 /*Colors*/
 .gray{
@@ -91,7 +98,15 @@ html, body{
 .teal{
   color:var(--teal-100)!important;
 }
+.teal80{
+  color:var(--teal-80)!important;
+}
+.teal-study-area-label{
+  color:var(--teal-80)!important;
+}
 .bg-teal{background-color: var(--teal-100)!important}
+.bg-gray{background-color: var(--deep-brown-100)!important;
+color:var(--deep-brown-20)!important;}
 .bg-black,.btn{
   background-color: var(--black)!important;
   margin:0px!important;
@@ -100,6 +115,8 @@ html, body{
   vertical-align:middle!important;
 
 }
+.bg-solid-black{background-color: var(--solid-black)!important;
+color:var(--white)!important;}
 .time-lapse-active{
   background-color: var(--teal-100)!important;
   color:var(--deep-brown-70)!important;
@@ -141,7 +158,7 @@ html, body{
 .text-black{
   color:var(--black)!important;
 }
-
+table {border: none!important;}
 /*///////////////////////////////////////////////////////*/
 
 .main-container{
@@ -190,6 +207,7 @@ th{font-weight:  600!important}
   color:var(--white);
   background-color: var(--black)!important;
   /*max-height:1.7em;*/
+  font-size:1em;
   z-index:2;
 }
 .image-icon-bar{
@@ -199,6 +217,22 @@ th{font-weight:  600!important}
   border-radius: 0px;
   background:rgba(255,255,255,0.2);
 }
+.home-image-icon-bar{
+  max-height:2em;
+  float:right;
+  margin:0.3em;
+  border-radius: 0px;
+  /*background:rgba(255,255,255,0.2);*/
+}
+.support-icons{
+  max-width:4em;
+  max-height:3em;
+}
+.support-text{
+  color: var(--teal-100)!important;
+}
+.text-capitalize { text-transform: uppercase!important; }
+
 .table-bordered td{    border-right: 1px solid #000!important;border-left: 1px solid #000!important;}
 .chart-table  {
   max-height:30em;
@@ -415,6 +449,18 @@ font-size:0.9em;
 }
 /*///////////////////////////////////////////////////////*/
 /*Scroll bar styling*/
+::-webkit-scrollbar {
+    width: 0.7em;
+}
+
+::-webkit-scrollbar-track {
+     -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--deep-brown-70); 
+  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
+}
 .flexcroll::-webkit-scrollbar {
     width: 0.7em;
 }
@@ -458,7 +504,17 @@ font-size:0.9em;
   color:#000!important;
   outline:none!important;
 }
-
+.bg-download-select{
+  
+  background-color: var(--deep-brown-10)!important;
+  margin:0px!important;
+  color:var(--teal-100)!important;
+  outline:none!important;
+}
+.bg-download-select::selection {
+  color: red; 
+  background: yellow;
+}
 .panel-title > a:after {
     float: right !important;
     font-family: FontAwesome;
@@ -470,7 +526,9 @@ font-size:0.9em;
     float: right !important;
     content:"\f067";
 }
-
+.sub-panel-title{
+  padding-top:0.8em;
+}
 .sub-panel-title > a:after {
   float: left !important;
   font-family: FontAwesome;
@@ -633,7 +691,59 @@ input[type=checkbox]:checked + label:before,input[type=radio].form-check-input:c
   height: .25em ;
   background:var(--deep-brown-100);           
 }
+.ui-slider-horizontal .ui-slider-handle .ui-state-focus{
+  border-radius: 0em!important;
+}
+/*///////////////////////////////////////////////////////////*/
+/*Tree dropdown styling*/
+/*Taken from https://www.w3schools.com/howto/howto_js_treeview.asp*/
+/* Remove default bullets */
+ul, #myUL {
+  list-style-type: none;
+}
 
+/* Remove margins and padding from the parent ul */
+#myUL {
+  margin: 0;
+  padding: 0;
+}
+
+/* Style the caret/arrow */
+.caret {
+  cursor: pointer;
+  user-select: none; /* Prevent text selection */
+}
+
+/* Create the caret/arrow with a unicode, and style it */
+.caret::before {
+  font-family: FontAwesome;
+  content:"\f07b";
+  color: var(--teal-100);
+  display: inline-block;
+  margin-right: 0.2em;
+  /*padding-left:0.5em;*/
+}
+
+/* Rotate the caret/arrow icon when clicked on (using JavaScript) */
+.caret-down::before {
+  font-family: FontAwesome;
+  content:"\f07c";
+  color: var(--teal-100);
+  
+}
+
+/* Hide the nested list */
+.nested {
+  display: none;
+  
+}
+
+/* Show the nested list when the user clicks on the caret/arrow (with JavaScript) */
+.active {
+   display: block;
+   padding-left:1.2em;
+   
+}
 /*
 .ui-slider-horizontal .ui-slider-handle {
 

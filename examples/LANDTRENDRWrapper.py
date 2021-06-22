@@ -1,3 +1,20 @@
+"""
+   Copyright 2021 Ian Housman
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
+
 #Example of how to run the LANDTRENDR temporal segmentation algorithm and view outputs using the Python visualization tools
 #LANDTRENDR original paper: https://www.sciencedirect.com/science/article/pii/S0034425710002245
 #LANDTRENDR in GEE paper: https://www.mdpi.com/2072-4292/10/5/691
@@ -7,8 +24,10 @@ import os,sys
 sys.path.append(os.getcwd())
 
 #Module imports
-from  geeViz.getImagesLib import *
-from geeViz.changeDetectionLib import *
+import geeViz.getImagesLib as getImagesLib
+import geeViz.changeDetectionLib as changeDetectionLib
+ee = getImagesLib.ee
+Map = getImagesLib.Map
 Map.clearMap()
 ####################################################################################################
 #Define user parameters:
@@ -16,7 +35,7 @@ Map.clearMap()
 
 # Specify study area: Study area
 # Can be a featureCollection, feature, or geometry
-studyArea = testAreas['CA']
+studyArea = getImagesLib.testAreas['CA']
 
 # Update the startJulian and endJulian variables to indicate your seasonal 
 # constraints. This supports wrapping for tropics and southern hemisphere.
@@ -112,17 +131,17 @@ scale = None
 ####################################################################################################
 #Start function calls
 ####################################################################################################
-hansen = ee.Image('UMD/hansen/global_forest_change_2018_v1_6').select(['lossyear']).add(2000).int16()
+hansen = ee.Image("UMD/hansen/global_forest_change_2020_v1_8").select(['lossyear']).add(2000).int16()
 hansen = hansen.updateMask(hansen.neq(2000).And(hansen.gte(startYear)).And(hansen.lte(endYear)))
-Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':lossYearPalette},'Hansen Loss Year',False);
+Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':changeDetectionLib.lossYearPalette},'Hansen Loss Year',False);
 
 ####################################################################################################
 #Call on master wrapper function to get Landat scenes and composites
-allImages = getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian).select([indexName])
+allImages = getImagesLib.getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian).select([indexName])
 composites = ee.ImageCollection(ee.List.sequence(startYear,endYear).map(lambda yr: allImages.filter(ee.Filter.calendarRange(yr,yr,'year')).median().set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())))
 
 #Run LANDTRENDR
-ltOut = simpleLANDTRENDR(composites,startYear,endYear,indexName, run_params,lossMagThresh,lossSlopeThresh,\
+ltOut = changeDetectionLib.simpleLANDTRENDR(composites,startYear,endYear,indexName, run_params,lossMagThresh,lossSlopeThresh,\
                                                 gainMagThresh,gainSlopeThresh,slowLossDurationThresh,chooseWhichLoss,\
                                                 chooseWhichGain,addToMap,howManyToPull)
 if exportLTStack:
@@ -147,7 +166,7 @@ if exportLTStack:
 
   
   #Export output
-  exportToAssetWrapper(ltOutStack,exportName,exportPath,outObj,studyArea,scale,crs,transform)
+  getImagesLib.exportToAssetWrapper(ltOutStack,exportName,exportPath,outObj,studyArea,scale,crs,transform)
 ####################################################################################################
 #Load the study region
 Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", False)

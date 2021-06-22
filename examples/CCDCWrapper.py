@@ -1,3 +1,19 @@
+"""
+   Copyright 2021 Ian Housman
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 #Example of how to run CCDC and view outputs using the Python visualization tools
 #Acquires Landsat data, runs CCDC, and tries to add them to the viewer
 #Original CCDC paper: https://www.sciencedirect.com/science/article/pii/S0034425714000248
@@ -9,7 +25,9 @@ import os,sys
 sys.path.append(os.getcwd())
 
 #Module imports
-from  geeViz.getImagesLib import *
+import geeViz.getImagesLib as getImagesLib
+ee = getImagesLib.ee
+Map = getImagesLib.Map
 Map.clearMap()
 ####################################################################################################
 #Define user parameters:
@@ -17,7 +35,7 @@ Map.clearMap()
 
 # Specify study area: Study area
 # Can be a featureCollection, feature, or geometry
-studyArea = testAreas['CA']
+studyArea = getImagesLib.testAreas['CA']
 
 #Update the startJulian and endJulian variables to indicate your seasonal 
 #constraints. This supports wrapping for tropics and southern hemisphere.
@@ -105,7 +123,7 @@ ccdcParams ={
 #Start function calls
 ###############################################################
 #Call on master wrapper function to get Landat and Sentinel 2 scenes
-processedScenes = getProcessedLandsatScenes(studyArea = studyArea,startYear = startYear, endYear = endYear,
+processedScenes = getImagesLib.getProcessedLandsatScenes(studyArea = studyArea,startYear = startYear, endYear = endYear,
                                                         startJulian = startJulian,endJulian = endJulian,
                                                         includeSLCOffL7 = includeSLCOffL7).select(exportBands)
 
@@ -138,7 +156,7 @@ if exportCCDC:
   exportPath = exportPathRoot + '/'+ exportName
 
   #Export output
-  exportToAssetWrapper(ccdc,exportName,exportPath,{'.default':'sample'},studyArea,scale,crs,transform)
+  getImagesLib.exportToAssetWrapper(ccdc,exportName,exportPath,{'.default':'sample'},studyArea,scale,crs,transform)
 
 ####################################################################################################
 #Load the study region

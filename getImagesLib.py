@@ -1197,9 +1197,9 @@ def addTCAngles(image):
   wetness = image.select(['wetness'])
   
   #Calculate Tasseled Cap angles and distances
-  tcAngleBG = brightness.atan2(greenness).divide(Math.PI).rename(['tcAngleBG'])
-  tcAngleGW = greenness.atan2(wetness).divide(Math.PI).rename(['tcAngleGW'])
-  tcAngleBW = brightness.atan2(wetness).divide(Math.PI).rename(['tcAngleBW'])
+  tcAngleBG = brightness.atan2(greenness).divide(math.pi).rename(['tcAngleBG'])
+  tcAngleGW = greenness.atan2(wetness).divide(math.pi).rename(['tcAngleGW'])
+  tcAngleBW = brightness.atan2(wetness).divide(math.pi).rename(['tcAngleBW'])
   tcDistBG = brightness.hypot(greenness).rename(['tcDistBG'])
   tcDistGW = greenness.hypot(wetness).rename(['tcDistGW'])
   tcDistBW = brightness.hypot(wetness).rename(['tcDistBW'])
@@ -1283,6 +1283,14 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicyObje
   #Make sure image is clipped to roi in case it's a multi-part polygon
   if roi != None:
     imageForExport = imageForExport.clip(roi)
+
+    try:
+      roi = roi.geometry()
+    except Exception as e:
+      x = e
+    outRegion = roi.bounds().transform('EPSG:4326', 100).getInfo()['coordinates'][0]
+  else:
+    outRegion = None
   assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
 
   if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
@@ -1301,7 +1309,7 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicyObje
                     assetId = assetPath, 
                     pyramidingPolicy = pyramidingPolicyObject, 
                     dimensions = None, 
-                    #region = outRegion, 
+                    region = outRegion, 
                     scale = scale, 
                     crs = crs, 
                     crsTransform = transform, 
@@ -2841,7 +2849,10 @@ def getProcessedLandsatAndSentinel2Scenes(
       preComputedSentinel2TDOMIRMean = None,
       preComputedSentinel2TDOMIRStdDev = None,
       cloudProbThresh = 40):
-        
+  
+  if toaOrSR == 'SR':
+    runChastainHarmonization = False
+    
   origin = 'Landsat-Sentinel2-Hybrid'
   toaOrSR = toaOrSR.upper()
 
@@ -2920,6 +2931,7 @@ def getProcessedLandsatAndSentinel2Scenes(
     preComputedTDOMIRStdDev = preComputedSentinel2TDOMIRStdDev,
     cloudProbThresh = cloudProbThresh)
 
+
   #Select off common bands between Landsat and Sentinel 2
   commonBands =  ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'sensor']
   ls = ls.select(commonBands)
@@ -2931,11 +2943,16 @@ def getProcessedLandsatAndSentinel2Scenes(
   ls = fillEmptyCollections(ls,dummyImage)
   s2s = fillEmptyCollections(s2s,dummyImage)
 
-  if runChastainHarmonization:
+
+  if runChastainHarmonization and toaOrSR == 'TOA':
     
     # Separate each sensor
+    
     tm = ls.filter(ee.Filter.inList('SENSOR_ID',['TM','ETM']))
     oli = ls.filter(ee.Filter.eq('SENSOR_ID','OLI_TIRS'))
+    # else:
+    #   tm = ls.filter(ee.Filter.inList('sensor',['LANDSAT_4','LANDSAT_5','LANDSAT_7']))
+    #   oli = ls.filter(ee.Filter.eq('sensor','LANDSAT_8'))
     msi = s2s
 
     # Fill if no images exist for particular Landsat sensor
@@ -2963,11 +2980,14 @@ def getProcessedLandsatAndSentinel2Scenes(
     ls = ee.ImageCollection(tm.merge(oli))
 
   # Merge Landsat and S2
-  merged = ls.merge(s2s)
+  merged = ee.ImageCollection(ls.merge(s2s))
+ 
   merged = merged.map(simpleAddIndices)\
             .map(getTasseledCap)\
             .map(simpleAddTCAngles)
+
   merged = merged.set(args)
+
   
   return merged
 #################################################################################

@@ -1,3 +1,19 @@
+"""
+   Copyright 2021 Ian Housman
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 #Example of how to get Landsat data using the getImagesLib and view outputs using the Python visualization tools
 #Acquires Landsat data and then adds them to the viewer
 ####################################################################################################
@@ -5,14 +21,16 @@ import os,sys
 sys.path.append(os.getcwd())
 
 #Module imports
-from  geeViz.getImagesLib import *
+import geeViz.getImagesLib as getImagesLib
+ee = getImagesLib.ee
+Map = getImagesLib.Map
 Map.clearMap()
 ####################################################################################################
 #Define user parameters:
 
 # Specify study area: Study area
 # Can be a featureCollection, feature, or geometry
-studyArea = testAreas['CA']
+studyArea = getImagesLib.testAreas['CA']
 
 # Update the startJulian and endJulian variables to indicate your seasonal 
 # constraints. This supports wrapping for tropics and southern hemisphere.
@@ -136,11 +154,11 @@ resampleMethod = 'near'
 # These have been pre-computed for all CONUS for Landsat and Setinel 2 (separately)
 # and are appropriate to use for any time period within the growing season
 # The cloudScore offset is generally some lower percentile of cloudScores on a pixel-wise basis
-preComputedCloudScoreOffset = getPrecomputedCloudScoreOffsets(cloudScorePctl)['landsat']
+preComputedCloudScoreOffset = getImagesLib.getPrecomputedCloudScoreOffsets(cloudScorePctl)['landsat']
 
 # The TDOM stats are the mean and standard deviations of the two IR bands used in TDOM
 # By default, TDOM uses the nir and swir1 bands
-preComputedTDOMStats = getPrecomputedTDOMStats()
+preComputedTDOMStats = getImagesLib.getPrecomputedTDOMStats()
 preComputedTDOMIRMean = preComputedTDOMStats['landsat']['mean']
 preComputedTDOMIRStdDev = preComputedTDOMStats['landsat']['stdDev']
 
@@ -182,7 +200,7 @@ scale = None
 ####################################################################################################
 ####################################################################################################
 #Call on master wrapper function to get Landat scenes and composites
-lsAndTs = getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,\
+lsAndTs = getImagesLib.getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,\
   timebuffer,weights,compositingMethod,\
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,\
   applyFmaskCloudShadowMask,applyFmaskSnowMask,\
@@ -200,8 +218,8 @@ processedComposites = lsAndTs['processedComposites']
 
 # Map.addLayer(processedComposites.select(['NDVI','NBR']),{'addToLegend':'false'},'Time Series (NBR and NDVI)',False)
 for year in range(startYear + timebuffer      ,endYear + 1 - timebuffer ):
-     t = processedComposites.filter(ee.Filter.calendarRange(year,year,'year')).mosaic()
-     Map.addLayer(t.float(),vizParamsFalse,str(year),'False')
+     t = processedComposites.filter(ee.Filter.calendarRange(year,year,'year')).first()
+     Map.addLayer(t.float(),getImagesLib.vizParamsFalse,str(year),False)
 ####################################################################################################
 #Load the study region
 Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", True)

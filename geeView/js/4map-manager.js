@@ -834,7 +834,7 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
       if(yr !== viz.years[0]){
         viz.addToLegend = false;
         viz.addToClassLegend = false;
-        
+        viz.classLegendDict = null;
       }
       var vizT = Object.assign({},viz);
       vizT.year = yr
@@ -1134,7 +1134,7 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
       viz.queryDict = dicts.queryDict
     }
     //Construct legend
-    if(viz != null && viz.bands == null && viz.addToLegend != false && (viz.classLegendDict == undefined || viz.classLegendDict == null)){
+    if(viz != null && viz.bands == null && viz.addToLegend != false && (viz.addToClassLegend === undefined || viz.addToClassLegend === null || viz.addToClassLegend === false) &&(viz.classLegendDict == undefined || viz.classLegendDict == null )){
       addLegendContainer(legendDivID,'legend-'+whichLayerList,false,helpBox)
       
       var legend ={};
@@ -1187,7 +1187,7 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
        addColorRampLegendEntry(legendDivID,legend)
     }
 
-    else if(viz != null && viz.bands == null && viz.addToClassLegend !== false &&  viz.classLegendDict !== undefined  &&  viz.classLegendDict !== null){
+    else if(viz != null && viz.bands == null  &&  ((viz.classLegendDict !== undefined  &&  viz.classLegendDict !== null) || viz.addToClassLegend === true)){
       
       addLegendContainer(legendDivID,'legend-'+whichLayerList,false,helpBox)
       var classLegendContainerID = legendDivID + '-class-container';
@@ -1262,10 +1262,12 @@ function standardTileURLFunction(url,xThenY,fileExtension,token){
               if(fileExtension === null || fileExtension === undefined  ){fileExtension  = '.png';}
               
               return function(coord, zoom) {
+                    
                     // "Wrap" x (logitude) at 180th meridian properly
                     // NB: Don't touch coord.x because coord param is by reference, and changing its x property breakes something in Google's lib 
                     var tilesPerGlobe = 1 << zoom;
                     var x = coord.x % tilesPerGlobe;
+                    console.log(coord,zoom,x)
                     if (x < 0) {
                         x = tilesPerGlobe+x;
                     }
@@ -1278,6 +1280,7 @@ function standardTileURLFunction(url,xThenY,fileExtension,token){
                     
                 }
             }
+function superSimpleTileURLFunction(url){return function(coord, zoom) {return url + zoom+'/' + coord.y+'/'+coord.x}}
 /////////////////////////////////////////////////////
 //Function to add ee object ot map
 function addRESTToMap(tileURLFunction,name,visible,maxZoom,helpBox,whichLayerList){

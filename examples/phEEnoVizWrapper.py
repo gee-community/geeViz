@@ -1,4 +1,23 @@
-from geeViz.phEEnoViz  import *
+"""
+   Copyright 2021 Ian Housman
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
+import os,glob
+import geeViz.phEEnoViz  as phEEnoViz
+ee = phEEnoViz.ee
+Map = phEEnoViz.Map
 #####################################################################################
 #Exports table of n day median composite values for a sample of point locations
 #It then creates a hovmuller-like plot of the time series
@@ -9,14 +28,14 @@ from geeViz.phEEnoViz  import *
 output_table_dir = r'C:\PheenoViz_Outputs'
 
 #Define output table name (no extension needed)
-output_table_name ='Clean_OR2'
+output_table_name ='Clean_OR3'
 #Set up dates
 #Years can range from 1984-present
 #Julian days can range from 1-365
 startYear = 2015
 endYear = 2020
-startJulian =160
-endJulian = 280
+startJulian =1
+endJulian = 365
 
 #Number of samples to pull (Generally < 3000 or so will work)
 nSamples = 5000
@@ -221,7 +240,7 @@ if __name__ == '__main__':
   
   #Get raw json table of samples of time series across provided area
   if not os.path.exists(output_table_name):
-    getTimeSeriesSample(startYear,endYear,startJulian,endJulian,compositePeriod,exportBands,studyArea,nSamples,os.path.join(table_dir,output_table_name+'.json',),showGEEViz = showGEEViz,maskSnow = maskSnow,programs = programs)
+    phEEnoViz.getTimeSeriesSample(startYear,endYear,startJulian,endJulian,compositePeriod,exportBands,studyArea,nSamples,os.path.join(table_dir,output_table_name+'.json',),showGEEViz = showGEEViz,maskSnow = maskSnow,programs = programs)
 
 
   #Create plots for each band
@@ -230,4 +249,4 @@ if __name__ == '__main__':
   csvs = [i for i in csvs if int(os.path.splitext(os.path.basename(i))[0].split('_')[-5]) in range(startYear,endYear+1)]
   # print(csvs)
   #Create plots
-  chartTimeSeriesDistributions(csvs,chart_dir,output_table_name + '_{}_{}-{}_{}-{}_{}_{}'.format('-'.join(programs),startYear,endYear,startJulian,endJulian,compositePeriod,nSamples),overwrite = overwriteCharts,howManyHarmonics = howManyHarmonics,showChart =showChart,annotate_harmonic_peaks = annotate_harmonic_peaks)
+  phEEnoViz.chartTimeSeriesDistributions(csvs,chart_dir,output_table_name + '_{}_{}-{}_{}-{}_{}_{}'.format('-'.join(programs),startYear,endYear,startJulian,endJulian,compositePeriod,nSamples),overwrite = overwriteCharts,howManyHarmonics = howManyHarmonics,showChart =showChart,annotate_harmonic_peaks = annotate_harmonic_peaks)

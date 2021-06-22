@@ -27,9 +27,9 @@ Based on https://github.com/google/earthengine-community/blob/master/datasets/sc
 import os,sys
 sys.path.append(os.getcwd())
 
-from  geeViz.geeView import *
-import ee
-ee.Initialize()
+import  geeViz.geeView as geeView
+ee = geeView.ee
+Map = geeView.Map
 
 Map.clearMap()
 ####################################################################################################
@@ -164,9 +164,9 @@ justChange = change.map(lambda img:img.updateMask(ee.Image(img.gt(1).And(img.lt(
 Map.addTimeLapse(justChange,{'autoViz':True},'LCMS Change Time Lapse',False)
 
 
-# ##############################################################################
-# #### Map setup ###
-# ##############################################################################
-# Map.centerObject(lcms.filter(ee.Filter.eq('study_area', 'CONUS')).first().geometry())
+##############################################################################
+#### Map setup ###
+##############################################################################
+Map.centerObject(lcms.filter(ee.Filter.eq('study_area', 'CONUS')).first().geometry())
 Map.turnOnInspector()
 Map.view()

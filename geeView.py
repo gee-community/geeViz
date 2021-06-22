@@ -166,7 +166,9 @@ class mapper:
     
     def turnOnInspector(self):
         # self.mapCommandList.append("$('#tools-collapse-div').addClass('show')")
-        self.mapCommandList.append("$('#query-label').click();")
+        query_command = "$('#query-label').click();"
+        if query_command not in self.mapCommandList:
+            self.mapCommandList.append("$('#query-label').click();")
         
     def turnOffAllLayers(self):
         update = {'visible':'false'}

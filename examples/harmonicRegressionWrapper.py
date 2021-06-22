@@ -1,3 +1,19 @@
+"""
+   Copyright 2021 Ian Housman
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 #Example of how to seasonality metrics using harmonic regression with Landsat data
 #Acquires harmonic regression-based seasonality metrics
 ####################################################################################################
@@ -5,7 +21,9 @@ import os,sys
 sys.path.append(os.getcwd())
 
 #Module imports
-from  geeViz.getImagesLib import *
+import geeViz.getImagesLib as getImagesLib
+ee = getImagesLib.ee
+Map = getImagesLib.Map
 Map.clearMap()
 ####################################################################################################
 ####################################################################################################
@@ -13,7 +31,7 @@ Map.clearMap()
 
 # Specify study area: Study area
 # Can be a featureCollection, feature, or geometry
-studyArea = testAreas['CA']
+studyArea = getImagesLib.testAreas['CA']
 
 # Update the startJulian and endJulian variables to indicate your seasonal 
 # constraints. This supports wrapping for tropics and southern hemisphere.
@@ -89,7 +107,7 @@ if seasonalityVizIndexName not in indexNames:indexNames.append(seasonalityVizInd
 ####################################################################################################
 #Function Calls
 #Get all images
-allScenes = getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian).select(indexNames)
+allScenes = getImagesLib.getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian).select(indexNames)
 
 # Map.addLayer(allScenes,vizParamsFalse,'median')
 # Map.view()
@@ -112,7 +130,7 @@ for yr in ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo():
   seasonalityMedian = composite.select([seasonalityVizIndexName])
  
   #Fit harmonic model
-  coeffsPredicted =getHarmonicCoefficientsAndFit(allScenesT,indexNames,whichHarmonics,detrend)
+  coeffsPredicted =getImagesLib.getHarmonicCoefficientsAndFit(allScenesT,indexNames,whichHarmonics,detrend)
 
   
   #Set some properties
@@ -130,7 +148,7 @@ for yr in ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo():
   
   #Optionally simplify coeffs to phase, amplitude, and date of peak
   if 2 in whichHarmonics :
-    pap = ee.Image(getPhaseAmplitudePeak(coeffs))
+    pap = ee.Image(getImagesLib.getPhaseAmplitudePeak(coeffs))
     
     
     vals = coeffs.select(['.*_intercept'])
@@ -146,7 +164,7 @@ for yr in ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo():
 
     #Create synthetic image for peak julian day according the the seasonalityVizIndexName band
     dateImage = ee.Image(yr).add(peakJulians.select([seasonalityVizIndexName + '_peakJulianDay']).divide(365))
-    synth = synthImage(coeffs,dateImage,indexNames,whichHarmonics,detrend);
+    synth = getImagesLib.synthImage(coeffs,dateImage,indexNames,whichHarmonics,detrend);
     Map.addLayer(synth,{'min':0.1,'max':0.4},nameStart + '_Date_of_Max_'+seasonalityVizIndexName+'_Synth_Image',False);
     
     #Turn the HSV data into an RGB image and add it to the map.
@@ -168,7 +186,7 @@ for yr in ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo():
 
     outName = outputName + str(startYearT) + '_'+ str(endYearT)
     outPath = exportPathRoot + '/' + outName
-    exportToAssetWrapper(coeffs,outName,outPath,'mean',studyArea,scale,crs,transform)
+    getImagesLib.exportToAssetWrapper(coeffs,outName,outPath,'mean',studyArea,scale,crs,transform)
   coeffCollection.append(coeffs)
 ####################################################################################################
 #Load the study region

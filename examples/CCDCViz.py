@@ -1,3 +1,19 @@
+"""
+   Copyright 2021 Ian Housman
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+"""
+
 #Example of how to visualize CCDC outputs using the Python visualization tools
 #Adds change products and fitted harmonics from CCDC output to the viewer
 #The general workflow for CCDC is to run the CCDCWrapper.py script, and then either utilize the harmonic model for a given date
@@ -7,8 +23,10 @@ import os,sys
 sys.path.append(os.getcwd())
 
 #Module imports
-from  geeViz.getImagesLib import *
-from geeViz.changeDetectionLib import *
+import geeViz.getImagesLib as getImagesLib
+import geeViz.changeDetectionLib as changeDetectionLib
+ee = getImagesLib.ee
+Map = getImagesLib.Map
 Map.clearMap()
 ####################################################################################################
 #Bring in ccdc image asset
@@ -39,18 +57,18 @@ endYear = 2020
 Map.addLayer(ccdcImg,{},'Raw CCDC Output',False)
 
 #Extract the change years and magnitude
-changeObj = ccdcChangeDetection(ccdcImg,changeDetectionBandName);
-Map.addLayer(changeObj['highestMag']['loss']['year'],{'min':startYear,'max':endYear,'palette':lossYearPalette},'Loss Year')
-Map.addLayer(changeObj['highestMag']['loss']['mag'],{'min':-0.5,'max':-0.1,'palette':lossMagPalette},'Loss Mag',False);
-Map.addLayer(changeObj['highestMag']['gain']['year'],{'min':startYear,'max':endYear,'palette':gainYearPalette},'Gain Year');
-Map.addLayer(changeObj['highestMag']['gain']['mag'],{'min':0.05,'max':0.2,'palette':gainMagPalette},'Gain Mag',False);
+changeObj = changeDetectionLib.ccdcChangeDetection(ccdcImg,changeDetectionBandName);
+Map.addLayer(changeObj['highestMag']['loss']['year'],{'min':startYear,'max':endYear,'palette':changeDetectionLib.lossYearPalette},'Loss Year')
+Map.addLayer(changeObj['highestMag']['loss']['mag'],{'min':-0.5,'max':-0.1,'palette':changeDetectionLib.lossMagPalette},'Loss Mag',False);
+Map.addLayer(changeObj['highestMag']['gain']['year'],{'min':startYear,'max':endYear,'palette':changeDetectionLib.gainYearPalette},'Gain Year');
+Map.addLayer(changeObj['highestMag']['gain']['mag'],{'min':0.05,'max':0.2,'palette':changeDetectionLib.gainMagPalette},'Gain Mag',False);
 
 #Apply the CCDC harmonic model across a time series
 #First get a time series of time images 
-yearImages = getTimeImageCollection(startYear,endYear,startJulian,endJulian,0.1);
+yearImages = changeDetectionLib.getTimeImageCollection(startYear,endYear,startJulian,endJulian,0.1);
 
 #Then predict the CCDC models
-fitted = predictCCDC(ccdcImg,yearImages,fillGaps,whichHarmonics)
+fitted = changeDetectionLib.predictCCDC(ccdcImg,yearImages,fillGaps,whichHarmonics)
 Map.addLayer(fitted.select(['.*_predicted']),{'opacity':0},'Fitted CCDC',True);
 
 
