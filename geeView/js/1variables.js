@@ -145,7 +145,7 @@ function constructUrlSearch(){
 /*Load global variables*/
 var cachedSettingskey = 'settings';
 var startYear = 1985;
-var endYear = 2019;
+var endYear = 2020;
 var startJulian = 153;//190;
 var endJulian = 274;//250;
 var layerObj = null;

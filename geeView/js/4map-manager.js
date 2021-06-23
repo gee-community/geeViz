@@ -1537,7 +1537,12 @@ function reRun(){
   
 
   //Rerun the GEE code
-  setTimeout(function() { run();  $('#close-modal-button').click();setupAreaLayerSelection();}, 1500);
+  setTimeout(function() { 
+    run();  
+    $('#close-modal-button').click();
+    setupAreaLayerSelection();
+    addLabelOverlay();
+  }, 1500);
 	
   
   
@@ -2183,6 +2188,31 @@ function getInfoWindow(xOffset,yOffset){
   });
 } 
 ////////////////////////////////////////////////////////////////
+// Create an overlay to display map labels only
+var labelOverlayAdded = false;
+function addLabelOverlay(){
+  map.overlayMapTypes.setAt(Object.keys(layerObj).length, labelsMapType);
+  labelOverlayAdded = true;
+}
+function removeLabelOverlay(){
+  map.overlayMapTypes.setAt(Object.keys(layerObj).length,null);
+  labelOverlayAdded = false;
+}
+function toggleLabelOverlay(){
+  if(labelOverlayAdded){
+    removeLabelOverlay()
+  }else{addLabelOverlay()}
+}
+var labelsMapType = new google.maps.StyledMapType([
+  {
+    "elementType": "geometry.fill",
+    "stylers": [
+      {
+        "visibility": "off"
+      }
+    ]
+  }
+]);
 //Initialize map
 function initialize() {
   // Create a new StyledMapType object, passing it an array of styles,
@@ -2655,6 +2685,8 @@ function initialize() {
     google.maps.event.addListener(map,'maptypeid_changed',function(){
         console.log('map type id changed')
         urlParams.mapTypeId = map.mapTypeId;
+        if(map.mapTypeId === 'satellite'){removeLabelOverlay()}
+        else{addLabelOverlay()};
     })
 
     //Keep track of map bounds for eeBoundsPoly object 
@@ -2741,7 +2773,7 @@ function initialize() {
       $('#close-modal-button').click();
       $('#intro-modal-loading-div').hide();
       $('#summary-spinner').hide();
-      
+      addLabelOverlay();
     }, 1500);
    
   	});
