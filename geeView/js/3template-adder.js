@@ -1,4 +1,4 @@
-/*This script constructs the page depending on the chosen mode*/
+ /*This script constructs the page depending on the chosen mode*/
 /*Put main elements on body*/
 $('body').append(staticTemplates.map);
 
@@ -300,6 +300,8 @@ addCheckboxes('parameters-collapse-div','index-choice-checkboxes','Choose which 
   }
   addCollapse('sidebar-left','support-collapse-label','support-collapse-div','SUPPORT & FEEDBACK',`<i class="fa fa-question-circle mr-1" aria-hidden="true"></i>`,true,``,'');
   $('#support-collapse-div').append(staticTemplates.walkThroughButton);
+    $('#support-collapse-div').append(`<div class="dropdown-divider"</div>`);
+  $('#support-collapse-div').append(`<p>MTBS burned area boundaries and severity within the Data Explorer and MTBS web map services are updated regularly, but alignment of their update schedule may vary. Please visit the <a href="https://mtbs.gov/direct-download?tab=map-services&target=mtbs-data-explorer" target="_blank" > map services</a> section at MTBS.gov to verify the publication dates when making comparisons between the MTBS data available within these products/services.</p>`)
   $('#support-collapse-div').append(`<div class="dropdown-divider"</div>`);
   $('#support-collapse-div').append(`<p>If you have any issues with this tool or have suggestions on how it could be improved, please <a href="https://www.mtbs.gov/contact" target="_blank" > contact us</a></p>`)
   $('#support-collapse-div').append(`<div class="dropdown-divider mb-2"</div>`);

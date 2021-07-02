@@ -188,7 +188,12 @@ var staticTemplates = {
                         	
                         </div>
                         <div class = 'modal-footer' id = 'introModal-footer'>
-                      
+                        <div class = ' ml-0' id = 'intro-modal-loading-div'>
+                            <p>
+                              <img style="width:1.8em;" class="image-icon fa-spin mr-1" src="images/GEE_logo_transparent.png">
+                                Creating map services within Google Earth Engine. 
+                             </p>
+                        </div>
 						<div class="form-check  mr-0">
                                 <input type="checkbox" class="form-check-input" id="dontShowAgainCheckbox"   name = 'dontShowAgain' value = 'true'>
                                 <label class=" text-uppercase form-check-label " for="dontShowAgainCheckbox" >Don't show again</label>
@@ -210,7 +215,12 @@ var staticTemplates = {
                             
                         </div>
                         <div class = 'modal-footer' id = 'introModal-footer'>
-                      
+                        <div class = ' ml-0' id = 'intro-modal-loading-div'>
+                            <p>
+                              <img style="width:1.8em;" class="image-icon fa-spin mr-1" src="images/GEE_logo_transparent.png">
+                                Creating map services within Google Earth Engine. 
+                             </p>
+                        </div>
                         <div class="form-check  mr-0">
                                 <input type="checkbox" class="form-check-input" id="dontShowAgainCheckbox"   name = 'dontShowAgain' value = 'true'>
                                 <label class=" text-uppercase form-check-label " for="dontShowAgainCheckbox" >Don't show again</label>
@@ -232,7 +242,12 @@ var staticTemplates = {
                             
                         </div>
                         <div class = 'modal-footer' id = 'introModal-footer'>
-                      
+                        <div class = ' ml-0' id = 'intro-modal-loading-div'>
+                            <p>
+                              <img style="width:1.8em;" class="image-icon fa-spin mr-1" src="images/GEE_logo_transparent.png">
+                                Creating map services within Google Earth Engine. 
+                             </p>
+                        </div>
                         <div class="form-check  mr-0">
                                 <input type="checkbox" class="form-check-input" id="dontShowAgainCheckbox"   name = 'dontShowAgain' value = 'true'>
                                 <label class=" text-uppercase form-check-label " for="dontShowAgainCheckbox" >Don't show again</label>

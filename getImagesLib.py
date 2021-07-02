@@ -1309,7 +1309,7 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicyObje
                     assetId = assetPath, 
                     pyramidingPolicy = pyramidingPolicyObject, 
                     dimensions = None, 
-                    region = outRegion, 
+                    region = None, 
                     scale = scale, 
                     crs = crs, 
                     crsTransform = transform, 

@@ -33,6 +33,7 @@ taskLimit = 10
 
 #Function for updating ACL for a given GEE asset path
 def updateACL(assetName,writers = [],all_users_can_read = True,readers = []):
+    print('Updating permissions for: ',assetName)
     ee.data.setAssetAcl(assetName, json.dumps({u'writers': writers, u'all_users_can_read': all_users_can_read, u'readers': readers}))
 
 #--------------------------------------------------------------------------------------------

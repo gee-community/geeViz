@@ -2203,7 +2203,11 @@ function toggleLabelOverlay(){
     removeLabelOverlay()
   }else{addLabelOverlay()}
 }
-var labelsMapType = new google.maps.StyledMapType([
+var labelsMapType;
+
+//Initialize map
+function initialize() {
+  labelsMapType = new google.maps.StyledMapType([
   {
     "elementType": "geometry.fill",
     "stylers": [
@@ -2213,8 +2217,6 @@ var labelsMapType = new google.maps.StyledMapType([
     ]
   }
 ]);
-//Initialize map
-function initialize() {
   // Create a new StyledMapType object, passing it an array of styles,
   // and the name to be displayed on the map type control.
 
