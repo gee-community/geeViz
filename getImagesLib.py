@@ -2118,12 +2118,13 @@ def nDayComposites(images,startYear,endYear,startJulian,endJulian,compositePerio
   def getJdImages(yr,yrImages,start):
     yr = ee.Number(yr).int16()
     start = ee.Number(start).int16()
-    index = ee.Date.fromYMD(yr,1,1).advance(start.subtract(1),'day').format('yyyy-MM-dd')
+    date = ee.Date.fromYMD(yr,1,1).advance(start.subtract(1),'day')
+    index = date.format('yyyy-MM-dd')
     end = start.add(compositePeriod-1).int16()
     jdImages = yrImages.filter(ee.Filter.calendarRange(start,end))
     jdImages = fillEmptyCollections(jdImages,dummyImage)
     composite = jdImages.median()
-    return composite.set('system:index',index)
+    return composite.set({'system:index':index,'system:time_start':date.millis()})
 
   #Set up wrappers
   def jdWrapper(yr,yrImages):

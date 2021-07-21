@@ -596,7 +596,9 @@ function jitterZoom(fromButton){
     // console.log(tDiff)
     console.log('jittering zoom')
     var z = map.getZoom();
+    updateViewList = false;
     map.setZoom(z-1);
+    updateViewList = false;
     map.setZoom(z);
     jittered = true;
     lastJitter = new Date();
@@ -2187,6 +2189,44 @@ function getInfoWindow(xOffset,yOffset){
     close:false
   });
 } 
+//Functions for tracking views and going forward and backward map views
+function trackView(){
+  if(updateViewList){
+    viewList = viewList.slice(0,viewIndex)
+    viewList.push({lng:urlParams.lng, lat:urlParams.lat,zoom:urlParams.zoom});
+    viewIndex = viewList.length;
+    checkViewIndex();
+  }
+}
+//See if there are any remaining views
+function checkViewIndex(){
+  if(viewIndex <= 1){
+    viewIndex = 1
+    $('#back-view-button').prop('disabled',true);
+  }else{$('#back-view-button').prop('disabled',false)};
+
+  if(viewIndex >= viewList.length){
+    viewIndex = viewList.length;
+    $('#forward-view-button').prop('disabled',true);
+  }else{$('#forward-view-button').prop('disabled',false)};
+}
+function setView(view){
+    updateViewList = false;
+    map.setCenter(view);
+    map.setZoom(view.zoom);
+  }
+  function backView(){
+    viewIndex--;
+    checkViewIndex();
+    setView(viewList[viewIndex-1]);
+    
+  }
+  function forwardView(){
+    viewIndex++;
+    checkViewIndex();
+    setView(viewList[viewIndex-1]);
+    
+  } 
 ////////////////////////////////////////////////////////////////
 // Create an overlay to display map labels only
 var labelOverlayAdded = false;
@@ -2215,227 +2255,18 @@ function initialize() {
         "visibility": "off"
       }
     ]
+  },
+  {
+    "elementType": "geometry.stroke",
+    "stylers": [
+      {
+        "weight": 0.01
+      }
+    ]
   }
 ]);
-  // Create a new StyledMapType object, passing it an array of styles,
-  // and the name to be displayed on the map type control.
 
-  //Created with: https://mapstyle.withgoogle.com/
-  var styledMapType = new google.maps.StyledMapType(
-    [
-      {
-        "elementType": "geometry",
-        "stylers": [
-          {
-            "color": "#212121"
-          }
-        ]
-      },
-      {
-        "elementType": "labels.icon",
-        "stylers": [
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "elementType": "labels.text.fill",
-        "stylers": [
-          {
-            "color": "#757575"
-          }
-        ]
-      },
-      {
-        "elementType": "labels.text.stroke",
-        "stylers": [
-          {
-            "color": "#212121"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative",
-        "elementType": "geometry",
-        "stylers": [
-          {
-            "color": "#757575"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative.country",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          {
-            "color": "#9e9e9e"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative.land_parcel",
-        "stylers": [
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative.locality",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          {
-            "color": "#bdbdbd"
-          }
-        ]
-      },
-      {
-        "featureType": "poi",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          {
-            "color": "#757575"
-          }
-        ]
-      },
-      {
-        "featureType": "poi.park",
-        "elementType": "geometry",
-        "stylers": [
-          {
-            "color": "#181818"
-          }
-        ]
-      },
-      {
-        "featureType": "poi.park",
-        "elementType": "geometry.fill",
-        "stylers": [
-          {
-            "color": "#004000"
-          }
-        ]
-      },
-      {
-        "featureType": "poi.park",
-        "elementType": "labels.icon",
-        "stylers": [
-          {
-            "color": "#004000"
-          }
-        ]
-      },
-      {
-        "featureType": "poi.park",
-        "elementType": "labels.text",
-        "stylers": [
-          {
-            "color": "#004000"
-          }
-        ]
-      },
-      {
-        "featureType": "poi.park",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          {
-            "color": "#616161"
-          }
-        ]
-      },
-      {
-        "featureType": "poi.park",
-        "elementType": "labels.text.stroke",
-        "stylers": [
-          {
-            "color": "#1b1b1b"
-          }
-        ]
-      },
-      {
-        "featureType": "road",
-        "elementType": "geometry.fill",
-        "stylers": [
-          {
-            "color": "#2c2c2c"
-          }
-        ]
-      },
-      {
-        "featureType": "road",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          {
-            "color": "#8a8a8a"
-          }
-        ]
-      },
-      {
-        "featureType": "road.arterial",
-        "elementType": "geometry",
-        "stylers": [
-          {
-            "color": "#373737"
-          }
-        ]
-      },
-      {
-        "featureType": "road.highway",
-        "elementType": "geometry",
-        "stylers": [
-          {
-            "color": "#3c3c3c"
-          }
-        ]
-      },
-      {
-        "featureType": "road.highway.controlled_access",
-        "elementType": "geometry",
-        "stylers": [
-          {
-            "color": "#4e4e4e"
-          }
-        ]
-      },
-      {
-        "featureType": "road.local",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          {
-            "color": "#616161"
-          }
-        ]
-      },
-      {
-        "featureType": "transit",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          {
-            "color": "#757575"
-          }
-        ]
-      },
-      {
-        "featureType": "water",
-        "elementType": "geometry",
-        "stylers": [
-          {
-            "color": "#000000"
-          }
-        ]
-      },
-      {
-        "featureType": "water",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          {
-            "color": "#3d3d3d"
-          }
-        ]
-      }
-    ],
-            {name: 'Dark Mode'});
+ 
   var mapTypeIds = ['roadmap', 'satellite', 'hybrid', 'terrain'];
   if(urlParams.mapTypeId  === undefined || urlParams.mapTypeId  === null &&urlParams.mapTypeId.indexOf(urlParams.mapTypeIds)  === -1 ){
     urlParams.mapTypeId = 'hybrid'
@@ -2505,6 +2336,8 @@ function initialize() {
     mapOptions.center = {lng:parseFloat(urlParams.lng),lat:parseFloat(urlParams.lat)};
   }else{
     mapOptions.center = center;
+
+
   }
   if(urlParams.zoom !== undefined && urlParams.zoom !== null ){
     print('Setting zoom from URL')
@@ -2512,11 +2345,11 @@ function initialize() {
   }else{
     mapOptions.zoom = zoom;
   }
-  
-     
+  urlParams.lng =  mapOptions.center.lng;urlParams.lat = mapOptions.center.lat;urlParams.zoom= mapOptions.zoom;
+  // trackView()  
   map = new google.maps.Map(document.getElementById("map"),mapOptions);
   //Associate the styled map with the MapTypeId and set it to display.
-  map.mapTypes.set('dark_mode', styledMapType);
+  // map.mapTypes.set('dark_mode', styledMapType);
   // const drawingManager = new google.maps.drawing.DrawingManager({
   //   drawingMode: google.maps.drawing.OverlayType.MARKER,
   //   drawingControl: true,
@@ -2678,26 +2511,15 @@ function initialize() {
         else{updateMousePositionAndZoom(mouseLng,mouseLat,zoom,lastElevation)}
         
     })
-    //Listen for zoom change and update bottom bar
-    google.maps.event.addListener(map,'zoom_changed',function(){
-        var zoom = map.getZoom();
-        console.log('zoom changed')
-        updateMousePositionAndZoom(mouseLng,mouseLat,zoom,lastElevation)
-    })
-    google.maps.event.addListener(map,'maptypeid_changed',function(){
-        console.log('map type id changed')
-        urlParams.mapTypeId = map.mapTypeId;
-        if(map.mapTypeId === 'satellite'){removeLabelOverlay()}
-        else{addLabelOverlay()};
-    })
-
-    //Keep track of map bounds for eeBoundsPoly object 
-    google.maps.event.addListener(map,'bounds_changed',function(){
+    function trackViewChange(){
+      // console.log('idle')
       zoom = map.getZoom();
       var mapCenter = map.getCenter();
       var mapCenterLng = mapCenter.lng();
       var mapCenterLat = mapCenter.lat();
       urlParams.lng = mapCenterLng;urlParams.lat = mapCenterLat;urlParams.zoom= zoom;
+
+      trackView();
       
       // console.log('bounds changed');
       var bounds = map.getBounds();
@@ -2705,10 +2527,25 @@ function initialize() {
       var keysX = Object.keys(bounds[keys[0]]);
       var keysY = Object.keys(bounds[keys[1]]);
       // console.log('b');console.log(bounds);
+      updateMousePositionAndZoom(mouseLng,mouseLat,zoom,lastElevation);
       eeBoundsPoly = ee.Geometry.Rectangle([bounds[keys[1]][keysX[0]],bounds[keys[0]][keysY[0]],bounds[keys[1]][keysX[1]],bounds[keys[0]][keysY[1]]]);
-        if(typeof(Storage) == "undefined") return;
-        localStorage.setItem(cachedSettingskey,JSON.stringify({center:{lat:mapCenter.lat(),lng:mapCenter.lng()},zoom:zoom}));
-      });
+      if(typeof(Storage) == "undefined") return;
+      localStorage.setItem(cachedSettingskey,JSON.stringify({center:{lat:mapCenterLat,lng:mapCenterLng},zoom:zoom}));
+      updateViewList = true;
+      // setTimeout(function(){updateViewList = true;},10)
+    }
+    //Listen for zoom change and update bottom bar
+    
+    google.maps.event.addListener(map,'maptypeid_changed',function(){
+        console.log('map type id changed')
+        urlParams.mapTypeId = map.mapTypeId;
+        if(map.mapTypeId === 'satellite'){removeLabelOverlay()}
+        else{addLabelOverlay()};
+    })
+
+    //Keep track of map bounds and zoom changes
+    // google.maps.event.addListener(map,'zoom_changed',trackViewChange)
+    google.maps.event.addListener(map,'idle',trackViewChange);
 
     //Specify proxy server location
     //Proxy server used for EE and GCS auth

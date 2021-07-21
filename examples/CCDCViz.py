@@ -33,7 +33,7 @@ Map.clearMap()
 #This is assumed to be an image of arrays that is returned from the ee.Algorithms.TemporalSegmentation.Ccdc method
 ccdcImg = ee.ImageCollection("projects/CCDC/USA_V2")\
           .filter(ee.Filter.eq('spectral', 'SR')).mosaic()
-
+# ccdcImg = ee.ImageCollection('projects/lcms-292214/assets/R8/PR_USVI/Base-Learners/CCDC-Landsat_1984_2020').mosaic()
 #Specify which harmonics to use when predicting the CCDC model
 #CCDC exports the first 3 harmonics (1 cycle/yr, 2 cycles/yr, and 3 cycles/yr)
 #If you only want to see yearly patterns, specify [1]
@@ -71,12 +71,10 @@ yearImages = changeDetectionLib.getTimeImageCollection(startYear,endYear,startJu
 fitted = changeDetectionLib.predictCCDC(ccdcImg,yearImages,fillGaps,whichHarmonics)
 Map.addLayer(fitted.select(['.*_predicted']),{'opacity':0},'Fitted CCDC',True);
 
-
-
 ####################################################################################################
 #Load the study region
 studyArea = ccdcImg.geometry()
 Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", False)
-Map.centerObject(studyArea)
+# Map.centerObject(studyArea)
 ####################################################################################################
 Map.view()

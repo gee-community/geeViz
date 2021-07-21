@@ -86,23 +86,20 @@ function TweetThis(preURL,postURL,openInNewTab,showMessageBox){
         }
     );
 }
-//Adapted from W3 Schools
-function copyText(id,messageBoxId){
-     /* Get the text field */
-  var copyText = document.getElementById(id);
 
-  /* Select the text field */
-  copyText.select();
-  copyText.setSelectionRange(0, 99999); /*For mobile devices*/
-
-  /* Copy the text inside the text field */
-  document.execCommand("copy");
-
-    /* Alert the copied text */
-  if(messageBoxId !== null && messageBoxId !== undefined){
-    $('#'+messageBoxId).html("Copied text to clipboard")
-  }
- 
+function copyText(element,messageBoxId) {
+    var $temp = $("<input>");
+    $("body").append($temp);
+    var text = $('#'+element).text();
+    if(text === ''){text = $('#'+element).val()}
+    $temp.val(text).select();
+    // $temp.setSelectionRange(0, 99999); /*For mobile devices*/
+    document.execCommand("copy");
+    $temp.remove();
+     /* Alert the copied text */
+    if(messageBoxId !== null && messageBoxId !== undefined){
+      $('#'+messageBoxId).html("Copied text to clipboard")
+    }
 }
 function parseUrlSearch(){
   // console.log(window.location.search == '')
@@ -495,6 +492,9 @@ var selectionTracker = {};
 
 var selectionUNID = 1;
 
+var updateViewList = true;
+var viewList = [];
+var viewIndex = 0;
 
 var outputURL;
 var tableConverter = null;
@@ -691,6 +691,15 @@ String.prototype.toTitle = function() {
   return this.replace(/(^|\s)\S/g, function(t) { return t.toUpperCase() });
 }
 
+//Function to produce monthDayNumber monthName year format date string
+Date.prototype.toStringFormat = function(){
+  var  months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  var yr = this.getFullYear();
+  var month = months[this.getMonth()];
+  var day = this.getDate();
+  return `${day} ${month} ${yr}`
+}
 
 //Taken from: https://stackoverflow.com/questions/22015684/how-do-i-zip-two-arrays-in-javascript
 const zip = (a, b) => a.map((k, i) => [k, b[i]]);

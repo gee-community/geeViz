@@ -140,11 +140,16 @@ var staticTemplates = {
 	    					<button onclick = 'TweetThis()' title = 'Click to share your current view' class=" btn input-group-text bg-white search-box pr-1 pl-2" id="share-button"><i class="fa fa-share-alt teal "></i></button>
                             
                             <span class="input-group-text bg-white search-box" id="search-icon"><i class="fa fa-search text-black "></i></span>
+                            
 	  					</div>
 
-			            <input id = 'pac-input' class="form-control bg-white search-box" type="text" placeholder="Search Places">
+			            <input id = 'pac-input' class="form-control bg-white search-box" title = 'Search for places on the map' type="text" placeholder="Search Places">
+                        <div class="input-group-prepend">
+                            <button onclick = 'backView()' title = 'Click to go back a view' class=" btn input-group-text bg-white search-box pr-1 pl-2" id="back-view-button"><i class="fa fa-arrow-left teal "></i></button>
+                            <button onclick = 'forwardView()' title = 'Click to go forward a view' style = 'border-radius: 0px 3px 3px 0px' class=" btn input-group-text bg-white search-box pr-1 pl-2" id="forward-view-button"><i class="fa fa-arrow-right teal "></i></button>
                         </div>
-                        <p class = 'mt-0 mb-1' style = 'display:none;font-size:0.8em;font-weight:bold' id = 'time-lapse-year-label'></p>`,
+                    </div>
+                    <p class = 'mt-0 mb-1' style = 'display:none;font-size:0.8em;font-weight:bold' id = 'time-lapse-year-label'></p>`,
 	introModal:{'LCMS':`<div class="modal fade "  id="introModal" tabindex="-1" role="dialog" >
                 <div class="modal-dialog modal-md " role="document">
                     <div class="modal-content text-dark" style = 'background-color:rgba(230,230,230,0.95);'>
@@ -434,7 +439,30 @@ var staticTemplates = {
                             </div>
                         </div>
                         <hr>
-                        
+                        <div class = 'row p-2'>
+                            <div class = 'col-lg-2 p-0 m-0'>
+                                <h2>"..."</h2>
+                            </div>
+                            <div class = 'col-lg-10  support-text'>
+                              
+                                    Suggested citation: 
+                                    <p class = 'support-text' onclick = 'copyText("suggested-citation-text","copiedCitationMessageBox")'' id = 'suggested-citation-text'>Forest Service, U.S. Department of Agriculture (2021). Landscape Change Monitoring System Data Explorer [Online]. Available at: https://apps.fs.usda.gov/lcms-viewer (Accessed: ${new Date().toStringFormat()}).
+                                    </p>
+                                    <button onclick = 'copyText("suggested-citation-text","copiedCitationMessageBox")'' title = 'Click to copy suggested citation to clipboard' class="py-0  fa fa-copy btn input-group-text bg-white" id = 'copiedCitationMessageBox'>
+                                        
+                                    </button> 
+                                    
+                                        
+                                   
+                                    
+                              
+                                
+                                  
+                                
+                            </div>
+                        </div>
+                        <hr>
+                    
                         <div class = 'row'>
                             <h3 class = ' text-capitalize'>Contact</h3>
                         </div>

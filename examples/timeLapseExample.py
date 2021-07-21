@@ -26,9 +26,9 @@
 import os,sys
 sys.path.append(os.getcwd())
 
-import  geeViz.geeView as geeView
-ee = geeView.ee
-Map = geeView.Map
+import geeViz.getImagesLib as getImagesLib
+ee = getImagesLib.ee
+Map = getImagesLib.Map
 Map.clearMap()
 ####################################################################################################
 #Bring in pre-defined area
@@ -47,9 +47,36 @@ rio = ee.Feature(ee.Geometry.Polygon(\
           [-107.5198171213165, 37.40759534811328],\
           [-106.6189382150665, 37.40759534811328],\
           [-106.6189382150665, 38.080864394376015]]], None, False))
+conus = ee.Feature(ee.Geometry.Polygon(\
+        [
+    [
+      [
+        -124.85720095425737,
+        24.959288058753405
+      ],
+      [
+        -66.97879243191109,
+        24.959288058753405
+      ],
+      [
+        -66.97879243191109,
+        49.632344931561455
+      ],
+      [
+        -124.85720095425737,
+        49.632344931561455
+      ],
+      [
+        -124.85720095425737,
+        24.959288058753405
+      ]
+    ]
+  ], None, False))
+Map.addLayer(conus,{'layerType':'geeVector'},'Conterminous United States for PDSI Time Lapse (double click to zoom to)',False);
 Map.addLayer(gsl,{'layerType':'geeVector'},'Great Salt Lake Example Area for JRC Water Time Lapse (double click to zoom to)',False);
 Map.addLayer(cambodia,{'layerType':'geeVector'},'Cambodia Example Area for Hansen Loss Time Lapse (double click to zoom to)',False);
 Map.addLayer(rio,{'layerType':'geeVector'},'Rio Grande National Forest Example Area for LCMS Loss Time Lapse (double click to zoom to)',True);
+
 #The Map can be centered on featureCollections, features, or geometry
 Map.centerObject(rio)
 
@@ -102,6 +129,19 @@ lcms = ee.ImageCollection.fromImages(lcmsYears.map(lcmsFun))
 
 # Map.addLayer(lcms)
 Map.addTimeLapse(lcms,{'min':lcmsStartYear,'max':lcmsEndYear,'palette':declineYearPalette,'years':lcmsYears.getInfo()},'LCMS Loss Time Lapse')
+
+#Add PDSI time lapse
+pdsiStartYear = 2016
+pdsiEndYear = 2020
+pdsi = ee.ImageCollection("GRIDMET/DROUGHT")\
+    .filter(ee.Filter.calendarRange(pdsiStartYear,pdsiEndYear,'year')).select(['pdsi'])
+
+#Convert 5 day PDSI values into 8 week composites (median)
+pdsi = getImagesLib.nDayComposites(pdsi,pdsiStartYear,pdsiEndYear,1,365,56)
+
+#Add PDSI time lapse
+#This example isn't annual, so the dateFormat and advanceInterval are changed
+Map.addTimeLapse(pdsi,{'min':-5,'max':5,'palette':'F00,888,00F','dateFormat':'YYYYMMdd','advanceInterval':'day'},'PDSI Time Lapse')
 
 #Final step is to launch the viewer
 Map.view()
