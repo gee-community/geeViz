@@ -1681,9 +1681,9 @@ def getCCDCSegCoeffs(timeImg,ccdcImg,fillGaps):
 # 
 # Get CCDC coefficients for each year.
 # yearStartMonth and yearStartDay are the date that you want the CCDC "year" to start at. This is mostly important for Annualized CCDC.
-# For LCMS, this is Sept. 1. So any change that occurs before Sept 1 in that year will be counted in that year, and Sept. 1 and after
+# For CONUS & COASTAL AK LCMS, this is Sept. 1. So any change that occurs before Sept 1 in that year will be counted in that year, and Sept. 1 and after
 # will be counted in the following year.
-def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, yearStartMonth, yearStartDay, tEndExtrapolationPeriod):
+def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, tEndExtrapolationPeriod, yearStartMonth = 9, yearStartDay = 1):
   # Create image collection of images with the proper time stamp as well as a 'year' band with the year fraction.
   timeImgs = getTimeImageCollection(startYear, endYear, startJulian ,endJulian, 1, yearStartMonth, yearStartDay)
 
