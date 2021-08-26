@@ -5,7 +5,7 @@
 * **Smarter GEE initialization** - All modules that call upon ee.Initialize will now check to ensure GEE hasn't already been initialized. If it hasn't, it will initialize.
 
 ## Bug fixes 
-* GEE occasionally wouldn't recognize an imageCollection as such. An explicit cast to imageCollection was now made.
+* GEE occasionally wouldn't recognize an imageCollection as such when adding a TimeLapse. An explicit cast to imageCollection was now made.
 
 
 
