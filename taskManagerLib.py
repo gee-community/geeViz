@@ -20,7 +20,11 @@
 
 import ee, time, re
 from datetime import datetime, timedelta
-ee.Initialize()
+try:
+    z = ee.Number(1).getInfo()
+except:
+    print('Initializing GEE')
+    ee.Initialize()
 
 
 #------------------------------------------------------------------------------
@@ -43,7 +47,25 @@ def trackTasks():
         print()
         time.sleep(10)
         x+=1
-
+def trackTasks2(credential_name = None,id_list = None,task_count = 1):
+  while task_count > 0:
+    tasks = ee.data.getTaskList()
+    if id_list != None:
+      tasks = [i for i in tasks if i['description'] in id_list]
+    ready = [i for i in tasks if i['state'] == 'READY']
+    running = [i for i in tasks if i['state'] == 'RUNNING']
+    running_names = [[str(i['description']),str(timedelta(seconds = int(((time.time()*1000)-int(i['start_timestamp_ms']))/1000)))] for i in running]
+    now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+    if credential_name != None:
+      print(credential_name)
+    print(len(ready),'tasks ready',now)
+    print(len(running),'tasks running',now)
+    print('Running names:')
+    for rn in running_names:print(rn)
+    print()
+    print()
+    time.sleep(5)
+    task_count = len(ready) +len(running) 
 # Standard task tracker - prints number of ready and running tasks each 10 seconds
 def failedTasks():
     tasks = ee.data.getTaskList()

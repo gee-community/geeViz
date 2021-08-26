@@ -3,7 +3,7 @@ __author__ = 'Ian Housman'
 __email__ = 'ian.housman@gmail.com'
 
 #Version format yyyy.m.n
-__version__ = '2021.7.2'
+__version__ = '2021.8.1'
 
 
 

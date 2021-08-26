@@ -47,7 +47,7 @@ endJulian = 273
 # well. If providing pre-computed stats for cloudScore and TDOM, this does not 
 # matter
 startYear = 2018
-endYear = 2020
+endYear = 2021
 
 # Specify an annual buffer to include imagery from the same season 
 # timeframe from the prior and following year. timeBuffer = 1 will result 

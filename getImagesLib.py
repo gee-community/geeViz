@@ -18,7 +18,11 @@
 ######################################################################
 from geeViz.geeView import *
 import math, ee, json, pdb
-ee.Initialize()
+try:
+    z = ee.Number(1).getInfo()
+except:
+    print('Initializing GEE')
+    ee.Initialize()
 ######################################################################
 #Module for getting Landsat, Sentinel 2 and MODIS images/composites
 #Define visualization parameters
@@ -1280,18 +1284,21 @@ def medoidMosaicMSD(inCollection, medoidIncludeBands = None):
 #From earthengine-api batch.Export.toAsset documentation: "region: The lon,lat coordinates for a LinearRing or Polygon specifying the region to export. 
 #     Can be specified as a nested lists of numbers or a serialized string. Defaults to the image's region."
 def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
-  #Make sure image is clipped to roi in case it's a multi-part polygon
-  if roi != None:
-    imageForExport = imageForExport.clip(roi)
+  #Get rid of any spaces
+  assetName = assetName.replace("/\s+/g",'-')
+  assetPath = assetPath.replace("/\s+/g",'-')
 
+  #Pull geometry if feature or featureCollection
+  if roi != None:
     try:
       roi = roi.geometry()
     except Exception as e:
       x = e
-    outRegion = roi.bounds().transform('EPSG:4326', 100).getInfo()['coordinates'][0]
+    imageForExport = imageForExport.clip(roi)
+    outRegion = roi.bounds(100,crs)
   else:
     outRegion = None
-  assetName = assetName.replace("/\s+/g",'-')#Get rid of any spaces
+  
 
   if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
     transform = str(transform)
@@ -1317,53 +1324,59 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicyObje
   print('Exporting:',assetName)
   print(t)
   t.start()
+  # Map.addLayer(imageForExport,vizParamsFalse,assetName)
 exportToAssetWrapper3 = exportToAssetWrapper
 exportToAssetWrapper2 = exportToAssetWrapper
 #########################################################################
-def exportToDriveWrapper(imageForExport,outputName,driveFolderName,roi= None,scale= None,crs = None,transform = None,outputNoData = -32768):
-  #Make sure image is clipped to roi in case it's a multi-part polygon
-  imageForExport = imageForExport.clip(roi).unmask(outputNoData,False)
-
+def exportToDriveWrapper(imageForExport,outputName,driveFolderName,roi,scale= None,crs = None,transform = None,outputNoData = -32768):
   outputName = outputName.replace("/\s+/g",'-')#Get rid of any spaces
+
+  #Pull geometry if feature or featureCollection
   try:
     roi = roi.geometry()
   except Exception as e:
     x = e
 
+  #Make sure image is clipped to roi in case it's a multi-part polygon
+  imageForExport = imageForExport.clip(roi).unmask(outputNoData,False)
+
   if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
     transform = str(transform)
  
  
-  #Ensure bounds are in web mercator
-  outRegion = roi.bounds().transform('EPSG:4326', 100).getInfo()['coordinates'][0]
+  #Ensure bounds are in export projection
+  outRegion = roi.bounds(100,crs)
   
   # Map.addLayer(imageForExport,{},outputName,False)
   t = ee.batch.Export.image.toDrive(imageForExport, outputName, driveFolderName, outputName, None, outRegion, scale, crs, transform, 1e13)
   print('Exporting:',outputName)
   t.start()
 #########################################################################
-def exportToCloudStorageWrapper(imageForExport,outputName,bucketName,roi= None,scale= None,crs = None,transform = None,outputNoData = -32768):
-  #Make sure image is clipped to roi in case it's a multi-part polygon
-  imageForExport = imageForExport.clip(roi).unmask(ee.Image(outputNoData),False)
-
+def exportToCloudStorageWrapper(imageForExport,outputName,bucketName,roi,scale= None,crs = None,transform = None,outputNoData = -32768):
   outputName = outputName.replace("/\s+/g",'-')#Get rid of any spaces
+
+  #Pull geometry if feature or featureCollection
   try:
     roi = roi.geometry()
   except Exception as e:
     x = e
 
+  #Make sure image is clipped to roi in case it's a multi-part polygon
+  imageForExport = imageForExport.clip(roi).unmask(outputNoData,False)
+
   if transform != None and (str(type(transform)) == "<type 'list'>" or str(type(transform)) == "<class 'list'>"):
     transform = str(transform)
  
  
-  #Ensure bounds are in web mercator
-  outRegion = roi.bounds().transform('EPSG:4326', 100).getInfo()['coordinates'][0]
-  
-  # Map.addLayer(imageForExport,{},outputName,False)
-  t = ee.batch.Export.image.toCloudStorage(imageForExport, outputName, bucketName, outputName, None, roi.bounds(), scale, crs, transform, 1e13)
+  #Ensure bounds are in export projection
+  outRegion = roi.bounds(100,crs)
+
+  t = ee.batch.Export.image.toCloudStorage(imageForExport, outputName, bucketName, outputName, None, outRegion, scale, crs, transform, 1e13)
   print('Exporting:',outputName)
   print(t)
   t.start()
+
+
 #########################################################################
 #########################################################################
 #Function for wrapping dates when the startJulian < endJulian
@@ -1832,10 +1845,8 @@ def spatioTemporalJoin(primary, secondary, hourDiff = 24, outKey = 'secondary'):
 # Retains the geometry of the primary, but copies the properties of the secondary collection
 def joinFeatureCollections(primary,secondary,fieldName):
   # Use an equals filter to specify how the collections match.
-  f = ee.Filter.equals({\
-    'leftField': fieldName,
-    'rightField': fieldName\
-  })
+  f = ee.Filter.equals(fieldName,None,fieldName)
+  
   
   # Define the join.
   innerJoin = ee.Join.inner('primary', 'secondary')
@@ -1845,7 +1856,6 @@ def joinFeatureCollections(primary,secondary,fieldName):
   joined = joined.map(lambda f: ee.Feature(f.get('primary')).copyProperties(ee.Feature(f.get('secondary'))))
 
   return joined
-
 #########################################################################
 #########################################################################
 #Method for removing spikes in time series
@@ -2039,8 +2049,8 @@ def getProcessedModis(startYear,
             endJulian,
             zenithThresh = 90,
             addLookAngleBands = True,
-            applyCloudScore = False,
-            applyTDOM = False,
+            applyCloudScore = True,
+            applyTDOM = True,
             useTempInCloudMask = True,
             cloudScoreThresh = 20,
             performCloudScoreOffset = True,
@@ -2177,7 +2187,7 @@ def exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,co
    
     exportPath = exportPathRoot + '/' + exportName
    
-    exportToAssetWrapper(composite,exportName,exportPath,'mean',studyArea.bounds(),scale,crs,transform);
+    exportToAssetWrapper(composite,exportName,exportPath,'mean',studyArea,scale,crs,transform);
     
 #########################################################################
 #########################################################################
@@ -2237,10 +2247,12 @@ def exportCompositeCollection(
     systemTimeStartYear = year+yearWithMajority
     yearOriginal = year
     yearUsed = systemTimeStartYear
-    args['system:time_start'] = ee.Date.fromYMD(systemTimeStartYear, 6, 1).millis()
+    # args['system:time_start'] = ee.Date.fromYMD(systemTimeStartYear, 6, 1).millis()
 
     composite = composite.set(formatArgs(args))
-  
+    
+    composite = composite.set('system:time_start',ee.Date.fromYMD(systemTimeStartYear, 6, 1).millis())
+    
     if additionalPropertyDict != None:
       if 'args' in additionalPropertyDict.keys():
         del additionalPropertyDict['args']
@@ -3586,102 +3598,133 @@ def synthImage(coeffs,dateImage,indexNames,harmonics,detrend):
   out = out.select(ee.List.sequence(1, out.bandNames().size().subtract(1)))
  
   return out
-#########################################################################
-#########################################################################
-# // function getHarmonicFit(allImages,indexNames,whichHarmonics){
-# //   getHarmonicCoefficients(allImages,indexNames,whichHarmonics)
-# //   // newPredict(coeffs,withHarmonics)
-  
-# // //   var dateStack = getDateStack(startDate.get('year'),endDate.get('year'),startDate.getFraction('year').multiply(365),endDate.getFraction('year').multiply(365),syntheticFrequency);
-# // //   var synthHarmonics = getHarmonics2(dateStack,'year',whichHarmonics)
-# // //   var predictedBandNames = indexNames.map(function(nm){
-# // //     return ee.String(nm).cat('_predicted')
-# // //   })
-# // //   var syntheticStack = ee.ImageCollection(newPredict(coeffs,synthHarmonics)).select(predictedBandNames,indexNames)
- 
-# // //   //Filter out and visualize synthetic test image
-# // //   Map.addLayer(syntheticStack.median(),vizParams,'Synthetic All Images Composite',false);
-# // //   var test1ImageSynth = syntheticStack.filterDate(test1Start,test1End);
-# // //   Map.addLayer(test1ImageSynth,vizParams,'Synthetic Test 1 Composite',false);
-# // //   var test2ImageSynth = syntheticStack.filterDate(test2Start,test2End);
-# // //   Map.addLayer(test2ImageSynth,vizParams,'Synthetic Test 2 Composite',false);
-  
-  
-# // //   //Export image for download
-# // //   var forExport = setNoData(coeffs.clip(sa),outNoData);
-# // //   Map.addLayer(forExport,vizParamsCoeffs,'For Export',false);
-# // //   Export.image(forExport,exportName,{'crs':crs,'region':regionJSON,'scale':exportRes,'maxPixels':1e13})
-  
-# // //   Export.table(ee.FeatureCollection([metaData]),exportName + '_metadata');
-# // //   return syntheticStack
-# // }
-# ////////////////////////////////////////////////////////////////////////////////
-# //Wrapper function to get climate data
-# // Supports:
-# // NASA/ORNL/DAYMET_V3
-# // UCSB-CHG/CHIRPS/DAILY (precipitation only)
-# //and possibly others
-# function getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,
-#   timebuffer,weights,compositingReducer,
-#   exportComposites,exportPathRoot,crs,transform,scale,exportBands){
-    
-#   // Prepare dates
-#   //Wrap the dates if needed
-#   var wrapOffset = 0;
-#   if (startJulian > endJulian) {
-#     wrapOffset = 365;
-#   }
-#   var startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day');
-#   var endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day');
-#   print('Start and end dates:', startDate, endDate);
-#   print('Julian days are:',startJulian,endJulian);
-#   //Get climate data
-#   var c = ee.ImageCollection(collectionName)
-#           .filterBounds(studyArea.bounds())
-#           .filterDate(startDate,endDate)
-#           .filter(ee.Filter.calendarRange(startJulian,endJulian));
-  
-#   // Create composite time series
-#   var ts = compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,null,compositingReducer);
-  
-#   if(exportComposites){
-#     //Set up export bands if not specified
-#     if(exportBands === null || exportBands === undefined){
-#       exportBands = ee.Image(ts.first()).bandNames();
-#     }
-#     print('Export bands are:',exportBands);
-#     //Export collection
-#     exportCollection(exportPathRoot,collectionName,studyArea, crs,transform,scale,
-#       ts,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands);
-     
-#   }
-  
-#   return ts;
-#   }
-# //////////////////////////////////////////
-# /////////////////////////////////////////////////////////////////////
-# //Adds absolute difference from a specified band summarized by a provided percentile
-# //Intended for custom sorting across collections
-# var addAbsDiff = function(inCollection, qualityBand, percentile,sign){
-#   var bestQuality = inCollection.select([qualityBand]).reduce(ee.Reducer.percentile([percentile]));
-#   var out = inCollection.map(function(image) {
-#     var delta = image.select([qualityBand]).subtract(bestQuality).abs().multiply(sign);
-#     return image.addBands(delta.select([0], ['delta']));
-#   });
-#   return out
-# };
-# ////////////////////////////////////////////////////////////
-# //Method for applying the qualityMosaic function using a specified percentile
-# //Useful when the max of the quality band is not what is wanted
-# var customQualityMosaic = function(inCollection,qualityBand,percentile){
-#   //Add an absolute difference from the specified percentile
-#   //This is inverted for the qualityMosaic function to properly prioritize
-#   var inCollectionDelta = addAbsDiff(inCollection, qualityBand, percentile,-1);
-  
-#   //Apply the qualityMosaic function
-#   return inCollectionDelta.qualityMosaic('delta');
+#####################################################################
+#Wrapper function to get climate data
+# Supports:
+# NASA/ORNL/DAYMET_V3
+# NASA/ORNL/DAYMET_V4
+# UCSB-CHG/CHIRPS/DAILY (precipitation only)
+#and possibly others
+def getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,endJulian,timebuffer,weights,compositingReducer,exportComposites = False,exportPathRoot = None,crs = None,transform = None,scale = None,exportBands = None):
+  args = formatArgs(locals())
+  if 'args' in args.keys():
+    del args['args']
+  print(args)
 
-# };
+  #Prepare dates
+  #Wrap the dates if needed
+  wrapOffset = 0
+  if startJulian > endJulian:
+    wrapOffset = 365
+
+  startDate = ee.Date.fromYMD(startYear,1,1).advance(startJulian-1,'day')
+  endDate = ee.Date.fromYMD(endYear,1,1).advance(endJulian-1+wrapOffset,'day')
+  print('Start and end dates:', startDate.format('YYYY-MM-dd').getInfo(), endDate.format('YYYY-MM-dd').getInfo())
+  print('Julian days are:',startJulian,endJulian)
+
+  #Get climate data
+  c = ee.ImageCollection(collectionName)\
+           .filterBounds(studyArea)\
+           .filterDate(startDate,endDate)\
+           .filter(ee.Filter.calendarRange(startJulian,endJulian))
+
+  #Set to appropriate resampling method
+  c = c.map(lambda img: img.resample('bicubic'))
+  Map.addLayer(c,{},'Raw Climate',False)
+
+  #Create composite time series
+  ts = compositeTimeSeries(c,startYear,endYear,startJulian,endJulian,timebuffer,weights,None,compositingReducer)
+  ts = ee.ImageCollection(ts.map(lambda i : i.float()))
+
+  #Export composite collection
+  if exportComposites:
+    #Set up export bands if not specified
+    if exportBands == None:
+      exportBands = ee.List(ee.Image(ts.first()).bandNames())
+
+    exportCollection(exportPathRoot,collectionName.split('/')[-1],studyArea, crs,transform,scale,ts,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands)
+  
+  return ts####
+#####################################################################
+#Adds absolute difference from a specified band summarized by a provided percentile
+#Intended for custom sorting across collections
+def addAbsDiff(inCollection, qualityBand, percentile,sign):
+  bestQuality = inCollection.select([qualityBand]).reduce(ee.Reducer.percentile([percentile]))
+  def w(image):
+    delta = image.select([qualityBand]).subtract(bestQuality).abs().multiply(sign)
+    return image.addBands(delta.select([0], ['delta']))
+  out = inCollection.map(w)
+  return out
+
+#####################################################################
+#Method for applying the qualityMosaic function using a specified percentile
+#Useful when the max of the quality band is not what is wanted
+def customQualityMosaic(inCollection,qualityBand,percentile):
+  #Add an absolute difference from the specified percentile
+  #This is inverted for the qualityMosaic function to properly prioritize
+  inCollectionDelta = addAbsDiff(inCollection, qualityBand, percentile,-1)
+  
+  #Apply the qualityMosaic function
+  return inCollectionDelta.qualityMosaic('delta')
+
+#####################################################################
+#Jeff Ho Method for algal bloom detection
+#https://www.nature.com/articles/s41586-019-1648-7
+
+# Simplified Script for Landsat Water Quality
+# Produces a map of an algal bloom in Lake Erie on 2011/9/3
+# Created on 12/7/2015 by Jeff Ho
+
+# Specifies a threshold for hue to estimate "green" pixels
+# this is used as an additional filter to refine the algorithm above
+def HoCalcGreenness(img):
+  #map r, g, and b for more readable algebra below
+  r = img.select(['red'])
+  g = img.select(['green'])
+  b = img.select(['blue'])
+  
+  #calculate intensity, hue
+  I = r.add(g).add(b).rename(['I'])
+  mins = r.min(g).min(b).rename(['mins'])
+  H = mins.where(mins.eq(r),(b.subtract(r)).divide(I.subtract(r.multiply(3))).add(1) )
+  H = H.where(mins.eq(g),(r.subtract(g)).divide(I.subtract(g.multiply(3))).add(2) )
+  H = H.where(mins.eq(b),(g.subtract(b)).divide(I.subtract(b.multiply(3))) )
+    
+  #pixels with hue below 1.6 more likely to be bloom and not suspended sediment
+  Hthresh = H.lte(1.6)
+  
+  return H.rename('H')
+
+
+#Apply bloom detection algorithm
+def HoCalcAlgorithm1(image):
+  truecolor = 1 #show true color image as well
+  testThresh = False # add a binary image classifying into "bloom"and "non-bloom
+  bloomThreshold = 0.02346 #threshold for classification fit based on other data
+  greenessThreshold = 1.6
+
+  # Algorithm 1 based on:
+  # Wang, M., & Shi, W. (2007). The NIR-SWIR combined atmospheric 
+  #  correction approach for MODIS ocean color data processing. 
+  #  Optics Express, 15(24), 15722–15733.
+  
+  # Add secondary filter using greenness function below
+  image = image.addBands(HoCalcGreenness(image))
+
+  # Apply algorithm 1: B4 - 1.03*B5
+  #bloom1 = image.select('nir').subtract(image.select('swir1').multiply(1.03)).rename('bloom1')
+
+  # Get binary image by applying the threshold
+  bloom1_mask = image.select("H").lte(greenessThreshold).rename(["bloom1_mask"])
+  
+
+  return image\
+          .addBands(bloom1)\
+          .addBands(bloom1_mask)
+
+
+
+
 # //////////////////////////////////////////////////////////////////////////
 # // END FUNCTIONS
 # ////////////////////////////////////////////////////////////////////////////////

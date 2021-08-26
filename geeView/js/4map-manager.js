@@ -681,7 +681,8 @@ function addTimeLapseToMap(item,viz,name,visible,label,fontColor,helpBox,whichLa
     //Force time lapses to be turned off on load to speed up loading
     var visible = false;
   if(viz.opacity === undefined || viz.opacity === null){viz.opacity = 1}
-   
+  item = ee.ImageCollection(item);
+
   var checked = '';
   if(visible){checked = 'checked'}
   var legendDivID = name.replaceAll(' ','-')+ '-' +NEXT_LAYER_ID.toString() ;

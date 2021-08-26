@@ -25,10 +25,8 @@ folder
 
 4. You can also install with git. If installing this way, first install the Python GEE package (`pip install earthengine-api`)
 5. Then clone this repository (`git clone https://github.com/rcr-usfs/geeViz`) into your Python's site-packages 
-6. To stay up to date, pull the latest commit (`git pull origin master`)
+6. To stay up to date, upgrade via PIP (`pip install earthengine-api --upgrade`) or pull the latest commit (`git pull origin master`)
 7. This repository is also available within the FS gitHub instance (<https://code.fs.usda.gov/forest-service/geeViz>)
-   * To add this instance to your local git instance execute `remote add https://code.fs.usda.gov/forest-service/geeViz` in a git bash
-   * Now you can pull the latest from your origin (`git pull origin master`) or github (`git pull github master`)
 
 ## Using
 * Several examples are available within the examples module to help you get started. To test, enter the following command within the Python build you installed geeViz in: 
@@ -43,7 +41,8 @@ folder
 	* `from geeViz.examples import lcmsViewerExample`
 	* `from geeViz.examples import phEEnoVizWrapper`
 
-* When these examples are run, a viewer should open in your default browser.  It will show any data that was added to the map.
+* There are several notebook eamples also available. These are very similar to their script counterparts, but are better for learning how to use the tool.
+* When these examples are run, a viewer should open in your default browser. It will show any data that was added to the map.
 * Layers can be toggled on/off and opacity changed.  They can also be measured and queried under the TOOLS pane.
 
 

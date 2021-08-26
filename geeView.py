@@ -27,7 +27,11 @@ else:
     import http.server, socketserver 
 ######################################################################
 #Set up GEE and paths
-ee.Initialize()
+try:
+    z = ee.Number(1).getInfo()
+except:
+    print('Initializing GEE')
+    ee.Initialize()
 
 geeVizFolder = 'geeViz'
 geeViewFolder = 'geeView'
@@ -40,8 +44,8 @@ paths = sys.path
 gee_py_modules_dir = site.getsitepackages()[-1]
 
 py_viz_dir = gee_py_modules_dir+'/'+geeVizFolder +'/'
-os.chdir(py_viz_dir)
-print('geeViz package folder:', os.getcwd())
+# os.chdir(py_viz_dir)
+print('geeViz package folder:', py_viz_dir)
 
 #Specify location of files to run
 template = py_viz_dir +geeViewFolder +'/index.html'
@@ -61,7 +65,7 @@ def run_local_server(port = 8001):
     else:
         server_name = 'http.server'
         
-    call = subprocess.Popen('"{}" -m {} {}'.format(sys.executable, server_name,str(local_server_port)),shell = True)
+    call = subprocess.Popen('"{}" -m {} -d {} {}'.format(sys.executable, server_name,py_viz_dir,str(local_server_port)),shell = True)
     call.wait()
 #Function to see if port is active
 def isPortActive(port = 8001):
