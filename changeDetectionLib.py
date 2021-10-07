@@ -1702,11 +1702,13 @@ def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, tEndExtra
 
 
 # Using annualized time series, get fitted values and slopes from fitted values.
-def getFitSlopeCCDC(annualSegCoeffs, startYear, endYear):
+def getFitSlopeCCDC(annualSegCoeffs, startYear, endYear, whichHarmonics = [1,2,3]):
   # Predict across each time image
-  whichBands = ee.Image(annualSegCoeffs.first()).select(['.*_INTP']).bandNames().map(lambda bn: ee.String(bn).split('_').get(0))
-  whichBands = ee.Dictionary(whichBands.reduce(ee.Reducer.frequencyHistogram())).keys()
-  fitted = annualSegCoeffs.map(lambda img: simpleCCDCPredictionAnnualized(img,'year',whichBands))
+  # whichBands = ee.Image(annualSegCoeffs.first()).select(['.*_INTP']).bandNames().map(lambda bn: ee.String(bn).split('_').get(0))
+  # whichBands = ee.Dictionary(whichBands.reduce(ee.Reducer.frequencyHistogram())).keys()
+  # fitted = annualSegCoeffs.map(lambda img: simpleCCDCPredictionAnnualized(img,'year',whichBands))
+  timeBandName = ee.Image(annualSegCoeffs.first()).select([0]).bandNames().get(0)
+  fitted = simpleCCDCPredictionWrapper(annualSegCoeffs, timeBandName, whichHarmonics)
   
   # Get back-casted slope using the fitted values
   diff = ee.ImageCollection(ee.List.sequence(ee.Number(startYear).add(ee.Number(1)), endYear).map(lambda rightYear: yearlySlope(rightYear, fitted)))
@@ -1722,8 +1724,8 @@ def yearlySlope(rightYear, fitted):
   leftYear = ee.Number(rightYear).subtract(1)
   rightFitted = ee.Image(fitted.filter(ee.Filter.calendarRange(rightYear, rightYear, 'year')).first())
   leftFitted = ee.Image(fitted.filter(ee.Filter.calendarRange(leftYear, leftYear, 'year')).first())
-  slopeNames = rightFitted.select(['.*_fitted']).bandNames().map(lambda name: ee.String(ee.String(name).split('_fitted').get(0)).cat(ee.String('_fitSlope')))
-  slope = rightFitted.select(['.*_fitted']).subtract(leftFitted.select(['.*_fitted'])).rename(slopeNames)
+  slopeNames = rightFitted.select(['.*_predicted']).bandNames().map(lambda name: ee.String(ee.String(name).split('_predicted').get(0)).cat(ee.String('_fitSlope')))
+  slope = rightFitted.select(['.*_predicted']).subtract(leftFitted.select(['.*_predicted'])).rename(slopeNames)
   return rightFitted.addBands(slope)
 
 def simpleCCDCPredictionAnnualized(img,timeBandName,whichBands):
