@@ -1683,9 +1683,16 @@ def getCCDCSegCoeffs(timeImg,ccdcImg,fillGaps):
 # yearStartMonth and yearStartDay are the date that you want the CCDC "year" to start at. This is mostly important for Annualized CCDC.
 # For CONUS & COASTAL AK LCMS, this is Sept. 1. So any change that occurs before Sept 1 in that year will be counted in that year, and Sept. 1 and after
 # will be counted in the following year.
-def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, tEndExtrapolationPeriod, yearStartMonth = 9, yearStartDay = 1):
+# 10/21 LSC Added Capability to use pixel-wise Composite Dates instead of set dates. 
+# If used, set annualizeWithCompositeDates to True and provide imported/prepped composite image collection with 'year' and 'julianDay' bands
+def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, tEndExtrapolationPeriod, 
+  yearStartMonth = 9, yearStartDay = 1, annualizeWithCompositeDates = False, compositeCollection = None):
+
   # Create image collection of images with the proper time stamp as well as a 'year' band with the year fraction.
-  timeImgs = getTimeImageCollection(startYear, endYear, startJulian ,endJulian, 1, yearStartMonth, yearStartDay)
+  if annualizeWithCompositeDates:
+    timeImgs = getTimeImageCollectionFromComposites(startJulian, endJulian, compositeCollection)
+  else:
+    timeImgs = getTimeImageCollection(startYear, endYear, startJulian ,endJulian, 1, yearStartMonth, yearStartDay)
 
   # If selected, add a constant amount of time to last end segment to make sure the last year is annualized correctly.
   # tEndExtrapolationPeriod should be a fraction of a year.
@@ -1702,13 +1709,11 @@ def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, tEndExtra
 
 
 # Using annualized time series, get fitted values and slopes from fitted values.
-def getFitSlopeCCDC(annualSegCoeffs, startYear, endYear, whichHarmonics = [1,2,3]):
+def getFitSlopeCCDC(annualSegCoeffs, startYear, endYear):
   # Predict across each time image
-  # whichBands = ee.Image(annualSegCoeffs.first()).select(['.*_INTP']).bandNames().map(lambda bn: ee.String(bn).split('_').get(0))
-  # whichBands = ee.Dictionary(whichBands.reduce(ee.Reducer.frequencyHistogram())).keys()
-  # fitted = annualSegCoeffs.map(lambda img: simpleCCDCPredictionAnnualized(img,'year',whichBands))
-  timeBandName = ee.Image(annualSegCoeffs.first()).select([0]).bandNames().get(0)
-  fitted = simpleCCDCPredictionWrapper(annualSegCoeffs, timeBandName, whichHarmonics)
+  whichBands = ee.Image(annualSegCoeffs.first()).select(['.*_INTP']).bandNames().map(lambda bn: ee.String(bn).split('_').get(0))
+  whichBands = ee.Dictionary(whichBands.reduce(ee.Reducer.frequencyHistogram())).keys()
+  fitted = annualSegCoeffs.map(lambda img: simpleCCDCPredictionAnnualized(img,'year',whichBands))
   
   # Get back-casted slope using the fitted values
   diff = ee.ImageCollection(ee.List.sequence(ee.Number(startYear).add(ee.Number(1)), endYear).map(lambda rightYear: yearlySlope(rightYear, fitted)))
@@ -1728,6 +1733,8 @@ def yearlySlope(rightYear, fitted):
   slope = rightFitted.select(['.*_predicted']).subtract(leftFitted.select(['.*_predicted'])).rename(slopeNames)
   return rightFitted.addBands(slope)
 
+# This function is ALMOST the same as simpleCCDCPrediction(), except that you don't use the harmonic coefficients, just the slope and intercept.
+# This is necessary if using a pixel-wise composite date method instead of one consistent date for annualization.
 def simpleCCDCPredictionAnnualized(img,timeBandName,whichBands):
 
   # Pull out the time band in the yyyy.ff format
@@ -1738,7 +1745,7 @@ def simpleCCDCPredictionAnnualized(img,timeBandName,whichBands):
   slopes = img.select(['.*_SLP']).multiply(tBand)
   
   # Set up final output band names
-  outBns = whichBands.map(lambda bn: ee.String(bn).cat('_CCDC_fitted'))
+  outBns = whichBands.map(lambda bn: ee.String(bn).cat('_predicted'))
   
   # Iterate across each band and predict value
   predicted = ee.ImageCollection(whichBands.map(lambda bn: ee.Image([intercepts.select(ee.String(bn).cat('_.*')),
@@ -1776,6 +1783,44 @@ def getTimeImageCollection(startYear, endYear, startJulian = 1, endJulian = 365,
   return yearImages.filter(ee.Filter.calendarRange(startYear,endYear,'year'))\
                       .filter(ee.Filter.calendarRange(startJulian,endJulian))
 
+# This creates an image collection in the same format as getTimeImageCollection(), but gets the pixel-wise dates from a composite collection
+# Composite collection should be an imported and prepped image collection with 'julianDay' and 'year' bands
+def getTimeImageCollectionFromComposites(startJulian, endJulian, compositeCollection):
+  # Account for date wrapping. If julian day is less than startJulian, add one year.
+  # For PRUSVI CCDC, Year 2020 is day 152 2020 to day 151 2021
+  # For CONUS CCDC, Year 2020 is day 1 2020 to day 365 2020, so it will never be less.
+  def getWrappedFraction(jDay):
+    fraction = jDay.divide(365)
+    nextYearMask = jDay.lte(ee.Image.constant(startJulian))
+    thisYearMask = nextYearMask.Not()
+    nextYearFraction = fraction.updateMask(nextYearMask).add(1)
+    thisYearFraction = fraction.updateMask(thisYearMask)
+    fraction = nextYearFraction.addBands(thisYearFraction).reduce(ee.Reducer.max())
+    return fraction
+  medianFraction = compositeCollection.select('julianDay')\
+    .map(lambda jDay: getWrappedFraction(jDay))\
+    .reduce(ee.Reducer.median())
+
+  def getYearTimeImage(dateImg):
+    # Get Unmasked values
+    newDateImg = ee.Image(dateImg.select('year').add(dateImg.select('julianDay').divide(365))).copyProperties(dateImg, ['system:time_start'])    
+    
+    # Create values for masked pixels  
+    imgYear = dateImg.date().get('year');
+    medianValues = ee.Image.constant(imgYear).float().add(ee.Image(medianFraction)).rename('median_values');
+    
+    # Fill masked Values with median fraction
+    compositeMask = ee.Image(newDateImg).mask()
+    out = ee.Image(newDateImg)\
+      .addBands(medianValues.updateMask(compositeMask.Not()))\
+      .reduce(ee.Reducer.max())\
+      .rename('year')\
+      .copyProperties(dateImg, ['system:time_start']);
+
+    return out
+  yearImages = compositeCollection.map(lambda dateImg: getYearTimeImage(dateImg))
+
+  return yearImages
 ###################################################################################
 #Function for getting change years and magnitudes for a specified band from CCDC outputs
 #Only change from the breaks is extracted

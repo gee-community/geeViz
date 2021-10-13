@@ -166,21 +166,21 @@ def humansize(nbytes):
 l=[]
 def assetsize(asset):
     header=ee.data.getInfo(asset)['type']
-    if header=="ImageCollection":
+    if header=="IMAGE_COLLECTION":
         collc=ee.ImageCollection(asset)
         size=collc.aggregate_array('system:asset_size')
         print('')
         print(str(asset)+" ===> "+str(humansize(sum(size.getInfo()))))
         print('Total number of items in collection: '+str(collc.size().getInfo()))
-    elif header=="Image":
+    elif header=="IMAGE":
         collc=ee.Image(asset)
         print('')
         print(str(asset)+" ===> "+str(humansize(collc.get('system:asset_size').getInfo())))
-    elif header=="Table":
+    elif header=="TABLE":
         collc=ee.FeatureCollection(asset)
         print('')
         print(str(asset)+" ===> "+str(humansize(collc.get('system:asset_size').getInfo())))
-    elif header =="Folder":
+    elif header =="FOLDER":
         b=subprocess.check_output("earthengine du "+asset+" -s",shell=True)
         num=subprocess.check_output("earthengine ls "+asset,shell=True)
         size=humansize(float(b.strip().split(' ')[0]))
