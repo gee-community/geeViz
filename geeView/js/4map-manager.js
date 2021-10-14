@@ -1190,8 +1190,7 @@ function addToMap(item,viz,name,visible,label,fontColor,helpBox,whichLayerList,q
        addColorRampLegendEntry(legendDivID,legend)
     }
 
-    else if(viz != null && viz.bands == null  &&  ((viz.classLegendDict !== undefined  &&  viz.classLegendDict !== null) || viz.addToClassLegend === true)){
-      
+    else if(viz != null   &&  ((viz.classLegendDict !== undefined  &&  viz.classLegendDict !== null) || viz.addToClassLegend === true)){
       addLegendContainer(legendDivID,'legend-'+whichLayerList,false,helpBox)
       var classLegendContainerID = legendDivID + '-class-container';
       var legendClassContainerName;

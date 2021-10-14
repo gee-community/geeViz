@@ -17,8 +17,7 @@
 #Intended to work within the geeViz package
 ######################################################################
 #Import modules
-import ee
-import sys,os,webbrowser,json,socket,subprocess,site
+import ee,sys,os,webbrowser,json,socket,subprocess,site,time
 from threading import Thread
 from IPython.display import IFrame
 if sys.version_info[0] < 3:
@@ -43,15 +42,15 @@ paths = sys.path
 
 gee_py_modules_dir = site.getsitepackages()[-1]
 
-py_viz_dir = gee_py_modules_dir+'/'+geeVizFolder +'/'
+py_viz_dir = os.path.join(gee_py_modules_dir,geeVizFolder)
 # os.chdir(py_viz_dir)
 print('geeViz package folder:', py_viz_dir)
 
 #Specify location of files to run
-template = py_viz_dir +geeViewFolder +'/index.html'
-ee_run_dir =  py_viz_dir+ geeViewFolder +'/js/'
+template = os.path.join(py_viz_dir,geeViewFolder,'index.html')
+ee_run_dir =  os.path.join(py_viz_dir, geeViewFolder,'js')
 if os.path.exists(ee_run_dir) == False:os.makedirs(ee_run_dir)
-ee_run = ee_run_dir + 'runGeeViz.js'
+ee_run = os.path.join(ee_run_dir, 'runGeeViz.js')
 
 #Specify port to run on
 local_server_port = 8005    
@@ -64,9 +63,19 @@ def run_local_server(port = 8001):
         server_name = 'SimpleHTTPServer'
     else:
         server_name = 'http.server'
-        
-    call = subprocess.Popen('"{}" -m {} -d {} {}'.format(sys.executable, server_name,py_viz_dir,str(local_server_port)),shell = True)
-    call.wait()
+    # c = '"{}" -m {} -d "{}" {}'.format(sys.executable, server_name,py_viz_dir,str(local_server_port))
+    cwd = os.getcwd()
+    os.chdir(py_viz_dir)
+    # print('cwd',os.getcwd())
+    c = '"{}" -m {}  {}'.format(sys.executable, server_name,local_server_port)
+    print('HTTP server command:',c)
+    # call = 
+    subprocess.Popen(c,shell = True)
+    os.chdir(cwd)
+    # print('cwd',os.getcwd())
+    # call.wait()
+
+
 #Function to see if port is active
 def isPortActive(port = 8001):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -124,7 +133,7 @@ class mapper:
         
         self.mapCommandList.append(command)
     #Function for launching the web map after all adding to the map has been completed
-    def view(self,open_browser = True, open_iframe = False):
+    def view(self,open_browser = True, open_iframe = False,iframe_height = 500):
         print('Starting webmap')
 
         #Set up js code to populate
@@ -150,19 +159,19 @@ class mapper:
         oo.close()
         if not isPortActive(local_server_port):
             print('Starting local web server at: http://localhost:{}/{}/'.format(local_server_port,geeViewFolder))
-            # run_local_server(local_server_port)
-            # subprocess.Popen('python -m SimpleHTTPServer '+str(local_server_port),shell = True)
-            t = Thread(target = run_local_server,args = (local_server_port,))
-            t.start()
+            run_local_server(local_server_port)
+            print('Done')
+            # t = Thread(target = run_local_server,args = (local_server_port,))
+            # t.start()
 
         else:
             print('Local web server at: http://localhost:{}/{}/ already serving.'.format(local_server_port,geeViewFolder))
             # print('Refresh browser instance')
-        
+        print('cwd',os.getcwd())
         if open_browser:
             webbrowser.open('http://localhost:{}/{}/'.format(local_server_port,geeViewFolder),new = 1)
         if open_iframe:
-            self.IFrame = IFrame(src='http://localhost:{}/{}/'.format(local_server_port,geeViewFolder), width='100%', height='500px')
+            self.IFrame = IFrame(src='http://localhost:{}/{}/'.format(local_server_port,geeViewFolder), width='100%', height='{}px'.format(iframe_height))
     def clearMap(self):
         self.layerNumber = 1
         self.idDictList = []

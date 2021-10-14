@@ -51,7 +51,7 @@ endJulian = 365
 #well. If providing pre-computed stats for cloudScore and TDOM, this does not 
 #matter
 startYear = 1984
-endYear = 2020
+endYear = 2021
 
 #Choose whether to include Landat 7
 #Generally only included when data are limited

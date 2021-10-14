@@ -30,7 +30,6 @@ ee = getImagesLib.ee
 Map = getImagesLib.Map
 Map.clearMap()
 ####################################################################################################
-#Define user parameters:
 # Define user parameters:
 
 # Specify study area: Study area
@@ -43,8 +42,8 @@ studyArea = getImagesLib.testAreas['CA']
 # to June 1 of that year.Otherwise, all system:time_starts will default to June 1 of the given year
 # startJulian: Starting Julian date 
 # endJulian: Ending Julian date
-startJulian = 190
-endJulian = 250
+startJulian = 152
+endJulian = 273
 
 # Specify start and end years for all analyses
 # More than a 3 year span should be provided for time series methods to work 
@@ -52,7 +51,7 @@ endJulian = 250
 # pre-computed stats for cloudScore and TDOM, this does not 
 # matter
 startYear = 1990  
-endYear = 2020
+endYear = 2021
 
 
 
@@ -133,12 +132,13 @@ scale = None
 ####################################################################################################
 hansen = ee.Image("UMD/hansen/global_forest_change_2020_v1_8").select(['lossyear']).add(2000).int16()
 hansen = hansen.updateMask(hansen.neq(2000).And(hansen.gte(startYear)).And(hansen.lte(endYear)))
-Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':changeDetectionLib.lossYearPalette},'Hansen Loss Year',False);
+Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':changeDetectionLib.lossYearPalette},'Hansen Loss Year',False)
 
 ####################################################################################################
 #Call on master wrapper function to get Landat scenes and composites
 allImages = getImagesLib.getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian).select([indexName])
-composites = ee.ImageCollection(ee.List.sequence(startYear,endYear).map(lambda yr: allImages.filter(ee.Filter.calendarRange(yr,yr,'year')).median().set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())))
+dummyImage = allImages.first()
+composites = ee.ImageCollection(ee.List.sequence(startYear,endYear).map(lambda yr: getImagesLib.fillEmptyCollections(allImages.filter(ee.Filter.calendarRange(yr,yr,'year')),dummyImage).median().set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())))
 
 #Run LANDTRENDR
 ltOut = changeDetectionLib.simpleLANDTRENDR(composites,startYear,endYear,indexName, run_params,lossMagThresh,lossSlopeThresh,\

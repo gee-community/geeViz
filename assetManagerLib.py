@@ -23,7 +23,11 @@
 
 import sys, ee, os, shutil, subprocess, datetime, calendar, json
 import time, logging, pdb
-ee.Initialize()
+try:
+    z = ee.Number(1).getInfo()
+except:
+    print('Initializing GEE')
+    ee.Initialize()
 
 taskLimit = 10
 

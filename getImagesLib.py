@@ -18,6 +18,7 @@
 ######################################################################
 from geeViz.geeView import *
 import math, ee, json, pdb
+from threading import Thread
 try:
     z = ee.Number(1).getInfo()
 except:
@@ -70,10 +71,10 @@ changeDirDict = {\
 #The TDOM stats are the mean and standard deviations of the two bands used in TDOM
 #By default, TDOM uses the nir and swir1 bands
 preComputedCloudScoreOffset = ee.ImageCollection('projects/lcms-tcc-shared/assets/CS-TDOM-Stats/cloudScore').mosaic()
-preComputedTDOMStats = ee.ImageCollection('projects/lcms-tcc-shared/assets/CS-TDOM-Stats/TDOM').mosaic().divide(10000)
+preComputedTDOMStats = ee.ImageCollection('projects/lcms-tcc-shared/assets/CS-TDOM-Stats/TDOM').filter(ee.Filter.eq('endYear',2019)).mosaic().divide(10000)
 
 
-def getPrecomputedCloudScoreOffsets(cloudScorePctl):
+def getPrecomputedCloudScoreOffsets(cloudScorePctl = 10):
   return {'landsat': preComputedCloudScoreOffset.select(['Landsat_CloudScore_p{}'.format(cloudScorePctl)]),
           'sentinel2':preComputedCloudScoreOffset.select(['Sentinel2_CloudScore_p{}'.format(cloudScorePctl)])
           }
@@ -95,12 +96,20 @@ def getPrecomputedTDOMStats():
 #FUNCTIONS
 ######################################################################
 ######################################################################
+#Function to asynchronously print ee objects
+def printEE(eeObject,message = ''):
+  def printIt(eeObject):
+    print(message,eeObject.getInfo())
+    print()
+  t = Thread(target = printIt,args = (eeObject,))
+  t.start()
+######################################################################
+######################################################################
 #Function to set null value for export or conversion to arrays
 def setNoData(image,noDataValue):
   # args = formatArgs(locals())
   image = image.unmask(noDataValue, False)#.set('noDataValue', noDataValue)
   return image#.set(args)
-
 ######################################################################
 ######################################################################
 # Formats arguments as strings so can be easily set as properties
@@ -3667,6 +3676,23 @@ def customQualityMosaic(inCollection,qualityBand,percentile):
   #Apply the qualityMosaic function
   return inCollectionDelta.qualityMosaic('delta')
 
+#####################################################################
+#On-the-fly basic water masking method
+#This method is used to provide a time-sensitive water mask
+#This method tends to work well if there is no wet snow present
+#Wet snow over flat areas can result in false positives
+def simpleWaterMask(img,contractPixels = 1.5):
+  img = addTCAngles(img);
+  ned = ee.Image("USGS/NED").resample('bicubic')
+  slope = ee.Terrain.slope(ned.focal_mean(5.5))
+  flat = slope.lte(10)
+  
+  waterMask = img.select(['tcAngleBW']).gte(-0.05)\
+    .And(img.select(['tcAngleBG']).lte(0.05))\
+    .And(img.select(['brightness']).lt(0.3))\
+    .And(flat).focal_min(contractPixels)
+  
+  return waterMask
 #####################################################################
 #Jeff Ho Method for algal bloom detection
 #https://www.nature.com/articles/s41586-019-1648-7

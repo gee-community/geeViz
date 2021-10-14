@@ -31,6 +31,8 @@ except:
 #                     Standard Task Tracking 
 #------------------------------------------------------------------------------
 # Standard task tracker - prints number of ready and running tasks each 10 seconds
+def now():
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 def trackTasks():
     x = 1
     while x <1000:
@@ -66,6 +68,17 @@ def trackTasks2(credential_name = None,id_list = None,task_count = 1):
     print()
     time.sleep(5)
     task_count = len(ready) +len(running) 
+#Get tasks in an easy-to-use format
+def getTasks(id_list = None):
+    tasks = ee.data.getTaskList()
+    if id_list != None:
+      tasks = [i for i in tasks if i['description'] in id_list]
+    out = {}
+    out['ready'] = [i['description'] for i in tasks if i['state'] == 'READY']
+    out['running'] = [i['description'] for i in tasks if i['state'] == 'RUNNING']
+    out['failed'] = [i['description'] for i in tasks if i['state'] == 'FAILED']
+    out['completed'] = [i['description'] for i in tasks if i['state'] == 'COMPLETED']
+    return out
 # Standard task tracker - prints number of ready and running tasks each 10 seconds
 def failedTasks():
     tasks = ee.data.getTaskList()

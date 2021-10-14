@@ -432,6 +432,8 @@ def prepTimeSeriesForLandTrendr(ts,indexName, run_params):
 def LANDTRENDRVertStack(composites, indexName, run_params, startYear, endYear):
   creationDate = datetime.strftime(datetime.now(),'%Y%m%d')
 
+  composites = composites.filter(ee.Filter.calendarRange(startYear,endYear,'year'))
+  
   # Prep Time Series and put into run parameters
   prepDict = prepTimeSeriesForLandTrendr(composites, indexName, run_params)
   run_params = prepDict['run_params']
@@ -439,7 +441,7 @@ def LANDTRENDRVertStack(composites, indexName, run_params, startYear, endYear):
 
   # Run LANDTRENDR
   rawLt = ee.Algorithms.TemporalSegmentation.LandTrendr(**run_params)
-  
+  # Map.addLayer(rawLt,{},'raw lt {}-{}'.format(startYear,endYear))
   # Convert to image stack
   lt = rawLt.select([0])
   ltStack = ee.Image(getLTvertStack(lt, run_params)).updateMask(countMask)
@@ -1686,7 +1688,7 @@ def getCCDCSegCoeffs(timeImg,ccdcImg,fillGaps):
 def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, tEndExtrapolationPeriod, yearStartMonth = 9, yearStartDay = 1):
   # Create image collection of images with the proper time stamp as well as a 'year' band with the year fraction.
   timeImgs = getTimeImageCollection(startYear, endYear, startJulian ,endJulian, 1, yearStartMonth, yearStartDay)
-
+  Map.addLayer(timeImgs,{},'time')
   # If selected, add a constant amount of time to last end segment to make sure the last year is annualized correctly.
   # tEndExtrapolationPeriod should be a fraction of a year.
   finalTEnd = ccdcImg.select('tEnd')
