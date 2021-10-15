@@ -133,7 +133,7 @@ class mapper:
         
         self.mapCommandList.append(command)
     #Function for launching the web map after all adding to the map has been completed
-    def view(self,open_browser = True, open_iframe = False,iframe_height = 500):
+    def view(self,open_browser = True, open_iframe = False,iframe_height = 525):
         print('Starting webmap')
 
         #Set up js code to populate

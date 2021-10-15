@@ -1691,7 +1691,7 @@ def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, tEndExtra
   yearStartMonth = 9, yearStartDay = 1, annualizeWithCompositeDates = False, compositeCollection = None):
 
   # Create image collection of images with the proper time stamp as well as a 'year' band with the year fraction.
-  if annualizeWithCompositeDates:
+  if annualizeWithCompositeDates and compositeCollection != None:
     timeImgs = getTimeImageCollectionFromComposites(startJulian, endJulian, compositeCollection)
   else:
     timeImgs = getTimeImageCollection(startYear, endYear, startJulian ,endJulian, 1, yearStartMonth, yearStartDay)

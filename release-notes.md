@@ -1,3 +1,14 @@
+# geeViz 2021.10.1 Release Notes
+## October 15, 2021
+
+## New Features
+* **LANDTRENDRWrapper Notebook** - A new example of how to use LandTrendr in a Jupyter Notebook format. This is very similar to the script, but provides a little more detail of the resources available to run LandTrendr.
+
+
+## Bug fixes 
+* geeView would not work in ArcPro Miniconda Python builds (and perhaps others). The new fix addresses this issue and allows it to run from Miniconda Python builds based from ArcPro
+
+
 # geeViz 2021.8.1 Release Notes
 ## August 26, 2021
 
