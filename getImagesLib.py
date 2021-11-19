@@ -31,23 +31,27 @@ vizParamsFalse = {\
   'min': 0.1, 
   'max': [0.5,0.6,0.6], 
   'bands': 'swir2,nir,red', 
-  'gamma': 1.6\
+  'gamma': 1.6,
+  'layerType':'geeImage'\
 }
 vizParamsFalse10k = {\
   'min': 0.1*10000, 
   'max': [0.5*10000,0.6*10000,0.6*10000], 
   'bands': 'swir2,nir,red', 
-  'gamma': 1.6\
+  'gamma': 1.6,
+  'layerType':'geeImage'\
 }
 vizParamsTrue = {\
   'min': 0, 
   'max': [0.2,0.2,0.2], 
   'bands': 'red,green,blue', 
+  'layerType':'geeImage'\
 }
 vizParamsTrue10k = {\
   'min': 0, 
   'max': [0.2*10000,0.2*10000,0.2*10000], 
-  'bands': 'red,green,blue', 
+  'bands': 'red,green,blue',
+  'layerType':'geeImage'\
 }
 
 #Direction of  a decrease in photosynthetic vegetation- add any that are missing
@@ -511,7 +515,7 @@ def getS2(studyArea,
   #Get some s2 data
   print('Using S2 Collection:', s2CollectionDict[toaOrSR])
   s2s = ee.ImageCollection(s2CollectionDict[toaOrSR])\
-            .filterDate(startDate, endDate)\
+            .filterDate(startDate, endDate.advance(1,'day'))\
             .filter(ee.Filter.calendarRange(startJulian, endJulian))\
             .filterBounds(studyArea)\
             .map(multS2)\
@@ -522,7 +526,7 @@ def getS2(studyArea,
   if addCloudProbability:
     print('Joining pre-computed cloud probabilities from: COPERNICUS/S2_CLOUD_PROBABILITY')
     cloudProbabilities = ee.ImageCollection("COPERNICUS/S2_CLOUD_PROBABILITY")\
-                    .filterDate(startDate, endDate)\
+                    .filterDate(startDate, endDate.advance(1,'day'))\
                     .filter(ee.Filter.calendarRange(startJulian, endJulian))\
                     .filterBounds(studyArea)\
                     .select(['probability'],['cloud_probability'])
@@ -578,12 +582,17 @@ def getLandsat(studyArea,
     'L7SR': ee.List([0,1,2,3,4,5,6,'pixel_qa']),\
     'L5SR': ee.List([0,1,2,3,4,5,6,'pixel_qa']),\
     'L4SR': ee.List([0,1,2,3,4,5,6,'pixel_qa']),\
+    'L4SRC2': ee.List([0,1,2,3,4,5,6,'pixel_qa']),\
+    'L8SRC2': ee.List([1,2,3,4,5,8,6,'pixel_qa']),\
+    'L7SRC2': ee.List([0,1,2,3,4,5,6,'pixel_qa']),\
+    'L5SRC2': ee.List([0,1,2,3,4,5,6,'pixel_qa']),\
+    'L4SRC2': ee.List([0,1,2,3,4,5,6,'pixel_qa']),\
     'L8SRFMASK': ee.List(['pixel_qa']),\
     'L7SRFMASK': ee.List(['pixel_qa']),\
     'L5SRFMASK': ee.List(['pixel_qa']),\
     'L4SRFMASK': ee.List(['pixel_qa'])\
     }
-  
+  #https://code.earthengine.google.com/cb7c17278249217d49ba6fb08db8aa87
   sensorBandNameDict = {\
     'TOA': ee.List(['blue','green','red','nir','swir1','temp','swir2','BQA']),\
     'SR': ee.List(['blue','green','red','nir','swir1','temp', 'swir2','pixel_qa']),\
@@ -599,7 +608,11 @@ def getLandsat(studyArea,
     'L8SR': 'LANDSAT/LC08/C01/T1_SR',\
     'L7SR': 'LANDSAT/LE07/C01/T1_SR',\
     'L5SR': 'LANDSAT/LT05/C01/T1_SR',\
-    'L4SR': 'LANDSAT/LT04/C01/T1_SR'\
+    'L4SR': 'LANDSAT/LT04/C01/T1_SR',\
+    'L8SRC2': 'LANDSAT/LC08/C02/T1_L2',\
+    'L7SRC2': 'LANDSAT/LE07/C02/T1_L2',\
+    'L5SRC2': 'LANDSAT/LT05/C02/T1_L2',\
+    'L4SRC2': 'LANDSAT/LT04/C02/T1_L2'\
     };
   
   multImageDict = {\
@@ -609,14 +622,14 @@ def getLandsat(studyArea,
   def getCollections(toaOrSR):
     #Get Landsat data
     l4s = ee.ImageCollection(collectionDict['L4'+ toaOrSR])\
-      .filterDate(startDate,endDate)\
+      .filterDate(startDate,endDate.advance(1,'day'))\
       .filter(ee.Filter.calendarRange(startJulian,endJulian))\
       .filterBounds(studyArea)\
       .filter(ee.Filter.lte('WRS_ROW',120))\
       .select(sensorBandDict['L4'+ toaOrSR],sensorBandNameDict[toaOrSR])
       
     l5s = ee.ImageCollection(collectionDict['L5'+ toaOrSR])\
-      .filterDate(startDate,endDate)\
+      .filterDate(startDate,endDate.advance(1,'day'))\
       .filter(ee.Filter.calendarRange(startJulian,endJulian))\
       .filterBounds(studyArea)\
       .filter(ee.Filter.lte('WRS_ROW',120))\
@@ -628,7 +641,7 @@ def getLandsat(studyArea,
       l5s = l5s.map(defringeLandsat)
 
     l8s = ee.ImageCollection(collectionDict['L8'+ toaOrSR])\
-      .filterDate(startDate,endDate)\
+      .filterDate(startDate,endDate.advance(1,'day'))\
       .filter(ee.Filter.calendarRange(startJulian,endJulian))\
       .filterBounds(studyArea)\
       .filter(ee.Filter.lte('WRS_ROW',120))\
@@ -638,7 +651,7 @@ def getLandsat(studyArea,
     if includeSLCOffL7:
       print('Including All Landsat 7')
       l7s = ee.ImageCollection(collectionDict['L7'+toaOrSR])\
-        .filterDate(startDate,endDate)\
+        .filterDate(startDate,endDate.advance(1,'day'))\
         .filter(ee.Filter.calendarRange(startJulian,endJulian))\
         .filterBounds(studyArea)\
         .filter(ee.Filter.lte('WRS_ROW',120))\
@@ -646,8 +659,8 @@ def getLandsat(studyArea,
     else:
       print('Only including SLC On Landsat 7');
       l7s = ee.ImageCollection(collectionDict['L7'+toaOrSR])\
-        .filterDate(ee.Date.fromYMD(1998,1,1),ee.Date.fromYMD(2003,5,31))\
-        .filterDate(startDate,endDate)\
+        .filterDate(ee.Date.fromYMD(1998,1,1),ee.Date.fromYMD(2003,5,31).advance(1,'day'))\
+        .filterDate(startDate,endDate.advance(1,'day'))\
         .filter(ee.Filter.calendarRange(startJulian,endJulian))\
         .filterBounds(studyArea)\
         .filter(ee.Filter.lte('WRS_ROW',120))\
@@ -663,21 +676,21 @@ def getLandsat(studyArea,
   if toaOrSR.lower() == 'toa' and addPixelQA:
     print('Acquiring SR qa bands for applying Fmask to TOA data')
     l4sTOAFMASK = ee.ImageCollection(collectionDict['L4SR'])\
-              .filterDate(startDate, endDate)\
+              .filterDate(startDate, endDate.advance(1,'day'))\
               .filter(ee.Filter.calendarRange(startJulian, endJulian))\
               .filterBounds(studyArea)\
               .filter(ee.Filter.lte('WRS_ROW',120))\
               .select(sensorBandDict['L4SRFMASK'], sensorBandNameDict['SRFMASK'])
               
     l5sTOAFMASK = ee.ImageCollection(collectionDict['L5SR'])\
-              .filterDate(startDate, endDate)\
+              .filterDate(startDate, endDate.advance(1,'day'))\
               .filter(ee.Filter.calendarRange(startJulian, endJulian))\
               .filterBounds(studyArea)\
               .filter(ee.Filter.lte('WRS_ROW',120))\
               .select(sensorBandDict['L5SRFMASK'], sensorBandNameDict['SRFMASK'])
 
     l8sTOAFMASK = ee.ImageCollection(collectionDict['L8SR'])\
-              .filterDate(startDate, endDate)\
+              .filterDate(startDate, endDate.advance(1,'day'))\
               .filter(ee.Filter.calendarRange(startJulian, endJulian))\
               .filterBounds(studyArea)\
               .filter(ee.Filter.lte('WRS_ROW',120))\
@@ -686,7 +699,7 @@ def getLandsat(studyArea,
     if includeSLCOffL7: 
       print('Including All Landsat 7 for TOA QA')
       l7sTOAFMASK = ee.ImageCollection(collectionDict['L7SR'])\
-              .filterDate(startDate, endDate)\
+              .filterDate(startDate, endDate.advance(1,'day'))\
               .filter(ee.Filter.calendarRange(startJulian, endJulian))\
               .filterBounds(studyArea)\
               .filter(ee.Filter.lte('WRS_ROW',120))\
@@ -694,8 +707,8 @@ def getLandsat(studyArea,
     else:
       print('Only including SLC On Landsat 7 for TOA QA');
       l7sTOAFMASK =  ee.ImageCollection(collectionDict['L7SR'])\
-              .filterDate(ee.Date.fromYMD(1998,1,1), ee.Date.fromYMD(2003,5,31))\
-              .filterDate(startDate, endDate)\
+              .filterDate(ee.Date.fromYMD(1998,1,1), ee.Date.fromYMD(2003,5,31).advance(1,'day'))\
+              .filterDate(startDate, endDate.advance(1,'day'))\
               .filter(ee.Filter.calendarRange(startJulian, endJulian))\
               .filterBounds(studyArea)\
               .filter(ee.Filter.lte('WRS_ROW',120))\
@@ -1460,7 +1473,7 @@ def compositeTimeSeries(
       endDateT = ee.Date.fromYMD(yr,1,1).advance(endJulian-1+wrapOffset,'day')
 
       #Filter images for given date range
-      lsT = ls.filterDate(startDateT,endDateT)
+      lsT = ls.filterDate(startDateT,endDateT.advance(1,'day'))
       lsT = fillEmptyCollections(lsT,dummyImage)
       return lsT
     images = yearsTT.map(yrGetter)    
@@ -3634,7 +3647,7 @@ def getClimateWrapper(collectionName,studyArea,startYear,endYear,startJulian,end
   #Get climate data
   c = ee.ImageCollection(collectionName)\
            .filterBounds(studyArea)\
-           .filterDate(startDate,endDate)\
+           .filterDate(startDate,endDate.advance(1,'day'))\
            .filter(ee.Filter.calendarRange(startJulian,endJulian))
 
   #Set to appropriate resampling method
@@ -3681,11 +3694,11 @@ def customQualityMosaic(inCollection,qualityBand,percentile):
 #This method is used to provide a time-sensitive water mask
 #This method tends to work well if there is no wet snow present
 #Wet snow over flat areas can result in false positives
-def simpleWaterMask(img,contractPixels = 1.5):
+def simpleWaterMask(img,contractPixels = 1.5,slope_thresh = 10):
   img = addTCAngles(img);
   ned = ee.Image("USGS/NED").resample('bicubic')
   slope = ee.Terrain.slope(ned.focal_mean(5.5))
-  flat = slope.lte(10)
+  flat = slope.lte(slope_thresh)
   
   waterMask = img.select(['tcAngleBW']).gte(-0.05)\
     .And(img.select(['tcAngleBG']).lte(0.05))\

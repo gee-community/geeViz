@@ -1,3 +1,12 @@
+# geeViz 2021.11.1 Release Notes
+## November 19, 2021
+
+## New Features
+* ** None
+
+## Bug fixes 
+* Fixed endDate for all filterDate calls. Previously, it had been assumed this was inclusive of the day of the endDate, when the GEE filterDate method is exclusive of the day of the endDate. Since the assumption is that all dates specified are inclusive, the current fix involves advancing all endDates provided to any filterDate function by 1 day.
+
 # geeViz 2021.10.1 Release Notes
 ## October 15, 2021
 
