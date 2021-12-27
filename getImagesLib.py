@@ -28,16 +28,16 @@ except:
 #Module for getting Landsat, Sentinel 2 and MODIS images/composites
 #Define visualization parameters
 vizParamsFalse = {\
-  'min': 0.1, 
+  'min': 0.05, 
   'max': [0.5,0.6,0.6], 
-  'bands': 'swir2,nir,red', 
+  'bands': 'swir1,nir,red', 
   'gamma': 1.6,
   'layerType':'geeImage'\
 }
 vizParamsFalse10k = {\
-  'min': 0.1*10000, 
+  'min': 0.05*10000, 
   'max': [0.5*10000,0.6*10000,0.6*10000], 
-  'bands': 'swir2,nir,red', 
+  'bands': 'swir1,nir,red', 
   'gamma': 1.6,
   'layerType':'geeImage'\
 }
@@ -300,9 +300,13 @@ def addSensorBand(img, whichProgram, toaOrSR):
               'Sentinel-2B': 22,
               'Sentinel-2C': 23,
               })
-  sensorPropDict = ee.Dictionary({'landsat':
+  sensorPropDict = ee.Dictionary({'C1_landsat':
                         {'TOA':'SPACECRAFT_ID',
                           'SR':'SATELLITE'\
+                        },
+                    'C2_landsat':
+                        {'TOA':'SPACECRAFT_ID',
+                          'SR':'SPACECRAFT_ID'\
                         },
                   'sentinel2':
                         {'TOA':'SPACECRAFT_NAME',
@@ -558,6 +562,73 @@ def getS2(studyArea,
 
 
 ##################################################################
+#Set up dictionaries to manage various Landsat collections, rescale factors, band names, etc
+landsat_C2_L2_rescale_dict = {
+  'C1':{'refl_mult':0.0001,'refl_add':0,'temp_mult':0.1,'temp_add':0},
+  'C2':{'refl_mult':0.0000275,'refl_add':-0.2,'temp_mult':0.00341802,'temp_add':149.0},
+  }
+#Set up bands and corresponding band names
+landsatSensorBandDict = {
+'C1_L4_TOA':['B1','B2','B3','B4','B5','B6','B7','BQA'],
+'C2_L4_TOA':['B1','B2','B3','B4','B5','B6','B7','QA_PIXEL'],
+'C1_L5_TOA':['B1','B2','B3','B4','B5','B6','B7','BQA'],
+'C2_L5_TOA':['B1','B2','B3','B4','B5','B6','B7','QA_PIXEL'],
+'C1_L7_TOA':['B1','B2','B3','B4','B5','B6_VCID_1','B7','BQA'],
+'C2_L7_TOA':['B1','B2','B3','B4','B5','B6_VCID_1','B7','QA_PIXEL'],
+'C1_L8_TOA':['B2','B3','B4','B5','B6','B10','B7','BQA'],
+'C2_L8_TOA':['B2','B3','B4','B5','B6','B10','B7','QA_PIXEL'],
+'C1_L4_SR':['B1','B2','B3','B4','B5','B6','B7','pixel_qa'],
+'C2_L4_SR':['SR_B1','SR_B2','SR_B3','SR_B4','SR_B5','ST_B6','SR_B7','QA_PIXEL'],
+'C1_L5_SR':['B1','B2','B3','B4','B5','B6','B7','pixel_qa'],
+'C2_L5_SR':['SR_B1','SR_B2','SR_B3','SR_B4','SR_B5','ST_B6','SR_B7','QA_PIXEL'],
+'C1_L7_SR':['B1','B2','B3','B4','B5','B6','B7','pixel_qa'],
+'C2_L7_SR':['SR_B1','SR_B2','SR_B3','SR_B4','SR_B5','ST_B6','SR_B7','QA_PIXEL'],
+'C1_L8_SR':['B2','B3','B4','B5','B6','B10','B7','pixel_qa'],
+'C2_L8_SR':['SR_B2','SR_B3','SR_B4','SR_B5','SR_B6','ST_B10','SR_B7','QA_PIXEL'],
+}
+
+# Provide common band names
+landsatSensorBandNameDict = {\
+  'C1_TOA': ['blue','green','red','nir','swir1','temp','swir2','BQA'],\
+  'C1_SR': ['blue','green','red','nir','swir1','temp', 'swir2','pixel_qa'],\
+  'C1_SRFMASK': ['pixel_qa'],\
+  'C2_TOA': ['blue','green','red','nir','swir1','temp','swir2','QA_PIXEL'],\
+  'C2_SR': ['blue','green','red','nir','swir1','temp', 'swir2','QA_PIXEL']
+  }
+
+#Set up collections
+landsatCollectionDict = {
+  'C1_L8_TOA': 'LANDSAT/LC08/C01/T1',\
+  'C1_L7_TOA': 'LANDSAT/LE07/C01/T1',\
+  'C1_L5_TOA': 'LANDSAT/LT05/C01/T1',\
+  'C1_L4_TOA': 'LANDSAT/LT04/C01/T1',\
+  'C1_L8_SR': 'LANDSAT/LC08/C01/T1_SR',\
+  'C1_L7_SR': 'LANDSAT/LE07/C01/T1_SR',\
+  'C1_L5_SR': 'LANDSAT/LT05/C01/T1_SR',\
+  'C1_L4_SR': 'LANDSAT/LT04/C01/T1_SR',\
+  'C2_L8_TOA': 'LANDSAT/LC08/C02/T1',\
+  'C2_L7_TOA': 'LANDSAT/LE07/C02/T1',\
+  'C2_L5_TOA': 'LANDSAT/LT05/C02/T1',\
+  'C2_L4_TOA': 'LANDSAT/LT04/C02/T1',\
+  'C2_L8_SR': 'LANDSAT/LC08/C02/T1_L2',\
+  'C2_L7_SR': 'LANDSAT/LE07/C02/T1_L2',\
+  'C2_L5_SR': 'LANDSAT/LT05/C02/T1_L2',\
+  'C2_L4_SR': 'LANDSAT/LT04/C02/T1_L2'\
+  };
+
+# Name of cFmask qa bits band for Collections 1 and 2
+landsatFmaskBandNameDict = {'C1':'pixel_qa','C2':'QA_PIXEL'}
+##################################################################
+# Method for rescaling reflectance and surface temperature data to 0-1 and Kelvin respectively
+# This was adapted from the method provided by Google for rescaling Collection 2:
+# https://code.earthengine.google.com/?scriptPath=Examples%3ADatasets%2FLANDSAT_LC08_C02_T1_L2
+def applyScaleFactors(image,landsatCollectionVersion):
+  factor_dict = landsat_C2_L2_rescale_dict[landsatCollectionVersion]
+  opticalBands = image.select('blue','green','red','nir','swir1','swir2').multiply(factor_dict['refl_mult']).add(factor_dict['refl_add']).float()
+  thermalBands = image.select('temp').multiply(factor_dict['temp_mult']).add(factor_dict['temp_add']).float()
+  return image.addBands(opticalBands, None, True)\
+              .addBands(thermalBands, None, True)
+##################################################################
 #Function for acquiring Landsat TOA image collection
 def getLandsat(studyArea,
               startDate,
@@ -568,151 +639,94 @@ def getLandsat(studyArea,
               includeSLCOffL7 = False,
               defringeL5 = False,
               addPixelQA = False,
-              resampleMethod = 'near'):
+              resampleMethod = 'near',
+              landsatCollectionVersion = 'C1'):
   
   args = formatArgs(locals())
 
-  #Set up bands and corresponding band names
-  sensorBandDict = {\
-    'L8TOA': ee.List([1,2,3,4,5,9,6,'BQA']),\
-    'L7TOA': ee.List([0,1,2,3,4,5,7,'BQA']),\
-    'L5TOA': ee.List([0,1,2,3,4,5,6,'BQA']),\
-    'L4TOA': ee.List([0,1,2,3,4,5,6,'BQA']),\
-    'L8SR': ee.List([1,2,3,4,5,7,6,'pixel_qa']),\
-    'L7SR': ee.List([0,1,2,3,4,5,6,'pixel_qa']),\
-    'L5SR': ee.List([0,1,2,3,4,5,6,'pixel_qa']),\
-    'L4SR': ee.List([0,1,2,3,4,5,6,'pixel_qa']),\
-    'L4SRC2': ee.List([0,1,2,3,4,5,6,'pixel_qa']),\
-    'L8SRC2': ee.List([1,2,3,4,5,8,6,'pixel_qa']),\
-    'L7SRC2': ee.List([0,1,2,3,4,5,6,'pixel_qa']),\
-    'L5SRC2': ee.List([0,1,2,3,4,5,6,'pixel_qa']),\
-    'L4SRC2': ee.List([0,1,2,3,4,5,6,'pixel_qa']),\
-    'L8SRFMASK': ee.List(['pixel_qa']),\
-    'L7SRFMASK': ee.List(['pixel_qa']),\
-    'L5SRFMASK': ee.List(['pixel_qa']),\
-    'L4SRFMASK': ee.List(['pixel_qa'])\
-    }
-  #https://code.earthengine.google.com/cb7c17278249217d49ba6fb08db8aa87
-  sensorBandNameDict = {\
-    'TOA': ee.List(['blue','green','red','nir','swir1','temp','swir2','BQA']),\
-    'SR': ee.List(['blue','green','red','nir','swir1','temp', 'swir2','pixel_qa']),\
-    'SRFMASK': ee.List(['pixel_qa'])\
-    }
-  
-  #Set up collections
-  collectionDict = {
-    'L8TOA': 'LANDSAT/LC08/C01/T1_TOA',\
-    'L7TOA': 'LANDSAT/LE07/C01/T1_TOA',\
-    'L5TOA': 'LANDSAT/LT05/C01/T1_TOA',\
-    'L4TOA': 'LANDSAT/LT04/C01/T1_TOA',\
-    'L8SR': 'LANDSAT/LC08/C01/T1_SR',\
-    'L7SR': 'LANDSAT/LE07/C01/T1_SR',\
-    'L5SR': 'LANDSAT/LT05/C01/T1_SR',\
-    'L4SR': 'LANDSAT/LT04/C01/T1_SR',\
-    'L8SRC2': 'LANDSAT/LC08/C02/T1_L2',\
-    'L7SRC2': 'LANDSAT/LE07/C02/T1_L2',\
-    'L5SRC2': 'LANDSAT/LT05/C02/T1_L2',\
-    'L4SRC2': 'LANDSAT/LT04/C02/T1_L2'\
-    };
-  
-  multImageDict = {\
-      'TOA': ee.Image([1,1,1,1,1,1,1,1]),\
-      'SR': ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.1,0.0001,1])}
 
-  def getCollections(toaOrSR):
+  def getLandsatCollection(landsatCollectionVersion,whichC,toaOrSR):
+    c = ee.ImageCollection(landsatCollectionDict[landsatCollectionVersion+'_'+whichC+'_'+toaOrSR])\
+        .filterDate(startDate,endDate.advance(1,'day'))\
+        .filter(ee.Filter.calendarRange(startJulian,endJulian))\
+        .filterBounds(studyArea)\
+        .filter(ee.Filter.lte('WRS_ROW',120))
+    if toaOrSR.lower() == 'toa':
+      c = c.map(ee.Algorithms.Landsat.TOA)
+    
+    c = c.select(landsatSensorBandDict[landsatCollectionVersion+'_'+whichC+'_'+toaOrSR],landsatSensorBandNameDict[landsatCollectionVersion+'_'+toaOrSR])
+    
+    if toaOrSR.lower() == 'sr':
+      c = c.map(lambda image:applyScaleFactors(image,landsatCollectionVersion))
+
+    return c
+  def getLandsatCollections(toaOrSR,landsatCollectionVersion):
     #Get Landsat data
-    l4s = ee.ImageCollection(collectionDict['L4'+ toaOrSR])\
-      .filterDate(startDate,endDate.advance(1,'day'))\
-      .filter(ee.Filter.calendarRange(startJulian,endJulian))\
-      .filterBounds(studyArea)\
-      .filter(ee.Filter.lte('WRS_ROW',120))\
-      .select(sensorBandDict['L4'+ toaOrSR],sensorBandNameDict[toaOrSR])
-      
-    l5s = ee.ImageCollection(collectionDict['L5'+ toaOrSR])\
-      .filterDate(startDate,endDate.advance(1,'day'))\
-      .filter(ee.Filter.calendarRange(startJulian,endJulian))\
-      .filterBounds(studyArea)\
-      .filter(ee.Filter.lte('WRS_ROW',120))\
-      .select(sensorBandDict['L5'+ toaOrSR],sensorBandNameDict[toaOrSR])
+    l4s = getLandsatCollection(landsatCollectionVersion,'L4',toaOrSR)
+    l5s = getLandsatCollection(landsatCollectionVersion,'L5',toaOrSR)
       
     if defringeL5:
       print('Defringing L4 and L5')
       l4s = l4s.map(defringeLandsat)
       l5s = l5s.map(defringeLandsat)
 
-    l8s = ee.ImageCollection(collectionDict['L8'+ toaOrSR])\
-      .filterDate(startDate,endDate.advance(1,'day'))\
-      .filter(ee.Filter.calendarRange(startJulian,endJulian))\
-      .filterBounds(studyArea)\
-      .filter(ee.Filter.lte('WRS_ROW',120))\
-      .select(sensorBandDict['L8'+ toaOrSR],sensorBandNameDict[toaOrSR])
+    l8s = getLandsatCollection(landsatCollectionVersion,'L8',toaOrSR)
     
   #   var ls; var l7s;
     if includeSLCOffL7:
       print('Including All Landsat 7')
-      l7s = ee.ImageCollection(collectionDict['L7'+toaOrSR])\
-        .filterDate(startDate,endDate.advance(1,'day'))\
-        .filter(ee.Filter.calendarRange(startJulian,endJulian))\
-        .filterBounds(studyArea)\
-        .filter(ee.Filter.lte('WRS_ROW',120))\
-        .select(sensorBandDict['L7'+ toaOrSR],sensorBandNameDict[ toaOrSR])
+      l7s =getLandsatCollection(landsatCollectionVersion,'L7',toaOrSR)
     else:
       print('Only including SLC On Landsat 7');
-      l7s = ee.ImageCollection(collectionDict['L7'+toaOrSR])\
-        .filterDate(ee.Date.fromYMD(1998,1,1),ee.Date.fromYMD(2003,5,31).advance(1,'day'))\
-        .filterDate(startDate,endDate.advance(1,'day'))\
-        .filter(ee.Filter.calendarRange(startJulian,endJulian))\
-        .filterBounds(studyArea)\
-        .filter(ee.Filter.lte('WRS_ROW',120))\
-        .select(sensorBandDict['L7'+ toaOrSR],sensorBandNameDict[toaOrSR]);
-
-    
+      l7s = getLandsatCollection(landsatCollectionVersion,'L7',toaOrSR)\
+          .filterDate(ee.Date.fromYMD(1998,1,1),ee.Date.fromYMD(2003,5,31).advance(1,'day'))\
+        
     #Merge collections
     ls = ee.ImageCollection(l4s.merge(l5s).merge(l7s).merge(l8s))
     return ls
 
-  ls = getCollections(toaOrSR)
+  ls = getLandsatCollections(toaOrSR,landsatCollectionVersion)
   #If TOA and Fmask need to merge Fmask qa bits with toa- this gets the qa band from the sr collections
-  if toaOrSR.lower() == 'toa' and addPixelQA:
+  if toaOrSR.lower() == 'toa' and addPixelQA and landsatCollectionVersion.lower() == 'c1':
     print('Acquiring SR qa bands for applying Fmask to TOA data')
-    l4sTOAFMASK = ee.ImageCollection(collectionDict['L4SR'])\
+    l4sTOAFMASK = ee.ImageCollection(landsatCollectionDict['C1_L4_SR'])\
               .filterDate(startDate, endDate.advance(1,'day'))\
               .filter(ee.Filter.calendarRange(startJulian, endJulian))\
               .filterBounds(studyArea)\
               .filter(ee.Filter.lte('WRS_ROW',120))\
-              .select(sensorBandDict['L4SRFMASK'], sensorBandNameDict['SRFMASK'])
+              .select(landsatSensorBandNameDict['C1_SRFMASK'])
               
-    l5sTOAFMASK = ee.ImageCollection(collectionDict['L5SR'])\
+    l5sTOAFMASK = ee.ImageCollection(landsatCollectionDict['C1_L5_SR'])\
               .filterDate(startDate, endDate.advance(1,'day'))\
               .filter(ee.Filter.calendarRange(startJulian, endJulian))\
               .filterBounds(studyArea)\
               .filter(ee.Filter.lte('WRS_ROW',120))\
-              .select(sensorBandDict['L5SRFMASK'], sensorBandNameDict['SRFMASK'])
+              .select(landsatSensorBandNameDict['C1_SRFMASK'])
 
-    l8sTOAFMASK = ee.ImageCollection(collectionDict['L8SR'])\
+    l8sTOAFMASK = ee.ImageCollection(landsatCollectionDict['C1_L8_SR'])\
               .filterDate(startDate, endDate.advance(1,'day'))\
               .filter(ee.Filter.calendarRange(startJulian, endJulian))\
               .filterBounds(studyArea)\
               .filter(ee.Filter.lte('WRS_ROW',120))\
-              .select(sensorBandDict['L8SRFMASK'], sensorBandNameDict['SRFMASK'])
+              .select(landsatSensorBandNameDict['C1_SRFMASK'])
     
     if includeSLCOffL7: 
       print('Including All Landsat 7 for TOA QA')
-      l7sTOAFMASK = ee.ImageCollection(collectionDict['L7SR'])\
+      l7sTOAFMASK = ee.ImageCollection(landsatCollectionDict['C1_L7_SR'])\
               .filterDate(startDate, endDate.advance(1,'day'))\
               .filter(ee.Filter.calendarRange(startJulian, endJulian))\
               .filterBounds(studyArea)\
               .filter(ee.Filter.lte('WRS_ROW',120))\
-              .select(sensorBandDict['L7SRFMASK'], sensorBandNameDict['SRFMASK'])    
+              .select(landsatSensorBandNameDict['C1_SRFMASK'])    
     else:
       print('Only including SLC On Landsat 7 for TOA QA');
-      l7sTOAFMASK =  ee.ImageCollection(collectionDict['L7SR'])\
+      l7sTOAFMASK =  ee.ImageCollection(landsatCollectionDict['C1_L7_SR'])\
               .filterDate(ee.Date.fromYMD(1998,1,1), ee.Date.fromYMD(2003,5,31).advance(1,'day'))\
               .filterDate(startDate, endDate.advance(1,'day'))\
               .filter(ee.Filter.calendarRange(startJulian, endJulian))\
               .filterBounds(studyArea)\
               .filter(ee.Filter.lte('WRS_ROW',120))\
-              .select(sensorBandDict['L7SRFMASK'],sensorBandNameDict['SRFMASK'])
+              .select(landsatSensorBandNameDict['C1_SRFMASK'])
     
     lsTOAFMASK = ee.ImageCollection(l4sTOAFMASK.merge(l5sTOAFMASK).merge(l7sTOAFMASK).merge(l8sTOAFMASK))
     
@@ -726,8 +740,8 @@ def getLandsat(studyArea,
     # ls = joinCollections(ls.select([0,1,2,3,4,5,6]),lsTOAFMASK)
     
   def dataInAllBands(img):
-    img = img.updateMask(img.mask().reduce(ee.Reducer.min()))
-    return img.multiply(multImageDict[toaOrSR]).copyProperties(img,['system:time_start']).copyProperties(img)
+    return img.updateMask(img.mask().reduce(ee.Reducer.min()))
+    # return img.multiply(multImageDict[toaOrSR]).copyProperties(img,['system:time_start']).copyProperties(img)
 
   #Make sure all bands have data
   ls = ls.map(dataInAllBands)
@@ -922,11 +936,21 @@ def applyCloudScoreAlgorithm(\
 #########################################################################
 #########################################################################
 #Functions for applying fmask to SR data
-fmaskBitDict = {'cloud' : 32, 'shadow': 8,'snow':16}
+fmaskBitDict = {'C1':{
+                    'cloud' : 5, 
+                    'shadow': 3,
+                    'snow':4
+                    },
+                'C2':{
+                    'cloud' : 3, 
+                    'shadow': 4,
+                    'snow':5
+                  }
+                }
 
 # LSC updated 4/16/19 to add medium and high confidence cloud masks
 # Supported fmaskClass options: 'cloud', 'shadow', 'snow', 'high_confidence_cloud', 'med_confidence_cloud'
-def cFmask(img,fmaskClass):
+def cFmask(img,fmaskClass,bitMaskBandName = 'QA_PIXEL'):
   
   qa = img.select('pixel_qa').int16()
   if fmaskClass == 'high_confidence_cloud':
@@ -938,12 +962,18 @@ def cFmask(img,fmaskClass):
 
   return img.updateMask(m.Not())
 
+# Method for applying a single bit bit mask
+def applyBitMask(img,bit,bitMaskBandName = 'QA_PIXEL'):
+  m = img.select([bitMaskBandName]).uint16();
+  m = m.bitwiseAnd(1<<bit).neq(0)
+  return img.updateMask(m.Not())
 
-def cFmaskCloud(img):
-  return cFmask(img,'cloud')
 
-def cFmaskCloudShadow(img):
-  return cFmask(img,'shadow')
+def cFmaskCloud(img,landsatCollectionVersion,bitMaskBandName = 'QA_PIXEL'):
+  return applyBitMask(img,fmaskBitDict[landsatCollectionVersion]['cloud'],bitMaskBandName)
+
+def cFmaskCloudShadow(img,landsatCollectionVersion,bitMaskBandName = 'QA_PIXEL'):
+  return applyBitMask(img,fmaskBitDict[landsatCollectionVersion]['shadow'],bitMaskBandName)
 
 #########################################################################
 #########################################################################
@@ -2337,7 +2367,8 @@ def getLandsatWrapper(
   preComputedTDOMIRMean = None,
   preComputedTDOMIRStdDev = None,
   compositingReducer = None,
-  harmonizeOLI = False):
+  harmonizeOLI = False,
+  landsatCollectionVersion = 'C2'):
   
   toaOrSR = toaOrSR.upper()
   origin = 'Landsat'
@@ -2378,7 +2409,8 @@ def getLandsatWrapper(
     harmonizeOLI = harmonizeOLI,
     preComputedCloudScoreOffset = preComputedCloudScoreOffset,
     preComputedTDOMIRMean = preComputedTDOMIRMean,
-    preComputedTDOMIRStdDev = preComputedTDOMIRStdDev)
+    preComputedTDOMIRStdDev = preComputedTDOMIRStdDev,
+    landsatCollectionVersion = landsatCollectionVersion)
 
   #Add zenith and azimuth
   if correctIllumination:
@@ -2491,11 +2523,12 @@ def getProcessedLandsatScenes(
   harmonizeOLI = False,
   preComputedCloudScoreOffset = None,
   preComputedTDOMIRMean = None,
-  preComputedTDOMIRStdDev = None):
+  preComputedTDOMIRStdDev = None,
+  landsatCollectionVersion = 'C2'):
     
   origin = 'Landsat'
   toaOrSR = toaOrSR.upper()
-  if toaOrSR =='TOA' and (applyFmaskCloudMask or applyFmaskCloudShadowMask  or applyFmaskSnowMask ):
+  if toaOrSR.lower() == 'toa' and landsatCollectionVersion.lower() == 'c1' and (applyFmaskCloudMask or applyFmaskCloudShadowMask  or applyFmaskSnowMask ):
     addPixelQA = True    
   else:
     addPixelQA = False
@@ -2528,7 +2561,8 @@ def getProcessedLandsatScenes(
     includeSLCOffL7 = includeSLCOffL7,
     defringeL5 = defringeL5,
     addPixelQA = addPixelQA,
-    resampleMethod = resampleMethod)
+    resampleMethod = resampleMethod,
+    landsatCollectionVersion = landsatCollectionVersion)
 
   #Apply relevant cloud masking methods
   if applyCloudScore:
@@ -2545,7 +2579,8 @@ def getProcessedLandsatScenes(
 
   if applyFmaskCloudMask:
     print('Applying Fmask Cloud Mask')
-    ls = ls.map(lambda img: cFmask(img, 'cloud'))
+    
+    ls = ls.map(lambda img: applyBitMask(img,fmaskBitDict[landsatCollectionVersion]['cloud'],landsatFmaskBandNameDict[landsatCollectionVersion]))
 
   if applyTDOM:
     print('Applying TDOM Shadow Mask')
@@ -2561,11 +2596,13 @@ def getProcessedLandsatScenes(
 
   if applyFmaskCloudShadowMask:
     print('Applying Fmask Shadow Mask')
-    ls = ls.map(lambda img: cFmask(img, 'shadow'))
+    ls = ls.map(lambda img: applyBitMask(img,fmaskBitDict[landsatCollectionVersion]['shadow'],landsatFmaskBandNameDict[landsatCollectionVersion]))
+
 
   if applyFmaskSnowMask:
     print('Applying Fmask snow mask')
-    ls = ls.map(lambda img: cFmask(img, 'snow'))
+    ls = ls.map(lambda img: applyBitMask(img,fmaskBitDict[landsatCollectionVersion]['snow'],landsatFmaskBandNameDict[landsatCollectionVersion]))
+
 
   # Add common indices
   ls = ls.map(simpleAddIndices)\
@@ -2573,7 +2610,7 @@ def getProcessedLandsatScenes(
           .map(simpleAddTCAngles)
        
   # Add Sensor Band
-  ls = ls.map(lambda img: addSensorBand(img, 'landsat', toaOrSR))    
+  ls = ls.map(lambda img: addSensorBand(img, landsatCollectionVersion+'_landsat', toaOrSR))    
 
   return ls.set(args)
 
@@ -2883,7 +2920,8 @@ def getProcessedLandsatAndSentinel2Scenes(
       preComputedSentinel2CloudScoreOffset = None,
       preComputedSentinel2TDOMIRMean = None,
       preComputedSentinel2TDOMIRStdDev = None,
-      cloudProbThresh = 40):
+      cloudProbThresh = 40,
+      landsatCollectionVersion = 'C2'):
   
   if toaOrSR == 'SR':
     runChastainHarmonization = False
@@ -2935,8 +2973,9 @@ def getProcessedLandsatAndSentinel2Scenes(
     #harmonizeOLI = harmonizeOLI,
     preComputedCloudScoreOffset = preComputedLandsatCloudScoreOffset,
     preComputedTDOMIRMean = preComputedLandsatTDOMIRMean,
-    preComputedTDOMIRStdDev = preComputedSentinel2TDOMIRStdDev)
-
+    preComputedTDOMIRStdDev = preComputedSentinel2TDOMIRStdDev,
+    landsatCollectionVersion = landsatCollectionVersion)
+  
   #Get Sentinel 2
   s2s = getProcessedSentinel2Scenes(\
     studyArea = studyArea,
@@ -2971,7 +3010,6 @@ def getProcessedLandsatAndSentinel2Scenes(
   commonBands =  ['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'sensor']
   ls = ls.select(commonBands)
   s2s = s2s.select(commonBands)
-
   #Fill in any empty collections
   #If they're both empty, this will not work
   dummyImage =ee.Image(ee.ImageCollection(ee.Algorithms.If(ls.toList(1).length().gt(0),ls,s2s)).first())
@@ -3014,9 +3052,9 @@ def getProcessedLandsatAndSentinel2Scenes(
     #Merge Landsat back together
     ls = ee.ImageCollection(tm.merge(oli))
 
+
   # Merge Landsat and S2
   merged = ee.ImageCollection(ls.merge(s2s))
- 
   merged = merged.map(simpleAddIndices)\
             .map(getTasseledCap)\
             .map(simpleAddTCAngles)
@@ -3110,7 +3148,8 @@ def getLandsatAndSentinel2HybridWrapper(\
   preComputedSentinel2CloudScoreOffset = None,
   preComputedSentinel2TDOMIRMean = None,
   preComputedSentinel2TDOMIRStdDev = None,
-  cloudProbThresh = 40):
+  cloudProbThresh = 40,
+  landsatCollectionVersion = 'C2'):
   
   origin = 'Landsat-Sentinel2-Hybrid'
   toaOrSR = toaOrSR.upper()
@@ -3159,7 +3198,8 @@ def getLandsatAndSentinel2HybridWrapper(\
     preComputedSentinel2CloudScoreOffset = preComputedSentinel2CloudScoreOffset,
     preComputedSentinel2TDOMIRMean = preComputedSentinel2TDOMIRMean,
     preComputedSentinel2TDOMIRStdDev = preComputedSentinel2TDOMIRStdDev,
-    cloudProbThresh = cloudProbThresh)
+    cloudProbThresh = cloudProbThresh,
+    landsatCollectionVersion = landsatCollectionVersion)
 
   #Create hybrid composites
   composites = compositeTimeSeries(\
@@ -3694,10 +3734,11 @@ def customQualityMosaic(inCollection,qualityBand,percentile):
 #This method is used to provide a time-sensitive water mask
 #This method tends to work well if there is no wet snow present
 #Wet snow over flat areas can result in false positives
-def simpleWaterMask(img,contractPixels = 1.5,slope_thresh = 10):
+#Designed to work with TOA data. SR data will result in false negatives (omission)
+def simpleWaterMask(img,contractPixels = 0,slope_thresh = 10,elevationImagePath = "USGS/NED",elevationFocalMeanRadius = 5.5):
   img = addTCAngles(img);
-  ned = ee.Image("USGS/NED").resample('bicubic')
-  slope = ee.Terrain.slope(ned.focal_mean(5.5))
+  ned = ee.Image(elevationImagePath).resample('bicubic')
+  slope = ee.Terrain.slope(ned.focal_mean(elevationFocalMeanRadius))
   flat = slope.lte(slope_thresh)
   
   waterMask = img.select(['tcAngleBW']).gte(-0.05)\
@@ -3705,7 +3746,7 @@ def simpleWaterMask(img,contractPixels = 1.5,slope_thresh = 10):
     .And(img.select(['brightness']).lt(0.3))\
     .And(flat).focal_min(contractPixels)
   
-  return waterMask
+  return waterMask.rename(['waterMask'])
 #####################################################################
 #Jeff Ho Method for algal bloom detection
 #https://www.nature.com/articles/s41586-019-1648-7

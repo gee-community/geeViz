@@ -105,7 +105,7 @@ hansenYears = ee.List.sequence(hansenStartYear,hansenEndYear)
 def hansenFun(yr):
 	yr = ee.Number(yr)
 	t = ee.Image(yr).updateMask(hansenLoss.eq(yr)).set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())
-	return t
+	return t.int16()
 hansenC =ee.ImageCollection.fromImages(hansenYears.map(hansenFun))
 
 #Add time lapse to map
