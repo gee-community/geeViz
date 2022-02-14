@@ -16,13 +16,17 @@
 #Script to help visualize variability of observations across space and time
 #Intended to work within the geeViz package
 ######################################################################
-from geeViz.getImagesLib import *
+import geeViz.getImagesLib as getImagesLib
 import os,json, pdb,glob,math,threading,time,datetime
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patheffects as pe
 from datetime import date
+
+ee = getImagesLib.ee
+Map = getImagesLib.Map
+Map.clearMap()
 ###############################################################
 def check_dir(dir):
   if not os.path.exists(dir):os.makedirs(dir)
@@ -65,13 +69,13 @@ def getTimeSeriesSample(startYear,endYear,startJulian,endJulian,compositePeriod,
   #These have been pre-computed for all CONUS for Landsat and Setinel 2 (separately)
   #and are appropriate to use for any time period within the growing season
   #The cloudScore offset is generally some lower percentile of cloudScores on a pixel-wise basis
-  preComputedCloudScoreOffset = getPrecomputedCloudScoreOffsets(10)
+  preComputedCloudScoreOffset = getImagesLib.getPrecomputedCloudScoreOffsets(10)
   preComputedLandsatCloudScoreOffset = preComputedCloudScoreOffset['landsat']
   preComputedSentinel2CloudScoreOffset = preComputedCloudScoreOffset['sentinel2']
 
   #The TDOM stats are the mean and standard deviations of the two bands used in TDOM
   #By default, TDOM uses the nir and swir1 bands
-  preComputedTDOMStats = getPrecomputedTDOMStats()
+  preComputedTDOMStats = getImagesLib.getPrecomputedTDOMStats()
   preComputedLandsatTDOMIRMean = preComputedTDOMStats['landsat']['mean']
   preComputedLandsatTDOMIRStdDev = preComputedTDOMStats['landsat']['stdDev']
 
@@ -97,13 +101,13 @@ def getTimeSeriesSample(startYear,endYear,startJulian,endJulian,compositePeriod,
     if not os.path.exists(output_table_nameT):
       if 'Landsat' in programs and 'Sentinel2' in programs:
         if dummyImage == None:
-          dummyImage = ee.Image(getProcessedLandsatAndSentinel2Scenes(saBounds,\
+          dummyImage = ee.Image(getImagesLib.getProcessedLandsatAndSentinel2Scenes(saBounds,\
               2019,\
               2020,\
               1,\
               365).first())
 
-        images = getProcessedLandsatAndSentinel2Scenes(saBounds,\
+        images = getImagesLib.getProcessedLandsatAndSentinel2Scenes(saBounds,\
               yr,\
               yr,\
               startJulian,\
@@ -113,24 +117,24 @@ def getTimeSeriesSample(startYear,endYear,startJulian,endJulian,compositePeriod,
               )
       elif 'Sentinel2' in programs: 
         if dummyImage == None:
-          dummyImage = ee.Image(getProcessedSentinel2Scenes(saBounds,\
+          dummyImage = ee.Image(getImagesLib.getProcessedSentinel2Scenes(saBounds,\
                 2019,\
                 2020,\
                 1,\
                 365).first())
-        images = getProcessedSentinel2Scenes(saBounds,\
+        images = getImagesLib.etProcessedSentinel2Scenes(saBounds,\
               yr,\
               yr,\
               startJulian,\
               endJulian)
       elif 'Landsat' in programs:
         if dummyImage == None:
-          dummyImage = ee.Image(getProcessedLandsatScenes(saBounds,\
+          dummyImage = ee.Image(getImagesLib.getProcessedLandsatScenes(saBounds,\
                 2019,\
                 2020,\
                 1,\
                 365).first())
-        images =  getProcessedLandsatScenes(
+        images =  getImagesLib.getProcessedLandsatScenes(
                   saBounds,\
                   yr,\
                   yr,\
@@ -138,7 +142,7 @@ def getTimeSeriesSample(startYear,endYear,startJulian,endJulian,compositePeriod,
                   endJulian,\
                   toaOrSR = 'TOA',
                   includeSLCOffL7 = True)
-      images = fillEmptyCollections(images,dummyImage)
+      images = getImagesLib.fillEmptyCollections(images,dummyImage)
 
       #Vizualize the median of the images
       # Map.addLayer(images.median(),vizParamsFalse,'Median Composite '+str(yr),False)
@@ -147,15 +151,15 @@ def getTimeSeriesSample(startYear,endYear,startJulian,endJulian,compositePeriod,
       #Mask snow
       if maskSnow:
         print('Masking snow')
-        images = images.map(sentinel2SnowMask)
+        images = images.map(getImagesLib.sentinel2SnowMask)
 
 
       #Add greenness ratio/indices
-      images = images.map(HoCalcAlgorithm2)
+      images = images.map(getImagesLib.HoCalcAlgorithm2)
       # Map.addLayer(images.select(exportBands),{},'Raw Time Series ' + str(yr),True)
 
       #Convert to n day composites
-      composites = nDayComposites(images,yr,yr,1,365,compositePeriod)
+      composites = getImagesLib.nDayComposites(images,yr,yr,1,365,compositePeriod)
 
       # Map.addLayer(composites.select(exportBands),{},str(compositePeriod) +' day composites '+str(yr))
 
@@ -235,7 +239,7 @@ def convert_to_csv(output_table_name):
 #Function to take a set of csv tables with yyyy-mm-dd dates on the header row and values of a band/index from an
 #area for each row (some sort of zonal stat or point location value). Null values are expected to be blank entries in the csv.
 #It produces a time series chart of the histogram for each date in the given table
-def chartTimeSeriesDistributions(tables,output_dir,output_base_name,n_bins = 40,min_pctl = 1,max_pctl = 99,background_color = '#D6D1CA',font_color = '#1B1716',overwrite = False, howManyHarmonics = 3,showChart = False,annotate_harmonic_peaks = True):
+def chartTimeSeriesDistributions(tables,output_dir,output_base_name,n_bins = 40,min_pctl = 0.05,max_pctl = 99.95,background_color = '#D6D1CA',font_color = '#1B1716',overwrite = False, howManyHarmonics = 3,showChart = False,annotate_harmonic_peaks = True):
   # print(tables)
   check_dir(output_dir)
 
@@ -315,6 +319,8 @@ def chartTimeSeriesDistributions(tables,output_dir,output_base_name,n_bins = 40,
       table_ys = np.array(table_ys).flatten()
  
       #Harmonic regression fit model
+      peak_year_i = 2
+      if peak_year_i > len(years)-1:peak_year_i = 0
       xs = np.array([table_xs]).T
       sin1Term = np.sin(xs*2*math.pi)
       cos1Term = np.cos(xs*2*math.pi)
@@ -339,8 +345,8 @@ def chartTimeSeriesDistributions(tables,output_dir,output_base_name,n_bins = 40,
       if peak_2_fraction > 1:
         peak_2_fraction = peak_2_fraction - 1
 
-      peak_1_yr = int(years[-2])+peak_1_fraction
-      peak_2_yr = int(years[-2])+peak_2_fraction
+      peak_1_yr = int(years[peak_year_i])+peak_1_fraction
+      peak_2_yr = int(years[peak_year_i])+peak_2_fraction
       peak_1_pred = np.dot([np.sin(peak_1_yr*2*math.pi),np.cos(peak_1_yr*2*math.pi),peak_1_yr, 1],harm_1_model[0])
       peak_2_pred = np.dot([np.sin(peak_2_yr*2*math.pi),np.cos(peak_2_yr*2*math.pi),peak_2_yr, 1],harm_1_model[0])
       peak_1_y = min_2
@@ -353,10 +359,10 @@ def chartTimeSeriesDistributions(tables,output_dir,output_base_name,n_bins = 40,
       peak_date2 = int(peak_2_fraction*365)+1
   
 
-      print(peak_date,peak_date2,peak_1_pred,peak_2_pred,years[-2][2:]+f'{peak_date:03}',years[-2][2:]+f'{peak_date2:03}')
+      print(peak_date,peak_date2,peak_1_pred,peak_2_pred,years[peak_year_i][2:]+f'{peak_date:03}',years[peak_year_i][2:]+f'{peak_date2:03}')
       # print(datetime.datetime.strptime('19'+str(int(peak_date*365)), '%y%j').strftime("%d-%m-%Y"))
-      peak_date = datetime.datetime.strptime(years[-2][2:]+f'{peak_date:03}', '%y%j').strftime("%m-%d")
-      peak_date2 = datetime.datetime.strptime(years[-2][2:]+f'{peak_date2:03}', '%y%j').strftime("%m-%d")
+      peak_date = datetime.datetime.strptime(years[peak_year_i][2:]+f'{peak_date:03}', '%y%j').strftime("%m-%d")
+      peak_date2 = datetime.datetime.strptime(years[peak_year_i][2:]+f'{peak_date2:03}', '%y%j').strftime("%m-%d")
       # print(peak_date)
       # print(peak_date2)
       #Apply harm model
@@ -447,7 +453,7 @@ def chartTimeSeriesDistributions(tables,output_dir,output_base_name,n_bins = 40,
       if(annotate_harmonic_peaks):
         print('Annotating peak dates of harmonics')
         try:
-          yr_dates = [i for i in dates if i.split('-')[0] == years[-2]]
+          yr_dates = [i for i in dates if i.split('-')[0] == years[peak_year_i]]
           m_dates = [i for i in yr_dates if i.split('-')[1] == peak_date.split('-')[0]]
           if len(m_dates) == 0:
             m_dates = [i for i in yr_dates if int(i.split('-')[1]) == int(peak_date.split('-')[0])-1]
@@ -458,16 +464,16 @@ def chartTimeSeriesDistributions(tables,output_dir,output_base_name,n_bins = 40,
               # xytext=(m_dates, peak_1_y),    # fraction, fraction
               # textcoords='data',
               # arrowprops=dict(facecolor='black', shrink=0.05),
-                color = background_color, fontsize='10',path_effects=[pe.withStroke(linewidth=3, foreground=font_color)]
+                color = background_color, fontsize='10',path_effects=[pe.withStroke(linewidth=2.5, foreground=font_color)]
                 )
-          yr_dates = [i for i in dates if i.split('-')[0] == years[-2]]
+          yr_dates = [i for i in dates if i.split('-')[0] == years[peak_year_i]]
           m_dates = [i for i in yr_dates if i.split('-')[1] == peak_date2.split('-')[0]][0]
           ax.annotate('{} ({})'.format(peak_date2,round(peak_2_pred,3)),
                 xy=(m_dates, peak_2_pred), xycoords='data',
                  # xytext=(m_dates, peak_2_y),    # fraction, fraction
               # textcoords='data',
               # arrowprops=dict(facecolor='black', shrink=0.05),
-                color = background_color, fontsize='10',path_effects=[pe.withStroke(linewidth=3, foreground=font_color)]
+                color = background_color, fontsize='10',path_effects=[pe.withStroke(linewidth=2.5, foreground=font_color)]
                 )
         except Exception as e:
           print(e)

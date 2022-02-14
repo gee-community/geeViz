@@ -1,5 +1,5 @@
 """
-   Copyright 2021 Ian Housman
+   Copyright 2022 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ sys.path.append(os.getcwd())
 
 #Module imports
 import geeViz.getImagesLib as getImagesLib
+import geeViz.taskManagerLib as taskManagerLib
 ee = getImagesLib.ee
 Map = getImagesLib.Map
 Map.clearMap()
@@ -65,7 +66,7 @@ outputName = 'Harmonic_Coefficients_'
 
 # Provide location composites will be exported to
 # This should be an asset folder, or more ideally, an asset imageCollection
-exportPathRoot = 'users/iwhousman/test/coeffCollection'
+exportPathRoot = 'users/username/someCollection'
 
 # CRS- must be provided.  
 # Common crs codes: Web mercator is EPSG:4326, USGS Albers is EPSG:5070, 
@@ -85,7 +86,7 @@ scale = None
 
 #Which harmonics to include
 #Is a list of numbers of the n PI per year
-#Typical assumption of 1 cycle/yr would be [2]
+#Typical assumption of 1 cycle/yr would be [2] (2*pi)
 #If trying to overfit, or expected bimodal phenology try adding a higher frequency as well
 #ex. [2,4]
 whichHarmonics = [2]
@@ -193,5 +194,12 @@ for yr in ee.List.sequence(startYear+timebuffer,endYear-timebuffer,1).getInfo():
 Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", False)
 Map.centerObject(studyArea)
 ####################################################################################################
-Map.view()  
+####################################################################################################
+# View map
+Map.turnOnInspector()
+Map.view()
+####################################################################################################
+####################################################################################################
+# If exporting composites, track the exports
+if exportCoefficients:taskManagerLib.trackTasks2()
 

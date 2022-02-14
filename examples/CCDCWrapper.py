@@ -1,5 +1,5 @@
 """
-   Copyright 2021 Ian Housman
+   Copyright 2022 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ sys.path.append(os.getcwd())
 
 #Module imports
 import geeViz.getImagesLib as getImagesLib
+import geeViz.taskManagerLib as taskManagerLib
 ee = getImagesLib.ee
 Map = getImagesLib.Map
 Map.clearMap()
@@ -71,11 +72,11 @@ exportBands = ["blue","green","red","nir","swir1","swir2","NDVI"]
 
 
 #Set up Names for the export
-outputName = 'CCDC-Test4'
+outputName = 'CCDC-Test'
 
 #Provide location composites will be exported to
 #This should be an asset folder, or more ideally, an asset imageCollection
-exportPathRoot = 'users/iwhousman/test/ChangeCollection'
+exportPathRoot = 'users/username/someCollection'
 
 
 #CRS- must be provided.  
@@ -122,7 +123,7 @@ ccdcParams ={
 ###############################################################
 #Start function calls
 ###############################################################
-#Call on master wrapper function to get Landat and Sentinel 2 scenes
+#Get cloud and cloud shadow masked Landsat scenes
 processedScenes = getImagesLib.getProcessedLandsatScenes(studyArea = studyArea,startYear = startYear, endYear = endYear,
                                                         startJulian = startJulian,endJulian = endJulian,
                                                         includeSLCOffL7 = includeSLCOffL7).select(exportBands)
@@ -163,4 +164,10 @@ if exportCCDC:
 Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", False)
 Map.centerObject(studyArea)
 ####################################################################################################
+# View map
+Map.turnOnInspector()
 Map.view()
+####################################################################################################
+####################################################################################################
+# Track the export
+if exportCCDC:taskManagerLib.trackTasks2()

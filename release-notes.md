@@ -1,3 +1,15 @@
+# geeViz 2022.2.1 Release Notes
+## February 14, 2022
+
+### New Features
+* **LCMAP_and_LCMS_Viewer Script and Notebook.** - A new example viewer that displays two US-wide change mapping products - Land Change Monitoring, Assessment, and Projection (LCMAP) produced by USGS and the Landscape Change Monitoring System (LCMS) produced by USFS. Land cover, land use, and change outputs from each product suite are displayed for easy comparison. The notebook facilitates the comparison by bringing in each set of data from the data suites into separate viewers.
+
+* **Task Tracking in Example Scripts** - While the taskManagerLib is not new, the task tracking functionality available within that module was added to the example scripts that export data. 
+
+### Bug fixes
+* Fixed bug in pulling CCDC most recent loss and gain year out. It now behaves in a similar manner as the most recent loss and gain outputs.
+
+____
 # geeViz 2021.12.1 Release Notes
 ## December 27, 2021
 

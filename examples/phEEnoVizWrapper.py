@@ -1,5 +1,5 @@
 """
-   Copyright 2021 Ian Housman
+   Copyright 2022 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -28,16 +28,16 @@ Map = phEEnoViz.Map
 output_table_dir = r'C:\PheenoViz_Outputs'
 
 #Define output table name (no extension needed)
-output_table_name ='Clean_OR3'
+output_table_name ='HI_Big_Island_All'
 #Set up dates
 #Years can range from 1984-present
 #Julian days can range from 1-365
-startYear = 2015
-endYear = 2020
+startYear = 2005
+endYear = 2022
 startJulian =1
 endJulian = 365
 
-#Number of samples to pull (Generally < 3000 or so will work)
+#Number of samples to pull (Generally < 3000 or so will work. 5000 seems to be the max)
 nSamples = 5000
 
 #Number of days in each median composite
@@ -54,7 +54,7 @@ programs = ['Landsat','Sentinel2']
 #Landsat and Sentinel2 combined band options include: blue, green, red, nir, swir1, swir2, NDVI, NBR, NDMI, brightness, greenness, wetness, bloom2, NDGI
 #Sentinel 2 only band options include: 'cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2', NDVI, NBR, NDMI, brightness, greenness, wetness, bloom2, NDGI, NDCI
 #Landsat only band options include: blue, green, red, nir, swir1, swir2, temp, NDVI, NBR, NDMI, brightness, greenness, wetness, bloom2, NDG
-exportBands = ['bloom2','NDGI']#['bloom2','NDGI','NDSI','NBR','NDVI','brightness','greenness','wetness']
+exportBands = ['NBR','NDVI','brightness','greenness','wetness']#['bloom2','NDGI','NDSI','NBR','NDVI','brightness','greenness','wetness']
 
 #Whether to apply snow mask
 maskSnow = True
@@ -70,7 +70,7 @@ howManyHarmonics = 1
 annotate_harmonic_peaks = True
 
 #Whether to show the study area and samples
-showGEEViz = True
+showGEEViz = False
 
 #Whether to show charts in an interactive, non-png version as they are being created
 showChart = False
@@ -155,6 +155,23 @@ hi_tree =  ee.Geometry.Polygon(
           [-159.607354826546, 21.984900822281173],
           [-159.36840218982724, 21.984900822281173],
           [-159.36840218982724, 22.196132168064572]]], None, False)
+hi_big_island_grass= ee.Geometry.Polygon(
+        [[[-155.56028303413623, 20.061196369301374],
+          [-155.8115952899956, 19.92698234055476],
+          [-155.71958479194873, 19.760346894513372],
+          [-155.48337873726123, 19.93085549997741],
+          [-155.52457746772998, 20.027653591460307]]], None, False)
+hi_big_island = ee.Geometry.Polygon(
+        [[[-155.39548811226123, 19.249028001824247],
+          [-155.20872053413623, 19.29051128611493],
+          [-154.85166487007373, 19.497769680305982],
+          [-155.25266584663623, 19.973453984479924],
+          [-155.90635237007373, 20.272608247443916],
+          [-155.83494123726123, 19.994103654068354],
+          [-156.02170881538623, 19.740959345490495],
+          [-155.90085920601123, 19.425259278322205],
+          [-155.92283186226123, 19.093372409309254],
+          [-155.69211897163623, 18.927178310302807]]], None, False)
 pa_test =  ee.Geometry.Polygon(
         [[[-77.94513497907685, 41.54746570321669],
           [-77.94513497907685, 41.479596644089234],
@@ -188,7 +205,7 @@ tempWater =ee.ImageCollection("JRC/GSW1_1/MonthlyHistory")\
               .filter(ee.Filter.calendarRange(startJulian,endJulian)).mode().eq(2).unmask(0)
 
 water_mask = permWater.Or(tempWater).selfMask()
-studyArea = water_mask.clip(clean_or_combo).reduceToVectors(scale = 30)
+studyArea = hi_big_island# water_mask.clip(clean_or_combo).reduceToVectors(scale = 30)
 # studyArea = dirty_odell_lake
 #If you would like to visualize phenology of trees, the LCMS tree layer works well
 #LCMS land cover classes are as follows:

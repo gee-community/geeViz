@@ -1,5 +1,5 @@
 """
-   Copyright 2021 Ian Housman
+   Copyright 2022 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -14,19 +14,20 @@
    limitations under the License.
 """
 
-#Example of how to get Landsat data using the getImagesLib and view outputs using the Python visualization tools
-#Acquires Landsat data and then adds them to the viewer
+# Example of how to get Landsat data using the getImagesLib and view outputs using the Python visualization tools
+# Acquires Landsat data and then adds them to the viewer
 ####################################################################################################
 import os,sys
 sys.path.append(os.getcwd())
 
 #Module imports
 import geeViz.getImagesLib as getImagesLib
+import geeViz.taskManagerLib as taskManagerLib
 ee = getImagesLib.ee
 Map = getImagesLib.Map
 Map.clearMap()
 ####################################################################################################
-#Define user parameters:
+# Define user parameters:
 
 # Specify study area: Study area
 # Can be a featureCollection, feature, or geometry
@@ -185,7 +186,7 @@ outputName = 'Landsat'
 
 # Provide location composites will be exported to
 # This should be an asset folder, or more ideally, an asset imageCollection
-exportPathRoot = 'users/iwhousman/test/compositeCollection'
+exportPathRoot = 'users/username/someCollection'
 
 
 # CRS- must be provided.  
@@ -199,14 +200,14 @@ transform = [30,0,-2361915.0,0,-30,3177735.0]
 # Specify scale if transform is null
 scale = None
 ####################################################################################################
-#End user parameters
+# End user parameters
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
-#Start function calls
+# Start function calls
 ####################################################################################################
 ####################################################################################################
-#Call on master wrapper function to get Landat scenes and composites
+# Call on master wrapper function to get Landat scenes and composites
 lsAndTs = getImagesLib.getLandsatWrapper(studyArea,startYear,endYear,startJulian,endJulian,\
   timebuffer,weights,compositingMethod,\
   toaOrSR,includeSLCOffL7,defringeL5,applyCloudScore,applyFmaskCloudMask,applyTDOM,\
@@ -220,7 +221,7 @@ lsAndTs = getImagesLib.getLandsatWrapper(studyArea,startYear,endYear,startJulian
   landsatCollectionVersion = landsatCollectionVersion)
 
 
-#Separate into scenes and composites for subsequent analysis
+# Separate into scenes and composites for subsequent analysis
 processedScenes = lsAndTs['processedScenes']
 processedComposites = lsAndTs['processedComposites']
 
@@ -229,9 +230,15 @@ for year in range(startYear + timebuffer      ,endYear + 1 - timebuffer ):
      t = processedComposites.filter(ee.Filter.calendarRange(year,year,'year')).first()
      Map.addLayer(t.float(),getImagesLib.vizParamsFalse,str(year),False)
 ####################################################################################################
-#Load the study region
+# Load the study region
 Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", True)
 Map.centerObject(studyArea)
 ####################################################################################################
 ####################################################################################################
+# View map
+Map.turnOnInspector()
 Map.view()
+####################################################################################################
+####################################################################################################
+# If exporting composites, track the exports
+if exportComposites:taskManagerLib.trackTasks2()

@@ -629,7 +629,7 @@ def applyScaleFactors(image,landsatCollectionVersion):
   return image.addBands(opticalBands, None, True)\
               .addBands(thermalBands, None, True)
 ##################################################################
-#Function for acquiring Landsat TOA image collection
+#Function for acquiring Landsat image collections
 def getLandsat(studyArea,
               startDate,
               endDate,
@@ -952,7 +952,7 @@ fmaskBitDict = {'C1':{
 # Supported fmaskClass options: 'cloud', 'shadow', 'snow', 'high_confidence_cloud', 'med_confidence_cloud'
 def cFmask(img,fmaskClass,bitMaskBandName = 'QA_PIXEL'):
   
-  qa = img.select('pixel_qa').int16()
+  qa = img.select(bitMaskBandName).uint16()
   if fmaskClass == 'high_confidence_cloud':
      m = qa.bitwiseAnd(1 << 6).neq(0).And(qa.bitwiseAnd(1 << 7).neq(0))
   elif fmaskClass == 'med_confidence_cloud':
@@ -2579,7 +2579,6 @@ def getProcessedLandsatScenes(
 
   if applyFmaskCloudMask:
     print('Applying Fmask Cloud Mask')
-    
     ls = ls.map(lambda img: applyBitMask(img,fmaskBitDict[landsatCollectionVersion]['cloud'],landsatFmaskBandNameDict[landsatCollectionVersion]))
 
   if applyTDOM:
@@ -3816,6 +3815,11 @@ testAreas['CO'] = ee.Geometry.Polygon(
           [-108.28630509064759, 37.18051220092945],
           [-106.74821915314759, 37.18051220092945],
           [-106.74821915314759, 38.085343638120925]]], None, False)
+testAreas['CO_North'] = ee.Geometry.Polygon(
+        [[[-106.41977869339524, 40.97947702393234],
+          [-106.41977869339524, 39.96406321814001],
+          [-105.20578943558274, 39.96406321814001],
+          [-105.20578943558274, 40.97947702393234]]], None, False)
 testAreas['CA'] =ee.Geometry.Polygon(
         [[[-119.96383760287506, 37.138150574108714],
           [-119.96383760287506, 36.40774412106424],

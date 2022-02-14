@@ -1,5 +1,5 @@
 """
-   Copyright 2021 Ian Housman
+   Copyright 2022 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ sys.path.append(os.getcwd())
 
 #Module imports
 import geeViz.getImagesLib as getImagesLib
+import geeViz.taskManagerLib as taskManagerLib
 ee = getImagesLib.ee
 Map = getImagesLib.Map
 Map.clearMap()
@@ -45,8 +46,8 @@ endJulian = 273
 # More than a 3 year span should be provided for time series methods to work 
 # well. If providing pre-computed stats for cloudScore and TDOM, this does not 
 # matter
-startYear = 2017
-endYear = 2019
+startYear = 2016
+endYear = 2020
 
 # Specify an annual buffer to include imagery from the same season 
 # timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -76,13 +77,14 @@ collectionName = 'NASA/ORNL/DAYMET_V4'
 
 # Export params
 # Whether to export climate composites
-exportComposites = True
+exportComposites = False
 
 
 # Provide location composites will be exported to
 # This should be an asset folder, or more ideally, an asset imageCollection
-exportPathRoot = 'users/iwhousman/test/climate-test'
+exportPathRoot = 'users/username/someCollection'
 
+# users/username/someCollection
 # Specify which bands to export
 # If not sure or want all bands, just set to None
 exportBands = ['prcp.*','tmax.*','tmin.*']
@@ -116,4 +118,10 @@ Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", True)
 Map.centerObject(studyArea)
 ####################################################################################################
 ####################################################################################################
+# View map
+Map.turnOnInspector()
 Map.view()
+####################################################################################################
+####################################################################################################
+# If exporting composites, track the exports
+if exportComposites:taskManagerLib.trackTasks2()

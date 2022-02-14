@@ -50,7 +50,6 @@ print('geeViz package folder:', py_viz_dir)
 template = os.path.join(py_viz_dir,geeViewFolder,'index.html')
 ee_run_dir =  os.path.join(py_viz_dir, geeViewFolder,'js')
 if os.path.exists(ee_run_dir) == False:os.makedirs(ee_run_dir)
-ee_run = os.path.join(ee_run_dir, 'runGeeViz.js')
 
 #Specify port to run on
 local_server_port = 8005    
@@ -92,6 +91,8 @@ class mapper:
         self.layerNumber = 1
         self.idDictList = []
         self.mapCommandList  = []
+        self.ee_run_name = 'runGeeViz'
+        self.ee_run = os.path.join(ee_run_dir, '{}.js'.format(self.ee_run_name))
 
     #Function for adding a layer to the map
     def addLayer(self,image,viz = {},name= None,visible= True):
@@ -154,7 +155,7 @@ class mapper:
         lines+= "}"
         
         #Write out js file
-        oo = open(ee_run,'w')
+        oo = open(self.ee_run,'w')
         oo.writelines(lines)
         oo.close()
         if not isPortActive(local_server_port):
@@ -176,12 +177,17 @@ class mapper:
         self.layerNumber = 1
         self.idDictList = []
         self.mapCommandList  = []
-    
+    def setMapTitle(self,title):
+        query_command = "$('#title-banner').html('{0}');document.title = 'geeViz | {0}';".format(title)
+        if query_command not in self.mapCommandList:
+            self.mapCommandList.append(query_command)
+    def setTitle(self,title):
+        self.setMapTitle(title)
     def turnOnInspector(self):
         # self.mapCommandList.append("$('#tools-collapse-div').addClass('show')")
         query_command = "$('#query-label').click();"
         if query_command not in self.mapCommandList:
-            self.mapCommandList.append("$('#query-label').click();")
+            self.mapCommandList.append(query_command)
         
     def turnOffAllLayers(self):
         update = {'visible':'false'}
