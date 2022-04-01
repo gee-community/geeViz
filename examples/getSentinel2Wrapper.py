@@ -222,16 +222,19 @@ s2sAndTs =getImagesLib.getSentinel2Wrapper(studyArea,startYear,endYear,startJuli
   exportComposites,outputName,exportPathRoot,crs,transform,scale,resampleMethod,toaOrSR,convertToDailyMosaics,
   applyCloudProbability,preComputedCloudScoreOffset,preComputedTDOMIRMean,preComputedTDOMIRStdDev,cloudProbThresh)
   
-#Separate into scenes and composites for subsequent analysis
+# Separate into scenes and composites for subsequent analysis
 processedScenes = s2sAndTs['processedScenes']
 processedComposites = s2sAndTs['processedComposites']
+
+# Indicate what type of image is being added to speed up map service creation
 getImagesLib.vizParamsFalse['layerType']= 'geeImage';
-Map.addLayer(processedComposites.select(['NDVI','NBR']),{'addToLegend':False},'Time Series (NBR and NDVI)',False)
+
+Map.addLayer(processedComposites.select(['NDVI','NBR']),{'addToLegend':False,'layerType':'geeImageCollection'},'Time Series (NBR and NDVI)',False)
 for year in range(startYear + timebuffer      ,endYear + 1 - timebuffer ):
      t = processedComposites.filter(ee.Filter.calendarRange(year,year,'year')).first()
-     Map.addLayer(t,getImagesLib.vizParamsFalse,str(year),'False')
+     Map.addLayer(t,getImagesLib.vizParamsFalse,str(year),False)
 ####################################################################################################
-#Load the study region
+# Load the study region
 Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", True)
 Map.centerObject(studyArea)
 ####################################################################################################

@@ -1,3 +1,18 @@
+# geeViz 2022.4.1 Release Notes
+## April 1, 2022
+
+### New Features
+* **Improved LandTrendr decompression method.** - A new function called batchSimpleLTFit has been added to the changeDetectionLib to help provide a faster method for decompressing the LandTrendr stacked output format into a usable time series image collection with all relevant metrics from LandTrendr.
+
+* **LANDTRENDRViz example script.** - A new example script that demonstrates how to visualize and post-process LandTrendr outputs.
+
+* **Common projection info dictionary** - In order to help organize common projections, a common_projections dictionary is now provided in the getImagesLib module. 
+
+### Bug fixes
+* Landsat Collection 2 Level 2 data often have null values in the thermal band. Past versions of geeViz forced all bands to have data (some earlier scenes would have missing data in some but not all bands). This would result in null values in all bands over any area the new Collection 2 surface temperature algorithm could not compute an output. In order to handle this, for Landsat data, all optical bands found in TM, ETM+, and OLI sensors (blue, green, red, nir, swir1, swir2) must have data now, thus allowing a null thermal value to carry through. 
+* Related to the bug fix above - The medoidMosaicMSD function would still result in a null output if any band had null values. In order to fix this, the min reducer was swapped with the qualityMosaic function and the sum of the squared differences is multiplied by -1 so the qualityMosaic function can function properly. This results in almost the identical result. As the sum of the squared differences approaches 0 for more than a single observation for a given pixel, this method can result in a slightly different pixel choice, but should not make any substantive differences in the final composite.
+* Removed the layerType key from the vizParams found within the getImagesLib. If imageCollections were added to the map using addLayer or addTimeLapse, they would not render if using any of the vizParams (vizParamsFalse and vizParamsTrue) since the layer type was explicitly specified as geeImage. You can add the relevant property back into those dictionaries in order to speed up map rendering. Example scripts that make use of these vizParams dictionaries have been updated. e.g. getImagesLib.vizParamsFalse['layerType']= 'geeImage' or getImagesLib.vizParamsFalse['layerType']= 'geeImageCollection' 
+____
 # geeViz 2022.2.1 Release Notes
 ## February 14, 2022
 

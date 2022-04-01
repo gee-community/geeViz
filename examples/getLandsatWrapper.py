@@ -225,6 +225,8 @@ lsAndTs = getImagesLib.getLandsatWrapper(studyArea,startYear,endYear,startJulian
 processedScenes = lsAndTs['processedScenes']
 processedComposites = lsAndTs['processedComposites']
 
+# Indicate what type of image is being added to speed up map service creation
+getImagesLib.vizParamsFalse['layerType']= 'geeImage';
 # Map.addLayer(processedComposites.select(['NDVI','NBR']),{'addToLegend':'false'},'Time Series (NBR and NDVI)',False)
 for year in range(startYear + timebuffer      ,endYear + 1 - timebuffer ):
      t = processedComposites.filter(ee.Filter.calendarRange(year,year,'year')).first()

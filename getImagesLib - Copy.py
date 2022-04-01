@@ -49,14 +49,9 @@ vizParamsTrue10k = {\
   'max': [0.2*10000,0.2*10000,0.2*10000], 
   'bands': 'red,green,blue'\
 }
+nlcd_transform = [30,0,-2361915.0,0,-30,3177735.0]
 
-common_projections = {}
-common_projections['NLCD_CONUS'] = {'crs':'PROJCS["Albers_Conical_Equal_Area",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9122"]],AUTHORITY["EPSG","4326"]],PROJECTION["Albers_Conic_Equal_Area"],PARAMETER["latitude_of_center",23],PARAMETER["longitude_of_center",-96],PARAMETER["standard_parallel_1",29.5],PARAMETER["standard_parallel_2",45.5],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["meters",1],AXIS["Easting",EAST],AXIS["Northing",NORTH]]',
-                              'transform': [30,0,-2361915.0,0,-30,3177735.0]}
-common_projections['NLCD_AK'] = {'crs':'PROJCS["Albers_Conical_Equal_Area",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9108"]],AUTHORITY["EPSG","4326"]],PROJECTION["Albers_Conic_Equal_Area"],PARAMETER["standard_parallel_1",55],PARAMETER["standard_parallel_2",65],PARAMETER["latitude_of_center",50],PARAMETER["longitude_of_center",-154],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["meters",1]]',
-                                  'transform':[30,0,-48915.0,0,-30,1319415.0]}
-
-
+nlcd_crs = 'EPSG:5070'
 #Direction of  a decrease in photosynthetic vegetation- add any that are missing
 changeDirDict = {\
 "blue":1,"green":1,"red":1,"nir":-1,"swir1":1,"swir2":1,"temp":1,\
@@ -502,10 +497,7 @@ def getS2(studyArea,
 
   toaOrSR = toaOrSR.upper()
 
-  # 3/22 - Changed to using the _HARMONIZED collections following the introduction of a 1000 value offset from Jan 25 2022 onward
-  # These collections account for these differences
   s2CollectionDict = {'TOA':'COPERNICUS/S2_HARMONIZED','SR':'COPERNICUS/S2_SR_HARMONIZED'}
-
   sensorBandDict = {\
       'SR': ['B1','B2','B3','B4','B5','B6','B7','B8','B8A', 'B9', 'B11','B12'],
       'TOA': ['B1','B2','B3','B4','B5','B6','B7','B8','B8A', 'B9', 'B10', 'B11','B12']\
@@ -1305,32 +1297,42 @@ def addZenithAzimuth(
 #########################################################################
 #########################################################################
 #Function for computing the mean squared difference medoid from an image collection
-# As the data are not normalized in this method, ensuring the medoidIncludeBands have roughly comparable ranges of values
-# helps the function work properly. For example, if temperature is included, it will account for most of the variance
-# thus resulting in a medoid mosaic that will more or less choose values closest to the median temperature only, rather than
-# all the bands
-def medoidMosaicMSD(inCollection, medoidIncludeBands = None):
+def medoidMosaicMSD(inCollection, medoidIncludeBands = None, unmaskTemperature = False):
 
+  if unmaskTemperature:
+    inCollection = inCollection.map(lambda img: img.addBands(img.select(['temp']).unmask(-32768),None,True))
+  #Find band names in first image
+  f = ee.Image(inCollection.first())
+  bandNames = f.bandNames()
+  
   if medoidIncludeBands == None:
-    medoidIncludeBands = ee.Image(inCollection.first()).bandNames()
+    medoidIncludeBands = bandNames
 
   #Find the median
   median = inCollection.select(medoidIncludeBands).median()
   
   #Find the squared difference from the median for each image
-  # Multiply by -1 so quality mosaic function can be used
   def msdGetter(img):
-    diff = ee.Image(img).select(medoidIncludeBands).subtract(median).pow(2)
+    diff = ee.Image(img).select(medoidIncludeBands).subtract(median).pow(ee.Image.constant(2))
     img = addYearBand(img)
     img = addJulianDayBand(img)
-    return diff.reduce('sum').multiply(-1).addBands(img)
+    return diff.reduce('sum').addBands(img)
   medoid = inCollection.map(msdGetter)
- 
-  #Minimize the distance across all bands by finding the pixels that correspond to the minimum distance (multiplied by -1 above)
-  medoid = medoid.qualityMosaic('sum')
-  medoid = medoid.select(medoid.bandNames().remove('sum'))
-  
+  # Map.addLayer(medoid.select(['sum','NBR','NDVI']),{},'pre medoid')
+  bandNames = bandNames.cat(['year','julianDay'])
+  bandNumbers = ee.List.sequence(1,bandNames.length())
+
+  #Minimize the distance across all bands
+  medoid = ee.ImageCollection(medoid)\
+    .reduce(ee.Reducer.min(bandNames.length().add(1)))\
+    .select(bandNumbers,bandNames)
+
+  if unmaskTemperature:
+    medoid = medoid.addBands(medoid.select(['temp']).updateMask(medoid.select(['temp']).neq(-32768)),None,True)
+  # Map.addLayer(medoid,vizParamsFalse,'medoid')
   return medoid
+
+
 #########################################################################
 #########################################################################
 #Function to export a provided image to an EE asset
@@ -1461,7 +1463,8 @@ def compositeTimeSeries(
       timebuffer = 0,
       weights = [1],
       compositingMethod = None,
-      compositingReducer = None):
+      compositingReducer = None,
+      unmaskTemperature = False):
   
   args = formatArgs(locals())
   if 'args' in args.keys():
@@ -1519,7 +1522,7 @@ def compositeTimeSeries(
     elif compositingMethod.lower() == 'median':
       composite = lsT.median()
     else:
-      composite = medoidMosaicMSD(lsT,['green','red','nir','swir1','swir2'])
+      composite = medoidMosaicMSD(lsT,['green','red','nir','swir1','swir2'],unmaskTemperature)
     composite = composite.addBands(count).float()
 
     return composite.set({'system:time_start':ee.Date.fromYMD(year+ yearWithMajority,6,1).millis(),\
@@ -2430,7 +2433,8 @@ def getLandsatWrapper(
     timebuffer = timebuffer,
     weights = weights,
     compositingMethod = compositingMethod,
-    compositingReducer = compositingReducer)
+    compositingReducer = compositingReducer,
+    unmaskTemperature = True)
   
   # Correct illumination
   if correctIllumination:

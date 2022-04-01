@@ -266,6 +266,9 @@ processedAndComposites = getImagesLib.getLandsatAndSentinel2HybridWrapper(studyA
 processedScenes = processedAndComposites['processedScenes']
 processedComposites = processedAndComposites['processedComposites']
 
+# Indicate what type of image is being added to speed up map service creation
+getImagesLib.vizParamsFalse['layerType']= 'geeImage';
+
 # Map.addLayer(processedComposites.select(['NDVI','NBR']),{'addToLegend':'false'},'Time Series (NBR and NDVI)',False)
 for year in range(startYear + timebuffer      ,endYear + 1 - timebuffer ):
      t = processedComposites.filter(ee.Filter.calendarRange(year,year,'year')).mosaic()

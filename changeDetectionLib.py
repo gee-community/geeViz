@@ -541,6 +541,9 @@ def LT_VT_vertStack_multBands(img, verdet_or_landtrendr, multBy):
 def simpleLTFit(ltStack,startYear,endYear,indexName = ''):
   indexName = ee.String(indexName)
 
+  #Set up output band names
+  outBns = [indexName.cat('_LT_dur'), indexName.cat('_LT_fitted'), indexName.cat('_LT_mag'), indexName.cat('_LT_slope'), indexName.cat('_LT_diff')]
+
   #Separate years and fitted values of vertices
   yrs = ltStack.select('yrs_.*').selfMask()
   fit = ltStack.select('fit_.*').updateMask(yrs.mask())
@@ -583,17 +586,31 @@ def simpleLTFit(ltStack,startYear,endYear,indexName = ''):
     fitDiff = segSlope.multiply(tDiff)
     fitted = fitStart.add(fitDiff)
     
-    formatted = segDur.addBands(fitted)\
-                .addBands(segDiff)\
-                .addBands(segSlope)\
-                .addBands(fitDiff)\
-                .rename([indexName.cat('_LT_dur'), indexName.cat('_LT_fitted'), indexName.cat('_LT_mag'), indexName.cat('_LT_slope'), indexName.cat('_LT_diff')])\
+    formatted = ee.Image.cat([segDur,fitted,segDiff,segSlope,fitDiff])\
+                .rename(outBns)\
                 .set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())
 
     return formatted
 
   out = ee.ImageCollection(ee.List.sequence(startYear,endYear).map(lambda yr: getYearValues(yr)))
   return out
+
+# Wrapper function to iterate across multiple LT band/index values
+def batchSimpleLTFit(ltStacks,startYear,endYear,indexNames = None,bandPropertyName = 'band'):
+  #Get band/index names if not provided
+  if indexNames == None:
+    indexNames = ltStacks.aggregate_histogram(bandPropertyName).keys().getInfo()
+
+  # Iterate across each band/index and get the fitted, mag, slope, etc
+  lt_fit = None
+  for bn in indexNames:
+    ltt = ltStacks.filter(ee.Filter.eq('band',bn)).mosaic()
+
+    if lt_fit == None:
+      lt_fit = simpleLTFit(ltt,startYear,endYear,indexName = bn)
+    else:
+      lt_fit = joinCollections(lt_fit, simpleLTFit(ltt,startYear,endYear,indexName = bn), False)
+  return lt_fit
 
 # Function to parse stack from LANDTRENDR or VERDET into image collection
 # July 2019 LSC: multiply(distDir) and multiply(10000) now take place outside of this function,

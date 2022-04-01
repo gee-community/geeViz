@@ -28,12 +28,12 @@ Map = phEEnoViz.Map
 output_table_dir = r'C:\PheenoViz_Outputs'
 
 #Define output table name (no extension needed)
-output_table_name ='HI_Big_Island_All'
+output_table_name ='HI_Big_Island_Lava'
 #Set up dates
 #Years can range from 1984-present
 #Julian days can range from 1-365
-startYear = 2005
-endYear = 2022
+startYear = 2009
+endYear = 2021
 startJulian =1
 endJulian = 365
 
@@ -41,14 +41,14 @@ endJulian = 365
 nSamples = 5000
 
 #Number of days in each median composite
-compositePeriod = 30
+compositePeriod = 32
 
 #Which programs to include
 #Options are Landsat and Sentinel 2
 #E.g. ['Landsat','Sentinel2'] will include both Landsat 4-8 and Sentinel 2a and 2b TOA data
 #If choosing both Landsat and Sentinel 2, available bands/indices are limited to those that can be computed
 #Using bands from each (e.g. Sentinel 2 red edge bands would not be available if using only Landsat or Landsat and Sentinel 2)
-programs = ['Landsat','Sentinel2']
+programs = ['Landsat']
 
 #Bands to export. 
 #Landsat and Sentinel2 combined band options include: blue, green, red, nir, swir1, swir2, NDVI, NBR, NDMI, brightness, greenness, wetness, bloom2, NDGI
@@ -172,6 +172,10 @@ hi_big_island = ee.Geometry.Polygon(
           [-155.90085920601123, 19.425259278322205],
           [-155.92283186226123, 19.093372409309254],
           [-155.69211897163623, 18.927178310302807]]], None, False)
+hi_big_island_lava =ee.Geometry.MultiPoint(
+        [[-155.538, 19.83957],
+         [-155.43, 19.21147],
+         [-155.406, 19.55582]]).buffer(1000)
 pa_test =  ee.Geometry.Polygon(
         [[[-77.94513497907685, 41.54746570321669],
           [-77.94513497907685, 41.479596644089234],
@@ -205,7 +209,7 @@ tempWater =ee.ImageCollection("JRC/GSW1_1/MonthlyHistory")\
               .filter(ee.Filter.calendarRange(startJulian,endJulian)).mode().eq(2).unmask(0)
 
 water_mask = permWater.Or(tempWater).selfMask()
-studyArea = hi_big_island# water_mask.clip(clean_or_combo).reduceToVectors(scale = 30)
+studyArea = hi_big_island_lava# water_mask.clip(clean_or_combo).reduceToVectors(scale = 30)
 # studyArea = dirty_odell_lake
 #If you would like to visualize phenology of trees, the LCMS tree layer works well
 #LCMS land cover classes are as follows:
@@ -266,4 +270,4 @@ if __name__ == '__main__':
   csvs = [i for i in csvs if int(os.path.splitext(os.path.basename(i))[0].split('_')[-5]) in range(startYear,endYear+1)]
   # print(csvs)
   #Create plots
-  phEEnoViz.chartTimeSeriesDistributions(csvs,chart_dir,output_table_name + '_{}_{}-{}_{}-{}_{}_{}'.format('-'.join(programs),startYear,endYear,startJulian,endJulian,compositePeriod,nSamples),overwrite = overwriteCharts,howManyHarmonics = howManyHarmonics,showChart =showChart,annotate_harmonic_peaks = annotate_harmonic_peaks)
+  phEEnoViz.chartTimeSeriesDistributions(csvs,chart_dir,output_table_name + '_{}_{}-{}_{}-{}_{}_{}'.format('-'.join(programs),startYear,endYear,startJulian,endJulian,compositePeriod,nSamples),overwrite = overwriteCharts,howManyHarmonics = howManyHarmonics,showChart =showChart,annotate_harmonic_peaks = annotate_harmonic_peaks,min_pctl = 0.5,max_pctl = 99.5)
