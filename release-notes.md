@@ -1,3 +1,13 @@
+# geeViz 2022.4.2 Release Notes
+## April 15, 2022
+
+### New Features
+* **GFS Time Lapse Example** - A new example script illustrating how to visualize the GFS forecast model outputs.
+
+
+### Bug fixes
+* When running geeViz from inside certain IDEs (such as IDLE), the use of sys.executable to identify how to run the local web server would hit on the pythonw instead of python executable. If it finds a pythonw under the sys.executable variable, it now forces it to use the python (without a w).
+____
 # geeViz 2022.4.1 Release Notes
 ## April 1, 2022
 

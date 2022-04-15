@@ -66,7 +66,9 @@ def run_local_server(port = 8001):
     cwd = os.getcwd()
     os.chdir(py_viz_dir)
     # print('cwd',os.getcwd())
-    c = '"{}" -m {}  {}'.format(sys.executable, server_name,local_server_port)
+    python_path = sys.executable
+    if python_path.find('pythonw')>-1:python_path = python_path.replace('pythonw','python')
+    c = '"{}" -m {}  {}'.format(python_path, server_name,local_server_port)
     print('HTTP server command:',c)
     # call = 
     subprocess.Popen(c,shell = True)

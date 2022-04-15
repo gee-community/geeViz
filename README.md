@@ -39,9 +39,13 @@ folder
 	* `from geeViz.examples import getCombinedLandsatSentinel2Wrapper`
 	* `from geeViz.examples import harmonicRegressionWrapper`
 	* `from geeViz.examples import LANDTRENDRWrapper`
+	* `from geeViz.examples import LANDTRENDRViz`
 	* `from geeViz.examples import CCDCViz`
 	* `from geeViz.examples import lcmsViewerExample`
+	* `from geeViz.examples import LCMAP_and_LCMS_Viewer`
 	* `from geeViz.examples import phEEnoVizWrapper`
+	* `from geeViz.examples import LANDTRENDRViz`
+	* `from geeViz.examples import GFSTimeLapse`
 
 * These examples are a great way of getting started. In order to use them for your work, go to you Python site-packages folder `PythonNN\Lib\site-packages\geeViz`
 * There are several notebook eamples also available. These are very similar to their script counterparts, but are better for learning how to use the tool.
