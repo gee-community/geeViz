@@ -1,11 +1,10 @@
 # GTAC GEE Visualization Python Modules
 > A repository of GEE Python code modules for general data processing, analysis, and visualization
 
-> [Can be accessed in GitHub](https://github.com/rcr-usfs/geeViz)
+> [Can be accessed from the GEE Community Repository](https://github.com/gee-community/geeViz)
 > [Or within the internal Forest Service GitHub instance](https://code.fs.usda.gov/forest-service/geeViz)
-> [Or within the GEE Community Repository](https://github.com/gee-community/geeViz)
-
-> [A javaScript equivalent can be accessed in the GEE Playground](https://earthengine.googlesource.com/users/USFS_GTAC/modules)
+> 
+> [A javaScript equivalent can be accessed in the GEE Playground](https://earthengine.googlesource.com/users/aaronkamoske/GTAC-Modules)
 > [on GitHub](https://github.com/rcr-usfs/gtac-rcr-gee-js-modules.git)
 > [Or withing the Forest Service GitHub instance](https://code.fs.usda.gov/forest-service/gtac-gee-js-modules.git)
 

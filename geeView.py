@@ -51,8 +51,7 @@ template = os.path.join(py_viz_dir,geeViewFolder,'index.html')
 ee_run_dir =  os.path.join(py_viz_dir, geeViewFolder,'js')
 if os.path.exists(ee_run_dir) == False:os.makedirs(ee_run_dir)
 
-#Specify port to run on
-local_server_port = 8005    
+
 ######################################################################
 ######################################################################
 #Functions
@@ -62,19 +61,16 @@ def run_local_server(port = 8001):
         server_name = 'SimpleHTTPServer'
     else:
         server_name = 'http.server'
-    # c = '"{}" -m {} -d "{}" {}'.format(sys.executable, server_name,py_viz_dir,str(local_server_port))
     cwd = os.getcwd()
     os.chdir(py_viz_dir)
     # print('cwd',os.getcwd())
     python_path = sys.executable
     if python_path.find('pythonw')>-1:python_path = python_path.replace('pythonw','python')
-    c = '"{}" -m {}  {}'.format(python_path, server_name,local_server_port)
+    c = '"{}" -m {}  {}'.format(python_path, server_name,port)
     print('HTTP server command:',c)
-    # call = 
     subprocess.Popen(c,shell = True)
     os.chdir(cwd)
-    # print('cwd',os.getcwd())
-    # call.wait()
+
 
 
 #Function to see if port is active
@@ -89,13 +85,13 @@ def isPortActive(port = 8001):
 
 #Set up map object
 class mapper:
-    def __init__(self):
+    def __init__(self,port = 8001):
+        self.port = port
         self.layerNumber = 1
         self.idDictList = []
         self.mapCommandList  = []
         self.ee_run_name = 'runGeeViz'
-        self.ee_run = os.path.join(ee_run_dir, '{}.js'.format(self.ee_run_name))
-
+        
     #Function for adding a layer to the map
     def addLayer(self,image,viz = {},name= None,visible= True):
         if name == None:
@@ -129,9 +125,9 @@ class mapper:
     #Function for centering on a GEE object that has a geometry
     def centerObject(self,feature):
         try:
-            bounds = json.dumps(feature.geometry().bounds().getInfo())
+            bounds = json.dumps(feature.geometry().bounds(100).getInfo())
         except Exception as e:
-            bounds = json.dumps(feature.bounds().getInfo())
+            bounds = json.dumps(feature.bounds(100).getInfo())
         command = 'synchronousCenterObject('+bounds+')'
         
         self.mapCommandList.append(command)
@@ -157,24 +153,24 @@ class mapper:
         lines+= "}"
         
         #Write out js file
+        self.ee_run = os.path.join(ee_run_dir, '{}.js'.format(self.ee_run_name))
         oo = open(self.ee_run,'w')
         oo.writelines(lines)
         oo.close()
-        if not isPortActive(local_server_port):
-            print('Starting local web server at: http://localhost:{}/{}/'.format(local_server_port,geeViewFolder))
-            run_local_server(local_server_port)
+        if not isPortActive(self.port):
+            print('Starting local web server at: http://localhost:{}/{}/'.format(self.port,geeViewFolder))
+            run_local_server(self.port)
             print('Done')
-            # t = Thread(target = run_local_server,args = (local_server_port,))
-            # t.start()
+            
 
         else:
-            print('Local web server at: http://localhost:{}/{}/ already serving.'.format(local_server_port,geeViewFolder))
+            print('Local web server at: http://localhost:{}/{}/ already serving.'.format(self.port,geeViewFolder))
             # print('Refresh browser instance')
         print('cwd',os.getcwd())
         if open_browser:
-            webbrowser.open('http://localhost:{}/{}/'.format(local_server_port,geeViewFolder),new = 1)
+            webbrowser.open('http://localhost:{}/{}/'.format(self.port,geeViewFolder),new = 1)
         if open_iframe:
-            self.IFrame = IFrame(src='http://localhost:{}/{}/'.format(local_server_port,geeViewFolder), width='100%', height='{}px'.format(iframe_height))
+            self.IFrame = IFrame(src='http://localhost:{}/{}/'.format(self.port,geeViewFolder), width='100%', height='{}px'.format(iframe_height))
     def clearMap(self):
         self.layerNumber = 1
         self.idDictList = []

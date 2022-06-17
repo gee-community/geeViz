@@ -47,7 +47,7 @@ endJulian = 273
 # well. If providing pre-computed stats for cloudScore and TDOM, this does not 
 # matter
 startYear = 2015
-endYear = 2021
+endYear = 2022
 
 # Specify an annual buffer to include imagery from the same season 
 # timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -225,12 +225,7 @@ lsAndTs = getImagesLib.getLandsatWrapper(studyArea,startYear,endYear,startJulian
 processedScenes = lsAndTs['processedScenes']
 processedComposites = lsAndTs['processedComposites']
 
-# Indicate what type of image is being added to speed up map service creation
-getImagesLib.vizParamsFalse['layerType']= 'geeImage';
-# Map.addLayer(processedComposites.select(['NDVI','NBR']),{'addToLegend':'false'},'Time Series (NBR and NDVI)',False)
-for year in range(startYear + timebuffer      ,endYear + 1 - timebuffer ):
-     t = processedComposites.filter(ee.Filter.calendarRange(year,year,'year')).first()
-     Map.addLayer(t.float(),getImagesLib.vizParamsFalse,str(year),False)
+Map.addTimeLapse(processedComposites,getImagesLib.vizParamsFalse,'Composite Timelapse')
 ####################################################################################################
 # Load the study region
 Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", True)

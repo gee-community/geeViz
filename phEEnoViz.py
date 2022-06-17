@@ -122,7 +122,7 @@ def getTimeSeriesSample(startYear,endYear,startJulian,endJulian,compositePeriod,
                 2020,\
                 1,\
                 365).first())
-        images = getImagesLib.etProcessedSentinel2Scenes(saBounds,\
+        images = getImagesLib.getProcessedSentinel2Scenes(saBounds,\
               yr,\
               yr,\
               startJulian,\

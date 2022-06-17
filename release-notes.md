@@ -1,3 +1,10 @@
+# geeViz 2022.6.1 Release Notes
+## June 17, 2022
+
+### New Features
+* **Landsat 9 Integration** - Landsat 9 is now included for all Collection 2 Landsat functions.
+* **Specify geeView port** - You can now specify which port to run geeView through by specifying it (e.g. `Map.port = 8000`)
+____
 # geeViz 2022.4.2 Release Notes
 ## April 15, 2022
 

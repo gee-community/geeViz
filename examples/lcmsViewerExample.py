@@ -63,7 +63,7 @@ def getMostRecentChange(c, code):
 ### Bring in LCMS annual outputs ###
 #############################################################################
 
-lcms = ee.ImageCollection('USFS/GTAC/LCMS/v2020-5');
+lcms = ee.ImageCollection('USFS/GTAC/LCMS/v2021-7');
 bandNames =  lcms.first().bandNames().getInfo()
 print('Available study areas:', lcms.aggregate_histogram('study_area').keys().getInfo());
 print('Available LCMS products',bandNames);
