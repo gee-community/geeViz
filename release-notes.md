@@ -1,9 +1,16 @@
+# geeViz 2022.7.1 Release Notes
+## July 6, 2022
+
+### New Features
+* **geeView token options** - geeView now tries to utilize the default location GEE refresh token instead of a proxy. It cannot use private keys from service accounts. You can however specify a different location of the refresh token from the default (e.g. `Map.accessToken = r'C:\someOtherFolder\someOtherPersistentCredentials`). 
+If geeView fails to find a refresh token, it will fall back to utilizing the default proxy location. If that fails, a message will appear. It is best to simply ensure there is a working refresh token availble (most easily created using `earthengine authenticate` or `ee.Authenticate()`).
+____
 # geeViz 2022.6.1 Release Notes
 ## June 17, 2022
 
 ### New Features
 * **Landsat 9 Integration** - Landsat 9 is now included for all Collection 2 Landsat functions.
-* **Specify geeView port** - You can now specify which port to run geeView through by specifying it (e.g. `Map.port = 8000`)
+* **Specify geeView port** - You can now specify which port to run geeView through by specifying it (e.g. `Map.port = 8000`).
 ____
 # geeViz 2022.4.2 Release Notes
 ## April 15, 2022

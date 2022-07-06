@@ -17,7 +17,7 @@
 #Intended to work within the geeViz package
 ######################################################################
 #Import modules
-import ee,sys,os,webbrowser,json,socket,subprocess,site,time
+import ee,sys,os,webbrowser,json,socket,subprocess,site,time,requests
 from threading import Thread
 from IPython.display import IFrame
 if sys.version_info[0] < 3:
@@ -55,6 +55,28 @@ if os.path.exists(ee_run_dir) == False:os.makedirs(ee_run_dir)
 ######################################################################
 ######################################################################
 #Functions
+# Function for using default GEE refresh token to get an access token for geeView
+def refreshToken(refresh_token_path = ee.oauth.get_credentials_path()):
+    try:
+        refresh_token=json.load(open(refresh_token_path))['refresh_token']
+    except Exception as e:
+        print('Could not find refresh token at:',refresh_token_path)
+        refresh_token = ''
+        
+    params = {
+            "grant_type": "refresh_token",
+            "client_id": ee.oauth.CLIENT_ID,
+            "client_secret": ee.oauth.CLIENT_SECRET,
+            "refresh_token": refresh_token
+    }
+    r = requests.post(ee.oauth.TOKEN_URI, data=params)
+
+    if r.ok:
+            return r.json()['access_token']
+    else:
+        return None
+
+ 
 #Function for running local web server
 def run_local_server(port = 8001):
     if sys.version[0] == '2':
@@ -91,6 +113,8 @@ class mapper:
         self.idDictList = []
         self.mapCommandList  = []
         self.ee_run_name = 'runGeeViz'
+        self.refreshTokenPath = ee.oauth.get_credentials_path()
+        
         
     #Function for adding a layer to the map
     def addLayer(self,image,viz = {},name= None,visible= True):
@@ -135,6 +159,9 @@ class mapper:
     def view(self,open_browser = True, open_iframe = False,iframe_height = 525):
         print('Starting webmap')
 
+        # Get access token
+        self.accessToken = refreshToken(self.refreshTokenPath)
+
         #Set up js code to populate
         lines = "showMessage('Loading',staticTemplates.loadingModal);\nfunction runGeeViz(){\n"
 
@@ -157,6 +184,7 @@ class mapper:
         oo = open(self.ee_run,'w')
         oo.writelines(lines)
         oo.close()
+        time.sleep(5)
         if not isPortActive(self.port):
             print('Starting local web server at: http://localhost:{}/{}/'.format(self.port,geeViewFolder))
             run_local_server(self.port)
@@ -168,9 +196,9 @@ class mapper:
             # print('Refresh browser instance')
         print('cwd',os.getcwd())
         if open_browser:
-            webbrowser.open('http://localhost:{}/{}/'.format(self.port,geeViewFolder),new = 1)
+            webbrowser.open('http://localhost:{}/{}/?accessToken={}'.format(self.port,geeViewFolder,self.accessToken),new = 1)
         if open_iframe:
-            self.IFrame = IFrame(src='http://localhost:{}/{}/'.format(self.port,geeViewFolder), width='100%', height='{}px'.format(iframe_height))
+            self.IFrame = IFrame(src='http://localhost:{}/{}/?accessToken={}'.format(self.port,geeViewFolder,self.accessToken), width='100%', height='{}px'.format(iframe_height))
     def clearMap(self):
         self.layerNumber = 1
         self.idDictList = []
