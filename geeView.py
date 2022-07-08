@@ -18,6 +18,9 @@
 ######################################################################
 #Import modules
 import ee,sys,os,webbrowser,json,socket,subprocess,site,time,requests
+from google.auth.transport import requests as gReq
+from google.oauth2 import service_account
+
 from threading import Thread
 from IPython.display import IFrame
 if sys.version_info[0] < 3:
@@ -55,6 +58,12 @@ if os.path.exists(ee_run_dir) == False:os.makedirs(ee_run_dir)
 ######################################################################
 ######################################################################
 #Functions
+
+# Function for cleaning trailing .... in accessToken
+def cleanAccessToken(accessToken):
+    while accessToken[-1] == '.': accessToken = accessToken[:-1]
+    return accessToken
+
 # Function for using default GEE refresh token to get an access token for geeView
 def refreshToken(refresh_token_path = ee.oauth.get_credentials_path()):
     try:
@@ -62,7 +71,7 @@ def refreshToken(refresh_token_path = ee.oauth.get_credentials_path()):
     except Exception as e:
         print('Could not find refresh token at:',refresh_token_path)
         refresh_token = ''
-        
+
     params = {
             "grant_type": "refresh_token",
             "client_id": ee.oauth.CLIENT_ID,
@@ -72,11 +81,22 @@ def refreshToken(refresh_token_path = ee.oauth.get_credentials_path()):
     r = requests.post(ee.oauth.TOKEN_URI, data=params)
 
     if r.ok:
-            return r.json()['access_token']
+        return cleanAccessToken(r.json()['access_token'])
     else:
         return None
 
- 
+# Function for using a GEE white-listed service account key to get an access token for geeView
+def serviceAccountToken(service_key_file_path):
+    try:
+        credentials = service_account.Credentials.from_service_account_file(service_key_file_path, scopes=ee.oauth.SCOPES)
+        credentials.refresh(gReq.Request())
+        accessToken = credentials.token
+        accessToken = cleanAccessToken(accessToken)
+        return accessToken
+    except Exception as e:
+        print(e)
+        print('Failed to utilize service account key file.')
+        return None
 #Function for running local web server
 def run_local_server(port = 8001):
     if sys.version[0] == '2':
@@ -114,7 +134,7 @@ class mapper:
         self.mapCommandList  = []
         self.ee_run_name = 'runGeeViz'
         self.refreshTokenPath = ee.oauth.get_credentials_path()
-        
+        self.serviceKeyPath = None
         
     #Function for adding a layer to the map
     def addLayer(self,image,viz = {},name= None,visible= True):
@@ -160,9 +180,16 @@ class mapper:
         print('Starting webmap')
 
         # Get access token
-        self.accessToken = refreshToken(self.refreshTokenPath)
-
-        #Set up js code to populate
+        if self.serviceKeyPath == None:
+            print('Using default refresh token for geeView:',self.refreshTokenPath)
+            self.accessToken = refreshToken(self.refreshTokenPath)
+        else:
+            print('Using service account key for geeView:',self.serviceKeyPath)
+            self.accessToken = serviceAccountToken(self.serviceKeyPath)
+            if self.accessToken == None:
+                print('Trying to authenticate to GEE using persistent refresh token.')
+                self.accessToken = refreshToken(self.refreshTokenPath)
+        #Set up js code to populate0
         lines = "showMessage('Loading',staticTemplates.loadingModal);\nfunction runGeeViz(){\n"
 
 

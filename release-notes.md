@@ -1,9 +1,15 @@
+# geeViz 2022.7.2 Release Notes
+## July 8, 2022
+
+### New Features
+* **geeView Service Account Options** - geeView can now utilize a service account key for authentication to GEE. This service account must be white-listed using [this tool](https://signup.earthengine.google.com/#!/service_accounts). To have geeView use a service account key, specify the path to the json key file as the `serviceKeyPath` attribute of the Map object (e.g. `Map.serviceKeyPath = r"c:\someFolder\keyFile.json"`). This will cause geeView to use that file to gain access to GEE instead of using the default persistent refresh token.  
+____
 # geeViz 2022.7.1 Release Notes
 ## July 6, 2022
 
 ### New Features
-* **geeView token options** - geeView now tries to utilize the default location GEE refresh token instead of a proxy. It cannot use private keys from service accounts. You can however specify a different location of the refresh token from the default (e.g. `Map.accessToken = r'C:\someOtherFolder\someOtherPersistentCredentials`). 
-If geeView fails to find a refresh token, it will fall back to utilizing the default proxy location. If that fails, a message will appear. It is best to simply ensure there is a working refresh token availble (most easily created using `earthengine authenticate` or `ee.Authenticate()`).
+* **geeView Token Options** - geeView now tries to utilize the default location GEE refresh token instead of a proxy. It cannot use private keys from service accounts. You can however specify a different location of the refresh token from the default (e.g. `Map.accessToken = r'C:\someOtherFolder\someOtherPersistentCredentials`). 
+If geeView fails to find a refresh token, it will fall back to utilizing the default proxy location. If that fails, a message will appear. It is best to simply ensure there is a working refresh token available (most easily created using `earthengine authenticate` or `ee.Authenticate()`).
 ____
 # geeViz 2022.6.1 Release Notes
 ## June 17, 2022
