@@ -1,8 +1,14 @@
+# geeViz 2023.1.1 Release Notes
+## January 17, 2023
+
+### Bug fixes
+* When loading very large/complicated outputs into geeView, it would often not load the first time. This bug has been fixed to the page properly loads even with very large/complicated EE objects. It can take a while to load the page however.
+____
 # geeViz 2022.7.2 Release Notes
 ## July 8, 2022
 
 ### New Features
-* **geeView Service Account Options** - geeView can now utilize a service account key for authentication to GEE. This service account must be white-listed using [this tool](https://signup.earthengine.google.com/#!/service_accounts). To have geeView use a service account key, specify the path to the json key file as the `serviceKeyPath` attribute of the Map object (e.g. `Map.serviceKeyPath = r"c:\someFolder\keyFile.json"`). This will cause geeView to use that file to gain access to GEE instead of using the default persistent refresh token.  
+* **geeView Service Account Options** - geeView can now utilize a service account key for authentication to GEE. For general guidance for setting up a service account, [see this](https://developers.google.com/earth-engine/guides/service_account). This service account must be white-listed using [this tool](https://signup.earthengine.google.com/#!/service_accounts). Be sure to download the json key to a local, unshared location. To have geeView use a service account key, specify the path to the json key file as the `serviceKeyPath` attribute of the Map object (e.g. `Map.serviceKeyPath = r"c:\someFolder\keyFile.json"`). This will cause geeView to use that file to gain access to GEE instead of using the default persistent refresh token. If it fails, geeView will then try to use the persistent credential method.  
 ____
 # geeViz 2022.7.1 Release Notes
 ## July 6, 2022

@@ -89,7 +89,7 @@ scale = None
 #Typical assumption of 1 cycle/yr would be [2] (2*pi)
 #If trying to overfit, or expected bimodal phenology try adding a higher frequency as well
 #ex. [2,4]
-whichHarmonics = [2]
+whichHarmonics = [2,4,6]
 
 #Which bands/indices to run harmonic regression across
 indexNames =['swir2','nir','red','NDVI'];#,'NBR','NDMI','nir','swir1','swir2','tcAngleBG'];//['nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];//['blue','green','red','nir','swir1','swir2','NDMI','NDVI','NBR','tcAngleBG'];

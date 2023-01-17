@@ -55,7 +55,7 @@ sortingMethod = 'mostRecent'
 startJulian = 1
 endJulian = 365
 startYear = 1984
-endYear = 2020
+endYear = 2021
 
 #Add the raw array image
 Map.addLayer(ccdcImg,{'opacity':0},'Raw CCDC Output',False)

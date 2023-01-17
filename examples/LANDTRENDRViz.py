@@ -37,7 +37,7 @@ Map.clearMap()
 # Specify which years to look at 
 # Available years are 1984-2021
 startYear = 1984
-endYear = 2021
+endYear = 2022
 
 # Which property stores which band/index LandTrendr was run across
 bandPropertyName = 'band'

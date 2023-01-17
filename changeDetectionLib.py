@@ -538,15 +538,23 @@ def LT_VT_vertStack_multBands(img, verdet_or_landtrendr, multBy):
 #Simplified method to convert LANDTRENDR stack to annual collection of
 #Duration, fitted, magnitude, slope, and diff
 #Improved handling of start year delay found in older method
-def simpleLTFit(ltStack,startYear,endYear,indexName = ''):
+def simpleLTFit(ltStack,startYear,endYear,indexName = '',arrayMode = False,maxSegs=6):
   indexName = ee.String(indexName)
 
   #Set up output band names
   outBns = [indexName.cat('_LT_dur'), indexName.cat('_LT_fitted'), indexName.cat('_LT_mag'), indexName.cat('_LT_slope'), indexName.cat('_LT_diff')]
 
   #Separate years and fitted values of vertices
-  yrs = ltStack.select('yrs_.*').selfMask()
-  fit = ltStack.select('fit_.*').updateMask(yrs.mask())
+  if arrayMode:
+    zeros =ee.Image(ee.Array([0]).repeat(0,maxSegs+2))
+    yrBns = ['yrs_{}'.format(i) for i in range(1,maxSegs+2)]
+    fitBns = ['fit_{}'.format(i) for i in range(1,maxSegs+2)]
+    yrs = ltStack.arraySlice(0,0,1).arrayProject([1]).arrayCat(zeros,0).arraySlice(0, 0, maxSegs+1).arrayFlatten([yrBns]).selfMask()
+    fit = ltStack.arraySlice(0,1,2).arrayProject([1]).arrayCat(zeros,0).arraySlice(0, 0, maxSegs+1).arrayFlatten([fitBns]).updateMask(yrs.mask())
+    
+  else:
+    yrs = ltStack.select('yrs_.*').selfMask()
+    fit = ltStack.select('fit_.*').updateMask(yrs.mask())
   
   #Find the first and last vertex years
   isStartYear = yrs.reduce(ee.Reducer.firstNonNull())
@@ -596,7 +604,7 @@ def simpleLTFit(ltStack,startYear,endYear,indexName = ''):
   return out
 
 # Wrapper function to iterate across multiple LT band/index values
-def batchSimpleLTFit(ltStacks,startYear,endYear,indexNames = None,bandPropertyName = 'band'):
+def batchSimpleLTFit(ltStacks,startYear,endYear,indexNames = None,bandPropertyName = 'band',arrayMode = False,maxSegs=6):
   #Get band/index names if not provided
   if indexNames == None:
     indexNames = ltStacks.aggregate_histogram(bandPropertyName).keys().getInfo()
@@ -607,9 +615,9 @@ def batchSimpleLTFit(ltStacks,startYear,endYear,indexNames = None,bandPropertyNa
     ltt = ltStacks.filter(ee.Filter.eq('band',bn)).mosaic()
 
     if lt_fit == None:
-      lt_fit = simpleLTFit(ltt,startYear,endYear,indexName = bn)
+      lt_fit = simpleLTFit(ltt,startYear,endYear,bn,arrayMode,maxSegs)
     else:
-      lt_fit = joinCollections(lt_fit, simpleLTFit(ltt,startYear,endYear,indexName = bn), False)
+      lt_fit = joinCollections(lt_fit, simpleLTFit(ltt,startYear,endYear,bn,arrayMode,maxSegs), False)
   return lt_fit
 
 # Function to parse stack from LANDTRENDR or VERDET into image collection

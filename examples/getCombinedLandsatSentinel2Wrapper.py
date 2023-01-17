@@ -75,7 +75,7 @@ compositingMethod = 'medoid'
 # Only choose 'C1' if working with other Collection 1 data and using
 # data from before 1/1/2022. Otherwise, choose 'C2'
 # See: https://www.usgs.gov/landsat-missions/landsat-collection-2 for more information
-landsatCollectionVersion = 'C1'
+landsatCollectionVersion = 'C2'
 
 # Choose Top of Atmospheric (TOA) or Surface Reflectance (SR)
 # Use caution when combining Landsat and S2 SR data since S2 SR data had terrain correction performed 

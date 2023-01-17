@@ -193,8 +193,8 @@ Map.addLayer(changeObj['mostRecent']['gain']['year'],gain_viz,'LCMS CCDC Most Re
 yearImages = changeDetectionLib.getTimeImageCollection(1984,2021,1,365,0.1);
 
 #Then predict the CCDC models
-fitted = changeDetectionLib.predictCCDC(ccdcImg.select(['tStart','tEnd','tBreak','changeProb','NDVI.*']),yearImages,False,[1,2,3])
-Map.addLayer(fitted.select(['.*_predicted']),{'opacity':0},'Fitted CCDC NDVI',True);
+fitted = changeDetectionLib.predictCCDC(ccdcImg,yearImages,False,[1,2,3])
+Map.addLayer(fitted.select(['NDVI_predicted']),{'opacity':0},'Fitted CCDC NDVI',True);
 ####################################################################################################
 Map.setTitle('LCMAP LCMS Viewer')
 Map.turnOnInspector()

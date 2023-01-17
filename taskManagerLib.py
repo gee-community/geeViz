@@ -18,7 +18,7 @@
 ################################################################################
 # Functions for GEE task management
 
-import ee, time, re
+import ee, time, re,os
 from datetime import datetime, timedelta
 try:
     z = ee.Number(1).getInfo()
@@ -100,6 +100,7 @@ def batchCancel():
     for ind, i in enumerate(tasks):
         if i['state'] == 'READY' or i['state'] == 'RUNNING':
             cancelledTasks.append(ind)
+            print('Cancelling:',i['description'])
             ee.data.cancelTask(i['id'])
             #ee.data.cancelOperation(ee._cloud_api_utils.convert_task_id_to_operation_name(i['id'])) # this was the workaround for a bug with cancelTask in earthengine-api v0.1.225
     tasks2 = ee.data.getTaskList()
@@ -172,3 +173,35 @@ def nameTaskList(nameIdentifier):
     tasks = ee.data.getTaskList()
     thisList = [i for i in tasks if re.findall(nameIdentifier, i['description']) and (i['state'] == 'READY' or i['state'] == 'RUNNING')]
     return thisList
+
+# Function to create a table of successful exports, how long it took, and the EECUs used
+def getEECUS(output_table_name,nameFind=None,overwrite=False):
+    if os.path.splitext(output_table_name)[1] != '.csv':
+        print('Only output extension allowed is .csv. Changing extension to .csv')
+        output_table_name = os.path.splitext(output_table_name)[0] + '.csv'
+    if not os.path.exists(output_table_name) or overwrite:
+        operations = ee.data.listOperations()
+        print(ee.data.getTaskList())
+        completed = [i for i in operations if i['metadata']['state'] == 'SUCCEEDED']
+        
+        if nameFind != None:
+            completed = [i for i in completed if i['metadata']['description'].find(nameFind)>-1]
+        output_table_name = os.path.splitext(output_table_name)[0]+'.csv'
+        out_lines = 'Name,Run Time, EECU Seconds,Size (megaBytes)\n'
+
+        for task in completed:
+            try:
+                uri = task['metadata']['destinationUris'][0].split('?asset=')[1]
+                info = ee.data.getAsset(uri)
+                size = float(info['sizeBytes'])*1e-6
+            except:
+                size = 'NA'
+            
+            startTime = datetime.fromisoformat(task['metadata']['startTime'][:-1])
+            endTime = datetime.fromisoformat(task['metadata']['endTime'][:-1])
+            out_lines+='{},{},{},{}\n'.format(task['metadata']['description'],endTime-startTime,task['metadata']['batchEecuUsageSeconds'],size)
+        o = open(output_table_name,'w')
+        o.write(out_lines)
+        o.close()
+    else:
+        print('Output table already exists and overwite is set to False')

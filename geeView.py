@@ -190,7 +190,7 @@ class mapper:
                 print('Trying to authenticate to GEE using persistent refresh token.')
                 self.accessToken = refreshToken(self.refreshTokenPath)
         #Set up js code to populate0
-        lines = "showMessage('Loading',staticTemplates.loadingModal);\nfunction runGeeViz(){\n"
+        lines = "showMessage('Loading',staticTemplates.loadingModal[mode]);\nfunction runGeeViz(){\n"
 
 
         #Iterate across each map layer to add js code to
@@ -211,7 +211,7 @@ class mapper:
         oo = open(self.ee_run,'w')
         oo.writelines(lines)
         oo.close()
-        time.sleep(5)
+        # time.sleep(5)
         if not isPortActive(self.port):
             print('Starting local web server at: http://localhost:{}/{}/'.format(self.port,geeViewFolder))
             run_local_server(self.port)

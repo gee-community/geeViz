@@ -519,9 +519,9 @@ def getS2(studyArea,
 
   def multS2(img):
     t = img.select(sensorBandDict[toaOrSR]).divide(10000)
-    t = t.addBands(img.select(['QA60']))
-    out = t.copyProperties(img).copyProperties(img,['system:time_start'])
-    return out
+    # t = t.addBands(img.select(['QA60']))
+    # out = t.copyProperties(img).copyProperties(img,['system:time_start'])
+    return img.addBands(t,None,True)
 
   #Get some s2 data
   print('Using S2 Collection:', s2CollectionDict[toaOrSR])
@@ -651,7 +651,7 @@ def getLandsat(studyArea,
               defringeL5 = False,
               addPixelQA = False,
               resampleMethod = 'near',
-              landsatCollectionVersion = 'C1'):
+              landsatCollectionVersion = 'C2'):
 
   args = formatArgs(locals())
 
@@ -3657,16 +3657,18 @@ def synthImage(coeffs,dateImage,indexNames,harmonics,detrend):
   constImage = ee.Image(1)
   if detrend:constImage = constImage.addBands(dateImage)
   for harm in harmonics:
-    constImage = constImage.addBands(ee.Image([dateImage.multiply(harm*math.pi).sin()]))\
-                           .addBands(ee.Image([dateImage.multiply(harm*math.pi).cos()]))
-
-
+    constImage = constImage.addBands(ee.Image([dateImage.multiply(harm*math.pi).sin()]).rename(['{}_sin'.format(harm*100)]))                       
+  for harm in harmonics:
+    constImage = constImage.addBands(ee.Image([dateImage.multiply(harm*math.pi).cos()]).rename(['{}_cos'.format(harm*100)]))
+  
+  # coeffssBn = coeffs.select(ee.String(indexNames[0]).cat('_.*'))
+  # print(constImage.bandNames().getInfo(),coeffssBn.bandNames().getInfo())
   #Predict values for each band
   out = ee.Image(1);
   def predictWrapper(bn,out):
     bn = ee.String(bn)
     #Select coeffs for that band
-    coeffssBn = coeffs.select(ee.String(bn).cat('.*'))
+    coeffssBn = coeffs.select(ee.String(bn).cat('_.*'))
     predicted = constImage.multiply(coeffssBn).reduce('sum').rename(bn)
     return ee.Image(out).addBands(predicted)
 
@@ -3751,7 +3753,7 @@ def customQualityMosaic(inCollection,qualityBand,percentile):
 #Wet snow over flat areas can result in false positives
 #Designed to work with TOA data. SR data will result in false negatives (omission)
 def simpleWaterMask(img,contractPixels = 0,slope_thresh = 10,elevationImagePath = "USGS/NED",elevationFocalMeanRadius = 5.5):
-  img = addTCAngles(img);
+  img = addTCAngles(img)
   ned = ee.Image(elevationImagePath).resample('bicubic')
   slope = ee.Terrain.slope(ned.focal_mean(elevationFocalMeanRadius))
   flat = slope.lte(slope_thresh)
