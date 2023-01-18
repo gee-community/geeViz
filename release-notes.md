@@ -1,3 +1,9 @@
+# geeViz 2023.1.2 Release Notes
+## January 18, 2023
+
+### New Features
+* **Sentinel 1 Basic Processing** - Integration of Guido Lemoine's shared GEE adaptation of the Refined Lee speckle filter from [this script](https://code.earthengine.google.com/2ef38463ebaf5ae133a478f173fd0ab5) as coded in the SNAP 3.0 S1 Toolbox. This can be found in the `getS1` function in the `getImagesLib`.
+____
 # geeViz 2023.1.1 Release Notes
 ## January 17, 2023
 
