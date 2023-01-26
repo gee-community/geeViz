@@ -1,3 +1,9 @@
+# geeViz 2023.1.3 Release Notes
+## January 26, 2023
+
+### New Features
+* **Join Collections Using Different Field Names** - The `joinFeatureCollections` and `joinCollections` functions now optionally support different field names between the two collections. e.g. `joinFeatureCollections(primaryFC,secondaryFC,'primaryFieldName','secondaryFieldName')`
+____
 # geeViz 2023.1.2 Release Notes
 ## January 18, 2023
 

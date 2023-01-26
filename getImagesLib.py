@@ -1962,7 +1962,10 @@ multModisDict = {\
 #########################################################################
 #########################################################################
 #Helper function to join two collections- Source: code.earthengine.google.com
-def joinCollections(c1, c2, maskAnyNullValues = True, joinProperty = 'system:time_start'):
+def joinCollections(c1, c2, maskAnyNullValues = True, joinProperty = 'system:time_start',joinPropertySecondary=None):
+  
+  if joinPropertySecondary==None:joinPropertySecondary=joinProperty
+  
   def MergeBands(element):
     #A function to merge the bands together.
     #After a join, results are in 'primary' and 'secondary' properties.
@@ -1970,7 +1973,7 @@ def joinCollections(c1, c2, maskAnyNullValues = True, joinProperty = 'system:tim
 
 
   join = ee.Join.inner()
-  joinFilter = ee.Filter.equals(joinProperty, None, joinProperty)
+  joinFilter = ee.Filter.equals(joinProperty, None, joinPropertySecondary)
   joined = ee.ImageCollection(join.apply(c1, c2, joinFilter))
 
   joined = ee.ImageCollection(joined.map(MergeBands))
@@ -2041,10 +2044,12 @@ def spatioTemporalJoin(primary, secondary, hourDiff = 24, outKey = 'secondary'):
 
 # Simple inner join function for featureCollections
 # Matches features based on an exact match of the fieldName parameter
+# An optional different field name can be provided for the second featureCollection
 # Retains the geometry of the primary, but copies the properties of the secondary collection
-def joinFeatureCollections(primary,secondary,fieldName):
+def joinFeatureCollections(primary,secondary,fieldName,fieldNameSecondary=None):
+  if fieldNameSecondary==None:fieldNameSecondary=fieldName
   # Use an equals filter to specify how the collections match.
-  f = ee.Filter.equals(fieldName,None,fieldName)
+  f = ee.Filter.equals(fieldName,None,fieldNameSecondary)
 
 
   # Define the join.
