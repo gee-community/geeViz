@@ -1,5 +1,5 @@
 """
-   Copyright 2022 Ian Housman
+   Copyright 2023 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@
 #Import modules
 import os,sys
 sys.path.append(os.getcwd())
-
 import  geeViz.geeView as geeView
 ee = geeView.ee
 Map = geeView.Map

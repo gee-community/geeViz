@@ -45,19 +45,39 @@ bandPropertyName = 'band'
 # Specify which bands to run across
 # Set to None to run all available bands
 # Available bands include: ['NBR', 'NDMI', 'NDSI', 'NDVI', 'blue', 'brightness', 'green', 'greenness', 'nir', 'red', 'swir1', 'swir2', 'tcAngleBG', 'wetness']
-bandNames =['NBR']
+bandNames =None
+
+# Specify if output is an array image or not
+arrayMode = False
 ####################################################################################################
 # Bring in LCMS LandTrendr outputs (see other examples that include LCMS final data)
 lt = ee.ImageCollection('projects/lcms-tcc-shared/assets/LandTrendr/LandTrendr-Collection-yesL7-1984-2020');
 print('Available bands/indices:',lt.aggregate_histogram(bandPropertyName).keys().getInfo())
 
+
 # Convert stacked outputs into collection of fitted, magnitude, slope, duration, etc values for each year
-lt_fit = changeDetectionLib.batchSimpleLTFit(lt,startYear,endYear,bandNames,bandPropertyName)
+lt_fit = changeDetectionLib.batchSimpleLTFit(lt,startYear,endYear,bandNames,bandPropertyName,arrayMode)
 
 # Vizualize image collection for charting (opacity set to 0 so it will chart but not be visible)
 Map.addLayer(lt_fit,{'opacity':0},'LT Fit TS')
 
+# Visualize single year fitted landTrendr composite
+# Set to only run if no bandNames are specified
+if bandNames == None:
+  # Get fitted bandnames
+  fitted_bns = lt_fit.select(['.*_fitted']).first().bandNames()
+  out_bns = fitted_bns.map(lambda bn: ee.String(bn).split('_').get(0))
+
+  # Filter out next to last year
+  lt_synth = lt_fit.select(fitted_bns,out_bns)\
+            .filter(ee.Filter.calendarRange(endYear-1,endYear-1,'year')).first()
+
+  # Visualize as you would a composite
+  Map.addLayer(lt_synth,getImagesLib.vizParamsFalse10k,'Synthetic Composite')
+
+
 # Iterate across each band to look for areas of change
+if bandNames == None:bandNames=['NBR']
 for bandName in bandNames:
   #Convert LandTrendr stack to Loss & Gain space
   ltt = lt.filter(ee.Filter.eq(bandPropertyName,bandName)).mosaic()

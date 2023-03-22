@@ -1,5 +1,5 @@
 """
-   Copyright 2022 Ian Housman
+   Copyright 2023 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -46,8 +46,8 @@ addTimelapses = False
 # Playground example: https://code.earthengine.google.com/791aa894ce0abfe1a9eb1dc478bbc5d7
 # Their outputs are divided into LC (land cover) and SC (spectral change)
 # More details about their different products can be found here:
-# https://prd-wret.s3.us-west-2.amazonaws.com/assets/palladium/production/atoms/files/LSDS-1981%20LCMAP%20Science%20Product%20Guide.pdf
-# LCMAP methods can be found here: https://tinyurl.com/45sh9aep
+# https://www.sciencedirect.com/science/article/pii/S003442571930375X
+# LCMAP methods can be found here: https://www.sciencedirect.com/science/article/pii/S003442571930375X
 # LCMAP data can be downloaded from: https://www.usgs.gov/core-science-systems/eros/lcmap/lcmap-data-access
 # LCMAP data can also be viewed here: https://eros.usgs.gov/lcmap/viewer/
 lcachg = ee.ImageCollection("projects/sat-io/open-datasets/LCMAP/LCACHG")
@@ -96,10 +96,10 @@ change_viz = {'min':1985,'max':2020,'palette':['00F','F0F']}
 ####################################################################################################
 # Bring in LCMS GEE collection over CONUS
 # LCMS' homepage can be found here: https://data.fs.usda.gov/geodata/rastergateway/LCMS/index.php
-# LCMS methods are described here: https://data.fs.usda.gov/geodata/rastergateway/LCMS/LCMS_v2020-5_Methods.pdf
+# LCMS methods are described here: https://data.fs.usda.gov/geodata/rastergateway/LCMS/LCMS_v2021-7_Methods.pdf
 # LCMS data can also be viewed and downloaded here: https://apps.fs.usda.gov/lcms-viewer
 # LCMS GEE data collections are available at:
-  # https://developers.google.com/earth-engine/datasets/catalog/USFS_GTAC_LCMS_v2020-5 (CONUS and Southeastern AK)
+  # https://developers.google.com/earth-engine/datasets/catalog/USFS_GTAC_LCMS_v20201-7 (CONUS and Southeastern AK)
   # https://developers.google.com/earth-engine/datasets/catalog/USFS_GTAC_LCMS_v2020-6 (Puerto Rico and US Virgin Islands
 # An in-depth look at the model predictor variables that go into making LCMS maps can be found here:https://apps.fs.usda.gov/lcms-viewer/lcms-base-learner.html
 lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2021-7").filter(ee.Filter.eq('study_area','CONUS'))
@@ -177,7 +177,7 @@ Map.addLayer(lcmap_change_yr,change_viz,'LCMAP Most Recent SC Date',True)
 # identify the strengths and weaknesses of the approach
 
 # Bring in the LCMS CCDC output that is similar to what LCMAP uses
-ccdcImg = ee.ImageCollection('projects/lcms-292214/assets/CONUS-LCMS/Base-Learners/CCDC-Collection-1984-2021')\
+ccdcImg = ee.ImageCollection('projects/lcms-292214/assets/CONUS-LCMS/Base-Learners/CCDC-Collection-1984-2022')\
           .select(['tStart','tEnd','tBreak','changeProb','red.*','nir.*','swir1.*','swir2.*','NDVI.*','NBR.*']).mosaic()
 
 # Pull out the most recent date of change

@@ -252,6 +252,30 @@ def getLTStack(LTresult, maxVertices, bandNames):
   # .arrayFlatten(lbls, ''):        # ...this takes the 2-d array and makes it 1-d by stacking the unique sets of rows and cols into bands. there will be 7 bands (vertices) for vertYear, followed by 7 bands (vertices) for rawVert, followed by 7 bands (vertices) for fittedVert, according to the 'lbls' list
   return ltVertStack.updateMask(ltVertStack.neq(-32768))
 
+############################################################################################################
+# Function to remove non vertex info from raw image array format from LandTrendr.
+# E.g. if an output is [1985,1990,2020],[500,450,320],[500,510,320],[1,0,1], the output will be [1985,2020],[500,320]
+# This is the equivalent to the vert stack functions by keeps outputs in image array format
+def rawLTToVertices(rawLT,indexName = None,multBy=10000,vertexNoData=-32768):
+  if indexName != None:
+    try:
+      distDir = changeDirDict[indexName]
+    except:
+      distDir = -1
+  else:
+    distDir = -1
+  ltArray = rawLT.select(['LandTrendr'])
+  rmse = rawLT.select(['rmse']).multiply(multBy)
+  vertices = ltArray.arraySlice(0,3,4)
+  ltArray = ltArray.arrayMask(vertices)
+  minObservationsNeededMask = ltArray.arraySlice(0,1,2).arraySlice(1,0,1).neq(vertexNoData).arrayProject([0]).arrayFlatten([['test']])
+  
+  ltArray = ltArray.arrayMask(ee.Image(ee.Array([[1],[0],[1],[0]])))
+  l = ltArray.arrayLength(1)
+  multImg = ee.Image(ee.Array([[1],[distDir*multBy]])).arrayRepeat(1,l)
+  ltArray = ltArray.multiply(multImg)
+  return ltArray.addBands(rmse).updateMask(minObservationsNeededMask)
+############################################################################################################
 #Function to wrap landtrendr processing
 def landtrendrWrapper(processedComposites,startYear,endYear,indexName,distDir,run_params,distParams,mmu):
   # startYear = 1984#ee.Date(ee.Image(processedComposites.first()).get('system:time_start')).get('year').getInfo()
@@ -546,6 +570,7 @@ def simpleLTFit(ltStack,startYear,endYear,indexName = '',arrayMode = False,maxSe
 
   #Separate years and fitted values of vertices
   if arrayMode:
+    ltStack = ltStack.select([0])
     zeros =ee.Image(ee.Array([0]).repeat(0,maxSegs+2))
     yrBns = ['yrs_{}'.format(i) for i in range(1,maxSegs+2)]
     fitBns = ['fit_{}'.format(i) for i in range(1,maxSegs+2)]
@@ -612,7 +637,7 @@ def batchSimpleLTFit(ltStacks,startYear,endYear,indexNames = None,bandPropertyNa
   # Iterate across each band/index and get the fitted, mag, slope, etc
   lt_fit = None
   for bn in indexNames:
-    ltt = ltStacks.filter(ee.Filter.eq('band',bn)).mosaic()
+    ltt = ltStacks.filter(ee.Filter.eq('band',bn)).max()
 
     if lt_fit == None:
       lt_fit = simpleLTFit(ltt,startYear,endYear,bn,arrayMode,maxSegs)

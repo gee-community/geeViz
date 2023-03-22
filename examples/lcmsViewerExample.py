@@ -1,6 +1,6 @@
 '''
 Based on https://github.com/google/earthengine-community/blob/master/datasets/scripts/LCMS_Visualization.js
- * Copyright 2022 The Google Earth Engine Community Authors
+ * Copyright 2023 The Google Earth Engine Community Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ Map.clearMap()
 ### Define visualization parameters ###
 #############################################################################
 startYear = 1985;
-endYear = 2020;
+endYear = 2021;
 lossYearPalette = ['ffffe5', 'fff7bc', 'fee391', 'fec44f', 'fe9929',
                    'ec7014', 'cc4c02']
 gainYearPalette = ['c5ee93', '00a398']

@@ -1,5 +1,5 @@
 """
-   Copyright 2022 Ian Housman
+   Copyright 2023 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ endJulian = 273
 # pre-computed stats for cloudScore and TDOM, this does not 
 # matter
 startYear = 1990  
-endYear = 2021
+endYear = 2022
 
 
 
@@ -105,11 +105,14 @@ addToMap = True
 #Whether to export LANDTRENDR outputs
 exportLTStack = False
 
+# Whether to export LandTrendr vertex array raw output
+exportLTRawArray = True
+
 #Set up Names for the export
 outputName = 'LT_Test'
 
 #Provide location composites will be exported to
-#This should be an asset folder, or more ideally, an asset imageCollection
+#This should be an asset imageCollection
 exportPathRoot = 'users/username/someCollection'
 
 
@@ -137,6 +140,11 @@ Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':changeDetectionLib.
 
 ####################################################################################################
 #Call on master wrapper function to get Landat scenes and composites
+# Important that the range of data values of the composites match the run_params spikeThreshold and recoveryThreshold
+# e.g. Reflectance bands that have a scale of 0-1 should have a spikeThreshold around 0.9
+# and a recoveryThreshold around 0.25
+# If the reflectance values were scaled by 10000, the spikeThreshold would be around 9000 
+# and a recoveryThreshold around 2500
 allImages = getImagesLib.getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian).select([indexName])
 dummyImage = allImages.first()
 composites = ee.ImageCollection(ee.List.sequence(startYear,endYear).map(lambda yr: getImagesLib.fillEmptyCollections(allImages.filter(ee.Filter.calendarRange(yr,yr,'year')),dummyImage).median().set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())))
@@ -168,6 +176,28 @@ if exportLTStack:
   
   #Export output
   getImagesLib.exportToAssetWrapper(ltOutStack,exportName,exportPath,outObj,studyArea,scale,crs,transform)
+
+
+#Export raw LandTrendr array image
+if exportLTRawArray:
+  rawLT = ltOut[0]
+  rawLTForExport = changeDetectionLib.rawLTToVertices(rawLT,indexName,10000).int16()
+  Map.addLayer(rawLT,{},'Raw LT {}'.format(indexName),False)
+  Map.addLayer(rawLTForExport,{},'Raw LT For Export {}'.format(indexName),False)
+  
+  rawLTForExport = rawLTForExport.set({'startYear':startYear,
+                                        'endYear':endYear,
+                                        'startJulian':startJulian,
+                                        'endJulian':endJulian,
+                                        'band':indexName})
+  rawLTForExport =rawLTForExport.set(run_params)
+  exportName = '{}_LT_Raw_{}_{}_{}_{}_{}'.format(outputName,indexName,startYear,endYear,startJulian,endJulian)
+  exportPath = exportPathRoot + '/'+ exportName
+  # getImagesLib.exportToAssetWrapper(rawLTForExport,exportName,exportPath,{'.default':'sample'},studyArea,scale,crs,transform)
+  # //Reverse for modeling
+  decompressedC = changeDetectionLib.simpleLTFit(rawLTForExport,startYear,endYear,indexName,True,run_params['maxSegments'])
+  Map.addLayer(decompressedC,{},'Decompressed LT Output {}'.format(indexName),False)
+
 ####################################################################################################
 #Load the study region
 Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", False)

@@ -1,5 +1,5 @@
 """
-   Copyright 2022 Ian Housman
+   Copyright 2023 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ Map.clearMap()
 ####################################################################################################
 #Bring in ccdc image asset
 #This is assumed to be an image of arrays that is returned from the ee.Algorithms.TemporalSegmentation.Ccdc method
-ccdcImg = ee.ImageCollection('projects/lcms-292214/assets/CONUS-LCMS/Base-Learners/CCDC-Collection-1984-2021')\
+ccdcImg = ee.ImageCollection('projects/lcms-292214/assets/CONUS-LCMS/Base-Learners/CCDC-Collection-1984-2022')\
           .select(['tStart','tEnd','tBreak','changeProb','red.*','nir.*','swir1.*','swir2.*','NDVI.*','NBR.*']).mosaic()
 # ccdcImg = ee.ImageCollection('projects/lcms-292214/assets/R8/PR_USVI/Base-Learners/CCDC-Landsat_1984_2020').mosaic()
 #Specify which harmonics to use when predicting the CCDC model
@@ -78,6 +78,20 @@ fitted = changeDetectionLib.predictCCDC(ccdcImg,yearImages,fillGaps,whichHarmoni
 Map.addLayer(fitted.select(['.*_predicted']),{'opacity':0},'Fitted CCDC',True);
 Map.addLayer(fitted.filter(ee.Filter.calendarRange(1990,1990,'year')).select(['.*_predicted']),{'opacity':0},'Fitted CCDC 1990',True);
 
+# Synthetic composites visualizing
+# Take common false color composite bands and visualize them for the next to the last year
+
+# First get the bands of predicted bands and then split off the name
+fittedBns = fitted.select(['.*_predicted']).first().bandNames()
+bns = fittedBns.map(lambda bn: ee.String(bn).split('_').get(0))
+
+# Filter down to the next to the last year and a summer date range
+syntheticComposites = fitted.select(fittedBns,bns)\
+    .filter(ee.Filter.calendarRange(endYear-1,endYear-1,'year'))\
+    .filter(ee.Filter.calendarRange(190,250)).first()
+
+# Visualize output as you would a composite
+Map.addLayer(syntheticComposites,getImagesLib.vizParamsFalse,'Synthetic Composite')
 ####################################################################################################
 #Load the study region
 studyArea = ccdcImg.geometry()

@@ -55,7 +55,8 @@ common_projections['NLCD_CONUS'] = {'crs':'PROJCS["Albers_Conical_Equal_Area",GE
                               'transform': [30,0,-2361915.0,0,-30,3177735.0]}
 common_projections['NLCD_AK'] = {'crs':'PROJCS["Albers_Conical_Equal_Area",GEOGCS["WGS 84",DATUM["WGS_1984",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.0174532925199433,AUTHORITY["EPSG","9108"]],AUTHORITY["EPSG","4326"]],PROJECTION["Albers_Conic_Equal_Area"],PARAMETER["standard_parallel_1",55],PARAMETER["standard_parallel_2",65],PARAMETER["latitude_of_center",50],PARAMETER["longitude_of_center",-154],PARAMETER["false_easting",0],PARAMETER["false_northing",0],UNIT["meters",1]]',
                                   'transform':[30,0,-48915.0,0,-30,1319415.0]}
-
+common_projections['NLCD_HI'] = {'crs':'PROJCS["Albers_Conical_Equal_Area",GEOGCS["WGS 84",DATUM["WGS_1984", SPHEROID["WGS 84", 6378137.0, 298.257223563, AUTHORITY["EPSG","7030"]], AUTHORITY["EPSG","6326"]], PRIMEM["Greenwich", 0.0], UNIT["degree", 0.017453292519943295], AXIS["Longitude", EAST], AXIS["Latitude", NORTH], AUTHORITY["EPSG","4326"]], PROJECTION["Albers_Conic_Equal_Area"], PARAMETER["central_meridian", -157.0],PARAMETER["latitude_of_origin", 3.0],PARAMETER["standard_parallel_1", 8.0],PARAMETER["false_easting", 0.0],PARAMETER["false_northing", 0.0],PARAMETER["standard_parallel_2", 18.0],UNIT["m", 1.0],AXIS["x", EAST],AXIS["y", NORTH]]',
+                                  'transform':[30,0,-342585,0,-30,2127135]}
 
 #Direction of  a decrease in photosynthetic vegetation- add any that are missing
 changeDirDict = {\
@@ -647,7 +648,9 @@ def getS2(studyArea,
       'SR': ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'swir1', 'swir2'],
       'TOA': ['cb', 'blue', 'green', 'red', 're1','re2','re3','nir', 'nir2', 'waterVapor', 'cirrus','swir1', 'swir2']\
   }
-
+  # Specify S2 continuous bands if resampling is set to something other than near
+  s2_continuous_bands = sensorBandNameDict[toaOrSR]
+  
   def multS2(img):
     t = img.select(sensorBandDict[toaOrSR]).divide(10000)
     # t = t.addBands(img.select(['QA60']))
@@ -681,13 +684,14 @@ def getS2(studyArea,
     s2s = joinCollections(s2s, cloudProbabilities, False,'system:index')
     # print('N s2 images after joining with cloud prob:', s2s.size().getInfo())
 
+  # Set resampling method - only sets to non nearest-neighbor for continuous bands
   if resampleMethod == 'bilinear' or resampleMethod == 'bicubic':
     print('Setting resample method to ', resampleMethod)
-    s2s = s2s.map(lambda img: img.resample(resampleMethod))
+    s2s = s2s.map(lambda img: img.addBands(img.select(s2_continuous_bands).resample(resampleMethod),None,True))
   elif resampleMethod == 'aggregate':
     print('Setting to aggregate instead of resample ')
-    s2s = s2s.map(lambda img: img.reduceResolution(ee.Reducer.mean(), True, 64))
-
+    s2s = s2s.map(lambda img: img.addBands(img.select(s2_continuous_bands).reduceResolution(ee.Reducer.mean(), True, 64),None,True))
+  
   #Convert to daily mosaics to avoid redundant observations in MGRS overlap areas and edge artifacts for shadow masking
   if convertToDailyMosaics:
     print('Converting S2 data to daily mosaics')
@@ -698,13 +702,15 @@ def getS2(studyArea,
 
   return s2s.set(args)
 
-
+getSentinel2 = getS2
 ##################################################################
 #Set up dictionaries to manage various Landsat collections, rescale factors, band names, etc
 landsat_C2_L2_rescale_dict = {
   'C1':{'refl_mult':0.0001,'refl_add':0,'temp_mult':0.1,'temp_add':0},
   'C2':{'refl_mult':0.0000275,'refl_add':-0.2,'temp_mult':0.00341802,'temp_add':149.0},
   }
+# Specify Landsat continuous bands if resampling is set to something other than near
+landsat_continuous_bands = ['blue','green','red','nir','swir1','temp', 'swir2']
 #Set up bands and corresponding band names
 landsatSensorBandDict = {
 'C1_L4_TOA':['B1','B2','B3','B4','B5','B6','B7','BQA'],
@@ -799,6 +805,7 @@ def getLandsat(studyArea,
     c = c.select(landsatSensorBandDict[landsatCollectionVersion+'_'+whichC+'_'+toaOrSR],landsatSensorBandNameDict[landsatCollectionVersion+'_'+toaOrSR])
 
     if toaOrSR.lower() == 'sr':
+      print('Applying scale factors for {} {} data'.format(landsatCollectionVersion,whichC))
       c = c.map(lambda image:applyScaleFactors(image,landsatCollectionVersion))
 
     return c
@@ -896,15 +903,16 @@ def getLandsat(studyArea,
   #Make sure all bands have data
   ls = ls.map(dataInAllBands)
 
+  # Set resampling method - only sets to non nearest-neighbor for continuous bands
   def setResample(img):
     return img.resample(resampleMethod)
 
   if resampleMethod in ['bilinear','bicubic']:
     print('Setting resample method to ',resampleMethod)
-    ls = ls.map(lambda img: img.resample(resampleMethod))
+    ls = ls.map(lambda img: img.addBands(img.select(landsat_continuous_bands).resample(resampleMethod),None,True))
   elif resampleMethod == 'aggregate':
     print('Setting to aggregate instead of resample ')
-    ls = ls.map(lambda img: img.reduceResolution(ee.Reducer.mean(), true, 64))
+    ls = ls.map(lambda img: img.addBands(img.select(landsat_continuous_bands).reduceResolution(ee.Reducer.mean(), True, 64),None,True))
 
   return ls.set(args)
 
@@ -996,8 +1004,8 @@ def maskS2clouds(image):
   qa = image.select('QA60').int16()
 
   #Bits 10 and 11 are clouds and cirrus, respectively.
-  cloudBitMask = Math.pow(2, 10)
-  cirrusBitMask = Math.pow(2, 11)
+  cloudBitMask = 1<<10
+  cirrusBitMask = 1<<11
 
   #Both flags should be set to zero, indicating clear conditions.
   mask = qa.bitwiseAnd(cloudBitMask).eq(0).And(\
@@ -1026,7 +1034,10 @@ def landsatCloudScore(img):
 
 
   #Clouds are reasonably cool in temperature.
-  score = score.min(rescale(img.select(['temp']), [300, 290]))
+  # Unmask temperature to a cold cold temp so it doesn't exclude the pixels entirely
+  # This is an issue largely with SR data where a suspected cloud temperature value is masked out
+  tempUnmasked = img.select(['temp']).unmask(270)
+  score = score.min(rescale(tempUnmasked, [300, 290]))
 
   #However, clouds are not snow.
   ndsi = img.normalizedDifference(['green', 'swir1'])
@@ -2878,6 +2889,7 @@ def getProcessedSentinel2Scenes(\
   # Add Sensor Band
   s2s = s2s.map(lambda img: addSensorBand(img, 'sentinel2', toaOrSR))
 
+ 
   return s2s.set(args)
 
 

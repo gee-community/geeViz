@@ -190,15 +190,16 @@ class mapper:
                 print('Trying to authenticate to GEE using persistent refresh token.')
                 self.accessToken = refreshToken(self.refreshTokenPath)
         #Set up js code to populate0
-        lines = "showMessage('Loading',staticTemplates.loadingModal[mode]);\nfunction runGeeViz(){\n"
+        lines = "var layerLoadErrorMessages=[];showMessage('Loading',staticTemplates.loadingModal[mode]);\nfunction runGeeViz(){\n"
 
 
         #Iterate across each map layer to add js code to
         for idDict in self.idDictList:
-            t ="Map2.{}({},{},'{}',{});\n".format(idDict['function'],idDict['item'],idDict['viz'],idDict['name'],str(idDict['visible']).lower())
+            t ="Map2.{}({},{},'{}',{});".format(idDict['function'],idDict['item'],idDict['viz'],idDict['name'],str(idDict['visible']).lower())
+            t = 'try{\n\t'+t+'\n}catch(err){\n\tlayerLoadErrorMessages.push("Error loading: '+idDict['name']+'<br>GEE "+err);}\n'
             lines += t
-        
-        lines += "setTimeout(function(){$('#close-modal-button').click();}, 2500);\n"
+        lines += 'if(layerLoadErrorMessages.length>0){showMessage("Map.addLayer Error List",layerLoadErrorMessages.join("<br>"));}\n'
+        lines += "setTimeout(function(){if(layerLoadErrorMessages.length===0){$('#close-modal-button').click();}}, 2500);\n"
 
         #Iterate across each map command
         for mapCommand in self.mapCommandList:
@@ -236,6 +237,30 @@ class mapper:
             self.mapCommandList.append(query_command)
     def setTitle(self,title):
         self.setMapTitle(title)
+
+    # Functions to set various click query properties
+    def setQueryCRS(self,crs):
+        print('Setting click query crs to: {}'.format(crs))
+        cmd = "crs='{}'".format(crs)
+        if cmd not in self.mapCommandList:
+            self.mapCommandList.append(cmd)
+    def setQueryScale(self,scale):
+        print('Setting click query scale to: {}'.format(scale))
+        cmd = "tansform=null;scale={}".format(scale)
+        if cmd not in self.mapCommandList:
+            self.mapCommandList.append(cmd)
+    def setQueryTransform(self,transform):
+        print('Setting click query transform to: {}'.format(transform))
+        cmd = "scale=null;transform={}".format(transform)
+        if cmd not in self.mapCommandList:
+            self.mapCommandList.append(cmd)
+    def setQueryBoxColor(self,color):
+        if color[0] != '#':color = '#{}'.format(color)
+        print('Setting click query box color to: {}'.format(color))
+        cmd = "clickBoundsColor='{}'".format(color)
+        if cmd not in self.mapCommandList:
+            self.mapCommandList.append(cmd)
+
     def turnOnInspector(self):
         # self.mapCommandList.append("$('#tools-collapse-div').addClass('show')")
         query_command = "$('#query-label').click();"

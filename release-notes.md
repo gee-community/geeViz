@@ -1,3 +1,18 @@
+# geeViz 2023.3.1 Release Notes
+## March 22, 2023
+
+### New Features
+* **Query (inspector) parameters setting** - Can now set the click query projection (crs, scale and/or transform), and query box color parameters. 
+    * To set the query box color: `Map.setQueryBoxColor(hexColor)`
+    * To set the query crs: `Map.setQueryCRS(crs)`
+    * To set the query transform: `Map.setQueryTransform(transform)` (note: this will set the scale to null)
+    * To set the query scale: `Map.setQueryScale(scale)` (note: this will set the transform to null)
+* **LandTrendr Array Image Support** - Can now export the raw LandTrendr array image output for vertex values only as well as RMSE (`changeDetectionLib.rawLTToVertices`). Functions to annualize vertex-only array images are now available too (`changeDetectionLib.simpleLTFit` with `arrayMode = True`. See the LANDTRENDRWrapper example script for a detailed example.
+* **Improved `Map.addLayer` error handling** - Any ee object added using a `Map.addLayer` call that fails to load will show an error and not load onto the map rather than stopping the entire map from loading.
+
+### Bug fixes
+* Landsat and Sentinel 2 resampling was set for all bands, including the qa bits. This resulted in speckling around the edges of cloud, cloud shadow, and snow masks. Now, the resampling method remains nearest neighbor for any qa bit band for both Landsat and Sentinel 2. This bug does not exist for MODIS since all masking is performed on continuous bands or the underlying mask of the thermal data.
+____
 # geeViz 2023.1.3 Release Notes
 ## January 26, 2023
 
