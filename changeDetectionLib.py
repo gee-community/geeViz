@@ -1748,12 +1748,10 @@ def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, tEndExtra
   Map.addLayer(timeImgs,{},'time')
   # If selected, add a constant amount of time to last end segment to make sure the last year is annualized correctly.
   # tEndExtrapolationPeriod should be a fraction of a year.
-  finalTEnd = ccdcImg.select('tEnd')
-  finalTEnd = finalTEnd.arraySlice(0,-1,None).rename('tEnd').arrayGet(0).add(tEndExtrapolationPeriod).toArray(0)
+  finalTEnd = ccdcImg.select('tEnd').arraySlice(0,-1,None).rename('tEnd').arrayGet(0).add(tEndExtrapolationPeriod).toArray(0)
   tEnds = ccdcImg.select('tEnd')
   tEnds = tEnds.arraySlice(0,0,-1).arrayCat(finalTEnd,0).rename('tEnd')
-  keepBands = ccdcImg.bandNames().remove('tEnd')
-  ccdcImg = ccdcImg.select(keepBands).addBands(tEnds)
+  ccdcImg = ccdcImg.addBands(tEnds,None,True)
 
   # Loop through time image collection and grab the correct CCDC coefficients
   annualSegCoeffs = timeImgs.map(lambda img: getCCDCSegCoeffs(img,ccdcImg,True))
@@ -1837,42 +1835,49 @@ def getTimeImageCollection(startYear, endYear, startJulian = 1, endJulian = 365,
 
 # This creates an image collection in the same format as getTimeImageCollection(), but gets the pixel-wise dates from a composite collection
 # Composite collection should be an imported and prepped image collection with 'julianDay' and 'year' bands
-def getTimeImageCollectionFromComposites(startJulian, endJulian, compositeCollection):
-  # Account for date wrapping. If julian day is less than startJulian, add one year.
-  # For PRUSVI CCDC, Year 2020 is day 152 2020 to day 151 2021
-  # For CONUS CCDC, Year 2020 is day 1 2020 to day 365 2020, so it will never be less.
-  def getWrappedFraction(jDay):
-    fraction = jDay.divide(365)
-    nextYearMask = jDay.lte(ee.Image.constant(startJulian))
-    thisYearMask = nextYearMask.Not()
-    nextYearFraction = fraction.updateMask(nextYearMask).add(1)
-    thisYearFraction = fraction.updateMask(thisYearMask)
-    fraction = nextYearFraction.addBands(thisYearFraction).reduce(ee.Reducer.max())
-    return fraction
-  medianFraction = compositeCollection.select('julianDay')\
-    .map(lambda jDay: getWrappedFraction(jDay))\
-    .reduce(ee.Reducer.median())
+#def getTimeImageCollectionFromComposites(startJulian, endJulian, compositeCollection):
+  ## Account for date wrapping. If julian day is less than startJulian, add one year.
+  ## For PRUSVI CCDC, Year 2020 is day 152 2020 to day 151 2021
+  ## For CONUS CCDC, Year 2020 is day 1 2020 to day 365 2020, so it will never be less.
+  #def getWrappedFraction(jDay):
+    #fraction = jDay.divide(365)
+    #nextYearMask = jDay.lte(ee.Image.constant(startJulian))
+    #thisYearMask = nextYearMask.Not()
+    #nextYearFraction = fraction.updateMask(nextYearMask).add(1)
+    #thisYearFraction = fraction.updateMask(thisYearMask)
+    #fraction = nextYearFraction.addBands(thisYearFraction).reduce(ee.Reducer.max())
+    #return fraction
+  #medianFraction = compositeCollection.select('julianDay')\
+    #.map(lambda jDay: getWrappedFraction(jDay))\
+    #.reduce(ee.Reducer.median())
 
-  def getYearTimeImage(dateImg):
-    # Get Unmasked values
-    newDateImg = ee.Image(dateImg.select('year').add(dateImg.select('julianDay').divide(365))).copyProperties(dateImg, ['system:time_start'])    
+  #def getYearTimeImage(dateImg):
+    ## Get Unmasked values
+    #newDateImg = ee.Image(dateImg.select('year').add(dateImg.select('julianDay').divide(365))).copyProperties(dateImg, ['system:time_start'])    
     
-    # Create values for masked pixels  
-    imgYear = dateImg.date().get('year');
-    medianValues = ee.Image.constant(imgYear).float().add(ee.Image(medianFraction)).rename('median_values');
+    ## Create values for masked pixels  
+    #imgYear = dateImg.date().get('year');
+    #medianValues = ee.Image.constant(imgYear).float().add(ee.Image(medianFraction)).rename('median_values');
     
-    # Fill masked Values with median fraction
-    compositeMask = ee.Image(newDateImg).mask()
-    out = ee.Image(newDateImg)\
-      .addBands(medianValues.updateMask(compositeMask.Not()))\
-      .reduce(ee.Reducer.max())\
-      .rename('year')\
-      .copyProperties(dateImg, ['system:time_start']);
+    ## Fill masked Values with median fraction
+    #compositeMask = ee.Image(newDateImg).mask()
+    #out = ee.Image(newDateImg)\
+      #.addBands(medianValues.updateMask(compositeMask.Not()))\
+      #.reduce(ee.Reducer.max())\
+      #.rename('year')\
+      #.copyProperties(dateImg, ['system:time_start']);
 
-    return out
-  yearImages = compositeCollection.map(lambda dateImg: getYearTimeImage(dateImg))
+    #return out
+  #yearImages = compositeCollection.map(lambda dateImg: getYearTimeImage(dateImg))
 
-  return yearImages
+  #return yearImages
+
+def getTimeImageCollectionFromComposites(startJulian, endJulian, compositeCollection): 
+  dates = compositeCollection.map(lambda img:img.select(['year']).add(img.select(['julianDay']).divide(365)).float().copyProperties(img,['system:time_start']))
+  nYears = dates.size().getInfo()
+  interpolated = linearInterp(dates, 365*nYears, -32768)
+  return interpolated
+
 ###################################################################################
 #Function for getting change years and magnitudes for a specified band from CCDC outputs
 #Only change from the breaks is extracted

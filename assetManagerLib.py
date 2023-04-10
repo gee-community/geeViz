@@ -21,7 +21,7 @@
 #           ASSETMANAGERLIB.PY
 #--------------------------------------------------------------------------
 
-import sys, ee, os, shutil, subprocess, datetime, calendar, json
+import sys, ee, os, shutil, subprocess, datetime, calendar, json,glob
 import time, logging, pdb
 try:
     z = ee.Number(1).getInfo()
@@ -217,7 +217,7 @@ def upload_to_gee(image_dir, gs_bucket,asset_dir,image_extension = '.tif', resam
     create_image_collection(asset_dir)
 
     #Get the names that need to be transferred form GCS to EE
-    tifs = glob(image_dir,image_extension)
+    tifs = glob.glob(os.path.join(image_dir,image_extension))
 
     #Set up the asset dir, files, and band names object
     asset_dir = check_end(asset_dir)
@@ -285,20 +285,21 @@ def check_end(in_path, add = '/'):
 ##############################################################################################
 #Returns all files containing an extension or any of a list of extensions
 #Can give a single extension or a list of extensions
-def glob(Dir, extension):
-    Dir = check_end(Dir)
-    if type(extension) != list:
-        if extension.find('*') == -1:
-            return map(lambda i : Dir + i, filter(lambda i: os.path.splitext(i)[1] == extension, os.listdir(Dir)))
-        else:
-            return map(lambda i : Dir + i, os.listdir(Dir))
-    else:
-        out_list = []
-        for ext in extension:
-            tl = map(lambda i : Dir + i, filter(lambda i: os.path.splitext(i)[1] == ext, os.listdir(Dir)))
-            for l in tl:
-                out_list.append(l)
-        return out_list
+# use glob.glob
+# def glob(Dir, extension):
+#     Dir = check_end(Dir)
+#     if type(extension) != list:
+#         if extension.find('*') == -1:
+#             return map(lambda i : Dir + i, filter(lambda i: os.path.splitext(i)[1] == extension, os.listdir(Dir)))
+#         else:
+#             return map(lambda i : Dir + i, os.listdir(Dir))
+#     else:
+#         out_list = []
+#         for ext in extension:
+#             tl = map(lambda i : Dir + i, filter(lambda i: os.path.splitext(i)[1] == ext, os.listdir(Dir)))
+#             for l in tl:
+#                 out_list.append(l)
+#         return out_list
 ##############################################################################################
 #Function to get filename without extension
 def base(in_path):
@@ -463,4 +464,94 @@ def julian_to_calendar(julian_date, year):
         ldn = str(dn)
     return [year,mn,dn]
 ##############################################################################################
+# Functions to set date
+def getDate(year,month,day):
+   return datetime.datetime(year,month,day).isoformat()+'Z'
+def setDate(assetPath,year,month,day):
+   ee.data.updateAsset(assetPath, {'start_time':getDate(year,month,day)},['start_time'])
 
+
+#########################################################################
+# Function to ingest tif from Google Cloud Storage as an asset
+# Follows guidance from: https://developers.google.com/earth-engine/guides/image_manifest
+# Must have bandNames specified for pyramiding policy and no data values to be set
+# Band names must be one name for each band in images that will be uploaded
+# pyramidingPolicy and noDataValues can be one for each band name or only one (that is then repeated for each band)
+# The system:time_start and system:time_end properties are handled automatically assuming the proper format or ee Date object is provided
+def ingestImageFromGCS(gcsURIs,assetPath,overwrite = False,bandNames = None,properties = None,pyramidingPolicy=None,noDataValues=None):
+    if overwrite or not ee_asset_exists(assetPath):
+        taskID= ee.data.newTaskId(1)[0]
+
+        #Make sure collection or folder exists
+        create_image_collection(os.path.basename(assetPath))
+
+        # Handle if single image path is provided - changes to a list
+        if str(type(gcsURIs)).find("'str'")>-1:
+            gcsURIs = [gcsURIs]
+
+        # Repeat the pyramiding policy and no data value if only one is provided
+        if bandNames != None and pyramidingPolicy != None and str(type(pyramidingPolicy)).find("'str'")>-1:
+            pyramidingPolicy = [pyramidingPolicy]*len(bandNames)
+
+        if bandNames != None and noDataValues != None and str(type(noDataValues)).find("'list'")==-1:
+            noDataValues = [noDataValues]*len(bandNames)
+            
+        # Set up the manifest
+        params = {
+            'name' :assetPath,
+            'tilesets' :[{'sources': 
+                            [{'uris': gcsURIs}]   
+                        }]
+            }
+        # Set up the band names, pyramiding policy, and no data values
+        if bandNames !=None:
+            bnDict = []
+            for i,bn in enumerate(bandNames):
+                bnDictT = {'id': bn,'tileset_band_index':i}
+                if pyramidingPolicy != None:
+                    bnDictT['pyramiding_policy']= pyramidingPolicy[i]
+                if noDataValues != None:
+                    bnDictT['missing_data']= {'values':[noDataValues[i]]}
+                bnDict.append(bnDictT) 
+            params['bands'] = bnDict
+
+        # Handle the date inconsistency in the GEE API
+        def fixDate(propIn,propOut):
+            if propIn in properties.keys():
+                d = properties[propIn]
+                if str(type(d)).find('ee.ee_date.Date')>-1:
+                    d = d.format('YYYY-MM-dd').cat('T').cat(d.format('HH:mm:SS')).cat('Z').getInfo()
+                params[propOut] = d
+                properties.pop(propIn)
+            
+        if properties !=None:
+            fixDate('system:time_start','start_time')
+            fixDate('system:time_end','end_time')
+            params['properties'] = properties
+        print('Ingestion manifest:',params)   
+            
+        ee.data.startIngestion(taskID, params,overwrite)
+        print('Starting ingestion task:',assetPath)
+    else:
+        print(assetPath,'already exists')
+#########################################################################
+# Function to wrap the entire uploading an image to GEE image asset workflow
+# First uploads to an existing GCS bucket, and then ingests to GEE
+# Can handle multiple multi-band image tiles or a single image
+# Must have bandNames specified for pyramiding policy and no data values to be set
+# Band names must be one name for each band in images that will be uploaded
+# pyramidingPolicy and noDataValues can be one for each band name or only one (that is then repeated for each band)
+# The system:time_start and system:time_end properties are handled automatically assuming the proper format or ee Date object is provided
+def uploadToGEEImageAsset(localTif,gcsBucket,assetPath,overwrite = False,bandNames = None,properties = None,pyramidingPolicy=None,noDataValues=None,gsutil_path='C:/Program Files (x86)/Google/Cloud SDK/google-cloud-sdk/bin/gsutil.cmd'):
+  # List all local files with specified name or wildcard name and make GCS paths for each file
+  localTifs = glob.glob(localTif)
+  gcsURIs = [gcsBucket+'/'+os.path.basename(tif) for tif in localTifs]
+
+  # Upload files to GCS (will not overwrite)
+  uploadCommand = '"{}" -m cp -n -r {} {}'.format(gsutil_path,localTif,gcsBucket)
+  call = subprocess.Popen(uploadCommand)
+  call.wait()
+
+  # Ingest to GEE
+  ingestImageFromGCS(gcsURIs,assetPath,overwrite = overwrite,bandNames = bandNames,properties = properties,pyramidingPolicy=pyramidingPolicy,noDataValues=noDataValues)
+#########################################################################

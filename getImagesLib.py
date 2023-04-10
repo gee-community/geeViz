@@ -1936,20 +1936,20 @@ dailyViewAngleBandNames = ['SensorZenith','SensorAzimuth','SolarZenith','SolarAz
 compositeViewAngleBandNames = ['SolarZenith', 'ViewZenith', 'RelativeAzimuth']
 #Dictionary of MODIS collections
 modisCDict = {\
-  'eightDayNDVIA' : 'MODIS/006/MYD13Q1',\
-  'eightDayNDVIT' : 'MODIS/006/MOD13Q1',\
-  'eightDaySR250A' : 'MODIS/006/MYD09Q1',\
-  'eightDaySR250T' : 'MODIS/006/MOD09Q1',\
-  'eightDaySR500A' : 'MODIS/006/MYD09A1',\
-  'eightDaySR500T' : 'MODIS/006/MOD09A1',\
-  'eightDayLST1000A' : 'MODIS/006/MYD11A2',\
-  'eightDayLST1000T' : 'MODIS/006/MOD11A2',\
-  'dailySR250A' : 'MODIS/006/MYD09GQ',\
-  'dailySR250T' : 'MODIS/006/MOD09GQ',\
-  'dailySR500A' : 'MODIS/006/MYD09GA',\
-  'dailySR500T' : 'MODIS/006/MOD09GA',\
-  'dailyLST1000A' : 'MODIS/006/MYD11A1',\
-  'dailyLST1000T' : 'MODIS/006/MOD11A1'\
+  'eightDayNDVIA' : 'MODIS/061/MYD13Q1',\
+  'eightDayNDVIT' : 'MODIS/061/MOD13Q1',\
+  'eightDaySR250A' : 'MODIS/061/MYD09Q1',\
+  'eightDaySR250T' : 'MODIS/061/MOD09Q1',\
+  'eightDaySR500A' : 'MODIS/061/MYD09A1',\
+  'eightDaySR500T' : 'MODIS/061/MOD09A1',\
+  'eightDayLST1000A' : 'MODIS/061/MYD11A2',\
+  'eightDayLST1000T' : 'MODIS/061/MOD11A2',\
+  'dailySR250A' : 'MODIS/061/MYD09GQ',\
+  'dailySR250T' : 'MODIS/061/MOD09GQ',\
+  'dailySR500A' : 'MODIS/061/MYD09GA',\
+  'dailySR500T' : 'MODIS/061/MOD09GA',\
+  'dailyLST1000A' : 'MODIS/061/MYD11A1',\
+  'dailyLST1000T' : 'MODIS/061/MOD11A1'\
 }
 multModisDict = {\
     'tempNoAngleDaily': [ee.Image([0.0001,0.0001,0.0001,0.0001,0.0001,0.0001,0.02,1,1]),\

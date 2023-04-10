@@ -1,3 +1,16 @@
+# geeViz 2023.4.1 Release Notes
+## April 11, 2023
+
+### New Features
+* **Default Query Output Location Change** - Query outputs are not placed in the side pane where the legend is located. 
+    * To back to using the default on-map infoWindow use: `Map.setQueryToInfoWindow()`
+
+* **Improved Upload To Asset Capabilities** - Can now upload tifs to gee assets more easily and handle setting a number of paramters (`assetManagerLib.uploadToGEEImageAsset`) and (`assetManagerLib.ingestImageFromGCS`)
+
+### Bug fixes
+* All MODIS collections have been updated to newer 061 collections
+* Query box size now reflects the chosen scale
+____
 # geeViz 2023.3.1 Release Notes
 ## March 22, 2023
 

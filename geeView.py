@@ -135,6 +135,7 @@ class mapper:
         self.ee_run_name = 'runGeeViz'
         self.refreshTokenPath = ee.oauth.get_credentials_path()
         self.serviceKeyPath = None
+        self.queryWindowMode = 'sidePane'
         
     #Function for adding a layer to the map
     def addLayer(self,image,viz = {},name= None,visible= True):
@@ -204,7 +205,10 @@ class mapper:
         #Iterate across each map command
         for mapCommand in self.mapCommandList:
             lines += mapCommand + '\n'
-
+        
+        # Set location of query outputs
+        lines += 'queryWindowMode = "{}"\n'.format(self.queryWindowMode)
+        
         lines+= "}"
         
         #Write out js file
@@ -246,12 +250,12 @@ class mapper:
             self.mapCommandList.append(cmd)
     def setQueryScale(self,scale):
         print('Setting click query scale to: {}'.format(scale))
-        cmd = "tansform=null;scale={}".format(scale)
+        cmd = "tansform=null;scale={};plotRadius={}".format(scale,scale/2.)
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
     def setQueryTransform(self,transform):
         print('Setting click query transform to: {}'.format(transform))
-        cmd = "scale=null;transform={}".format(transform)
+        cmd = "scale=null;transform={};plotRadius={}".format(transform,transform[0]/2.)
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
     def setQueryBoxColor(self,color):
@@ -260,7 +264,15 @@ class mapper:
         cmd = "clickBoundsColor='{}'".format(color)
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
-
+    # Functions to handle location of query outputs
+    def setQueryWindowMode(self,mode):
+        self.queryWindowMode = mode
+    def setQueryToInfoWindow(self):
+        self.setQueryWindowMode('infoWindow')
+    def setQueryToSidePane(self):
+        self.setQueryWindowMode('sidePane')
+    
+    # Turn on query inspector 
     def turnOnInspector(self):
         # self.mapCommandList.append("$('#tools-collapse-div').addClass('show')")
         query_command = "$('#query-label').click();"
