@@ -3900,7 +3900,7 @@ def customQualityMosaic(inCollection,qualityBand,percentile):
 #This method tends to work well if there is no wet snow present
 #Wet snow over flat areas can result in false positives
 #Designed to work with TOA data. SR data will result in false negatives (omission)
-def simpleWaterMask(img,contractPixels = 0,slope_thresh = 10,elevationImagePath = "USGS/NED",elevationFocalMeanRadius = 5.5):
+def simpleWaterMask(img,contractPixels = 0,slope_thresh = 10,elevationImagePath = "USGS/3DEP/10m",elevationFocalMeanRadius = 5.5):
   img = addTCAngles(img)
   ned = ee.Image(elevationImagePath).resample('bicubic')
   slope = ee.Terrain.slope(ned.focal_mean(elevationFocalMeanRadius))

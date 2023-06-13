@@ -1,5 +1,5 @@
 """
-   Copyright 2019 Leah Campbell
+   Copyright 2023 Leah Campbell and Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -483,7 +483,7 @@ def ingestImageFromGCS(gcsURIs,assetPath,overwrite = False,bandNames = None,prop
         taskID= ee.data.newTaskId(1)[0]
 
         #Make sure collection or folder exists
-        create_image_collection(os.path.basename(assetPath))
+        create_image_collection(os.path.dirname(assetPath))
 
         # Handle if single image path is provided - changes to a list
         if str(type(gcsURIs)).find("'str'")>-1:

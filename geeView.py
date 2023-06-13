@@ -1,5 +1,5 @@
 """
-   Copyright 2020 Ian Housman
+   Copyright 2023 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ from google.auth.transport import requests as gReq
 from google.oauth2 import service_account
 
 from threading import Thread
-from IPython.display import IFrame
+from IPython.display import IFrame,display, HTML
 if sys.version_info[0] < 3:
     import SimpleHTTPServer, SocketServer
 else:
@@ -59,6 +59,21 @@ if os.path.exists(ee_run_dir) == False:os.makedirs(ee_run_dir)
 ######################################################################
 #Functions
 
+######################################################################
+# Function to check if being run inside a notebook
+# Taken from: https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
+def is_notebook():
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True   # Jupyter notebook or qtconsole
+        elif shell == 'TerminalInteractiveShell':
+            return False  # Terminal running IPython
+        else:
+            return False  # Other type (?)
+    except NameError:
+        return False      # Probably standard Python interpreter
+######################################################################
 # Function for cleaning trailing .... in accessToken
 def cleanAccessToken(accessToken):
     while accessToken[-1] == '.': accessToken = accessToken[:-1]
@@ -133,6 +148,9 @@ class mapper:
         self.idDictList = []
         self.mapCommandList  = []
         self.ee_run_name = 'runGeeViz'
+
+        self.isNotebook = is_notebook()
+
         self.refreshTokenPath = ee.oauth.get_credentials_path()
         self.serviceKeyPath = None
         self.queryWindowMode = 'sidePane'
@@ -170,14 +188,14 @@ class mapper:
     #Function for centering on a GEE object that has a geometry
     def centerObject(self,feature):
         try:
-            bounds = json.dumps(feature.geometry().bounds(100).getInfo())
+            bounds = json.dumps(feature.geometry().bounds(100,'EPSG:4326').getInfo())
         except Exception as e:
-            bounds = json.dumps(feature.bounds(100).getInfo())
+            bounds = json.dumps(feature.bounds(100,'EPSG:4326').getInfo())
         command = 'synchronousCenterObject('+bounds+')'
         
         self.mapCommandList.append(command)
     #Function for launching the web map after all adding to the map has been completed
-    def view(self,open_browser = True, open_iframe = False,iframe_height = 525):
+    def view(self,open_browser = None, open_iframe = None,iframe_height = 525):
         print('Starting webmap')
 
         # Get access token
@@ -217,6 +235,21 @@ class mapper:
         oo.writelines(lines)
         oo.close()
         # time.sleep(5)
+
+        # if not self.isNotebook:
+        #     self.Map.save(os.path.join(folium_html_folder,folium_html))
+        #     if not geeView.isPortActive(self.port):
+        #         print('Starting local web server at: http://localhost:{}/{}/'.format(self.port,geeView.geeViewFolder))
+        #         geeView.run_local_server(self.port)
+        #         print('Done')
+        #     else:
+        #         print('Local web server at: http://localhost:{}/{}/ already serving.'.format(self.port,geeView.geeViewFolder))
+        #     if open_browser:
+        #         geeView.webbrowser.open('http://localhost:{}/{}/{}'.format(self.port,geeView.geeViewFolder,folium_html),new = 1)
+
+        # else:
+        #     display(self.Map)
+        
         if not isPortActive(self.port):
             print('Starting local web server at: http://localhost:{}/{}/'.format(self.port,geeViewFolder))
             run_local_server(self.port)
@@ -226,11 +259,16 @@ class mapper:
         else:
             print('Local web server at: http://localhost:{}/{}/ already serving.'.format(self.port,geeViewFolder))
             # print('Refresh browser instance')
+       
+
         print('cwd',os.getcwd())
-        if open_browser:
+        if not self.isNotebook or open_browser:
             webbrowser.open('http://localhost:{}/{}/?accessToken={}'.format(self.port,geeViewFolder,self.accessToken),new = 1)
-        if open_iframe:
+        elif open_browser == False and open_iframe:
             self.IFrame = IFrame(src='http://localhost:{}/{}/?accessToken={}'.format(self.port,geeViewFolder,self.accessToken), width='100%', height='{}px'.format(iframe_height))
+        else:
+            self.IFrame = IFrame(src='http://localhost:{}/{}/?accessToken={}'.format(self.port,geeViewFolder,self.accessToken), width='100%', height='{}px'.format(iframe_height))
+            display(self.IFrame)
     def clearMap(self):
         self.layerNumber = 1
         self.idDictList = []

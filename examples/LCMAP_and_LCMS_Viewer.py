@@ -34,8 +34,8 @@ preStartYear = 1985
 preEndYear = 1990
 
 # Define the more recent time period
-postStartYear = 2016
-postEndYear = 2020
+postStartYear = 2021
+postEndYear = 2022
 
 # Specify whether to add time lapses of products. If True, loading the viewer will take much much much much longer
 addTimelapses = False
@@ -84,9 +84,9 @@ lcachg_palette = ['E60000','A87000','E3E3C2','1D6330','476BA1','BAD9EB','FFFFFF'
 
 # Set up some visualization dictionaries
 lc_viz = {'min':1,'max':9,'palette':lcpri_palette,'classLegendDict':lc_legend_dict,'queryDict':lc_lookup_dict}
-loss_viz = {'min':1985,'max':2020,'palette':changeDetectionLib.lossYearPalette}
-gain_viz = {'min':1985,'max':2020,'palette':changeDetectionLib.gainYearPalette}
-change_viz = {'min':1985,'max':2020,'palette':['00F','F0F']}
+loss_viz = {'min':1985,'max':2022,'palette':changeDetectionLib.lossYearPalette}
+gain_viz = {'min':1985,'max':2022,'palette':changeDetectionLib.gainYearPalette}
+change_viz = {'min':1985,'max':2022,'palette':['00F','F0F']}
 
 # Map.addLayer(sctime.max(),{'min':100,'max':292,'palette':['151d44', '156c72', '7eb390', 'fdf5f4', 'db8d77', '9c3060', '340d35']},'SCTIME',True)
 # Map.addLayer(scmag.max(),{'min':651,'max':3700,'palette':['d7f9d0', 'a2d595', '64b463', '129450', '126e45', '1a482f', '122414']},'SCMAG',True)
@@ -102,7 +102,7 @@ change_viz = {'min':1985,'max':2020,'palette':['00F','F0F']}
   # https://developers.google.com/earth-engine/datasets/catalog/USFS_GTAC_LCMS_v20201-7 (CONUS and Southeastern AK)
   # https://developers.google.com/earth-engine/datasets/catalog/USFS_GTAC_LCMS_v2020-6 (Puerto Rico and US Virgin Islands
 # An in-depth look at the model predictor variables that go into making LCMS maps can be found here:https://apps.fs.usda.gov/lcms-viewer/lcms-base-learner.html
-lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2021-7").filter(ee.Filter.eq('study_area','CONUS'))
+lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2022-8").filter(ee.Filter.eq('study_area','CONUS'))
 ####################################################################################################
 
 ####################################################################################################

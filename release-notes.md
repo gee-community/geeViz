@@ -1,3 +1,14 @@
+# geeViz 2023.6.1 Release Notes
+## June 13, 2023
+
+### New Features
+* **Folium based simple GEE object viewer** - A Folium-based GEE object viewer is now available (`foliumView.py`). The syntax is very similar to geeView. It tends to load faster, but be quite buggy with layer ordering, and lacks the ability to query values of layers. Examples are provided to help use it (`examples\foliumViewer.ipynb`,`examples\geeViewVSFoliumViewerExampleNotebook.ipynb`)
+
+* **GEE2Pandas data science helper module** - A new module geared toward going between traditional data formats (csv, Excel, dbf, json, etc) and GEE (`gee2Pandas.py`). Functions are provided to go from a Pandas dataframe to GEE featureCollection and back. An example is provided (`examples\gee2PandasExample.ipynb`)
+
+### Bug fixes
+* geeView layer names with odd characters are now accepted (`e.g. / \ `)
+____
 # geeViz 2023.4.1 Release Notes
 ## April 11, 2023
 

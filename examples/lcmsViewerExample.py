@@ -36,8 +36,8 @@ Map.clearMap()
 #############################################################################
 ### Define visualization parameters ###
 #############################################################################
-startYear = 1985;
-endYear = 2021;
+startYear = 1985
+endYear = 2022
 lossYearPalette = ['ffffe5', 'fff7bc', 'fee391', 'fec44f', 'fe9929',
                    'ec7014', 'cc4c02']
 gainYearPalette = ['c5ee93', '00a398']
@@ -63,7 +63,7 @@ def getMostRecentChange(c, code):
 ### Bring in LCMS annual outputs ###
 #############################################################################
 
-lcms = ee.ImageCollection('USFS/GTAC/LCMS/v2021-7');
+lcms = ee.ImageCollection('USFS/GTAC/LCMS/v2022-8')
 bandNames =  lcms.first().bandNames().getInfo()
 print('Available study areas:', lcms.aggregate_histogram('study_area').keys().getInfo());
 print('Available LCMS products',bandNames);
