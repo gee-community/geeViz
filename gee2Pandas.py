@@ -194,7 +194,6 @@ def dfToJSON(dbf,outJsonFilename):
 ####################################################################################################
 # Scratch space for testing
 if __name__ == '__main__':
-    # tableToFeatureCollection(table_path,lat='Latitude', lon='Longitude',properties=[],dateCol=None,groupByColumns = None,mode='Excel')
     output_dir = r'C:\tmp\geeToPandasTest' 
     out_json = os.path.join(output_dir,'test_json.json')
 

@@ -27,14 +27,61 @@ if sys.version_info[0] < 3:
     import SimpleHTTPServer, SocketServer
 else:
     import http.server, socketserver 
+creds_path = ee.oauth.get_credentials_path()
+######################################################################
+# Functions to handle various initialization/authentication workflows to try to get a user an initialized instance of ee
+
+# Function to have user input a project id if one is still needed
+def getProject():
+    provided_project = '{}.proj_id'.format(creds_path)
+    provided_project = os.path.normpath(provided_project)
+    
+    if not os.path.exists(provided_project):
+        project_id = input('Please enter GEE project ID: ')
+        print('You entered: {}'.format(project_id))
+        o = open(provided_project,'w')
+        o.write(project_id)
+        o.close()
+    o = open(provided_project,'r')
+    project_id=o.read()
+    print('Cached project id file path: {}'.format(provided_project))
+    print('Cached project id: {}'.format(project_id))
+    o.close()
+    return project_id
+def verified_initialize(project=None):
+    ee.Initialize(project=project)
+    z = ee.Number(1).getInfo()
+    print('Successfully initialized')
+# Function to handle various exceptions to initializing to GEE
+def robustInitializer():
+    try:
+        z = ee.Number(1).getInfo()
+    except:
+        print('Initializing GEE')
+        
+        if not os.path.exists(creds_path):
+            print('No credentials found')
+            print('Will attempt ee.Authenticate')
+            ee.Authenticate()
+        try:
+            verified_initialize(project=None)
+        except Exception as E:
+            print(E)
+            if str(E).find('Reauthentication is needed') >- 1:
+                ee.Authenticate()
+            
+            if str(E).find('project is not registered') > -1:
+                project_id=getProject()
+            else:
+                project_id = None
+            try:
+                verified_initialize(project=project_id)
+            except Exception as E:
+                print(E)
+                
 ######################################################################
 #Set up GEE and paths
-try:
-    z = ee.Number(1).getInfo()
-except:
-    print('Initializing GEE')
-    ee.Initialize()
-
+robustInitializer()
 geeVizFolder = 'geeViz'
 geeViewFolder = 'geeView'
 #Set up template web viewer
@@ -43,9 +90,9 @@ cwd = os.getcwd()
 
 paths = sys.path
 
-gee_py_modules_dir = site.getsitepackages()[-1]
-
-py_viz_dir = os.path.join(gee_py_modules_dir,geeVizFolder)
+# gee_py_modules_dir = site.getsitepackages()[-1]
+# py_viz_dir = os.path.join(gee_py_modules_dir,geeVizFolder)
+py_viz_dir = os.path.dirname(__file__)
 # os.chdir(py_viz_dir)
 print('geeViz package folder:', py_viz_dir)
 
@@ -94,7 +141,8 @@ def refreshToken(refresh_token_path = ee.oauth.get_credentials_path()):
             "refresh_token": refresh_token
     }
     r = requests.post(ee.oauth.TOKEN_URI, data=params)
-
+    # print('R:',r.json()['access_token'])
+    # input('press any key to continue')
     if r.ok:
         return cleanAccessToken(r.json()['access_token'])
     else:

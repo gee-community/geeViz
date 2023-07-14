@@ -1742,7 +1742,7 @@ def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, tEndExtra
 
   # Create image collection of images with the proper time stamp as well as a 'year' band with the year fraction.
   if annualizeWithCompositeDates and compositeCollection != None:
-    timeImgs = getTimeImageCollectionFromComposites(startJulian, endJulian, compositeCollection)
+    timeImgs = getTimeImageCollectionFromComposites(compositeCollection,startYear,endYear)
   else:
     timeImgs = getTimeImageCollection(startYear, endYear, startJulian ,endJulian, 1, yearStartMonth, yearStartDay)
   Map.addLayer(timeImgs,{},'time')
@@ -1872,12 +1872,27 @@ def getTimeImageCollection(startYear, endYear, startJulian = 1, endJulian = 365,
 
   #return yearImages
 
-def getTimeImageCollectionFromComposites(startJulian, endJulian, compositeCollection): 
-  dates = compositeCollection.map(lambda img:img.select(['year']).add(img.select(['julianDay']).divide(365)).float().copyProperties(img,['system:time_start']))
-  nYears = dates.size().getInfo()
-  interpolated = linearInterp(dates, 365*nYears, -32768)
-  return interpolated
+# def getTimeImageCollectionFromComposites(startJulian, endJulian, compositeCollection): 
+#   dates = compositeCollection.map(lambda img:img.select(['year']).add(img.select(['julianDay']).divide(365)).float().copyProperties(img,['system:time_start']))
+#   nYears = dates.size().getInfo()
+#   interpolated = linearInterp(dates, 365*nYears, -32768)
+#   return interpolated
+def getTimeImageCollectionFromComposites(compositeCollection,startYear=None,endYear=None): 
+    compositeCollection = compositeCollection.sort('system:time_start')
+    if startYear == None:
+      startYear =compositeCollection.first().date().get('year')
+      print('Found start year: {}'.format(startYear.getInfo()))
+    if endYear == None:
+      endYear =compositeCollection.sort('system:time_start',False).first().date().get('year')
+      print('Found end year: {}'.format(endYear.getInfo()))
 
+    dates = compositeCollection.map(lambda img:img.select(['year']).add(img.select(['julianDay']).divide(365)).float().copyProperties(img,['system:time_start']))
+    dummyImage = dates.first()
+  
+    datesFilled = ee.ImageCollection(ee.List.sequence(startYear,endYear).map(lambda yr:fillEmptyCollections(dates.filter(ee.Filter.calendarRange(yr,yr,'year')),dummyImage).first().set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())))
+    nYears = datesFilled.size().getInfo()
+    interpolated = linearInterp(datesFilled, 365*nYears, -32768)
+    return interpolated
 ###################################################################################
 #Function for getting change years and magnitudes for a specified band from CCDC outputs
 #Only change from the breaks is extracted

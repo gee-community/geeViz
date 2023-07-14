@@ -1,3 +1,12 @@
+# geeViz 2023.7.1 Release Notes
+## July 14, 2023
+
+### New Features
+* **More robust authentication and initialization** - There are many inconsistencies being introduced for authenticating and initializing to GEE. A new function (`geeViz.geeView.robustInitializer`) attempts to handle some of these scenarios. It is not solid though and if you know your particular environment setup, it is best to authenticate and initialize before importing geeViz. There is also difficulty with authenticating on the javaScript client for geeView for some GEE accounts. If the javaScript instance fails to initialize, it will fall back on an existing auth proxy. Since this uses an account different from your own, it may result in errors in accessing assets for viewing in geeView. This can be solved by sharing assets publically. 
+
+### Bug fixes
+* `changeDetectionLib.getTimeImageCollectionFromComposites` has been updated to fill in a blank image for any missing years and allow a year range to be specified to allow for interpolation and extrapolation. The unused parameters of `startJulian` and `endJulian` are no longer used.
+____
 # geeViz 2023.6.1 Release Notes
 ## June 13, 2023
 

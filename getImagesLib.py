@@ -19,11 +19,6 @@
 from geeViz.geeView import *
 import math, ee, json, pdb
 from threading import Thread
-try:
-    z = ee.Number(1).getInfo()
-except:
-    print('Initializing GEE')
-    ee.Initialize()
 ######################################################################
 #Module for getting Landsat, Sentinel 2 and MODIS images/composites
 #Define visualization parameters
