@@ -1,3 +1,15 @@
+# geeViz 2023.7.3 Release Notes
+## July 24, 2023
+
+### New Features
+* **exportToAssetWrapper overwrite support** - `exportToAssetWrapper` can now be run with `overwrite` set to `True` or `False`. It will check to see if the asset either exists or is currently being exported. If set to `True` it will stop the export or delete the existing asset and restart it. If set to `False`, it will not start the export.
+____
+# geeViz 2023.7.2 Release Notes
+## July 19, 2023
+
+### New Features
+* **geeView Colab Support** - `geeView` can now be used in Google Colab notebooks. This support may present authentication bugs depending on how you are authenticating to GEE. 
+____
 # geeViz 2023.7.1 Release Notes
 ## July 14, 2023
 

@@ -17,6 +17,8 @@
 #Intended to work within the geeViz package
 ######################################################################
 from geeViz.geeView import *
+import geeViz.assetManagerLib as aml
+import geeViz.taskManagerLib as tml
 import math, ee, json, pdb
 from threading import Thread
 ######################################################################
@@ -1488,7 +1490,7 @@ def medoidMosaicMSD(inCollection, medoidIncludeBands = None):
 # There was an issue with the region with this new version.
 #From earthengine-api batch.Export.toAsset documentation: "region: The lon,lat coordinates for a LinearRing or Polygon specifying the region to export.
 #     Can be specified as a nested lists of numbers or a serialized string. Defaults to the image's region."
-def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None):
+def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicyObject = None,roi= None,scale= None,crs = None,transform = None,overwrite=False):
   #Get rid of any spaces
   assetName = assetName.replace("/\s+/g",'-')
   assetPath = assetPath.replace("/\s+/g",'-')
@@ -1515,20 +1517,32 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicyObje
   # pyramidingPolicyObject = json.dumps(pyramidingPolicyObject)
   print('pyramiding object:',pyramidingPolicyObject)
 
-  # LSC 1/6/20 was getting error: "ee.ee_exception.EEException: JSON provided for reductionPolicy must be an object." Getting rid of json.dumps() seemed to fix the problem
-  t = ee.batch.Export.image.toAsset(imageForExport,
-                    description = assetName,
-                    assetId = assetPath,
-                    pyramidingPolicy = pyramidingPolicyObject,
-                    dimensions = None,
-                    region = None,
-                    scale = scale,
-                    crs = crs,
-                    crsTransform = transform,
-                    maxPixels = 1e13)
-  print('Exporting:',assetName)
-  print(t)
-  t.start()
+  # Handle different instances of an asset either already existing or currently being exported and whether it should be overwritten
+  currently_exporting = assetName  in tml.getTasks()['running']
+  currently_exists = aml.ee_asset_exists(assetPath)
+  
+  if overwrite and currently_exists:
+    ee.data.deleteAsset(assetPath)
+  if overwrite and currently_exporting:
+    tml.cancelByName(assetName)
+  if overwrite or (not currently_exists and not currently_exporting):
+  
+    # LSC 1/6/20 was getting error: "ee.ee_exception.EEException: JSON provided for reductionPolicy must be an object." Getting rid of json.dumps() seemed to fix the problem
+    t = ee.batch.Export.image.toAsset(imageForExport,
+                      description = assetName,
+                      assetId = assetPath,
+                      pyramidingPolicy = pyramidingPolicyObject,
+                      dimensions = None,
+                      region = None,
+                      scale = scale,
+                      crs = crs,
+                      crsTransform = transform,
+                      maxPixels = 1e13)
+    print('Exporting:',assetName)
+    print(t)
+    t.start()
+  else:
+    print('Asset currently exists or is being exported and overwrite = False. Export not started. Set overwite = True if you would like to overwite any existing asset or asset exporting task')
   # Map.addLayer(imageForExport,vizParamsFalse,assetName)
 exportToAssetWrapper3 = exportToAssetWrapper
 exportToAssetWrapper2 = exportToAssetWrapper
@@ -2360,7 +2374,7 @@ def nDayComposites(images,startYear,endYear,startJulian,endJulian,compositePerio
   return composites
 ###############################################################
 #########################################################################
-def exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands):
+def exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,collection,startYear,endYear,startJulian,endJulian,compositingReducer,timebuffer,exportBands,overwrite=False):
 
   #Take care of date wrapping
   dateWrapping = wrapDates(startJulian,endJulian)
@@ -2397,7 +2411,7 @@ def exportCollection(exportPathRoot,outputName,studyArea, crs,transform,scale,co
 
     exportPath = exportPathRoot + '/' + exportName
 
-    exportToAssetWrapper(composite,exportName,exportPath,'mean',studyArea,scale,crs,transform);
+    exportToAssetWrapper(composite,exportName,exportPath,'mean',studyArea,scale,crs,transform,overwrite);
 
 #########################################################################
 #########################################################################
@@ -2420,7 +2434,8 @@ def exportCompositeCollection(
   toaOrSR,
   nonDivideBands,
   exportBands,
-  additionalPropertyDict = None):
+  additionalPropertyDict = None,
+  overwrite=False):
 
   args = formatArgs(locals())
 
@@ -2482,7 +2497,8 @@ def exportCompositeCollection(
       roi= studyArea,
       scale= scale,
       crs = crs,
-      transform = transform)
+      transform = transform,
+      overwrite=overwrite)
 
 
 #########################################################################

@@ -28,6 +28,9 @@ if sys.version_info[0] < 3:
 else:
     import http.server, socketserver 
 creds_path = ee.oauth.get_credentials_path()
+IS_COLAB = "google.colab" in sys.modules
+if IS_COLAB:
+  from google.colab.output import eval_js
 ######################################################################
 # Functions to handle various initialization/authentication workflows to try to get a user an initialized instance of ee
 
@@ -198,6 +201,7 @@ class mapper:
         self.ee_run_name = 'runGeeViz'
 
         self.isNotebook = is_notebook()
+        self.isColab = "google.colab" in sys.modules
 
         self.refreshTokenPath = ee.oauth.get_credentials_path()
         self.serviceKeyPath = None
@@ -310,7 +314,14 @@ class mapper:
        
 
         print('cwd',os.getcwd())
-        if not self.isNotebook or open_browser:
+        if IS_COLAB:
+            proxy_js = "google.colab.kernel.proxyPort({})".format(self.port)
+            proxy_url = eval_js(proxy_js)
+            geeView_proxy_url = '{}geeView/?accessToken={}'.format(proxy_url,self.accessToken)
+            print('Colab Proxy URL:',geeView_proxy_url)
+            viewerFrame = IFrame(src=geeView_proxy_url, width='100%', height='{}px'.format(iframe_height))
+            display(viewerFrame)
+        elif not self.isNotebook or open_browser:
             webbrowser.open('http://localhost:{}/{}/?accessToken={}'.format(self.port,geeViewFolder,self.accessToken),new = 1)
         elif open_browser == False and open_iframe:
             self.IFrame = IFrame(src='http://localhost:{}/{}/?accessToken={}'.format(self.port,geeViewFolder,self.accessToken), width='100%', height='{}px'.format(iframe_height))
