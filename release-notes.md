@@ -1,3 +1,15 @@
+# geeViz 2023.7.5 Release Notes
+## July 28, 2023
+
+### New Features
+* **geeView Vertex AI Workbench lab Support** - `geeView` can now be used in Vertex AI notebooks. This support may present authentication bugs depending on how you are authenticating to GEE. You must provide the URL from which the lab is being run as the variable `proxy_url`. This can be set as `MapObject.proxy_url = https://code-dot-region.notebooks.googleusercontent.com/`. If it is not provided before a `.view()` call is made, the user will be prompted to enter it. This attribute will stick with the Map object for the duration of its existence. 
+____
+# geeViz 2023.7.4 Release Notes
+## July 24, 2023
+
+### New Features
+* **exportToAssetWrapper overwrite support in wrappers** - `getLandsatWrapper`, `getSentinel2Wrapper`, and  `getLandsatAndSentinel2HybridWrapper` can now be run with `overwrite` set to `True` or `False`. It will check to see if the asset either exists or is currently being exported. If set to `True` it will stop the export or delete the existing asset and restart it. If set to `False`, it will not start the export.
+____
 # geeViz 2023.7.3 Release Notes
 ## July 24, 2023
 

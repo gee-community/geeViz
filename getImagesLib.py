@@ -2542,7 +2542,8 @@ def getLandsatWrapper(
   preComputedTDOMIRStdDev = None,
   compositingReducer = None,
   harmonizeOLI = False,
-  landsatCollectionVersion = 'C2'):
+  landsatCollectionVersion = 'C2',
+  overwrite = False):
 
   toaOrSR = toaOrSR.upper()
   origin = 'Landsat'
@@ -2661,7 +2662,8 @@ def getLandsatWrapper(
       # exportBands = exportBands,
       # resampleMethod = resampleMethod,
       # runChastainHarmonization = 'NA',
-      additionalPropertyDict = args)
+      additionalPropertyDict = args,
+      overwrite = overwrite)
 
   args['processedScenes'] = ls
   args['processedComposites'] = ts
@@ -2944,7 +2946,8 @@ def getSentinel2Wrapper(\
   preComputedCloudScoreOffset = None,
   preComputedTDOMIRMean = None,
   preComputedTDOMIRStdDev = None,
-  cloudProbThresh = 40):
+  cloudProbThresh = 40,
+  overwrite = False):
 
   origin = 'Sentinel2'
   toaOrSR = toaOrSR.upper()
@@ -3045,7 +3048,8 @@ def getSentinel2Wrapper(\
       toaOrSR = toaOrSR,
       nonDivideBands = nonDivideBands,
       exportBands = exportBands,
-      additionalPropertyDict = args)
+      additionalPropertyDict = args,
+      overwrite = overwrite)
 
   args['processedScenes'] = s2s
   args['processedComposites'] = ts
@@ -3323,7 +3327,8 @@ def getLandsatAndSentinel2HybridWrapper(\
   preComputedSentinel2TDOMIRMean = None,
   preComputedSentinel2TDOMIRStdDev = None,
   cloudProbThresh = 40,
-  landsatCollectionVersion = 'C2'):
+  landsatCollectionVersion = 'C2',
+  overwrite = False):
 
   origin = 'Landsat-Sentinel2-Hybrid'
   toaOrSR = toaOrSR.upper()
@@ -3418,7 +3423,8 @@ def getLandsatAndSentinel2HybridWrapper(\
       toaOrSR = toaOrSR,
       nonDivideBands = nonDivideBands,
       exportBands = exportBands,
-      additionalPropertyDict = args)
+      additionalPropertyDict = args,
+      overwrite = overwrite)
 
   args['processedScenes'] = merged
   args['processedComposites'] = composites

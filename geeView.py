@@ -29,8 +29,10 @@ else:
     import http.server, socketserver 
 creds_path = ee.oauth.get_credentials_path()
 IS_COLAB = "google.colab" in sys.modules
+IS_WORKBENCH = os.getenv("DL_ANACONDA_HOME") != None
 if IS_COLAB:
   from google.colab.output import eval_js
+
 ######################################################################
 # Functions to handle various initialization/authentication workflows to try to get a user an initialized instance of ee
 
@@ -128,7 +130,9 @@ def is_notebook():
 def cleanAccessToken(accessToken):
     while accessToken[-1] == '.': accessToken = accessToken[:-1]
     return accessToken
-
+# Function to get domain base without any folders
+def baseDomain(domain):
+    return domain.split('.com')[0]+'.com'
 # Function for using default GEE refresh token to get an access token for geeView
 def refreshToken(refresh_token_path = ee.oauth.get_credentials_path()):
     try:
@@ -202,6 +206,8 @@ class mapper:
 
         self.isNotebook = is_notebook()
         self.isColab = "google.colab" in sys.modules
+
+        self.proxy_url = None
 
         self.refreshTokenPath = ee.oauth.get_credentials_path()
         self.serviceKeyPath = None
@@ -319,6 +325,14 @@ class mapper:
             proxy_url = eval_js(proxy_js)
             geeView_proxy_url = '{}geeView/?accessToken={}'.format(proxy_url,self.accessToken)
             print('Colab Proxy URL:',geeView_proxy_url)
+            viewerFrame = IFrame(src=geeView_proxy_url, width='100%', height='{}px'.format(iframe_height))
+            display(viewerFrame)
+        if IS_WORKBENCH:
+            if self.proxy_url == None:
+                self.proxy_url = input('Please enter current URL Workbench Notebook is running from (e.g. https://code-dot-region.notebooks.googleusercontent.com/): ')
+            self.proxy_url = baseDomain(self.proxy_url)
+            geeView_proxy_url = '{}/proxy/{}/geeView/?accessToken={}'.format(self.proxy_url,self.port,self.accessToken)
+            print('Workbench Proxy URL:',geeView_proxy_url)
             viewerFrame = IFrame(src=geeView_proxy_url, width='100%', height='{}px'.format(iframe_height))
             display(viewerFrame)
         elif not self.isNotebook or open_browser:
