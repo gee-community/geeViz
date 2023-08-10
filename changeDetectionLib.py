@@ -1667,7 +1667,7 @@ def simpleCCDCPrediction(img,timeBandName,whichHarmonics,whichBands):
   coss = coss.select(harmSelect)
   
   #Set up final output band names
-  outBns = ee.List(whichBands).map(lambda bn: ee.String(bn).cat('_predicted'))
+  outBns = ee.List(whichBands).map(lambda bn: ee.String(bn).cat('_CCDC_predicted'))
   
   #Iterate across each band and predict value
   def predHelper(bn):
@@ -1745,7 +1745,7 @@ def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, tEndExtra
     timeImgs = getTimeImageCollectionFromComposites(compositeCollection,startYear,endYear)
   else:
     timeImgs = getTimeImageCollection(startYear, endYear, startJulian ,endJulian, 1, yearStartMonth, yearStartDay)
-  Map.addLayer(timeImgs,{},'time')
+  
   # If selected, add a constant amount of time to last end segment to make sure the last year is annualized correctly.
   # tEndExtrapolationPeriod should be a fraction of a year.
   finalTEnd = ccdcImg.select('tEnd').arraySlice(0,-1,None).rename('tEnd').arrayGet(0).add(tEndExtrapolationPeriod).toArray(0)
@@ -1795,7 +1795,7 @@ def simpleCCDCPredictionAnnualized(img,timeBandName,whichBands):
   slopes = img.select(['.*_SLP']).multiply(tBand)
   
   # Set up final output band names
-  outBns = whichBands.map(lambda bn: ee.String(bn).cat('_predicted'))
+  outBns = whichBands.map(lambda bn: ee.String(bn).cat('_CCDC_predicted'))
   
   # Iterate across each band and predict value
   predicted = ee.ImageCollection(whichBands.map(lambda bn: ee.Image([intercepts.select(ee.String(bn).cat('_.*')),

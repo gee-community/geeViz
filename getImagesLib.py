@@ -1515,10 +1515,10 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicyObje
   elif type(pyramidingPolicyObject) == str:
     pyramidingPolicyObject = {'.default': pyramidingPolicyObject}
   # pyramidingPolicyObject = json.dumps(pyramidingPolicyObject)
-  print('pyramiding object:',pyramidingPolicyObject)
+  # print('pyramiding object:',pyramidingPolicyObject)
 
   # Handle different instances of an asset either already existing or currently being exported and whether it should be overwritten
-  currently_exporting = assetName  in tml.getTasks()['running']
+  currently_exporting = assetName in tml.getTasks()['running'] or assetName in tml.getTasks()['ready'] 
   currently_exists = aml.ee_asset_exists(assetPath)
   
   if overwrite and currently_exists:
@@ -1539,10 +1539,10 @@ def exportToAssetWrapper(imageForExport,assetName,assetPath,pyramidingPolicyObje
                       crsTransform = transform,
                       maxPixels = 1e13)
     print('Exporting:',assetName)
-    print(t)
+    # print(t)
     t.start()
   else:
-    print('Asset currently exists or is being exported and overwrite = False. Export not started. Set overwite = True if you would like to overwite any existing asset or asset exporting task')
+    print(f'{assetName} currently exists or is being exported and overwrite = False. Set overwite = True if you would like to overwite any existing asset or asset exporting task')
   # Map.addLayer(imageForExport,vizParamsFalse,assetName)
 exportToAssetWrapper3 = exportToAssetWrapper
 exportToAssetWrapper2 = exportToAssetWrapper
@@ -2543,7 +2543,8 @@ def getLandsatWrapper(
   compositingReducer = None,
   harmonizeOLI = False,
   landsatCollectionVersion = 'C2',
-  overwrite = False):
+  overwrite = False,
+  verbose = False):
 
   toaOrSR = toaOrSR.upper()
   origin = 'Landsat'
@@ -2585,7 +2586,8 @@ def getLandsatWrapper(
     preComputedCloudScoreOffset = preComputedCloudScoreOffset,
     preComputedTDOMIRMean = preComputedTDOMIRMean,
     preComputedTDOMIRStdDev = preComputedTDOMIRStdDev,
-    landsatCollectionVersion = landsatCollectionVersion)
+    landsatCollectionVersion = landsatCollectionVersion,
+    verbose = verbose)
 
   #Add zenith and azimuth
   if correctIllumination:
@@ -2700,7 +2702,8 @@ def getProcessedLandsatScenes(
   preComputedCloudScoreOffset = None,
   preComputedTDOMIRMean = None,
   preComputedTDOMIRStdDev = None,
-  landsatCollectionVersion = 'C2'):
+  landsatCollectionVersion = 'C2',
+  verbose = False):
 
   origin = 'Landsat'
   toaOrSR = toaOrSR.upper()
@@ -2722,9 +2725,10 @@ def getProcessedLandsatScenes(
     del args['args']
 
   print('Get Processed Landsat: ')
-  # print('Start date:', startDate.format('MMM dd yyyy').getInfo(),', End date:', endDate.format('MMM dd yyyy').getInfo())
-  # for arg in args.keys():
-  #   print(arg, ': ', args[arg])
+  print('Start date:', startDate.format('MMM dd yyyy').getInfo(),', End date:', endDate.format('MMM dd yyyy').getInfo())
+  if verbose:
+    for arg in args.keys():
+      print(arg, ': ', args[arg])
 
   #Get Landsat image collection
   ls = getLandsat(\
@@ -2818,7 +2822,8 @@ def getProcessedSentinel2Scenes(\
   preComputedCloudScoreOffset = None,
   preComputedTDOMIRMean = None,
   preComputedTDOMIRStdDev = None,
-  cloudProbThresh = 40):
+  cloudProbThresh = 40,
+  verbose = False):
 
   origin = 'Sentinel2'
   toaOrSR = toaOrSR.upper()
@@ -2837,8 +2842,9 @@ def getProcessedSentinel2Scenes(\
 
   print('Get Processed Sentinel2: ')
   print('Start date:', startDate.format('MMM dd yyyy').getInfo(),', End date:', endDate.format('MMM dd yyyy').getInfo())
-  for arg in args.keys():
-    print(arg, ': ', args[arg])
+  if verbose:
+    for arg in args.keys():
+      print(arg, ': ', args[arg])
 
   #Get Sentinel2 image collection
   s2s = getS2(\
@@ -2947,7 +2953,8 @@ def getSentinel2Wrapper(\
   preComputedTDOMIRMean = None,
   preComputedTDOMIRStdDev = None,
   cloudProbThresh = 40,
-  overwrite = False):
+  overwrite = False,
+  verbose = False):
 
   origin = 'Sentinel2'
   toaOrSR = toaOrSR.upper()
@@ -2982,7 +2989,8 @@ def getSentinel2Wrapper(\
     preComputedCloudScoreOffset = preComputedCloudScoreOffset,
     preComputedTDOMIRMean = preComputedTDOMIRMean,
     preComputedTDOMIRStdDev = preComputedTDOMIRStdDev,
-    cloudProbThresh = cloudProbThresh)
+    cloudProbThresh = cloudProbThresh,
+    verbose = verbose)
 
   #Add zenith and azimuth
   #if correctIllumination:
@@ -3099,7 +3107,8 @@ def getProcessedLandsatAndSentinel2Scenes(
       preComputedSentinel2TDOMIRMean = None,
       preComputedSentinel2TDOMIRStdDev = None,
       cloudProbThresh = 40,
-      landsatCollectionVersion = 'C2'):
+      landsatCollectionVersion = 'C2',
+      verbose = False):
 
   if toaOrSR == 'SR':
     runChastainHarmonization = False
@@ -3121,8 +3130,9 @@ def getProcessedLandsatAndSentinel2Scenes(
 
   print('Get Processed Landsat and Sentinel2 Scenes: ')
   print('Start date:', startDate.format('MMM dd yyyy').getInfo(),', End date:', endDate.format('MMM dd yyyy').getInfo())
-  for arg in args.keys():
-    print(arg, ': ', args[arg])
+  if verbose:
+    for arg in args.keys():
+      print(arg, ': ', args[arg])
 
   #Get Landsat
   ls = getProcessedLandsatScenes(\
@@ -3152,7 +3162,8 @@ def getProcessedLandsatAndSentinel2Scenes(
     preComputedCloudScoreOffset = preComputedLandsatCloudScoreOffset,
     preComputedTDOMIRMean = preComputedLandsatTDOMIRMean,
     preComputedTDOMIRStdDev = preComputedSentinel2TDOMIRStdDev,
-    landsatCollectionVersion = landsatCollectionVersion)
+    landsatCollectionVersion = landsatCollectionVersion,
+    verbose = False)
 
   #Get Sentinel 2
   s2s = getProcessedSentinel2Scenes(\
@@ -3181,7 +3192,8 @@ def getProcessedLandsatAndSentinel2Scenes(
     preComputedCloudScoreOffset = preComputedSentinel2CloudScoreOffset,
     preComputedTDOMIRMean = preComputedSentinel2TDOMIRMean,
     preComputedTDOMIRStdDev = preComputedSentinel2TDOMIRStdDev,
-    cloudProbThresh = cloudProbThresh)
+    cloudProbThresh = cloudProbThresh,
+    verbose = False)
 
 
   #Select off common bands between Landsat and Sentinel 2
@@ -3328,7 +3340,8 @@ def getLandsatAndSentinel2HybridWrapper(\
   preComputedSentinel2TDOMIRStdDev = None,
   cloudProbThresh = 40,
   landsatCollectionVersion = 'C2',
-  overwrite = False):
+  overwrite = False,
+  verbose = False):
 
   origin = 'Landsat-Sentinel2-Hybrid'
   toaOrSR = toaOrSR.upper()
@@ -3378,7 +3391,8 @@ def getLandsatAndSentinel2HybridWrapper(\
     preComputedSentinel2TDOMIRMean = preComputedSentinel2TDOMIRMean,
     preComputedSentinel2TDOMIRStdDev = preComputedSentinel2TDOMIRStdDev,
     cloudProbThresh = cloudProbThresh,
-    landsatCollectionVersion = landsatCollectionVersion)
+    landsatCollectionVersion = landsatCollectionVersion,
+    verbose = verbose)
 
   #Create hybrid composites
   composites = compositeTimeSeries(\

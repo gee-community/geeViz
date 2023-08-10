@@ -48,8 +48,8 @@ endJulian = 273
 # well. If using Fmask as the cloud/cloud shadow masking method, or providing
 # pre-computed stats for cloudScore and TDOM, this does not 
 # matter
-startYear = 2018
-endYear = 2022
+startYear = 2020
+endYear = 2023
 
 # Specify an annual buffer to include imagery from the same season 
 # timeframe from the prior and following year. timeBuffer = 1 will result 
@@ -230,9 +230,7 @@ processedComposites = s2sAndTs['processedComposites']
 getImagesLib.vizParamsFalse['layerType']= 'geeImage';
 
 Map.addLayer(processedComposites.select(['NDVI','NBR']),{'addToLegend':False,'layerType':'geeImageCollection'},'Time Series (NBR and NDVI)',False)
-for year in range(startYear + timebuffer      ,endYear + 1 - timebuffer ):
-     t = processedComposites.filter(ee.Filter.calendarRange(year,year,'year')).first()
-     Map.addLayer(t,getImagesLib.vizParamsFalse,str(year),False)
+Map.addTimeLapse(processedComposites,getImagesLib.vizParamsFalse,'Composite Timelapse',False)
 ####################################################################################################
 # Load the study region
 Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", True)

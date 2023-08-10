@@ -1,3 +1,27 @@
+# geeViz 2023.8.3 Release Notes
+## August 9, 2023
+
+### Bug fixes
+* Minor bug fixes
+____
+# geeViz 2023.8.2 Release Notes
+## August 7, 2023
+
+### New Features
+* **robust_featureCollection_to_df** - `robust_featureCollection_to_df` in the `gee2Pandas` module will handle large featureCollection conversion to a Pandas dataframe. 
+
+### Bug fixes
+* `create_asset` will now handle nested folder creation with `recursive = True`.
+____
+# geeViz 2023.8.1 Release Notes
+## August 3, 2023
+
+### New Features
+* **verbose parameter** - `getImagesLib` Landsat and Sentinel 2 functions now can be less verbose when run. This helps clean up the console. By defult, `verbose = False`. 
+
+### Bug fixes
+* `assetManagerLib` has improved error handling when various operations cannot be performed - likely due to permissions errors.
+____
 # geeViz 2023.7.5 Release Notes
 ## July 28, 2023
 

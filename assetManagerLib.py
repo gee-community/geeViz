@@ -21,14 +21,9 @@
 #           ASSETMANAGERLIB.PY
 #--------------------------------------------------------------------------
 
+import geeViz.geeView 
 import sys, ee, os, shutil, subprocess, datetime, calendar, json,glob
 import time, logging, pdb
-try:
-    z = ee.Number(1).getInfo()
-except:
-    print('Initializing GEE')
-    ee.Initialize()
-
 taskLimit = 10
 
 #############################################################################################
@@ -38,8 +33,11 @@ taskLimit = 10
 #Function for updating ACL for a given GEE asset path
 def updateACL(assetName,writers = [],all_users_can_read = True,readers = []):
     print('Updating permissions for: ',assetName)
-    ee.data.setAssetAcl(assetName, json.dumps({u'writers': writers, u'all_users_can_read': all_users_can_read, u'readers': readers}))
-
+    try:
+        ee.data.setAssetAcl(assetName, json.dumps({u'writers': writers, u'all_users_can_read': all_users_can_read, u'readers': readers}))
+    except Exception as E:
+        print('Could not update permissions for: ',assetName)
+        print(E)
 #--------------------------------------------------------------------------------------------
 
 #Function for updating all assets under a given folder level in GEE
@@ -88,11 +86,15 @@ def batchCopy(fromFolder,toFolder,outType = 'imageCollection'):
 
     for image in images:
         out = toFolder +'/'+ base(image)
-        print( out)
-        try:
-            ee.data.copyAsset(image,out)
-        except:
-            print( out,'Error: May already exist')
+        if not ee_asset_exists(out):
+            print('Copying: ',image)
+            try:
+                ee.data.copyAsset(image,out)
+            except Exception as E:
+                print('Could not copy: ',image)
+                print(E)
+        else:
+            print(out,' already exists')
 
 def copyByName(fromFolder, toFolder, nameIdentifier, outType = 'imageCollection'):
 
@@ -120,16 +122,19 @@ def copyByName(fromFolder, toFolder, nameIdentifier, outType = 'imageCollection'
                 print( out,'Error: May already exist')
 #---------------------------------------------------------------------------------------------
 
-def moveImages(images,toFolder):
+def moveImages(images,toFolder,delete_original = False):
     create_image_collection(toFolder)
     for image in images:
         print ('Copying',base(image))
         out = toFolder + '/' + base(image)
-        try:
-            ee.data.copyAsset(image,out)
-            #ee.data.deleteAsset(image)
-        except:
-            print (out,'already exists')
+        if not ee_asset_exists(out):
+            try:
+                ee.data.copyAsset(image,out)
+                if delete_original:
+                    ee.data.deleteAsset(image)
+            except Exception as E:
+                print('Error copying:', image)
+                print(E)
 
 #---------------------------------------------------------------------------------------------
 # types = 'imageCollection' or 'tables'
@@ -142,7 +147,11 @@ def batchDelete(Collection, type = 'imageCollection'):
 
     for image in images:
         print('Deleting: '+ Collection +'/'+ base(image))
-        ee.data.deleteAsset(image)
+        try:
+            ee.data.deleteAsset(image)
+        except Exception as E:
+            print('Could not delete: ',image)
+            print(E)
 
 def deleteByName(Collection, nameIdentifier, type='imageCollection'):
     if type == 'imageCollection':
@@ -153,7 +162,11 @@ def deleteByName(Collection, nameIdentifier, type='imageCollection'):
     for image in images:
         if nameIdentifier in image:
             print('Deleting: '+ Collection +'/'+ base(image))
-            ee.data.deleteAsset(image)
+            try:
+                ee.data.deleteAsset(image)
+            except Exception as E:
+                print('Could not delete: ',image)
+                print(E)
 #############################################################################################
 #       Asset Info Queries
 #############################################################################################
@@ -191,8 +204,7 @@ def assetsize(asset):
         print('')
         print(str(asset)+" ===> "+str(size))
         print('Total number of items in folder: '+str(len(num.split('\n'))-1))
-if __name__ == '__main__':
-    assetsize(None)
+
 #############################################################################################
 #       Functions to Upload to Google Cloud Storage and Google Earth Engine Repository
 #############################################################################################
@@ -400,9 +412,41 @@ def create_image_collection(full_path_to_collection):
     if ee_asset_exists(full_path_to_collection):
         print("Collection "+full_path_to_collection+" already exists")
     else:
-        ee.data.createAsset({'type': ee.data.ASSET_TYPE_IMAGE_COLL}, full_path_to_collection)
-        print('New collection '+full_path_to_collection+' created')
+        try:
+            ee.data.createAsset({'type': ee.data.ASSET_TYPE_IMAGE_COLL}, full_path_to_collection)
+            print('New collection '+full_path_to_collection+' created')
+        except Exception as E:
+            print('Could not create: ',full_path_to_collection)
+            print(E)
+            
+# More general function to create asset collecctions or folders
+# asset_type can be one of ee.data.ASSET_TYPE_FOLDER or ee.data.ASSET_TYPE_IMAGE_COLL
+# If nested folders that do not already exist are provided, they will be created unless recursive = False
+def create_asset(asset_path,asset_type = ee.data.ASSET_TYPE_FOLDER,recursive=True):
 
+    # Find the root and all nested folders
+    project_root = f'{asset_path.split("assets")[0]}assets'
+    sub_directories = f'{asset_path.split("assets/")[1]}'.split('/')
+    
+    # If there is more than 1 level of folder, try to make them
+    if len(sub_directories) > 1 and recursive:
+        print('Found the following sub directories: ',sub_directories)
+        print('Will attempt to create them if they do not exist')
+        path_temp = project_root
+        for sub_directory in sub_directories[:-1]:
+            path_temp = f'{path_temp}/{sub_directory}'
+            create_asset(path_temp,asset_type = ee.data.ASSET_TYPE_FOLDER,recursive = False)
+
+    if ee_asset_exists(asset_path):
+        print("Asset "+asset_path+" already exists")
+    else:
+        try:
+            print(asset_path)
+            ee.data.createAsset({'type': asset_type}, asset_path)
+            print('New asset '+asset_path+' created')
+        except Exception as E:
+            print('Could not create: ',asset_path)
+            print(E)
 def verify_path(path):
     response = ee.data.getInfo(path)
     if not response:

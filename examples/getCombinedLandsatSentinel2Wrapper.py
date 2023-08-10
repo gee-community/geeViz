@@ -47,8 +47,8 @@ endJulian = 273
 # More than a 3 year span should be provided for time series methods to work 
 # well. If providing pre-computed stats for cloudScore and TDOM, this does not 
 # matter
-startYear = 2018
-endYear = 2022
+startYear = 2020
+endYear = 2023
 
 # Specify an annual buffer to include imagery from the same season 
 # timeframe from the prior and following year. timeBuffer = 1 will result 
