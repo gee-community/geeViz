@@ -220,6 +220,54 @@ def dfToJSON(dbf,outJsonFilename):
     o.write(json.dumps(outJson))
     o.close()
     return outJson
+#########################################################################
+# Show image array at a location
+def setDFTitle(df,title):
+    styles = [dict(selector="caption",
+                       props=[("text-align", "left"),
+                              ("font-size", "150%"),
+                             ("font-weight", "bold")])]
+
+    df = df.style.set_caption(title).set_table_styles(styles)
+    return df
+def imageArrayPixelToDataFrame(img,pt,scale=None,crs = None, transform = None,title = None,index = None,columns = None,bandName = None, reducer = ee.Reducer.first(),arrayImage = None):
+    # Pull the values
+    vals = img.reduceRegion(reducer,pt,scale=scale,crs = crs, crsTransform = transform).getInfo()
+    
+    # Determine if it is an array image
+    # Only handle the first band or a single specified band if it is
+    if arrayImage == None:
+        if type(list(vals.values())[0])==list:
+            arrayImage = True
+        else:
+            arrayImage = False
+
+    if arrayImage:
+        # If no band is specified, and its an array image, pull the first band
+        if bandName == None:
+            bandName = list(vals.keys())[0]
+        
+        # Get the values for the band
+        vals = vals[bandName]
+
+        # Convert to Pandas dataframe
+        df = pandas.DataFrame(vals,columns = columns,index =index)
+
+    else:
+        df = pandas.DataFrame(list(vals.values()),columns = ['Values'],index =list(vals.keys()))
+    # Set a title if provided
+    if title != None:
+        df = setDFTitle(df,title)
+    return df
+
+# Function to extract any EE image object type to a dataframe
+# Handles multi-band images (with array images as well) and image collections
+def eeImageObjToDataFrame(eeObj,pt,scale=None,crs = None, transform = None,title = None,index = None,columns = None,bandName = None, reducer = ee.Reducer.first()):
+    # Pull the values
+    objType = type(eeObj)
+    print(objType)
+    # vals = img.reduceRegion(reducer,pt,scale=scale,crs = crs, crsTransform = transform).getInfo()
+    
 ####################################################################################################
 # Scratch space for testing
 if __name__ == '__main__':
@@ -227,7 +275,7 @@ if __name__ == '__main__':
     if not os.path.exists(output_dir):os.makedirs(output_dir)
 #     out_json = os.path.join(output_dir,'test_json.json')
 
-    out_csv = os.path.join(output_dir,'test_json.csv')
+    # out_csv = os.path.join(output_dir,'test_json.csv')
 #     if not os.path.exists(output_dir):os.makedirs(output_dir)
 #     fc = ee.FeatureCollection('projects/lcms-292214/assets/CONUS-LCMS/Training-Tables/Training-Tables-AnnualizedFormat_v2022/LCMS-CONUS-2015').limit(5)
 #     composite = ee.ImageCollection('projects/lcms-tcc-shared/assets/Composites/Composite-Collection-yesL7-1984-2020')\
@@ -242,9 +290,22 @@ if __name__ == '__main__':
 # #     # featureCollection_to_json(fc,out_json,overwrite=True,maxNumberOfFeatures=20)
 # #     # featureCollection_to_csv(fc,out_csv,overwrite = True,maxNumberOfFeatures=500)
 
-    assets = ee.data.listAssets({'parent': 'projects/rcr-gee/assets/lcms-training/lcms-training_module-4_timeSync'})['assets']
+    # assets = ee.data.listAssets({'parent': 'projects/rcr-gee/assets/lcms-training/lcms-training_module-4_timeSync'})['assets']
 
-    training_data = ee.FeatureCollection([ee.FeatureCollection(asset['name']) for asset in assets]).flatten()
+    # training_data = ee.FeatureCollection([ee.FeatureCollection(asset['name']) for asset in assets]).flatten()
    
     # robust_featureCollection_to_df(training_data.limit(10))
-    featureCollection_to_csv(training_data,out_csv,overwrite = True)
+    # featureCollection_to_csv(training_data,out_csv,overwrite = True)
+
+    pt = ee.Geometry.Point([-65.8491, 18.2233])
+    lt = ee.ImageCollection('projects/rcr-gee/assets/lcms-training/lcms-training_module-3_landTrendr')\
+    .filter(ee.Filter.eq('band','NBR')).first()\
+    .select(['LandTrendr'])
+
+    eeObjToDataFrame(ee.Image([1,2,3]),pt,crs = 'EPSG:5070', scale=30,transform = None,title = None,index = None,columns = None,bandName = None, reducer = ee.Reducer.first())
+    # df = imagePixelToDataFrame(lt,pt,crs = 'EPSG:5070', scale=30,transform = None,index = ['year','vertex fit'],columns = None,bandName = None, reducer = ee.Reducer.first())
+    # print(df)
+    # df = imagePixelToDataFrame(ee.Image([1,2,3]).byte(),pt,crs = 'EPSG:5070', scale=30,transform = None)
+
+
+    # print(df)

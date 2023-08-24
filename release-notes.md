@@ -1,3 +1,34 @@
+# geeViz 2023.8.6 Release Notes
+## August 23, 2023
+
+### New Features
+* **imageArrayPixelToDataFrame** - `gee2Pandas.imageArrayPixelToDataFrame` function to easily visualize image array values as a Pandas data frame.
+
+
+### Bug fixes
+* Minor bug fixes
+
+____
+# geeViz 2023.8.5 Release Notes
+## August 17, 2023
+
+### New Features
+* **setZoom** - `setZoom` function to set the zoom level of the map within `geeView.Mapper` . This functionality is also avail 
+able in the `centerObject` function where the zoom level can optionally be set.
+
+* **Date Interpolation now optional for annualizing CCDC** - `annualizeCCDC` and `getTimeImageCollectionFromComposites` functions now can have the linear interpolation turned off. Turning interpolation off will speed up creating outputs, but will result in null values where any date image data are missing.
+
+### Bug fixes
+* Minor bug fixes
+
+____
+# geeViz 2023.8.4 Release Notes
+## August 10, 2023
+
+### Bug fixes
+* Minor bug fixes
+
+____
 # geeViz 2023.8.3 Release Notes
 ## August 9, 2023
 

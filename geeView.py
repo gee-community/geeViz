@@ -243,8 +243,11 @@ class mapper:
         idDict['function'] = 'addSerializedTimeLapse'
         self.idDictList.append(idDict)
 
+    # Function for setting the map zoom
+    def setZoom(self,zoom):
+        self.mapCommandList.append(f'map.setZoom({zoom})')
     #Function for centering on a GEE object that has a geometry
-    def centerObject(self,feature):
+    def centerObject(self,feature,zoom = None):
         try:
             bounds = json.dumps(feature.geometry().bounds(100,'EPSG:4326').getInfo())
         except Exception as e:
@@ -252,6 +255,9 @@ class mapper:
         command = 'synchronousCenterObject('+bounds+')'
         
         self.mapCommandList.append(command)
+
+        if zoom != None:
+            self.setZoom(zoom)
     #Function for launching the web map after all adding to the map has been completed
     def view(self,open_browser = None, open_iframe = None,iframe_height = 525):
         print('Starting webmap')

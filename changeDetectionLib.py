@@ -1,5 +1,5 @@
 """
-   Copyright 2022 Ian Housman
+   Copyright 2023 Ian Housman, Leah Campbell, Josh Heyer
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -971,7 +971,69 @@ def linearInterp(imgcol, frame = 32, nodata = 0):
     interpolated = ee.ImageCollection(c2.map(lambda img: interpolator(img)))
 
     return interpolated
+############################################################
+# Function to do a single-band linear interpolation across time
+# Assumes the image has date properties stored under system:time_start
+# Will return a linearally interpolated date value where they were missing
+# Where there are only values on one side, it will cast out the mean date of year offset 
+# for all years prior to or after actual data being available
+def new_interp_date(dateYr,dateCollection,max_window = 10,dummyImage = None,extrapolate=True):
 
+    # Find the year
+    year = dateYr.date().get('year')
+
+    # When looking at years where there are no images available
+    # will need to fill empty collections
+    # This needs a dummy image to fill in blank images with
+    if dummyImage == None:
+        dummyImage = dateCollection.first()
+
+    # Find the years in the window plus and minus from the given year
+    window_years = ee.List.sequence(1,max_window)
+
+    # Get values on either side
+    def getWindow(window):
+        # Get window of years
+        yrLeft = year.subtract(window)
+        yrRight = year.add(window)
+
+        # Pull any data available for that year and add a constant year band as an integer (to handle date wrapping)
+        dateYrLeft = fillEmptyCollections(dateCollection.filter(ee.Filter.calendarRange(yrLeft,yrLeft,'year')),dummyImage).first().rename(['left']).float()
+        yrLeft = ee.Image(yrLeft).updateMask(dateYrLeft.mask()).rename(['left_year']).int16()
+        dateYrRight = fillEmptyCollections(dateCollection.filter(ee.Filter.calendarRange(yrRight,yrRight,'year')),dummyImage).first().rename(['right']).float()
+        yrRight = ee.Image(yrRight).updateMask(dateYrRight.mask()).rename(['right_year']).int16()
+        return ee.Image.cat([dateYrLeft,yrLeft,dateYrRight,yrRight])
+    window_stack = ee.ImageCollection(window_years.map(getWindow))
+    
+    # Get the first non null date
+    window_first = window_stack.reduce(ee.Reducer.firstNonNull())
+
+    # Find the difference in date per year (will be close to 1)
+    slope = window_first.select(['right_first']).subtract(window_first.select(['left_first']))\
+            .divide(window_first.select(['right_year_first']).subtract(window_first.select(['left_year_first'])))
+
+    # Compute the interpolated value
+    interpolated = ee.Image(year).subtract(window_first.select(['left_year_first']))
+    interpolated = interpolated.multiply(slope)
+    interpolated = interpolated.add(window_first.select(['left_first']))
+
+    # Burn in any non null interpolated values
+    dateYrOut = dateYr.unmask(interpolated)
+    
+    # Extrapolate using the mean date offset
+    if extrapolate:
+        extrapolate_left = window_stack.map(lambda img:img.select(['right']).subtract(img.select(['right_year']))).mean().add(year)
+        extrapolate_right = window_stack.map(lambda img:img.select(['left']).subtract(img.select(['left_year']))).mean().add(year)
+        dateYrOut = ee.Image(dateYrOut).unmask(extrapolate_left)
+        dateYrOut = ee.Image(dateYrOut).unmask(extrapolate_right)
+    return dateYrOut
+
+# Wrapper function to handle date interpolation for
+def new_interp_date_collection(dateCollection,max_window = 20,dummyImage = None,extrapolate=True):
+    dummyImage = dateCollection.first()
+    interpolated = dateCollection.map(lambda dateImg:new_interp_date(dateImg,dateCollection,max_window,dummyImage,extrapolate))
+    return interpolated
+############################################################
 # Function to apply linear interpolation for Verdet
 def applyLinearInterp(composites, nYearsInterpolate):      
     
@@ -1667,7 +1729,7 @@ def simpleCCDCPrediction(img,timeBandName,whichHarmonics,whichBands):
   coss = coss.select(harmSelect)
   
   #Set up final output band names
-  outBns = ee.List(whichBands).map(lambda bn: ee.String(bn).cat('_CCDC_predicted'))
+  outBns = ee.List(whichBands).map(lambda bn: ee.String(bn).cat('_CCDC_fitted'))
   
   #Iterate across each band and predict value
   def predHelper(bn):
@@ -1737,12 +1799,13 @@ def getCCDCSegCoeffs(timeImg,ccdcImg,fillGaps):
 # will be counted in the following year.
 # 10/21 LSC Added Capability to use pixel-wise Composite Dates instead of set dates. 
 # If used, set annualizeWithCompositeDates to True and provide imported/prepped composite image collection with 'year' and 'julianDay' bands
+# Optionally, if there are holes in the composite dates, they can be interpolated using linear interpolation across time
 def annualizeCCDC(ccdcImg, startYear, endYear, startJulian, endJulian, tEndExtrapolationPeriod, 
-  yearStartMonth = 9, yearStartDay = 1, annualizeWithCompositeDates = False, compositeCollection = None):
+  yearStartMonth = 9, yearStartDay = 1, annualizeWithCompositeDates = False, compositeCollection = None,interpolateCompositeDates=True):
 
   # Create image collection of images with the proper time stamp as well as a 'year' band with the year fraction.
   if annualizeWithCompositeDates and compositeCollection != None:
-    timeImgs = getTimeImageCollectionFromComposites(compositeCollection,startYear,endYear)
+    timeImgs = getTimeImageCollectionFromComposites(compositeCollection,startYear,endYear,interpolateCompositeDates)
   else:
     timeImgs = getTimeImageCollection(startYear, endYear, startJulian ,endJulian, 1, yearStartMonth, yearStartDay)
   
@@ -1779,8 +1842,8 @@ def yearlySlope(rightYear, fitted):
   leftYear = ee.Number(rightYear).subtract(1)
   rightFitted = ee.Image(fitted.filter(ee.Filter.calendarRange(rightYear, rightYear, 'year')).first())
   leftFitted = ee.Image(fitted.filter(ee.Filter.calendarRange(leftYear, leftYear, 'year')).first())
-  slopeNames = rightFitted.select(['.*_predicted']).bandNames().map(lambda name: ee.String(ee.String(name).split('_predicted').get(0)).cat(ee.String('_fitSlope')))
-  slope = rightFitted.select(['.*_predicted']).subtract(leftFitted.select(['.*_predicted'])).rename(slopeNames)
+  slopeNames = rightFitted.select(['.*_fitted']).bandNames().map(lambda name: ee.String(ee.String(name).split('_fitted').get(0)).cat(ee.String('_fitSlope')))
+  slope = rightFitted.select(['.*_fitted']).subtract(leftFitted.select(['.*_fitted'])).rename(slopeNames)
   return rightFitted.addBands(slope)
 
 # This function is ALMOST the same as simpleCCDCPrediction(), except that you don't use the harmonic coefficients, just the slope and intercept.
@@ -1795,7 +1858,7 @@ def simpleCCDCPredictionAnnualized(img,timeBandName,whichBands):
   slopes = img.select(['.*_SLP']).multiply(tBand)
   
   # Set up final output band names
-  outBns = whichBands.map(lambda bn: ee.String(bn).cat('_CCDC_predicted'))
+  outBns = whichBands.map(lambda bn: ee.String(bn).cat('_CCDC_fitted'))
   
   # Iterate across each band and predict value
   predicted = ee.ImageCollection(whichBands.map(lambda bn: ee.Image([intercepts.select(ee.String(bn).cat('_.*')),
@@ -1877,7 +1940,7 @@ def getTimeImageCollection(startYear, endYear, startJulian = 1, endJulian = 365,
 #   nYears = dates.size().getInfo()
 #   interpolated = linearInterp(dates, 365*nYears, -32768)
 #   return interpolated
-def getTimeImageCollectionFromComposites(compositeCollection,startYear=None,endYear=None): 
+def getTimeImageCollectionFromComposites(compositeCollection,startYear=None,endYear=None,interpolate=True,useNewInterpMethod=False): 
     compositeCollection = compositeCollection.sort('system:time_start')
     if startYear == None:
       startYear =compositeCollection.first().date().get('year')
@@ -1890,9 +1953,18 @@ def getTimeImageCollectionFromComposites(compositeCollection,startYear=None,endY
     dummyImage = dates.first()
   
     datesFilled = ee.ImageCollection(ee.List.sequence(startYear,endYear).map(lambda yr:fillEmptyCollections(dates.filter(ee.Filter.calendarRange(yr,yr,'year')),dummyImage).first().set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())))
-    nYears = datesFilled.size().getInfo()
-    interpolated = linearInterp(datesFilled, 365*nYears, -32768)
-    return interpolated
+    
+    if interpolate:
+      print('Interpolating composite time images')
+      if not useNewInterpMethod:
+        nYears = datesFilled.size().getInfo()
+        # print(nYears,endYear.getInfo()-startYear.getInfo())
+        return linearInterp(datesFilled, 365*nYears, -32768)
+      else:
+        return new_interp_date_collection(datesFilled)
+    else:
+      return datesFilled
+
 ###################################################################################
 #Function for getting change years and magnitudes for a specified band from CCDC outputs
 #Only change from the breaks is extracted

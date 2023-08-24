@@ -75,14 +75,14 @@ yearImages = changeDetectionLib.getTimeImageCollection(startYear,endYear,startJu
 
 #Then predict the CCDC models
 fitted = changeDetectionLib.predictCCDC(ccdcImg,yearImages,fillGaps,whichHarmonics)
-Map.addLayer(fitted.select(['.*_predicted']),{'opacity':0},'Fitted CCDC',True);
-Map.addLayer(fitted.filter(ee.Filter.calendarRange(1990,1990,'year')).select(['.*_predicted']),{'opacity':0},'Fitted CCDC 1990',True);
+Map.addLayer(fitted.select(['.*_fitted']),{'opacity':0},'Fitted CCDC',True);
+Map.addLayer(fitted.filter(ee.Filter.calendarRange(1990,1990,'year')).select(['.*_fitted']),{'opacity':0},'Fitted CCDC 1990',True);
 
 # Synthetic composites visualizing
 # Take common false color composite bands and visualize them for the next to the last year
 
 # First get the bands of predicted bands and then split off the name
-fittedBns = fitted.select(['.*_predicted']).first().bandNames()
+fittedBns = fitted.select(['.*_fitted']).first().bandNames()
 bns = fittedBns.map(lambda bn: ee.String(bn).split('_').get(0))
 
 # Filter down to the next to the last year and a summer date range
