@@ -260,13 +260,32 @@ def imageArrayPixelToDataFrame(img,pt,scale=None,crs = None, transform = None,ti
         df = setDFTitle(df,title)
     return df
 
-# Function to extract any EE image object type to a dataframe
+# Functions to extract any EE image object type to a dataframe
 # Handles multi-band images (with array images as well) and image collections
-def eeImageObjToDataFrame(eeObj,pt,scale=None,crs = None, transform = None,title = None,index = None,columns = None,bandName = None, reducer = ee.Reducer.first()):
+# While intended for point locations using the ee.Reducer.first() reducer, it can handle polygons and multi-polygons with an appropriate reducer (e.g. ee.Reducer.mean() or ee.Reducer.median())
+def extractPointImageValues(ee_image,pt,scale=None,crs = None, transform = None,reducer = ee.Reducer.first(),includeNonSystemProperties = False,includeSystemProperties=True):
     # Pull the values
-    objType = type(eeObj)
-    print(objType)
-    # vals = img.reduceRegion(reducer,pt,scale=scale,crs = crs, crsTransform = transform).getInfo()
+    ee_image = ee.Image(ee_image)
+    system_props = ee_image.toDictionary(['system:index','system:time_start','system:time_end'])
+    props = ee_image.toDictionary()
+    vals = ee.Image(ee_image).reduceRegion(reducer,pt,scale=scale,crs = crs, crsTransform = transform)
+    if includeNonSystemProperties and includeSystemProperties:
+        props = system_props.combine(props)
+        return props.combine(vals)
+    elif includeNonSystemProperties and not includeSystemProperties:
+        return props.combine(vals)
+    elif not includeNonSystemProperties and includeSystemProperties:
+        return system_props.combine(vals)
+    else:
+        return vals
+def extractPointValuesToDataFrame(ee_object,pt,scale=None,crs = None, transform = None,title = None,index = None,columns = None,bandName = None, reducer = ee.Reducer.first(),includeNonSystemProperties = False,includeSystemProperties=True):
+    if isinstance(ee_object, ee.imagecollection.ImageCollection):
+        vals = ee_object.toList(10000,0).map(lambda ee_image:extractPointImageValues(ee_image,pt,scale=scale,crs = crs, transform = transform,reducer = reducer,includeNonSystemProperties=includeNonSystemProperties,includeSystemProperties=includeSystemProperties)).getInfo()
+        
+    elif isinstance(ee_object, ee.image.Image):
+        vals = extractPointImageValues(ee_object,pt,scale=scale,crs = crs, transform = transform,reducer = reducer,includeNonSystemProperties=includeNonSystemProperties,includeSystemProperties=includeSystemProperties).getInfo()
+       
+    return pandas.json_normalize(vals)
     
 ####################################################################################################
 # Scratch space for testing
@@ -298,11 +317,17 @@ if __name__ == '__main__':
     # featureCollection_to_csv(training_data,out_csv,overwrite = True)
 
     pt = ee.Geometry.Point([-65.8491, 18.2233])
+    comps = ee.ImageCollection('projects/rcr-gee/assets/lcms-training/lcms-training_module-2_composites')
     lt = ee.ImageCollection('projects/rcr-gee/assets/lcms-training/lcms-training_module-3_landTrendr')\
-    .filter(ee.Filter.eq('band','NBR')).first()\
-    .select(['LandTrendr'])
+    # .filter(ee.Filter.eq('band','NBR')).first()\
+    # .select(['LandTrendr'])
 
-    eeObjToDataFrame(ee.Image([1,2,3]),pt,crs = 'EPSG:5070', scale=30,transform = None,title = None,index = None,columns = None,bandName = None, reducer = ee.Reducer.first())
+    # eeObjToDataFrame(ee.Image([1,2,3]),pt,crs = 'EPSG:5070', scale=30,transform = None,title = None,index = None,
+    #             columns = None,bandName = None, reducer = ee.Reducer.first())
+    # extractPointValues(ee.Image.cat([ee.Image([1,2,3]).toArray(),ee.Image(1)]),pt,crs = 'EPSG:5070', scale=30,transform = None,title = None,index = None,columns = None,bandName = None, reducer = ee.Reducer.first())
+
+    extracted = extractPointValuesToDataFrame(comps,pt,crs = 'EPSG:5070', scale=30,transform = None,title = None,index = None,columns = None,bandName = None, reducer = ee.Reducer.first(),includeNonSystemProperties = False,includeSystemProperties=True)
+    print(extracted)
     # df = imagePixelToDataFrame(lt,pt,crs = 'EPSG:5070', scale=30,transform = None,index = ['year','vertex fit'],columns = None,bandName = None, reducer = ee.Reducer.first())
     # print(df)
     # df = imagePixelToDataFrame(ee.Image([1,2,3]).byte(),pt,crs = 'EPSG:5070', scale=30,transform = None)

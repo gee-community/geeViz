@@ -22,6 +22,7 @@ from google.auth.transport import requests as gReq
 from google.oauth2 import service_account
 
 from threading import Thread
+from urllib.parse import urlparse
 from IPython.display import IFrame,display, HTML
 if sys.version_info[0] < 3:
     import SimpleHTTPServer, SocketServer
@@ -131,8 +132,9 @@ def cleanAccessToken(accessToken):
     while accessToken[-1] == '.': accessToken = accessToken[:-1]
     return accessToken
 # Function to get domain base without any folders
-def baseDomain(domain):
-    return domain.split('.com')[0]+'.com'
+def baseDomain(url):
+    url_parts = urlparse(url)
+    return f'{url_parts.scheme}://{url_parts.netloc}'
 # Function for using default GEE refresh token to get an access token for geeView
 def refreshToken(refresh_token_path = ee.oauth.get_credentials_path()):
     try:

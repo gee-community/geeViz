@@ -1,8 +1,19 @@
+# geeViz 2023.8.7 Release Notes
+## August 24, 2023
+
+### New Features
+* **extractPointValuesToDataFrame** - `gee2Pandas.extractPointValuesToDataFrame` function extract values as a Pandas data frame. Will handle images or imageCollections automatically. 
+
+### Bug fixes
+* Minor bug fixes
+
+____
 # geeViz 2023.8.6 Release Notes
 ## August 23, 2023
 
 ### New Features
 * **imageArrayPixelToDataFrame** - `gee2Pandas.imageArrayPixelToDataFrame` function to easily visualize image array values as a Pandas data frame.
+* **new_interp_date** - `changeDetectionLib.new_interp_date` experimental function to interpolate dates. This method is likely no faster than the previous method (`changeDetectionLib.linearInterp`), but does extrapolate in a more expected manner.
 
 
 ### Bug fixes
