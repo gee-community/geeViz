@@ -397,7 +397,18 @@ class mapper:
         query_command = "$('#query-label').click();"
         if query_command not in self.mapCommandList:
             self.mapCommandList.append(query_command)
-        
+
+    # Functions to handle setting query output y labels
+    def setYLabelMaxLength(self,maxLength):
+        command = f"yLabelMaxLength = {maxLength}"
+        if command not in self.mapCommandList:
+            self.mapCommandList.append(command)
+    def setYLabelBreakLength(self,maxLength):
+        command = f"yLabelBreakLength = {maxLength}"
+        if command not in self.mapCommandList:
+            self.mapCommandList.append(command)
+            
+    # Functions to handle batch layer toggling       
     def turnOffAllLayers(self):
         update = {'visible':'false'}
         self.idDictList = [{**d,**update} for d in self.idDictList]

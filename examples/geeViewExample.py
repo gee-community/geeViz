@@ -84,14 +84,16 @@ water = ee.ImageCollection('JRC/GSW1_0/YearlyHistory')
 waterColors = ['ffffff','99d9ea','0000ff']
 waterLabels = ['1 Not Water','2 Seasonal Water','3 Permanent Water']
 waterDict =  {waterLabels[i]: waterColors[i] for i in range(len(waterColors))}
-waterQueryDict =  {str(i+1): waterLabels[i] for i in range(len(waterLabels))}
+waterQueryDict =  {i+1:waterLabel for i,waterLabel in enumerate(waterLabels)}
 
 #The lookup table is applied to the image, but only a graph is created when querying the imageCollection
 Map.addLayer(water,{'min':1,'max':3,'palette':waterColors,'classLegendDict':waterDict,'queryDict':waterQueryDict},'JRC Surface Water Time Series',False)
 Map.addLayer(water.mode(),{'min':1,'max':3,'palette':waterColors,'classLegendDict':waterDict,'queryDict':waterQueryDict},'JRC Surface Water Mode',False)
-Map.addTimeLapse(water,{'min':1,'max':3,'palette':waterColors,'classLegendDict':waterDict},'JRC Surface Water Time Lapse',False)
+Map.addTimeLapse(water,{'min':1,'max':3,'palette':waterColors,'classLegendDict':waterDict,'queryDict':waterQueryDict},'JRC Surface Water Time Lapse',False)
 #The Map can be centered on featureCollections or features
 Map.centerObject(nps)
+Map.setYLabelBreakLength(2)
+Map.setYLabelMaxLength(5)
 #The ability to query visible map layers can be turned on manually or with the following command
 Map.turnOnInspector()
 
