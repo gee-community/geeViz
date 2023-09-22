@@ -1,3 +1,13 @@
+# geeViz 2023.9.1 Release Notes
+## September 20, 2023
+
+### New Features
+* **queryDict Chart Y Tick Labels** - Charting any imageCollection from a `Map.addLayer` or `Map.addTimeLapse` call will automatically use the `queryDict` `viz` parameter (e.g. `Map.addLayer(someLayer,{"queryDict":{1:"Trees",2:"Grass",3:"Water"}},"SomeLayerName")`) to label the Y axis ticks with class names. If class names are too long, they will be shortened. The max character length and the max characters per line in a Y axis tick label can be changed using `Map.setYLabelMaxLength` and `Map.setYLabelBreakLength` respectively.
+
+### Bug fixes
+* Improved array and mixed array and traditional image query charting robustness
+
+____
 # geeViz 2023.8.7 Release Notes
 ## August 24, 2023
 
