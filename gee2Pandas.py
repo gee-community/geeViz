@@ -100,7 +100,7 @@ def featureCollection_to_csv(featureCollection,output_csv_name,overwrite = False
 # This will run into memory errors if any complex operations precede the tables creation
 # In those instances, the featureCollections should first be exported to asset and then brought back in and run through
 # this function
-def robust_featureCollection_to_df(featureCollection):
+def robust_featureCollection_to_df(featureCollection,sep = '___'):
     maxFeatures = 5000
     nFeatures = featureCollection.size().getInfo()
     featureCollection = featureCollection.toList(1000000,0)
@@ -110,13 +110,15 @@ def robust_featureCollection_to_df(featureCollection):
         if end > nFeatures:end = nFeatures
         print(f'Converting features {start+1}-{end}')
         fcT = ee.FeatureCollection(featureCollection.slice(start,end))
-        df = pandas.json_normalize(fcT.getInfo()["features"])
+        features = fcT.getInfo()["features"]
+        df = pandas.json_normalize(features,sep = sep)
         out_df.append(df)
        
     out_df = pandas.concat(out_df)
 
     properties = out_df.columns
-    properties_out = [prop.replace('properties.','') for prop in properties]
+    properties_out = [prop.replace(f'properties{sep}','') for prop in properties]
+    properties_out = [prop.replace(f'geometry{sep}','geometry.') for prop in properties_out]
     prop_dict = dict(zip(properties,properties_out))
     out_df = out_df.rename(columns=prop_dict)
 
@@ -132,7 +134,7 @@ def geeToLocalZonalStats(zones,raster,output_csv,reducer=ee.Reducer.first(),scal
       transform, \
      tileScale)
     
-    featureCollection_to_csv(table,output_csv,overwrite,maxNumberOfFeatures)
+    featureCollection_to_csv(table,output_csv,overwrite)
 #########################################################################
 # Function to convert a Pandas dataframe to geojson
 # Assumes point location geometry
