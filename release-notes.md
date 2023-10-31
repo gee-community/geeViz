@@ -1,3 +1,16 @@
+# geeViz 2023.10.1 Release Notes
+## October 31, 2023
+
+### New Features
+* **cloudScore+ For Sentinel-2** - cloudScore+ is now available for cloud and cloud shadow masking for Sentinel-2. It is available for all Sentinel-2 functions/wrappers/examples.
+
+* **mosiac time lapses** - if an input imageCollection for an `addTimeLapse` call has multiple images per date, you can now have them mosaicked on-the-fly by using `{'mosaic':True}` in the viz parameters.
+
+* **Reducers for imageCollections in addLayer** - When adding an imageCollection with `Map.addLayer`, you can now specify the reducer that is used to reduce the imageCollection to a single image to show on the map. Use `{'reducer':ee.SomeReducer()}` in the viz params.
+
+### Bug fixes
+* Improved Y axis label overcrowding image query charting robustness
+____
 # geeViz 2023.9.1 Release Notes
 ## September 20, 2023
 

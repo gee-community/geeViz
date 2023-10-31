@@ -463,12 +463,12 @@ def uniqueValues(collection,field):
 def dailyMosaics(imgs):
   #Simplify date to exclude time of day
   def propWrapper(img):
-    d = ee.String(ee.Date(img.get('system:time_start')).format('YYYY-MM-dd'))
+    d = img.date().format('YYYY-MM-dd')
     orbit = ee.Number(img.get('SENSING_ORBIT_NUMBER')).format()
     return img.set({'date-orbit':d.cat(ee.String('_')).cat(orbit),'date':d})
   imgs = imgs.map(propWrapper)
 
-  #Find the unique days
+  #Find the unique day orbits
   dayOrbits  = ee.Dictionary(imgs.aggregate_histogram('date-orbit')).keys()
 
   def dayWrapper(d):
@@ -626,7 +626,8 @@ def getS2(studyArea,
           resampleMethod = 'aggregate',
           toaOrSR = 'TOA',
           convertToDailyMosaics = True,
-          addCloudProbability = True):
+          addCloudProbability = True,
+          addCloudScorePlus = False):
 
   args = formatArgs(locals())
 
@@ -679,6 +680,24 @@ def getS2(studyArea,
     # print('Missing cloud probability ids:', missing.getInfo())
     # print('N s2 images before joining with cloud prob:', s2s.size().getInfo())
     s2s = joinCollections(s2s, cloudProbabilities, False,'system:index')
+    # print('N s2 images after joining with cloud prob:', s2s.size().getInfo())
+  
+  if addCloudScorePlus:
+    print('Joining pre-computed cloudScore+ from: GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED')
+    cloudScorePlus = ee.ImageCollection("GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED")\
+                    .filterDate(startDate, endDate.advance(1,'day'))\
+                    .filter(ee.Filter.calendarRange(startJulian, endJulian))\
+                    .filterBounds(studyArea)\
+                    .select(['cs'],['cloudScorePlus'])
+
+    cloudScorePlusIds = ee.List(ee.Dictionary(cloudScorePlus.aggregate_histogram('system:index')).keys())
+
+    s2sIds = ee.List(ee.Dictionary(s2s.aggregate_histogram('system:index')).keys())
+    missing = s2sIds.removeAll(cloudScorePlus)
+    # print('Missing cloud probability ids:', missing.getInfo())
+    # print('N s2 images before joining with cloudScore+:', s2s.size().getInfo())
+    s2s = joinCollections(s2s, cloudScorePlus, False,'system:index')
+    # s2s = s2s.linkCollection(cloudScorePlus)
     # print('N s2 images after joining with cloud prob:', s2s.size().getInfo())
 
   # Set resampling method - only sets to non nearest-neighbor for continuous bands
@@ -2823,7 +2842,9 @@ def getProcessedSentinel2Scenes(\
   preComputedTDOMIRMean = None,
   preComputedTDOMIRStdDev = None,
   cloudProbThresh = 40,
-  verbose = False):
+  verbose = False,
+  applyCloudScorePlus = False,
+  cloudScorePlusThresh = 0.6):
 
   origin = 'Sentinel2'
   toaOrSR = toaOrSR.upper()
@@ -2856,7 +2877,8 @@ def getProcessedSentinel2Scenes(\
     resampleMethod = resampleMethod,
     toaOrSR = toaOrSR,
     convertToDailyMosaics = convertToDailyMosaics,
-    addCloudProbability = applyCloudProbability)
+    addCloudProbability = applyCloudProbability,
+    addCloudScorePlus = applyCloudScorePlus)
 
   if applyQABand:
     print('Applying QA Band Cloud Mask')
@@ -2875,8 +2897,12 @@ def getProcessedSentinel2Scenes(\
       preComputedCloudScoreOffset = preComputedCloudScoreOffset)
 
   if applyCloudProbability:
-    print('Apply Cloud Probability')
+    print('Applying Cloud Probability')
     s2s = s2s.map(lambda img: img.updateMask(img.select(['cloud_probability']).lte(cloudProbThresh)))
+
+  if applyCloudScorePlus:
+    print('Applying cloudScore+')
+    s2s = s2s.map(lambda img: img.updateMask(img.select(['cloudScorePlus']).gte(cloudScorePlusThresh)))
 
   if applyShadowShift:
     print('Applying Shadow Shift')
@@ -2954,7 +2980,9 @@ def getSentinel2Wrapper(\
   preComputedTDOMIRStdDev = None,
   cloudProbThresh = 40,
   overwrite = False,
-  verbose = False):
+  verbose = False,
+  applyCloudScorePlus = False,
+  cloudScorePlusThresh = 0.6):
 
   origin = 'Sentinel2'
   toaOrSR = toaOrSR.upper()
@@ -2990,7 +3018,9 @@ def getSentinel2Wrapper(\
     preComputedTDOMIRMean = preComputedTDOMIRMean,
     preComputedTDOMIRStdDev = preComputedTDOMIRStdDev,
     cloudProbThresh = cloudProbThresh,
-    verbose = verbose)
+    verbose = verbose,
+    applyCloudScorePlus = applyCloudScorePlus,
+    cloudScorePlusThresh = cloudScorePlusThresh)
 
   #Add zenith and azimuth
   #if correctIllumination:
@@ -3108,7 +3138,9 @@ def getProcessedLandsatAndSentinel2Scenes(
       preComputedSentinel2TDOMIRStdDev = None,
       cloudProbThresh = 40,
       landsatCollectionVersion = 'C2',
-      verbose = False):
+      verbose = False,
+      applyCloudScorePlus = False,
+      cloudScorePlusThresh = 0.6):
 
   if toaOrSR == 'SR':
     runChastainHarmonization = False
@@ -3193,7 +3225,9 @@ def getProcessedLandsatAndSentinel2Scenes(
     preComputedTDOMIRMean = preComputedSentinel2TDOMIRMean,
     preComputedTDOMIRStdDev = preComputedSentinel2TDOMIRStdDev,
     cloudProbThresh = cloudProbThresh,
-    verbose = False)
+    verbose = False,
+    applyCloudScorePlus = applyCloudScorePlus,
+    cloudScorePlusThresh = cloudScorePlusThresh)
 
 
   #Select off common bands between Landsat and Sentinel 2
@@ -3341,7 +3375,9 @@ def getLandsatAndSentinel2HybridWrapper(\
   cloudProbThresh = 40,
   landsatCollectionVersion = 'C2',
   overwrite = False,
-  verbose = False):
+  verbose = False,
+  applyCloudScorePlusSentinel2 = False,
+  cloudScorePlusThresh = 0.6):
 
   origin = 'Landsat-Sentinel2-Hybrid'
   toaOrSR = toaOrSR.upper()
@@ -3392,7 +3428,9 @@ def getLandsatAndSentinel2HybridWrapper(\
     preComputedSentinel2TDOMIRStdDev = preComputedSentinel2TDOMIRStdDev,
     cloudProbThresh = cloudProbThresh,
     landsatCollectionVersion = landsatCollectionVersion,
-    verbose = verbose)
+    verbose = verbose,
+    applyCloudScorePlus = applyCloudScorePlusSentinel2,
+    cloudScorePlusThresh = cloudScorePlusThresh)
 
   #Create hybrid composites
   composites = compositeTimeSeries(\

@@ -120,11 +120,12 @@ Map.addLayer(lateLu, {'autoViz':True}, 'Recent Land Use Mode ({}-{})'.format(lat
 ### Visualize Land Cover change ###
 #############################################################################
 #Copy properties from original image after reducing collection to retain visualization properties
+# Or you can provide a reducer to be applied for map visualization and still be able to query all values of the collection
 lc = lcms.select(['Land_Cover'])
-earlyLc = lc.filter(ee.Filter.calendarRange(earlySpan[0], earlySpan[1], 'year')).mode().copyProperties(lcms.first())
-lateLc = lc.filter(ee.Filter.calendarRange(lateSpan[0], lateSpan[1], 'year')).mode().copyProperties(lcms.first())
-Map.addLayer(earlyLc, {'autoViz':True}, 'Early Land Cover Mode ({}-{})'.format(earlySpan[0],earlySpan[1]), False);
-Map.addLayer(lateLc, {'autoViz':True}, 'Recent Land Cover Mode ({}-{})'.format(lateSpan[0],lateSpan[1]), False);
+earlyLc = lc.filter(ee.Filter.calendarRange(earlySpan[0], earlySpan[1], 'year'))#.mode().copyProperties(lcms.first())
+lateLc = lc.filter(ee.Filter.calendarRange(lateSpan[0], lateSpan[1], 'year'))#.mode().copyProperties(lcms.first())
+Map.addLayer(earlyLc, {'autoViz':True,'reducer':ee.Reducer.mode()}, 'Early Land Cover Mode ({}-{})'.format(earlySpan[0],earlySpan[1]), False);
+Map.addLayer(lateLc, {'autoViz':True,'reducer':ee.Reducer.mode()}, 'Recent Land Cover Mode ({}-{})'.format(lateSpan[0],lateSpan[1]), False);
 
 
 
@@ -132,6 +133,11 @@ Map.addLayer(lateLc, {'autoViz':True}, 'Recent Land Cover Mode ({}-{})'.format(l
 ### Visualize Change products ###
 #############################################################################
 
+
+# Show LCMS probability composite as an RGB to illustrate where Tree and non tree loss and gain have occured
+Map.addLayer(lcms.select(['.*Probability.*']),{'reducer':ee.Reducer.max(),'min':0,'max':30,'classLegendDict':{'Non-Tree No Change':'000','Tree No Change':'0E0','Non-Tree Fast Loss':'E00','Tree Gain':'0FF','Tree Fast Loss':'FF0','Tree Fast Loss + Gain':'FFF'},'bands':'Change_Raw_Probability_Fast_Loss,Land_Cover_Raw_Probability_Trees,Change_Raw_Probability_Gain'},'LCMS Change Composite',False)
+   
+   
 #Select the change band. Land_Cover and Land_Use are also available.
 change = lcms.select(['Change'])
 

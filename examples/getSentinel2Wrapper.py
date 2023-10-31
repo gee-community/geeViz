@@ -104,14 +104,26 @@ applyShadowShift = False
 applyTDOM = True
 
 #Whether to use the pre-computed cloud probabilities to mask
-#clouds for Sentinel 2
+#clouds for Sentinel 2 (s2Cloudless)
 #This method works really well and should be used instead of cloudScore (applyCloudScore)
 applyCloudProbability = True
 
+#Whether to use the pre-computed cloudScore+ to mask
+#clouds and cloud shadows for Sentinel 2
+#This method works really well and should be used instead of all other methods once it finishes
+# running for the S2 archive (~ early 2024????)
+applyCloudScorePlus = False
+
+
 #If cloudProbability is chosen, choose a threshold 
 #(generally somewhere around 40-60 works well)
-cloudProbThresh = 40;
+cloudProbThresh = 40
 
+# If applyCloudScorePlus = True, choose a threshold
+# Adjustable threshold for converting CS+ QA to a binary mask.
+# Higher thresholds will mask out more clouds (e.g. partial occlusions like thin clouds, haze &
+# cirrus shadows). Lower thresholds will mask out fewer clouds.
+cloudScorePlusThresh = 0.6
 
 # If applyCloudScore is set to True
 # cloudScoreThresh: lower number masks more clouds.  Between 10 and 30 generally 
@@ -189,6 +201,12 @@ preComputedTDOMIRStdDev = preComputedTDOMStats['sentinel2']['stdDev']
 # Whether to export composites
 exportComposites = False
 
+# Whether to overwite existing assets should they exist or currently be exporting
+overwrite = False
+
+# Whether to print a lot of information about what is going on
+verbose = False
+
 # Set up Names for the export
 outputName = 'Sentinel2'
 
@@ -220,17 +238,17 @@ s2sAndTs =getImagesLib.getSentinel2Wrapper(studyArea,startYear,endYear,startJuli
   contractPixels,dilatePixels,\
   ['nir','swir1'],False,250,\
   exportComposites,outputName,exportPathRoot,crs,transform,scale,resampleMethod,toaOrSR,convertToDailyMosaics,
-  applyCloudProbability,preComputedCloudScoreOffset,preComputedTDOMIRMean,preComputedTDOMIRStdDev,cloudProbThresh)
+  applyCloudProbability,preComputedCloudScoreOffset,preComputedTDOMIRMean,preComputedTDOMIRStdDev,cloudProbThresh,
+  overwrite,verbose,applyCloudScorePlus,cloudScorePlusThresh)
   
 # Separate into scenes and composites for subsequent analysis
 processedScenes = s2sAndTs['processedScenes']
 processedComposites = s2sAndTs['processedComposites']
 
-# Indicate what type of image is being added to speed up map service creation
-getImagesLib.vizParamsFalse['layerType']= 'geeImage';
-
-Map.addLayer(processedComposites.select(['NDVI','NBR']),{'addToLegend':False,'layerType':'geeImageCollection'},'Time Series (NBR and NDVI)',False)
+Mapap.addLayer(processedComposites.select(['NDVI','NBR']),{'addToLegend':False,'layerType':'geeImageCollection'},'Time Series (NBR and NDVI)',False)
 Map.addTimeLapse(processedComposites,getImagesLib.vizParamsFalse,'Composite Timelapse',False)
+# Map.addTimeLapse(processedComposites.sel  ect(['compositeObsCount']),{'min':30,'max':100,'palette':'F00,00F'},'Composite Count Timelapse',False)
+
 ####################################################################################################
 # Load the study region
 Map.addLayer(studyArea, {'strokeColor': '0000FF'}, "Study Area", True)

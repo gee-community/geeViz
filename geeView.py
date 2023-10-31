@@ -221,6 +221,15 @@ class mapper:
             name = 'Layer '+str(self.layerNumber)
             self.layerNumber+=1
         print('Adding layer: ' +name)
+
+        # Handle reducer if ee object is given
+        if 'reducer' in viz.keys():
+            # if str(type(viz['reducer']))=="<class 'ee.Reducer'>":
+            #     viz['reducer'] = eval(viz['reducer'])
+            try:
+                viz['reducer'] = viz['reducer'].serialize()
+            except:
+                viz['reducer'] = eval(viz['reducer']).serialize()
         #Get the id and populate dictionary
         idDict = {}#image.getMapId()
         idDict['item'] = image.serialize()
@@ -236,6 +245,10 @@ class mapper:
             name = 'Layer '+str(self.layerNumber)
             self.layerNumber+=1
         print('Adding layer: ' +name)
+
+        # Handle reducer if ee object is given - delete it
+        if 'reducer' in viz.keys():
+            del viz['reducer']
         #Get the id and populate dictionary
         idDict = {}#image.getMapId()
         idDict['item'] = image.serialize()
@@ -407,7 +420,16 @@ class mapper:
         command = f"yLabelBreakLength = {maxLength}"
         if command not in self.mapCommandList:
             self.mapCommandList.append(command)
-            
+    def setYLabelMaxLines(self,maxLines):
+        command = f"yLabelMaxLines = {maxLines}"
+        if command not in self.mapCommandList:
+            self.mapCommandList.append(command)
+    def setYLabelFontSize(self,fontSize):
+        command = f"yLabelFontSize = {fontSize}"
+        if command not in self.mapCommandList:
+            self.mapCommandList.append(command)
+
+
     # Functions to handle batch layer toggling       
     def turnOffAllLayers(self):
         update = {'visible':'false'}

@@ -17,7 +17,7 @@
   --deep-brown-80:#6F6259;
   --deep-brown-100:#372e2c;
 
-
+ 
   --grayy:#6F6259;
   --black:#1B1716DD;
   --solid-black:#1B1716;
@@ -312,12 +312,13 @@ button {
 }
 .vl {
   border-left: 1px solid var(--deep-brown-20);
-  height: 1.25rem;
-  vertical-align: middle;
-  display: inline-block;
+  /* height: 1.25rem; */
+  /* vertical-align: middle; */
+  /* display: inline-block; */
   margin-left: 0.1rem;
   margin-right:0.25rem;
-  margin-top:0.5rem;
+  margin-top:0.25rem;
+  margin-bottom:0.25rem;
 }
 .hl {
   border-bottom: 1px solid var(--deep-brown-20);
@@ -358,6 +359,12 @@ button {
   margin-top:0.25rem;
   font-size:1.5rem;
   display:flex;
+}
+/* the noWrap class */
+.noWrap {
+  overflow-x: scroll;
+  white-space: nowrap;
+  padding: 0;
 }
 .search-bar{
   padding-left:2.75rem;
@@ -730,13 +737,22 @@ font-size:0.9em;
 
 .time-lapse-layer-range-container{
   float:right;
-  width:30%;
-  margin-top:-0.95em;
+  max-width:10%;
+  margin-top:-1rem;
 
 }
 .time-lapse-label-container{
-  padding-bottom:2em;
+  padding-bottom:1rem;
+  margin-bottom: 0.25rem;
 }
+/* .btn>i.fa{font-size: 0.95rem;} */
+.icon-bar>button.btn{
+  padding-left: 0.3rem;
+  padding-right:0.3rem;
+  padding-top:0.25rem;
+  padding-bottom:0.25rem;
+}
+
 .simple-time-lapse-layer-range{
 
     /*height: 0.1rem;*/
@@ -744,7 +760,7 @@ font-size:0.9em;
     /*vertical-align:bottom;*/
     /*display:inline-block;*/
     /*vertical-align:bottom;*/
-    margin-top:1.8em;
+    margin-top:2rem;
     cursor:pointer;
     float:right;
 
@@ -764,7 +780,7 @@ font-size:0.9em;
     /*height: 0.1rem;*/
     
     min-width:4rem;
-    margin-top:1.5em;
+    margin-top:1.5rem;
     cursor:pointer;
   }
 
@@ -906,7 +922,7 @@ font-size:0.9em;
 }
 
 .fa{
-  font-size:1.1em;
+  font-size:1.1rem;
   color:#FFF;
   cursor:pointer;
   }
