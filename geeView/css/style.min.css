@@ -126,7 +126,9 @@ color:var(--deep-brown-20)!important;}
   padding: 0.1rem 0.2rem;
   font-size:1.25rem;
 }
-
+.shepherd-header{
+  padding:0.75rem;
+}
 .shepherd-content,.shepherd-title,.shepherd-header,.shepherd-text,.shepherd-footer{
   background-color: var(--deep-brown-100)!important;
   color:var(--deep-brown-10)!important;
@@ -285,7 +287,13 @@ th{font-weight:  600!important}
 button {
   -webkit-appearance: button;
 }
-
+.dashboard-results-toggler{
+  position:absolute;
+  top:0%;
+  margin-top:-0.2rem;
+  z-index: 5;
+  height:3rem;
+}
 .sidebar-toggler{
   position:absolute;
   top:0%;
@@ -400,30 +408,38 @@ button {
   overflow-y:hidden;
   white-space:nowrap;
   color:var(--white);
-  background-color: var(--black)!important;
+  /* background-color: var(--black)!important; */
   margin:0;
   padding:0;
  
+}
+.dashboard-row-hover{
+  background-color: var(--almost-transparent)!important;
+  box-shadow:inset 0 0 0 9999px rgba(0, 0, 0, 0.075);
 }
 .dashboard-highlights{
   position:absolute;
   top:0rem;
   right:0%;
-  max-width:25rem;
+  /* max-width:35rem; */
   max-height:100%;
   overflow-y:auto;
   overflow-x:auto;
   z-index: 2;
+  padding-left:0px;
+  padding-right:0px;
 }
 .dashboard-download-div{
  
   margin:0.5rem;
 }
 .dashboard-download-button{
-  background-color: var(--deep-brown-100)!important;
-  
+  background-color: var(--solid-black)!important;
+  margin-left:2.5rem;
+  margin-top:0.5rem;
+  border-radius: 0.1rem;
   font-size: 0.75rem;
-  color:var(--deep-brown-10)!important;
+  color:var(--white)!important;
   font-family: 'Roboto';
   
   font-size:1rem;
@@ -511,7 +527,9 @@ button {
   color:var(--deep-brown-100);
   font-family: 'Roboto';
 }
-
+div.dataTables_info{
+  margin-left:0.75rem;
+}
 
 .highlights-disclaimer{   
   margin-top:0.75rem; 
@@ -520,7 +538,7 @@ button {
   margin-bottom:0.75rem;
   font-size: 0.75rem;
   max-width: 20rem;
-  color: var(--deep-brown-20);
+  /* color: var(--deep-brown-20); */
 }
 .btn-group>.btn{
   margin-left: 0.5rem!important;
@@ -543,7 +561,23 @@ button {
 #dashboard-progress-container {
   padding-left:1.75rem;
   padding-right:1rem;
+  
 }
+@keyframes color {
+  to {
+    background-color: var(--deep-brown-20);
+    }
+  
+}
+.progress-pulse{
+ /* background-color: #222; */
+ animation-name: color;
+ animation-duration: 1s;
+ animation-iteration-count: infinite;
+ animation-direction: alternate-reverse;
+ animation-timing-function: ease;;
+}
+
 .progressbar {
   background: var(--deep-brown-80);
   width: 100%;
@@ -553,9 +587,10 @@ button {
   height:0.8rem;
   margin-top: 0rem;
   margin-bottom: 0.25rem;
+ 
 }
 .progress-spinner{
-  margin-left:0.25rem;
+  /* margin-left:0.25rem; */
   margin-right:0.25rem;
   margin-top:0rem;
   margin-bottom:0rem;
@@ -635,11 +670,11 @@ button {
   display: inline-block;
   height:100%;
   /* width:33rem; */
-  padding-top:0.5rem;
-  padding-bottom:0.5rem;
-  padding-left:0.5rem;
+  /* padding-top:0.5rem; */
+  /* padding-bottom:0.5rem; */
+  /* padding-left:0.5rem; */
   
-  padding-right:0.5rem;
+  /* padding-right:0.5rem; */
 }
 
 .lcms-change-table-columns td {
@@ -653,10 +688,10 @@ td{
   word-wrap:break-word;
 }
 
-.plotly-chart{
-  padding-top:0.75rem;
-  margin-left:0.5rem;
-}
+/* .plotly-chart{ */
+  /* padding-top:0.75rem; */
+  /* margin-left:0.5rem; */
+/* } */
 .plotly-chart-download{display: none;}
 
 
@@ -1109,6 +1144,13 @@ textarea {
     overflow: hidden;
     min-height: 50px;
     max-height: 100px;
+}
+/*///////////////////////////////////////////////////////////*/
+/*Export styling*/
+.export-res-input{
+  max-width: 2rem;
+  padding-left:0.25rem;
+  padding-right:0.25rem;
 }
 /*///////////////////////////////////////////////////////////*/
 /*Modal styling*/

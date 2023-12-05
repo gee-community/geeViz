@@ -1,3 +1,17 @@
+# geeViz 2023.12.1 Release Notes
+## December 4, 2023
+
+### New Features
+* **Simplified simpleLANDTRENDR** - the `simpleLANDTRENDR` function has been reworked to be more streamlined, but still provide the same functionality. Steps it uses are now available as stand-alone functions. These include the following new functions: `runLANDTRENDR, multLT, LTLossGainExportPrep, and addLossGainToMap` and the following previously existing functions: `simpleLTFit and convertToLossGain`. The `LANDTRENDRViz.py`, `LANDTRENDRWrapper.py`, and `LANDTRENDRWrapperNotebook.ipynb` examples have all been updated to utilize these reworked functions. 
+
+
+* **setQueryPrecision for Charting** - The precision of query outputs is now handled better. It can be changed by using the `Map.setQueryPrecision` function. Any floating point number will be constrained by the maximum of `chartPrecision` or `chartDecimalProportion*len(someFloatingPointNumber)`. The default is `3` and `0.25` respectively. E.g. if the number is `0.12345`, `max[3,ceiling(len(0.12345)*0.25)] = 3`, so the final number would be `0.123`.
+
+* **setQueryDateFormat for Charting** - The date format can be changed by using the `Map.setQueryDateFormat` function or `queryDateFormat` property within the viz params for a `Map.addLayer` or `Map.addTimeLapse` call. E.g. if you want to only show the year in a chart, you'd put `Map.setQueryDateFormat('YYYY')` or if you need hours and minutes, `Map.setQueryDateFormat('YYYY-MM-dd HH:mm')`
+
+### Bug fixes
+* ImageCollection query bug when some pixels were null, but there was a `queryDict` provided is now fixed
+____
 # geeViz 2023.10.1 Release Notes
 ## October 31, 2023
 

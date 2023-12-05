@@ -52,7 +52,7 @@ endJulian = 365
 #well. If providing pre-computed stats for cloudScore and TDOM, this does not 
 #matter
 startYear = 1984
-endYear = 2021
+endYear = 2023
 
 #Choose whether to include Landat 7
 #Generally only included when data are limited
@@ -62,7 +62,7 @@ includeSLCOffL7 = True
 
 #Export params
 #Whether to export CCDC outputs
-exportCCDC = False
+exportCCDC = True
 
 #Which bands/indices to export
 #These will not always be used to find breaks - that is specified below in the ccdcParams
@@ -76,7 +76,7 @@ outputName = 'CCDC-Test'
 
 #Provide location composites will be exported to
 #This should be an asset folder, or more ideally, an asset imageCollection
-exportPathRoot = 'users/username/someCollection'
+exportPathRoot = 'users/usfs-ihousman/test2'#'users/username/someCollection'
 
 
 #CRS- must be provided.  

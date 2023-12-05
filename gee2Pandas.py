@@ -138,23 +138,25 @@ def geeToLocalZonalStats(zones,raster,output_csv,reducer=ee.Reducer.first(),scal
 #########################################################################
 # Function to convert a Pandas dataframe to geojson
 # Assumes point location geometry
-# Function taken from: https://notebook.community/captainsafia/nteract/applications/desktop/example-notebooks/pandas-to-geojson
-def df_to_geojson(df, properties, lat='latitude', lon='longitude'):
+# Function adapted from: https://notebook.community/captainsafia/nteract/applications/desktop/example-notebooks/pandas-to-geojson
+def df_to_geojson(df, properties = None, geometry_type_fieldname ='geometry.type', geometry_coordinates_fieldname='geometry.coordinates'):
     # create a new python dict to contain our geojson data, using geojson format
     geojson = {'type':'FeatureCollection', 'features':[]}
 
+    # Pull all non geo props if none are provided
+    if properties == [] or properties == None:
+        properties = [col for col in df.columns if col not in [geometry_type_fieldname,geometry_coordinates_fieldname]]
+    
     # loop through each row in the dataframe and convert each row to geojson format
     for _, row in df.iterrows():
-      if not pandas.isnull(row[lon]) and not pandas.isnull(row[lat]):
-        # create a feature template to fill in
+      if not pandas.isnull(row[geometry_type_fieldname]) and not pandas.isnull(row[geometry_coordinates_fieldname]):
+        # create a feature 
         feature = {'type':'Feature',
                     'properties':{},
-                    'geometry':{'type':'Point',
-                                'coordinates':[]}}
+                    'geometry':{'type':row[geometry_type_fieldname],
+                                'coordinates':json.loads(row[geometry_coordinates_fieldname])}}
 
-        # fill in the coordinates
-        feature['geometry']['coordinates'] = [row[lon],row[lat]]
-
+        
         # for each column, get the value and add it as a new feature property
         for prop in properties:
           p = row[prop]
@@ -162,14 +164,13 @@ def df_to_geojson(df, properties, lat='latitude', lon='longitude'):
           feature['properties'][prop] = p
         
         # add this feature (aka, converted dataframe row) to the list of features inside our dict
-        
         geojson['features'].append(feature)
     
     return geojson
 ####################################################################################################
-# Function to take the Excel HCB spreadsheet and convert it to a GEE featureCollection
+# Function to take the Excel spreadsheet and convert it to a GEE featureCollection
 # Supports Excel (mode='Excel'), CSV (mode='csv'), and Pickle (mode='pickle') input table formats
-def tableToFeatureCollection(table_path,lat='Lat', lon='Lng',properties=[],dateCol=None,groupByColumns = None,mode=None):
+def tableToFeatureCollection(table_path,properties=None,dateCol=None,groupByColumns = None,mode=None,geometry_type_fieldname ='geometry.type', geometry_coordinates_fieldname='geometry.coordinates'):
     mode_dict = {'.csv':'csv','.xls':'excel','.xlsx':'excel','.pkl':'pickle','.pickle':'pickle'}
     if mode == None:
         try:
@@ -197,11 +198,7 @@ def tableToFeatureCollection(table_path,lat='Lat', lon='Lng',properties=[],dateC
         df = df.groupby(groupByColumns).sum(numeric_only=True).reset_index()
 
     # Convert the dataframe to geojson
-    # Pull all non geo props if none are provided
-    if properties == [] or properties == None:
-        properties = [col for col in df.columns if col not in [lat,lon]]
-
-    df_json = df_to_geojson(df, properties, lat, lon)
+    df_json = df_to_geojson(df, properties, geometry_type_fieldname =geometry_type_fieldname, geometry_coordinates_fieldname=geometry_coordinates_fieldname)
     
     # Read in the geojson as a GEE featureCollection
     df_fc = ee.FeatureCollection(df_json)

@@ -390,6 +390,16 @@ class mapper:
         cmd = "scale=null;transform={};plotRadius={}".format(transform,transform[0]/2.)
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
+    def setQueryPrecision(self,chartPrecision = 3,chartDecimalProportion=0.25):
+        print('Setting click query precision to: {}'.format(chartPrecision))
+        cmd = "chartPrecision = {};chartDecimalProportion={};".format(chartPrecision,chartDecimalProportion)
+        if cmd not in self.mapCommandList:
+            self.mapCommandList.append(cmd)
+    def setQueryDateFormat(self,defaultQueryDateFormat = 'YYYY-MM-dd'):
+        print('Setting default query date format to: {}'.format(defaultQueryDateFormat))
+        cmd = "defaultQueryDateFormat = '{}';".format(defaultQueryDateFormat)
+        if cmd not in self.mapCommandList:
+            self.mapCommandList.append(cmd)
     def setQueryBoxColor(self,color):
         if color[0] != '#':color = '#{}'.format(color)
         print('Setting click query box color to: {}'.format(color))

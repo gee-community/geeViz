@@ -92,8 +92,8 @@ Map.addLayer(water.mode(),{'min':1,'max':3,'palette':waterColors,'classLegendDic
 Map.addTimeLapse(water,{'min':1,'max':3,'palette':waterColors,'classLegendDict':waterDict,'queryDict':waterQueryDict},'JRC Surface Water Time Lapse',False)
 #The Map can be centered on featureCollections or features
 Map.centerObject(nps)
-Map.setYLabelBreakLength(2)
-Map.setYLabelMaxLength(5)
+# Map.setYLabelBreakLength(2)
+# Map.setYLabelMaxLength(5)
 #The ability to query visible map layers can be turned on manually or with the following command
 Map.turnOnInspector()
 

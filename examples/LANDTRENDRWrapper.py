@@ -15,27 +15,28 @@
 """
 
 
-#Example of how to run the LANDTRENDR temporal segmentation algorithm and view outputs using the Python visualization tools
-#LANDTRENDR original paper: https://www.sciencedirect.com/science/article/pii/S0034425710002245
-#LANDTRENDR in GEE paper: https://www.mdpi.com/2072-4292/10/5/691
-#Acquires Landsat data, runs LANDTRENDR, and then adds some outputs to the viewer
+# Example of how to run the LANDTRENDR temporal segmentation algorithm and view outputs using the Python visualization tools
+# LANDTRENDR original paper: https://www.sciencedirect.com/science/article/pii/S0034425710002245
+# LANDTRENDR in GEE paper: https://www.mdpi.com/2072-4292/10/5/691
+# Acquires Landsat data, runs LANDTRENDR, and then adds some outputs to the viewer
 ####################################################################################################
 import os,sys
 sys.path.append(os.getcwd())
 
-#Module imports
-import geeViz.getImagesLib as getImagesLib
-import geeViz.changeDetectionLib as changeDetectionLib
-import geeViz.taskManagerLib as taskManagerLib
-ee = getImagesLib.ee
-Map = getImagesLib.Map
+# Module imports
+import geeViz.getImagesLib as gil
+import geeViz.changeDetectionLib as cdl
+import geeViz.taskManagerLib as tml
+ee = gil.ee
+Map = gil.Map
+Map.port = 1232
 Map.clearMap()
 ####################################################################################################
 # Define user parameters:
 
 # Specify study area: Study area
 # Can be a featureCollection, feature, or geometry
-studyArea = getImagesLib.testAreas['CA']
+studyArea = gil.testAreas['CA']
 
 # Update the startJulian and endJulian variables to indicate your seasonal 
 # constraints. This supports wrapping for tropics and southern hemisphere.
@@ -52,41 +53,41 @@ endJulian = 273
 # pre-computed stats for cloudScore and TDOM, this does not 
 # matter
 startYear = 1990  
-endYear = 2022
+endYear = 2023
 
 
 
-#Choose band or index
-#NBR, NDMI, and NDVI tend to work best
-#Other good options are wetness and tcAngleBG
+# Choose band or index
+# NBR, NDMI, and NDVI tend to work best
+# Other good options are wetness and tcAngleBG
 indexName = 'NBR'
 
-#How many significant loss and/or gain segments to include
-#Do not make less than 1
-#If you only want the first loss and/or gain, choose 1
-#Generally any past 2 are noise
+# How many significant loss and/or gain segments to include
+# Do not make less than 1
+# If you only want the first loss and/or gain, choose 1
+# Generally any past 2 are noise
 howManyToPull = 1
 
 #Parameters to identify suitable LANDTRENDR segments
 
-#Thresholds to identify loss in vegetation
-#Any segment that has a change magnitude or slope less than both of these thresholds is omitted
+# Thresholds to identify loss in vegetation
+# Any segment that has a change magnitude or slope less than both of these thresholds is omitted
 lossMagThresh = -0.15
 lossSlopeThresh = -0.05
 
 
-#Thresholds to identify gain in vegetation
-#Any segment that has a change magnitude or slope greater than both of these thresholds is omitted
+# Thresholds to identify gain in vegetation
+# Any segment that has a change magnitude or slope greater than both of these thresholds is omitted
 gainMagThresh = 0.1
 gainSlopeThresh = 0.05
 
 slowLossDurationThresh = 3
 
-#Choose from: 'newest','oldest','largest','smallest','steepest','mostGradual','shortest','longest'
+# Choose from: 'newest','oldest','largest','smallest','steepest','mostGradual','shortest','longest'
 chooseWhichLoss = 'largest'
 chooseWhichGain = 'largest'
 
-#LandTrendr Params
+# LandTrendr Params
 # run_params ={
 #   'timeSeries': (ImageCollection) Yearly time-series from which to extract breakpoints. The first band is used to find breakpoints, and all subsequent bands are fitted using those breakpoints.
 #   'maxSegments':            6,\ (Integer) Maximum number of segments to be fitted on the time series.
@@ -98,46 +99,44 @@ chooseWhichGain = 'largest'
 #   'bestModelProportion':    0.75,\(Float, default: 0.75) Allows models with more vertices to be chosen if their p-value is no more than (2 - bestModelProportion) times the p-value of the best model.
 #   'minObservationsNeeded':  6\(Integer, default: 6) Min observations needed to perform output fitting.
 # };
-#Define landtrendr params
+# Define landtrendr params
 run_params = { \
-  'maxSegments':            6,\
+  'maxSegments':            9,\
   'spikeThreshold':         0.9,\
   'vertexCountOvershoot':   3,\
-  'preventOneYearRecovery': True,\
+  'preventOneYearRecovery': False,\
   'recoveryThreshold':      0.25,\
   'pvalThreshold':          0.05,\
   'bestModelProportion':    0.75,\
   'minObservationsNeeded':  6\
 }
 
-#Whether to add outputs to map
+# Whether to add change outputs to map
 addToMap = True
 
-#Export params
-#Whether to export LANDTRENDR outputs
-exportLTStack = False
+# Export params
+# Whether to export LANDTRENDR change detection (loss and gain) outputs
+exportLTLossGain = False
 
 # Whether to export LandTrendr vertex array raw output
-exportLTRawArray = True
+exportLTVertexArray = False
 
-#Set up Names for the export
+# Set up Names for the export
 outputName = 'LT_Test'
 
-#Provide location composites will be exported to
-#This should be an asset imageCollection
+# Provide location composites will be exported to
+# This should be an asset imageCollection
 exportPathRoot = 'users/username/someCollection'
 
-
-
-#CRS- must be provided.  
-#Common crs codes: Web mercator is EPSG:4326, USGS Albers is EPSG:5070, 
-#WGS84 UTM N hemisphere is EPSG:326+ zone number (zone 12 N would be EPSG:32612) and S hemisphere is EPSG:327+ zone number
+# CRS- must be provided.  
+# Common crs codes: Web mercator is EPSG:4326, USGS Albers is EPSG:5070, 
+# WGS84 UTM N hemisphere is EPSG:326+ zone number (zone 12 N would be EPSG:32612) and S hemisphere is EPSG:327+ zone number
 crs = 'EPSG:5070'
 
-#Specify transform if scale is None and snapping to known grid is needed
+# Specify transform if scale is None and snapping to known grid is needed
 transform = [30,0,-2361915.0,0,-30,3177735.0]
 
-#Specify scale if transform is None
+# Specify scale if transform is None
 scale = None
 ####################################################################################################
 #End user parameters
@@ -146,32 +145,44 @@ scale = None
 ####################################################################################################
 #Start function calls
 ####################################################################################################
-hansen = ee.Image("UMD/hansen/global_forest_change_2020_v1_8").select(['lossyear']).add(2000).int16()
+hansen = ee.Image("UMD/hansen/global_forest_change_2022_v1_10").select(['lossyear']).add(2000).int16()
 hansen = hansen.updateMask(hansen.neq(2000).And(hansen.gte(startYear)).And(hansen.lte(endYear)))
-Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':changeDetectionLib.lossYearPalette},'Hansen Loss Year',False)
+Map.addLayer(hansen,{'min':startYear,'max':endYear,'palette':cdl.lossYearPalette},'Hansen Loss Year',False)
 
 ####################################################################################################
-#Call on master wrapper function to get Landat scenes and composites
+# Call on master wrapper function to get Landat scenes and composites
 # Important that the range of data values of the composites match the run_params spikeThreshold and recoveryThreshold
 # e.g. Reflectance bands that have a scale of 0-1 should have a spikeThreshold around 0.9
 # and a recoveryThreshold around 0.25
 # If the reflectance values were scaled by 10000, the spikeThreshold would be around 9000 
 # and a recoveryThreshold around 2500
-allImages = getImagesLib.getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian).select([indexName])
+
+allImages = gil.getProcessedLandsatScenes(studyArea,startYear,endYear,startJulian,endJulian).select([indexName])
 dummyImage = allImages.first()
-composites = ee.ImageCollection(ee.List.sequence(startYear,endYear).map(lambda yr: getImagesLib.fillEmptyCollections(allImages.filter(ee.Filter.calendarRange(yr,yr,'year')),dummyImage).median().set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())))
+composites = ee.ImageCollection(ee.List.sequence(startYear,endYear).map(lambda yr: gil.fillEmptyCollections(allImages.filter(ee.Filter.calendarRange(yr,yr,'year')),dummyImage).median().set('system:time_start',ee.Date.fromYMD(yr,6,1).millis())))
 
-#Run LANDTRENDR
-ltOut = changeDetectionLib.simpleLANDTRENDR(composites,startYear,endYear,indexName, run_params,lossMagThresh,lossSlopeThresh,\
-                                                gainMagThresh,gainSlopeThresh,slowLossDurationThresh,chooseWhichLoss,\
-                                                chooseWhichGain,addToMap,howManyToPull)
-if exportLTStack:
-  ltOutStack = ltOut[1]
+# Run LANDTRENDR
+# This function handles a lot
+# This function will ensure the band/index will be flipped so a decrease in veg/moisture goes up
+# It will then flip it back and return only the image array of the vertex values and the rmse
+# It will then run a simple change detection over the resulting LT output
+ltOutputs = cdl.simpleLANDTRENDR(composites,startYear,endYear,indexName,run_params,lossMagThresh,lossSlopeThresh,gainMagThresh,gainSlopeThresh,slowLossDurationThresh,chooseWhichLoss,chooseWhichGain,addToMap,howManyToPull,multBy=10000)
 
+
+
+if exportLTLossGain:
+  lossGainStack = ltOutputs[1]
   #Export  stack
-  exportName = outputName + '_Stack_'+indexName + '_'+str(startYear) + '_' + str(endYear) + '_' + str(startJulian) + '_' + str(endJulian)
+  exportName = f'{outputName}_LT_LossGain_Stack_{indexName}_{startYear}_{endYear}_{startJulian}_{endJulian}'
   exportPath = exportPathRoot + '/'+ exportName
 
+  lossGainStack = lossGainStack.set({'startYear':startYear,
+                                        'endYear':endYear,
+                                        'startJulian':startJulian,
+                                        'endJulian':endJulian,
+                                        'band':indexName})
+  lossGainStack =lossGainStack.set(run_params)
+  
   #Set up proper resampling for each band
   #Be sure to change if the band names for the exported image change
   pyrObj = {'_yr_':'mode','_dur_':'mode','_mag_':'mean','_slope_':'mean'}
@@ -185,17 +196,15 @@ if exportLTStack:
         kt = indexName + '_LT_'+p + key+str(i)
         outObj[kt]= pyrObj[key]
 
-  
-  #Export output
-  getImagesLib.exportToAssetWrapper(ltOutStack,exportName,exportPath,outObj,studyArea,scale,crs,transform)
+  # print(outObj)
+  # Export output
+  gil.exportToAssetWrapper(lossGainStack,exportName,exportPath,outObj,studyArea,scale,crs,transform)
 
 
-#Export raw LandTrendr array image
-if exportLTRawArray:
-  rawLT = ltOut[0]
-  rawLTForExport = changeDetectionLib.rawLTToVertices(rawLT,indexName,10000).int16()
-  Map.addLayer(rawLT,{},'Raw LT {}'.format(indexName),False)
-  Map.addLayer(rawLTForExport,{},'Raw LT For Export {}'.format(indexName),False)
+# Export raw LandTrendr array image
+if exportLTVertexArray:
+  rawLTForExport = ltOutputs[0]
+  # Map.addLayer(rawLTForExport,{},'Raw LT For Export {}'.format(indexName),False)
   
   rawLTForExport = rawLTForExport.set({'startYear':startYear,
                                         'endYear':endYear,
@@ -205,10 +214,10 @@ if exportLTRawArray:
   rawLTForExport =rawLTForExport.set(run_params)
   exportName = '{}_LT_Raw_{}_{}_{}_{}_{}'.format(outputName,indexName,startYear,endYear,startJulian,endJulian)
   exportPath = exportPathRoot + '/'+ exportName
-  # getImagesLib.exportToAssetWrapper(rawLTForExport,exportName,exportPath,{'.default':'sample'},studyArea,scale,crs,transform)
-  # //Reverse for modeling
-  decompressedC = changeDetectionLib.simpleLTFit(rawLTForExport,startYear,endYear,indexName,True,run_params['maxSegments'])
-  Map.addLayer(decompressedC,{},'Decompressed LT Output {}'.format(indexName),False)
+  gil.exportToAssetWrapper(rawLTForExport,exportName,exportPath,{'.default':'sample'},studyArea,scale,crs,transform)
+  # Reverse for modeling
+  # decompressedC = cdl.simpleLTFit(rawLTForExport,startYear,endYear,indexName,True,run_params['maxSegments'])
+  # Map.addLayer(decompressedC,{},'Decompressed LT Output {}'.format(indexName),False)
 
 ####################################################################################################
 #Load the study region
@@ -222,4 +231,4 @@ Map.view()
 ####################################################################################################
 ####################################################################################################
 # If exporting LT stack, track the exports
-if exportLTStack:taskManagerLib.trackTasks2()
+if exportLTLossGain or exportLTVertexArray:tml.trackTasks2()

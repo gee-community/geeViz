@@ -25,19 +25,20 @@ import os,sys
 sys.path.append(os.getcwd())
 
 #Module imports
-import geeViz.getImagesLib as getImagesLib
-import geeViz.changeDetectionLib as changeDetectionLib
+import geeViz.getImagesLib as gil
+import geeViz.changeDetectionLib as cdl
 
-ee = getImagesLib.ee
-Map = getImagesLib.Map
+ee = gil.ee
+Map = gil.Map
 Map.clearMap()
+Map.port = 1234
 ####################################################################################################
 # Define user parameters:
 
 # Specify which years to look at 
 # Available years are 1984-2021
 startYear = 1984
-endYear = 2022
+endYear = 2023
 
 # Which property stores which band/index LandTrendr was run across
 bandPropertyName = 'band'
@@ -48,15 +49,15 @@ bandPropertyName = 'band'
 bandNames =None
 
 # Specify if output is an array image or not
-arrayMode = False
+arrayMode = True
 ####################################################################################################
 # Bring in LCMS LandTrendr outputs (see other examples that include LCMS final data)
-lt = ee.ImageCollection('projects/lcms-tcc-shared/assets/LandTrendr/LandTrendr-Collection-yesL7-1984-2020');
+lt = ee.ImageCollection('projects/lcms-tcc-shared/assets/CONUS/Base-Learners/LandTrendr-Collection');
 print('Available bands/indices:',lt.aggregate_histogram(bandPropertyName).keys().getInfo())
 
 
 # Convert stacked outputs into collection of fitted, magnitude, slope, duration, etc values for each year
-lt_fit = changeDetectionLib.batchSimpleLTFit(lt,startYear,endYear,bandNames,bandPropertyName,arrayMode)
+lt_fit = cdl.batchSimpleLTFit(lt,startYear,endYear,bandNames,bandPropertyName,arrayMode)
 
 # Vizualize image collection for charting (opacity set to 0 so it will chart but not be visible)
 Map.addLayer(lt_fit,{'opacity':0},'LT Fit TS')
@@ -73,53 +74,36 @@ if bandNames == None:
             .filter(ee.Filter.calendarRange(endYear-1,endYear-1,'year')).first()
 
   # Visualize as you would a composite
-  Map.addLayer(lt_synth,getImagesLib.vizParamsFalse10k,'Synthetic Composite')
+  Map.addLayer(lt_synth,gil.vizParamsFalse10k,'Synthetic Composite')
 
 
 # Iterate across each band to look for areas of change
 if bandNames == None:bandNames=['NBR']
 for bandName in bandNames:
-  #Convert LandTrendr stack to Loss & Gain space
+  # Do basic change detection with raw LT output
   ltt = lt.filter(ee.Filter.eq(bandPropertyName,bandName)).mosaic()
-  fit = ltt.select(['fit.*']).multiply(getImagesLib.changeDirDict[bandName]/10000)
-  ltt = ltt.addBands(fit,None,True)
-  lossGainDict = changeDetectionLib.convertToLossGain(ltt, \
-                                                      format = 'vertStack',\
-                                                      lossMagThresh = -0.15,\
-                                                      lossSlopeThresh = -0.1,\
-                                                      gainMagThresh = 0.1,\
-                                                      gainSlopeThresh = 0.1,\
-                                                      slowLossDurationThresh = 3,
-                                                      chooseWhichLoss = 'largest', 
-                                                      chooseWhichGain = 'largest', 
-                                                      howManyToPull = 1)
-
-  lossStack = lossGainDict['lossStack']
-  gainStack = lossGainDict['gainStack']
-
+  ltt = cdl.multLT(ltt,cdl.changeDirDict[bandName])
  
-
-  #Set up viz params
-  vizParamsLossYear = {'min':startYear,'max':endYear,'palette':changeDetectionLib.lossYearPalette}
-  vizParamsLossMag = {'min':-0.8 ,'max':-0.15,'palette':list(reversed(changeDetectionLib.lossMagPalette.split(',')))}
-  
-  vizParamsGainYear = {'min':startYear,'max':endYear,'palette':changeDetectionLib.gainYearPalette}
-  vizParamsGainMag = {'min':0.1,'max':0.8,'palette':changeDetectionLib.gainMagPalette}
-  
-  vizParamsDuration = {'min':1,'max':5,'palette':changeDetectionLib.changeDurationPalette,'legendLabelLeftAfter':'year','legendLabelRightAfter':'years'}
-
-  # Select off the first change detected and visualize outputs
-  lossStackI = lossStack.select(['.*_1'])
-  gainStackI = gainStack.select(['.*_1'])
- 
-  Map.addLayer(lossStackI.select(['loss_yr.*']),vizParamsLossYear,bandName +' Loss Year',True)
-  Map.addLayer(lossStackI.select(['loss_mag.*']),vizParamsLossMag,bandName +' Loss Magnitude',False)
-  Map.addLayer(lossStackI.select(['loss_dur.*']),vizParamsDuration,bandName +' Loss Duration',False)
-  
-  Map.addLayer(gainStackI.select(['gain_yr.*']),vizParamsGainYear,bandName +' Gain Year',False)
-  Map.addLayer(gainStackI.select(['gain_mag.*']),vizParamsGainMag,bandName +' Gain Magnitude',False)
-  Map.addLayer(gainStackI.select(['gain_dur.*']),vizParamsDuration,bandName +' Gain Duration',False)
-
+  lossMagThresh = -0.15*10000
+  lossSlopeThresh = -0.1*10000
+  gainMagThresh = 0.1*10000
+  gainSlopeThresh = 0.1*10000
+  slowLossDurationThresh = 3
+  chooseWhichLoss = 'largest'
+  chooseWhichGain = 'largest' 
+  howManyToPull = 1
+  lossGainDict = cdl.convertToLossGain(ltt, \
+                                      format = 'arrayLandTrendr',\
+                                      lossMagThresh = lossMagThresh,\
+                                      lossSlopeThresh = lossSlopeThresh,\
+                                      gainMagThresh = gainMagThresh,\
+                                      gainSlopeThresh = gainSlopeThresh,\
+                                      slowLossDurationThresh = slowLossDurationThresh,\
+                                      chooseWhichLoss = chooseWhichLoss, \
+                                      chooseWhichGain = chooseWhichGain, \
+                                      howManyToPull = howManyToPull)
+  lossGainStack = cdl.LTLossGainExportPrep(lossGainDict,indexName = bandName,multBy = 1)
+  cdl.addLossGainToMap(lossGainStack,startYear,endYear,lossMagThresh-7000,lossMagThresh,gainMagThresh,gainMagThresh+7000)
 ####################################################################################################
 ####################################################################################################
 # View map

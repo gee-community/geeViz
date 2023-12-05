@@ -111,7 +111,7 @@ applyCloudProbability = True
 #Whether to use the pre-computed cloudScore+ to mask
 #clouds and cloud shadows for Sentinel 2
 #This method works really well and should be used instead of all other methods once it finishes
-# running for the S2 archive (~ early 2024????)
+# running for the S2 archive (~ spring 2024????)
 applyCloudScorePlus = False
 
 
