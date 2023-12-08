@@ -245,7 +245,7 @@ s2sAndTs =getImagesLib.getSentinel2Wrapper(studyArea,startYear,endYear,startJuli
 processedScenes = s2sAndTs['processedScenes']
 processedComposites = s2sAndTs['processedComposites']
 
-Mapap.addLayer(processedComposites.select(['NDVI','NBR']),{'addToLegend':False,'layerType':'geeImageCollection'},'Time Series (NBR and NDVI)',False)
+Map.addLayer(processedComposites.select(['NDVI','NBR']),{'addToLegend':False,'layerType':'geeImageCollection'},'Time Series (NBR and NDVI)',False)
 Map.addTimeLapse(processedComposites,getImagesLib.vizParamsFalse,'Composite Timelapse',False)
 # Map.addTimeLapse(processedComposites.sel  ect(['compositeObsCount']),{'min':30,'max':100,'palette':'F00,00F'},'Composite Count Timelapse',False)
 

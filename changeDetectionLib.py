@@ -25,11 +25,11 @@ from datetime import datetime
 #-------------------------------------------------------------------------
 #             Image and array manipulation
 #------------------------------------------------------------------------
-lossYearPalette =  'ffffe5,fff7bc,fee391,fec44f,fe9929,ec7014,cc4c02'
-lossMagPalette = 'D00,F5DEB3'
-gainYearPalette =  'c5ee93,00a398'
-gainMagPalette = 'F5DEB3,006400'
-changeDurationPalette = 'BD1600,E2F400,0C2780'
+lossYearPalette =  'ffffe5,fff7bc,fee391,fec44f,fe9929,ec7014,cc4c02'.split(',')
+lossMagPalette = 'D00,F5DEB3'.split(',')
+gainYearPalette =  'c5ee93,00a398'.split(',')
+gainMagPalette = 'F5DEB3,006400'.split(',')
+changeDurationPalette = 'BD1600,E2F400,0C2780'.split(',')
 ######################################################################
 #Helper to multiply image
 def multBands(img,distDir,by=1):
@@ -418,11 +418,11 @@ def LTLossGainExportPrep(lossGainDict,indexName = 'Bn',multBy = 10000):
 
   #Convert to byte/int16 to save space
   lossThematic = lossStack.select(['.*_yr_.*']).int16().addBands(lossStack.select(['.*_dur_.*']).byte())
-  lossContinuous = lossStack.select(['.*_mag_.*','.*_slope_.*']).multiply(multBy).int16()
+  lossContinuous = lossStack.select(['.*_mag_.*','.*_slope_.*']).multiply(multBy).float()
   lossStack = lossThematic.addBands(lossContinuous)
 
   gainThematic = gainStack.select(['.*_yr_.*']).int16().addBands(gainStack.select(['.*_dur_.*']).byte())
-  gainContinuous = gainStack.select(['.*_mag_.*','.*_slope_.*']).multiply(multBy).int16()
+  gainContinuous = gainStack.select(['.*_mag_.*','.*_slope_.*']).multiply(multBy).float()
   gainStack = gainThematic.addBands(gainContinuous)
   outStack = lossStack.addBands(gainStack)
   
@@ -634,7 +634,7 @@ def LT_VT_vertStack_multBands(img, verdet_or_landtrendr, multBy):
 #Simplified method to convert LANDTRENDR stack to annual collection of
 #Duration, fitted, magnitude, slope, and diff
 #Improved handling of start year delay found in older method
-def simpleLTFit(ltStack,startYear,endYear,indexName = 'bn',arrayMode = False,maxSegs=6):
+def simpleLTFit(ltStack,startYear,endYear,indexName = 'bn',arrayMode = False,maxSegs=6,multBy = 1):
   indexName = ee.String(indexName)
 
   #Set up output band names
@@ -653,6 +653,7 @@ def simpleLTFit(ltStack,startYear,endYear,indexName = 'bn',arrayMode = False,max
     yrs = ltStack.select('yrs_.*').selfMask()
     fit = ltStack.select('fit_.*').updateMask(yrs.mask())
   
+  fit = fit.multiply(multBy)
   #Find the first and last vertex years
   isStartYear = yrs.reduce(ee.Reducer.firstNonNull())
   isEndYear = yrs.reduce(ee.Reducer.lastNonNull())  
@@ -701,7 +702,7 @@ def simpleLTFit(ltStack,startYear,endYear,indexName = 'bn',arrayMode = False,max
   return out
 
 # Wrapper function to iterate across multiple LT band/index values
-def batchSimpleLTFit(ltStacks,startYear,endYear,indexNames = None,bandPropertyName = 'band',arrayMode = False,maxSegs=6):
+def batchSimpleLTFit(ltStacks,startYear,endYear,indexNames = None,bandPropertyName = 'band',arrayMode = False,maxSegs=6,multBy=1):
   #Get band/index names if not provided
   if indexNames == None:
     indexNames = ltStacks.aggregate_histogram(bandPropertyName).keys().getInfo()
@@ -712,9 +713,9 @@ def batchSimpleLTFit(ltStacks,startYear,endYear,indexNames = None,bandPropertyNa
     ltt = ltStacks.filter(ee.Filter.eq('band',bn)).max()
 
     if lt_fit == None:
-      lt_fit = simpleLTFit(ltt,startYear,endYear,bn,arrayMode,maxSegs)
+      lt_fit = simpleLTFit(ltt,startYear,endYear,bn,arrayMode,maxSegs,multBy)
     else:
-      lt_fit = joinCollections(lt_fit, simpleLTFit(ltt,startYear,endYear,bn,arrayMode,maxSegs), False)
+      lt_fit = joinCollections(lt_fit, simpleLTFit(ltt,startYear,endYear,bn,arrayMode,maxSegs,multBy), False)
   return lt_fit
 
 # Function to parse stack from LANDTRENDR or VERDET into image collection

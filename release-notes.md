@@ -1,3 +1,13 @@
+# geeViz 2023.12.2 Release Notes
+## December 8, 2023
+
+### New Features
+* **Color name support** - Colors for `vizParams` `palette` and `classLegendDict` can now be provided as standard w3 color name strings. 
+
+* **simpleLTFit batchSimpleLTFit multBy support** - Better support for ingesting landTrendr array vertex outputs that are multiplied by 10000 using the `multBy` parameter in the `simpleLTFit` `batchSimpleLTFit` functions. E.g. if the fitted vertex values were multiplied by 10000, set `multBy = 0.0001`.
+
+
+____
 # geeViz 2023.12.1 Release Notes
 ## December 4, 2023
 

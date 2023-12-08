@@ -368,42 +368,41 @@ class mapper:
         self.idDictList = []
         self.mapCommandList  = []
     def setMapTitle(self,title):
-        query_command = "$('#title-banner').html('{0}');document.title = 'geeViz | {0}';".format(title)
-        if query_command not in self.mapCommandList:
-            self.mapCommandList.append(query_command)
+        title_command = f'Map2.setTitle("{title}")'
+        if title_command not in self.mapCommandList:
+            self.mapCommandList.append(title_command)
     def setTitle(self,title):
         self.setMapTitle(title)
 
     # Functions to set various click query properties
     def setQueryCRS(self,crs):
         print('Setting click query crs to: {}'.format(crs))
-        cmd = "crs='{}'".format(crs)
+        cmd = f'Map2.setQueryCRS("{crs}");'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
     def setQueryScale(self,scale):
         print('Setting click query scale to: {}'.format(scale))
-        cmd = "tansform=null;scale={};plotRadius={}".format(scale,scale/2.)
+        cmd = f'Map2.setQueryScale({scale});'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
     def setQueryTransform(self,transform):
         print('Setting click query transform to: {}'.format(transform))
-        cmd = "scale=null;transform={};plotRadius={}".format(transform,transform[0]/2.)
+        cmd = f'Map2.setQueryTransform({transform});'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
     def setQueryPrecision(self,chartPrecision = 3,chartDecimalProportion=0.25):
         print('Setting click query precision to: {}'.format(chartPrecision))
-        cmd = "chartPrecision = {};chartDecimalProportion={};".format(chartPrecision,chartDecimalProportion)
+        cmd = f'Map2.setQueryPrecision({chartPrecision},{chartDecimalProportion});'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
     def setQueryDateFormat(self,defaultQueryDateFormat = 'YYYY-MM-dd'):
         print('Setting default query date format to: {}'.format(defaultQueryDateFormat))
-        cmd = "defaultQueryDateFormat = '{}';".format(defaultQueryDateFormat)
+        cmd = f'Map2.setQueryDateFormat("{defaultQueryDateFormat}");'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
     def setQueryBoxColor(self,color):
-        if color[0] != '#':color = '#{}'.format(color)
         print('Setting click query box color to: {}'.format(color))
-        cmd = "clickBoundsColor='{}'".format(color)
+        cmd = f'Map2.setQueryBoxColor("{color}");'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
     # Functions to handle location of query outputs
@@ -417,7 +416,7 @@ class mapper:
     # Turn on query inspector 
     def turnOnInspector(self):
         # self.mapCommandList.append("$('#tools-collapse-div').addClass('show')")
-        query_command = "$('#query-label').click();"
+        query_command = "Map2.turnOnInspector();"
         if query_command not in self.mapCommandList:
             self.mapCommandList.append(query_command)
 

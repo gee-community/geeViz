@@ -55,12 +55,15 @@ arrayMode = True
 lt = ee.ImageCollection('projects/lcms-tcc-shared/assets/CONUS/Base-Learners/LandTrendr-Collection');
 print('Available bands/indices:',lt.aggregate_histogram(bandPropertyName).keys().getInfo())
 
+lt_props = lt.first().toDictionary().getInfo()
+print(lt_props)
 
 # Convert stacked outputs into collection of fitted, magnitude, slope, duration, etc values for each year
-lt_fit = cdl.batchSimpleLTFit(lt,startYear,endYear,bandNames,bandPropertyName,arrayMode)
+# Divide by 10000 (0.0001) so values are back to original values (0-1 or -1-1)
+lt_fit = cdl.batchSimpleLTFit(lt,startYear,endYear,bandNames,bandPropertyName,arrayMode,lt_props['maxSegments'],0.0001)
 
 # Vizualize image collection for charting (opacity set to 0 so it will chart but not be visible)
-Map.addLayer(lt_fit,{'opacity':0},'LT Fit TS')
+Map.addLayer(lt_fit.select(['NBR_LT_fitted']),{'opacity':0},'LT Fit TS')
 
 # Visualize single year fitted landTrendr composite
 # Set to only run if no bandNames are specified
@@ -74,7 +77,7 @@ if bandNames == None:
             .filter(ee.Filter.calendarRange(endYear-1,endYear-1,'year')).first()
 
   # Visualize as you would a composite
-  Map.addLayer(lt_synth,gil.vizParamsFalse10k,'Synthetic Composite')
+  Map.addLayer(lt_synth,gil.vizParamsFalse,'Synthetic Composite')
 
 
 # Iterate across each band to look for areas of change
@@ -82,12 +85,12 @@ if bandNames == None:bandNames=['NBR']
 for bandName in bandNames:
   # Do basic change detection with raw LT output
   ltt = lt.filter(ee.Filter.eq(bandPropertyName,bandName)).mosaic()
-  ltt = cdl.multLT(ltt,cdl.changeDirDict[bandName])
+  ltt = cdl.multLT(ltt,cdl.changeDirDict[bandName]*0.0001)
  
-  lossMagThresh = -0.15*10000
-  lossSlopeThresh = -0.1*10000
-  gainMagThresh = 0.1*10000
-  gainSlopeThresh = 0.1*10000
+  lossMagThresh = -0.15
+  lossSlopeThresh = -0.1
+  gainMagThresh = 0.1
+  gainSlopeThresh = 0.1
   slowLossDurationThresh = 3
   chooseWhichLoss = 'largest'
   chooseWhichGain = 'largest' 
@@ -103,10 +106,11 @@ for bandName in bandNames:
                                       chooseWhichGain = chooseWhichGain, \
                                       howManyToPull = howManyToPull)
   lossGainStack = cdl.LTLossGainExportPrep(lossGainDict,indexName = bandName,multBy = 1)
-  cdl.addLossGainToMap(lossGainStack,startYear,endYear,lossMagThresh-7000,lossMagThresh,gainMagThresh,gainMagThresh+7000)
+  cdl.addLossGainToMap(lossGainStack,startYear,endYear,lossMagThresh-0.7,lossMagThresh,gainMagThresh,gainMagThresh+0.7)
 ####################################################################################################
 ####################################################################################################
 # View map
+Map.setQueryDateFormat('YYYY')
 Map.turnOnInspector()
 Map.view()
 ####################################################################################################
