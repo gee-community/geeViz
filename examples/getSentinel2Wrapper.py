@@ -101,18 +101,18 @@ applyQABand = False
 
 applyCloudScore = False
 applyShadowShift = False
-applyTDOM = True
+applyTDOM = False
 
 #Whether to use the pre-computed cloud probabilities to mask
 #clouds for Sentinel 2 (s2Cloudless)
 #This method works really well and should be used instead of cloudScore (applyCloudScore)
-applyCloudProbability = True
+applyCloudProbability = False
 
 #Whether to use the pre-computed cloudScore+ to mask
 #clouds and cloud shadows for Sentinel 2
 #This method works really well and should be used instead of all other methods once it finishes
 # running for the S2 archive (~ spring 2024????)
-applyCloudScorePlus = False
+applyCloudScorePlus = True
 
 
 #If cloudProbability is chosen, choose a threshold 

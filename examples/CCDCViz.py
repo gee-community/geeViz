@@ -22,7 +22,7 @@
 import os,sys
 sys.path.append(os.getcwd())
 
-#Module imports
+#Module imports 
 import geeViz.getImagesLib as getImagesLib
 import geeViz.changeDetectionLib as changeDetectionLib
 ee = getImagesLib.ee
@@ -70,11 +70,11 @@ Map.addLayer(changeObj[sortingMethod]['gain']['mag'],{'min':0.05,'max':0.2,'pale
 
 #Apply the CCDC harmonic model across a time series
 #First get a time series of time images 
-yearImages = changeDetectionLib.getTimeImageCollection(startYear,endYear,startJulian,endJulian,0.1);
+yearImages = changeDetectionLib.getTimeImageCollection(startYear,endYear,startJulian,endJulian,0.1)
 
 #Then predict the CCDC models
 fitted = changeDetectionLib.predictCCDC(ccdcImg,yearImages,fillGaps,whichHarmonics)
-Map.addLayer(fitted.select(['.*_fitted']),{'opacity':0},'Fitted CCDC',True);
+Map.addLayer(fitted.select(['.*_fitted']),{'opacity':0},'Fitted CCDC',True)
 Map.addLayer(fitted.filter(ee.Filter.calendarRange(1990,1990,'year')).select(['.*_fitted']),{'opacity':0},'Fitted CCDC 1990',True);
 
 # Synthetic composites visualizing

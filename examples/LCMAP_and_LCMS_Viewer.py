@@ -34,7 +34,7 @@ preStartYear = 1985
 preEndYear = 1990
 
 # Define the more recent time period
-postStartYear = 2021
+postStartYear = 2020
 postEndYear = 2022
 
 # Specify whether to add time lapses of products. If True, loading the viewer will take much much much much longer
@@ -83,7 +83,7 @@ lcachg_palette = ['E60000','A87000','E3E3C2','1D6330','476BA1','BAD9EB','FFFFFF'
 # scmqa_palette = ['000000','A900E6','DF73FF','F5F5E3','DB8A00','924900','9C9C9C','FFFFFF']
 
 # Set up some visualization dictionaries
-lc_viz = {'min':1,'max':9,'palette':lcpri_palette,'classLegendDict':lc_legend_dict,'queryDict':lc_lookup_dict}
+lc_viz = {'reducer':ee.Reducer.mode(),'min':1,'max':9,'palette':lcpri_palette,'classLegendDict':lc_legend_dict,'queryDict':lc_lookup_dict}
 loss_viz = {'min':1985,'max':2022,'palette':changeDetectionLib.lossYearPalette}
 gain_viz = {'min':1985,'max':2022,'palette':changeDetectionLib.gainYearPalette}
 change_viz = {'min':1985,'max':2022,'palette':['00F','F0F']}
@@ -109,12 +109,12 @@ lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2022-8").filter(ee.Filter.eq('study_a
 #This section adds the land cover and land use maps from LCMAP and LCMS
 
 # Pull the LCMAP pre and post land cover data
-lcmap_pre = lcpri.filter(ee.Filter.calendarRange(preStartYear,preEndYear,'year')).mode()
-lcmap_post = lcpri.filter(ee.Filter.calendarRange(postStartYear,postEndYear,'year')).mode()
+lcmap_pre = lcpri.filter(ee.Filter.calendarRange(preStartYear,preEndYear,'year'))
+lcmap_post = lcpri.filter(ee.Filter.calendarRange(postStartYear,postEndYear,'year'))
 
 # Pull the LCMS pre and post land cover data
-lcms_pre = ee.Image(lcms.filter(ee.Filter.calendarRange(preStartYear,preEndYear,'year')).mode().copyProperties(lcms.first()))
-lcms_post = ee.Image(lcms.filter(ee.Filter.calendarRange(postStartYear,postEndYear,'year')).mode().copyProperties(lcms.first()))
+lcms_pre = lcms.filter(ee.Filter.calendarRange(preStartYear,preEndYear,'year'))
+lcms_post = lcms.filter(ee.Filter.calendarRange(postStartYear,postEndYear,'year'))
 
 
 
@@ -138,8 +138,8 @@ Map.addLayer(lcmap_pre,lc_viz, 'LCMAP LC {}-{} mode'.format(preStartYear,preEndY
 Map.addLayer(lcmap_post,lc_viz, 'LCMAP LC {}-{} mode'.format(postStartYear,postEndYear),False)
 
 for t in ['Cover','Use']:
-  Map.addLayer(lcms_pre.select(['Land_{}'.format(t)]),{'autoViz':True}, 'LCMS L{} {}-{} mode'.format(t[0],preStartYear,preEndYear),False)
-  Map.addLayer(lcms_post.select(['Land_{}'.format(t)]),{'autoViz':True}, 'LCMS L{} {}-{} mode'.format(t[0],postStartYear,postEndYear),False)
+  Map.addLayer(lcms_pre.select(['Land_{}'.format(t)]),{'reducer':ee.Reducer.mode(),'autoViz':True}, 'LCMS L{} {}-{} mode'.format(t[0],preStartYear,preEndYear),False)
+  Map.addLayer(lcms_post.select(['Land_{}'.format(t)]),{'reducer':ee.Reducer.mode(),'autoViz':True}, 'LCMS L{} {}-{} mode'.format(t[0],postStartYear,postEndYear),False)
 
 ####################################################################################################
 # This section adds the change maps from LCMAP and LCMS
@@ -178,7 +178,7 @@ Map.addLayer(lcmap_change_yr,change_viz,'LCMAP Most Recent SC Date',True)
 
 # Bring in the LCMS CCDC output that is similar to what LCMAP uses
 ccdcImg = ee.ImageCollection('projects/lcms-292214/assets/CONUS-LCMS/Base-Learners/CCDC-Collection-1984-2022')\
-          .select(['tStart','tEnd','tBreak','changeProb','red.*','nir.*','swir1.*','swir2.*','NDVI.*','NBR.*']).mosaic()
+          .select(['tStart','tEnd','tBreak','changeProb','red.*','nir.*','swir1.*','swir2.*','NDVI.*']).mosaic()
 
 # Pull out the most recent date of change
 changeObj = changeDetectionLib.ccdcChangeDetection(ccdcImg,'NDVI');
@@ -190,12 +190,14 @@ Map.addLayer(changeObj['mostRecent']['gain']['year'],gain_viz,'LCMS CCDC Most Re
 # This produces a chart of the harmonic models from CCDC and the breaks to help further understand how the outputs are created
 # Apply the CCDC harmonic model across a time series
 # First get a time series of time images 
-yearImages = changeDetectionLib.getTimeImageCollection(1984,2021,1,365,0.1);
+yearImages = changeDetectionLib.getTimeImageCollection(1984,2022,1,365,0.1)
 
 #Then predict the CCDC models
 fitted = changeDetectionLib.predictCCDC(ccdcImg,yearImages,False,[1,2,3])
-Map.addLayer(fitted.select(['NDVI_predicted']),{'opacity':0},'Fitted CCDC NDVI',True);
+
+Map.addLayer(fitted.select(['NDVI_CCDC_fitted']),{'opacity':0},'Fitted CCDC NDVI',True);
 ####################################################################################################
 Map.setTitle('LCMAP LCMS Viewer')
 Map.turnOnInspector()
+Map.setQueryDateFormat('YYYY')
 Map.view()

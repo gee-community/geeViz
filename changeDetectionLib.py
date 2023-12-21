@@ -634,7 +634,7 @@ def LT_VT_vertStack_multBands(img, verdet_or_landtrendr, multBy):
 #Simplified method to convert LANDTRENDR stack to annual collection of
 #Duration, fitted, magnitude, slope, and diff
 #Improved handling of start year delay found in older method
-def simpleLTFit(ltStack,startYear,endYear,indexName = 'bn',arrayMode = False,maxSegs=6,multBy = 1):
+def simpleLTFit(ltStack,startYear,endYear,indexName = 'bn',arrayMode = True,maxSegs=6,multBy = 1):
   indexName = ee.String(indexName)
 
   #Set up output band names
@@ -702,7 +702,7 @@ def simpleLTFit(ltStack,startYear,endYear,indexName = 'bn',arrayMode = False,max
   return out
 
 # Wrapper function to iterate across multiple LT band/index values
-def batchSimpleLTFit(ltStacks,startYear,endYear,indexNames = None,bandPropertyName = 'band',arrayMode = False,maxSegs=6,multBy=1):
+def batchSimpleLTFit(ltStacks,startYear,endYear,indexNames = None,bandPropertyName = 'band',arrayMode = True,maxSegs=6,multBy=1):
   #Get band/index names if not provided
   if indexNames == None:
     indexNames = ltStacks.aggregate_histogram(bandPropertyName).keys().getInfo()
@@ -848,7 +848,7 @@ def convertStack_To_DurFitMagSlope(stackCollection, VTorLT):
 #If using vertStack format, this will not work if there are masked values in the vertStack. Must use getImagesLib.setNoData prior to 
 #calling this function
 #Have to apply LandTrendr changeDirection (loss in veg/moisture goes up) to both Verdet and Landtrendr before applying convertToLossGain()
-def convertToLossGain(ltStack, format = 'rawLandtrendr', lossMagThresh = -0.15, lossSlopeThresh = -0.1, gainMagThresh = 0.1, gainSlopeThresh = 0.1, 
+def convertToLossGain(ltStack, format = 'rawLandTrendr', lossMagThresh = -0.15, lossSlopeThresh = -0.1, gainMagThresh = 0.1, gainSlopeThresh = 0.1, 
                             slowLossDurationThresh = 3, chooseWhichLoss = 'largest', chooseWhichGain = 'largest', howManyToPull = 2):
 
   if format == 'rawLandTrendr':
