@@ -418,11 +418,15 @@ def LTLossGainExportPrep(lossGainDict,indexName = 'Bn',multBy = 10000):
 
   #Convert to byte/int16 to save space
   lossThematic = lossStack.select(['.*_yr_.*']).int16().addBands(lossStack.select(['.*_dur_.*']).byte())
-  lossContinuous = lossStack.select(['.*_mag_.*','.*_slope_.*']).multiply(multBy).float()
+  lossContinuous = lossStack.select(['.*_mag_.*','.*_slope_.*']).multiply(multBy)
+  if abs(multBy) == 10000:lossContinuous = lossContinuous.int16()
+
   lossStack = lossThematic.addBands(lossContinuous)
 
   gainThematic = gainStack.select(['.*_yr_.*']).int16().addBands(gainStack.select(['.*_dur_.*']).byte())
-  gainContinuous = gainStack.select(['.*_mag_.*','.*_slope_.*']).multiply(multBy).float()
+  gainContinuous = gainStack.select(['.*_mag_.*','.*_slope_.*']).multiply(multBy)
+  if abs(multBy) == 10000:gainContinuous = gainContinuous.int16()
+  
   gainStack = gainThematic.addBands(gainContinuous)
   outStack = lossStack.addBands(gainStack)
   
