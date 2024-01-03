@@ -1,3 +1,35 @@
+# geeViz 2023.12.6 Release Notes
+## December 21, 2023
+### New Features
+* **Easier Colab Availability** - Colab links are now provided in each notebook in the examples folder.  
+
+
+### Bug fixes
+* 'addLayer' Viz params `reducer` bug fix. When a reducer within a `viz` dictionary is passed to the map with a `addLayer` call more than once, geeViz would try to serialize it again resulting in an error. It now accepts it and assumes it's already been serialized.
+____
+# geeViz 2023.12.5 Release Notes
+## December 21, 2023
+
+
+### Bug fixes
+* Fixed bug when `ee.oauth.get_credentials_path()` folder didn't exist already and geeViz tried to store the selected project within it. The folder is now created if it does not exist. This is needed when `ee.Authenticate` does not automatically make the folder.
+____
+# geeViz 2023.12.4 Release Notes
+## December 21, 2023
+
+
+### Bug fixes
+* Fixed bug where project was not read in if ee was initialized outside of geeViz. `setProject` is run when geeView is imported which sets the `project_id` to the project provided in `ee.Initialize` if it was provided. 
+____
+# geeViz 2023.12.3 Release Notes
+## December 21, 2023
+
+### New Features
+* **Enhanced project support** - More robust handling of projects for authentication, as well as geeViz viewer authentication. The same project you are using in Python is now used in `geeView`.  
+
+### Bug fixes
+* `geeView` query of collections with over 5000 image*bands values would not query. Reverted to older getRegion-based query method. 
+____
 # geeViz 2023.12.2 Release Notes
 ## December 8, 2023
 

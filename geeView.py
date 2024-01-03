@@ -17,7 +17,7 @@
 #Intended to work within the geeViz package
 ######################################################################
 #Import modules
-import ee,sys,os,webbrowser,json,socket,subprocess,site,time,requests
+import ee,sys,os,webbrowser,json,socket,subprocess,site,time,requests,google
 from google.auth.transport import requests as gReq
 from google.oauth2 import service_account
 
@@ -29,7 +29,10 @@ if sys.version_info[0] < 3:
 else:
     import http.server, socketserver 
 creds_path = ee.oauth.get_credentials_path()
-IS_COLAB = "google.colab" in sys.modules
+creds_dir = os.path.dirname(creds_path)
+if not os.path.exists(creds_dir):os.makedirs(creds_dir)
+
+IS_COLAB = ee.oauth._in_colab_shell()#"google.colab" in sys.modules
 IS_WORKBENCH = os.getenv("DL_ANACONDA_HOME") != None
 if IS_COLAB:
   from google.colab.output import eval_js
@@ -38,12 +41,22 @@ if IS_COLAB:
 # Functions to handle various initialization/authentication workflows to try to get a user an initialized instance of ee
 
 # Function to have user input a project id if one is still needed
-def getProject():
+def setProject(id=ee.data._cloud_api_user_project):
+    global project_id
+    project_id = id
+    ee.data.setCloudApiUserProject(project_id)
+def getProject(overwrite=False):
+    global project_id
     provided_project = '{}.proj_id'.format(creds_path)
     provided_project = os.path.normpath(provided_project)
     
-    if not os.path.exists(provided_project):
+    # if not os.path.exists(provided_project) or overwrite:
+    current_project = ee.data._cloud_api_user_project
+    if  (current_project == None and not os.path.exists(provided_project)) or overwrite:
+                    
+            
         project_id = input('Please enter GEE project ID: ')
+        
         print('You entered: {}'.format(project_id))
         o = open(provided_project,'w')
         o.write(project_id)
@@ -52,6 +65,7 @@ def getProject():
     project_id=o.read()
     print('Cached project id file path: {}'.format(provided_project))
     print('Cached project id: {}'.format(project_id))
+    ee.data.setCloudApiUserProject(project_id)
     o.close()
     return project_id
 def verified_initialize(project=None):
@@ -59,35 +73,44 @@ def verified_initialize(project=None):
     z = ee.Number(1).getInfo()
     print('Successfully initialized')
 # Function to handle various exceptions to initializing to GEE
+
 def robustInitializer():
+    global project_id
+   
     try:
         z = ee.Number(1).getInfo()
     except:
         print('Initializing GEE')
-        
-        if not os.path.exists(creds_path):
-            print('No credentials found')
-            print('Will attempt ee.Authenticate')
+        if not ee.oauth._valid_credentials_exist():
             ee.Authenticate()
         try:
-            verified_initialize(project=None)
+            verified_initialize(project=ee.data._cloud_api_user_project)
         except Exception as E:
-            print(E)
+            # print(E)
             if str(E).find('Reauthentication is needed') >- 1:
-                ee.Authenticate()
-            
-            if str(E).find('project is not registered') > -1:
+                ee.Authenticate(force=True)
+
+            if str(E).find('project is not registered') > -1 or str(E).find(' quota project, which is not set by default')>-1:
                 project_id=getProject()
+                
             else:
                 project_id = None
             try:
                 verified_initialize(project=project_id)
             except Exception as E:
                 print(E)
-                
+                try:
+                    project_id=getProject(overwrite=True)
+                    verified_initialize(project=project_id)
+                except Exception as E:
+                    print(E)
+       
+        ee.data.setCloudApiUserProject(project_id)
+setProject()
+robustInitializer()
 ######################################################################
 #Set up GEE and paths
-robustInitializer()
+# robustInitializer()
 geeVizFolder = 'geeViz'
 geeViewFolder = 'geeView'
 #Set up template web viewer
@@ -116,16 +139,17 @@ if os.path.exists(ee_run_dir) == False:os.makedirs(ee_run_dir)
 # Function to check if being run inside a notebook
 # Taken from: https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
 def is_notebook():
-    try:
-        shell = get_ipython().__class__.__name__
-        if shell == 'ZMQInteractiveShell':
-            return True   # Jupyter notebook or qtconsole
-        elif shell == 'TerminalInteractiveShell':
-            return False  # Terminal running IPython
-        else:
-            return False  # Other type (?)
-    except NameError:
-        return False      # Probably standard Python interpreter
+    return ee.oauth._in_jupyter_shell()
+    # try:
+    #     shell = get_ipython().__class__.__name__
+    #     if shell == 'ZMQInteractiveShell':
+    #         return True   # Jupyter notebook or qtconsole
+    #     elif shell == 'TerminalInteractiveShell':
+    #         return False  # Terminal running IPython
+    #     else:
+    #         return False  # Other type (?)
+    # except NameError:
+    #     return False      # Probably standard Python interpreter
 ######################################################################
 # Function for cleaning trailing .... in accessToken
 def cleanAccessToken(accessToken):
@@ -136,27 +160,15 @@ def baseDomain(url):
     url_parts = urlparse(url)
     return f'{url_parts.scheme}://{url_parts.netloc}'
 # Function for using default GEE refresh token to get an access token for geeView
-def refreshToken(refresh_token_path = ee.oauth.get_credentials_path()):
-    try:
-        refresh_token=json.load(open(refresh_token_path))['refresh_token']
-    except Exception as e:
-        print('Could not find refresh token at:',refresh_token_path)
-        refresh_token = ''
-
-    params = {
-            "grant_type": "refresh_token",
-            "client_id": ee.oauth.CLIENT_ID,
-            "client_secret": ee.oauth.CLIENT_SECRET,
-            "refresh_token": refresh_token
-    }
-    r = requests.post(ee.oauth.TOKEN_URI, data=params)
-    # print('R:',r.json()['access_token'])
-    # input('press any key to continue')
-    if r.ok:
-        return cleanAccessToken(r.json()['access_token'])
-    else:
-        return None
-
+# Updated 12/23 to reflect updated auth methods for GEE
+def refreshToken():
+    credentials = ee.data.get_persistent_credentials()
+    credentials.refresh(gReq.Request())
+    accessToken = credentials.token
+    # print(credentials.to_json())
+    accessToken = cleanAccessToken(accessToken)
+    return accessToken
+    
 # Function for using a GEE white-listed service account key to get an access token for geeView
 def serviceAccountToken(service_key_file_path):
     try:
@@ -206,15 +218,15 @@ class mapper:
         self.mapCommandList  = []
         self.ee_run_name = 'runGeeViz'
 
-        self.isNotebook = is_notebook()
-        self.isColab = "google.colab" in sys.modules
+        self.isNotebook = ee.oauth._in_jupyter_shell()
+        self.isColab = ee.oauth._in_colab_shell()#"google.colab" in sys.modules
 
         self.proxy_url = None
 
         self.refreshTokenPath = ee.oauth.get_credentials_path()
         self.serviceKeyPath = None
         self.queryWindowMode = 'sidePane'
-        
+        self.project = project_id
     #Function for adding a layer to the map
     def addLayer(self,image,viz = {},name= None,visible= True):
         if name == None:
@@ -226,10 +238,14 @@ class mapper:
         if 'reducer' in viz.keys():
             # if str(type(viz['reducer']))=="<class 'ee.Reducer'>":
             #     viz['reducer'] = eval(viz['reducer'])
+
             try:
                 viz['reducer'] = viz['reducer'].serialize()
-            except:
-                viz['reducer'] = eval(viz['reducer']).serialize()
+            except Exception as e:
+                try:
+                    viz['reducer'] = eval(viz['reducer']).serialize()
+                except Exception as e:# Most likely it's already serialized
+                    e = e
         #Get the id and populate dictionary
         idDict = {}#image.getMapId()
         idDict['item'] = image.serialize()
@@ -279,8 +295,8 @@ class mapper:
 
         # Get access token
         if self.serviceKeyPath == None:
-            print('Using default refresh token for geeView:',self.refreshTokenPath)
-            self.accessToken = refreshToken(self.refreshTokenPath)
+            print('Using default refresh token for geeView')
+            self.accessToken = refreshToken()
         else:
             print('Using service account key for geeView:',self.serviceKeyPath)
             self.accessToken = serviceAccountToken(self.serviceKeyPath)
@@ -344,25 +360,28 @@ class mapper:
         if IS_COLAB:
             proxy_js = "google.colab.kernel.proxyPort({})".format(self.port)
             proxy_url = eval_js(proxy_js)
-            geeView_proxy_url = '{}geeView/?accessToken={}'.format(proxy_url,self.accessToken)
+            geeView_proxy_url = '{}geeView/?projectID={}&accessToken={}'.format(proxy_url,self.project,self.accessToken)
             print('Colab Proxy URL:',geeView_proxy_url)
             viewerFrame = IFrame(src=geeView_proxy_url, width='100%', height='{}px'.format(iframe_height))
             display(viewerFrame)
-        if IS_WORKBENCH:
+        elif IS_WORKBENCH:
             if self.proxy_url == None:
                 self.proxy_url = input('Please enter current URL Workbench Notebook is running from (e.g. https://code-dot-region.notebooks.googleusercontent.com/): ')
             self.proxy_url = baseDomain(self.proxy_url)
-            geeView_proxy_url = '{}/proxy/{}/geeView/?accessToken={}'.format(self.proxy_url,self.port,self.accessToken)
+            geeView_proxy_url = '{}/proxy/{}/geeView/?projectID={}&accessToken={}'.format(self.proxy_url,self.port,self.project,self.accessToken)
             print('Workbench Proxy URL:',geeView_proxy_url)
             viewerFrame = IFrame(src=geeView_proxy_url, width='100%', height='{}px'.format(iframe_height))
             display(viewerFrame)
-        elif not self.isNotebook or open_browser:
-            webbrowser.open('http://localhost:{}/{}/?accessToken={}'.format(self.port,geeViewFolder,self.accessToken),new = 1)
-        elif open_browser == False and open_iframe:
-            self.IFrame = IFrame(src='http://localhost:{}/{}/?accessToken={}'.format(self.port,geeViewFolder,self.accessToken), width='100%', height='{}px'.format(iframe_height))
         else:
-            self.IFrame = IFrame(src='http://localhost:{}/{}/?accessToken={}'.format(self.port,geeViewFolder,self.accessToken), width='100%', height='{}px'.format(iframe_height))
-            display(self.IFrame)
+            url = 'http://localhost:{}/{}/?projectID={}&accessToken={}'.format(self.port,geeViewFolder,self.project,self.accessToken)
+            print('geeView URL:',url)
+            if not self.isNotebook or open_browser:
+                webbrowser.open(url,new = 1)
+            elif open_browser == False and open_iframe:
+                self.IFrame = IFrame(src=url, width='100%', height='{}px'.format(iframe_height))
+            else:
+                self.IFrame = IFrame(src=url, width='100%', height='{}px'.format(iframe_height))
+                display(self.IFrame)
     def clearMap(self):
         self.layerNumber = 1
         self.idDictList = []
@@ -448,3 +467,22 @@ class mapper:
         self.idDictList = [{**d,**update} for d in self.idDictList]
 #Instantiate Map object
 Map = mapper()
+
+
+# print(ee.data._initialized  )
+# ee.Authenticate(auth_mode='localhost')
+# ee.Authenticate(force=True)
+
+# ee.Authenticate()
+# ee.Initialize()#project='lcms-292214')
+# ee.data.setCloudApiUserProject('rcr-gee')
+
+# # ee.Initialize()
+# print(ee.data._cloud_api_user_project  )
+# print(refreshToken())
+# f = ee.FeatureCollection('projects/rcr-gee-2/assets/test/DAMAGE_AREAS_FLAT_AllYears_CONUS_Rgn9')
+# print(ee.Image().getInfo())
+# Map.addLayer(f,{'palette':'F00'})
+# Map.turnOnInspector()
+
+

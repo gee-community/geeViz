@@ -62,7 +62,7 @@ includeSLCOffL7 = True
 
 #Export params
 #Whether to export CCDC outputs
-exportCCDC = True
+exportCCDC = False
 
 #Which bands/indices to export
 #These will not always be used to find breaks - that is specified below in the ccdcParams
@@ -76,7 +76,7 @@ outputName = 'CCDC-Test'
 
 #Provide location composites will be exported to
 #This should be an asset folder, or more ideally, an asset imageCollection
-exportPathRoot = 'users/usfs-ihousman/test2'#'users/username/someCollection'
+exportPathRoot = 'users/username/someCollection'
 
 
 #CRS- must be provided.  
