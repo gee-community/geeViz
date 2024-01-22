@@ -1,5 +1,5 @@
 """
-   Copyright 2023 Ian Housman
+   Copyright 2024 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -114,7 +114,7 @@ applyCloudScoreLandsat = True
 applyCloudScoreSentinel2 = False
 
 applyTDOMLandsat = True
-applyTDOMSentinel2 = True
+applyTDOMSentinel2 = False
 
 #S2 only cloud/cloud shadow masking methods switches- generally do not use these
 #QA band method is fast but is generally awful- don't use if you like good composites
@@ -128,13 +128,12 @@ cloudHeights = ee.List.sequence(500,10000,500)
 #Whether to use the pre-computed cloud probabilities to mask
 #clouds for Sentinel 2
 #This method works really well
-applyCloudProbability = True
+applyCloudProbability = False
 
 # Whether to use the pre-computed cloudScore+ to mask
 # clouds and cloud shadows for Sentinel 2
 # This method works really well and should be used instead of all other methods once it finishes
-# running for the S2 archive (~ spring 2024????)
-applyCloudScorePlusSentinel2 = False
+applyCloudScorePlusSentinel2 = True
 
 #If cloudProbability is chosen, choose a threshold 
 #(generally somewhere around 40-60 works well)

@@ -1,5 +1,5 @@
 """
-   Copyright 2022 Ian Housman
+   Copyright 2023 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ bandNames =None
 arrayMode = True
 ####################################################################################################
 # Bring in LCMS LandTrendr outputs (see other examples that include LCMS final data)
-lt = ee.ImageCollection('projects/lcms-tcc-shared/assets/CONUS/Base-Learners/LandTrendr-Collection');
+lt = ee.ImageCollection('projects/lcms-tcc-shared/assets/CONUS/Base-Learners/LandTrendr-Collection')
 print('Available bands/indices:',lt.aggregate_histogram(bandPropertyName).keys().getInfo())
 
 lt_props = lt.first().toDictionary().getInfo()

@@ -1,5 +1,5 @@
 """
-   Copyright 2023 Ian Housman
+   Copyright 2024 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import geeViz.geeView
 import sys, ee, os, shutil, subprocess, datetime, calendar, json,glob,numpy,pandas
 import time, logging, pdb
 from simpledbf import Dbf5
-
 
 
 #########################################################################
@@ -325,11 +324,14 @@ if __name__ == '__main__':
     #             columns = None,bandName = None, reducer = ee.Reducer.first())
     # extractPointValues(ee.Image.cat([ee.Image([1,2,3]).toArray(),ee.Image(1)]),pt,crs = 'EPSG:5070', scale=30,transform = None,title = None,index = None,columns = None,bandName = None, reducer = ee.Reducer.first())
 
-    extracted = extractPointValuesToDataFrame(comps,pt,crs = 'EPSG:5070', scale=30,transform = None,title = None,index = None,columns = None,bandName = None, reducer = ee.Reducer.first(),includeNonSystemProperties = False,includeSystemProperties=True)
-    print(extracted)
+    # extracted = extractPointValuesToDataFrame(comps,pt,crs = 'EPSG:5070', scale=30,transform = None,title = None,index = None,columns = None,bandName = None, reducer = ee.Reducer.first(),includeNonSystemProperties = False,includeSystemProperties=True)
+    # print(extracted)
     # df = imagePixelToDataFrame(lt,pt,crs = 'EPSG:5070', scale=30,transform = None,index = ['year','vertex fit'],columns = None,bandName = None, reducer = ee.Reducer.first())
     # print(df)
     # df = imagePixelToDataFrame(ee.Image([1,2,3]).byte(),pt,crs = 'EPSG:5070', scale=30,transform = None)
 
 
     # print(df)
+    
+  
+    

@@ -1,5 +1,5 @@
 """
-   Copyright 2023 Ian Housman
+   Copyright 2024 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 #Intended to work within the geeViz package
 ######################################################################
 from geeViz.geeView import *
+import geeViz.cloudStorageManagerLib as cml
 import geeViz.assetManagerLib as aml
 import geeViz.taskManagerLib as tml
 import math, ee, json, pdb
@@ -626,8 +627,8 @@ def getS2(studyArea,
           resampleMethod = 'aggregate',
           toaOrSR = 'TOA',
           convertToDailyMosaics = True,
-          addCloudProbability = True,
-          addCloudScorePlus = False):
+          addCloudProbability = False,
+          addCloudScorePlus = True):
 
   args = formatArgs(locals())
 
@@ -1590,9 +1591,11 @@ def exportToDriveWrapper(imageForExport,outputName,driveFolderName,roi,scale= No
   print('Exporting:',outputName)
   t.start()
 #########################################################################
-def exportToCloudStorageWrapper(imageForExport,outputName,bucketName,roi,scale= None,crs = None,transform = None,outputNoData = -32768):
+def exportToCloudStorageWrapper(imageForExport,outputName,bucketName,roi,scale= None,crs = None,transform = None,outputNoData = -32768,fileFormat ='GeoTIFF',formatOptions = {'cloudOptimized':True},overwrite = False):
   outputName = outputName.replace("/\s+/g",'-')#Get rid of any spaces
 
+  extension_dict = {'GeoTIFF':['.tif'],'TFRecord':['.tfrecord','.json']} 
+  extensions = extension_dict[fileFormat]
   #Pull geometry if feature or featureCollection
   try:
     roi = roi.geometry()
@@ -1609,10 +1612,19 @@ def exportToCloudStorageWrapper(imageForExport,outputName,bucketName,roi,scale= 
   #Ensure bounds are in export projection
   outRegion = roi.bounds(100,crs)
 
-  t = ee.batch.Export.image.toCloudStorage(imageForExport, outputName, bucketName, outputName, None, outRegion, scale, crs, transform, 1e13)
-  print('Exporting:',outputName)
-  print(t)
-  t.start()
+  # Handle different instances of an blob either already existing or currently being exported and whether it should be overwritten
+  currently_exporting = outputName in tml.getTasks()['running'] or outputName in tml.getTasks()['ready']
+  currently_exists = cml.gcs_exists(bucketName,outputName+extensions[0])
+  
+  if overwrite and currently_exists:
+    for extension in extensions:cml.delete_blob(bucketName,outputName+extension)
+  if overwrite and currently_exporting:
+    tml.cancelByName(outputName)
+  if overwrite or (not currently_exists and not currently_exporting):
+    t = ee.batch.Export.image.toCloudStorage(imageForExport, outputName, bucketName, outputName, None, outRegion, scale, crs, transform, 1e13,fileFormat= fileFormat,formatOptions=formatOptions)
+    print('Exporting:',outputName)
+    print(t)
+    t.start()
 
 
 #########################################################################
@@ -2824,7 +2836,7 @@ def getProcessedSentinel2Scenes(\
   applyQABand = False,
   applyCloudScore = False,
   applyShadowShift = False,
-  applyTDOM = True,
+  applyTDOM = False,
   cloudScoreThresh = 20,
   performCloudScoreOffset = True,
   cloudScorePctl = 10,
@@ -2837,13 +2849,13 @@ def getProcessedSentinel2Scenes(\
   resampleMethod = 'aggregate',
   toaOrSR = 'TOA',
   convertToDailyMosaics = True,
-  applyCloudProbability = True,
+  applyCloudProbability = False,
   preComputedCloudScoreOffset = None,
   preComputedTDOMIRMean = None,
   preComputedTDOMIRStdDev = None,
   cloudProbThresh = 40,
   verbose = False,
-  applyCloudScorePlus = False,
+  applyCloudScorePlus = True,
   cloudScorePlusThresh = 0.6):
 
   origin = 'Sentinel2'
@@ -2953,7 +2965,7 @@ def getSentinel2Wrapper(\
   applyQABand = False,
   applyCloudScore = False,
   applyShadowShift = False,
-  applyTDOM = True,
+  applyTDOM = False,
   cloudScoreThresh = 20,
   performCloudScoreOffset = True,
   cloudScorePctl = 10,
@@ -2974,14 +2986,14 @@ def getSentinel2Wrapper(\
   resampleMethod = 'aggregate',
   toaOrSR = 'TOA',
   convertToDailyMosaics = True,
-  applyCloudProbability = True,
+  applyCloudProbability = False,
   preComputedCloudScoreOffset = None,
   preComputedTDOMIRMean = None,
   preComputedTDOMIRStdDev = None,
   cloudProbThresh = 40,
   overwrite = False,
   verbose = False,
-  applyCloudScorePlus = False,
+  applyCloudScorePlus = True,
   cloudScorePlusThresh = 0.6):
 
   origin = 'Sentinel2'
@@ -3106,12 +3118,12 @@ def getProcessedLandsatAndSentinel2Scenes(
       includeSLCOffL7 = False,
       defringeL5 = False,
       applyQABand = False,
-      applyCloudProbability = True,
+      applyCloudProbability = False,
       applyShadowShift = False,
       applyCloudScoreLandsat = False,
       applyCloudScoreSentinel2 = False,
       applyTDOMLandsat = True,
-      applyTDOMSentinel2 = True,
+      applyTDOMSentinel2 = False,
       applyFmaskCloudMask = True,
       applyFmaskCloudShadowMask = True,
       applyFmaskSnowMask = False,
@@ -3139,7 +3151,7 @@ def getProcessedLandsatAndSentinel2Scenes(
       cloudProbThresh = 40,
       landsatCollectionVersion = 'C2',
       verbose = False,
-      applyCloudScorePlus = False,
+      applyCloudScorePlus = True,
       cloudScorePlusThresh = 0.6):
 
   if toaOrSR == 'SR':
@@ -3336,12 +3348,12 @@ def getLandsatAndSentinel2HybridWrapper(\
   includeSLCOffL7 = False,
   defringeL5 = False,
   applyQABand = False,
-  applyCloudProbability = True,
+  applyCloudProbability = False,
   applyShadowShift = False,
   applyCloudScoreLandsat = False,
   applyCloudScoreSentinel2 = False,
   applyTDOMLandsat = True,
-  applyTDOMSentinel2 = True,
+  applyTDOMSentinel2 = False,
   applyFmaskCloudMask = True,
   applyFmaskCloudShadowMask = True,
   applyFmaskSnowMask = False,
@@ -3376,7 +3388,7 @@ def getLandsatAndSentinel2HybridWrapper(\
   landsatCollectionVersion = 'C2',
   overwrite = False,
   verbose = False,
-  applyCloudScorePlusSentinel2 = False,
+  applyCloudScorePlusSentinel2 = True,
   cloudScorePlusThresh = 0.6):
 
   origin = 'Landsat-Sentinel2-Hybrid'

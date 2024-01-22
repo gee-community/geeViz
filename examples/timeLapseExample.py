@@ -1,5 +1,5 @@
 """
-   Copyright 2022 Ian Housman
+   Copyright 2023 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -93,11 +93,11 @@ Map.addTimeLapse(water,{'min':1,'max':3,'palette':waterColors,'addToClassLegend'
 
 #Bring in Hansen loss
 declineYearPalette = 'ffffe5,fff7bc,fee391,fec44f,fe9929,ec7014,cc4c02'
-hansen = ee.Image("UMD/hansen/global_forest_change_2020_v1_8")
+hansen = ee.Image("UMD/hansen/global_forest_change_2022_v1_10")
 
 hansenLoss = hansen.select(['lossyear']).add(2000).int16()
 hansenStartYear = 2001
-hansenEndYear = 2020
+hansenEndYear = 2022
 
 hansenYears = ee.List.sequence(hansenStartYear,hansenEndYear)
 
@@ -113,9 +113,9 @@ hansenYearsCli = hansenYears.getInfo()
 Map.addTimeLapse(hansenC,{'min':hansenStartYear,'max':hansenEndYear,'palette':declineYearPalette,'years':hansenYearsCli},'Hansen Loss Time Lapse')
   
 #Bring in LCMS
-lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2020-5").select(['Change'])
+lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2022-8").select(['Change'])
 lcmsStartYear = 1985
-lcmsEndYear = 2020
+lcmsEndYear = 2022
 lcmsYears = ee.List.sequence(lcmsStartYear,lcmsEndYear)
 
 def lcmsFun(yr):
@@ -143,5 +143,6 @@ pdsi = getImagesLib.nDayComposites(pdsi,pdsiStartYear,pdsiEndYear,1,365,56)
 #This example isn't annual, so the dateFormat and advanceInterval are changed
 Map.addTimeLapse(pdsi,{'min':-5,'max':5,'palette':'F00,888,00F','dateFormat':'YYYYMMdd','advanceInterval':'day'},'PDSI Time Lapse')
 
+Map.turnOnInspector()
 #Final step is to launch the viewer
 Map.view()

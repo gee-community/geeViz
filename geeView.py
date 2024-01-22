@@ -1,5 +1,5 @@
 """
-   Copyright 2023 Ian Housman
+   Copyright 2024 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ if IS_COLAB:
 # Functions to handle various initialization/authentication workflows to try to get a user an initialized instance of ee
 
 # Function to have user input a project id if one is still needed
-def setProject(id=ee.data._cloud_api_user_project):
+def setProject(id):
     global project_id
     project_id = id
     ee.data.setCloudApiUserProject(project_id)
@@ -50,9 +50,9 @@ def getProject(overwrite=False):
     provided_project = '{}.proj_id'.format(creds_path)
     provided_project = os.path.normpath(provided_project)
     
-    # if not os.path.exists(provided_project) or overwrite:
     current_project = ee.data._cloud_api_user_project
-    if  (current_project == None and not os.path.exists(provided_project)) or overwrite:
+    
+    if (current_project == None and not os.path.exists(provided_project)) or overwrite:
                     
             
         project_id = input('Please enter GEE project ID: ')
@@ -61,12 +61,17 @@ def getProject(overwrite=False):
         o = open(provided_project,'w')
         o.write(project_id)
         o.close()
-    o = open(provided_project,'r')
-    project_id=o.read()
-    print('Cached project id file path: {}'.format(provided_project))
-    print('Cached project id: {}'.format(project_id))
+    
+    if current_project != None:
+        project_id = current_project
+    elif os.path.exists(provided_project):
+        o = open(provided_project,'r')
+        project_id=o.read()
+        print('Cached project id file path: {}'.format(provided_project))
+        print('Cached project id: {}'.format(project_id))
+        o.close()
     ee.data.setCloudApiUserProject(project_id)
-    o.close()
+    
     return project_id
 def verified_initialize(project=None):
     ee.Initialize(project=project)
@@ -90,7 +95,7 @@ def robustInitializer():
             if str(E).find('Reauthentication is needed') >- 1:
                 ee.Authenticate(force=True)
 
-            if str(E).find('project is not registered') > -1 or str(E).find(' quota project, which is not set by default')>-1:
+            if str(E).find('no project found. Call with project') or str(E).find('project is not registered') > -1 or str(E).find(' quota project, which is not set by default')>-1:
                 project_id=getProject()
                 
             else:
@@ -106,7 +111,7 @@ def robustInitializer():
                     print(E)
        
         ee.data.setCloudApiUserProject(project_id)
-setProject()
+setProject(ee.data._cloud_api_user_project)
 robustInitializer()
 ######################################################################
 #Set up GEE and paths
@@ -247,12 +252,21 @@ class mapper:
                 except Exception as e:# Most likely it's already serialized
                     e = e
         #Get the id and populate dictionary
-        idDict = {}#image.getMapId()
-        idDict['item'] = image.serialize()
+        idDict = {}
+        if not isinstance(image, dict):
+            image=image.serialize()
+            idDict['item'] = image
+            idDict['function'] = 'addSerializedLayer'
+        # Handle passing in geojson vector layers
+        else:
+            idDict['item'] = image
+            viz['layerType']='geoJSONVector'
+            idDict['function'] = 'addLayer'
+
         idDict['name'] = name 
         idDict['visible'] = str(visible).lower()
         idDict['viz'] = json.dumps(viz, sort_keys=False)
-        idDict['function'] = 'addSerializedLayer'
+        
         self.idDictList.append(idDict)
 
     #Function for adding a layer to the map

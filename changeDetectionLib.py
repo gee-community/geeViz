@@ -1,5 +1,5 @@
 """
-   Copyright 2023 Ian Housman, Leah Campbell, Josh Heyer
+   Copyright 2024 Ian Housman, Leah Campbell, Josh Heyer
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -416,7 +416,7 @@ def LTLossGainExportPrep(lossGainDict,indexName = 'Bn',multBy = 10000):
   lossStack = lossGainDict['lossStack']
   gainStack = lossGainDict['gainStack']
 
-  #Convert to byte/int16 to save space
+  #Convert to byte/int16 if possible to save space
   lossThematic = lossStack.select(['.*_yr_.*']).int16().addBands(lossStack.select(['.*_dur_.*']).byte())
   lossContinuous = lossStack.select(['.*_mag_.*','.*_slope_.*']).multiply(multBy)
   if abs(multBy) == 10000:lossContinuous = lossContinuous.int16()
@@ -499,7 +499,7 @@ def simpleLANDTRENDR(ts,startYear,endYear,indexName = 'NBR', run_params = None,l
     addLossGainToMap(lossGainStack,startYear,endYear,(lossMagThresh-0.7)*multBy,lossMagThresh*multBy,gainMagThresh*multBy,(gainMagThresh+0.7)*multBy)
   
   
-  return [multLT(lt,multBy).int16(),lossGainStack]
+  return [multLT(lt,multBy),lossGainStack]
 
 
 #########################################################################################################
@@ -714,7 +714,7 @@ def batchSimpleLTFit(ltStacks,startYear,endYear,indexNames = None,bandPropertyNa
   # Iterate across each band/index and get the fitted, mag, slope, etc
   lt_fit = None
   for bn in indexNames:
-    ltt = ltStacks.filter(ee.Filter.eq('band',bn)).max()
+    ltt = ltStacks.filter(ee.Filter.eq(bandPropertyName,bn)).max()
 
     if lt_fit == None:
       lt_fit = simpleLTFit(ltt,startYear,endYear,bn,arrayMode,maxSegs,multBy)
