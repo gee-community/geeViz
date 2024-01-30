@@ -2117,4 +2117,26 @@ def ccdcChangeDetection(ccdcImg,bandName):
     }    
   }
   
+###################################################################################
+# Function to feather two CCDC collections together based on overlapping data time periods and weights 
+# For first function argument (joinedCCDCImg), .map a image collection of joined annualized ccdc images over function
+# For example, coeffs_joinedCol.map(lambda img: dLib.featherCCDCImgs(img,ccdcBnds,coeffs1_bns,coeffs2_bns,diff,featherStartYear,featherEndYear))
+# The feather years are the overlapping years between the two CCDC collections that are used in weighting 
+def featherCCDCImgs(joinedCCDCImg,ccdcBnds,coeffs1_bns,coeffs2_bns,featherStartYr,featherEndYr):
+  yr = ee.Number.parse(joinedCCDCImg.date().format('YYYY.DDD'))
+  
+  # Find difference between end and start feather years for weighting in feathering 
+  diff = ee.Number(featherEndYr).subtract(featherStartYr).float()    
 
+  weight = yr.subtract(featherStartYr).divide(diff).clamp(0,1).multiply(-1).add(1)
+  c1 = joinedCCDCImg.select(coeffs1_bns)
+  c2 = joinedCCDCImg.select(coeffs2_bns)
+
+  w1 = c1.mask().multiply(weight)
+
+  w2 = c2.mask().multiply(ee.Number(1).subtract(weight))
+  c1 = c1.unmask(0).multiply(w1)
+  c2 = c2.unmask(0).multiply(w2)
+  avg = c1.add(c2).divide(w1.add(w2))
+  avg = avg.set('weight',weight)
+  return avg.rename(ccdcBnds).copyProperties(joinedCCDCImg,['system:time_start'])
