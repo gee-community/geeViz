@@ -132,7 +132,7 @@ print('geeViz package folder:', py_viz_dir)
 
 #Specify location of files to run
 template = os.path.join(py_viz_dir,geeViewFolder,'index.html')
-ee_run_dir =  os.path.join(py_viz_dir, geeViewFolder,'js')
+ee_run_dir =  os.path.join(py_viz_dir, geeViewFolder,'src/gee/gee-run/')
 if os.path.exists(ee_run_dir) == False:os.makedirs(ee_run_dir)
 
 

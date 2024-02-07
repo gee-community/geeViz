@@ -1,65 +1,66 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta name="keywords" content="Landscape, Change, Forestry, USDA, Forest Service, Remote Sensing, Google Earth Engine, Earth Engine, Land use chanage">
-        <meta name="author" content="Ian Housman">
-        <meta name="google-site-verification" content="guQNolJwd-DzktNTTA5REOu8bxwOi3mYqQrNWsunLlw">
+  <head>
+    <meta name="keywords" content="Landscape, Change, Forestry, USDA, Forest Service, Remote Sensing, Google Earth Engine, Earth Engine, Land use chanage" />
+    <meta name="author" content="Ian Housman" />
+    <meta name="google-site-verification" content="guQNolJwd-DzktNTTA5REOu8bxwOi3mYqQrNWsunLlw" />
 
-        <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
-        <meta content="utf-8" http-equiv="encoding">
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+    <meta content="utf-8" http-equiv="encoding" />
 
-        <!-- Set up analytics -->
-        <script type="text/javascript">
-            var mode = 'geeViz';
-        </script>
-        
+    <!-- Set up analytics -->
+    <script type="text/javascript">
+      var mode = "geeViz";
+    </script>
 
-        <!-- Set up view scale -->
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <link rel="icon" href="./images/usfslogo.png">
-        
-        <!-- Google Maps API -->
-        <script async src="https://maps.googleapis.com/maps/api/js?v=3.52&key=AIzaSyBOgBha7gn8rZQAqEFFxVvJXUAMJtU-41U&libraries=places"></script>
-        
-        <!-- Google Earth Engine API -->
-        <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/google/earthengine-api@v0.1.341/javascript/build/ee_api_js.js"></script>
-        
-        <!-- Jquery -->
-        <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
-        <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
-        <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+    <!-- Set up view scale -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="./src/assets/images/usfslogo.png" />
 
-        <!-- Bootstrap -->
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+    <!-- Google Maps API -->
+    <script async src="https://maps.googleapis.com/maps/api/js?v=3.52&key=AIzaSyBOgBha7gn8rZQAqEFFxVvJXUAMJtU-41U&libraries=places"></script>
 
+    <!-- Google Earth Engine API -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/google/earthengine-api@v0.1.341/javascript/build/ee_api_js.js"></script>
 
-        <!-- ChartJS and Plotly- charting apis -->
-        <script type="text/javascript" src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js'></script>
-        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css">
-        <script src='https://cdn.plot.ly/plotly-2.12.1.min.js'></script>
+    <!-- Jquery -->
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css" />
 
-        <!-- Hammer for mobile tap and desktop click support -->
-        <script src="https://hammerjs.github.io/dist/hammer.js"></script>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css"
+      integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4"
+      crossorigin="anonymous"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
 
-        <!-- Jquery Fittext to make top bar title fit properly -->
-        <script src = 'https://cdn.jsdelivr.net/gh/davatron5000/FitText.js@1.2.0/jquery.fittext.js'></script>
+    <!-- ChartJS and Plotly- charting apis -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" />
+    <script src="https://cdn.plot.ly/plotly-2.12.1.min.js"></script>
 
-        <!-- JScolor color picker -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jscolor/2.0.4/jscolor.min.js"></script>
-        
-        <!-- Style sheet -->
-        <link rel="stylesheet" href="./css/style.min.css">
-    </head>
+    <!-- Hammer for mobile tap and desktop click support -->
+    <script src="https://hammerjs.github.io/dist/hammer.js"></script>
 
+    <!-- Jquery Fittext to make top bar title fit properly -->
+    <script src="https://cdn.jsdelivr.net/gh/davatron5000/FitText.js@1.2.0/jquery.fittext.js"></script>
 
-    <body>
-        <script type="text/javascript" src="./js/gena-gee-palettes.js"></script>
-        <script type="text/javascript" src="./js/load.min.js"></script>
-        <script type="text/javascript" src="./js/lcms-viewer.min.js"></script>
-        <script type="text/javascript" src="./js/runGeeViz.js"></script>
-    </body>
+    <!-- JScolor color picker -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jscolor/2.0.4/jscolor.min.js"></script>
+
+    <!-- Style sheet -->
+    <link rel="stylesheet" href="./src/styles/style.min.css" />
+  </head>
+
+  <body>
+    <script type="text/javascript" src="./src/js/gena-gee-palettes.js"></script>
+    <script type="text/javascript" src="./src/js/load.min.js"></script>
+    <script type="text/javascript" src="./src/js/lcms-viewer.min.js"></script>
+    <script type="text/javascript" src="./src/gee/gee-run/runGeeViz.js"></script>
+  </body>
 </html>
-
