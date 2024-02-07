@@ -2121,8 +2121,6 @@ def ccdcChangeDetection(ccdcImg,bandName):
   
 ###################################################################################
 # Function to feather two CCDC collections together based on overlapping data time periods and weights 
-# For first function argument (joinedCCDCImg), .map a image collection of joined annualized ccdc images over function
-# For example, coeffs_joinedCol.map(lambda img: dLib.featherCCDCImgs(img,ccdcBnds,coeffs1_bns,coeffs2_bns,diff,featherStartYear,featherEndYear))
 # The feather years are the overlapping years between the two CCDC collections that are used in weighting 
 def featherCCDCImgs(joinedCCDCImg,ccdcBnds,coeffs1_bns,coeffs2_bns,featherStartYr,featherEndYr):
   yr = ee.Number.parse(joinedCCDCImg.date().format('YYYY.DDD'))
@@ -2130,6 +2128,8 @@ def featherCCDCImgs(joinedCCDCImg,ccdcBnds,coeffs1_bns,coeffs2_bns,featherStartY
   # Find difference between end and start feather years for weighting in feathering 
   diff = ee.Number(featherEndYr).subtract(featherStartYr).float()    
 
+  # Weights that are used to feather ccdc collections together 
+  # The clamp ensures weights are constrained to range of feather years 
   weight = yr.subtract(featherStartYr).divide(diff).clamp(0,1).multiply(-1).add(1)
   c1 = joinedCCDCImg.select(coeffs1_bns)
   c2 = joinedCCDCImg.select(coeffs2_bns)
@@ -2142,3 +2142,24 @@ def featherCCDCImgs(joinedCCDCImg,ccdcBnds,coeffs1_bns,coeffs2_bns,featherStartY
   avg = c1.add(c2).divide(w1.add(w2))
   avg = avg.set('weight',weight)
   return avg.rename(ccdcBnds).copyProperties(joinedCCDCImg,['system:time_start'])
+
+# Wrapper function to join annualized CCDC images from two different CCDC collections, and iterate across images and apply featherCCDCImgs function 
+# The feather years are the overlapping years between the two CCDC collections that are used in weighting
+def batchFeatherCCDCImgs(ccdcAnnualizedCol1, ccdcAnnualizedCol2,featherStartYr,featherEndYr):
+  # Get coeffs band info and rename bands for joined Collection 
+  coeffs1 = ccdcAnnualizedCol1.select(['year','.*_coefs_.*'])
+  coeffs2 = ccdcAnnualizedCol2.select(['year','.*_coefs_.*'])
+
+  bns = coeffs1.first().bandNames()
+  coeffs1_bns = bns.map(lambda bn:ee.String(bn).cat('_1'))
+  coeffs2_bns = bns.map(lambda bn:ee.String(bn).cat('_2'))
+
+  coeffs1 = coeffs1.select(bns,coeffs1_bns)
+  coeffs2 = coeffs2.select(bns,coeffs2_bns)
+
+  # Join CCDC images together for feathering 
+  coeffs_joined = joinCollections(coeffs1,coeffs2)     
+
+  # Apply featherCCDCImgs across images 
+  ccdcCol_coeffs_avg = coeffs_joined.map(lambda img: featherCCDCImgs(img,bns,coeffs1_bns,coeffs2_bns,featherStartYr,featherEndYr))
+  return ccdcCol_coeffs_avg
