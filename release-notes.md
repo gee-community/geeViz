@@ -1,3 +1,15 @@
+# geeViz 2024.2.2 Release Notes
+
+## February 7, 2024
+
+### New Features
+
+- **Map Layer Drag Reordering** - Can now reorder non-timelapse map layers by clicking and dragging the layer up or down. This feature still can be buggy depending on the underlying layer type.
+
+- **CCDC output smart join method** - The `batchFeatherCCDCImgs` will take two time series of CCDC coefficients (typically created using `predictCCDC`), and linearly weight which coefficients are being used across a user-specified transition period (`featherStartYr`,`featherEndYr`). This allows for a smooth way of splicing together two sets of CCDC outputs with a generous overlapping time period. An example script of how to use this will be provided in a future release once this function solidifies a bit.
+
+---
+
 # geeViz 2024.2.1 Release Notes
 
 ## February 7, 2024
