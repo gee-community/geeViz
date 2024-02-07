@@ -2,6 +2,8 @@
 
 > A repository of GEE Python code modules for general data processing, analysis, and visualization
 
+> > geeViz is a powerful tool for exploring and analyzing Earth observation data like Landsat images within Google Earth Engine. It simplifies complex Earth Engine code into user-friendly Python functions.
+
 > [Can be accessed from the GEE Community Repository](https://github.com/gee-community/geeViz) > [Or within the internal Forest Service GitHub instance](https://code.fs.usda.gov/forest-service/geeViz)
 >
 > [A javaScript equivalent can be accessed in the GEE Playground](https://earthengine.googlesource.com/users/aaronkamoske/GTAC-Modules) > [on GitHub](https://github.com/rcr-usfs/gtac-rcr-gee-js-modules.git) > [Or within the Forest Service GitHub instance](https://code.fs.usda.gov/forest-service/gtac-gee-js-modules.git)

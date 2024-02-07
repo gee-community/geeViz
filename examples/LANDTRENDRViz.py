@@ -73,9 +73,9 @@ if bandNames == None:
   out_bns = fitted_bns.map(lambda bn: ee.String(bn).split('_').get(0))
 
   # Filter out next to last year
-  lt_synth = lt_fit.select(fitted_bns,out_bns)\
-            .filter(ee.Filter.calendarRange(endYear-1,endYear-1,'year')).first()
-
+  lt_synth = lt_fit.select(fitted_bns,out_bns)
+            # .filter(ee.Filter.calendarRange(endYear-1,endYear-1,'year')).first()
+  gil.vizParamsFalse['reducer']=ee.Reducer.lastNonNull()
   # Visualize as you would a composite
   Map.addLayer(lt_synth,gil.vizParamsFalse,'Synthetic Composite')
 

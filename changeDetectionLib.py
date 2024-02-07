@@ -706,7 +706,7 @@ def simpleLTFit(ltStack,startYear,endYear,indexName = 'bn',arrayMode = True,maxS
   return out
 
 # Wrapper function to iterate across multiple LT band/index values
-def batchSimpleLTFit(ltStacks,startYear,endYear,indexNames = None,bandPropertyName = 'band',arrayMode = True,maxSegs=6,multBy=1):
+def batchSimpleLTFit(ltStacks,startYear,endYear,indexNames = None,bandPropertyName = 'band',arrayMode = True,maxSegs=6,multBy=1,mosaicReducer = ee.Reducer.lastNonNull()):
   #Get band/index names if not provided
   if indexNames == None:
     indexNames = ltStacks.aggregate_histogram(bandPropertyName).keys().getInfo()
@@ -714,7 +714,9 @@ def batchSimpleLTFit(ltStacks,startYear,endYear,indexNames = None,bandPropertyNa
   # Iterate across each band/index and get the fitted, mag, slope, etc
   lt_fit = None
   for bn in indexNames:
-    ltt = ltStacks.filter(ee.Filter.eq(bandPropertyName,bn)).max()
+    ltt = ltStacks.filter(ee.Filter.eq(bandPropertyName,bn))
+    bns = ltt.first().bandNames()
+    ltt = ltt.reduce(mosaicReducer).rename(bns)
 
     if lt_fit == None:
       lt_fit = simpleLTFit(ltt,startYear,endYear,bn,arrayMode,maxSegs,multBy)

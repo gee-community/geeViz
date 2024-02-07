@@ -1,3 +1,13 @@
+# geeViz 2024.2.1 Release Notes
+
+## February 7, 2024
+
+### Bug fixes
+
+- The reducer in `batchSimpleLTFit` was hard-coded to `.max` for reducing any multi-image inputs for a given band/index. This resulted in nulls or errors in overlapping areas if LandTrendr arrays were being mosaicked. There is now a parameter `mosaicReducer` that can be set to handle overlapping values as you see fit. For array formatted outputs, it has to be `ee.Reducer.firstNonNull()` or `ee.Reducer.lastNonNull()` (default) since GEE doesn't handle array reductions well for imageCollection reductions.
+
+---
+
 # geeViz 2024.1.1 Release Notes
 
 ## January 19, 2024

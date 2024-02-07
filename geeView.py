@@ -317,7 +317,7 @@ class mapper:
             if self.accessToken == None:
                 print('Trying to authenticate to GEE using persistent refresh token.')
                 self.accessToken = refreshToken(self.refreshTokenPath)
-        #Set up js code to populate0
+        #Set up js code to populate
         lines = "var layerLoadErrorMessages=[];showMessage('Loading',staticTemplates.loadingModal[mode]);\nfunction runGeeViz(){\n"
 
 
