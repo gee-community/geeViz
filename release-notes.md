@@ -1,3 +1,17 @@
+# geeViz 2024.2.3 Release Notes
+
+## February 8, 2024
+
+### New Features
+
+- **Map Layer Drag Reordering Deactivation Option** - Can now deactivate layer reordering using `Map.setCanReorderLayers(False)`.
+
+### Bug fixes
+
+- Layer reordering with > 10 layers bug fixed. Sorting > 10 would sort 1,10,11,2,3,....etc. `geeVector` layerType is now frozen and cannot be reordered. This is because Google Maps API doesn't treat vector layers the same as raster overlays.Support for reordering vectors on the map is not supported.
+
+---
+
 # geeViz 2024.2.2 Release Notes
 
 ## February 7, 2024

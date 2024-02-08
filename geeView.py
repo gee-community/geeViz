@@ -323,7 +323,7 @@ class mapper:
 
         #Iterate across each map layer to add js code to
         for idDict in self.idDictList:
-            t ="Map2.{}({},{},'{}',{});".format(idDict['function'],idDict['item'],idDict['viz'],idDict['name'],str(idDict['visible']).lower())
+            t ="Map.{}({},{},'{}',{});".format(idDict['function'],idDict['item'],idDict['viz'],idDict['name'],str(idDict['visible']).lower())
             t = 'try{\n\t'+t+'\n}catch(err){\n\tlayerLoadErrorMessages.push("Error loading: '+idDict['name']+'<br>GEE "+err);}\n'
             lines += t
         lines += 'if(layerLoadErrorMessages.length>0){showMessage("Map.addLayer Error List",layerLoadErrorMessages.join("<br>"));}\n'
@@ -401,7 +401,7 @@ class mapper:
         self.idDictList = []
         self.mapCommandList  = []
     def setMapTitle(self,title):
-        title_command = f'Map2.setTitle("{title}")'
+        title_command = f'Map.setTitle("{title}")'
         if title_command not in self.mapCommandList:
             self.mapCommandList.append(title_command)
     def setTitle(self,title):
@@ -410,32 +410,32 @@ class mapper:
     # Functions to set various click query properties
     def setQueryCRS(self,crs):
         print('Setting click query crs to: {}'.format(crs))
-        cmd = f'Map2.setQueryCRS("{crs}");'
+        cmd = f'Map.setQueryCRS("{crs}");'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
     def setQueryScale(self,scale):
         print('Setting click query scale to: {}'.format(scale))
-        cmd = f'Map2.setQueryScale({scale});'
+        cmd = f'Map.setQueryScale({scale});'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
     def setQueryTransform(self,transform):
         print('Setting click query transform to: {}'.format(transform))
-        cmd = f'Map2.setQueryTransform({transform});'
+        cmd = f'Map.setQueryTransform({transform});'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
     def setQueryPrecision(self,chartPrecision = 3,chartDecimalProportion=0.25):
         print('Setting click query precision to: {}'.format(chartPrecision))
-        cmd = f'Map2.setQueryPrecision({chartPrecision},{chartDecimalProportion});'
+        cmd = f'Map.setQueryPrecision({chartPrecision},{chartDecimalProportion});'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
     def setQueryDateFormat(self,defaultQueryDateFormat = 'YYYY-MM-dd'):
         print('Setting default query date format to: {}'.format(defaultQueryDateFormat))
-        cmd = f'Map2.setQueryDateFormat("{defaultQueryDateFormat}");'
+        cmd = f'Map.setQueryDateFormat("{defaultQueryDateFormat}");'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
     def setQueryBoxColor(self,color):
         print('Setting click query box color to: {}'.format(color))
-        cmd = f'Map2.setQueryBoxColor("{color}");'
+        cmd = f'Map.setQueryBoxColor("{color}");'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
     # Functions to handle location of query outputs
@@ -449,7 +449,7 @@ class mapper:
     # Turn on query inspector 
     def turnOnInspector(self):
         # self.mapCommandList.append("$('#tools-collapse-div').addClass('show')")
-        query_command = "Map2.turnOnInspector();"
+        query_command = "Map.turnOnInspector();"
         if query_command not in self.mapCommandList:
             self.mapCommandList.append(query_command)
 
@@ -471,7 +471,11 @@ class mapper:
         if command not in self.mapCommandList:
             self.mapCommandList.append(command)
 
-
+    # Specify whether layers can be re-ordered by the user
+    def setCanReorderLayers(self,canReorderLayers):
+        command = f"Map.canReorderLayers = {str(canReorderLayers).lower()};"
+        if command not in self.mapCommandList:
+            self.mapCommandList.append(command)
     # Functions to handle batch layer toggling       
     def turnOffAllLayers(self):
         update = {'visible':'false'}
