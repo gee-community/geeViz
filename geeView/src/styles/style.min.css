@@ -579,7 +579,7 @@ div.dataTables_info {
   /* color: var(--deep-brown-20); */
 }
 .btn-group > .btn {
-  margin-left: 0.5rem !important;
+  /* margin-left: 0.5rem !important; */
   padding-bottom: 0px;
   border-radius: 3px;
   color: var(--deep-brown-20) !important;
@@ -642,6 +642,7 @@ div.dataTables_info {
   height: 0.8rem;
   font-size: 0.6rem;
   padding-bottom: 0.5rem;
+  /* padding-top: 0.1rem; */
 }
 /*///////////////////////////////////////////////////////////*/
 /*Bottombar styling*/
@@ -689,6 +690,7 @@ div.dataTables_info {
   border-right: 1px solid #000 !important;
   border-left: 1px solid #000 !important;
 }
+.table{margin-bottom: 0rem;}
 .chart-table {
   max-height: 30rem;
   max-width: 90rem;
@@ -1180,7 +1182,10 @@ a:hover {
 .dropdown {
   cursor: pointer;
 }
-
+.btn.area-chart-download-btn {
+  width: 2.25rem;
+  padding: 0rem;
+}
 .btn {
   padding: 0.3rem;
 }

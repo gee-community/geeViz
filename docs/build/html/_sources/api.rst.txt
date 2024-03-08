@@ -1,0 +1,12 @@
+Modules
+===
+
+geeViz.getImagesLib
+------------
+.. automodule:: geeViz.getImagesLib
+    :members:
+
+geeViz.changeDetectionLib
+------------
+.. automodule:: geeViz.changeDetectionLib
+    :members:
