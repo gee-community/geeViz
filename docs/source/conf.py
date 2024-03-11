@@ -1,9 +1,10 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here.
 import pathlib
-import sys, os
+import sys, os, re
 
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("..Examples/"))
+# sys.path.insert(0, os.path.abspath(".."))
 
 # sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
 # sys.path.insert(0, os.path.abspath(".../simulator"))
@@ -15,10 +16,17 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "GeeViz"
+
+def GetVersion(initPath):
+    with open(initPath) as f:
+        return re.findall(r"__version__\s*=\s*\'([.\d]+)\'", f.read())[0]
+
+
+initPath = r"A:\GEE\gee_py_modules_package\geeViz\__init__.py"
+project = "geeViz"
 copyright = "2024, Ian Housman, Josh Heyer"
 author = "Ian Housman, Josh Heyer"
-release = "2024.3.1"
+release = GetVersion(initPath)
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

@@ -52,6 +52,15 @@ def setProject(id):
 
 
 def getProject(overwrite=False):
+    """
+    Tries to find the current Google Cloud Platform project id
+
+    Args:
+        overwrite (bool, optional): Whether or not to overwrite a cached project ID file
+
+    Returns:
+        str: The currently selected Google Cloud Platform project id
+    """
     global project_id
     provided_project = "{}.proj_id".format(creds_path)
     provided_project = os.path.normpath(provided_project)
@@ -178,6 +187,15 @@ def is_notebook():
 ######################################################################
 # Function for cleaning trailing .... in accessToken
 def cleanAccessToken(accessToken):
+    """
+    Remove trailing '....' in generated access token
+
+    Args:
+        accessToken (str): Raw access token
+
+    Returns:
+        str: Given access token without trailing '....'
+    """
     while accessToken[-1] == ".":
         accessToken = accessToken[:-1]
     return accessToken
@@ -185,6 +203,15 @@ def cleanAccessToken(accessToken):
 
 # Function to get domain base without any folders
 def baseDomain(url):
+    """
+    Get root domain for a given url
+
+    Args:
+        url (str): URL to find the base domain of
+
+    Returns:
+        str: domain of given URL
+    """
     url_parts = urlparse(url)
     return f"{url_parts.scheme}://{url_parts.netloc}"
 
@@ -247,6 +274,14 @@ def isPortActive(port=8001):
 
 # Set up map object
 class mapper:
+    """Primary geeViz map setup and manipulation object
+
+    Map object that is used to manage layers, activated user input methods, and launching the map viewer user interface
+
+    Attributes:
+        port (int, optional): Which port to user for web server. Sometimes a port will become "stuck," so this will need set to some other number than what it was set at in previous runs of a given session.
+    """
+
     def __init__(self, port=8001):
         self.port = port
         self.layerNumber = 1
@@ -266,6 +301,71 @@ class mapper:
 
     # Function for adding a layer to the map
     def addLayer(self, image, viz={}, name=None, visible=True):
+        """
+        Adds GEE object to the mapper object that will then be added to the map user interface with a `view` call.
+
+        Args:
+            image (ImageCollection, Image, Feature, FeatureCollection, Geometry): ee object to add to the map UI.
+            viz (dict): Primary set of parameters for map visualization, querying, charting, etc. In addition to the parameters supported by the addLayer function in the GEE Code Editor, there are several additional parameters available to help facilitate legend generation, querying, and area summaries. The accepted keys are:
+
+                {
+                    "min" (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00.,
+
+                    "max" (int, list, or comma-separated numbers): One numeric value or one per band to map onto FF,
+
+                    "gain" (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00-FF.,
+
+                    "bias" (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00-FF.,
+
+                    "gamma" (int, list, or comma-separated numbers): Gamma correction factor. One numeric value or one per band.,
+
+                    "palette" (str, list, or comma-separated strings): List of CSS-style color strings (single-band previews only).,
+
+                    "opacity" (float): a number between 0 and 1 for initially set opacity.
+
+
+                    "reducer" (Reducer, default 'ee.Reducer.lastNonNull()'): If an ImageCollection is provided, how to reduce it to create the layer that is shown on the map. Defaults to ee.Reducer.lastNonNull(),
+
+                    "autoViz" (bool): Whether to take image bandName_class_values, bandName_class_names, bandName_class_palette properties to visualize, create a legend (populates `classLegendDict`), and apply class names to any query functions (populates `queryDict`),
+
+                    "canQuery" (bool, default True): Whether a layer can be queried when visible.,
+
+                    "classLegendDict" (dict): A dictionary with a key:value of the name:color(hex) to include in legend. This is auto-populated when `autoViz` : True,
+
+                    "queryDict" (dict): A dictionary with a key:value of the queried number:label to include if queried numeric values have corresponding label names. This is auto-populated when `autoViz` : True,
+
+                    "queryParams" (dict, optional): Dictionary of additional parameters for querying visible map layers:
+
+                        {
+                            "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.
+                        }
+
+                    "canAreaChart" (bool): whether to include this layer for area charting. If the layer is complex, area charting can be quite slow,
+
+                    "areaChartParams" (dict, optional): Dictionary of additional parameters for area charting:
+
+                        {
+                            "reducer" (Reducer, default `ee.Reducer.mean()` if no bandName_class_values, bandName_class_names, bandName_class_palette properties are available. `ee.Reducer.frequencyHistogram` if those are available or `thematic`:True (see below)): The reducer used to compute zonal summary statistics.,
+
+                            "line" (bool, default True): Whether to create a line chart,
+
+                            "sankey" (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs,
+
+                            "thematic" (bool): Whether input has discrete values or not. If True, it forces the reducer to `ee.Reducer.frequencyHistogram()` even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,
+
+                            "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.
+
+
+                        }
+
+                }
+            name (str): Descriptive name for map layer that will be shown on the map UI
+            visible (bool, optional): Whether layer should be visible when map UI loads
+
+        >>> Map.addLayer(ee.Image(1),{'min':0,'max':1,'palette':'000,FFF},"Example Map Layer",True)
+
+
+        """
         if name == None:
             name = "Layer " + str(self.layerNumber)
             self.layerNumber += 1

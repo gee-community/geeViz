@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Overview" href="overview.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Setup" href="installation.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>GeeViz 2024.3.1 documentation</title>
+        <title>geeViz 2024.2.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=362ab14a" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
@@ -123,7 +123,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="#"><div class="brand">GeeViz 2024.3.1 documentation</div></a>
+      <a href="#"><div class="brand">geeViz 2024.2.3 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -134,7 +134,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -146,7 +146,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
   
   
-  <span class="sidebar-brand-text">GeeViz 2024.3.1 documentation</span>
+  <span class="sidebar-brand-text">geeViz 2024.2.3 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -155,12 +155,18 @@
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Setup</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="overview.html">Overview</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Overview</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="generated/geeViz.geeView.html">geeViz.geeView</a></li>
-<li class="toctree-l2"><a class="reference internal" href="generated/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
-<li class="toctree-l2"><a class="reference internal" href="generated/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.geeView.html">geeViz.geeView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.geeView.mapper.html">geeViz.geeView.mapper</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Details</a></li>
 </ul>
 
 </div>
@@ -189,18 +195,31 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
         </div>
         <article role="main">
-          <p>Welcome to geeViz’s documentation!</p>
-<p>Check out the <a class="reference internal" href="usage.html"><span class="doc">Usage</span></a> section for further information, including how to
-<a class="reference internal" href="usage.html#installation"><span class="std std-ref">install</span></a> the package.
-==================</p>
+          <section id="geeviz-documentation">
+<h1>geeViz Documentation<a class="headerlink" href="#geeviz-documentation" title="Link to this heading">#</a></h1>
+<ul class="simple">
+<li><p>geeViz is a Python package that helps with data processing, analysis, and visualization in Google Earth Engine (GEE).</p></li>
+<li><dl class="simple">
+<dt>geeViz provides a number of functions for working with GEE data, including:</dt><dd><ul>
+<li><p>Importing and exporting data</p></li>
+<li><p>Data filtering and manipulation</p></li>
+<li><p>Data analysis and visualization</p></li>
+<li><p>Creating and managing maps</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>geeViz works inside and outside Python notebook environments, providing a flexible method for visualizing data in GEE using Python</p></li>
+<li><p>Check out the <a class="reference internal" href="installation.html"><span class="doc">Setup</span></a> section for further information, including how to <a class="reference internal" href="installation.html#installation"><span class="std std-ref">install</span></a> the package.</p></li>
+</ul>
 <section id="search-geeviz-documentation">
-<h1>Search geeViz Documentation<a class="headerlink" href="#search-geeviz-documentation" title="Link to this heading">#</a></h1>
+<h2>Search geeViz Documentation<a class="headerlink" href="#search-geeviz-documentation" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
@@ -208,17 +227,59 @@
 </ul>
 </section>
 <section id="geeviz-overview">
-<h1>geeViz Overview<a class="headerlink" href="#geeviz-overview" title="Link to this heading">#</a></h1>
+<h2>geeViz Overview<a class="headerlink" href="#geeviz-overview" title="Link to this heading">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#usage">Usage</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="generated/geeViz.geeView.html">geeViz.geeView</a></li>
-<li class="toctree-l2"><a class="reference internal" href="generated/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
-<li class="toctree-l2"><a class="reference internal" href="generated/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.geeView.html">geeViz.geeView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.geeView.mapper.html">geeViz.geeView.mapper</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="info/geeViz.geeView.mapper.html#geeViz.geeView.mapper"><code class="docutils literal notranslate"><span class="pre">mapper</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="info/geeViz.geeView.mapper.html#geeViz.geeView.mapper.port"><code class="docutils literal notranslate"><span class="pre">mapper.port</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="info/geeViz.geeView.mapper.html#geeViz.geeView.mapper.__init__"><code class="docutils literal notranslate"><span class="pre">mapper.__init__()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Details</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.geeView">geeViz.geeView</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.geeView.baseDomain"><code class="docutils literal notranslate"><span class="pre">baseDomain()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.geeView.cleanAccessToken"><code class="docutils literal notranslate"><span class="pre">cleanAccessToken()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.geeView.getProject"><code class="docutils literal notranslate"><span class="pre">getProject()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.geeView.mapper"><code class="docutils literal notranslate"><span class="pre">mapper</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="modules.html#geeViz.geeView.mapper.port"><code class="docutils literal notranslate"><span class="pre">mapper.port</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="modules.html#geeViz.geeView.mapper.addLayer"><code class="docutils literal notranslate"><span class="pre">mapper.addLayer()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.getImagesLib">geeViz.getImagesLib</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.getProcessedLandsatScenes"><code class="docutils literal notranslate"><span class="pre">getProcessedLandsatScenes()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.changeDetectionLib">geeViz.changeDetectionLib</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.changeDetectionLib.simpleLANDTRENDR"><code class="docutils literal notranslate"><span class="pre">simpleLANDTRENDR()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.taskManagerLib">geeViz.taskManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.assetManagerLib">geeViz.assetManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.gee2Pandas">geeViz.gee2Pandas</a></li>
 </ul>
 </li>
 </ul>
 </div>
+</section>
 </section>
 
         </article>
@@ -226,12 +287,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="overview.html">
+          <a class="next-page" href="installation.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Overview</div>
+                <div class="title">Setup</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -254,13 +315,33 @@
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">geeViz Documentation</a><ul>
+<li><a class="reference internal" href="#search-geeviz-documentation">Search geeViz Documentation</a></li>
+<li><a class="reference internal" href="#geeviz-overview">geeViz Overview</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=df55f829"></script>
+</div><script src="_static/documentation_options.js?v=3d00bc03"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>

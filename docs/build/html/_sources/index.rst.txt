@@ -3,25 +3,35 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to geeViz's documentation!
+geeViz Documentation
+==================================
 
-Check out the :doc:`usage` section for further information, including how to
-:ref:`install <installation>` the package.
-==================
+* geeViz is a Python package that helps with data processing, analysis, and visualization in Google Earth Engine (GEE). 
+* geeViz provides a number of functions for working with GEE data, including:
+     * Importing and exporting data
+     * Data filtering and manipulation
+     * Data analysis and visualization
+     * Creating and managing maps
+* geeViz works inside and outside Python notebook environments, providing a flexible method for visualizing data in GEE using Python
+
+* Check out the :doc:`installation` section for further information, including how to :ref:`install <installation>` the package. 
+
 
 
 
 Search geeViz Documentation
-==================
+-----------------------------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
 
 geeViz Overview
-==================
+-----------------------------------------
 .. toctree::
+   installation
    overview
+   modules
 
 
 
