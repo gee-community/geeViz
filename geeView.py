@@ -1,17 +1,24 @@
 """
-   Copyright 2024 Ian Housman
+View GEE objects using Python
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+geeViz.geeView is the core module for managing GEE objects on the geeViz mapper object. geeViz instantiates an instance of the `mapper` class as `Map` by default. Layers can be added to the map using `Map.addLayer` or `Map.addTimeLapse` and then viewed using the `Map.view` method. 
 
-       http://www.apache.org/licenses/LICENSE-2.0
+"""
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+"""
+    Copyright 2024 Ian Housman
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 """
 
 # Script to allow GEE objects to be viewed in a web viewer
@@ -172,16 +179,6 @@ if os.path.exists(ee_run_dir) == False:
 # Taken from: https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
 def is_notebook():
     return ee.oauth._in_jupyter_shell()
-    # try:
-    #     shell = get_ipython().__class__.__name__
-    #     if shell == 'ZMQInteractiveShell':
-    #         return True   # Jupyter notebook or qtconsole
-    #     elif shell == 'TerminalInteractiveShell':
-    #         return False  # Terminal running IPython
-    #     else:
-    #         return False  # Other type (?)
-    # except NameError:
-    #     return False      # Probably standard Python interpreter
 
 
 ######################################################################
@@ -340,12 +337,26 @@ class mapper:
                             "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.
                         }
 
+                    "legendLabelLeftBefore" (str) : Label for continuous legend on the left before the numeric component,
+
+                    "legendLabelLeftAfter" (str) : Label for continuous legend on the left after the numeric component,
+
+                    "legendLabelRightBefore" (str) : Label for continuous legend on the right before the numeric component,
+
+                    "legendLabelRightAfter" (str) : Label for continuous legend on the right after the numeric component,
+
                     "canAreaChart" (bool): whether to include this layer for area charting. If the layer is complex, area charting can be quite slow,
 
                     "areaChartParams" (dict, optional): Dictionary of additional parameters for area charting:
 
                         {
                             "reducer" (Reducer, default `ee.Reducer.mean()` if no bandName_class_values, bandName_class_names, bandName_class_palette properties are available. `ee.Reducer.frequencyHistogram` if those are available or `thematic`:True (see below)): The reducer used to compute zonal summary statistics.,
+
+                            "crs" (str, default "EPSG:5070"): the coordinate reference system string to use for are chart zonal stats,
+
+                            "transform" (list, default [30, 0, -2361915, 0, -30, 3177735]): the transform to snap to for zonal stats,
+
+                            "scale" (int, default None): The spatial resolution to use for zonal stats. Only specify if transform : None.
 
                             "line" (bool, default True): Whether to create a line chart,
 
@@ -383,6 +394,22 @@ class mapper:
                     viz["reducer"] = eval(viz["reducer"]).serialize()
                 except Exception as e:  # Most likely it's already serialized
                     e = e
+        if "areaChartParams" in viz.keys():
+
+            if "reducer" in viz["areaChartParams"].keys():
+                try:
+                    viz["areaChartParams"]["reducer"] = viz["areaChartParams"][
+                        "reducer"
+                    ].serialize()
+                except Exception as e:
+                    try:
+                        viz["areaChartParams"]["reducer"] = eval(
+                            viz["areaChartParams"]["reducer"]
+                        ).serialize()
+                    except Exception as e:  # Most likely it's already serialized
+                        e = e
+                print(viz["areaChartParams"]["reducer"])
+
         # Get the id and populate dictionary
         idDict = {}
         if not isinstance(image, dict):
@@ -403,6 +430,84 @@ class mapper:
 
     # Function for adding a layer to the map
     def addTimeLapse(self, image, viz={}, name=None, visible=True):
+        """
+        Adds GEE ImageCollection object to the mapper object that will then be added as an interactive time lapse in the map user interface with a `view` call.
+
+        Args:
+            image (ImageCollection): ee ImageCollecion object to add to the map UI.
+            viz (dict): Primary set of parameters for map visualization, querying, charting, etc. These are largely the same as the `addLayer` function. Keys unique to `addTimeLapse` are provided here first. In addition to the parameters supported by the `addLayer` function in the GEE Code Editor, there are several additional parameters available to help facilitate legend generation, querying, and area summaries. The accepted keys are:
+
+                {
+                    "mosaic" (bool, default False): If an ImageCollection with multiple images per time step is provided, how to reduce it to create the layer that is shown on the map. Uses ee.Reducer.lastNonNull() if True or ee.Reducer.first() if False,
+
+                    "dateFormat" (str, default "YYYY"): The format of the date to show in the slider. E.g. if your data is annual, generally "YYYY" is best. If it's monthly, generally "YYYYMM" is best. Daily, generally "YYYYMMdd"...etc.,
+
+                    "advanceInterval" (str, default 'year'): How much to advance each frame when creating each individual mosaic. One of 'year', 'month' 'week', 'day', 'hour', 'minute', or 'second'.
+
+
+                    "min" (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00.,
+
+                    "max" (int, list, or comma-separated numbers): One numeric value or one per band to map onto FF,
+
+                    "gain" (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00-FF.,
+
+                    "bias" (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00-FF.,
+
+                    "gamma" (int, list, or comma-separated numbers): Gamma correction factor. One numeric value or one per band.,
+
+                    "palette" (str, list, or comma-separated strings): List of CSS-style color strings (single-band previews only).,
+
+                    "opacity" (float): a number between 0 and 1 for initially set opacity.
+
+
+                    "autoViz" (bool): Whether to take image bandName_class_values, bandName_class_names, bandName_class_palette properties to visualize, create a legend (populates `classLegendDict`), and apply class names to any query functions (populates `queryDict`),
+
+                    "canQuery" (bool, default True): Whether a layer can be queried when visible.,
+
+                    "classLegendDict" (dict): A dictionary with a key:value of the name:color(hex) to include in legend. This is auto-populated when `autoViz` : True,
+
+                    "queryDict" (dict): A dictionary with a key:value of the queried number:label to include if queried numeric values have corresponding label names. This is auto-populated when `autoViz` : True,
+
+                    "queryParams" (dict, optional): Dictionary of additional parameters for querying visible map layers:
+
+                        {
+                            "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.
+                        }
+
+                    "legendLabelLeftBefore" (str) : Label for continuous legend on the left before the numeric component,
+
+                    "legendLabelLeftAfter" (str) : Label for continuous legend on the left after the numeric component,
+
+                    "legendLabelRightBefore" (str) : Label for continuous legend on the right before the numeric component,
+
+                    "legendLabelRightAfter" (str) : Label for continuous legend on the right after the numeric component,
+
+                    "canAreaChart" (bool): whether to include this layer for area charting. If the layer is complex, area charting can be quite slow,
+
+                    "areaChartParams" (dict, optional): Dictionary of additional parameters for area charting:
+
+                        {
+                            "reducer" (Reducer, default `ee.Reducer.mean()` if no bandName_class_values, bandName_class_names, bandName_class_palette properties are available. `ee.Reducer.frequencyHistogram` if those are available or `thematic`:True (see below)): The reducer used to compute zonal summary statistics.,
+
+                            "line" (bool, default True): Whether to create a line chart,
+
+                            "sankey" (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs,
+
+                            "thematic" (bool): Whether input has discrete values or not. If True, it forces the reducer to `ee.Reducer.frequencyHistogram()` even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,
+
+                            "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.
+
+
+                        }
+
+                }
+            name (str): Descriptive name for map layer that will be shown on the map UI
+            visible (bool, optional): Whether layer should be visible when map UI loads
+
+        >>> Map.addTimeLapse(ee.Image(1),{'min':0,'max':1,'palette':'000,FFF},"Example Map Layer",True)
+
+
+        """
         if name == None:
             name = "Layer " + str(self.layerNumber)
             self.layerNumber += 1
@@ -420,12 +525,60 @@ class mapper:
         idDict["function"] = "addSerializedTimeLapse"
         self.idDictList.append(idDict)
 
+    def addSelectLayer(self, featureCollection, viz={}, name=None):
+        """
+        Adds GEE featureCollection to the mapper object that will then be added as an interactive selection layer in the map user interface with a `view` call. This layer will be availble for selecting areas to include in area summary charts.
+
+        Args:
+            featureCollection (FeatureCollection): ee FeatureCollecion object to add to the map UI as a selectable layer, where each feature is selectable by clicking on it.
+            viz (dict, optional): Primary set of parameters for map visualization and specifying which feature attribute to use as the feature name (selectLayerNameProperty), etc. In addition to the parameters supported by the `addLayer` function in the GEE Code Editor, there are several additional parameters available to help facilitate legend generation, querying, and area summaries. The accepted keys are:
+
+                {
+                    "strokeColor" (str, default random color): The color of the selection layer on the map,
+
+                    "strokeWeight" (int, default 3): The thickness of the polygon outlines,
+
+                    "selectLayerNameProperty" (str, default first feature attribute with "name" in it or "system:index"): The attribute name to show when a user selects a feature.
+
+
+
+                }
+            name (str): Descriptive name for map layer that will be shown on the map UI
+
+        """
+        if name == None:
+            name = "Layer " + str(self.layerNumber)
+            self.layerNumber += 1
+        print("Adding layer: " + name)
+
+        # Get the id and populate dictionary
+        idDict = {}  # image.getMapId()
+        idDict["item"] = featureCollection.serialize()
+        idDict["name"] = name
+        idDict["visible"] = str(True).lower()
+        idDict["viz"] = json.dumps(viz, sort_keys=False)
+        idDict["function"] = "addSerializedSelectLayer"
+        self.idDictList.append(idDict)
+
     # Function for setting the map zoom
     def setZoom(self, zoom):
+        """
+        Set the map zoom level
+
+        Args:
+            zoom (int): The zoom level to set the map to on loading.
+        """
         self.mapCommandList.append(f"map.setZoom({zoom})")
 
     # Function for centering on a GEE object that has a geometry
     def centerObject(self, feature, zoom=None):
+        """
+        Center the map on an object on loading
+
+        Args:
+            feature (Feature, FeatureCollection, or Geometry): The object to center the map on
+            zoom (int, optional): If provided, will force the map to zoom to this level after centering it on the object. If not provided, the highest zoom level that allows the feature to be viewed fully will be used.
+        """
         try:
             bounds = json.dumps(feature.geometry().bounds(100, "EPSG:4326").getInfo())
         except Exception as e:
@@ -439,6 +592,16 @@ class mapper:
 
     # Function for launching the web map after all adding to the map has been completed
     def view(self, open_browser=None, open_iframe=None, iframe_height=525):
+        """
+        Compiles all map objects and commands and starts the map server
+
+        Args:
+            open_browser (bool): Whether or not to open the browser. If unspecified, will automatically be selected depending on whether geeViz is being used in a notebook (False) or not (True).
+
+            open_iframe (bool): Whether or not to open an iframe. If unspecified, will automatically be selected depending on whether geeViz is being used in a notebook (True) or not (False).
+
+            iframe_height (int, default 525): The height of the iframe shown if running inside a notebook
+        """
         print("Starting webmap")
 
         # Get access token
@@ -568,50 +731,102 @@ class mapper:
                 display(self.IFrame)
 
     def clearMap(self):
+        """
+        Removes all map layers and commands - useful if running geeViz in a notebook and don't want layers/commands from a prior code block to still be included.
+        """
         self.layerNumber = 1
         self.idDictList = []
         self.mapCommandList = []
 
     def setMapTitle(self, title):
+        """
+        Set the title that appears in the left sidebar header and the page title
+
+        Args:
+            title (str, default geeViz Data Explorer): The title to appear in the header on the left sidebar as well as the title of the viewer webpage.
+        """
         title_command = f'Map.setTitle("{title}")'
         if title_command not in self.mapCommandList:
             self.mapCommandList.append(title_command)
 
     def setTitle(self, title):
+        """
+        Set the title that appears in the left sidebar header and the page title
+
+        Args:
+            title (str, default geeViz Data Explorer): The title to appear in the header on the left sidebar as well as the title of the viewer webpage.
+        """
         self.setMapTitle(title)
 
     # Functions to set various click query properties
     def setQueryCRS(self, crs):
+        """
+        The coordinate reference system string to query layers with
+
+        Args:
+            crs (str, default "EPSG:5070"): Which projection (CRS) to use for querying map layers.
+        """
         print("Setting click query crs to: {}".format(crs))
         cmd = f'Map.setQueryCRS("{crs}");'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
     def setQueryScale(self, scale):
+        """
+        What scale to query map layers with. Will also update the size of the box drawn on the map query layers are queried.
+
+        Args:
+            scale (int, default None): The spatial resolution to use for querying map layers in meters. If set, the query transform will be set to None in the map viewer.
+        """
         print("Setting click query scale to: {}".format(scale))
         cmd = f"Map.setQueryScale({scale});"
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
     def setQueryTransform(self, transform):
+        """
+        What transform to query map layers with. Will also update the size of the box drawn on the map query layers are queried.
+
+        Args:
+            transform (list, default [30, 0, -2361915, 0, -30, 3177735]): The snap to grid to use for querying layers on the map. If set, the query scale will be set to None in the map viewer.
+        """
         print("Setting click query transform to: {}".format(transform))
         cmd = f"Map.setQueryTransform({transform});"
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
     def setQueryPrecision(self, chartPrecision=3, chartDecimalProportion=0.25):
+        """
+        What level of precision to show for queried layers. This avoids showing too many digits after the decimal.
+
+        Args:
+            chartPrecision (int, default 3): Will show the larger of `chartPrecision` decimal places or ceiling(`chartDecimalProportion` * total decimal places). E.g. if the number is 1.12345678, 0.25 of 8 decimal places is 2, so 3 will be used and yield 1.123.
+            chartDecimalProportion (float, default 0.25): Will show the larger of `chartPrecision` decimal places or `chartDecimalProportion` * total decimal places. E.g. if the number is 1.1234567891234, ceiling(0.25 of 13) decimal places is 4, so 4 will be used and yield 1.1235.
+        """
         print("Setting click query precision to: {}".format(chartPrecision))
         cmd = f"Map.setQueryPrecision({chartPrecision},{chartDecimalProportion});"
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
     def setQueryDateFormat(self, defaultQueryDateFormat="YYYY-MM-dd"):
+        """
+        Set the date format to be used for any dates when querying.
+
+        Args:
+            defaultQueryDateFormat (str, default "YYYY-MM-dd"): The date format string to use for query outputs with dates. To simplify date outputs, "YYYY" is often used instead of the default.
+        """
         print("Setting default query date format to: {}".format(defaultQueryDateFormat))
         cmd = f'Map.setQueryDateFormat("{defaultQueryDateFormat}");'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
     def setQueryBoxColor(self, color):
+        """
+        Set the color of the query box to something other than yellow
+
+        Args:
+            color (str, default "FFFF00"): Set the default query box color shown on the map by providing a hex color.
+        """
         print("Setting click query box color to: {}".format(color))
         cmd = f'Map.setQueryBoxColor("{color}");'
         if cmd not in self.mapCommandList:
@@ -622,29 +837,47 @@ class mapper:
         self.queryWindowMode = mode
 
     def setQueryToInfoWindow(self):
+        """
+        Set the location of query outputs to an info window popup over the map
+        """
         self.setQueryWindowMode("infoWindow")
 
     def setQueryToSidePane(self):
+        """
+        Set the location of query outputs to the right sidebar above the legend
+        """
         self.setQueryWindowMode("sidePane")
 
     # Turn on query inspector
     def turnOnInspector(self):
+        """
+        Turn on the query inspector tool upon map loading. This is used frequently so map layers can be queried as soon as the map viewer loads.
+        """
         query_command = "Map.turnOnInspector();"
         if query_command not in self.mapCommandList:
             self.mapCommandList.append(query_command)
 
     # Turn on area charting
     def turnOnAutoAreaCharting(self):
+        """
+        Turn on automatic area charting upon map loading. This will automatically update charts by summarizing any visible layers with "canAreaChart" : True any time the map finishes panning or zooming.
+        """
         query_command = "Map.turnOnAutoAreaCharting();"
         if query_command not in self.mapCommandList:
             self.mapCommandList.append(query_command)
 
     def turnOnUserDefinedAreaCharting(self):
+        """
+        Turn on area charting by a user defined area upon map loading. This will update charts by summarizing any visible layers with "canAreaChart" : True when the user draws an area to summarize and hits the `Chart Selected Areas` button in the user interface under `Area Tools -> User-Defined Area`.
+        """
         query_command = "Map.turnOnUserDefinedAreaCharting();"
         if query_command not in self.mapCommandList:
             self.mapCommandList.append(query_command)
 
     def turnOnSelectionAreaCharting(self):
+        """
+        Turn on area charting by a user selected area upon map loading. This will update charts by summarizing any visible layers with "canAreaChart" : True when the user selects selection areas to summarize and hits the `Chart Selected Areas` button in the user interface under `Area Tools -> Select an Area on Map`.
+        """
         query_command = "Map.turnOnSelectionAreaCharting();"
         if query_command not in self.mapCommandList:
             self.mapCommandList.append(query_command)
@@ -661,47 +894,54 @@ class mapper:
             self.mapCommandList.append(command)
 
     def setYLabelMaxLines(self, maxLines):
+        """
+        Set the max number of lines each y-axis label can have.
+
+        Args:
+            maxLines (int, default 5): The maximum number of lines each y-axis label can have. Will simply exclude any remaining lines.
+        """
         command = f"yLabelMaxLines = {maxLines}"
         if command not in self.mapCommandList:
             self.mapCommandList.append(command)
 
     def setYLabelFontSize(self, fontSize):
+        """
+        Set the size of the font on the y-axis labels. Useful when y-axis labels are too large to fit on the chart.
+
+        Args:
+            fontSize (int, default 10): The font size used on the y-axis labels for query charting.
+        """
         command = f"yLabelFontSize = {fontSize}"
         if command not in self.mapCommandList:
             self.mapCommandList.append(command)
 
     # Specify whether layers can be re-ordered by the user
     def setCanReorderLayers(self, canReorderLayers):
+        """
+        Set whether layers can be reordered by dragging layer user interface objects. By default all non timelapse and non geojson layers can be reordereed by dragging.
+
+        Args:
+            canReorderLayers (bool): Set whether layers can be reordered by dragging layer user interface objects. By default all non timelapse and non geojson layers can be reordereed by dragging.
+        """
         command = f"Map.canReorderLayers = {str(canReorderLayers).lower()};"
         if command not in self.mapCommandList:
             self.mapCommandList.append(command)
 
     # Functions to handle batch layer toggling
     def turnOffAllLayers(self):
+        """
+        Turn off all layers added to the mapper object
+        """
         update = {"visible": "false"}
         self.idDictList = [{**d, **update} for d in self.idDictList]
 
     def turnOnAllLayers(self):
+        """
+        Turn on all layers added to the mapper object
+        """
         update = {"visible": "true"}
         self.idDictList = [{**d, **update} for d in self.idDictList]
 
 
 # Instantiate Map object
 Map = mapper()
-
-
-# print(ee.data._initialized  )
-# ee.Authenticate(auth_mode='localhost')
-# ee.Authenticate(force=True)
-
-# ee.Authenticate()
-# ee.Initialize()#project='lcms-292214')
-# ee.data.setCloudApiUserProject('rcr-gee')
-
-# # ee.Initialize()
-# print(ee.data._cloud_api_user_project  )
-# print(refreshToken())
-# f = ee.FeatureCollection('projects/rcr-gee-2/assets/test/DAMAGE_AREAS_FLAT_AllYears_CONUS_Rgn9')
-# print(ee.Image().getInfo())
-# Map.addLayer(f,{'palette':'F00'})
-# Map.turnOnInspector()

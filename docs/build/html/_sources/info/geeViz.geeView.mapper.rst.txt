@@ -15,6 +15,7 @@
    
       ~mapper.__init__
       ~mapper.addLayer
+      ~mapper.addSelectLayer
       ~mapper.addTimeLapse
       ~mapper.centerObject
       ~mapper.clearMap

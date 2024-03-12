@@ -8,6 +8,7 @@ geeViz.geeView
 ----------------------------------------
 .. automodule:: geeViz.geeView
     :members:
+    
 
 .. geeViz.geeView.mapper
 .. ----------------------------------------
@@ -29,7 +30,8 @@ geeViz.taskManagerLib
 ----------------------------------------
 .. automodule:: geeViz.taskManagerLib
     :members:
-
+    :no-index:
+    
 geeViz.assetManagerLib
 ----------------------------------------
 .. automodule:: geeViz.assetManagerLib

@@ -234,86 +234,89 @@
 <tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.addLayer" title="geeViz.geeView.mapper.addLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">addLayer</span></code></a>(image[, viz, name, visible])</p></td>
 <td><p>Adds GEE object to the mapper object that will then be added to the map user interface with a <cite>view</cite> call.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">addTimeLapse</span></code>(image[, viz, name, visible])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.addSelectLayer" title="geeViz.geeView.mapper.addSelectLayer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">addSelectLayer</span></code></a>(featureCollection[, viz, name])</p></td>
+<td><p>Adds GEE featureCollection to the mapper object that will then be added as an interactive selection layer in the map user interface with a <cite>view</cite> call.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.addTimeLapse" title="geeViz.geeView.mapper.addTimeLapse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">addTimeLapse</span></code></a>(image[, viz, name, visible])</p></td>
+<td><p>Adds GEE ImageCollection object to the mapper object that will then be added as an interactive time lapse in the map user interface with a <cite>view</cite> call.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.centerObject" title="geeViz.geeView.mapper.centerObject"><code class="xref py py-obj docutils literal notranslate"><span class="pre">centerObject</span></code></a>(feature[, zoom])</p></td>
+<td><p>Center the map on an object on loading</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.clearMap" title="geeViz.geeView.mapper.clearMap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clearMap</span></code></a>()</p></td>
+<td><p>Removes all map layers and commands - useful if running geeViz in a notebook and don't want layers/commands from a prior code block to still be included.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.setCanReorderLayers" title="geeViz.geeView.mapper.setCanReorderLayers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setCanReorderLayers</span></code></a>(canReorderLayers)</p></td>
+<td><p>Set whether layers can be reordered by dragging layer user interface objects.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.setMapTitle" title="geeViz.geeView.mapper.setMapTitle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setMapTitle</span></code></a>(title)</p></td>
+<td><p>Set the title that appears in the left sidebar header and the page title</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.setQueryBoxColor" title="geeViz.geeView.mapper.setQueryBoxColor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryBoxColor</span></code></a>(color)</p></td>
+<td><p>Set the color of the query box to something other than yellow</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.setQueryCRS" title="geeViz.geeView.mapper.setQueryCRS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryCRS</span></code></a>(crs)</p></td>
+<td><p>The coordinate reference system string to query layers with</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.setQueryDateFormat" title="geeViz.geeView.mapper.setQueryDateFormat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryDateFormat</span></code></a>([defaultQueryDateFormat])</p></td>
+<td><p>Set the date format to be used for any dates when querying.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.setQueryPrecision" title="geeViz.geeView.mapper.setQueryPrecision"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryPrecision</span></code></a>([chartPrecision, ...])</p></td>
+<td><p>What level of precision to show for queried layers.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.setQueryScale" title="geeViz.geeView.mapper.setQueryScale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryScale</span></code></a>(scale)</p></td>
+<td><p>What scale to query map layers with.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.setQueryToInfoWindow" title="geeViz.geeView.mapper.setQueryToInfoWindow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryToInfoWindow</span></code></a>()</p></td>
+<td><p>Set the location of query outputs to an info window popup over the map</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.setQueryToSidePane" title="geeViz.geeView.mapper.setQueryToSidePane"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryToSidePane</span></code></a>()</p></td>
+<td><p>Set the location of query outputs to the right sidebar above the legend</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.setQueryTransform" title="geeViz.geeView.mapper.setQueryTransform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryTransform</span></code></a>(transform)</p></td>
+<td><p>What transform to query map layers with.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryWindowMode</span></code>(mode)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">centerObject</span></code>(feature[, zoom])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.setTitle" title="geeViz.geeView.mapper.setTitle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setTitle</span></code></a>(title)</p></td>
+<td><p>Set the title that appears in the left sidebar header and the page title</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setYLabelBreakLength</span></code>(maxLength)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">clearMap</span></code>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.setYLabelFontSize" title="geeViz.geeView.mapper.setYLabelFontSize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setYLabelFontSize</span></code></a>(fontSize)</p></td>
+<td><p>Set the size of the font on the y-axis labels.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setYLabelMaxLength</span></code>(maxLength)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setCanReorderLayers</span></code>(canReorderLayers)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.setYLabelMaxLines" title="geeViz.geeView.mapper.setYLabelMaxLines"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setYLabelMaxLines</span></code></a>(maxLines)</p></td>
+<td><p>Set the max number of lines each y-axis label can have.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setMapTitle</span></code>(title)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.setZoom" title="geeViz.geeView.mapper.setZoom"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setZoom</span></code></a>(zoom)</p></td>
+<td><p>Set the map zoom level</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryBoxColor</span></code>(color)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.turnOffAllLayers" title="geeViz.geeView.mapper.turnOffAllLayers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">turnOffAllLayers</span></code></a>()</p></td>
+<td><p>Turn off all layers added to the mapper object</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryCRS</span></code>(crs)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.turnOnAllLayers" title="geeViz.geeView.mapper.turnOnAllLayers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">turnOnAllLayers</span></code></a>()</p></td>
+<td><p>Turn on all layers added to the mapper object</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryDateFormat</span></code>([defaultQueryDateFormat])</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.turnOnAutoAreaCharting" title="geeViz.geeView.mapper.turnOnAutoAreaCharting"><code class="xref py py-obj docutils literal notranslate"><span class="pre">turnOnAutoAreaCharting</span></code></a>()</p></td>
+<td><p>Turn on automatic area charting upon map loading.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryPrecision</span></code>([chartPrecision, ...])</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.turnOnInspector" title="geeViz.geeView.mapper.turnOnInspector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">turnOnInspector</span></code></a>()</p></td>
+<td><p>Turn on the query inspector tool upon map loading.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryScale</span></code>(scale)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.turnOnSelectionAreaCharting" title="geeViz.geeView.mapper.turnOnSelectionAreaCharting"><code class="xref py py-obj docutils literal notranslate"><span class="pre">turnOnSelectionAreaCharting</span></code></a>()</p></td>
+<td><p>Turn on area charting by a user selected area upon map loading.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryToInfoWindow</span></code>()</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.turnOnUserDefinedAreaCharting" title="geeViz.geeView.mapper.turnOnUserDefinedAreaCharting"><code class="xref py py-obj docutils literal notranslate"><span class="pre">turnOnUserDefinedAreaCharting</span></code></a>()</p></td>
+<td><p>Turn on area charting by a user defined area upon map loading.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryToSidePane</span></code>()</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryTransform</span></code>(transform)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setQueryWindowMode</span></code>(mode)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setTitle</span></code>(title)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setYLabelBreakLength</span></code>(maxLength)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setYLabelFontSize</span></code>(fontSize)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setYLabelMaxLength</span></code>(maxLength)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setYLabelMaxLines</span></code>(maxLines)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setZoom</span></code>(zoom)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">turnOffAllLayers</span></code>()</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">turnOnAllLayers</span></code>()</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">turnOnAutoAreaCharting</span></code>()</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">turnOnInspector</span></code>()</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">turnOnSelectionAreaCharting</span></code>()</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">turnOnUserDefinedAreaCharting</span></code>()</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">view</span></code>([open_browser, open_iframe, iframe_height])</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.geeView.mapper.view" title="geeViz.geeView.mapper.view"><code class="xref py py-obj docutils literal notranslate"><span class="pre">view</span></code></a>([open_browser, open_iframe, iframe_height])</p></td>
+<td><p>Compiles all map objects and commands and starts the map server</p></td>
 </tr>
 </tbody>
 </table>

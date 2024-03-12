@@ -50,6 +50,9 @@ lossYearViz = {
     "max": endYear,
     "palette": lossYearPalette,
     "canAreaChart": True,
+    "areaChartParams": {
+        "reducer": ee.Reducer.frequencyHistogram(),
+    },
 }
 gainYearViz = {"min": startYear, "max": endYear, "palette": gainYearPalette}
 durationViz = {"min": 1, "max": 5, "palette": durationPalette}
@@ -154,6 +157,22 @@ Map.addLayer(
     },
     "Raw LCMS Land Use Model Probability",
     True,
+)
+
+mtbsBoundaries = ee.FeatureCollection("USFS/GTAC/MTBS/burned_area_boundaries/v1")
+mtbsBoundaries = mtbsBoundaries.map(
+    lambda f: f.set("system:time_start", f.get("Ig_Date"))
+)
+
+
+Map.addSelectLayer(
+    mtbsBoundaries,
+    {
+        "strokeColor": "00F",
+        "layerType": "geeVectorImage",
+        "selectLayerNameProperty": "Incid_Name",
+    },
+    "MTBS Fire Boundaries",
 )
 
 #############################################################################
