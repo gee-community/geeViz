@@ -1,9 +1,9 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here.
 import pathlib
-import sys, os, re
+import sys, os, re, shutil
 
-sys.path.insert(0, os.path.abspath("..Examples/"))
+# sys.path.insert(0, os.path.abspath("..Examples/"))
 # sys.path.insert(0, os.path.abspath(".."))
 
 # sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
@@ -19,8 +19,16 @@ sys.path.insert(0, os.path.abspath("..Examples/"))
 
 def GetVersion(initPath):
     with open(initPath) as f:
-        return re.findall(r"__version__\s*=\s*\'([.\d]+)\'", f.read())[0]
+        return f.read().split("__version__ = ")[-1][:-1]
+        # return re.findall(r"__version__\s*=\s*\'([.\d]+)\'", f.read())[0]
 
+
+build_folder = r"A:\GEE\gee_py_modules_package\geeViz\docs\build"
+info_folder = r"A:\GEE\gee_py_modules_package\geeViz\docs\source\info"
+if os.path.exists(build_folder):
+    shutil.rmtree(build_folder)
+if os.path.exists(info_folder):
+    shutil.rmtree(info_folder)
 
 initPath = r"A:\GEE\gee_py_modules_package\geeViz\__init__.py"
 project = "geeViz"

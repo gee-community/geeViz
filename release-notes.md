@@ -1,3 +1,23 @@
+# geeViz 2024.3.1 Release Notes
+
+## March 21, 2024
+
+### New Features
+
+- **Documentation for geeViz** - We are working on including docstrings and corresponding documentation. The site is located here: <https://gee-community.github.io/geeViz/build/html/index.html>
+
+- **Map Layer area charting option** - Can now include any map layer for area summarizing using the `"canAreaChart" : True` inside the `viz` parameters dictionary. The `lcmsViewerExample.py` and new `mapBiomasViewerExample.py` include the area charting functionality.
+
+- **Map Biomas Example** - There is an example of how to visualize and explore the Map Biomas land use / land cover datasets provided in `mapBiomasViewerExample.py`.
+
+- **Linearly Interpolated Color Ramp** - A function to linearly interpolate a set of hex colors given a starting set of colors, and min and max values (`geeview.get_poly_gradient_ct`). This is useful for charting values. .
+
+### Bug fixes
+
+- When querying layers, if `"autoViz" :True` or a `queryDict` is provided, but there is a queried value that is returned not found in that dictionary, the value will be shown instead. Previously, this would result in an error.
+
+---
+
 # geeViz 2024.2.3 Release Notes
 
 ## February 8, 2024

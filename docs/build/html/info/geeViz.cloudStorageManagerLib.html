@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="geeViz.cloudStorageManagerLib" href="geeViz.cloudStorageManagerLib.html" /><link rel="prev" title="geeViz.taskManagerLib" href="geeViz.taskManagerLib.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="geeViz.gee2Pandas" href="geeViz.gee2Pandas.html" /><link rel="prev" title="geeViz.assetManagerLib" href="geeViz.assetManagerLib.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>geeViz.assetManagerLib - geeViz &#34;2024.3.1&#34; documentation</title>
+        <title>geeViz.cloudStorageManagerLib - geeViz &#34;2024.3.1&#34; documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=362ab14a" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
@@ -162,8 +162,8 @@
 <li class="toctree-l2"><a class="reference internal" href="geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">geeViz.assetManagerLib</a></li>
-<li class="toctree-l2"><a class="reference internal" href="geeViz.cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">geeViz.cloudStorageManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.foliumView.html">geeViz.foliumView</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.phEEnoViz.html">geeViz.phEEnoViz</a></li>
@@ -204,103 +204,25 @@
           </label>
         </div>
         <article role="main">
-          <section id="module-geeViz.assetManagerLib">
-<span id="geeviz-assetmanagerlib"></span><h1>geeViz.assetManagerLib<a class="headerlink" href="#module-geeViz.assetManagerLib" title="Link to this heading">#</a></h1>
-<p>Helpful functions for managing GEE assets</p>
-<p>geeViz.assetManagerLib includes functions for copying, deleting, uploading, changing permissions, and more.</p>
+          <section id="module-geeViz.cloudStorageManagerLib">
+<span id="geeviz-cloudstoragemanagerlib"></span><h1>geeViz.cloudStorageManagerLib<a class="headerlink" href="#module-geeViz.cloudStorageManagerLib" title="Link to this heading">#</a></h1>
+<p>Helpful functions for managing Google Cloud Storage (GCS) buckets and blobs</p>
+<p>geeViz.cloudStorageManagerLib includes functions for renaming, seeing if a blob exists, and deleting blobs.</p>
 <p class="rubric">Functions</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">assetsize</span></code>(asset)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">delete_blob</span></code>(bucket, filename)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">base</span></code>(in_path)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">gcs_exists</span></code>(bucket, filename)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">batchCopy</span></code>(fromFolder, toFolder[, outType])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_blobs</span></code>(bucket_name)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">batchDelete</span></code>(Collection[, type])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">batchUpdateAcl</span></code>(folder[, writers, ...])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_dir</span></code>(in_path)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_end</span></code>(in_path[, add])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">copyByName</span></code>(fromFolder, toFolder, nameIdentifier)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">countTasks</span></code>([break_running_ready])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_asset</span></code>(asset_path[, asset_type, recursive])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_image_collection</span></code>(full_path_to_collection)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">deleteByName</span></code>(Collection, nameIdentifier[, type])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ee_asset_exists</span></code>(path)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getDate</span></code>(year, month, day)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">humansize</span></code>(nbytes)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ingestImageFromGCS</span></code>(gcsURIs, assetPath[, ...])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_leap_year</span></code>(year)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">julian_to_calendar</span></code>(julian_date, year)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">limitTasks</span></code>(taskLimit)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">moveImages</span></code>(images, toFolder[, delete_original])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">now</span></code>([Format])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setDate</span></code>(assetPath, year, month, day)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateACL</span></code>(assetName[, writers, ...])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">uploadToGEEImageAsset</span></code>(localTif, gcsBucket, ...)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">upload_to_gcs</span></code>(image_dir, gs_bucket[, ...])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">upload_to_gee</span></code>(image_dir, gs_bucket, asset_dir)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">verify_path</span></code>(path)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">walkFolders</span></code>(folder[, images])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">walkFoldersTables</span></code>(folder[, tables])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">year_month_day_to_seconds</span></code>(year_month_day)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.cloudStorageManagerLib.rename_blobs" title="geeViz.cloudStorageManagerLib.rename_blobs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rename_blobs</span></code></a>(bucket_name, old_name, new_name)</p></td>
+<td><p>Renames a group of blobs.</p></td>
 </tr>
 </tbody>
 </table>
@@ -312,23 +234,23 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="geeViz.cloudStorageManagerLib.html">
+          <a class="next-page" href="geeViz.gee2Pandas.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">geeViz.cloudStorageManagerLib</div>
+                <div class="title">geeViz.gee2Pandas</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="geeViz.taskManagerLib.html">
+          <a class="prev-page" href="geeViz.assetManagerLib.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">geeViz.taskManagerLib</div>
+                <div class="title">geeViz.assetManagerLib</div>
                 
               </div>
             </a>

@@ -1,4 +1,11 @@
 """
+Get images and organize them so they are easier to work with
+
+geeViz.getImagesLib is the core module for setting up various imageCollections from GEE. Notably, it facilitates Landsat, Sentinel-2, and MODIS data organization. This module helps avoid many common mistakes in GEE. Most functions ease matching band names, ensuring resampling methods are properly set, date wrapping, and helping with cloud and cloud shadow masking. 
+
+"""
+
+"""
    Copyright 2024 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");

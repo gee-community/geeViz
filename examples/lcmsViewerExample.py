@@ -45,6 +45,8 @@ lossYearPalette = ["ffffe5", "fff7bc", "fee391", "fec44f", "fe9929", "ec7014", "
 gainYearPalette = ["c5ee93", "00a398"]
 durationPalette = ["BD1600", "E2F400", "0C2780"]
 
+lossYearPalette = geeView.get_poly_gradient_ct(lossYearPalette, startYear, endYear)
+gainYearPalette = geeView.get_poly_gradient_ct(gainYearPalette, startYear, endYear)
 lossYearViz = {
     "min": startYear,
     "max": endYear,
@@ -52,9 +54,19 @@ lossYearViz = {
     "canAreaChart": True,
     "areaChartParams": {
         "reducer": ee.Reducer.frequencyHistogram(),
+        "palette": lossYearPalette,
     },
 }
-gainYearViz = {"min": startYear, "max": endYear, "palette": gainYearPalette}
+gainYearViz = {
+    "min": startYear,
+    "max": endYear,
+    "palette": gainYearPalette,
+    "canAreaChart": True,
+    "areaChartParams": {
+        "reducer": ee.Reducer.frequencyHistogram(),
+        "palette": gainYearPalette,
+    },
+}
 durationViz = {"min": 1, "max": 5, "palette": durationPalette}
 #############################################################################
 ### Define functions ###
@@ -164,13 +176,13 @@ mtbsBoundaries = mtbsBoundaries.map(
     lambda f: f.set("system:time_start", f.get("Ig_Date"))
 )
 
-
+# For area charting you can select areas to chart a number of ways. One method is using a map layer that is selectable by clicking on each feature.
 Map.addSelectLayer(
     mtbsBoundaries,
     {
-        "strokeColor": "00F",
-        "layerType": "geeVectorImage",
-        "selectLayerNameProperty": "Incid_Name",
+        # "strokeColor": "00F",
+        # "layerType": "geeVectorImage",
+        # "selectLayerNameProperty": "Incid_Name",
     },
     "MTBS Fire Boundaries",
 )
@@ -283,5 +295,6 @@ justChange = change.map(
 ##############################################################################
 Map.centerObject(lcms.filter(ee.Filter.eq("study_area", "CONUS")).first().geometry())
 # Map.turnOnInspector()
+# Map.setQueryToInfoWindow()
 Map.turnOnAutoAreaCharting()
 Map.view()

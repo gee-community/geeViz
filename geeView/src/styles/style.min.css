@@ -300,6 +300,10 @@ table {
 .form-control {
   height: 1.5em;
 }
+.json-input-text-box {
+  resize: vertical;
+  max-height: 10rem;
+}
 
 kbd {
   border: 1px solid #999;
@@ -356,6 +360,8 @@ button {
   max-height: calc(100% - 1.7em);
   background-color: var(--black) !important;
   z-index: 3;
+  /* max-width: 600px; */
+  resize: horizontal;
 }
 .vl {
   border-left: 1px solid var(--deep-brown-20);
@@ -690,7 +696,9 @@ div.dataTables_info {
   border-right: 1px solid #000 !important;
   border-left: 1px solid #000 !important;
 }
-.table{margin-bottom: 0rem;}
+.table {
+  margin-bottom: 0rem;
+}
 .chart-table {
   max-height: 30rem;
   max-width: 90rem;

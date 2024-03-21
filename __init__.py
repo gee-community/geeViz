@@ -1,6 +1,5 @@
+__author__ = "Ian Housman"
+__email__ = "ian.housman@gmail.com"
 
-__author__ = 'Ian Housman'
-__email__ = 'ian.housman@gmail.com'
-
-#Version format yyyy.m.n
-__version__ = '2024.2.3'
+# Version format yyyy.m.n
+__version__ = "2024.3.1"

@@ -1,4 +1,10 @@
 """
+Monitor and manage tasks programatically
+
+geeViz.taskManagerLib facilitates the monitoring and deleting of GEE export tasks.
+"""
+
+"""
    Copyright 2024 Ian Housman & Leah Campbell
 
    Licensed under the Apache License, Version 2.0 (the "License");

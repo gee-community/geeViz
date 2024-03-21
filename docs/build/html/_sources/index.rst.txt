@@ -16,6 +16,7 @@ geeViz Documentation
 
 * Check out the :doc:`installation` section for further information, including how to :ref:`install <installation>` the package. 
 
+* Please note that this documentation website is still under development. Future releases will have more complete documentation.
 
 
 

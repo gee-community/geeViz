@@ -1,4 +1,10 @@
 """
+Apply change detection methods usin GEE
+
+geeViz.changeDetectionLib is the core module for setting up various change detection algorithms within GEE. Notably, it facilitates the use of LandTrendr and CCDC data preparation, application, and output formatting, compression, and decompression. 
+"""
+
+"""
    Copyright 2024 Ian Housman, Leah Campbell, Josh Heyer
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -667,43 +673,11 @@ def simpleLANDTRENDR(
     howManyToPull=2,
     multBy=10000,
 ):
-    """Get Landsat images from all available TM-OLI collections with common bands selected/named, cloud and cloud masking applied, and common indices added.
+    """
+    Takes annual time series input data, properly sets it up for LandTrendr, runs LandTrendr, and provides both a compressed vertex-only format output as well as a basic change detection output.
 
 
-    Args:
-      studyArea (FeatureCollection, Feature, Geometry).
-      startYear (int).
-      endYear (int).
-      startJulian (int).
-      endJulian (int).
-      toaOrSR (str) ="SR".
-      includeSLCOffL7=False.
-      defringeL5=False.
-      applyCloudScore=False.
-      applyFmaskCloudMask=True.
-      applyTDOM=False.
-      applyFmaskCloudShadowMask=True.
-      applyFmaskSnowMask=False.
-      cloudScoreThresh=10.
-      performCloudScoreOffset=True.
-      cloudScorePctl=10.
-      zScoreThresh=-1.
-      shadowSumThresh=0.35.
-      contractPixels=1.5.
-      dilatePixels=3.5.
-      shadowSumBands=["nir". "swir1"].
-      resampleMethod="near".
-      harmonizeOLI=False.
-      preComputedCloudScoreOffset=None.
-      preComputedTDOMIRMean=None.
-      preComputedTDOMIRStdDev=None.
-      landsatCollectionVersion="C2".
-      verbose=False.
-        param1 (int): The first parameter.
-        param2 (str): The second parameter.
 
-    Returns:
-        ImageCollection: A collection of Landsat scenes.
     """
     if run_params == None:
         run_params = default_lt_run_params

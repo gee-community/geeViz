@@ -37,7 +37,22 @@ geeViz.assetManagerLib
 .. automodule:: geeViz.assetManagerLib
     :members:
 
+geeViz.cloudStorageManagerLib
+----------------------------------------
+.. automodule:: geeViz.cloudStorageManagerLib
+    :members:
+
 geeViz.gee2Pandas
 ----------------------------------------
 .. automodule:: geeViz.gee2Pandas
+    :members:
+
+geeViz.foliumView
+----------------------------------------
+.. automodule:: geeViz.foliumView
+    :members:
+
+geeViz.phEEnoViz
+----------------------------------------
+.. automodule:: geeViz.phEEnoViz
     :members:

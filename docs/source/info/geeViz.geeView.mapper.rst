@@ -14,11 +14,13 @@
    .. autosummary::
    
       ~mapper.__init__
+      ~mapper.addAreaChartLayer
       ~mapper.addLayer
       ~mapper.addSelectLayer
       ~mapper.addTimeLapse
       ~mapper.centerObject
       ~mapper.clearMap
+      ~mapper.populateAreaChartLayerSelect
       ~mapper.setCanReorderLayers
       ~mapper.setMapTitle
       ~mapper.setQueryBoxColor

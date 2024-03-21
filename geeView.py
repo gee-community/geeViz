@@ -96,6 +96,7 @@ def getProject(overwrite=False):
     return project_id
 
 
+######################################################################
 def verified_initialize(project=None):
     ee.Initialize(project=project)
     z = ee.Number(1).getInfo()
@@ -103,8 +104,6 @@ def verified_initialize(project=None):
 
 
 # Function to handle various exceptions to initializing to GEE
-
-
 def robustInitializer():
     global project_id
 
@@ -175,6 +174,129 @@ if os.path.exists(ee_run_dir) == False:
 
 
 ######################################################################
+# Linear color gradient functions
+##############################################################
+##############################################################
+def color_dict_maker(gradient):
+    """Takes in a list of RGB sub-lists and returns dictionary of
+    colors in RGB and hex form for use in a graphing function
+    defined later on"""
+    return {
+        "hex": [RGB_to_hex(RGB) for RGB in gradient],
+        "r": [RGB[0] for RGB in gradient],
+        "g": [RGB[1] for RGB in gradient],
+        "b": [RGB[2] for RGB in gradient],
+    }
+
+
+# color functions adapted from bsou.io/posts/color-gradients-with-python
+def hex_to_rgb(value):
+    """Return (red, green, blue) for the color given as #rrggbb."""
+    value = value.lstrip("#")
+    lv = len(value)
+    if lv == 3:
+        lv = 6
+        value = f"{value[0]}{value[0]}{value[1]}{value[1]}{value[2]}{value[2]}"
+
+    return tuple(int(value[i : i + lv // 3], 16) for i in range(0, lv, lv // 3))
+
+
+def RGB_to_hex(RGB):
+    """[255,255,255] -> "#FFFFFF" """
+    # Components need to be integers for hex to make sense
+    RGB = [int(x) for x in RGB]
+    return "#" + "".join(
+        ["0{0:x}".format(v) if v < 16 else "{0:x}".format(v) for v in RGB]
+    )
+
+
+def linear_gradient(start_hex, finish_hex="#FFFFFF", n=10):
+    """returns a gradient list of (n) colors between
+    two hex colors. start_hex and finish_hex
+    should be the full six-digit color string,
+    inlcuding the number sign ("#FFFFFF")"""
+    # Starting and ending colors in RGB form
+    s = hex_to_rgb(start_hex)
+    f = hex_to_rgb(finish_hex)
+    # Initilize a list of the output colors with the starting color
+    RGB_list = [s]
+    # Calcuate a color at each evenly spaced value of t from 1 to n
+    for t in range(1, n):
+        # Interpolate RGB vector for color at the current value of t
+        curr_vector = [
+            int(s[j] + (float(t) / (n - 1)) * (f[j] - s[j])) for j in range(3)
+        ]
+        # Add it to our list of output colors
+        RGB_list.append(curr_vector)
+
+    # print(RGB_list)
+    return color_dict_maker(RGB_list)
+
+
+def polylinear_gradient(colors, n):
+    """returns a list of colors forming linear gradients between
+    all sequential pairs of colors. "n" specifies the total
+    number of desired output colors"""
+    # The number of colors per individual linear gradient
+    n_out = int(float(n) / (len(colors) - 1)) + 1
+    # print(('n',n))
+    # print(('n_out',n_out))
+    # If we don't have an even number of color values, we will remove equally spaced values at the end.
+    apply_offset = False
+    if n % n_out != 0:
+        apply_offset = True
+        n_out = n_out + 1
+        # print(('new n_out',n_out))
+
+    # returns dictionary defined by color_dict()
+    gradient_dict = linear_gradient(colors[0], colors[1], n_out)
+
+    if len(colors) > 1:
+        for col in range(1, len(colors) - 1):
+            next = linear_gradient(colors[col], colors[col + 1], n_out)
+            for k in ("hex", "r", "g", "b"):
+                # Exclude first point to avoid duplicates
+                gradient_dict[k] += next[k][1:]
+
+    # Remove equally spaced values here.
+    if apply_offset:
+        # indList = list(range(len(gradient_dict['hex'])))
+        offset = len(gradient_dict["hex"]) - n
+        sliceval = []
+        # print(('len(gradient_dict)',len(gradient_dict['hex'])))
+        # print(('offset',offset))
+
+        for i in range(1, offset + 1):
+            sliceval.append(int(len(gradient_dict["hex"]) * i / float(offset + 2)))
+        # print(('sliceval',sliceval))
+        for k in ("hex", "r", "g", "b"):
+            gradient_dict[k] = [
+                i for j, i in enumerate(gradient_dict[k]) if j not in sliceval
+            ]
+        # print(('new len dict', len(gradient_dict['hex'])))
+    return gradient_dict
+
+
+def get_poly_gradient_ct(palette, min, max):
+    """
+    Take a palette and a set of min and max stretch values to get a 1:1 value to color hex list
+
+    Args:
+        palette (list): A list of hex code colors that will be interpolated
+
+        min (int): The min value for the stretch
+
+        max (int): The max value for the stretch
+
+    Returns:
+        list: A list of linearly interpolated hex codes where there is 1:1 color to value from min-max (inclusive)
+    """
+    ramp = polylinear_gradient(palette, max - min + 1)
+    return ramp["hex"]
+
+
+##############################################################
+######################################################################
 # Function to check if being run inside a notebook
 # Taken from: https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
 def is_notebook():
@@ -198,6 +320,7 @@ def cleanAccessToken(accessToken):
     return accessToken
 
 
+######################################################################
 # Function to get domain base without any folders
 def baseDomain(url):
     """
@@ -213,6 +336,7 @@ def baseDomain(url):
     return f"{url_parts.scheme}://{url_parts.netloc}"
 
 
+######################################################################
 # Function for using default GEE refresh token to get an access token for geeView
 # Updated 12/23 to reflect updated auth methods for GEE
 def refreshToken():
@@ -224,6 +348,7 @@ def refreshToken():
     return accessToken
 
 
+######################################################################
 # Function for using a GEE white-listed service account key to get an access token for geeView
 def serviceAccountToken(service_key_file_path):
     try:
@@ -240,6 +365,7 @@ def serviceAccountToken(service_key_file_path):
         return None
 
 
+######################################################################
 # Function for running local web server
 def run_local_server(port=8001):
     if sys.version[0] == "2":
@@ -258,6 +384,7 @@ def run_local_server(port=8001):
     os.chdir(cwd)
 
 
+######################################################################
 # Function to see if port is active
 def isPortActive(port=8001):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -269,7 +396,10 @@ def isPortActive(port=8001):
         return False
 
 
-# Set up map object
+######################################################################
+######################################################################
+######################################################################
+# Set up mapper object
 class mapper:
     """Primary geeViz map setup and manipulation object
 
@@ -296,6 +426,7 @@ class mapper:
         self.queryWindowMode = "sidePane"
         self.project = project_id
 
+    ######################################################################
     # Function for adding a layer to the map
     def addLayer(self, image, viz={}, name=None, visible=True):
         """
@@ -360,11 +491,17 @@ class mapper:
 
                             "line" (bool, default True): Whether to create a line chart,
 
-                            "sankey" (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs,
+                            "sankey" (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a `system:time_start` property set for each image,
+
+                            "sankeyTransitionPeriods" (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under `Area Tools -> Transition Charting Periods`. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.
 
                             "thematic" (bool): Whether input has discrete values or not. If True, it forces the reducer to `ee.Reducer.frequencyHistogram()` even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,
 
-                            "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.
+                            "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart,
+
+                            "showGrid" (bool, default True): Whether to show the grid lines on the line or bar graph,
+
+                            "rangeSlider" (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`https://plotly.com/javascript/range-slider/`)
 
 
                         }
@@ -408,7 +545,6 @@ class mapper:
                         ).serialize()
                     except Exception as e:  # Most likely it's already serialized
                         e = e
-                print(viz["areaChartParams"]["reducer"])
 
         # Get the id and populate dictionary
         idDict = {}
@@ -421,13 +557,14 @@ class mapper:
             idDict["item"] = image
             viz["layerType"] = "geoJSONVector"
             idDict["function"] = "addLayer"
-
+        idDict["objectName"] = "Map"
         idDict["name"] = name
         idDict["visible"] = str(visible).lower()
         idDict["viz"] = json.dumps(viz, sort_keys=False)
 
         self.idDictList.append(idDict)
 
+    ######################################################################
     # Function for adding a layer to the map
     def addTimeLapse(self, image, viz={}, name=None, visible=True):
         """
@@ -491,11 +628,17 @@ class mapper:
 
                             "line" (bool, default True): Whether to create a line chart,
 
-                            "sankey" (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs,
+                            "sankey" (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a `system:time_start` property set for each image,
+
+                            "sankeyTransitionPeriods" (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under `Area Tools -> Transition Charting Periods`. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.
 
                             "thematic" (bool): Whether input has discrete values or not. If True, it forces the reducer to `ee.Reducer.frequencyHistogram()` even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,
 
-                            "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.
+                            "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart,
+
+                            "showGrid" (bool, default True): Whethe to show the grid lines on the line or bar graph,
+
+                            "rangeSlider" (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`<https://plotly.com/javascript/range-slider/>`)
 
 
                         }
@@ -518,6 +661,7 @@ class mapper:
             del viz["reducer"]
         # Get the id and populate dictionary
         idDict = {}  # image.getMapId()
+        idDict["objectName"] = "Map"
         idDict["item"] = image.serialize()
         idDict["name"] = name
         idDict["visible"] = str(visible).lower()
@@ -525,6 +669,8 @@ class mapper:
         idDict["function"] = "addSerializedTimeLapse"
         self.idDictList.append(idDict)
 
+    ######################################################################
+    # Function for adding a select layer to the map
     def addSelectLayer(self, featureCollection, viz={}, name=None):
         """
         Adds GEE featureCollection to the mapper object that will then be added as an interactive selection layer in the map user interface with a `view` call. This layer will be availble for selecting areas to include in area summary charts.
@@ -553,6 +699,7 @@ class mapper:
 
         # Get the id and populate dictionary
         idDict = {}  # image.getMapId()
+        idDict["objectName"] = "Map"
         idDict["item"] = featureCollection.serialize()
         idDict["name"] = name
         idDict["visible"] = str(True).lower()
@@ -560,6 +707,7 @@ class mapper:
         idDict["function"] = "addSerializedSelectLayer"
         self.idDictList.append(idDict)
 
+    ######################################################################
     # Function for setting the map zoom
     def setZoom(self, zoom):
         """
@@ -570,6 +718,7 @@ class mapper:
         """
         self.mapCommandList.append(f"map.setZoom({zoom})")
 
+    ######################################################################
     # Function for centering on a GEE object that has a geometry
     def centerObject(self, feature, zoom=None):
         """
@@ -590,6 +739,7 @@ class mapper:
         if zoom != None:
             self.setZoom(zoom)
 
+    ######################################################################
     # Function for launching the web map after all adding to the map has been completed
     def view(self, open_browser=None, open_iframe=None, iframe_height=525):
         """
@@ -619,7 +769,8 @@ class mapper:
 
         # Iterate across each map layer to add js code to
         for idDict in self.idDictList:
-            t = "Map.{}({},{},'{}',{});".format(
+            t = "{}.{}({},{},'{}',{});".format(
+                idDict["objectName"],
                 idDict["function"],
                 idDict["item"],
                 idDict["viz"],
@@ -730,6 +881,7 @@ class mapper:
                 )
                 display(self.IFrame)
 
+    ######################################################################
     def clearMap(self):
         """
         Removes all map layers and commands - useful if running geeViz in a notebook and don't want layers/commands from a prior code block to still be included.
@@ -738,6 +890,7 @@ class mapper:
         self.idDictList = []
         self.mapCommandList = []
 
+    ######################################################################
     def setMapTitle(self, title):
         """
         Set the title that appears in the left sidebar header and the page title
@@ -749,6 +902,7 @@ class mapper:
         if title_command not in self.mapCommandList:
             self.mapCommandList.append(title_command)
 
+    ######################################################################
     def setTitle(self, title):
         """
         Set the title that appears in the left sidebar header and the page title
@@ -758,6 +912,7 @@ class mapper:
         """
         self.setMapTitle(title)
 
+    ######################################################################
     # Functions to set various click query properties
     def setQueryCRS(self, crs):
         """
@@ -771,6 +926,7 @@ class mapper:
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
+    ######################################################################
     def setQueryScale(self, scale):
         """
         What scale to query map layers with. Will also update the size of the box drawn on the map query layers are queried.
@@ -783,6 +939,7 @@ class mapper:
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
+    ######################################################################
     def setQueryTransform(self, transform):
         """
         What transform to query map layers with. Will also update the size of the box drawn on the map query layers are queried.
@@ -795,6 +952,7 @@ class mapper:
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
+    ######################################################################
     def setQueryPrecision(self, chartPrecision=3, chartDecimalProportion=0.25):
         """
         What level of precision to show for queried layers. This avoids showing too many digits after the decimal.
@@ -808,6 +966,7 @@ class mapper:
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
+    ######################################################################
     def setQueryDateFormat(self, defaultQueryDateFormat="YYYY-MM-dd"):
         """
         Set the date format to be used for any dates when querying.
@@ -820,6 +979,7 @@ class mapper:
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
+    ######################################################################
     def setQueryBoxColor(self, color):
         """
         Set the color of the query box to something other than yellow
@@ -832,6 +992,7 @@ class mapper:
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
+    ######################################################################
     # Functions to handle location of query outputs
     def setQueryWindowMode(self, mode):
         self.queryWindowMode = mode
@@ -848,6 +1009,7 @@ class mapper:
         """
         self.setQueryWindowMode("sidePane")
 
+    ######################################################################
     # Turn on query inspector
     def turnOnInspector(self):
         """
@@ -879,6 +1041,79 @@ class mapper:
         Turn on area charting by a user selected area upon map loading. This will update charts by summarizing any visible layers with "canAreaChart" : True when the user selects selection areas to summarize and hits the `Chart Selected Areas` button in the user interface under `Area Tools -> Select an Area on Map`.
         """
         query_command = "Map.turnOnSelectionAreaCharting();"
+        if query_command not in self.mapCommandList:
+            self.mapCommandList.append(query_command)
+
+    def addAreaChartLayer(self, image, params={}, name=None, shouldChart=True):
+        """
+        Use this method to add a layer for area charting that you do not want as a map layer as well. Once you add all area chart layers to the map, you can turn them on using the `Map.populateAreaChartLayerSelect` method. This will create a selection menu inside the `Area Tools -> Area Tools Parameters` menu. You can then turn layers to include in any area charts on and off from that menu.
+
+        Args:
+            image (ImageCollection, Image): ee Image or ImageCollection to add to include in area charting.
+            params (dict): Primary set of parameters for charting setup (colors, chart types, etc), charting, etc. The accepted keys are:
+
+                {
+
+                    "reducer" (Reducer, default `ee.Reducer.mean()` if no bandName_class_values, bandName_class_names, bandName_class_palette properties are available. `ee.Reducer.frequencyHistogram` if those are available or `thematic`:True (see below)): The reducer used to compute zonal summary statistics.,
+
+                    "crs" (str, default "EPSG:5070"): the coordinate reference system string to use for are chart zonal stats,
+
+                    "transform" (list, default [30, 0, -2361915, 0, -30, 3177735]): the transform to snap to for zonal stats,
+
+                    "scale" (int, default None): The spatial resolution to use for zonal stats. Only specify if transform : None.
+
+                    "line" (bool, default True): Whether to create a line chart,
+
+                    "sankey" (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a `system:time_start` property set for each image,
+
+                    "sankeyTransitionPeriods" (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under `Area Tools -> Transition Charting Periods`. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.
+
+                    "thematic" (bool): Whether input has discrete values or not. If True, it forces the reducer to `ee.Reducer.frequencyHistogram()` even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,
+
+                    "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.
+
+                }
+            name (str): Descriptive name for map layer that will be shown on the map UI
+            visible (bool, optional): Whether layer should be visible when map UI loads
+
+        """
+        if name == None:
+            name = "Area Chart Layer " + str(self.layerNumber)
+            self.layerNumber += 1
+        print("Adding area chart layer: " + name)
+
+        # Handle reducer if ee object is given
+        if "reducer" in params.keys():
+            # if str(type(viz['reducer']))=="<class 'ee.Reducer'>":
+            #     viz['reducer'] = eval(viz['reducer'])
+
+            try:
+                params["reducer"] = params["reducer"].serialize()
+            except Exception as e:
+                try:
+                    params["reducer"] = eval(params["reducer"]).serialize()
+                except Exception as e:  # Most likely it's already serialized
+                    e = e
+
+        # Get the id and populate dictionary
+        idDict = {}
+        if not isinstance(image, dict):
+            image = image.serialize()
+
+        idDict["item"] = image
+        idDict["function"] = "addLayer"
+        idDict["objectName"] = "areaChart"
+        idDict["name"] = name
+        idDict["visible"] = str(shouldChart).lower()
+        idDict["viz"] = json.dumps(params, sort_keys=False)
+
+        self.idDictList.append(idDict)
+
+    def populateAreaChartLayerSelect(self):
+        """
+        Once you add all area chart layers to the map, you can turn them on using this method- `Map.populateAreaChartLayerSelect`. This will create a selection menu inside the `Area Tools -> Area Tools Parameters` menu. You can then turn layers to include in any area charts on and off from that menu.
+        """
+        query_command = "areaChart.populateAreaChartLayerSelect();"
         if query_command not in self.mapCommandList:
             self.mapCommandList.append(query_command)
 
