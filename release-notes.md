@@ -1,5 +1,17 @@
 # geeViz 2024.3.1 Release Notes
 
+## March 22, 2024
+
+### Bug fixes
+
+- You can now use `Map.addLayer` or `Map.addTimeLapse` with an image collection where `"canAreaChart" : True` and `"reducer : ee.Reducer.frequencyHistogram()` but no `bandName_class_values`, `bandName_class_names`, `bandName_class_palette` are provided. Previously, this would not work.
+
+- Fixed bug where `areaChartParams` `reducer` was not being handled properly for `Map.addTimeLapse` calls.
+
+---
+
+# geeViz 2024.3.1 Release Notes
+
 ## March 21, 2024
 
 ### New Features
@@ -10,7 +22,7 @@
 
 - **Map Biomas Example** - There is an example of how to visualize and explore the Map Biomas land use / land cover datasets provided in `mapBiomasViewerExample.py`.
 
-- **Linearly Interpolated Color Ramp** - A function to linearly interpolate a set of hex colors given a starting set of colors, and min and max values (`geeview.get_poly_gradient_ct`). This is useful for charting values. .
+- **Linearly Interpolated Color Ramp** - A function to linearly interpolate a set of hex colors given a starting set of colors, and min and max values (`geeview.get_poly_gradient_ct`). This is useful for charting values.
 
 ### Bug fixes
 

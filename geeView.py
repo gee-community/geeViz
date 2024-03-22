@@ -458,6 +458,8 @@ class mapper:
 
                     "canQuery" (bool, default True): Whether a layer can be queried when visible.,
 
+                    "addToLegend" (bool, default True): Whether geeViz should try to create a legend for this layer. Sometimes setting it to `False` is useful for continuous multi-band inputs.,
+
                     "classLegendDict" (dict): A dictionary with a key:value of the name:color(hex) to include in legend. This is auto-populated when `autoViz` : True,
 
                     "queryDict" (dict): A dictionary with a key:value of the queried number:label to include if queried numeric values have corresponding label names. This is auto-populated when `autoViz` : True,
@@ -601,6 +603,8 @@ class mapper:
 
                     "canQuery" (bool, default True): Whether a layer can be queried when visible.,
 
+                    "addToLegend" (bool, default True): Whether geeViz should try to create a legend for this layer. Sometimes setting it to `False` is useful for continuous multi-band inputs.,
+
                     "classLegendDict" (dict): A dictionary with a key:value of the name:color(hex) to include in legend. This is auto-populated when `autoViz` : True,
 
                     "queryDict" (dict): A dictionary with a key:value of the queried number:label to include if queried numeric values have corresponding label names. This is auto-populated when `autoViz` : True,
@@ -659,6 +663,22 @@ class mapper:
         # Handle reducer if ee object is given - delete it
         if "reducer" in viz.keys():
             del viz["reducer"]
+
+        # Handle area charting reducer
+        if "areaChartParams" in viz.keys():
+
+            if "reducer" in viz["areaChartParams"].keys():
+                try:
+                    viz["areaChartParams"]["reducer"] = viz["areaChartParams"][
+                        "reducer"
+                    ].serialize()
+                except Exception as e:
+                    try:
+                        viz["areaChartParams"]["reducer"] = eval(
+                            viz["areaChartParams"]["reducer"]
+                        ).serialize()
+                    except Exception as e:  # Most likely it's already serialized
+                        e = e
         # Get the id and populate dictionary
         idDict = {}  # image.getMapId()
         idDict["objectName"] = "Map"

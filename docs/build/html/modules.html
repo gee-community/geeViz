@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="geeViz.phEEnoViz" href="info/geeViz.phEEnoViz.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Details - geeViz &#34;2024.3.1&#34; documentation</title>
+        <title>Details - geeViz &#34;2024.3.2&#34; documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=362ab14a" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
@@ -123,7 +123,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">geeViz "2024.3.1" documentation</div></a>
+      <a href="index.html"><div class="brand">geeViz "2024.3.2" documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -146,7 +146,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
-  <span class="sidebar-brand-text">geeViz "2024.3.1" documentation</span>
+  <span class="sidebar-brand-text">geeViz "2024.3.2" documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -377,6 +377,7 @@ inlcuding the number sign (“#FFFFFF”)</p>
 <p>”reducer” (Reducer, default ‘ee.Reducer.lastNonNull()’): If an ImageCollection is provided, how to reduce it to create the layer that is shown on the map. Defaults to ee.Reducer.lastNonNull(),</p>
 <p>”autoViz” (bool): Whether to take image bandName_class_values, bandName_class_names, bandName_class_palette properties to visualize, create a legend (populates <cite>classLegendDict</cite>), and apply class names to any query functions (populates <cite>queryDict</cite>),</p>
 <p>”canQuery” (bool, default True): Whether a layer can be queried when visible.,</p>
+<p>”addToLegend” (bool, default True): Whether geeViz should try to create a legend for this layer. Sometimes setting it to <cite>False</cite> is useful for continuous multi-band inputs.,</p>
 <p>”classLegendDict” (dict): A dictionary with a key:value of the name:color(hex) to include in legend. This is auto-populated when <cite>autoViz</cite> : True,</p>
 <p>”queryDict” (dict): A dictionary with a key:value of the queried number:label to include if queried numeric values have corresponding label names. This is auto-populated when <cite>autoViz</cite> : True,</p>
 <p>”queryParams” (dict, optional): Dictionary of additional parameters for querying visible map layers:</p>
@@ -469,6 +470,7 @@ inlcuding the number sign (“#FFFFFF”)</p>
 <p>”opacity” (float): a number between 0 and 1 for initially set opacity.</p>
 <p>”autoViz” (bool): Whether to take image bandName_class_values, bandName_class_names, bandName_class_palette properties to visualize, create a legend (populates <cite>classLegendDict</cite>), and apply class names to any query functions (populates <cite>queryDict</cite>),</p>
 <p>”canQuery” (bool, default True): Whether a layer can be queried when visible.,</p>
+<p>”addToLegend” (bool, default True): Whether geeViz should try to create a legend for this layer. Sometimes setting it to <cite>False</cite> is useful for continuous multi-band inputs.,</p>
 <p>”classLegendDict” (dict): A dictionary with a key:value of the name:color(hex) to include in legend. This is auto-populated when <cite>autoViz</cite> : True,</p>
 <p>”queryDict” (dict): A dictionary with a key:value of the queried number:label to include if queried numeric values have corresponding label names. This is auto-populated when <cite>autoViz</cite> : True,</p>
 <p>”queryParams” (dict, optional): Dictionary of additional parameters for querying visible map layers:</p>
@@ -972,7 +974,7 @@ param2 (str): The second parameter.</p></li>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=a955245a"></script>
+</div><script src="_static/documentation_options.js?v=d3e39fb5"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>
