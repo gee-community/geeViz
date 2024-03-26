@@ -449,8 +449,9 @@ class mapper:
 
                     "palette" (str, list, or comma-separated strings): List of CSS-style color strings (single-band previews only).,
 
-                    "opacity" (float): a number between 0 and 1 for initially set opacity.
+                    "opacity" (float): a number between 0 and 1 for initially set opacity.,
 
+                    "layerType" (str, one of geeImage, geeImageCollection, geeVector, geeVectorImage): Optional parameter, but if specified, can speed up the initial page loading of geeView since it won't have to figure out the layer type. For vector data ("featureCollection", "feature", or "geometry"), you can spcify "geeVector" if you would like to force the vector to be an actual vector object on the client. This can be slow if the ee object is large and/or complex. Otherwise, any "featureCollection", "feature", or "geometry" will default to "geeVectorImage" where the vector is rasterized on-the-fly for map rendering. Any querying of the vector will query the underlying vector data though.,
 
                     "reducer" (Reducer, default 'ee.Reducer.lastNonNull()'): If an ImageCollection is provided, how to reduce it to create the layer that is shown on the map. Defaults to ee.Reducer.lastNonNull(),
 
@@ -596,8 +597,9 @@ class mapper:
 
                     "palette" (str, list, or comma-separated strings): List of CSS-style color strings (single-band previews only).,
 
-                    "opacity" (float): a number between 0 and 1 for initially set opacity.
+                    "opacity" (float): a number between 0 and 1 for initially set opacity.,
 
+                    "layerType" (str, one of geeImage, geeImageCollection, geeVector, geeVectorImage): Optional parameter, but if specified, can speed up the initial page loading of geeView since it won't have to figure out the layer type. For vector data ("featureCollection", "feature", or "geometry"), you can spcify "geeVector" if you would like to force the vector to be an actual vector object on the client. This can be slow if the ee object is large and/or complex. Otherwise, any "featureCollection", "feature", or "geometry" will default to "geeVectorImage" where the vector is rasterized on-the-fly for map rendering. Any querying of the vector will query the underlying vector data though.,
 
                     "autoViz" (bool): Whether to take image bandName_class_values, bandName_class_names, bandName_class_palette properties to visualize, create a legend (populates `classLegendDict`), and apply class names to any query functions (populates `queryDict`),
 

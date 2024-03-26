@@ -20,6 +20,8 @@ geeViz Documentation
 
    Please note that this documentation website is still under development. Future releases will have more complete documentation.
 
+.. raw:: html
+   :file: https://apps.fs.usda.gov/lcms-viewer/
 
 Search geeViz Documentation
 -----------------------------------------
