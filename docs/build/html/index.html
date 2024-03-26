@@ -5,9 +5,9 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Setup" href="installation.html" />
 
-    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>geeViz &#34;2024.3.2&#34; documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=362ab14a" />
+    <link rel="shortcut icon" href="_static/RCR-logo.jpg"/><!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+        <title>geeViz &#34;2024.3.2&#34; docs</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
     
@@ -16,20 +16,32 @@
 
 <style>
   body {
-    --color-code-background: #f8f8f8;
+    --color-code-background: #eeffcc;
   --color-code-foreground: black;
+  --color-brand-primary: #00897b;
+  --color-brand-content: #00897b;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
   
   }
   @media not print {
     body[data-theme="dark"] {
-      --color-code-background: #202020;
-  --color-code-foreground: #d0d0d0;
+      --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
   
     }
     @media (prefers-color-scheme: dark) {
       body:not([data-theme="light"]) {
-        --color-code-background: #202020;
-  --color-code-foreground: #d0d0d0;
+        --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
   
       }
     }
@@ -112,7 +124,11 @@
   <div class="visually-hidden">Hide table of contents sidebar</div>
 </label>
 
-
+<div class="announcement">
+  <aside class="announcement-content">
+     <i>geeViz</i> docs are still in development 
+  </aside>
+</div>
 
 <div class="page">
   <header class="mobile-header">
@@ -123,7 +139,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="#"><div class="brand">geeViz "2024.3.2" documentation</div></a>
+      <a href="#"><div class="brand">geeViz "2024.3.2" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -145,8 +161,11 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
   
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="_static/RCR-logo.jpg" alt="Logo"/>
+  </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.3.2" documentation</span>
+  <span class="sidebar-brand-text">geeViz "2024.3.2" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -158,7 +177,6 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Setup</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="overview.html">Overview</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Overview</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.geeView.html">geeViz.geeView</a></li>
-<li class="toctree-l2"><a class="reference internal" href="info/geeViz.geeView.mapper.html">geeViz.geeView.mapper</a></li>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
@@ -220,8 +238,11 @@
 </li>
 <li><p>geeViz works inside and outside Python notebook environments, providing a flexible method for visualizing data in GEE using Python</p></li>
 <li><p>Check out the <a class="reference internal" href="installation.html"><span class="doc">Setup</span></a> section for further information, including how to <a class="reference internal" href="installation.html#installation"><span class="std std-ref">install</span></a> the package.</p></li>
-<li><p>Please note that this documentation website is still under development. Future releases will have more complete documentation.</p></li>
 </ul>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>Please note that this documentation website is still under development. Future releases will have more complete documentation.</p>
+</div>
 <section id="search-geeviz-documentation">
 <h2>Search geeViz Documentation<a class="headerlink" href="#search-geeviz-documentation" title="Link to this heading">#</a></h2>
 <ul class="simple">
@@ -241,14 +262,6 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.geeView.html">geeViz.geeView</a></li>
-<li class="toctree-l2"><a class="reference internal" href="info/geeViz.geeView.mapper.html">geeViz.geeView.mapper</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="info/geeViz.geeView.mapper.html#geeViz.geeView.mapper"><code class="docutils literal notranslate"><span class="pre">mapper</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="info/geeViz.geeView.mapper.html#geeViz.geeView.mapper.port"><code class="docutils literal notranslate"><span class="pre">mapper.port</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="info/geeViz.geeView.mapper.html#geeViz.geeView.mapper.__init__"><code class="docutils literal notranslate"><span class="pre">mapper.__init__()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
@@ -312,7 +325,7 @@
 <li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.changeDetectionLib.simpleLANDTRENDR"><code class="docutils literal notranslate"><span class="pre">simpleLANDTRENDR()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="modules.html#geeviz-taskmanagerlib">geeViz.taskManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.taskManagerLib">geeViz.taskManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.assetManagerLib">geeViz.assetManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.cloudStorageManagerLib">geeViz.cloudStorageManagerLib</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.cloudStorageManagerLib.rename_blobs"><code class="docutils literal notranslate"><span class="pre">rename_blobs()</span></code></a></li>
@@ -355,7 +368,10 @@
             
           </div>
           <div class="right-details">
-            
+            <div class="icons">
+              <a class="muted-link " href="https://www.redcastleresources.com/" aria-label="RedCastle Resources Inc"><img src='./_static/RCR-logo.jpg'  alt='RedCastle Inc. Logo' href='#' title='Click to learn more about RedCastle Resources Inc.'></a>
+              
+            </div>
           </div>
         </div>
         

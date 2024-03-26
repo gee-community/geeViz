@@ -5,7 +5,6 @@ Overview
    :toctree: info
 
    geeViz.geeView
-   geeViz.geeView.mapper
    geeViz.getImagesLib
    geeViz.changeDetectionLib
    geeViz.taskManagerLib

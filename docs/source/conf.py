@@ -55,3 +55,41 @@ exclude_patterns = []
 
 html_theme = "furo"
 html_static_path = ["_static"]
+
+dark_text_color = "#00bfa5"
+light_text_color = "#00897b"
+
+html_logo = f"./{html_static_path[0]}/RCR-logo.jpg"
+html_favicon = html_logo
+pygments_style = "sphinx"
+pygments_dark_style = "monokai"
+
+html_title = f"{project} {release} docs"
+
+# googleanalytics_id = "G-FZJPNRXYD2"
+
+html_theme_options = {
+    "announcement": f"<i>geeViz</i> docs are still in development",
+    "light_css_variables": {
+        "color-brand-primary": light_text_color,
+        "color-brand-content": light_text_color,
+        # "color-admonition-background": text_color,
+        "font-stack": "Roboto, sans-serif",
+        "font-stack--monospace": "Courier, monospace",
+    },
+    "dark_css_variables": {
+        "color-brand-primary": dark_text_color,
+        "color-brand-content": dark_text_color,
+        # "color-admonition-background": text_color,
+        "font-stack": "Roboto, sans-serif",
+        "font-stack--monospace": "Courier, monospace",
+    },
+    "footer_icons": [
+        {
+            "name": "RedCastle Resources Inc",
+            "url": "https://www.redcastleresources.com/",
+            "html": f"<img src='{html_logo}'  alt='RedCastle Inc. Logo' href='#' title='Click to learn more about RedCastle Resources Inc.'>",
+            "class": "",
+        },
+    ],
+}

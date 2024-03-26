@@ -30,7 +30,6 @@ geeViz.taskManagerLib
 ----------------------------------------
 .. automodule:: geeViz.taskManagerLib
     :members:
-    :no-index:
     
 geeViz.assetManagerLib
 ----------------------------------------
