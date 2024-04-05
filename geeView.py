@@ -268,12 +268,14 @@ def polylinear_gradient(colors, n):
 
         for i in range(1, offset + 1):
             sliceval.append(int(len(gradient_dict["hex"]) * i / float(offset + 2)))
-        # print(('sliceval',sliceval))
+        print(gradient_dict["hex"])
+        print(("sliceval", sliceval))
         for k in ("hex", "r", "g", "b"):
             gradient_dict[k] = [
                 i for j, i in enumerate(gradient_dict[k]) if j not in sliceval
             ]
         # print(('new len dict', len(gradient_dict['hex'])))
+    print(gradient_dict["hex"], len(gradient_dict["hex"]))
     return gradient_dict
 
 
@@ -293,6 +295,9 @@ def get_poly_gradient_ct(palette, min, max):
     """
     ramp = polylinear_gradient(palette, max - min + 1)
     return ramp["hex"]
+
+
+# print(get_poly_gradient_ct(["#FFFF00", "00F", "0FF", "FF0000"], 1, 2))
 
 
 ##############################################################
@@ -711,7 +716,7 @@ class mapper:
 
 
                 }
-            name (str): Descriptive name for map layer that will be shown on the map UI
+            name (str, default None): Descriptive name for map layer that will be shown on the map UI. Will be auto-populated with `Layer N` if not specified
 
         """
         if name == None:
@@ -724,7 +729,7 @@ class mapper:
         idDict["objectName"] = "Map"
         idDict["item"] = featureCollection.serialize()
         idDict["name"] = name
-        idDict["visible"] = str(True).lower()
+        idDict["visible"] = str(False).lower()
         idDict["viz"] = json.dumps(viz, sort_keys=False)
         idDict["function"] = "addSerializedSelectLayer"
         self.idDictList.append(idDict)
@@ -1116,7 +1121,7 @@ class mapper:
                     params["reducer"] = eval(params["reducer"]).serialize()
                 except Exception as e:  # Most likely it's already serialized
                     e = e
-
+        params["serialized"] = True
         # Get the id and populate dictionary
         idDict = {}
         if not isinstance(image, dict):
@@ -1135,7 +1140,8 @@ class mapper:
         """
         Once you add all area chart layers to the map, you can turn them on using this method- `Map.populateAreaChartLayerSelect`. This will create a selection menu inside the `Area Tools -> Area Tools Parameters` menu. You can then turn layers to include in any area charts on and off from that menu.
         """
-        query_command = "areaChart.populateAreaChartLayerSelect();"
+        query_command = "areaChart.populateChartLayerSelect();"
+
         if query_command not in self.mapCommandList:
             self.mapCommandList.append(query_command)
 

@@ -45,27 +45,20 @@ lossYearPalette = ["ffffe5", "fff7bc", "fee391", "fec44f", "fe9929", "ec7014", "
 gainYearPalette = ["c5ee93", "00a398"]
 durationPalette = ["BD1600", "E2F400", "0C2780"]
 
-lossYearPalette = geeView.get_poly_gradient_ct(lossYearPalette, startYear, endYear)
-gainYearPalette = geeView.get_poly_gradient_ct(gainYearPalette, startYear, endYear)
+
 lossYearViz = {
     "min": startYear,
     "max": endYear,
     "palette": lossYearPalette,
     "canAreaChart": True,
-    "areaChartParams": {
-        "reducer": ee.Reducer.frequencyHistogram(),
-        "palette": lossYearPalette,
-    },
+    "areaChartParams": {"reducer": ee.Reducer.frequencyHistogram()},
 }
 gainYearViz = {
     "min": startYear,
     "max": endYear,
     "palette": gainYearPalette,
     "canAreaChart": True,
-    "areaChartParams": {
-        "reducer": ee.Reducer.frequencyHistogram(),
-        "palette": gainYearPalette,
-    },
+    "areaChartParams": {"reducer": ee.Reducer.frequencyHistogram()},
 }
 durationViz = {"min": 1, "max": 5, "palette": durationPalette}
 #############################################################################

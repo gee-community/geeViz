@@ -1,3 +1,17 @@
+# geeViz 2024.4.1 Release Notes
+
+## April 4, 2024
+
+### New Features
+
+- **Area Charting Example Notebook** - There is now an area chart example notebook that walks through many examples of the available methods for charting zonal stats of ee images and imageCollections.
+
+### Bug fixes
+
+- Area charting bug fixes for various data types including thematic images.
+
+---
+
 # geeViz 2024.3.1 Release Notes
 
 ## March 22, 2024

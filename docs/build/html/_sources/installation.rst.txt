@@ -15,6 +15,5 @@ To use geeViz, first install it using pip:
 
 Usage
 ------------
-Check out the :doc:`modules` for usage information, including how to
-:ref:`view maps using geeView`.
+Check out the :doc:`modules` for usage information, including how to view maps using :class:`geeViz.geeView.mapper`.
 

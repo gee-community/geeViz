@@ -16,6 +16,8 @@ geeViz Documentation
 
 * Check out the :doc:`installation` section for further information, including how to :ref:`install <installation>` the package. 
 
+* :class:`geeViz.geeView.mapper` is based on the `Landscape Change Monitoring System (LCMS) Viewer framework <https://apps.fs.usda.gov/lcms-viewer/>`_. It leverages the same code the LCMS viewer uses, providing the ability to easily view and explore GEE objects in a map environment. 
+
 .. attention::
 
    Please note that this documentation website is still under development. Future releases will have more complete documentation.
