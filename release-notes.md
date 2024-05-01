@@ -1,3 +1,13 @@
+# geeViz 2024.5.1 Release Notes
+
+## May 1, 2024
+
+### Bug fixes
+
+- Area charting bug fixes and time lapse uneven dates slider bug fix.
+
+---
+
 # geeViz 2024.4.1 Release Notes
 
 ## April 4, 2024
