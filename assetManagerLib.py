@@ -586,16 +586,36 @@ def ingestImageFromGCS(gcsURIs,assetPath,overwrite = False,bandNames = None,prop
 # Band names must be one name for each band in images that will be uploaded
 # pyramidingPolicy and noDataValues can be one for each band name or only one (that is then repeated for each band)
 # The system:time_start and system:time_end properties are handled automatically assuming the proper format or ee Date object is provided
-def uploadToGEEImageAsset(localTif,gcsBucket,assetPath,overwrite = False,bandNames = None,properties = None,pyramidingPolicy=None,noDataValues=None,gsutil_path='C:/Program Files (x86)/Google/Cloud SDK/google-cloud-sdk/bin/gsutil.cmd'):
-  # List all local files with specified name or wildcard name and make GCS paths for each file
-  localTifs = glob.glob(localTif)
-  gcsURIs = [gcsBucket+'/'+os.path.basename(tif) for tif in localTifs]
+def uploadToGEEImageAsset(
+    localTif,
+    gcsBucket,
+    assetPath,
+    overwrite=False,
+    bandNames=None,
+    properties=None,
+    pyramidingPolicy=None,
+    noDataValues=None,
+    parallel_threshold = '150M',
+    gsutil_path="C:/Program Files (x86)/Google/Cloud SDK/google-cloud-sdk/bin/gsutil.cmd",
+):
+    # List all local files with specified name or wildcard name and make GCS paths for each file
+    localTifs = glob.glob(localTif)
+    gcsURIs = [gcsBucket + "/" + os.path.basename(tif) for tif in localTifs]
 
-  # Upload files to GCS (will not overwrite)
-  uploadCommand = '"{}" -m cp -n -r {} {}'.format(gsutil_path,localTif,gcsBucket)
-  call = subprocess.Popen(uploadCommand)
-  call.wait()
+    # Upload files to GCS (will not overwrite)
+    uploadCommand = '"{}" -o "GSUtil:parallel_composite_upload_threshold="{}" " -m cp -n -r {} {}'.format(gsutil_path,parallel_threshold,localTif,gcsBucket)
+    call = subprocess.Popen(uploadCommand)
+    call.wait()
 
-  # Ingest to GEE
-  ingestImageFromGCS(gcsURIs,assetPath,overwrite = overwrite,bandNames = bandNames,properties = properties,pyramidingPolicy=pyramidingPolicy,noDataValues=noDataValues)
+    # Ingest to GEE
+    ingestImageFromGCS(
+        gcsURIs,
+        assetPath,
+        overwrite=overwrite,
+        bandNames=bandNames,
+        properties=properties,
+        pyramidingPolicy=pyramidingPolicy,
+        noDataValues=noDataValues,
+    )
+
 #########################################################################
