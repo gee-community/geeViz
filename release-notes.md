@@ -8,6 +8,8 @@
 
 - **Sankey Charts Filtering** - Any class less than a specified percentage (`sankeyMinPercentage` - default : `0.5%`) won't be shown in the sankey chart. This helps clean up largely meaningless transitions from being shown.
 
+- **Composite uploading support** - `assetManagerLib.uploadToGEEImageAsset` now supports composite uploading using the `"GSUtil:parallel_composite_upload_threshold` setting.
+
 ### Bug fixes
 
 - Sentinel-2 QA bands being set to null instead of 0 since ~Feb 2024 bug fixed. QA bands are no longer required to have values for a pixel to be valid.

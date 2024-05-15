@@ -703,6 +703,7 @@ def uploadToGEEImageAsset(
     properties=None,
     pyramidingPolicy=None,
     noDataValues=None,
+    parallel_threshold = '150M',
     gsutil_path="C:/Program Files (x86)/Google/Cloud SDK/google-cloud-sdk/bin/gsutil.cmd",
 ):
     # List all local files with specified name or wildcard name and make GCS paths for each file
@@ -710,7 +711,7 @@ def uploadToGEEImageAsset(
     gcsURIs = [gcsBucket + "/" + os.path.basename(tif) for tif in localTifs]
 
     # Upload files to GCS (will not overwrite)
-    uploadCommand = '"{}" -m cp -n -r {} {}'.format(gsutil_path, localTif, gcsBucket)
+    uploadCommand = '"{}" -o "GSUtil:parallel_composite_upload_threshold="{}" " -m cp -n -r {} {}'.format(gsutil_path,parallel_threshold,localTif,gcsBucket)
     call = subprocess.Popen(uploadCommand)
     call.wait()
 
@@ -724,6 +725,5 @@ def uploadToGEEImageAsset(
         pyramidingPolicy=pyramidingPolicy,
         noDataValues=noDataValues,
     )
-
 
 #########################################################################
