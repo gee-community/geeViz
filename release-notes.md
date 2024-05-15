@@ -1,3 +1,75 @@
+# geeViz 2024.4.1 Release Notes
+
+## April 4, 2024
+
+### New Features
+
+- **Area Charting Example Notebook** - There is now an area chart example notebook that walks through many examples of the available methods for charting zonal stats of ee images and imageCollections.
+
+### Bug fixes
+
+- Area charting bug fixes for various data types including thematic images.
+
+---
+
+# geeViz 2024.3.1 Release Notes
+
+## March 22, 2024
+
+### Bug fixes
+
+- You can now use `Map.addLayer` or `Map.addTimeLapse` with an image collection where `"canAreaChart" : True` and `"reducer : ee.Reducer.frequencyHistogram()` but no `bandName_class_values`, `bandName_class_names`, `bandName_class_palette` are provided. Previously, this would not work.
+
+- Fixed bug where `areaChartParams` `reducer` was not being handled properly for `Map.addTimeLapse` calls.
+
+---
+
+# geeViz 2024.3.1 Release Notes
+
+## March 21, 2024
+
+### New Features
+
+- **Documentation for geeViz** - We are working on including docstrings and corresponding documentation. The site is located here: <https://gee-community.github.io/geeViz/build/html/index.html>
+
+- **Map Layer area charting option** - Can now include any map layer for area summarizing using the `"canAreaChart" : True` inside the `viz` parameters dictionary. The `lcmsViewerExample.py` and new `mapBiomasViewerExample.py` include the area charting functionality.
+
+- **Map Biomas Example** - There is an example of how to visualize and explore the Map Biomas land use / land cover datasets provided in `mapBiomasViewerExample.py`.
+
+- **Linearly Interpolated Color Ramp** - A function to linearly interpolate a set of hex colors given a starting set of colors, and min and max values (`geeview.get_poly_gradient_ct`). This is useful for charting values.
+
+### Bug fixes
+
+- When querying layers, if `"autoViz" :True` or a `queryDict` is provided, but there is a queried value that is returned not found in that dictionary, the value will be shown instead. Previously, this would result in an error.
+
+---
+
+# geeViz 2024.2.3 Release Notes
+
+## February 8, 2024
+
+### New Features
+
+- **Map Layer Drag Reordering Deactivation Option** - Can now deactivate layer reordering using `Map.setCanReorderLayers(False)`.
+
+### Bug fixes
+
+- Layer reordering with > 10 layers bug fixed. Sorting > 10 would sort 1,10,11,2,3,....etc. `geeVector` layerType is now frozen and cannot be reordered. This is because Google Maps API doesn't treat vector layers the same as raster overlays.Support for reordering vectors on the map is not supported.
+
+---
+
+# geeViz 2024.2.2 Release Notes
+
+## February 7, 2024
+
+### New Features
+
+- **Map Layer Drag Reordering** - Can now reorder non-timelapse map layers by clicking and dragging the layer up or down. This feature still can be buggy depending on the underlying layer type.
+
+- **CCDC output smart join method** - The `batchFeatherCCDCImgs` will take two time series of CCDC coefficients (typically created using `predictCCDC`), and linearly weight which coefficients are being used across a user-specified transition period (`featherStartYr`,`featherEndYr`). This allows for a smooth way of splicing together two sets of CCDC outputs with a generous overlapping time period. An example script of how to use this will be provided in a future release once this function solidifies a bit.
+
+---
+
 # geeViz 2024.2.1 Release Notes
 
 ## February 7, 2024

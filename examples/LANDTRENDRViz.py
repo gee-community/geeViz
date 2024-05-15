@@ -95,6 +95,7 @@ for bandName in bandNames:
   chooseWhichLoss = 'largest'
   chooseWhichGain = 'largest' 
   howManyToPull = 1
+  
   lossGainDict = cdl.convertToLossGain(ltt, \
                                       format = 'arrayLandTrendr',\
                                       lossMagThresh = lossMagThresh,\

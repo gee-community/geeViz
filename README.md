@@ -16,6 +16,8 @@ Josh Heyer- joshua.heyer@usda.gov
 
 Bonnie Ruefenacht- bonnie.ruefenacht@usda.gov
 
+## [Documentation (in progress)](https://gee-community.github.io/geeViz/build/html/index.html)
+
 ## Installing
 
 1. Become a trusted Google Earth Engine (GEE) tester (<https://signup.earthengine.google.com/#!/>)

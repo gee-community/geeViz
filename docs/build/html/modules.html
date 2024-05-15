@@ -1,0 +1,1005 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="geeViz.phEEnoViz" href="info/geeViz.phEEnoViz.html" />
+
+    <link rel="shortcut icon" href="_static/RCR-logo.jpg"/><!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+        <title>Details - geeViz &#34;2024.4.1&#34; docs</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #00897b;
+  --color-brand-content: #00897b;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+<div class="announcement">
+  <aside class="announcement-content">
+     <i>geeViz</i> docs are still in development 
+  </aside>
+</div>
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">geeViz "2024.4.1" docs</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="_static/RCR-logo.jpg" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">geeViz "2024.4.1" docs</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Setup</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="overview.html">Overview</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Overview</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.geeView.html">geeViz.geeView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.foliumView.html">geeViz.foliumView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.phEEnoViz.html">geeViz.phEEnoViz</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Details</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="details">
+<h1>Details<a class="headerlink" href="#details" title="Link to this heading">#</a></h1>
+<section id="module-geeViz.geeView">
+<span id="geeviz-geeview"></span><h2>geeViz.geeView<a class="headerlink" href="#module-geeViz.geeView" title="Link to this heading">#</a></h2>
+<p>View GEE objects using Python</p>
+<p>geeViz.geeView is the core module for managing GEE objects on the geeViz mapper object. geeViz instantiates an instance of the <cite>mapper</cite> class as <cite>Map</cite> by default. Layers can be added to the map using <cite>Map.addLayer</cite> or <cite>Map.addTimeLapse</cite> and then viewed using the <cite>Map.view</cite> method.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="geeViz.geeView.RGB_to_hex">
+<span class="sig-prename descclassname"><span class="pre">geeViz.geeView.</span></span><span class="sig-name descname"><span class="pre">RGB_to_hex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">RGB</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.RGB_to_hex" title="Link to this definition">#</a></dt>
+<dd><p>[255,255,255] -&gt; “#FFFFFF”</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="geeViz.geeView.baseDomain">
+<span class="sig-prename descclassname"><span class="pre">geeViz.geeView.</span></span><span class="sig-name descname"><span class="pre">baseDomain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.baseDomain" title="Link to this definition">#</a></dt>
+<dd><p>Get root domain for a given url</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>url</strong> (<em>str</em>) – URL to find the base domain of</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>domain of given URL</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="geeViz.geeView.cleanAccessToken">
+<span class="sig-prename descclassname"><span class="pre">geeViz.geeView.</span></span><span class="sig-name descname"><span class="pre">cleanAccessToken</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">accessToken</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.cleanAccessToken" title="Link to this definition">#</a></dt>
+<dd><p>Remove trailing ‘….’ in generated access token</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>accessToken</strong> (<em>str</em>) – Raw access token</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Given access token without trailing ‘….’</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="geeViz.geeView.color_dict_maker">
+<span class="sig-prename descclassname"><span class="pre">geeViz.geeView.</span></span><span class="sig-name descname"><span class="pre">color_dict_maker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gradient</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.color_dict_maker" title="Link to this definition">#</a></dt>
+<dd><p>Takes in a list of RGB sub-lists and returns dictionary of
+colors in RGB and hex form for use in a graphing function
+defined later on</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="geeViz.geeView.getProject">
+<span class="sig-prename descclassname"><span class="pre">geeViz.geeView.</span></span><span class="sig-name descname"><span class="pre">getProject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.getProject" title="Link to this definition">#</a></dt>
+<dd><p>Tries to find the current Google Cloud Platform project id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>overwrite</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not to overwrite a cached project ID file</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The currently selected Google Cloud Platform project id</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="geeViz.geeView.get_poly_gradient_ct">
+<span class="sig-prename descclassname"><span class="pre">geeViz.geeView.</span></span><span class="sig-name descname"><span class="pre">get_poly_gradient_ct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">palette</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.get_poly_gradient_ct" title="Link to this definition">#</a></dt>
+<dd><p>Take a palette and a set of min and max stretch values to get a 1:1 value to color hex list</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>palette</strong> (<em>list</em>) – A list of hex code colors that will be interpolated</p></li>
+<li><p><strong>min</strong> (<em>int</em>) – The min value for the stretch</p></li>
+<li><p><strong>max</strong> (<em>int</em>) – The max value for the stretch</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of linearly interpolated hex codes where there is 1:1 color to value from min-max (inclusive)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="geeViz.geeView.hex_to_rgb">
+<span class="sig-prename descclassname"><span class="pre">geeViz.geeView.</span></span><span class="sig-name descname"><span class="pre">hex_to_rgb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.hex_to_rgb" title="Link to this definition">#</a></dt>
+<dd><p>Return (red, green, blue) for the color given as #rrggbb.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="geeViz.geeView.linear_gradient">
+<span class="sig-prename descclassname"><span class="pre">geeViz.geeView.</span></span><span class="sig-name descname"><span class="pre">linear_gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_hex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">finish_hex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'#FFFFFF'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.linear_gradient" title="Link to this definition">#</a></dt>
+<dd><p>returns a gradient list of (n) colors between
+two hex colors. start_hex and finish_hex
+should be the full six-digit color string,
+inlcuding the number sign (“#FFFFFF”)</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">geeViz.geeView.</span></span><span class="sig-name descname"><span class="pre">mapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper" title="Link to this definition">#</a></dt>
+<dd><p>Primary geeViz map setup and manipulation object</p>
+<p>Map object that is used to manage layers, activated user input methods, and launching the map viewer user interface</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.port">
+<span class="sig-name descname"><span class="pre">port</span></span><a class="headerlink" href="#geeViz.geeView.mapper.port" title="Link to this definition">#</a></dt>
+<dd><p>Which port to user for web server. Sometimes a port will become “stuck,” so this will need set to some other number than what it was set at in previous runs of a given session.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.addAreaChartLayer">
+<span class="sig-name descname"><span class="pre">addAreaChartLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shouldChart</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.addAreaChartLayer" title="Link to this definition">#</a></dt>
+<dd><p>Use this method to add a layer for area charting that you do not want as a map layer as well. Once you add all area chart layers to the map, you can turn them on using the <cite>Map.populateAreaChartLayerSelect</cite> method. This will create a selection menu inside the <cite>Area Tools -&gt; Area Tools Parameters</cite> menu. You can then turn layers to include in any area charts on and off from that menu.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> (<em>ImageCollection</em><em>, </em><em>Image</em>) – ee Image or ImageCollection to add to include in area charting.</p></li>
+<li><p><strong>params</strong> (<em>dict</em>) – <p>Primary set of parameters for charting setup (colors, chart types, etc), charting, etc. The accepted keys are:</p>
+<p>{</p>
+<blockquote>
+<div><p>“reducer” (Reducer, default <cite>ee.Reducer.mean()</cite> if no bandName_class_values, bandName_class_names, bandName_class_palette properties are available. <cite>ee.Reducer.frequencyHistogram</cite> if those are available or <cite>thematic</cite>:True (see below)): The reducer used to compute zonal summary statistics.,</p>
+<p>”crs” (str, default “EPSG:5070”): the coordinate reference system string to use for are chart zonal stats,</p>
+<p>”transform” (list, default [30, 0, -2361915, 0, -30, 3177735]): the transform to snap to for zonal stats,</p>
+<p>”scale” (int, default None): The spatial resolution to use for zonal stats. Only specify if transform : None.</p>
+<p>”line” (bool, default True): Whether to create a line chart,</p>
+<p>”sankey” (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a <cite>system:time_start</cite> property set for each image,</p>
+<p>”sankeyTransitionPeriods” (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under <cite>Area Tools -&gt; Transition Charting Periods</cite>. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.</p>
+<p>”thematic” (bool): Whether input has discrete values or not. If True, it forces the reducer to <cite>ee.Reducer.frequencyHistogram()</cite> even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,</p>
+<p>”palette” (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.</p>
+</div></blockquote>
+<p>}</p>
+</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Descriptive name for map layer that will be shown on the map UI</p></li>
+<li><p><strong>visible</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether layer should be visible when map UI loads</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.addLayer">
+<span class="sig-name descname"><span class="pre">addLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visible</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.addLayer" title="Link to this definition">#</a></dt>
+<dd><p>Adds GEE object to the mapper object that will then be added to the map user interface with a <cite>view</cite> call.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> (<em>ImageCollection</em><em>, </em><em>Image</em><em>, </em><em>Feature</em><em>, </em><em>FeatureCollection</em><em>, </em><em>Geometry</em>) – ee object to add to the map UI.</p></li>
+<li><p><strong>viz</strong> (<em>dict</em>) – <p>Primary set of parameters for map visualization, querying, charting, etc. In addition to the parameters supported by the addLayer function in the GEE Code Editor, there are several additional parameters available to help facilitate legend generation, querying, and area summaries. The accepted keys are:</p>
+<dl>
+<dt>{</dt><dd><p>“min” (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00.,</p>
+<p>”max” (int, list, or comma-separated numbers): One numeric value or one per band to map onto FF,</p>
+<p>”gain” (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00-FF.,</p>
+<p>”bias” (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00-FF.,</p>
+<p>”gamma” (int, list, or comma-separated numbers): Gamma correction factor. One numeric value or one per band.,</p>
+<p>”palette” (str, list, or comma-separated strings): List of CSS-style color strings (single-band previews only).,</p>
+<p>”opacity” (float): a number between 0 and 1 for initially set opacity.,</p>
+<p>”layerType” (str, one of geeImage, geeImageCollection, geeVector, geeVectorImage): Optional parameter, but if specified, can speed up the initial page loading of geeView since it won’t have to figure out the layer type. For vector data (“featureCollection”, “feature”, or “geometry”), you can spcify “geeVector” if you would like to force the vector to be an actual vector object on the client. This can be slow if the ee object is large and/or complex. Otherwise, any “featureCollection”, “feature”, or “geometry” will default to “geeVectorImage” where the vector is rasterized on-the-fly for map rendering. Any querying of the vector will query the underlying vector data though.,</p>
+<p>”reducer” (Reducer, default ‘ee.Reducer.lastNonNull()’): If an ImageCollection is provided, how to reduce it to create the layer that is shown on the map. Defaults to ee.Reducer.lastNonNull(),</p>
+<p>”autoViz” (bool): Whether to take image bandName_class_values, bandName_class_names, bandName_class_palette properties to visualize, create a legend (populates <cite>classLegendDict</cite>), and apply class names to any query functions (populates <cite>queryDict</cite>),</p>
+<p>”canQuery” (bool, default True): Whether a layer can be queried when visible.,</p>
+<p>”addToLegend” (bool, default True): Whether geeViz should try to create a legend for this layer. Sometimes setting it to <cite>False</cite> is useful for continuous multi-band inputs.,</p>
+<p>”classLegendDict” (dict): A dictionary with a key:value of the name:color(hex) to include in legend. This is auto-populated when <cite>autoViz</cite> : True,</p>
+<p>”queryDict” (dict): A dictionary with a key:value of the queried number:label to include if queried numeric values have corresponding label names. This is auto-populated when <cite>autoViz</cite> : True,</p>
+<p>”queryParams” (dict, optional): Dictionary of additional parameters for querying visible map layers:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>{</dt><dd><p>“palette” (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<p>”legendLabelLeftBefore” (str) : Label for continuous legend on the left before the numeric component,</p>
+<p>”legendLabelLeftAfter” (str) : Label for continuous legend on the left after the numeric component,</p>
+<p>”legendLabelRightBefore” (str) : Label for continuous legend on the right before the numeric component,</p>
+<p>”legendLabelRightAfter” (str) : Label for continuous legend on the right after the numeric component,</p>
+<p>”canAreaChart” (bool): whether to include this layer for area charting. If the layer is complex, area charting can be quite slow,</p>
+<p>”areaChartParams” (dict, optional): Dictionary of additional parameters for area charting:</p>
+<blockquote>
+<div><dl>
+<dt>{</dt><dd><p>“reducer” (Reducer, default <cite>ee.Reducer.mean()</cite> if no bandName_class_values, bandName_class_names, bandName_class_palette properties are available. <cite>ee.Reducer.frequencyHistogram</cite> if those are available or <cite>thematic</cite>:True (see below)): The reducer used to compute zonal summary statistics.,</p>
+<p>”crs” (str, default “EPSG:5070”): the coordinate reference system string to use for are chart zonal stats,</p>
+<p>”transform” (list, default [30, 0, -2361915, 0, -30, 3177735]): the transform to snap to for zonal stats,</p>
+<p>”scale” (int, default None): The spatial resolution to use for zonal stats. Only specify if transform : None.</p>
+<p>”line” (bool, default True): Whether to create a line chart,</p>
+<p>”sankey” (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a <cite>system:time_start</cite> property set for each image,</p>
+<p>”sankeyTransitionPeriods” (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under <cite>Area Tools -&gt; Transition Charting Periods</cite>. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.</p>
+<p>”thematic” (bool): Whether input has discrete values or not. If True, it forces the reducer to <cite>ee.Reducer.frequencyHistogram()</cite> even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,</p>
+<p>”palette” (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart,</p>
+<p>”showGrid” (bool, default True): Whether to show the grid lines on the line or bar graph,</p>
+<p>”rangeSlider” (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (<cite>https://plotly.com/javascript/range-slider/</cite>)</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+</dd>
+</dl>
+<p>}</p>
+</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Descriptive name for map layer that will be shown on the map UI</p></li>
+<li><p><strong>visible</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether layer should be visible when map UI loads</p></li>
+</ul>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="mi">1</span><span class="p">),{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;palette&#39;</span><span class="p">:</span><span class="s1">&#39;000,FFF},&quot;Example Map Layer&quot;,True)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.addSelectLayer">
+<span class="sig-name descname"><span class="pre">addSelectLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">featureCollection</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.addSelectLayer" title="Link to this definition">#</a></dt>
+<dd><p>Adds GEE featureCollection to the mapper object that will then be added as an interactive selection layer in the map user interface with a <cite>view</cite> call. This layer will be availble for selecting areas to include in area summary charts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>featureCollection</strong> (<em>FeatureCollection</em>) – ee FeatureCollecion object to add to the map UI as a selectable layer, where each feature is selectable by clicking on it.</p></li>
+<li><p><strong>viz</strong> (<em>dict</em><em>, </em><em>optional</em>) – <p>Primary set of parameters for map visualization and specifying which feature attribute to use as the feature name (selectLayerNameProperty), etc. In addition to the parameters supported by the <cite>addLayer</cite> function in the GEE Code Editor, there are several additional parameters available to help facilitate legend generation, querying, and area summaries. The accepted keys are:</p>
+<dl>
+<dt>{</dt><dd><p>“strokeColor” (str, default random color): The color of the selection layer on the map,</p>
+<p>”strokeWeight” (int, default 3): The thickness of the polygon outlines,</p>
+<p>”selectLayerNameProperty” (str, default first feature attribute with “name” in it or “system:index”): The attribute name to show when a user selects a feature.</p>
+</dd>
+</dl>
+<p>}</p>
+</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>default None</em>) – Descriptive name for map layer that will be shown on the map UI. Will be auto-populated with <cite>Layer N</cite> if not specified</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.addTimeLapse">
+<span class="sig-name descname"><span class="pre">addTimeLapse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visible</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.addTimeLapse" title="Link to this definition">#</a></dt>
+<dd><p>Adds GEE ImageCollection object to the mapper object that will then be added as an interactive time lapse in the map user interface with a <cite>view</cite> call.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> (<em>ImageCollection</em>) – ee ImageCollecion object to add to the map UI.</p></li>
+<li><p><strong>viz</strong> (<em>dict</em>) – <p>Primary set of parameters for map visualization, querying, charting, etc. These are largely the same as the <cite>addLayer</cite> function. Keys unique to <cite>addTimeLapse</cite> are provided here first. In addition to the parameters supported by the <cite>addLayer</cite> function in the GEE Code Editor, there are several additional parameters available to help facilitate legend generation, querying, and area summaries. The accepted keys are:</p>
+<dl>
+<dt>{</dt><dd><p>“mosaic” (bool, default False): If an ImageCollection with multiple images per time step is provided, how to reduce it to create the layer that is shown on the map. Uses ee.Reducer.lastNonNull() if True or ee.Reducer.first() if False,</p>
+<p>”dateFormat” (str, default “YYYY”): The format of the date to show in the slider. E.g. if your data is annual, generally “YYYY” is best. If it’s monthly, generally “YYYYMM” is best. Daily, generally “YYYYMMdd”…etc.,</p>
+<p>”advanceInterval” (str, default ‘year’): How much to advance each frame when creating each individual mosaic. One of ‘year’, ‘month’ ‘week’, ‘day’, ‘hour’, ‘minute’, or ‘second’.</p>
+<p>”min” (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00.,</p>
+<p>”max” (int, list, or comma-separated numbers): One numeric value or one per band to map onto FF,</p>
+<p>”gain” (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00-FF.,</p>
+<p>”bias” (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00-FF.,</p>
+<p>”gamma” (int, list, or comma-separated numbers): Gamma correction factor. One numeric value or one per band.,</p>
+<p>”palette” (str, list, or comma-separated strings): List of CSS-style color strings (single-band previews only).,</p>
+<p>”opacity” (float): a number between 0 and 1 for initially set opacity.,</p>
+<p>”layerType” (str, one of geeImage, geeImageCollection, geeVector, geeVectorImage): Optional parameter, but if specified, can speed up the initial page loading of geeView since it won’t have to figure out the layer type. For vector data (“featureCollection”, “feature”, or “geometry”), you can spcify “geeVector” if you would like to force the vector to be an actual vector object on the client. This can be slow if the ee object is large and/or complex. Otherwise, any “featureCollection”, “feature”, or “geometry” will default to “geeVectorImage” where the vector is rasterized on-the-fly for map rendering. Any querying of the vector will query the underlying vector data though.,</p>
+<p>”autoViz” (bool): Whether to take image bandName_class_values, bandName_class_names, bandName_class_palette properties to visualize, create a legend (populates <cite>classLegendDict</cite>), and apply class names to any query functions (populates <cite>queryDict</cite>),</p>
+<p>”canQuery” (bool, default True): Whether a layer can be queried when visible.,</p>
+<p>”addToLegend” (bool, default True): Whether geeViz should try to create a legend for this layer. Sometimes setting it to <cite>False</cite> is useful for continuous multi-band inputs.,</p>
+<p>”classLegendDict” (dict): A dictionary with a key:value of the name:color(hex) to include in legend. This is auto-populated when <cite>autoViz</cite> : True,</p>
+<p>”queryDict” (dict): A dictionary with a key:value of the queried number:label to include if queried numeric values have corresponding label names. This is auto-populated when <cite>autoViz</cite> : True,</p>
+<p>”queryParams” (dict, optional): Dictionary of additional parameters for querying visible map layers:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>{</dt><dd><p>“palette” (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+<p>”legendLabelLeftBefore” (str) : Label for continuous legend on the left before the numeric component,</p>
+<p>”legendLabelLeftAfter” (str) : Label for continuous legend on the left after the numeric component,</p>
+<p>”legendLabelRightBefore” (str) : Label for continuous legend on the right before the numeric component,</p>
+<p>”legendLabelRightAfter” (str) : Label for continuous legend on the right after the numeric component,</p>
+<p>”canAreaChart” (bool): whether to include this layer for area charting. If the layer is complex, area charting can be quite slow,</p>
+<p>”areaChartParams” (dict, optional): Dictionary of additional parameters for area charting:</p>
+<blockquote>
+<div><dl>
+<dt>{</dt><dd><p>“reducer” (Reducer, default <cite>ee.Reducer.mean()</cite> if no bandName_class_values, bandName_class_names, bandName_class_palette properties are available. <cite>ee.Reducer.frequencyHistogram</cite> if those are available or <cite>thematic</cite>:True (see below)): The reducer used to compute zonal summary statistics.,</p>
+<p>”line” (bool, default True): Whether to create a line chart,</p>
+<p>”sankey” (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a <cite>system:time_start</cite> property set for each image,</p>
+<p>”sankeyTransitionPeriods” (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under <cite>Area Tools -&gt; Transition Charting Periods</cite>. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.</p>
+<p>”thematic” (bool): Whether input has discrete values or not. If True, it forces the reducer to <cite>ee.Reducer.frequencyHistogram()</cite> even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,</p>
+<p>”palette” (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart,</p>
+<p>”showGrid” (bool, default True): Whethe to show the grid lines on the line or bar graph,</p>
+<p>”rangeSlider” (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (<cite>&lt;https://plotly.com/javascript/range-slider/&gt;</cite>)</p>
+</dd>
+</dl>
+<p>}</p>
+</div></blockquote>
+</dd>
+</dl>
+<p>}</p>
+</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Descriptive name for map layer that will be shown on the map UI</p></li>
+<li><p><strong>visible</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether layer should be visible when map UI loads</p></li>
+</ul>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="mi">1</span><span class="p">),{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;palette&#39;</span><span class="p">:</span><span class="s1">&#39;000,FFF},&quot;Example Map Layer&quot;,True)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.centerObject">
+<span class="sig-name descname"><span class="pre">centerObject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">feature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zoom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.centerObject" title="Link to this definition">#</a></dt>
+<dd><p>Center the map on an object on loading</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>feature</strong> (<em>Feature</em><em>, </em><em>FeatureCollection</em><em>, or </em><em>Geometry</em>) – The object to center the map on</p></li>
+<li><p><strong>zoom</strong> (<em>int</em><em>, </em><em>optional</em>) – If provided, will force the map to zoom to this level after centering it on the object. If not provided, the highest zoom level that allows the feature to be viewed fully will be used.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.clearMap">
+<span class="sig-name descname"><span class="pre">clearMap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.clearMap" title="Link to this definition">#</a></dt>
+<dd><p>Removes all map layers and commands - useful if running geeViz in a notebook and don’t want layers/commands from a prior code block to still be included.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.populateAreaChartLayerSelect">
+<span class="sig-name descname"><span class="pre">populateAreaChartLayerSelect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.populateAreaChartLayerSelect" title="Link to this definition">#</a></dt>
+<dd><p>Once you add all area chart layers to the map, you can turn them on using this method- <cite>Map.populateAreaChartLayerSelect</cite>. This will create a selection menu inside the <cite>Area Tools -&gt; Area Tools Parameters</cite> menu. You can then turn layers to include in any area charts on and off from that menu.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.setCanReorderLayers">
+<span class="sig-name descname"><span class="pre">setCanReorderLayers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">canReorderLayers</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.setCanReorderLayers" title="Link to this definition">#</a></dt>
+<dd><p>Set whether layers can be reordered by dragging layer user interface objects. By default all non timelapse and non geojson layers can be reordereed by dragging.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>canReorderLayers</strong> (<em>bool</em>) – Set whether layers can be reordered by dragging layer user interface objects. By default all non timelapse and non geojson layers can be reordereed by dragging.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.setMapTitle">
+<span class="sig-name descname"><span class="pre">setMapTitle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.setMapTitle" title="Link to this definition">#</a></dt>
+<dd><p>Set the title that appears in the left sidebar header and the page title</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>title</strong> (<em>str</em><em>, </em><em>default geeViz Data Explorer</em>) – The title to appear in the header on the left sidebar as well as the title of the viewer webpage.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.setQueryBoxColor">
+<span class="sig-name descname"><span class="pre">setQueryBoxColor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.setQueryBoxColor" title="Link to this definition">#</a></dt>
+<dd><p>Set the color of the query box to something other than yellow</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>color</strong> (<em>str</em><em>, </em><em>default &quot;FFFF00&quot;</em>) – Set the default query box color shown on the map by providing a hex color.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.setQueryCRS">
+<span class="sig-name descname"><span class="pre">setQueryCRS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">crs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.setQueryCRS" title="Link to this definition">#</a></dt>
+<dd><p>The coordinate reference system string to query layers with</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>(</strong><strong>str</strong> (<em>crs</em>) – 5070”): Which projection (CRS) to use for querying map layers.</p></li>
+<li><p><strong>&quot;EPSG</strong> (<em>default</em>) – 5070”): Which projection (CRS) to use for querying map layers.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.setQueryDateFormat">
+<span class="sig-name descname"><span class="pre">setQueryDateFormat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">defaultQueryDateFormat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'YYYY-MM-dd'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.setQueryDateFormat" title="Link to this definition">#</a></dt>
+<dd><p>Set the date format to be used for any dates when querying.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>defaultQueryDateFormat</strong> (<em>str</em><em>, </em><em>default &quot;YYYY-MM-dd&quot;</em>) – The date format string to use for query outputs with dates. To simplify date outputs, “YYYY” is often used instead of the default.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.setQueryPrecision">
+<span class="sig-name descname"><span class="pre">setQueryPrecision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chartPrecision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chartDecimalProportion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.setQueryPrecision" title="Link to this definition">#</a></dt>
+<dd><p>What level of precision to show for queried layers. This avoids showing too many digits after the decimal.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chartPrecision</strong> (<em>int</em><em>, </em><em>default 3</em>) – Will show the larger of <cite>chartPrecision</cite> decimal places or ceiling(<cite>chartDecimalProportion</cite> * total decimal places). E.g. if the number is 1.12345678, 0.25 of 8 decimal places is 2, so 3 will be used and yield 1.123.</p></li>
+<li><p><strong>chartDecimalProportion</strong> (<em>float</em><em>, </em><em>default 0.25</em>) – Will show the larger of <cite>chartPrecision</cite> decimal places or <cite>chartDecimalProportion</cite> * total decimal places. E.g. if the number is 1.1234567891234, ceiling(0.25 of 13) decimal places is 4, so 4 will be used and yield 1.1235.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.setQueryScale">
+<span class="sig-name descname"><span class="pre">setQueryScale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scale</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.setQueryScale" title="Link to this definition">#</a></dt>
+<dd><p>What scale to query map layers with. Will also update the size of the box drawn on the map query layers are queried.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>scale</strong> (<em>int</em><em>, </em><em>default None</em>) – The spatial resolution to use for querying map layers in meters. If set, the query transform will be set to None in the map viewer.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.setQueryToInfoWindow">
+<span class="sig-name descname"><span class="pre">setQueryToInfoWindow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.setQueryToInfoWindow" title="Link to this definition">#</a></dt>
+<dd><p>Set the location of query outputs to an info window popup over the map</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.setQueryToSidePane">
+<span class="sig-name descname"><span class="pre">setQueryToSidePane</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.setQueryToSidePane" title="Link to this definition">#</a></dt>
+<dd><p>Set the location of query outputs to the right sidebar above the legend</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.setQueryTransform">
+<span class="sig-name descname"><span class="pre">setQueryTransform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transform</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.setQueryTransform" title="Link to this definition">#</a></dt>
+<dd><p>What transform to query map layers with. Will also update the size of the box drawn on the map query layers are queried.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>transform</strong> (<em>list</em><em>, </em><em>default</em><em> [</em><em>30</em><em>, </em><em>0</em><em>, </em><em>-2361915</em><em>, </em><em>0</em><em>, </em><em>-30</em><em>, </em><em>3177735</em><em>]</em>) – The snap to grid to use for querying layers on the map. If set, the query scale will be set to None in the map viewer.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.setTitle">
+<span class="sig-name descname"><span class="pre">setTitle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.setTitle" title="Link to this definition">#</a></dt>
+<dd><p>Set the title that appears in the left sidebar header and the page title</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>title</strong> (<em>str</em><em>, </em><em>default geeViz Data Explorer</em>) – The title to appear in the header on the left sidebar as well as the title of the viewer webpage.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.setYLabelFontSize">
+<span class="sig-name descname"><span class="pre">setYLabelFontSize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fontSize</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.setYLabelFontSize" title="Link to this definition">#</a></dt>
+<dd><p>Set the size of the font on the y-axis labels. Useful when y-axis labels are too large to fit on the chart.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fontSize</strong> (<em>int</em><em>, </em><em>default 10</em>) – The font size used on the y-axis labels for query charting.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.setYLabelMaxLines">
+<span class="sig-name descname"><span class="pre">setYLabelMaxLines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">maxLines</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.setYLabelMaxLines" title="Link to this definition">#</a></dt>
+<dd><p>Set the max number of lines each y-axis label can have.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>maxLines</strong> (<em>int</em><em>, </em><em>default 5</em>) – The maximum number of lines each y-axis label can have. Will simply exclude any remaining lines.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.setZoom">
+<span class="sig-name descname"><span class="pre">setZoom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">zoom</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.setZoom" title="Link to this definition">#</a></dt>
+<dd><p>Set the map zoom level</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>zoom</strong> (<em>int</em>) – The zoom level to set the map to on loading.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.turnOffAllLayers">
+<span class="sig-name descname"><span class="pre">turnOffAllLayers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.turnOffAllLayers" title="Link to this definition">#</a></dt>
+<dd><p>Turn off all layers added to the mapper object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.turnOnAllLayers">
+<span class="sig-name descname"><span class="pre">turnOnAllLayers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.turnOnAllLayers" title="Link to this definition">#</a></dt>
+<dd><p>Turn on all layers added to the mapper object</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.turnOnAutoAreaCharting">
+<span class="sig-name descname"><span class="pre">turnOnAutoAreaCharting</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.turnOnAutoAreaCharting" title="Link to this definition">#</a></dt>
+<dd><p>Turn on automatic area charting upon map loading. This will automatically update charts by summarizing any visible layers with “canAreaChart” : True any time the map finishes panning or zooming.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.turnOnInspector">
+<span class="sig-name descname"><span class="pre">turnOnInspector</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.turnOnInspector" title="Link to this definition">#</a></dt>
+<dd><p>Turn on the query inspector tool upon map loading. This is used frequently so map layers can be queried as soon as the map viewer loads.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.turnOnSelectionAreaCharting">
+<span class="sig-name descname"><span class="pre">turnOnSelectionAreaCharting</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.turnOnSelectionAreaCharting" title="Link to this definition">#</a></dt>
+<dd><p>Turn on area charting by a user selected area upon map loading. This will update charts by summarizing any visible layers with “canAreaChart” : True when the user selects selection areas to summarize and hits the <cite>Chart Selected Areas</cite> button in the user interface under <cite>Area Tools -&gt; Select an Area on Map</cite>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.turnOnUserDefinedAreaCharting">
+<span class="sig-name descname"><span class="pre">turnOnUserDefinedAreaCharting</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.turnOnUserDefinedAreaCharting" title="Link to this definition">#</a></dt>
+<dd><p>Turn on area charting by a user defined area upon map loading. This will update charts by summarizing any visible layers with “canAreaChart” : True when the user draws an area to summarize and hits the <cite>Chart Selected Areas</cite> button in the user interface under <cite>Area Tools -&gt; User-Defined Area</cite>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.view">
+<span class="sig-name descname"><span class="pre">view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">open_browser</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">open_iframe</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iframe_height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">525</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.view" title="Link to this definition">#</a></dt>
+<dd><p>Compiles all map objects and commands and starts the map server</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>open_browser</strong> (<em>bool</em>) – Whether or not to open the browser. If unspecified, will automatically be selected depending on whether geeViz is being used in a notebook (False) or not (True).</p></li>
+<li><p><strong>open_iframe</strong> (<em>bool</em>) – Whether or not to open an iframe. If unspecified, will automatically be selected depending on whether geeViz is being used in a notebook (True) or not (False).</p></li>
+<li><p><strong>iframe_height</strong> (<em>int</em><em>, </em><em>default 525</em>) – The height of the iframe shown if running inside a notebook</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="geeViz.geeView.polylinear_gradient">
+<span class="sig-prename descclassname"><span class="pre">geeViz.geeView.</span></span><span class="sig-name descname"><span class="pre">polylinear_gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">colors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.polylinear_gradient" title="Link to this definition">#</a></dt>
+<dd><p>returns a list of colors forming linear gradients between
+all sequential pairs of colors. “n” specifies the total
+number of desired output colors</p>
+</dd></dl>
+
+</section>
+<section id="module-geeViz.getImagesLib">
+<span id="geeviz-getimageslib"></span><h2>geeViz.getImagesLib<a class="headerlink" href="#module-geeViz.getImagesLib" title="Link to this heading">#</a></h2>
+<p>Get images and organize them so they are easier to work with</p>
+<p>geeViz.getImagesLib is the core module for setting up various imageCollections from GEE. Notably, it facilitates Landsat, Sentinel-2, and MODIS data organization. This module helps avoid many common mistakes in GEE. Most functions ease matching band names, ensuring resampling methods are properly set, date wrapping, and helping with cloud and cloud shadow masking.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="geeViz.getImagesLib.getProcessedLandsatScenes">
+<span class="sig-prename descclassname"><span class="pre">geeViz.getImagesLib.</span></span><span class="sig-name descname"><span class="pre">getProcessedLandsatScenes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">studyArea</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startYear</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endYear</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startJulian</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endJulian</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toaOrSR</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'SR'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeSLCOffL7</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defringeL5</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">applyCloudScore</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">applyFmaskCloudMask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">applyTDOM</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">applyFmaskCloudShadowMask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">applyFmaskSnowMask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cloudScoreThresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">performCloudScoreOffset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cloudScorePctl</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zScoreThresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shadowSumThresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.35</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contractPixels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dilatePixels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shadowSumBands</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['nir',</span> <span class="pre">'swir1']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resampleMethod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'near'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">harmonizeOLI</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preComputedCloudScoreOffset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preComputedTDOMIRMean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preComputedTDOMIRStdDev</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">landsatCollectionVersion</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'C2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.getImagesLib.getProcessedLandsatScenes" title="Link to this definition">#</a></dt>
+<dd><p>Get Landsat images from all available TM-OLI collections with common bands selected/named, cloud and cloud masking applied, and common indices added.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>studyArea</strong> (<em>FeatureCollection</em><em>, </em><em>Feature</em><em>, </em><em>Geometry</em>) – </p></li>
+<li><p><strong>startYear</strong> (<em>int</em>) – </p></li>
+<li><p><strong>endYear</strong> (<em>int</em>) – </p></li>
+<li><p><strong>startJulian</strong> (<em>int</em>) – </p></li>
+<li><p><strong>endJulian</strong> (<em>int</em>) – </p></li>
+<li><p><strong>toaOrSR</strong> (<em>str</em>) – </p></li>
+<li><p><strong>includeSLCOffL7=False.</strong> – </p></li>
+<li><p><strong>defringeL5=False.</strong> – </p></li>
+<li><p><strong>applyCloudScore=False.</strong> – </p></li>
+<li><p><strong>applyFmaskCloudMask=True.</strong> – </p></li>
+<li><p><strong>applyTDOM=False.</strong> – </p></li>
+<li><p><strong>applyFmaskCloudShadowMask=True.</strong> – </p></li>
+<li><p><strong>applyFmaskSnowMask=False.</strong> – </p></li>
+<li><p><strong>cloudScoreThresh=10.</strong> – </p></li>
+<li><p><strong>performCloudScoreOffset=True.</strong> – </p></li>
+<li><p><strong>cloudScorePctl=10.</strong> – </p></li>
+<li><p><strong>zScoreThresh=-1.</strong> – </p></li>
+<li><p><strong>shadowSumThresh=0.35.</strong> – </p></li>
+<li><p><strong>contractPixels=1.5.</strong> – </p></li>
+<li><p><strong>dilatePixels=3.5.</strong> – </p></li>
+<li><p><strong>&quot;swir1&quot;</strong><strong>]</strong><strong>.</strong> (<em>shadowSumBands=</em><em>[</em><em>&quot;nir&quot;.</em>) – </p></li>
+<li><p><strong>resampleMethod=&quot;near&quot;.</strong> – </p></li>
+<li><p><strong>harmonizeOLI=False.</strong> – </p></li>
+<li><p><strong>preComputedCloudScoreOffset=None.</strong> – </p></li>
+<li><p><strong>preComputedTDOMIRMean=None.</strong> – </p></li>
+<li><p><strong>preComputedTDOMIRStdDev=None.</strong> – </p></li>
+<li><p><strong>landsatCollectionVersion=&quot;C2&quot;.</strong> – </p></li>
+<li><p><strong>verbose=False.</strong> – param1 (int): The first parameter.
+param2 (str): The second parameter.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A collection of Landsat scenes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ImageCollection</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-geeViz.changeDetectionLib">
+<span id="geeviz-changedetectionlib"></span><h2>geeViz.changeDetectionLib<a class="headerlink" href="#module-geeViz.changeDetectionLib" title="Link to this heading">#</a></h2>
+<p>Apply change detection methods usin GEE</p>
+<p>geeViz.changeDetectionLib is the core module for setting up various change detection algorithms within GEE. Notably, it facilitates the use of LandTrendr and CCDC data preparation, application, and output formatting, compression, and decompression.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="geeViz.changeDetectionLib.simpleLANDTRENDR">
+<span class="sig-prename descclassname"><span class="pre">geeViz.changeDetectionLib.</span></span><span class="sig-name descname"><span class="pre">simpleLANDTRENDR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startYear</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endYear</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indexName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'NBR'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lossMagThresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lossSlopeThresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gainMagThresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gainSlopeThresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slowLossDurationThresh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chooseWhichLoss</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'largest'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chooseWhichGain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'largest'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addToMap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">howManyToPull</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multBy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.changeDetectionLib.simpleLANDTRENDR" title="Link to this definition">#</a></dt>
+<dd><p>Takes annual time series input data, properly sets it up for LandTrendr, runs LandTrendr, and provides both a compressed vertex-only format output as well as a basic change detection output.</p>
+</dd></dl>
+
+</section>
+<section id="module-geeViz.taskManagerLib">
+<span id="geeviz-taskmanagerlib"></span><h2>geeViz.taskManagerLib<a class="headerlink" href="#module-geeViz.taskManagerLib" title="Link to this heading">#</a></h2>
+<p>Monitor and manage tasks programatically</p>
+<p>geeViz.taskManagerLib facilitates the monitoring and deleting of GEE export tasks.</p>
+</section>
+<section id="module-geeViz.assetManagerLib">
+<span id="geeviz-assetmanagerlib"></span><h2>geeViz.assetManagerLib<a class="headerlink" href="#module-geeViz.assetManagerLib" title="Link to this heading">#</a></h2>
+<p>Helpful functions for managing GEE assets</p>
+<p>geeViz.assetManagerLib includes functions for copying, deleting, uploading, changing permissions, and more.</p>
+</section>
+<section id="module-geeViz.cloudStorageManagerLib">
+<span id="geeviz-cloudstoragemanagerlib"></span><h2>geeViz.cloudStorageManagerLib<a class="headerlink" href="#module-geeViz.cloudStorageManagerLib" title="Link to this heading">#</a></h2>
+<p>Helpful functions for managing Google Cloud Storage (GCS) buckets and blobs</p>
+<p>geeViz.cloudStorageManagerLib includes functions for renaming, seeing if a blob exists, and deleting blobs.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="geeViz.cloudStorageManagerLib.rename_blobs">
+<span class="sig-prename descclassname"><span class="pre">geeViz.cloudStorageManagerLib.</span></span><span class="sig-name descname"><span class="pre">rename_blobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">old_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.cloudStorageManagerLib.rename_blobs" title="Link to this definition">#</a></dt>
+<dd><p>Renames a group of blobs.</p>
+</dd></dl>
+
+</section>
+<section id="module-geeViz.gee2Pandas">
+<span id="geeviz-gee2pandas"></span><h2>geeViz.gee2Pandas<a class="headerlink" href="#module-geeViz.gee2Pandas" title="Link to this heading">#</a></h2>
+<p>Take data from GEE to Pandas and back</p>
+<p>geeViz.gee2Pandas facilitates converting GEE objects to tabular formats that work well in more common packages such as Pandas.</p>
+</section>
+<section id="module-geeViz.foliumView">
+<span id="geeviz-foliumview"></span><h2>geeViz.foliumView<a class="headerlink" href="#module-geeViz.foliumView" title="Link to this heading">#</a></h2>
+<p>View GEE objects using Folium</p>
+<p>geeViz.foliumView is facilitates viewing GEE objects in Folium. Layers can be added to the map using <cite>Map.addLayer</cite> and then viewed using the <cite>Map.view</cite> method.</p>
+</section>
+<section id="module-geeViz.phEEnoViz">
+<span id="geeviz-pheenoviz"></span><h2>geeViz.phEEnoViz<a class="headerlink" href="#module-geeViz.phEEnoViz" title="Link to this heading">#</a></h2>
+<p>Visualize the spectral seasonality of an area to facilitate composting methods development</p>
+<p>geeViz.phEEnoViz facilitates the creation of plots to show the seasonality of an area. This is a good tool for deciding what date ranges to use for compositing.</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          <a class="prev-page" href="info/geeViz.phEEnoViz.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">geeViz.phEEnoViz</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024, Ian Housman, Josh Heyer
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://www.redcastleresources.com/" aria-label="RedCastle Resources Inc"><img src='./_static/RCR-logo.jpg'  alt='RedCastle Inc. Logo' href='#' title='Click to learn more about RedCastle Resources Inc.'></a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Details</a><ul>
+<li><a class="reference internal" href="#module-geeViz.geeView">geeViz.geeView</a><ul>
+<li><a class="reference internal" href="#geeViz.geeView.RGB_to_hex"><code class="docutils literal notranslate"><span class="pre">RGB_to_hex()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.baseDomain"><code class="docutils literal notranslate"><span class="pre">baseDomain()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.cleanAccessToken"><code class="docutils literal notranslate"><span class="pre">cleanAccessToken()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.color_dict_maker"><code class="docutils literal notranslate"><span class="pre">color_dict_maker()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.getProject"><code class="docutils literal notranslate"><span class="pre">getProject()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.get_poly_gradient_ct"><code class="docutils literal notranslate"><span class="pre">get_poly_gradient_ct()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.hex_to_rgb"><code class="docutils literal notranslate"><span class="pre">hex_to_rgb()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.linear_gradient"><code class="docutils literal notranslate"><span class="pre">linear_gradient()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper"><code class="docutils literal notranslate"><span class="pre">mapper</span></code></a><ul>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.port"><code class="docutils literal notranslate"><span class="pre">mapper.port</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.addAreaChartLayer"><code class="docutils literal notranslate"><span class="pre">mapper.addAreaChartLayer()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.addLayer"><code class="docutils literal notranslate"><span class="pre">mapper.addLayer()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.addSelectLayer"><code class="docutils literal notranslate"><span class="pre">mapper.addSelectLayer()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.addTimeLapse"><code class="docutils literal notranslate"><span class="pre">mapper.addTimeLapse()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.centerObject"><code class="docutils literal notranslate"><span class="pre">mapper.centerObject()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.clearMap"><code class="docutils literal notranslate"><span class="pre">mapper.clearMap()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.populateAreaChartLayerSelect"><code class="docutils literal notranslate"><span class="pre">mapper.populateAreaChartLayerSelect()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.setCanReorderLayers"><code class="docutils literal notranslate"><span class="pre">mapper.setCanReorderLayers()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.setMapTitle"><code class="docutils literal notranslate"><span class="pre">mapper.setMapTitle()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.setQueryBoxColor"><code class="docutils literal notranslate"><span class="pre">mapper.setQueryBoxColor()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.setQueryCRS"><code class="docutils literal notranslate"><span class="pre">mapper.setQueryCRS()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.setQueryDateFormat"><code class="docutils literal notranslate"><span class="pre">mapper.setQueryDateFormat()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.setQueryPrecision"><code class="docutils literal notranslate"><span class="pre">mapper.setQueryPrecision()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.setQueryScale"><code class="docutils literal notranslate"><span class="pre">mapper.setQueryScale()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.setQueryToInfoWindow"><code class="docutils literal notranslate"><span class="pre">mapper.setQueryToInfoWindow()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.setQueryToSidePane"><code class="docutils literal notranslate"><span class="pre">mapper.setQueryToSidePane()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.setQueryTransform"><code class="docutils literal notranslate"><span class="pre">mapper.setQueryTransform()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.setTitle"><code class="docutils literal notranslate"><span class="pre">mapper.setTitle()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.setYLabelFontSize"><code class="docutils literal notranslate"><span class="pre">mapper.setYLabelFontSize()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.setYLabelMaxLines"><code class="docutils literal notranslate"><span class="pre">mapper.setYLabelMaxLines()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.setZoom"><code class="docutils literal notranslate"><span class="pre">mapper.setZoom()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.turnOffAllLayers"><code class="docutils literal notranslate"><span class="pre">mapper.turnOffAllLayers()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.turnOnAllLayers"><code class="docutils literal notranslate"><span class="pre">mapper.turnOnAllLayers()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.turnOnAutoAreaCharting"><code class="docutils literal notranslate"><span class="pre">mapper.turnOnAutoAreaCharting()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.turnOnInspector"><code class="docutils literal notranslate"><span class="pre">mapper.turnOnInspector()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.turnOnSelectionAreaCharting"><code class="docutils literal notranslate"><span class="pre">mapper.turnOnSelectionAreaCharting()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.turnOnUserDefinedAreaCharting"><code class="docutils literal notranslate"><span class="pre">mapper.turnOnUserDefinedAreaCharting()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.view"><code class="docutils literal notranslate"><span class="pre">mapper.view()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#geeViz.geeView.polylinear_gradient"><code class="docutils literal notranslate"><span class="pre">polylinear_gradient()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-geeViz.getImagesLib">geeViz.getImagesLib</a><ul>
+<li><a class="reference internal" href="#geeViz.getImagesLib.getProcessedLandsatScenes"><code class="docutils literal notranslate"><span class="pre">getProcessedLandsatScenes()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-geeViz.changeDetectionLib">geeViz.changeDetectionLib</a><ul>
+<li><a class="reference internal" href="#geeViz.changeDetectionLib.simpleLANDTRENDR"><code class="docutils literal notranslate"><span class="pre">simpleLANDTRENDR()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-geeViz.taskManagerLib">geeViz.taskManagerLib</a></li>
+<li><a class="reference internal" href="#module-geeViz.assetManagerLib">geeViz.assetManagerLib</a></li>
+<li><a class="reference internal" href="#module-geeViz.cloudStorageManagerLib">geeViz.cloudStorageManagerLib</a><ul>
+<li><a class="reference internal" href="#geeViz.cloudStorageManagerLib.rename_blobs"><code class="docutils literal notranslate"><span class="pre">rename_blobs()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-geeViz.gee2Pandas">geeViz.gee2Pandas</a></li>
+<li><a class="reference internal" href="#module-geeViz.foliumView">geeViz.foliumView</a></li>
+<li><a class="reference internal" href="#module-geeViz.phEEnoViz">geeViz.phEEnoViz</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=044377b6"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=32e29ea5"></script>
+    </body>
+</html>
