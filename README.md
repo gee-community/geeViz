@@ -57,6 +57,8 @@ Bonnie Ruefenacht- bonnie.ruefenacht@usda.gov
 - When these examples are run, a viewer should open in your default browser. It will show any data that was added to the map.
 - Layers can be toggled on/off and opacity changed. They can also be measured and queried under the TOOLS pane.
 
+![Example of GFS data using the `Map.addTimeLapse` method](examples/data/GFS_Example.gif)
+
 ## Contributing
 
 1. If you have a great piece of GEE code to share, please contact a POC listed above.

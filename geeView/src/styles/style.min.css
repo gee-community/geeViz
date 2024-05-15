@@ -132,6 +132,9 @@ body {
   outline: none !important;
   vertical-align: middle !important;
 }
+#reRun-button {
+  margin-bottom: 0.5rem !important;
+}
 .shepherd-button {
   background-color: var(--deep-brown-100) !important;
   padding: 0.1rem 0.2rem;
@@ -592,6 +595,9 @@ div.dataTables_info {
   background-color: var(--deep-brown-100) !important;
   font-size: 0.75rem;
   margin-top: 0.5rem !important;
+}
+.areaChart-download-btn-group {
+  margin-left: 1.8rem;
 }
 .pac-container {
   background-color: var(--deep-brown-20);
@@ -1293,6 +1299,9 @@ textarea {
   min-height: 50px;
   max-height: 100px;
 }
+.checkboxList {
+  padding-left: 0.2rem;
+}
 /*///////////////////////////////////////////////////////////*/
 /*Export styling*/
 .export-res-input {
@@ -1352,6 +1361,13 @@ textarea {
   font-weight: bold;
   margin-right: 0.3rem;
   color: var(--black) !important;
+}
+.links-bottombar {
+  text-decoration: underline !important;
+  /* font-size: 0.5rem; */
+  /* font-weight: bold; */
+  margin-right: 0.3rem;
+  color: var(--white) !important;
 }
 
 .intro-modal-links:active {
