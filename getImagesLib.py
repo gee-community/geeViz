@@ -5657,6 +5657,7 @@ def getProcessedSentinel2Scenes(
     verbose=False,
     applyCloudScorePlus=True,
     cloudScorePlusThresh=0.6,
+    cloudScorePlusScore = 'cs'
 ):
 
     origin = "Sentinel2"
@@ -5820,6 +5821,7 @@ def getSentinel2Wrapper(
     verbose=False,
     applyCloudScorePlus=True,
     cloudScorePlusThresh=0.6,
+    cloudScorePlusScore = 'cs',
 ):
 
     origin = "Sentinel2"
@@ -5859,6 +5861,7 @@ def getSentinel2Wrapper(
         verbose=verbose,
         applyCloudScorePlus=applyCloudScorePlus,
         cloudScorePlusThresh=cloudScorePlusThresh,
+        cloudScorePlusScore = cloudScorePlusScore,
     )
 
     # Add zenith and azimuth
@@ -6047,6 +6050,7 @@ def getProcessedLandsatAndSentinel2Scenes(
     verbose=False,
     applyCloudScorePlus=True,
     cloudScorePlusThresh=0.6,
+    cloudScorePlusScore = 'cs',
 ):
 
     if toaOrSR == "SR":
@@ -6141,6 +6145,7 @@ def getProcessedLandsatAndSentinel2Scenes(
         verbose=False,
         applyCloudScorePlus=applyCloudScorePlus,
         cloudScorePlusThresh=cloudScorePlusThresh,
+        cloudScorePlusScore = cloudScorePlusScore,
     )
 
     # Select off common bands between Landsat and Sentinel 2
@@ -6308,6 +6313,7 @@ def getLandsatAndSentinel2HybridWrapper(
     verbose=False,
     applyCloudScorePlusSentinel2=True,
     cloudScorePlusThresh=0.6,
+    cloudScorePlusScore = 'cs',
 ):
 
     origin = "Landsat-Sentinel2-Hybrid"
@@ -6362,6 +6368,7 @@ def getLandsatAndSentinel2HybridWrapper(
         verbose=verbose,
         applyCloudScorePlus=applyCloudScorePlusSentinel2,
         cloudScorePlusThresh=cloudScorePlusThresh,
+        cloudScorePlusScore = cloudScorePlusScore,
     )
 
     # Create hybrid composites
