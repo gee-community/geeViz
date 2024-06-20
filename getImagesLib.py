@@ -20,7 +20,7 @@ geeViz.getImagesLib is the core module for setting up various imageCollections f
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-
+#%%
 # Script to help with data prep, analysis, and delivery from GEE
 # Intended to work within the geeViz package
 ######################################################################
@@ -30,7 +30,7 @@ import geeViz.assetManagerLib as aml
 import geeViz.taskManagerLib as tml
 import math, ee, json, pdb
 from threading import Thread
-
+#%%
 ######################################################################
 # Module for getting Landsat, Sentinel 2 and MODIS images/composites
 # Define visualization parameters
@@ -2735,7 +2735,8 @@ def getS2(
         s2s = dailyMosaics(s2s)
 
     # This needs to occur AFTER the mosaicking to remove remaining edge artifacts.
-    s2s = s2s.map(lambda img: img.updateMask(img.mask().reduce(ee.Reducer.min())))
+    # Update on 15 May 2024 to only include spectral bands since qa bands are null after ~Feb 2024
+    s2s = s2s.map(lambda img: img.updateMask(img.select(sensorBandNameDict[toaOrSR]).mask().reduce(ee.Reducer.min())))
 
     return s2s.set(args)
 

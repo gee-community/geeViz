@@ -1,3 +1,41 @@
+# geeViz 2024.5.3 Release Notes
+
+## May 15, 2024
+
+### New Features
+
+- **Larger Area Charts for Downloading** - Area charts no automatically scale by 2x for downloading
+
+- **Sankey Charts Filtering** - Any class less than a specified percentage (`sankeyMinPercentage` - default : `0.5%`) won't be shown in the sankey chart. This helps clean up largely meaningless transitions from being shown.
+
+- **Composite uploading support** - `assetManagerLib.uploadToGEEImageAsset` now supports composite uploading using the `"GSUtil:parallel_composite_upload_threshold` setting.
+
+### Bug fixes
+
+- Sentinel-2 QA bands being set to null instead of 0 since ~Feb 2024 bug fixed. QA bands are no longer required to have values for a pixel to be valid.
+
+---
+
+# geeViz 2024.5.2 Release Notes
+
+## May 1, 2024
+
+### Bug fixes
+
+- Google Colab bug fix - earthengine-api changed `ee.oauth._in_colab_shell()` to `ee.oauth.in_colab_shell()`. Backward compatability supported for older function name.
+
+---
+
+# geeViz 2024.5.1 Release Notes
+
+## May 1, 2024
+
+### Bug fixes
+
+- Area charting bug fixes and time lapse uneven dates slider bug fix.
+
+---
+
 # geeViz 2024.4.1 Release Notes
 
 ## April 4, 2024

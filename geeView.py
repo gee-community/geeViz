@@ -42,7 +42,7 @@ creds_dir = os.path.dirname(creds_path)
 if not os.path.exists(creds_dir):
     os.makedirs(creds_dir)
 
-IS_COLAB = ee.oauth._in_colab_shell()  # "google.colab" in sys.modules
+IS_COLAB = ee.oauth.in_colab_shell()  # "google.colab" in sys.modules
 IS_WORKBENCH = os.getenv("DL_ANACONDA_HOME") != None
 if IS_COLAB:
     from google.colab.output import eval_js
@@ -421,8 +421,14 @@ class mapper:
         self.mapCommandList = []
         self.ee_run_name = "runGeeViz"
 
-        self.isNotebook = ee.oauth._in_jupyter_shell()
-        self.isColab = ee.oauth._in_colab_shell()  # "google.colab" in sys.modules
+        try:
+            self.isNotebook = ee.oauth._in_jupyter_shell()
+        except:
+            self.isNotebook = ee.oauth.in_jupyter_shell()
+        try:
+            self.isColab = ee.oauth._in_colab_shell()
+        except:
+            self.isColab = ee.oauth.in_colab_shell()
 
         self.proxy_url = None
 
@@ -502,6 +508,8 @@ class mapper:
                             "sankey" (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a `system:time_start` property set for each image,
 
                             "sankeyTransitionPeriods" (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under `Area Tools -> Transition Charting Periods`. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.
+
+                            "sankeyMinPercentage" (float, default 0.5): The minimum percentage a given class has to be to be shown in the sankey chart.
 
                             "thematic" (bool): Whether input has discrete values or not. If True, it forces the reducer to `ee.Reducer.frequencyHistogram()` even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,
 
@@ -642,6 +650,8 @@ class mapper:
                             "sankey" (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a `system:time_start` property set for each image,
 
                             "sankeyTransitionPeriods" (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under `Area Tools -> Transition Charting Periods`. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.
+
+                            "sankeyMinPercentage" (float, default 0.5): The minimum percentage a given class has to be to be shown in the sankey chart.
 
                             "thematic" (bool): Whether input has discrete values or not. If True, it forces the reducer to `ee.Reducer.frequencyHistogram()` even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,
 
@@ -1094,6 +1104,8 @@ class mapper:
                     "sankey" (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a `system:time_start` property set for each image,
 
                     "sankeyTransitionPeriods" (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under `Area Tools -> Transition Charting Periods`. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.
+
+                    "sankeyMinPercentage" (float, default 0.5): The minimum percentage a given class has to be to be shown in the sankey chart.
 
                     "thematic" (bool): Whether input has discrete values or not. If True, it forces the reducer to `ee.Reducer.frequencyHistogram()` even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,
 

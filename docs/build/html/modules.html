@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="geeViz.phEEnoViz" href="info/geeViz.phEEnoViz.html" />
 
     <link rel="shortcut icon" href="_static/RCR-logo.jpg"/><!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Details - geeViz &#34;2024.4.1&#34; docs</title>
+        <title>Details - geeViz &#34;2024.5.3&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
@@ -139,7 +139,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">geeViz "2024.4.1" docs</div></a>
+      <a href="index.html"><div class="brand">geeViz "2024.5.3" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -165,7 +165,7 @@
     <img class="sidebar-logo" src="_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.4.1" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.5.3" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -363,6 +363,7 @@ inlcuding the number sign (“#FFFFFF”)</p>
 <p>”line” (bool, default True): Whether to create a line chart,</p>
 <p>”sankey” (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a <cite>system:time_start</cite> property set for each image,</p>
 <p>”sankeyTransitionPeriods” (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under <cite>Area Tools -&gt; Transition Charting Periods</cite>. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.</p>
+<p>”sankeyMinPercentage” (float, default 0.5): The minimum percentage a given class has to be to be shown in the sankey chart.</p>
 <p>”thematic” (bool): Whether input has discrete values or not. If True, it forces the reducer to <cite>ee.Reducer.frequencyHistogram()</cite> even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,</p>
 <p>”palette” (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.</p>
 </div></blockquote>
@@ -422,6 +423,7 @@ inlcuding the number sign (“#FFFFFF”)</p>
 <p>”line” (bool, default True): Whether to create a line chart,</p>
 <p>”sankey” (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a <cite>system:time_start</cite> property set for each image,</p>
 <p>”sankeyTransitionPeriods” (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under <cite>Area Tools -&gt; Transition Charting Periods</cite>. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.</p>
+<p>”sankeyMinPercentage” (float, default 0.5): The minimum percentage a given class has to be to be shown in the sankey chart.</p>
 <p>”thematic” (bool): Whether input has discrete values or not. If True, it forces the reducer to <cite>ee.Reducer.frequencyHistogram()</cite> even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,</p>
 <p>”palette” (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart,</p>
 <p>”showGrid” (bool, default True): Whether to show the grid lines on the line or bar graph,</p>
@@ -513,6 +515,7 @@ inlcuding the number sign (“#FFFFFF”)</p>
 <p>”line” (bool, default True): Whether to create a line chart,</p>
 <p>”sankey” (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a <cite>system:time_start</cite> property set for each image,</p>
 <p>”sankeyTransitionPeriods” (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under <cite>Area Tools -&gt; Transition Charting Periods</cite>. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.</p>
+<p>”sankeyMinPercentage” (float, default 0.5): The minimum percentage a given class has to be to be shown in the sankey chart.</p>
 <p>”thematic” (bool): Whether input has discrete values or not. If True, it forces the reducer to <cite>ee.Reducer.frequencyHistogram()</cite> even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,</p>
 <p>”palette” (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart,</p>
 <p>”showGrid” (bool, default True): Whethe to show the grid lines on the line or bar graph,</p>
@@ -997,7 +1000,7 @@ param2 (str): The second parameter.</p></li>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=044377b6"></script>
+</div><script src="_static/documentation_options.js?v=9d7bf24c"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>

@@ -132,6 +132,9 @@ body {
   outline: none !important;
   vertical-align: middle !important;
 }
+#reRun-button {
+  margin-bottom: 0.5rem !important;
+}
 .shepherd-button {
   background-color: var(--deep-brown-100) !important;
   padding: 0.1rem 0.2rem;
@@ -593,6 +596,9 @@ div.dataTables_info {
   font-size: 0.75rem;
   margin-top: 0.5rem !important;
 }
+.areaChart-download-btn-group {
+  margin-left: 1.8rem;
+}
 .pac-container {
   background-color: var(--deep-brown-20);
 }
@@ -605,6 +611,10 @@ div.dataTables_info {
 #dashboard-progress-container {
   padding-left: 1.75rem;
   padding-right: 1rem;
+}
+#areaChart-progress-container {
+  width: 15rem;
+  display: inline-block;
 }
 @keyframes color {
   to {
@@ -619,7 +629,27 @@ div.dataTables_info {
   animation-direction: alternate-reverse;
   animation-timing-function: ease;
 }
-
+@keyframes Pulsate {
+  from {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.progress-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #88888888;
+  z-index: 99999;
+  animation: Pulsate 4s linear infinite;
+}
 .progressbar {
   background: var(--deep-brown-80);
   width: 100%;
@@ -627,7 +657,7 @@ div.dataTables_info {
   /* margin-right:0.5rem; */
   font-size: 1rem;
   height: 0.8rem;
-  margin-top: 0rem;
+  margin-top: 0.1rem;
   margin-bottom: 0.25rem;
 }
 .progress-spinner {
@@ -635,6 +665,8 @@ div.dataTables_info {
   margin-right: 0.25rem;
   margin-top: 0rem;
   margin-bottom: 0rem;
+  height: 1rem;
+  width: 1rem;
 }
 .progressbar span {
   display: block;
@@ -647,7 +679,8 @@ div.dataTables_info {
   /* max-width: 100%; */
   height: 0.8rem;
   font-size: 0.6rem;
-  padding-bottom: 0.5rem;
+  /* padding-bottom: 0.45rem; */
+  padding-top: 1px;
   /* padding-top: 0.1rem; */
 }
 /*///////////////////////////////////////////////////////////*/
@@ -783,7 +816,7 @@ td {
 }
 .my-legend .legend-scale ul {
   margin: 0;
-  margin-bottom: 0.3em;
+  margin-bottovm: 0.3em;
   padding: 0;
   float: left;
   list-style: none;
@@ -828,6 +861,7 @@ td {
   font-size: 0.9rem;
   width: 100%;
 }
+
 /*///////////////////////////////////////////////////////////*/
 /*Layer styling*/
 
@@ -1265,6 +1299,9 @@ textarea {
   min-height: 50px;
   max-height: 100px;
 }
+.checkboxList {
+  padding-left: 0.2rem;
+}
 /*///////////////////////////////////////////////////////////*/
 /*Export styling*/
 .export-res-input {
@@ -1324,6 +1361,13 @@ textarea {
   font-weight: bold;
   margin-right: 0.3rem;
   color: var(--black) !important;
+}
+.links-bottombar {
+  text-decoration: underline !important;
+  /* font-size: 0.5rem; */
+  /* font-weight: bold; */
+  margin-right: 0.3rem;
+  color: var(--white) !important;
 }
 
 .intro-modal-links:active {
