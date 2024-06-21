@@ -286,10 +286,12 @@ processedComposites = s2sAndTs["processedComposites"]
 
 Map.addLayer(
     processedComposites.select(["NDVI", "NBR"]),
-    {"addToLegend": False, "layerType": "geeImageCollection"},
+    {},
     "Time Series (NBR and NDVI)",
     False,
 )
+
+getImagesLib.vizParamsFalse["years"] = list(range(startYear, endYear + 1))
 Map.addTimeLapse(
     processedComposites, getImagesLib.vizParamsFalse, "Composite Timelapse", False
 )

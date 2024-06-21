@@ -20,7 +20,7 @@ geeViz.getImagesLib is the core module for setting up various imageCollections f
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-#%%
+# %%
 # Script to help with data prep, analysis, and delivery from GEE
 # Intended to work within the geeViz package
 ######################################################################
@@ -30,7 +30,8 @@ import geeViz.assetManagerLib as aml
 import geeViz.taskManagerLib as tml
 import math, ee, json, pdb
 from threading import Thread
-#%%
+
+# %%
 ######################################################################
 # Module for getting Landsat, Sentinel 2 and MODIS images/composites
 # Define visualization parameters
@@ -2669,9 +2670,9 @@ def getS2(
         )
         cloudProbabilities = (
             ee.ImageCollection("COPERNICUS/S2_CLOUD_PROBABILITY")
-            .filterDate(startDate, endDate.advance(1, "day"))
-            .filter(ee.Filter.calendarRange(startJulian, endJulian))
-            .filterBounds(studyArea)
+            # .filterDate(startDate, endDate.advance(1, "day"))
+            # .filter(ee.Filter.calendarRange(startJulian, endJulian))
+            # .filterBounds(studyArea)
             .select(["probability"], ["cloud_probability"])
         )
 
@@ -2682,7 +2683,8 @@ def getS2(
         missing = s2sIds.removeAll(cloudProbabilitiesIds)
         # print('Missing cloud probability ids:', missing.getInfo())
         # print('N s2 images before joining with cloud prob:', s2s.size().getInfo())
-        s2s = joinCollections(s2s, cloudProbabilities, False, "system:index")
+        # s2s = joinCollections(s2s, cloudProbabilities, False, "system:index")
+        s2s = s2s.linkCollection(cloudProbabilities, ["cloud_probability"])
         # print('N s2 images after joining with cloud prob:', s2s.size().getInfo())
 
     if addCloudScorePlus:
@@ -2691,9 +2693,9 @@ def getS2(
         )
         cloudScorePlus = (
             ee.ImageCollection("GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED")
-            .filterDate(startDate, endDate.advance(1, "day"))
-            .filter(ee.Filter.calendarRange(startJulian, endJulian))
-            .filterBounds(studyArea)
+            # .filterDate(startDate, endDate.advance(1, "day"))
+            # .filter(ee.Filter.calendarRange(startJulian, endJulian))
+            # .filterBounds(studyArea)
             .select(["cs"], ["cloudScorePlus"])
         )
 
@@ -2705,8 +2707,8 @@ def getS2(
         missing = s2sIds.removeAll(cloudScorePlus)
         # print('Missing cloud probability ids:', missing.getInfo())
         # print('N s2 images before joining with cloudScore+:', s2s.size().getInfo())
-        s2s = joinCollections(s2s, cloudScorePlus, False, "system:index")
-        # s2s = s2s.linkCollection(cloudScorePlus)
+        # s2s = joinCollections(s2s, cloudScorePlus, False, "system:index")
+        s2s = s2s.linkCollection(cloudScorePlus, ["cloudScorePlus"])
         # print('N s2 images after joining with cloud prob:', s2s.size().getInfo())
 
     # Set resampling method - only sets to non nearest-neighbor for continuous bands
@@ -2736,7 +2738,11 @@ def getS2(
 
     # This needs to occur AFTER the mosaicking to remove remaining edge artifacts.
     # Update on 15 May 2024 to only include spectral bands since qa bands are null after ~Feb 2024
-    s2s = s2s.map(lambda img: img.updateMask(img.select(sensorBandNameDict[toaOrSR]).mask().reduce(ee.Reducer.min())))
+    s2s = s2s.map(
+        lambda img: img.updateMask(
+            img.select(sensorBandNameDict[toaOrSR]).mask().reduce(ee.Reducer.min())
+        )
+    )
 
     return s2s.set(args)
 
@@ -4741,6 +4747,12 @@ def getModisData(
         .filter(ee.Filter.calendarRange(startJulian, endJulian))
         .select(modis250SelectBands, modis250BandNames)
     )
+    if addLookAngleBands:
+        modis500SelectBandsT = modis500SelectBands + viewAngleBandNames
+        modis500BandNamesT = modis500BandNames + viewAngleBandNames
+    else:
+        modis500SelectBandsT = modis500SelectBands
+        modis500BandNamesT = modis500BandNames
 
     def get500(c):
         images = (
@@ -4763,13 +4775,9 @@ def getModisData(
                 print("Masking with QA band:", c)
             images = images.map(applyZenith)
 
-        if addLookAngleBands:
-            images = images.select(
-                ee.List(modis500SelectBands).cat(viewAngleBandNames),
-                ee.List(modis500BandNames).cat(viewAngleBandNames),
-            )
-        else:
-            images = images.select(modis500SelectBands, modis500BandNames)
+        #     images = images.select(modis500SelectBands, modis500BandNames)
+        # else:
+        images = images.select(modis500SelectBandsT, modis500BandNamesT)
 
         return images
 
@@ -4777,34 +4785,37 @@ def getModisData(
     t500 = get500(t500C)
 
     # If thermal collection is wanted, pull it as well
+    tempbandNames = ["temp", "Emis_31", "Emis_32"]
     if useTempInCloudMask:
         t1000 = (
             ee.ImageCollection(t1000C)
             .filter(ee.Filter.calendarRange(startYear, endYear, "year"))
             .filter(ee.Filter.calendarRange(startJulian, endJulian))
-            .select([0, 8, 9], ["temp", "Emis_31", "Emis_32"])
+            .select([0, 8, 9], tempbandNames)
         )
 
         a1000 = (
             ee.ImageCollection(a1000C)
             .filter(ee.Filter.calendarRange(startYear, endYear, "year"))
             .filter(ee.Filter.calendarRange(startJulian, endJulian))
-            .select([0, 8, 9], ["temp", "Emis_31", "Emis_32"])
+            .select([0, 8, 9], tempbandNames)
         )
 
     # Now all collections are pulled, start joining them
     # First join the 250 and 500 m Aqua
-    a = joinCollections(a250, a500, False)
+    # a = joinCollections(a250, a500, False)
+    a = a250.linkCollection(a500, modis500BandNamesT)
 
     # Then Terra
-    t = joinCollections(t250, t500, False)
-
+    # t = joinCollections(t250, t500, False)
+    t = t250.linkCollection(t500, modis500BandNamesT)
     # If temp was pulled, join that in as well
     # Also select the bands in an L5-like order and give descriptive names
     if useTempInCloudMask:
-        a = joinCollections(a, a1000, False)
-        t = joinCollections(t, t1000, False)
-
+        # a = joinCollections(a, a1000, False)
+        # t = joinCollections(t, t1000, False)
+        a = a.linkCollection(a1000, tempbandNames)
+        t = t.linkCollection(t1000, tempbandNames)
     #   tSelectOrder = wTempSelectOrder
     #   tStdNames = wTempStdNames
 
@@ -4853,6 +4864,7 @@ def getModisData(
         return img.resample(resampleMethod)
 
     joined = joined.map(multiplyImg)
+
     if resampleMethod in ["bilinear", "bicubic"]:
         print("Setting resample method to ", resampleMethod)
         joined = joined.map(setResample)

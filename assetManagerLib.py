@@ -26,13 +26,13 @@ geeViz.assetManagerLib includes functions for copying, deleting, uploading, chan
 # --------------------------------------------------------------------------
 #           ASSETMANAGERLIB.PY
 # --------------------------------------------------------------------------
-
+#%%
 import geeViz.geeView
 import sys, ee, os, shutil, subprocess, datetime, calendar, json, glob
 import time, logging, pdb
 
 taskLimit = 10
-
+#%%
 #############################################################################################
 #               Functions to update ACL
 #############################################################################################

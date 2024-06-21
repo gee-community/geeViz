@@ -421,6 +421,14 @@ class mapper:
         self.mapCommandList = []
         self.ee_run_name = "runGeeViz"
 
+        self.typeLookup = {
+            "Image": "geeImage",
+            "ImageCollection": "geeImageCollection",
+            "Feature": "geeVectorImage",
+            "FeatureCollection": "geeVectorImage",
+            "Geometry": "geeVectorImage",
+            "dict": "geoJSONVector",
+        }
         try:
             self.isNotebook = ee.oauth._in_jupyter_shell()
         except:
@@ -462,7 +470,7 @@ class mapper:
 
                     "opacity" (float): a number between 0 and 1 for initially set opacity.,
 
-                    "layerType" (str, one of geeImage, geeImageCollection, geeVector, geeVectorImage): Optional parameter, but if specified, can speed up the initial page loading of geeView since it won't have to figure out the layer type. For vector data ("featureCollection", "feature", or "geometry"), you can spcify "geeVector" if you would like to force the vector to be an actual vector object on the client. This can be slow if the ee object is large and/or complex. Otherwise, any "featureCollection", "feature", or "geometry" will default to "geeVectorImage" where the vector is rasterized on-the-fly for map rendering. Any querying of the vector will query the underlying vector data though.,
+                    "layerType" (str, one of geeImage, geeImageCollection, geeVector, geeVectorImage, geoJSONVector): Optional parameter. For vector data ("featureCollection", "feature", or "geometry"), you can spcify "geeVector" if you would like to force the vector to be an actual vector object on the client. This can be slow if the ee object is large and/or complex. Otherwise, any "featureCollection", "feature", or "geometry" will default to "geeVectorImage" where the vector is rasterized on-the-fly for map rendering. Any querying of the vector will query the underlying vector data though. To add a geojson vector as json, just add the json as the image parameter.,
 
                     "reducer" (Reducer, default 'ee.Reducer.lastNonNull()'): If an ImageCollection is provided, how to reduce it to create the layer that is shown on the map. Defaults to ee.Reducer.lastNonNull(),
 
@@ -537,8 +545,6 @@ class mapper:
 
         # Handle reducer if ee object is given
         if "reducer" in viz.keys():
-            # if str(type(viz['reducer']))=="<class 'ee.Reducer'>":
-            #     viz['reducer'] = eval(viz['reducer'])
 
             try:
                 viz["reducer"] = viz["reducer"].serialize()
@@ -562,15 +568,20 @@ class mapper:
                     except Exception as e:  # Most likely it's already serialized
                         e = e
 
-        # Get the id and populate dictionary
+        # Get the id and populate dictionarye
         idDict = {}
+        imageType = type(image).__name__
+        layerType = self.typeLookup[imageType]
+        if "layerType" not in viz.keys():
+            viz["layerType"] = layerType
+        print("Type:", imageType, viz["layerType"])
         if not isinstance(image, dict):
             image = image.serialize()
             idDict["item"] = image
             idDict["function"] = "addSerializedLayer"
         # Handle passing in geojson vector layers
         else:
-            idDict["item"] = image
+            idDict["item"] = json.dumps(image)
             viz["layerType"] = "geoJSONVector"
             idDict["function"] = "addLayer"
         idDict["objectName"] = "Map"
@@ -611,8 +622,6 @@ class mapper:
                     "palette" (str, list, or comma-separated strings): List of CSS-style color strings (single-band previews only).,
 
                     "opacity" (float): a number between 0 and 1 for initially set opacity.,
-
-                    "layerType" (str, one of geeImage, geeImageCollection, geeVector, geeVectorImage): Optional parameter, but if specified, can speed up the initial page loading of geeView since it won't have to figure out the layer type. For vector data ("featureCollection", "feature", or "geometry"), you can spcify "geeVector" if you would like to force the vector to be an actual vector object on the client. This can be slow if the ee object is large and/or complex. Otherwise, any "featureCollection", "feature", or "geometry" will default to "geeVectorImage" where the vector is rasterized on-the-fly for map rendering. Any querying of the vector will query the underlying vector data though.,
 
                     "autoViz" (bool): Whether to take image bandName_class_values, bandName_class_names, bandName_class_palette properties to visualize, create a legend (populates `classLegendDict`), and apply class names to any query functions (populates `queryDict`),
 
@@ -696,6 +705,7 @@ class mapper:
                         ).serialize()
                     except Exception as e:  # Most likely it's already serialized
                         e = e
+        viz["layerType"] = "ImageCollection"
         # Get the id and populate dictionary
         idDict = {}  # image.getMapId()
         idDict["objectName"] = "Map"
@@ -1123,8 +1133,6 @@ class mapper:
 
         # Handle reducer if ee object is given
         if "reducer" in params.keys():
-            # if str(type(viz['reducer']))=="<class 'ee.Reducer'>":
-            #     viz['reducer'] = eval(viz['reducer'])
 
             try:
                 params["reducer"] = params["reducer"].serialize()
@@ -1133,10 +1141,13 @@ class mapper:
                     params["reducer"] = eval(params["reducer"]).serialize()
                 except Exception as e:  # Most likely it's already serialized
                     e = e
-        params["serialized"] = True
+
         # Get the id and populate dictionary
         idDict = {}
+
         if not isinstance(image, dict):
+            params["serialized"] = True
+            params["layerType"] = type(image).__name__
             image = image.serialize()
 
         idDict["item"] = image

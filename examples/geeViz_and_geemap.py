@@ -15,10 +15,11 @@
 """
 
 # Example of how to use a local shapefile in geeViz workflows
-# This uses geemap to convert the shapefile to geojson and then an ee object 
+# This uses geemap to convert the shapefile to geojson and then an ee object
 ####################################################################################################
 import geemap
 import geeViz.getImagesLib as gil
+
 Map = gil.Map
 ee = gil.ee
 
@@ -29,19 +30,25 @@ startJulian = 150
 endJulian = 250
 
 # Provide a shapefile
-shp = gil.os.path.join(gil.sys.path[0],"data/gadm41_CHE_shp/gadm41_CHE_0.shp")
+shp = gil.os.path.join(gil.sys.path[0], "data/gadm41_CHE_shp/gadm41_CHE_0.shp")
 
 # Convert it to an ee object
 studyArea = geemap.shp_to_ee(shp)
-
+# print(studyArea)
 # Get some images (use the bounds to avoid memory errors)
-s2s = gil.getProcessedSentinel2Scenes(studyArea.geometry().bounds(),startYear,endYear,startJulian,endJulian)
+s2s = gil.getProcessedSentinel2Scenes(
+    studyArea.geometry().bounds(), startYear, endYear, startJulian, endJulian
+)
 
 # Add the composite and study area to the map
-Map.addLayer(s2s.median(),gil.vizParamsFalse,'Composite')
+Map.addLayer(s2s.median(), gil.vizParamsFalse, "Composite")
 
 
-Map.addLayer(studyArea,{'strokeColor':'0FF','strokeWeight':3},'Study Area')
+Map.addLayer(
+    studyArea,
+    {"strokeColor": "0FF", "strokeWeight": 3, "layerType": "geeVector"},
+    "Study Area",
+)
 
 Map.centerObject(studyArea)
 Map.turnOnInspector()
