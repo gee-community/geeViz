@@ -586,11 +586,15 @@ def addLossGainToMap(
     lossMagMax=-2000,
     gainMagMin=1000,
     gainMagMax=8000,
+    indexName=None,
+    howManyToPull=None,
 ):
-    bns = lossGainStack.bandNames().getInfo()
-    indexName = bns[0].split("_")[0]
-    howManyToPull = list(set([int(bn.split("_")[-1]) for bn in bns]))
-
+    if indexName == None or howManyToPull == None:
+        bns = lossGainStack.bandNames().getInfo()
+        indexName = bns[0].split("_")[0]
+        howManyToPull = list(set([int(bn.split("_")[-1]) for bn in bns]))
+    else:
+        howManyToPull = list(range(1,howManyToPull + 1))
     # Set up viz params
     vizParamsLossYear = {"min": startYear, "max": endYear, "palette": lossYearPalette}
     vizParamsLossMag = {"min": lossMagMin, "max": lossMagMax, "palette": lossMagPalette}
@@ -729,6 +733,8 @@ def simpleLANDTRENDR(
             lossMagThresh * multBy,
             gainMagThresh * multBy,
             (gainMagThresh + 0.7) * multBy,
+            indexName,
+            howManyToPull,
         )
 
     return [multLT(lt, multBy), lossGainStack]

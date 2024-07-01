@@ -570,11 +570,12 @@ class mapper:
 
         # Get the id and populate dictionarye
         idDict = {}
-        imageType = type(image).__name__
-        layerType = self.typeLookup[imageType]
+
         if "layerType" not in viz.keys():
+            imageType = type(image).__name__
+            layerType = self.typeLookup[imageType]
             viz["layerType"] = layerType
-        print("Type:", imageType, viz["layerType"])
+            # print("Type:", imageType, viz["layerType"])
         if not isinstance(image, dict):
             image = image.serialize()
             idDict["item"] = image
@@ -753,6 +754,22 @@ class mapper:
         idDict["viz"] = json.dumps(viz, sort_keys=False)
         idDict["function"] = "addSerializedSelectLayer"
         self.idDictList.append(idDict)
+
+    ######################################################################
+    # Function for centering on a GEE object that has a geometry
+    def setCenter(self, lng, lat, zoom=None):
+        """
+        Center the map on a specified point and optional zoom on loading
+
+        Args:
+            lng (int or float): The longitude to center the map on
+            lat (int or float): The latitude to center the map on
+            zoom (int, optional): If provided, will force the map to zoom to this level after centering it on the provided coordinates. If not provided, the current zoom level will be used.
+        """
+
+        command = f"Map.setCenter({lng},{lat},{json.dumps(zoom)})"
+
+        self.mapCommandList.append(command)
 
     ######################################################################
     # Function for setting the map zoom
@@ -1123,7 +1140,7 @@ class mapper:
 
                 }
             name (str): Descriptive name for map layer that will be shown on the map UI
-            visible (bool, optional): Whether layer should be visible when map UI loads
+            shouldChart (bool, optional): Whether layer should be charted when map UI loads
 
         """
         if name == None:

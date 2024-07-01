@@ -134,8 +134,12 @@ applyCloudProbability = False
 
 # Whether to use the pre-computed cloudScore+ to mask
 # clouds and cloud shadows for Sentinel 2
-# This method works really well and should be used instead of all other methods once it finishes
+# This method works really well and should be used instead of all other methods
 applyCloudScorePlusSentinel2 = True
+
+# Choose which cloudScore+ band to use
+# Choices are cs or cs_cdf. cs tends to mask out more
+cloudScorePlusScore = "cs"
 
 # If cloudProbability is chosen, choose a threshold
 # (generally somewhere around 40-60 works well)
@@ -327,6 +331,7 @@ processedAndComposites = getImagesLib.getLandsatAndSentinel2HybridWrapper(
     verbose,
     applyCloudScorePlusSentinel2,
     cloudScorePlusThresh,
+    cloudScorePlusScore,
 )
 
 # Separate into scenes and composites for subsequent analysis

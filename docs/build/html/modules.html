@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="prev" title="geeViz.phEEnoViz" href="info/geeViz.phEEnoViz.html" />
 
     <link rel="shortcut icon" href="_static/RCR-logo.jpg"/><!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Details - geeViz &#34;2024.5.3&#34; docs</title>
+        <title>Details - geeViz &#34;2024.7.1&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
@@ -139,7 +139,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">geeViz "2024.5.3" docs</div></a>
+      <a href="index.html"><div class="brand">geeViz "2024.7.1" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -165,7 +165,7 @@
     <img class="sidebar-logo" src="_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.5.3" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.7.1" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -370,7 +370,7 @@ inlcuding the number sign (“#FFFFFF”)</p>
 <p>}</p>
 </p></li>
 <li><p><strong>name</strong> (<em>str</em>) – Descriptive name for map layer that will be shown on the map UI</p></li>
-<li><p><strong>visible</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether layer should be visible when map UI loads</p></li>
+<li><p><strong>shouldChart</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether layer should be charted when map UI loads</p></li>
 </ul>
 </dd>
 </dl>
@@ -393,7 +393,7 @@ inlcuding the number sign (“#FFFFFF”)</p>
 <p>”gamma” (int, list, or comma-separated numbers): Gamma correction factor. One numeric value or one per band.,</p>
 <p>”palette” (str, list, or comma-separated strings): List of CSS-style color strings (single-band previews only).,</p>
 <p>”opacity” (float): a number between 0 and 1 for initially set opacity.,</p>
-<p>”layerType” (str, one of geeImage, geeImageCollection, geeVector, geeVectorImage): Optional parameter, but if specified, can speed up the initial page loading of geeView since it won’t have to figure out the layer type. For vector data (“featureCollection”, “feature”, or “geometry”), you can spcify “geeVector” if you would like to force the vector to be an actual vector object on the client. This can be slow if the ee object is large and/or complex. Otherwise, any “featureCollection”, “feature”, or “geometry” will default to “geeVectorImage” where the vector is rasterized on-the-fly for map rendering. Any querying of the vector will query the underlying vector data though.,</p>
+<p>”layerType” (str, one of geeImage, geeImageCollection, geeVector, geeVectorImage, geoJSONVector): Optional parameter. For vector data (“featureCollection”, “feature”, or “geometry”), you can spcify “geeVector” if you would like to force the vector to be an actual vector object on the client. This can be slow if the ee object is large and/or complex. Otherwise, any “featureCollection”, “feature”, or “geometry” will default to “geeVectorImage” where the vector is rasterized on-the-fly for map rendering. Any querying of the vector will query the underlying vector data though. To add a geojson vector as json, just add the json as the image parameter.,</p>
 <p>”reducer” (Reducer, default ‘ee.Reducer.lastNonNull()’): If an ImageCollection is provided, how to reduce it to create the layer that is shown on the map. Defaults to ee.Reducer.lastNonNull(),</p>
 <p>”autoViz” (bool): Whether to take image bandName_class_values, bandName_class_names, bandName_class_palette properties to visualize, create a legend (populates <cite>classLegendDict</cite>), and apply class names to any query functions (populates <cite>queryDict</cite>),</p>
 <p>”canQuery” (bool, default True): Whether a layer can be queried when visible.,</p>
@@ -489,7 +489,6 @@ inlcuding the number sign (“#FFFFFF”)</p>
 <p>”gamma” (int, list, or comma-separated numbers): Gamma correction factor. One numeric value or one per band.,</p>
 <p>”palette” (str, list, or comma-separated strings): List of CSS-style color strings (single-band previews only).,</p>
 <p>”opacity” (float): a number between 0 and 1 for initially set opacity.,</p>
-<p>”layerType” (str, one of geeImage, geeImageCollection, geeVector, geeVectorImage): Optional parameter, but if specified, can speed up the initial page loading of geeView since it won’t have to figure out the layer type. For vector data (“featureCollection”, “feature”, or “geometry”), you can spcify “geeVector” if you would like to force the vector to be an actual vector object on the client. This can be slow if the ee object is large and/or complex. Otherwise, any “featureCollection”, “feature”, or “geometry” will default to “geeVectorImage” where the vector is rasterized on-the-fly for map rendering. Any querying of the vector will query the underlying vector data though.,</p>
 <p>”autoViz” (bool): Whether to take image bandName_class_values, bandName_class_names, bandName_class_palette properties to visualize, create a legend (populates <cite>classLegendDict</cite>), and apply class names to any query functions (populates <cite>queryDict</cite>),</p>
 <p>”canQuery” (bool, default True): Whether a layer can be queried when visible.,</p>
 <p>”addToLegend” (bool, default True): Whether geeViz should try to create a legend for this layer. Sometimes setting it to <cite>False</cite> is useful for continuous multi-band inputs.,</p>
@@ -571,6 +570,21 @@ inlcuding the number sign (“#FFFFFF”)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>canReorderLayers</strong> (<em>bool</em>) – Set whether layers can be reordered by dragging layer user interface objects. By default all non timelapse and non geojson layers can be reordereed by dragging.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.setCenter">
+<span class="sig-name descname"><span class="pre">setCenter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lng</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zoom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geeViz.geeView.mapper.setCenter" title="Link to this definition">#</a></dt>
+<dd><p>Center the map on a specified point and optional zoom on loading</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lng</strong> (<em>int</em><em> or </em><em>float</em>) – The longitude to center the map on</p></li>
+<li><p><strong>lat</strong> (<em>int</em><em> or </em><em>float</em>) – The latitude to center the map on</p></li>
+<li><p><strong>zoom</strong> (<em>int</em><em>, </em><em>optional</em>) – If provided, will force the map to zoom to this level after centering it on the provided coordinates. If not provided, the current zoom level will be used.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -947,6 +961,7 @@ param2 (str): The second parameter.</p></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.clearMap"><code class="docutils literal notranslate"><span class="pre">mapper.clearMap()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.populateAreaChartLayerSelect"><code class="docutils literal notranslate"><span class="pre">mapper.populateAreaChartLayerSelect()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.setCanReorderLayers"><code class="docutils literal notranslate"><span class="pre">mapper.setCanReorderLayers()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.setCenter"><code class="docutils literal notranslate"><span class="pre">mapper.setCenter()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.setMapTitle"><code class="docutils literal notranslate"><span class="pre">mapper.setMapTitle()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.setQueryBoxColor"><code class="docutils literal notranslate"><span class="pre">mapper.setQueryBoxColor()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.setQueryCRS"><code class="docutils literal notranslate"><span class="pre">mapper.setQueryCRS()</span></code></a></li>
@@ -1000,7 +1015,7 @@ param2 (str): The second parameter.</p></li>
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=9d7bf24c"></script>
+</div><script src="_static/documentation_options.js?v=81168827"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>

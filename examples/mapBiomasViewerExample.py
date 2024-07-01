@@ -31,7 +31,7 @@ Map.clearMap()
 # Datasets available here: https://gee-community-catalog.org/projects/mapbiomas/
 
 # Specify which years all datasets have
-years = range(1985, 2021 + 1)
+years = list(range(1985, 2021 + 1))
 common_bandNames = [f"classification_{yr}" for yr in years]
 
 # Bring in land use land cover datasets and mosaic them
@@ -232,7 +232,7 @@ lulcC = ee.ImageCollection(bns.map(setupLulc))
 # Add the collection to the map
 Map.addTimeLapse(
     lulcC,
-    {"canAreaChart": True, "autoViz": True},
+    {"canAreaChart": True, "autoViz": True, "years": years},
     "MapBiomas LULC",
 )
 
@@ -240,4 +240,5 @@ Map.addTimeLapse(
 # Set up the map
 Map.turnOnAutoAreaCharting()
 # Map.turnOnInspector()
+Map.setCenter(-62.8, -3, 6)
 Map.view()
