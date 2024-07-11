@@ -53,6 +53,13 @@ if IS_COLAB:
 
 # Function to have user input a project id if one is still needed
 def setProject(id):
+    """
+    Sets the project id of an instance of ee
+
+    Args:
+        id (str): Google Cloud Platform project id to use
+
+    """
     global project_id
     project_id = id
     ee.data.setCloudApiUserProject(project_id)
@@ -98,6 +105,13 @@ def getProject(overwrite=False):
 
 ######################################################################
 def verified_initialize(project=None):
+    """
+    Tries to initialize GEE with a given project id. Will error out if initilization fails
+
+    Args:
+        project (str, optional): Whether or not to overwrite a cached project ID file
+
+    """
     ee.Initialize(project=project)
     z = ee.Number(1).getInfo()
     print("Successfully initialized")
@@ -105,6 +119,11 @@ def verified_initialize(project=None):
 
 # Function to handle various exceptions to initializing to GEE
 def robustInitializer():
+    """
+    A method that tries to authenticate and/or initialize GEE if it isn't already successfully initialized. This method tries to handle many different scenarios, but often fails. It is best to initialize to a project prior to importing geeViz
+
+    """
+
     global project_id
 
     try:
@@ -305,6 +324,15 @@ def get_poly_gradient_ct(palette, min, max):
 # Function to check if being run inside a notebook
 # Taken from: https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
 def is_notebook():
+    """
+    Remove trailing '....' in generated access token
+
+    Args:
+        accessToken (str): Raw access token
+
+    Returns:
+        str: Given access token without trailing '....'
+    """
     return ee.oauth._in_jupyter_shell()
 
 
@@ -345,6 +373,12 @@ def baseDomain(url):
 # Function for using default GEE refresh token to get an access token for geeView
 # Updated 12/23 to reflect updated auth methods for GEE
 def refreshToken():
+    """
+    Get a refresh token from currently authenticated ee instance
+
+    Returns:
+        str: temporary access token
+    """
     credentials = ee.data.get_persistent_credentials()
     credentials.refresh(gReq.Request())
     accessToken = credentials.token
@@ -356,6 +390,12 @@ def refreshToken():
 ######################################################################
 # Function for using a GEE white-listed service account key to get an access token for geeView
 def serviceAccountToken(service_key_file_path):
+    """
+    Get a refresh token from service account key file credentials
+
+    Returns:
+        str: temporary access token
+    """
     try:
         credentials = service_account.Credentials.from_service_account_file(
             service_key_file_path, scopes=ee.oauth.SCOPES
@@ -373,6 +413,13 @@ def serviceAccountToken(service_key_file_path):
 ######################################################################
 # Function for running local web server
 def run_local_server(port=8001):
+    """
+    Start a local webserver using the Python http.server
+
+    Args:
+        port (int): Port number to run local server at
+
+    """
     if sys.version[0] == "2":
         server_name = "SimpleHTTPServer"
     else:
@@ -392,6 +439,15 @@ def run_local_server(port=8001):
 ######################################################################
 # Function to see if port is active
 def isPortActive(port=8001):
+    """
+    See if a given port number is currently active
+
+    Args:
+        port (int): Port number to check status of
+
+    Returns:
+        bool: Whether or not the port is already active
+    """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(2)  # 2 Second Timeout
     result = sock.connect_ex(("localhost", port))
@@ -534,7 +590,7 @@ class mapper:
             name (str): Descriptive name for map layer that will be shown on the map UI
             visible (bool, optional): Whether layer should be visible when map UI loads
 
-        >>> Map.addLayer(ee.Image(1),{'min':0,'max':1,'palette':'000,FFF},"Example Map Layer",True)
+        >>> Map.addLayer(ee.Image(1),{'min':0,'max':1,'palette':'000,FFF'},"Example Map Layer",True)
 
 
         """

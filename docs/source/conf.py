@@ -23,6 +23,15 @@ def GetVersion(initPath):
         # return re.findall(r"__version__\s*=\s*\'([.\d]+)\'", f.read())[0]
 
 
+# def linkcode_resolve(domain, info):
+#     if domain != "py":
+#         return None
+#     if not info["module"]:
+#         return None
+#     filename = info["module"].replace(".", "/")
+#     return "https://github.com/gee-community/geeViz/%s.py" % filename
+
+
 build_folder = r"A:\GEE\gee_py_modules_package\geeViz\docs\build"
 info_folder = r"A:\GEE\gee_py_modules_package\geeViz\docs\source\info"
 if os.path.exists(build_folder):
@@ -44,6 +53,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.coverage",
     "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
 ]
 
 templates_path = ["_templates"]
@@ -59,7 +69,7 @@ html_static_path = ["_static"]
 dark_text_color = "#00bfa5"
 light_text_color = "#00897b"
 
-html_logo = f"./{html_static_path[0]}/RCR-logo.jpg"
+html_logo = f"{html_static_path[0]}/RCR-logo.jpg"
 html_favicon = html_logo
 pygments_style = "sphinx"
 pygments_dark_style = "monokai"
