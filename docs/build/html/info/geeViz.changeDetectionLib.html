@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="geeViz.assetManagerLib" href="geeViz.assetManagerLib.html" /><link rel="prev" title="geeViz.changeDetectionLib" href="geeViz.changeDetectionLib.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="geeViz.taskManagerLib" href="geeViz.taskManagerLib.html" /><link rel="prev" title="geeViz.getImagesLib" href="geeViz.getImagesLib.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>geeViz.taskManagerLib - geeViz &#34;2024.8.1&#34; docs</title>
+        <title>geeViz.changeDetectionLib - geeViz &#34;2024.8.1&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -181,8 +181,8 @@
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../overview.html">Overview</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Overview</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="geeViz.geeView.html">geeViz.geeView</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
-<li class="toctree-l2"><a class="reference internal" href="geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">geeViz.taskManagerLib</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">geeViz.changeDetectionLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
@@ -236,45 +236,195 @@
           </label>
         </div>
         <article role="main">
-          <section id="module-geeViz.taskManagerLib">
-<span id="geeviz-taskmanagerlib"></span><h1>geeViz.taskManagerLib<a class="headerlink" href="#module-geeViz.taskManagerLib" title="Link to this heading">#</a></h1>
-<p>Monitor and manage tasks programatically</p>
-<p>geeViz.taskManagerLib facilitates the monitoring and deleting of GEE export tasks.</p>
+          <section id="module-geeViz.changeDetectionLib">
+<span id="geeviz-changedetectionlib"></span><h1>geeViz.changeDetectionLib<a class="headerlink" href="#module-geeViz.changeDetectionLib" title="Link to this heading">#</a></h1>
+<p>Apply change detection methods usin GEE</p>
+<p>geeViz.changeDetectionLib is the core module for setting up various change detection algorithms within GEE. Notably, it facilitates the use of LandTrendr and CCDC data preparation, application, and output formatting, compression, and decompression.</p>
 <p class="rubric">Functions</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">batchCancel</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">LANDTRENDRFitMagSlopeDiffCollection</span></code>(ts, ...)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cancelByName</span></code>(nameIdentifier)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">LANDTRENDRVertStack</span></code>(composites, indexName, ...)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">failedTasks</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">LTExportPrep</span></code>(rawLT[, multBy])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getEECUS</span></code>(output_table_name[, nameFind, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">LTLossGainExportPrep</span></code>(lossGainDict[, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getTasks</span></code>([id_list])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">LT_VT_multBands</span></code>(img, multBy)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">jobCompletionTracker</span></code>(starttime, endtime, ...)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">LT_VT_vertStack_multBands</span></code>(img, ...)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nameTaskList</span></code>(nameIdentifier)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">VERDETFitMagSlopeDiffCollection</span></code>(composites, ...)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">now</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">VERDETVertStack</span></code>(ts, indexName[, run_params, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">timeTaskList</span></code>(starttime, endtime)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">addLossGainToMap</span></code>(lossGainStack, startYear, ...)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">trackTasks</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">addMillisecondsTimeBand</span></code>(img)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">trackTasks2</span></code>([credential_name, id_list, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">addToImage</span></code>(img, howMuch)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">annualizeCCDC</span></code>(ccdcImg, startYear, endYear, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyDistDir_vertStack</span></code>(stack, distDir, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyLinearInterp</span></code>(composites, nYearsInterpolate)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">applyVerdetScaling</span></code>(ts, indexName, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">arrayToTimeSeries</span></code>(tsArray, yearsArray, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">batchFeatherCCDCImgs</span></code>(ccdcAnnualizedCol1, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">batchSimpleLTFit</span></code>(ltStacks, startYear, endYear)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ccdcChangeDetection</span></code>(ccdcImg, bandName)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">convertStack_To_DurFitMagSlope</span></code>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">convertToLossGain</span></code>(ltStack[, format, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">extractDisturbance</span></code>(lt, distDir, params, mmu)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">featherCCDCImgs</span></code>(joinedCCDCImg, ccdcBnds, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">fitStackToCollection</span></code>(stack, maxSegments, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getCCDCSegCoeffs</span></code>(timeImg, ccdcImg, fillGaps)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getFitSlopeCCDC</span></code>(annualSegCoeffs, startYear, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getLTStack</span></code>(LTresult, maxVertices, bandNames)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getLTvertStack</span></code>(LTresult, run_params)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getLinearFit</span></code>(c[, bandNames])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getRawAndFittedLT</span></code>(rawTs, lt, startYear, endYear)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getSegmentParamsForYear</span></code>(ccdc, yearImg)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getTimeImageCollection</span></code>(startYear, endYear[, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getTimeImageCollectionFromComposites</span></code>(...[, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">landtrendrWrapper</span></code>(processedComposites, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">linearInterp</span></code>(imgcol[, frame, nodata])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">multBands</span></code>(img, distDir[, by])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">multLT</span></code>(rawLT, multBy)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">new_interp_date</span></code>(dateYr, dateCollection[, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">new_interp_date_collection</span></code>(dateCollection[, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nullFinder</span></code>(img, countMask)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predictCCDC</span></code>(ccdcImg, timeImgs, fillGaps, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predictModel</span></code>(c, model[, bandNames])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepTimeSeriesForLandTrendr</span></code>(ts, indexName, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">prepTimeSeriesForVerdet</span></code>(ts, indexName, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">rawLTToVertices</span></code>(rawLT[, indexName, multBy, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">replace_mask</span></code>(img, newimg[, nodata])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">runLANDTRENDR</span></code>(ts, bandName[, run_params])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">simpleCCDCPrediction</span></code>(img, timeBandName, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">simpleCCDCPredictionAnnualized</span></code>(img, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">simpleCCDCPredictionWrapper</span></code>(c, timeBandName, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.changeDetectionLib.simpleLANDTRENDR" title="geeViz.changeDetectionLib.simpleLANDTRENDR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simpleLANDTRENDR</span></code></a>(ts, startYear, endYear[, ...])</p></td>
+<td><p>Takes annual time series input data, properly sets it up for LandTrendr, runs LandTrendr, and provides both a compressed vertex-only format output as well as a basic change detection output.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">simpleLTFit</span></code>(ltStack, startYear, endYear[, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">simpleRawLTToVertices</span></code>(rawLT)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">thresholdChange</span></code>(changeCollection, changeThresh)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">thresholdZAndTrend</span></code>(zAndTrendCollection, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">toAnnualMedian</span></code>(images, startYear, endYear)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">undoVerdetScaling</span></code>(fitted, indexName, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">updateVerdetMasks</span></code>(img, linearInterpMasks)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">verdetAnnualSlope</span></code>(tsIndex, indexName, ...[, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">yearlySlope</span></code>(rightYear, fitted)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">zAndTrendChangeDetection</span></code>(allScenes, ...[, ...])</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -287,23 +437,23 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="geeViz.assetManagerLib.html">
+          <a class="next-page" href="geeViz.taskManagerLib.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">geeViz.assetManagerLib</div>
+                <div class="title">geeViz.taskManagerLib</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="geeViz.changeDetectionLib.html">
+          <a class="prev-page" href="geeViz.getImagesLib.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">geeViz.changeDetectionLib</div>
+                <div class="title">geeViz.getImagesLib</div>
                 
               </div>
             </a>

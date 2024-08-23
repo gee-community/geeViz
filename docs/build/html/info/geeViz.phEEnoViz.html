@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="geeViz.assetManagerLib" href="geeViz.assetManagerLib.html" /><link rel="prev" title="geeViz.changeDetectionLib" href="geeViz.changeDetectionLib.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Details" href="../modules.html" /><link rel="prev" title="geeViz.foliumView" href="geeViz.foliumView.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>geeViz.taskManagerLib - geeViz &#34;2024.8.1&#34; docs</title>
+        <title>geeViz.phEEnoViz - geeViz &#34;2024.8.1&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -182,12 +182,12 @@
 <li class="toctree-l2"><a class="reference internal" href="geeViz.geeView.html">geeViz.geeView</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">geeViz.taskManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.foliumView.html">geeViz.foliumView</a></li>
-<li class="toctree-l2"><a class="reference internal" href="geeViz.phEEnoViz.html">geeViz.phEEnoViz</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">geeViz.phEEnoViz</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../modules.html">Details</a></li>
@@ -236,45 +236,30 @@
           </label>
         </div>
         <article role="main">
-          <section id="module-geeViz.taskManagerLib">
-<span id="geeviz-taskmanagerlib"></span><h1>geeViz.taskManagerLib<a class="headerlink" href="#module-geeViz.taskManagerLib" title="Link to this heading">#</a></h1>
-<p>Monitor and manage tasks programatically</p>
-<p>geeViz.taskManagerLib facilitates the monitoring and deleting of GEE export tasks.</p>
+          <section id="module-geeViz.phEEnoViz">
+<span id="geeviz-pheenoviz"></span><h1>geeViz.phEEnoViz<a class="headerlink" href="#module-geeViz.phEEnoViz" title="Link to this heading">#</a></h1>
+<p>Visualize the spectral seasonality of an area to facilitate composting methods development</p>
+<p>geeViz.phEEnoViz facilitates the creation of plots to show the seasonality of an area. This is a good tool for deciding what date ranges to use for compositing.</p>
 <p class="rubric">Functions</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">batchCancel</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">chartTimeSeriesDistributions</span></code>(tables, ...[, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cancelByName</span></code>(nameIdentifier)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_dir</span></code>(dir)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">failedTasks</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_to_csv</span></code>(output_table_name)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getEECUS</span></code>(output_table_name[, nameFind, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getTableWrapper</span></code>(image, fc, outputName[, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getTasks</span></code>([id_list])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getTimeSeriesSample</span></code>(startYear, endYear, ...)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">jobCompletionTracker</span></code>(starttime, endtime, ...)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nameTaskList</span></code>(nameIdentifier)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">now</span></code>()</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">timeTaskList</span></code>(starttime, endtime)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">trackTasks</span></code>()</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">trackTasks2</span></code>([credential_name, id_list, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">limitThreads</span></code>(limit)</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -287,23 +272,23 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="geeViz.assetManagerLib.html">
+          <a class="next-page" href="../modules.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">geeViz.assetManagerLib</div>
+                <div class="title">Details</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="geeViz.changeDetectionLib.html">
+          <a class="prev-page" href="geeViz.foliumView.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">geeViz.changeDetectionLib</div>
+                <div class="title">geeViz.foliumView</div>
                 
               </div>
             </a>

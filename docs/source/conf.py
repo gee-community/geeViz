@@ -82,11 +82,12 @@ print("here", os.path.dirname(os.path.realpath(__file__)))
 html_theme = "furo"
 html_static_path = ["_static"]
 html_css_files = ["style/custom.css"]
+# html_style = "style/custom.css"
 dark_text_color = "#00bfa5"
 light_text_color = "#00897b"
 
-html_logo = f"{html_static_path[0]}/RCR-logo.jpg"
-html_favicon = html_logo
+html_logo = "images/RCR-logo.jpg"
+# html_favicon = html_logo
 pygments_style = "sphinx"
 pygments_dark_style = "monokai"
 
@@ -114,7 +115,7 @@ html_theme_options = {
         {
             "name": "RedCastle Resources Inc",
             "url": "https://www.redcastleresources.com/",
-            "html": f"<img src='{html_logo}'  alt='RedCastle Inc. Logo' href='#' title='Click to learn more about RedCastle Resources Inc.'>",
+            "html": f"<img src='https://apps.fs.usda.gov/lcms-viewer/src/assets/images/RCR-logo.jpg'  alt='RedCastle Inc. Logo' href='#' title='Click to learn more about RedCastle Resources Inc.'>",
             "class": "",
         },
     ],

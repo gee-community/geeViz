@@ -5,14 +5,14 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Installation" href="installation.html" />
 
-    <link rel="shortcut icon" href="_static/RCR-logo.jpg"/><!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
         <title>geeViz &#34;2024.8.1&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=36a5483c" />
-    <link rel="stylesheet" type="text/css" href="_static/style/custom.css" />
+    <link rel="stylesheet" type="text/css" href="_static/style/custom.css?v=ebb50e13" />
     
     
 
@@ -180,10 +180,14 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="overview.html">Overview</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Overview</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.geeView.html">geeViz.geeView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.foliumView.html">geeViz.foliumView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.phEEnoViz.html">geeViz.phEEnoViz</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Details</a></li>
@@ -274,10 +278,14 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.geeView.html">geeViz.geeView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
 <li class="toctree-l2"><a class="reference internal" href="info/geeViz.foliumView.html">geeViz.foliumView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="info/geeViz.phEEnoViz.html">geeViz.phEEnoViz</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="modules.html">Details</a><ul>
@@ -334,17 +342,78 @@
 <li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.geeView.verified_initialize"><code class="docutils literal notranslate"><span class="pre">verified_initialize()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="modules.html#geeviz-getimageslib">geeViz.getImagesLib</a></li>
-<li class="toctree-l2"><a class="reference internal" href="modules.html#geeviz-changedetectionlib">geeViz.changeDetectionLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.getImagesLib">geeViz.getImagesLib</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.HoCalcAlgorithm2"><code class="docutils literal notranslate"><span class="pre">HoCalcAlgorithm2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.RefinedLee"><code class="docutils literal notranslate"><span class="pre">RefinedLee()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.addDateBand"><code class="docutils literal notranslate"><span class="pre">addDateBand()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.addFullYearJulianDayBand"><code class="docutils literal notranslate"><span class="pre">addFullYearJulianDayBand()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.addIndices"><code class="docutils literal notranslate"><span class="pre">addIndices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.addJulianDayBand"><code class="docutils literal notranslate"><span class="pre">addJulianDayBand()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.addSAVIandEVI"><code class="docutils literal notranslate"><span class="pre">addSAVIandEVI()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.addSensorBand"><code class="docutils literal notranslate"><span class="pre">addSensorBand()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.addSoilIndices"><code class="docutils literal notranslate"><span class="pre">addSoilIndices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.addTCAngles"><code class="docutils literal notranslate"><span class="pre">addTCAngles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.addYearBand"><code class="docutils literal notranslate"><span class="pre">addYearBand()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.addYearFractionBand"><code class="docutils literal notranslate"><span class="pre">addYearFractionBand()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.addYearJulianDayBand"><code class="docutils literal notranslate"><span class="pre">addYearJulianDayBand()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.addYearYearFractionBand"><code class="docutils literal notranslate"><span class="pre">addYearYearFractionBand()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.addZenithAzimuth"><code class="docutils literal notranslate"><span class="pre">addZenithAzimuth()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.applyBitMask"><code class="docutils literal notranslate"><span class="pre">applyBitMask()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.applyCloudScoreAlgorithm"><code class="docutils literal notranslate"><span class="pre">applyCloudScoreAlgorithm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.cFmask"><code class="docutils literal notranslate"><span class="pre">cFmask()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.cFmaskCloud"><code class="docutils literal notranslate"><span class="pre">cFmaskCloud()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.cFmaskCloudShadow"><code class="docutils literal notranslate"><span class="pre">cFmaskCloudShadow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.collectionToImage"><code class="docutils literal notranslate"><span class="pre">collectionToImage()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.compositeDates"><code class="docutils literal notranslate"><span class="pre">compositeDates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.compositeTimeSeries"><code class="docutils literal notranslate"><span class="pre">compositeTimeSeries()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.dailyMosaics"><code class="docutils literal notranslate"><span class="pre">dailyMosaics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.defringeLandsat"><code class="docutils literal notranslate"><span class="pre">defringeLandsat()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.exportToAssetWrapper"><code class="docutils literal notranslate"><span class="pre">exportToAssetWrapper()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.exportToCloudStorageWrapper"><code class="docutils literal notranslate"><span class="pre">exportToCloudStorageWrapper()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.exportToDriveWrapper"><code class="docutils literal notranslate"><span class="pre">exportToDriveWrapper()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.fillEmptyCollections"><code class="docutils literal notranslate"><span class="pre">fillEmptyCollections()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.formatArgs"><code class="docutils literal notranslate"><span class="pre">formatArgs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.getImageCollection"><code class="docutils literal notranslate"><span class="pre">getImageCollection()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.getLandsat"><code class="docutils literal notranslate"><span class="pre">getLandsat()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.getProcessedLandsatScenes"><code class="docutils literal notranslate"><span class="pre">getProcessedLandsatScenes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.getQABits"><code class="docutils literal notranslate"><span class="pre">getQABits()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.getS1"><code class="docutils literal notranslate"><span class="pre">getS1()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.getS2"><code class="docutils literal notranslate"><span class="pre">getS2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.getSentinel2"><code class="docutils literal notranslate"><span class="pre">getSentinel2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.getTasseledCap"><code class="docutils literal notranslate"><span class="pre">getTasseledCap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.harmonizationChastain"><code class="docutils literal notranslate"><span class="pre">harmonizationChastain()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.harmonizationRoy"><code class="docutils literal notranslate"><span class="pre">harmonizationRoy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.landsatCloudScore"><code class="docutils literal notranslate"><span class="pre">landsatCloudScore()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.maskEmptyPixels"><code class="docutils literal notranslate"><span class="pre">maskEmptyPixels()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.maskS2clouds"><code class="docutils literal notranslate"><span class="pre">maskS2clouds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.medoidMosaicMSD"><code class="docutils literal notranslate"><span class="pre">medoidMosaicMSD()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.offsetImageDate"><code class="docutils literal notranslate"><span class="pre">offsetImageDate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.rescale"><code class="docutils literal notranslate"><span class="pre">rescale()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.setNoData"><code class="docutils literal notranslate"><span class="pre">setNoData()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.sieve"><code class="docutils literal notranslate"><span class="pre">sieve()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.simpleAddIndices"><code class="docutils literal notranslate"><span class="pre">simpleAddIndices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.simpleAddTCAngles"><code class="docutils literal notranslate"><span class="pre">simpleAddTCAngles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.simpleGetTasseledCap"><code class="docutils literal notranslate"><span class="pre">simpleGetTasseledCap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.simpleTDOM2"><code class="docutils literal notranslate"><span class="pre">simpleTDOM2()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.toDB"><code class="docutils literal notranslate"><span class="pre">toDB()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.toNatural"><code class="docutils literal notranslate"><span class="pre">toNatural()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.uniqueValues"><code class="docutils literal notranslate"><span class="pre">uniqueValues()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.getImagesLib.wrapDates"><code class="docutils literal notranslate"><span class="pre">wrapDates()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.changeDetectionLib">geeViz.changeDetectionLib</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.changeDetectionLib.simpleLANDTRENDR"><code class="docutils literal notranslate"><span class="pre">simpleLANDTRENDR()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.taskManagerLib">geeViz.taskManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.assetManagerLib">geeViz.assetManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.cloudStorageManagerLib">geeViz.cloudStorageManagerLib</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="modules.html#geeViz.cloudStorageManagerLib.rename_blobs"><code class="docutils literal notranslate"><span class="pre">rename_blobs()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="modules.html#geeviz-gee2pandas">geeViz.gee2Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.gee2Pandas">geeViz.gee2Pandas</a></li>
 <li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.foliumView">geeViz.foliumView</a></li>
-<li class="toctree-l2"><a class="reference internal" href="modules.html#geeviz-pheenoviz">geeViz.phEEnoViz</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html#module-geeViz.phEEnoViz">geeViz.phEEnoViz</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a><ul>
@@ -464,7 +533,7 @@
           </div>
           <div class="right-details">
             <div class="icons">
-              <a class="muted-link " href="https://www.redcastleresources.com/" aria-label="RedCastle Resources Inc"><img src='_static/RCR-logo.jpg'  alt='RedCastle Inc. Logo' href='#' title='Click to learn more about RedCastle Resources Inc.'></a>
+              <a class="muted-link " href="https://www.redcastleresources.com/" aria-label="RedCastle Resources Inc"><img src='https://apps.fs.usda.gov/lcms-viewer/src/assets/images/RCR-logo.jpg'  alt='RedCastle Inc. Logo' href='#' title='Click to learn more about RedCastle Resources Inc.'></a>
               
             </div>
           </div>

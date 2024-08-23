@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="geeViz.assetManagerLib" href="geeViz.assetManagerLib.html" /><link rel="prev" title="geeViz.changeDetectionLib" href="geeViz.changeDetectionLib.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="geeViz.foliumView" href="geeViz.foliumView.html" /><link rel="prev" title="geeViz.cloudStorageManagerLib" href="geeViz.cloudStorageManagerLib.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>geeViz.taskManagerLib - geeViz &#34;2024.8.1&#34; docs</title>
+        <title>geeViz.gee2Pandas - geeViz &#34;2024.8.1&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -182,10 +182,10 @@
 <li class="toctree-l2"><a class="reference internal" href="geeViz.geeView.html">geeViz.geeView</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">geeViz.taskManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
-<li class="toctree-l2"><a class="reference internal" href="geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">geeViz.gee2Pandas</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.foliumView.html">geeViz.foliumView</a></li>
 <li class="toctree-l2"><a class="reference internal" href="geeViz.phEEnoViz.html">geeViz.phEEnoViz</a></li>
 </ul>
@@ -236,45 +236,45 @@
           </label>
         </div>
         <article role="main">
-          <section id="module-geeViz.taskManagerLib">
-<span id="geeviz-taskmanagerlib"></span><h1>geeViz.taskManagerLib<a class="headerlink" href="#module-geeViz.taskManagerLib" title="Link to this heading">#</a></h1>
-<p>Monitor and manage tasks programatically</p>
-<p>geeViz.taskManagerLib facilitates the monitoring and deleting of GEE export tasks.</p>
+          <section id="module-geeViz.gee2Pandas">
+<span id="geeviz-gee2pandas"></span><h1>geeViz.gee2Pandas<a class="headerlink" href="#module-geeViz.gee2Pandas" title="Link to this heading">#</a></h1>
+<p>Take data from GEE to Pandas and back</p>
+<p>geeViz.gee2Pandas facilitates converting GEE objects to tabular formats that work well in more common packages such as Pandas.</p>
 <p class="rubric">Functions</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">batchCancel</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dfToJSON</span></code>(dbf, outJsonFilename)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">cancelByName</span></code>(nameIdentifier)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">df_to_geojson</span></code>(df[, properties, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">failedTasks</span></code>()</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">extractPointImageValues</span></code>(ee_image, pt[, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getEECUS</span></code>(output_table_name[, nameFind, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">extractPointValuesToDataFrame</span></code>(ee_object, pt)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">getTasks</span></code>([id_list])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">featureCollection_to_csv</span></code>(featureCollection, ...)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">jobCompletionTracker</span></code>(starttime, endtime, ...)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">featureCollection_to_json</span></code>(featureCollection, ...)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">nameTaskList</span></code>(nameIdentifier)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">geeToLocalZonalStats</span></code>(zones, raster, output_csv)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">now</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">imageArrayPixelToDataFrame</span></code>(img, pt[, scale, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">timeTaskList</span></code>(starttime, endtime)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">robust_featureCollection_to_df</span></code>(featureCollection)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">trackTasks</span></code>()</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">setDFTitle</span></code>(df, title)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">trackTasks2</span></code>([credential_name, id_list, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">tableToFeatureCollection</span></code>(table_path[, ...])</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -287,23 +287,23 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="geeViz.assetManagerLib.html">
+          <a class="next-page" href="geeViz.foliumView.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">geeViz.assetManagerLib</div>
+                <div class="title">geeViz.foliumView</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="geeViz.changeDetectionLib.html">
+          <a class="prev-page" href="geeViz.cloudStorageManagerLib.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">geeViz.changeDetectionLib</div>
+                <div class="title">geeViz.cloudStorageManagerLib</div>
                 
               </div>
             </a>
