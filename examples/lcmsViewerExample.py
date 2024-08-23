@@ -40,7 +40,7 @@ Map.clearMap()
 ### Define visualization parameters ###
 #############################################################################
 startYear = 1985
-endYear = 2022
+endYear = 2023
 lossYearPalette = ["ffffe5", "fff7bc", "fee391", "fec44f", "fe9929", "ec7014", "cc4c02"]
 gainYearPalette = ["c5ee93", "00a398"]
 durationPalette = ["BD1600", "E2F400", "0C2780"]
@@ -71,13 +71,7 @@ durationViz = {"min": 1, "max": 5, "palette": durationPalette}
 def getMostRecentChange(c, code):
     def wrapper(img):
         yr = ee.Date(img.get("system:time_start")).get("year")
-        return (
-            ee.Image(yr)
-            .int16()
-            .rename(["year"])
-            .updateMask(img.eq(code))
-            .copyProperties(img, ["system:time_start"])
-        )
+        return ee.Image(yr).int16().rename(["year"]).updateMask(img.eq(code)).copyProperties(img, ["system:time_start"])
 
     return c.map(wrapper)
 
@@ -86,7 +80,7 @@ def getMostRecentChange(c, code):
 ### Bring in LCMS annual outputs ###
 #############################################################################
 
-lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2022-8")
+lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9")
 bandNames = lcms.first().bandNames().getInfo()
 lcms_props = lcms.first().toDictionary().getInfo()
 print("Available study areas:", lcms.aggregate_histogram("study_area").keys().getInfo())
@@ -165,9 +159,7 @@ Map.addLayer(
 )
 
 mtbsBoundaries = ee.FeatureCollection("USFS/GTAC/MTBS/burned_area_boundaries/v1")
-mtbsBoundaries = mtbsBoundaries.map(
-    lambda f: f.set("system:time_start", f.get("Ig_Date"))
-)
+mtbsBoundaries = mtbsBoundaries.map(lambda f: f.set("system:time_start", f.get("Ig_Date")))
 
 # For area charting you can select areas to chart a number of ways. One method is using a map layer that is selectable by clicking on each feature.
 Map.addSelectLayer(
@@ -233,11 +225,7 @@ Map.addLayer(
             "Tree Fast Loss": "FF0",
             "Tree Fast Loss + Gain": "FFF",
         },
-        "queryParams": {
-            "palette": lcms_props["Change_class_palette"][1:-1]
-            + lcms_props["Land_Cover_class_palette"][:-1]
-            + lcms_props["Land_Use_class_palette"][:-1]
-        },
+        "queryParams": {"palette": lcms_props["Change_class_palette"][1:-1] + lcms_props["Land_Cover_class_palette"][:-1] + lcms_props["Land_Use_class_palette"][:-1]},
         "bands": "Change_Raw_Probability_Fast_Loss,Land_Cover_Raw_Probability_Trees,Change_Raw_Probability_Gain",
     },
     "LCMS Change Composite",
@@ -273,11 +261,7 @@ Map.addLayer(slowLossDuration, durationViz, "Slow Loss Duration", False)
 Map.addLayer(fastLossDuration, durationViz, "Fast Loss Duration", False)
 Map.addLayer(gainDuration, durationViz, "Gain Duration", False)
 
-justChange = change.map(
-    lambda img: img.updateMask(
-        ee.Image(img.gt(1).And(img.lt(5))).copyProperties(lcms.first())
-    )
-)
+justChange = change.map(lambda img: img.updateMask(ee.Image(img.gt(1).And(img.lt(5))).copyProperties(lcms.first())))
 # Map.addTimeLapse(
 # justChange, {"autoViz": True, "mosaic": True}, "LCMS Change Time Lapse", False
 # )

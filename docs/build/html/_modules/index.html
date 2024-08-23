@@ -5,10 +5,13 @@
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" />
 
     <link rel="shortcut icon" href="../_static/RCR-logo.jpg"/><!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Overview: module code - geeViz &#34;2024.7.1&#34; docs</title>
+        <title>Overview: module code - geeViz &#34;2024.8.1&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="../_static/style/custom.css" />
     
     
 
@@ -138,7 +141,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">geeViz "2024.7.1" docs</div></a>
+      <a href="../index.html"><div class="brand">geeViz "2024.8.1" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -164,7 +167,7 @@
     <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.7.1" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.8.1" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -173,20 +176,27 @@
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul>
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../overview.html">Overview</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Overview</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../info/geeViz.geeView.html">geeViz.geeView</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../info/geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../info/geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../info/geeViz.cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../info/geeViz.foliumView.html">geeViz.foliumView</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.phEEnoViz.html">geeViz.phEEnoViz</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../modules.html">Details</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../examples.html">Examples</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../notebooks/geeViewExampleNotebook.html">Starter geeViz geeView Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../notebooks/lcmsViewerExampleNotebook.html">LCMS Viewer Intro Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../notebooks/getLandsatWrapperNotebook.html">Create High Quality Landsat Composites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../notebooks/areaChart_examples.html">Visualizing Area Summaries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../notebooks/geeViz_geeMap_comparison_tutorial.html">A comparison between geeViz and geeMap’s map visualization capabilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../notebooks/LANDTRENDRWrapperNotebook.html">Run LandTrendr and Visualize Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../notebooks/LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../notebooks/CCDCVizNotebook.html">CCDC Visualization Notebook</a></li>
+</ul>
+</li>
 </ul>
 
 </div>
@@ -221,10 +231,8 @@
         </div>
         <article role="main">
           <h1>All modules for which code is available</h1>
-<ul><li><a href="geeViz/changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
-<li><a href="geeViz/cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
+<ul><li><a href="geeViz/cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
 <li><a href="geeViz/geeView.html">geeViz.geeView</a></li>
-<li><a href="geeViz/getImagesLib.html">geeViz.getImagesLib</a></li>
 </ul>
         </article>
       </div>
@@ -260,9 +268,11 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=81168827"></script>
+</div><script src="../_static/documentation_options.js?v=7c878331"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
     </body>
 </html>

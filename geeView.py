@@ -139,11 +139,7 @@ def robustInitializer():
             if str(E).find("Reauthentication is needed") > -1:
                 ee.Authenticate(force=True)
 
-            if (
-                str(E).find("no project found. Call with project")
-                or str(E).find("project is not registered") > -1
-                or str(E).find(" quota project, which is not set by default") > -1
-            ):
+            if str(E).find("no project found. Call with project") or str(E).find("project is not registered") > -1 or str(E).find(" quota project, which is not set by default") > -1:
                 project_id = getProject()
 
             else:
@@ -224,9 +220,7 @@ def RGB_to_hex(RGB):
     """[255,255,255] -> "#FFFFFF" """
     # Components need to be integers for hex to make sense
     RGB = [int(x) for x in RGB]
-    return "#" + "".join(
-        ["0{0:x}".format(v) if v < 16 else "{0:x}".format(v) for v in RGB]
-    )
+    return "#" + "".join(["0{0:x}".format(v) if v < 16 else "{0:x}".format(v) for v in RGB])
 
 
 def linear_gradient(start_hex, finish_hex="#FFFFFF", n=10):
@@ -242,9 +236,7 @@ def linear_gradient(start_hex, finish_hex="#FFFFFF", n=10):
     # Calcuate a color at each evenly spaced value of t from 1 to n
     for t in range(1, n):
         # Interpolate RGB vector for color at the current value of t
-        curr_vector = [
-            int(s[j] + (float(t) / (n - 1)) * (f[j] - s[j])) for j in range(3)
-        ]
+        curr_vector = [int(s[j] + (float(t) / (n - 1)) * (f[j] - s[j])) for j in range(3)]
         # Add it to our list of output colors
         RGB_list.append(curr_vector)
 
@@ -290,9 +282,7 @@ def polylinear_gradient(colors, n):
         print(gradient_dict["hex"])
         print(("sliceval", sliceval))
         for k in ("hex", "r", "g", "b"):
-            gradient_dict[k] = [
-                i for j, i in enumerate(gradient_dict[k]) if j not in sliceval
-            ]
+            gradient_dict[k] = [i for j, i in enumerate(gradient_dict[k]) if j not in sliceval]
         # print(('new len dict', len(gradient_dict['hex'])))
     print(gradient_dict["hex"], len(gradient_dict["hex"]))
     return gradient_dict
@@ -397,9 +387,7 @@ def serviceAccountToken(service_key_file_path):
         str: temporary access token
     """
     try:
-        credentials = service_account.Credentials.from_service_account_file(
-            service_key_file_path, scopes=ee.oauth.SCOPES
-        )
+        credentials = service_account.Credentials.from_service_account_file(service_key_file_path, scopes=ee.oauth.SCOPES)
         credentials.refresh(gReq.Request())
         accessToken = credentials.token
         accessToken = cleanAccessToken(accessToken)
@@ -581,16 +569,22 @@ class mapper:
 
                             "showGrid" (bool, default True): Whether to show the grid lines on the line or bar graph,
 
-                            "rangeSlider" (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`https://plotly.com/javascript/range-slider/`)
+                            "rangeSlider" (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`https://plotly.com/javascript/range-slider/>`)
 
-
+                            "barChartMaxClasses" (int, default 20): The maximum number of classes to show for image bar charts. Will automatically only show the top `bartChartMaxClasses` in any image bar chart. Any downloaded csv table will still have all of the class counts.
                         }
 
                 }
             name (str): Descriptive name for map layer that will be shown on the map UI
             visible (bool, optional): Whether layer should be visible when map UI loads
 
-        >>> Map.addLayer(ee.Image(1),{'min':0,'max':1,'palette':'000,FFF'},"Example Map Layer",True)
+        >>> import geeViz.geeView as gv
+        >>> Map = gv.Map
+        >>> ee = gv.ee
+        >>> nlcd = ee.ImageCollection("USGS/NLCD_RELEASES/2021_REL/NLCD").select(['landcover'])
+        >>> Map.addLayer(nlcd, {"autoViz": True}, "NLCD Land Cover / Land Use 2021")
+        >>> Map.turnOnInspector()
+        >>> Map.view()
 
 
         """
@@ -613,14 +607,10 @@ class mapper:
 
             if "reducer" in viz["areaChartParams"].keys():
                 try:
-                    viz["areaChartParams"]["reducer"] = viz["areaChartParams"][
-                        "reducer"
-                    ].serialize()
+                    viz["areaChartParams"]["reducer"] = viz["areaChartParams"]["reducer"].serialize()
                 except Exception as e:
                     try:
-                        viz["areaChartParams"]["reducer"] = eval(
-                            viz["areaChartParams"]["reducer"]
-                        ).serialize()
+                        viz["areaChartParams"]["reducer"] = eval(viz["areaChartParams"]["reducer"]).serialize()
                     except Exception as e:  # Most likely it's already serialized
                         e = e
 
@@ -727,14 +717,22 @@ class mapper:
 
                             "rangeSlider" (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`<https://plotly.com/javascript/range-slider/>`)
 
-
+                            "barChartMaxClasses" (int, default 20): The maximum number of classes to show for image bar charts. Will automatically only show the top `bartChartMaxClasses` in any image bar chart. Any downloaded csv table will still have all of the class counts.
                         }
 
                 }
             name (str): Descriptive name for map layer that will be shown on the map UI
             visible (bool, optional): Whether layer should be visible when map UI loads
 
-        >>> Map.addTimeLapse(ee.Image(1),{'min':0,'max':1,'palette':'000,FFF},"Example Map Layer",True)
+        >>> import geeViz.geeView as gv
+        >>> Map = gv.Map
+        >>> ee = gv.ee
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter(ee.Filter.calendarRange(2010, 2023, "year"))
+        >>> Map.addTimeLapse(lcms.select(["Land_Cover"]), {"autoViz": True, "mosaic": True}, "LCMS Land Cover Time Lapse")
+        >>> Map.addTimeLapse(lcms.select(["Change"]), {"autoViz": True, "mosaic": True}, "LCMS Change Time Lapse")
+        >>> Map.addTimeLapse(lcms.select(["Land_Use"]), {"autoViz": True, "mosaic": True}, "LCMS Land Use Time Lapse")
+        >>> Map.turnOnInspector()
+        >>> Map.view()
 
 
         """
@@ -752,14 +750,10 @@ class mapper:
 
             if "reducer" in viz["areaChartParams"].keys():
                 try:
-                    viz["areaChartParams"]["reducer"] = viz["areaChartParams"][
-                        "reducer"
-                    ].serialize()
+                    viz["areaChartParams"]["reducer"] = viz["areaChartParams"]["reducer"].serialize()
                 except Exception as e:
                     try:
-                        viz["areaChartParams"]["reducer"] = eval(
-                            viz["areaChartParams"]["reducer"]
-                        ).serialize()
+                        viz["areaChartParams"]["reducer"] = eval(viz["areaChartParams"]["reducer"]).serialize()
                     except Exception as e:  # Most likely it's already serialized
                         e = e
         viz["layerType"] = "ImageCollection"
@@ -795,6 +789,16 @@ class mapper:
                 }
             name (str, default None): Descriptive name for map layer that will be shown on the map UI. Will be auto-populated with `Layer N` if not specified
 
+        >>> import geeViz.geeView as gv
+        >>> Map = gv.Map
+        >>> ee = gv.ee
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms, {"autoViz": True, "canAreaChart": True, "areaChartParams": {"line": True, "sankey": True}}, "LCMS")
+        >>> mtbsBoundaries = ee.FeatureCollection("USFS/GTAC/MTBS/burned_area_boundaries/v1")
+        >>> mtbsBoundaries = mtbsBoundaries.map(lambda f: f.set("system:time_start", f.get("Ig_Date")))
+        >>> Map.addSelectLayer(mtbsBoundaries, {"strokeColor": "00F", "selectLayerNameProperty": "Incid_Name"}, "MTBS Fire Boundaries")
+        >>> Map.turnOnSelectionAreaCharting()
+        >>> Map.view()
         """
         if name == None:
             name = "Layer " + str(self.layerNumber)
@@ -940,65 +944,39 @@ class mapper:
         #     display(self.Map)
 
         if not isPortActive(self.port):
-            print(
-                "Starting local web server at: http://localhost:{}/{}/".format(
-                    self.port, geeViewFolder
-                )
-            )
+            print("Starting local web server at: http://localhost:{}/{}/".format(self.port, geeViewFolder))
             run_local_server(self.port)
             print("Done")
 
         else:
-            print(
-                "Local web server at: http://localhost:{}/{}/ already serving.".format(
-                    self.port, geeViewFolder
-                )
-            )
+            print("Local web server at: http://localhost:{}/{}/ already serving.".format(self.port, geeViewFolder))
             # print('Refresh browser instance')
 
         print("cwd", os.getcwd())
         if IS_COLAB:
             proxy_js = "google.colab.kernel.proxyPort({})".format(self.port)
             proxy_url = eval_js(proxy_js)
-            geeView_proxy_url = "{}geeView/?projectID={}&accessToken={}".format(
-                proxy_url, self.project, self.accessToken
-            )
+            geeView_proxy_url = "{}geeView/?projectID={}&accessToken={}".format(proxy_url, self.project, self.accessToken)
             print("Colab Proxy URL:", geeView_proxy_url)
-            viewerFrame = IFrame(
-                src=geeView_proxy_url, width="100%", height="{}px".format(iframe_height)
-            )
+            viewerFrame = IFrame(src=geeView_proxy_url, width="100%", height="{}px".format(iframe_height))
             display(viewerFrame)
         elif IS_WORKBENCH:
             if self.proxy_url == None:
-                self.proxy_url = input(
-                    "Please enter current URL Workbench Notebook is running from (e.g. https://code-dot-region.notebooks.googleusercontent.com/): "
-                )
+                self.proxy_url = input("Please enter current URL Workbench Notebook is running from (e.g. https://code-dot-region.notebooks.googleusercontent.com/): ")
             self.proxy_url = baseDomain(self.proxy_url)
-            geeView_proxy_url = (
-                "{}/proxy/{}/geeView/?projectID={}&accessToken={}".format(
-                    self.proxy_url, self.port, self.project, self.accessToken
-                )
-            )
+            geeView_proxy_url = "{}/proxy/{}/geeView/?projectID={}&accessToken={}".format(self.proxy_url, self.port, self.project, self.accessToken)
             print("Workbench Proxy URL:", geeView_proxy_url)
-            viewerFrame = IFrame(
-                src=geeView_proxy_url, width="100%", height="{}px".format(iframe_height)
-            )
+            viewerFrame = IFrame(src=geeView_proxy_url, width="100%", height="{}px".format(iframe_height))
             display(viewerFrame)
         else:
-            url = "http://localhost:{}/{}/?projectID={}&accessToken={}".format(
-                self.port, geeViewFolder, self.project, self.accessToken
-            )
+            url = "http://localhost:{}/{}/?projectID={}&accessToken={}".format(self.port, geeViewFolder, self.project, self.accessToken)
             print("geeView URL:", url)
             if not self.isNotebook or open_browser:
                 webbrowser.open(url, new=1)
             elif open_browser == False and open_iframe:
-                self.IFrame = IFrame(
-                    src=url, width="100%", height="{}px".format(iframe_height)
-                )
+                self.IFrame = IFrame(src=url, width="100%", height="{}px".format(iframe_height))
             else:
-                self.IFrame = IFrame(
-                    src=url, width="100%", height="{}px".format(iframe_height)
-                )
+                self.IFrame = IFrame(src=url, width="100%", height="{}px".format(iframe_height))
                 display(self.IFrame)
 
     ######################################################################
@@ -1197,6 +1175,17 @@ class mapper:
                 }
             name (str): Descriptive name for map layer that will be shown on the map UI
             shouldChart (bool, optional): Whether layer should be charted when map UI loads
+
+        >>> import geeViz.geeView as gv
+        >>> Map = gv.Map
+        >>> ee = gv.ee
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select(["Change_Raw_Probability.*"]), {"reducer": ee.Reducer.stdDev(), "min": 0, "max": 10}, "LCMS Change Prob")
+        >>> Map.addAreaChartLayer(lcms, {"line": True, "layerType": "ImageCollection"}, "LCMS All Thematic Classes Line", True)
+        >>> Map.addAreaChartLayer(lcms, {"sankey": True}, "LCMS All Thematic Classes Sankey", True)
+        >>> Map.populateAreaChartLayerSelect()
+        >>> Map.turnOnAutoAreaCharting()
+        >>> Map.view()
 
         """
         if name == None:

@@ -2671,12 +2671,12 @@ def getS2(
     endDate: ee.Date,
     startJulian: int,
     endJulian: int,
+    resampleMethod: str = "nearest",
     toaOrSR: str = "TOA",
     convertToDailyMosaics: bool = True,
     addCloudProbability: bool = False,
     addCloudScorePlus: bool = True,
     cloudScorePlusScore: str = "cs",
-    resampleMethod: str = "nearest",
 ) -> ee.ImageCollection:
     """Loads and processes Sentinel-2 data for a given area and time period.
 
@@ -2686,12 +2686,13 @@ def getS2(
         endDate: The end date of the desired data.
         startJulian: The start Julian day of the desired data.
         endJulian: The end Julian day of the desired data.
+        resampleMethod: The resampling method (default: "nearest").
         toaOrSR: Whether to load TOA or SR data (default: "TOA").
         convertToDailyMosaics: Whether to convert the data to daily mosaics (default: True).
         addCloudProbability: Whether to add cloud probability data (default: False).
         addCloudScorePlus: Whether to add cloud score plus data (default: True).
         cloudScorePlusScore: The band name for cloud score plus (default: "cs").
-        resampleMethod: The resampling method (default: "nearest").
+
 
     Returns:
         An Earth Engine ImageCollection containing the processed Sentinel-2 data.

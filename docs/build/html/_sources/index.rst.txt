@@ -5,7 +5,8 @@
 
 geeViz Documentation
 ==================================
-
+.. image:: images/Area_Charting_Example.png
+ 
 * geeViz is a Python package that helps with data processing, analysis, and visualization in Google Earth Engine (GEE). 
 * geeViz provides a number of functions for working with GEE data, including:
      * Importing and exporting data
@@ -15,6 +16,8 @@ geeViz Documentation
 * geeViz works inside and outside Python notebook environments, providing a flexible method for visualizing data in GEE using Python
 
 * Check out the :doc:`installation` section for further information, including how to :ref:`install <installation>` the package. 
+
+* Check out the :doc:`examples` section for examples showing uses of geeViz. 
 
 * :class:`geeViz.geeView.mapper` is based on the `Landscape Change Monitoring System (LCMS) Viewer framework <https://apps.fs.usda.gov/lcms-viewer/>`_. It leverages the same code the LCMS viewer uses, providing the ability to easily view and explore GEE objects in a map environment. 
 
@@ -30,7 +33,6 @@ Search geeViz Documentation
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
 
 geeViz Overview
 -----------------------------------------
@@ -38,6 +40,7 @@ geeViz Overview
    installation
    overview
    modules
+   examples
 
 
 
