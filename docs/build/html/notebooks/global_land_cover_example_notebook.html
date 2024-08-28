@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="LCMAP and LCMS Outputs Viewer" href="LCMAP_and_LCMS_Viewer_Notebook.html" /><link rel="prev" title="Visualizing MapBiomas Datasets" href="mapBiomasViewerExampleNotebook.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Visualizing Global Land Cover - geeViz &#34;2024.8.2&#34; docs</title>
+        <title>Visualizing Global Land Cover - geeViz &#34;2024.8.3&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -142,7 +142,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">geeViz "2024.8.2" docs</div></a>
+      <a href="../index.html"><div class="brand">geeViz "2024.8.3" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -168,7 +168,7 @@
     <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.8.2" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.8.3" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -258,20 +258,26 @@ limitations under the License.</p>
 <p><a href="https://colab.research.google.com/github/gee-community/geeViz/blob/master/examples/global_land_cover_example_notebook.ipynb" target="_parent"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg"></a></p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">ee</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span>  <span class="nn">geeViz.geeView</span> <span class="k">as</span> <span class="nn">geeView</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="o">!</span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>geeViz
+    <span class="kn">import</span>  <span class="nn">geeViz.geeView</span> <span class="k">as</span> <span class="nn">geeView</span>
 
-<span class="c1"># Enter your project ID</span>
-<span class="n">projectID</span> <span class="o">=</span> <span class="s1">&#39;lcms-292214&#39;</span>
+<span class="n">ee</span> <span class="o">=</span> <span class="n">geeView</span><span class="o">.</span><span class="n">ee</span>
+<span class="n">Map</span> <span class="o">=</span> <span class="n">geeView</span><span class="o">.</span><span class="n">Map</span>
 
-<span class="n">ee</span><span class="o">.</span><span class="n">Initialize</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">projectID</span><span class="p">)</span>
-
-
-
-<span class="kn">import</span> <span class="nn">geeViz.geeView</span> <span class="k">as</span> <span class="nn">gv</span>
-
-
-
-<span class="n">Map</span> <span class="o">=</span> <span class="n">gv</span><span class="o">.</span><span class="n">Map</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;done&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Initializing GEE
+Cached project id file path: C:\Users\ihousman\.config\earthengine\credentials.proj_id
+Cached project id: lcms-292214
+Successfully initialized
+geeViz package folder: c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\geeViz
+done
 </pre></div>
 </div>
 </div>
@@ -560,7 +566,7 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=063138de"></script>
+</div><script src="../_static/documentation_options.js?v=9973ac44"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
