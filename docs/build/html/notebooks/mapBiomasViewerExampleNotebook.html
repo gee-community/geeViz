@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Visualizing Global Land Cover" href="global_land_cover_example_notebook.html" /><link rel="prev" title="LCMS Viewer Intro Notebook" href="lcmsViewerExampleNotebook.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Visualizing Map Biomas Datasets - geeViz &#34;2024.8.2&#34; docs</title>
+        <title>Visualizing MapBiomas Datasets - geeViz &#34;2024.8.2&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -194,7 +194,7 @@
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../examples.html">Examples</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="geeViewExampleNotebook.html">Starter geeViz geeView Notebook</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lcmsViewerExampleNotebook.html">LCMS Viewer Intro Notebook</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Visualizing Map Biomas Datasets</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Visualizing MapBiomas Datasets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="global_land_cover_example_notebook.html">Visualizing Global Land Cover</a></li>
 <li class="toctree-l2"><a class="reference internal" href="LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="getLandsatWrapperNotebook.html">Create High Quality Landsat Composites</a></li>
@@ -239,10 +239,10 @@
           </label>
         </div>
         <article role="main">
-          <section id="visualizing-map-biomas-datasets">
-<h1>Visualizing Map Biomas Datasets<a class="headerlink" href="#visualizing-map-biomas-datasets" title="Link to this heading">#</a></h1>
+          <section id="visualizing-mapbiomas-datasets">
+<h1>Visualizing MapBiomas Datasets<a class="headerlink" href="#visualizing-mapbiomas-datasets" title="Link to this heading">#</a></h1>
 <ul class="simple">
-<li><p>Map Biomas datasets are available as an EE asset as part of the awesome GEE community catelogue</p></li>
+<li><p>MapBiomas datasets are available as an EE asset as part of the awesome GEE community catelogue</p></li>
 <li><p>See https://gee-community-catalog.org/projects/mapbiomas/ for source documentation</p></li>
 </ul>
 <p>Copyright 2024 Ian Housman</p>
@@ -255,7 +255,7 @@ distributed under the License is distributed on an “AS IS” BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.</p>
-<p><a href="https://colab.research.google.com/github/gee-community/geeViz/blob/master/examples/global_land_cover_example_notebook.ipynb" target="_parent"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg"></a></p><div class="cell docutils container">
+<p><a href="https://colab.research.google.com/github/gee-community/geeViz/blob/master/examples/mapBiomasViewerExampleNotebook.ipynb" target="_parent"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg"></a></p><div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">ee</span>
 
@@ -279,7 +279,7 @@ limitations under the License.</p>
 <h2>Make a basic viewer<a class="headerlink" href="#make-a-basic-viewer" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p>Source information can be found here: https://gee-community-catalog.org/projects/mapbiomas</p></li>
-<li><p>This example mosaics most available Map Biomas data</p></li>
+<li><p>This example mosaics most available MapBiomas data</p></li>
 <li><p>geeViz will automatically generate legends and query lookups using <code class="docutils literal notranslate"><span class="pre">&quot;autoViz&quot;</span> <span class="pre">:</span> <span class="pre">True</span></code> in the visualization params</p></li>
 <li><p>Once the map loads, you can annimate the time series using the time lapse controls</p></li>
 <li><p>Double-clicking on the map will show the values for the pixel you clicked on</p></li>
@@ -606,6 +606,26 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: MapBiomas LULC
+Adding layer: Global Country Boundaries
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612yFBTw-c0i9oBGLnesqa2et_a-LClTLHIirCloc44PYoodXq4IWLi5_v670d2N-CZrBilqgaG1vN3d54Vd5uENVjIxLVJmTO3VuO0kIHAY6FqGoy1tVPotAtN0IENr1FOzRhh7A70xqYK7cbccfNhFS90GSyT7Ys_eS8u4aCgYKATQSARESFQHGX2Mip-lq39gSIPfX3pj1U8FvMg0178
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612yFBTw-c0i9oBGLnesqa2et_a-LClTLHIirCloc44PYoodXq4IWLi5_v670d2N-CZrBilqgaG1vN3d54Vd5uENVjIxLVJmTO3VuO0kIHAY6FqGoy1tVPotAtN0IENr1FOzRhh7A70xqYK7cbccfNhFS90GSyT7Ys_eS8u4aCgYKATQSARESFQHGX2Mip-lq39gSIPfX3pj1U8FvMg0178"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
 </div>
 </section>
 </section>
@@ -668,7 +688,7 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Visualizing Map Biomas Datasets</a><ul>
+<li><a class="reference internal" href="#">Visualizing MapBiomas Datasets</a><ul>
 <li><a class="reference internal" href="#make-a-basic-viewer">Make a basic viewer</a></li>
 <li><a class="reference internal" href="#calculating-and-exporting-statistics">Calculating and Exporting Statistics¶</a></li>
 <li><a class="reference internal" href="#create-sankey-charts">Create Sankey Charts</a></li>

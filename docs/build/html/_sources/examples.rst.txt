@@ -45,7 +45,7 @@ Visualize multi-temporal `imageCollections`
 
    notebooks/lcmsViewerExampleNotebook
 
-Visualize Map Biomas Datasets
+Visualize MapBiomas Datasets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. toctree::
