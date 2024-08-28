@@ -30,14 +30,33 @@ Map.clearMap()
 ####################################################################################################
 # Datasets available here: https://gee-community-catalog.org/projects/mapbiomas/
 
-# Specify which years all datasets have
-years = list(range(1985, 2021 + 1))
-common_bandNames = [f"classification_{yr}" for yr in years]
+# Specify which years to show
+years = list(range(1985, 2023 + 1))
+year_bandNames = [f"classification_{yr}" for yr in years]
+
+
+# Specify projection to use for zonal summaries and map querying
+# Be sure to leave one of scale or transform as None
+crs = "EPSG:4326"
+transform = None
+scale = 30
+
+
+Map.setQueryCRS(crs)
+if transform == None:
+    Map.setQueryScale(scale)
+else:
+    Map.setQueryTransform(transform)
+
+
+# Make an empty stack to handle missing years for some areas
+empty_stack = ee.ImageCollection([ee.Image().byte() for yb in year_bandNames]).toBands().rename(year_bandNames)
+
 
 # Bring in land use land cover datasets and mosaic them
 paths = [
-    "projects/mapbiomas-public/assets/bolivia/collection1/mapbiomas_bolivia_collection1_integration_v1",
-    "projects/mapbiomas-public/assets/peru/collection1/mapbiomas_peru_collection1_integration_v1",
+    "projects/mapbiomas-public/assets/bolivia/collection2/mapbiomas_bolivia_collection2_integration_v1",
+    "projects/mapbiomas-public/assets/peru/collection2/mapbiomas_peru_collection2_integration_v1",
     "projects/mapbiomas-public/assets/colombia/collection1/mapbiomas_colombia_collection1_integration_v1",
     "projects/mapbiomas-public/assets/ecuador/collection1/mapbiomas_ecuador_collection1_integration_v1",
     "projects/mapbiomas-public/assets/venezuela/collection1/mapbiomas_venezuela_collection1_integration_v1",
@@ -45,13 +64,15 @@ paths = [
     "projects/mapbiomas-workspace/public/collection8/mapbiomas_collection80_integration_v1",
     "projects/mapbiomas-raisg/public/collection5/mapbiomas_raisg_panamazonia_collection5_integration_v1",
     "projects/MapBiomas_Pampa/public/collection3/mapbiomas_uruguay_collection1_integration_v1",
+    "projects/mapbiomas-public/assets/chile/collection1/mapbiomas_chile_collection1_integration_v1",
+    "projects/mapbiomas-public/assets/argentina/collection1/mapbiomas_argentina_collection1_integration_v1",
 ]
 
-
+# Bring in each area and fill in empty years
 lulcImg = []
 for path in paths:
-    lulcImg.append(ee.Image(path).select(common_bandNames).byte())
-
+    lulcImg.append(empty_stack.addBands(ee.Image(path).byte(), None, True))
+print(ee.Image(paths[0]).projection().getInfo())
 lulcImg = ee.ImageCollection(lulcImg).mosaic()
 
 # Bring in the names, values, and palette
@@ -210,11 +231,7 @@ out_band_name = "lulc"
 def setupLulc(bn):
     bn = ee.String(bn)
     yr = ee.Number.parse(ee.String(bn).split("_").get(1))
-    img = (
-        lulcImg.select(bn)
-        .rename([out_band_name])
-        .set("system:time_start", ee.Date.fromYMD(yr, 6, 1).millis())
-    )
+    img = lulcImg.select(bn).rename([out_band_name]).set("system:time_start", ee.Date.fromYMD(yr, 6, 1).millis())
     img = img.set(
         {
             f"{out_band_name}_class_names": names,
@@ -230,15 +247,13 @@ lulcC = ee.ImageCollection(bns.map(setupLulc))
 
 
 # Add the collection to the map
-Map.addTimeLapse(
-    lulcC,
-    {"canAreaChart": True, "autoViz": True, "years": years},
-    "MapBiomas LULC",
-)
+Map.addTimeLapse(lulcC, {"canAreaChart": True, "autoViz": True, "years": years, "areaChartParams": {"line": True, "sankey": True, "crs": crs, "transform": transform, "scale": scale}}, "MapBiomas LULC")
 
-
+countries = ee.FeatureCollection("FAO/GAUL_SIMPLIFIED_500m/2015/level0")
+Map.addSelectLayer(countries, {}, "Global Country Boundaries")
 # Set up the map
 Map.turnOnAutoAreaCharting()
+Map.turnOffLayersWhenTimeLapseIsOn = False
 # Map.turnOnInspector()
-Map.setCenter(-62.8, -3, 6)
+Map.setCenter(-62.8, -3, 4)
 Map.view()

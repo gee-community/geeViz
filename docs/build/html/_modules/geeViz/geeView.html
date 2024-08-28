@@ -5,7 +5,7 @@
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>geeViz.geeView - geeViz &#34;2024.8.1&#34; docs</title>
+        <title>geeViz.geeView - geeViz &#34;2024.8.2&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -141,7 +141,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">geeViz "2024.8.1" docs</div></a>
+      <a href="../../index.html"><div class="brand">geeViz "2024.8.2" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -167,7 +167,7 @@
     <img class="sidebar-logo" src="../../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.8.1" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.8.2" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -193,6 +193,9 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../examples.html">Examples</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../notebooks/geeViewExampleNotebook.html">Starter geeViz geeView Notebook</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../notebooks/lcmsViewerExampleNotebook.html">LCMS Viewer Intro Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../notebooks/mapBiomasViewerExampleNotebook.html">Visualizing Map Biomas Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../notebooks/global_land_cover_example_notebook.html">Visualizing Global Land Cover</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../notebooks/LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../notebooks/getLandsatWrapperNotebook.html">Create High Quality Landsat Composites</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../notebooks/areaChart_examples.html">Visualizing Area Summaries</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../notebooks/geeViz_geeMap_comparison_tutorial.html">A comparison between geeViz and geeMap’s map visualization capabilities</a></li>
@@ -744,8 +747,20 @@
 
 <span class="sd">    Map object that is used to manage layers, activated user input methods, and launching the map viewer user interface</span>
 
+<span class="sd">    Args:</span>
+<span class="sd">        port (int, default 8001): Which port to user for web server. Sometimes a port will become &quot;stuck,&quot; so this will need set to some other number than what it was set at in previous runs of a given session.</span>
 <span class="sd">    Attributes:</span>
-<span class="sd">        port (int, optional): Which port to user for web server. Sometimes a port will become &quot;stuck,&quot; so this will need set to some other number than what it was set at in previous runs of a given session.</span>
+<span class="sd">        port (int, default 8001): Which port to user for web server. Sometimes a port will become &quot;stuck,&quot; so this will need set to some other number than what it was set at in previous runs of a given session.</span>
+
+<span class="sd">        proxy_url (str, default None): The proxy url the web server runs through for either Google Colab or Vertex AI Workbench. This is automatically specified in Google Colab, but in Vertex AI Workbench, the `Map.proxy_url` must be specified as the current URL Workbench Notebook is running from (e.g. https://code-dot-region.notebooks.googleusercontent.com/).</span>
+
+<span class="sd">        refreshTokenPath (str, default ee.oauth.get_credentials_path()): Refresh token credentials file path</span>
+
+<span class="sd">        serviceKeyPath (str, default None): Location of a service account key json. If provided, this will be used for authentication inside geeView instead of the refresh token</span>
+
+<span class="sd">        project (str, default  ee.data._cloud_api_user_project): Can override which project geeView will use for authentication. While geeViz will try to find a project if ee.data._cloud_api_user_project isn&#39;t already set (usually by `ee.Initialize(project=&quot;someProjectID&quot;)`) by prompting the user to enter one, in some builds, this does not work. Set this attribute manually if the URL say `project=None` when launching geeView using `Map.view()`.</span>
+
+<span class="sd">        turnOffLayersWhenTimeLapseIsOn (bool, default True): Whether all other layers should be turned off when a time lapse is turned on. This is set to True by default to avoid confusing layer order rendering that can occur when time lapses and non-time lapses are visible at the same time. Often this confusion is fine and visualizing time lapses and other layers is desired. Set `Map.turnOffLayersWhenTimeLapseIsOn` to False in this instance.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8001</span><span class="p">):</span>
@@ -778,6 +793,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">serviceKeyPath</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">queryWindowMode</span> <span class="o">=</span> <span class="s2">&quot;sidePane&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="o">=</span> <span class="n">project_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">turnOffLayersWhenTimeLapseIsOn</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="c1">######################################################################</span>
     <span class="c1"># Function for adding a layer to the map</span>
@@ -868,7 +884,7 @@
 
 <span class="sd">                }</span>
 <span class="sd">            name (str): Descriptive name for map layer that will be shown on the map UI</span>
-<span class="sd">            visible (bool, optional): Whether layer should be visible when map UI loads</span>
+<span class="sd">            visible (bool, default True): Whether layer should be visible when map UI loads</span>
 
 <span class="sd">        &gt;&gt;&gt; import geeViz.geeView as gv</span>
 <span class="sd">        &gt;&gt;&gt; Map = gv.Map</span>
@@ -1017,7 +1033,7 @@
 
 <span class="sd">                }</span>
 <span class="sd">            name (str): Descriptive name for map layer that will be shown on the map UI</span>
-<span class="sd">            visible (bool, optional): Whether layer should be visible when map UI loads</span>
+<span class="sd">            visible (bool, default True): Whether layer should be visible when map UI loads</span>
 
 <span class="sd">        &gt;&gt;&gt; import geeViz.geeView as gv</span>
 <span class="sd">        &gt;&gt;&gt; Map = gv.Map</span>
@@ -1230,6 +1246,8 @@
         <span class="c1"># Set location of query outputs</span>
         <span class="n">lines</span> <span class="o">+=</span> <span class="s1">&#39;queryWindowMode = &quot;</span><span class="si">{}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queryWindowMode</span><span class="p">)</span>
 
+        <span class="c1"># Set whether all layers are turned off when a time lapse is turned on</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="s2">&quot;Map.turnOffLayersWhenTimeLapseIsOn = </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">turnOffLayersWhenTimeLapseIsOn</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
         <span class="n">lines</span> <span class="o">+=</span> <span class="s2">&quot;}&quot;</span>
 
         <span class="c1"># Write out js file</span>
@@ -1299,6 +1317,25 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="mapper.clearMapLayers">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.clearMapLayers">[docs]</a>
+    <span class="k">def</span> <span class="nf">clearMapLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes all map layers - useful if running geeViz in a notebook and don&#39;t want layers from a prior code block to still be included, but want commands to remain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="mapper.clearMapCommands">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.clearMapCommands">[docs]</a>
+    <span class="k">def</span> <span class="nf">clearMapCommands</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes all map commands - useful if running geeViz in a notebook and don&#39;t want commands from a prior code block to still be included, but want layers to remain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 
@@ -1706,7 +1743,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=7c878331"></script>
+</div><script src="../../_static/documentation_options.js?v=063138de"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

@@ -454,8 +454,20 @@ class mapper:
 
     Map object that is used to manage layers, activated user input methods, and launching the map viewer user interface
 
+    Args:
+        port (int, default 8001): Which port to user for web server. Sometimes a port will become "stuck," so this will need set to some other number than what it was set at in previous runs of a given session.
     Attributes:
-        port (int, optional): Which port to user for web server. Sometimes a port will become "stuck," so this will need set to some other number than what it was set at in previous runs of a given session.
+        port (int, default 8001): Which port to user for web server. Sometimes a port will become "stuck," so this will need set to some other number than what it was set at in previous runs of a given session.
+
+        proxy_url (str, default None): The proxy url the web server runs through for either Google Colab or Vertex AI Workbench. This is automatically specified in Google Colab, but in Vertex AI Workbench, the `Map.proxy_url` must be specified as the current URL Workbench Notebook is running from (e.g. https://code-dot-region.notebooks.googleusercontent.com/).
+
+        refreshTokenPath (str, default ee.oauth.get_credentials_path()): Refresh token credentials file path
+
+        serviceKeyPath (str, default None): Location of a service account key json. If provided, this will be used for authentication inside geeView instead of the refresh token
+
+        project (str, default  ee.data._cloud_api_user_project): Can override which project geeView will use for authentication. While geeViz will try to find a project if ee.data._cloud_api_user_project isn't already set (usually by `ee.Initialize(project="someProjectID")`) by prompting the user to enter one, in some builds, this does not work. Set this attribute manually if the URL say `project=None` when launching geeView using `Map.view()`.
+
+        turnOffLayersWhenTimeLapseIsOn (bool, default True): Whether all other layers should be turned off when a time lapse is turned on. This is set to True by default to avoid confusing layer order rendering that can occur when time lapses and non-time lapses are visible at the same time. Often this confusion is fine and visualizing time lapses and other layers is desired. Set `Map.turnOffLayersWhenTimeLapseIsOn` to False in this instance.
     """
 
     def __init__(self, port=8001):
@@ -488,6 +500,7 @@ class mapper:
         self.serviceKeyPath = None
         self.queryWindowMode = "sidePane"
         self.project = project_id
+        self.turnOffLayersWhenTimeLapseIsOn = True
 
     ######################################################################
     # Function for adding a layer to the map
@@ -576,7 +589,7 @@ class mapper:
 
                 }
             name (str): Descriptive name for map layer that will be shown on the map UI
-            visible (bool, optional): Whether layer should be visible when map UI loads
+            visible (bool, default True): Whether layer should be visible when map UI loads
 
         >>> import geeViz.geeView as gv
         >>> Map = gv.Map
@@ -722,7 +735,7 @@ class mapper:
 
                 }
             name (str): Descriptive name for map layer that will be shown on the map UI
-            visible (bool, optional): Whether layer should be visible when map UI loads
+            visible (bool, default True): Whether layer should be visible when map UI loads
 
         >>> import geeViz.geeView as gv
         >>> Map = gv.Map
@@ -920,6 +933,8 @@ class mapper:
         # Set location of query outputs
         lines += 'queryWindowMode = "{}"\n'.format(self.queryWindowMode)
 
+        # Set whether all layers are turned off when a time lapse is turned on
+        lines += "Map.turnOffLayersWhenTimeLapseIsOn = {}\n".format(str(self.turnOffLayersWhenTimeLapseIsOn).lower())
         lines += "}"
 
         # Write out js file
@@ -986,6 +1001,19 @@ class mapper:
         """
         self.layerNumber = 1
         self.idDictList = []
+        self.mapCommandList = []
+
+    def clearMapLayers(self):
+        """
+        Removes all map layers - useful if running geeViz in a notebook and don't want layers from a prior code block to still be included, but want commands to remain.
+        """
+        self.layerNumber = 1
+        self.idDictList = []
+
+    def clearMapCommands(self):
+        """
+        Removes all map commands - useful if running geeViz in a notebook and don't want commands from a prior code block to still be included, but want layers to remain.
+        """
         self.mapCommandList = []
 
     ######################################################################

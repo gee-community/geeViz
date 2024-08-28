@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Examples" href="examples.html" /><link rel="prev" title="geeViz.phEEnoViz" href="info/geeViz.phEEnoViz.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Details - geeViz &#34;2024.8.1&#34; docs</title>
+        <title>Details - geeViz &#34;2024.8.2&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -142,7 +142,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">geeViz "2024.8.1" docs</div></a>
+      <a href="index.html"><div class="brand">geeViz "2024.8.2" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -168,7 +168,7 @@
     <img class="sidebar-logo" src="_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.8.1" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.8.2" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -194,6 +194,9 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="examples.html">Examples</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="notebooks/geeViewExampleNotebook.html">Starter geeViz geeView Notebook</a></li>
 <li class="toctree-l2"><a class="reference internal" href="notebooks/lcmsViewerExampleNotebook.html">LCMS Viewer Intro Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/mapBiomasViewerExampleNotebook.html">Visualizing Map Biomas Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/global_land_cover_example_notebook.html">Visualizing Global Land Cover</a></li>
+<li class="toctree-l2"><a class="reference internal" href="notebooks/LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="notebooks/getLandsatWrapperNotebook.html">Create High Quality Landsat Composites</a></li>
 <li class="toctree-l2"><a class="reference internal" href="notebooks/areaChart_examples.html">Visualizing Area Summaries</a></li>
 <li class="toctree-l2"><a class="reference internal" href="notebooks/geeViz_geeMap_comparison_tutorial.html">A comparison between geeViz and geeMap’s map visualization capabilities</a></li>
@@ -382,13 +385,73 @@ inlcuding the number sign (“#FFFFFF”)</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">geeViz.geeView.</span></span><span class="sig-name descname"><span class="pre">mapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geeViz/geeView.html#mapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geeViz.geeView.mapper" title="Link to this definition">#</a></dt>
 <dd><p>Primary geeViz map setup and manipulation object</p>
 <p>Map object that is used to manage layers, activated user input methods, and launching the map viewer user interface</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>port</strong> (<em>int</em><em>, </em><em>default 8001</em>) – Which port to user for web server. Sometimes a port will become “stuck,” so this will need set to some other number than what it was set at in previous runs of a given session.</p>
+</dd>
+</dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="geeViz.geeView.mapper.port">
 <span class="sig-name descname"><span class="pre">port</span></span><a class="headerlink" href="#geeViz.geeView.mapper.port" title="Link to this definition">#</a></dt>
 <dd><p>Which port to user for web server. Sometimes a port will become “stuck,” so this will need set to some other number than what it was set at in previous runs of a given session.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int, optional</p>
+<dd class="field-odd"><p>int, default 8001</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.proxy_url">
+<span class="sig-name descname"><span class="pre">proxy_url</span></span><a class="headerlink" href="#geeViz.geeView.mapper.proxy_url" title="Link to this definition">#</a></dt>
+<dd><p>The proxy url the web server runs through for either Google Colab or Vertex AI Workbench. This is automatically specified in Google Colab, but in Vertex AI Workbench, the <cite>Map.proxy_url</cite> must be specified as the current URL Workbench Notebook is running from (e.g. <a class="reference external" href="https://code-dot-region.notebooks.googleusercontent.com/">https://code-dot-region.notebooks.googleusercontent.com/</a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str, default None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.refreshTokenPath">
+<span class="sig-name descname"><span class="pre">refreshTokenPath</span></span><a class="headerlink" href="#geeViz.geeView.mapper.refreshTokenPath" title="Link to this definition">#</a></dt>
+<dd><p>Refresh token credentials file path</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str, default ee.oauth.get_credentials_path()</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.serviceKeyPath">
+<span class="sig-name descname"><span class="pre">serviceKeyPath</span></span><a class="headerlink" href="#geeViz.geeView.mapper.serviceKeyPath" title="Link to this definition">#</a></dt>
+<dd><p>Location of a service account key json. If provided, this will be used for authentication inside geeView instead of the refresh token</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str, default None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.project">
+<span class="sig-name descname"><span class="pre">project</span></span><a class="headerlink" href="#geeViz.geeView.mapper.project" title="Link to this definition">#</a></dt>
+<dd><p>Can override which project geeView will use for authentication. While geeViz will try to find a project if ee.data._cloud_api_user_project isn’t already set (usually by <cite>ee.Initialize(project=”someProjectID”)</cite>) by prompting the user to enter one, in some builds, this does not work. Set this attribute manually if the URL say <cite>project=None</cite> when launching geeView using <cite>Map.view()</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str, default  ee.data._cloud_api_user_project</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.turnOffLayersWhenTimeLapseIsOn">
+<span class="sig-name descname"><span class="pre">turnOffLayersWhenTimeLapseIsOn</span></span><a class="headerlink" href="#geeViz.geeView.mapper.turnOffLayersWhenTimeLapseIsOn" title="Link to this definition">#</a></dt>
+<dd><p>Whether all other layers should be turned off when a time lapse is turned on. This is set to True by default to avoid confusing layer order rendering that can occur when time lapses and non-time lapses are visible at the same time. Often this confusion is fine and visualizing time lapses and other layers is desired. Set <cite>Map.turnOffLayersWhenTimeLapseIsOn</cite> to False in this instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool, default True</p>
 </dd>
 </dl>
 </dd></dl>
@@ -498,7 +561,7 @@ inlcuding the number sign (“#FFFFFF”)</p>
 <p>}</p>
 </p></li>
 <li><p><strong>name</strong> (<em>str</em>) – Descriptive name for map layer that will be shown on the map UI</p></li>
-<li><p><strong>visible</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether layer should be visible when map UI loads</p></li>
+<li><p><strong>visible</strong> (<em>bool</em><em>, </em><em>default True</em>) – Whether layer should be visible when map UI loads</p></li>
 </ul>
 </dd>
 </dl>
@@ -608,7 +671,7 @@ inlcuding the number sign (“#FFFFFF”)</p>
 <p>}</p>
 </p></li>
 <li><p><strong>name</strong> (<em>str</em>) – Descriptive name for map layer that will be shown on the map UI</p></li>
-<li><p><strong>visible</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether layer should be visible when map UI loads</p></li>
+<li><p><strong>visible</strong> (<em>bool</em><em>, </em><em>default True</em>) – Whether layer should be visible when map UI loads</p></li>
 </ul>
 </dd>
 </dl>
@@ -643,6 +706,18 @@ inlcuding the number sign (“#FFFFFF”)</p>
 <dt class="sig sig-object py" id="geeViz.geeView.mapper.clearMap">
 <span class="sig-name descname"><span class="pre">clearMap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/geeViz/geeView.html#mapper.clearMap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geeViz.geeView.mapper.clearMap" title="Link to this definition">#</a></dt>
 <dd><p>Removes all map layers and commands - useful if running geeViz in a notebook and don’t want layers/commands from a prior code block to still be included.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.clearMapCommands">
+<span class="sig-name descname"><span class="pre">clearMapCommands</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/geeViz/geeView.html#mapper.clearMapCommands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geeViz.geeView.mapper.clearMapCommands" title="Link to this definition">#</a></dt>
+<dd><p>Removes all map commands - useful if running geeViz in a notebook and don’t want commands from a prior code block to still be included, but want layers to remain.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geeViz.geeView.mapper.clearMapLayers">
+<span class="sig-name descname"><span class="pre">clearMapLayers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/geeViz/geeView.html#mapper.clearMapLayers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geeViz.geeView.mapper.clearMapLayers" title="Link to this definition">#</a></dt>
+<dd><p>Removes all map layers - useful if running geeViz in a notebook and don’t want layers from a prior code block to still be included, but want commands to remain.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -2099,12 +2174,19 @@ Assumes image has bands: ‘brightness’, ‘greenness’, and ‘wetness’.</
 <li><a class="reference internal" href="#geeViz.geeView.linear_gradient"><code class="docutils literal notranslate"><span class="pre">linear_gradient()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper"><code class="docutils literal notranslate"><span class="pre">mapper</span></code></a><ul>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.port"><code class="docutils literal notranslate"><span class="pre">mapper.port</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.proxy_url"><code class="docutils literal notranslate"><span class="pre">mapper.proxy_url</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.refreshTokenPath"><code class="docutils literal notranslate"><span class="pre">mapper.refreshTokenPath</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.serviceKeyPath"><code class="docutils literal notranslate"><span class="pre">mapper.serviceKeyPath</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.project"><code class="docutils literal notranslate"><span class="pre">mapper.project</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.turnOffLayersWhenTimeLapseIsOn"><code class="docutils literal notranslate"><span class="pre">mapper.turnOffLayersWhenTimeLapseIsOn</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.addAreaChartLayer"><code class="docutils literal notranslate"><span class="pre">mapper.addAreaChartLayer()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.addLayer"><code class="docutils literal notranslate"><span class="pre">mapper.addLayer()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.addSelectLayer"><code class="docutils literal notranslate"><span class="pre">mapper.addSelectLayer()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.addTimeLapse"><code class="docutils literal notranslate"><span class="pre">mapper.addTimeLapse()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.centerObject"><code class="docutils literal notranslate"><span class="pre">mapper.centerObject()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.clearMap"><code class="docutils literal notranslate"><span class="pre">mapper.clearMap()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.clearMapCommands"><code class="docutils literal notranslate"><span class="pre">mapper.clearMapCommands()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.geeView.mapper.clearMapLayers"><code class="docutils literal notranslate"><span class="pre">mapper.clearMapLayers()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.populateAreaChartLayerSelect"><code class="docutils literal notranslate"><span class="pre">mapper.populateAreaChartLayerSelect()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.setCanReorderLayers"><code class="docutils literal notranslate"><span class="pre">mapper.setCanReorderLayers()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.geeView.mapper.setCenter"><code class="docutils literal notranslate"><span class="pre">mapper.setCenter()</span></code></a></li>
@@ -2222,7 +2304,7 @@ Assumes image has bands: ‘brightness’, ‘greenness’, and ‘wetness’.</
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=7c878331"></script>
+</div><script src="_static/documentation_options.js?v=063138de"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>

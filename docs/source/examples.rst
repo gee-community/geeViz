@@ -45,6 +45,27 @@ Visualize multi-temporal `imageCollections`
 
    notebooks/lcmsViewerExampleNotebook
 
+Visualize Map Biomas Datasets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. toctree::
+
+   notebooks/mapBiomasViewerExampleNotebook
+
+Visualize the Global Land Cover Dataset
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. toctree::
+
+   notebooks/global_land_cover_example_notebook
+
+Visualize LCMS and LCMAP Outputs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. toctree::
+
+   notebooks/LCMAP_and_LCMS_Viewer_Notebook
+
 Leverage `geeViz.getImagesLib` to consistently process Landsat data
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
