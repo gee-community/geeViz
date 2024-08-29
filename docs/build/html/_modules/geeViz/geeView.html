@@ -1,0 +1,1753 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" />
+
+    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+        <title>geeViz.geeView - geeViz &#34;2024.8.3&#34; docs</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/style/custom.css?v=ebb50e13" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #00897b;
+  --color-brand-content: #00897b;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+<div class="announcement">
+  <aside class="announcement-content">
+     <i>geeViz</i> docs are still in development 
+  </aside>
+</div>
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../index.html"><div class="brand">geeViz "2024.8.3" docs</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../../_static/RCR-logo.jpg" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">geeViz "2024.8.3" docs</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../overview.html">Overview</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Overview</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../info/geeViz.geeView.html">geeViz.geeView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../info/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../info/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../info/geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../info/geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../info/geeViz.cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../info/geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../info/geeViz.foliumView.html">geeViz.foliumView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../info/geeViz.phEEnoViz.html">geeViz.phEEnoViz</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Details</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../examples.html">Examples</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../notebooks/geeViewExampleNotebook.html">Starter geeViz geeView Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../notebooks/lcmsViewerExampleNotebook.html">LCMS Viewer Intro Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../notebooks/mapBiomasViewerExampleNotebook.html">Visualizing MapBiomas Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../notebooks/global_land_cover_example_notebook.html">Visualizing Global Land Cover</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../notebooks/LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../notebooks/getLandsatWrapperNotebook.html">Create High Quality Landsat Composites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../notebooks/areaChart_examples.html">Visualizing Area Summaries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../notebooks/geeViz_geeMap_comparison_tutorial.html">A comparison between geeViz and geeMap’s map visualization capabilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../notebooks/LANDTRENDRWrapperNotebook.html">Run LandTrendr and Visualize Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../notebooks/LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../notebooks/CCDCVizNotebook.html">CCDC Visualization Notebook</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <h1>Source code for geeViz.geeView</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">View GEE objects using Python</span>
+
+<span class="sd">geeViz.geeView is the core module for managing GEE objects on the geeViz mapper object. geeViz instantiates an instance of the `mapper` class as `Map` by default. Layers can be added to the map using `Map.addLayer` or `Map.addTimeLapse` and then viewed using the `Map.view` method. </span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Copyright 2024 Ian Housman</span>
+
+<span class="sd">    Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="sd">    you may not use this file except in compliance with the License.</span>
+<span class="sd">    You may obtain a copy of the License at</span>
+
+<span class="sd">        http://www.apache.org/licenses/LICENSE-2.0</span>
+
+<span class="sd">    Unless required by applicable law or agreed to in writing, software</span>
+<span class="sd">    distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="sd">    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="sd">    See the License for the specific language governing permissions and</span>
+<span class="sd">    limitations under the License.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Script to allow GEE objects to be viewed in a web viewer</span>
+<span class="c1"># Intended to work within the geeViz package</span>
+<span class="c1">######################################################################</span>
+<span class="c1"># Import modules</span>
+<span class="kn">import</span> <span class="nn">ee</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">webbrowser</span><span class="o">,</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">socket</span><span class="o">,</span> <span class="nn">subprocess</span><span class="o">,</span> <span class="nn">site</span><span class="o">,</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">requests</span><span class="o">,</span> <span class="nn">google</span>
+<span class="kn">from</span> <span class="nn">google.auth.transport</span> <span class="kn">import</span> <span class="n">requests</span> <span class="k">as</span> <span class="n">gReq</span>
+<span class="kn">from</span> <span class="nn">google.oauth2</span> <span class="kn">import</span> <span class="n">service_account</span>
+
+<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
+<span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">urlparse</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">IFrame</span><span class="p">,</span> <span class="n">display</span><span class="p">,</span> <span class="n">HTML</span>
+
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">SimpleHTTPServer</span><span class="o">,</span> <span class="nn">SocketServer</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">http.server</span><span class="o">,</span> <span class="nn">socketserver</span>
+<span class="n">creds_path</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">oauth</span><span class="o">.</span><span class="n">get_credentials_path</span><span class="p">()</span>
+<span class="n">creds_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">creds_path</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">creds_dir</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">creds_dir</span><span class="p">)</span>
+
+<span class="n">IS_COLAB</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">oauth</span><span class="o">.</span><span class="n">in_colab_shell</span><span class="p">()</span>  <span class="c1"># &quot;google.colab&quot; in sys.modules</span>
+<span class="n">IS_WORKBENCH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;DL_ANACONDA_HOME&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="kc">None</span>
+<span class="k">if</span> <span class="n">IS_COLAB</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">google.colab.output</span> <span class="kn">import</span> <span class="n">eval_js</span>
+
+<span class="c1">######################################################################</span>
+<span class="c1"># Functions to handle various initialization/authentication workflows to try to get a user an initialized instance of ee</span>
+
+
+<span class="c1"># Function to have user input a project id if one is still needed</span>
+<div class="viewcode-block" id="setProject">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.setProject">[docs]</a>
+<span class="k">def</span> <span class="nf">setProject</span><span class="p">(</span><span class="nb">id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets the project id of an instance of ee</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        id (str): Google Cloud Platform project id to use</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">project_id</span>
+    <span class="n">project_id</span> <span class="o">=</span> <span class="nb">id</span>
+    <span class="n">ee</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">setCloudApiUserProject</span><span class="p">(</span><span class="n">project_id</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="getProject">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.getProject">[docs]</a>
+<span class="k">def</span> <span class="nf">getProject</span><span class="p">(</span><span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tries to find the current Google Cloud Platform project id</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        overwrite (bool, optional): Whether or not to overwrite a cached project ID file</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The currently selected Google Cloud Platform project id</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">project_id</span>
+    <span class="n">provided_project</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.proj_id&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">creds_path</span><span class="p">)</span>
+    <span class="n">provided_project</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">provided_project</span><span class="p">)</span>
+
+    <span class="n">current_project</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">_cloud_api_user_project</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">current_project</span> <span class="o">==</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">provided_project</span><span class="p">))</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
+
+        <span class="n">project_id</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Please enter GEE project ID: &quot;</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;You entered: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">project_id</span><span class="p">))</span>
+        <span class="n">o</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">provided_project</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="n">o</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">project_id</span><span class="p">)</span>
+        <span class="n">o</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">current_project</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">project_id</span> <span class="o">=</span> <span class="n">current_project</span>
+    <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">provided_project</span><span class="p">):</span>
+        <span class="n">o</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">provided_project</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+        <span class="n">project_id</span> <span class="o">=</span> <span class="n">o</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cached project id file path: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">provided_project</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cached project id: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">project_id</span><span class="p">))</span>
+        <span class="n">o</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">ee</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">setCloudApiUserProject</span><span class="p">(</span><span class="n">project_id</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">project_id</span></div>
+
+
+
+<span class="c1">######################################################################</span>
+<div class="viewcode-block" id="verified_initialize">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.verified_initialize">[docs]</a>
+<span class="k">def</span> <span class="nf">verified_initialize</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tries to initialize GEE with a given project id. Will error out if initilization fails</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        project (str, optional): Whether or not to overwrite a cached project ID file</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ee</span><span class="o">.</span><span class="n">Initialize</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">project</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Successfully initialized&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Function to handle various exceptions to initializing to GEE</span>
+<div class="viewcode-block" id="robustInitializer">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.robustInitializer">[docs]</a>
+<span class="k">def</span> <span class="nf">robustInitializer</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A method that tries to authenticate and/or initialize GEE if it isn&#39;t already successfully initialized. This method tries to handle many different scenarios, but often fails. It is best to initialize to a project prior to importing geeViz</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">global</span> <span class="n">project_id</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Initializing GEE&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ee</span><span class="o">.</span><span class="n">oauth</span><span class="o">.</span><span class="n">_valid_credentials_exist</span><span class="p">():</span>
+            <span class="n">ee</span><span class="o">.</span><span class="n">Authenticate</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">verified_initialize</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">ee</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">_cloud_api_user_project</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">E</span><span class="p">:</span>
+            <span class="c1"># print(E)</span>
+            <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">E</span><span class="p">)</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;Reauthentication is needed&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">ee</span><span class="o">.</span><span class="n">Authenticate</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">E</span><span class="p">)</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;no project found. Call with project&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">E</span><span class="p">)</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;project is not registered&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">E</span><span class="p">)</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot; quota project, which is not set by default&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">project_id</span> <span class="o">=</span> <span class="n">getProject</span><span class="p">()</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">project_id</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">verified_initialize</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">project_id</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">E</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">project_id</span> <span class="o">=</span> <span class="n">getProject</span><span class="p">(</span><span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="n">verified_initialize</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">project_id</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">E</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+
+        <span class="n">ee</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">setCloudApiUserProject</span><span class="p">(</span><span class="n">project_id</span><span class="p">)</span></div>
+
+
+
+<span class="n">setProject</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">_cloud_api_user_project</span><span class="p">)</span>
+<span class="n">robustInitializer</span><span class="p">()</span>
+<span class="c1">######################################################################</span>
+<span class="c1"># Set up GEE and paths</span>
+<span class="c1"># robustInitializer()</span>
+<span class="n">geeVizFolder</span> <span class="o">=</span> <span class="s2">&quot;geeViz&quot;</span>
+<span class="n">geeViewFolder</span> <span class="o">=</span> <span class="s2">&quot;geeView&quot;</span>
+<span class="c1"># Set up template web viewer</span>
+<span class="c1"># Do not change</span>
+<span class="n">cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+
+<span class="n">paths</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span>
+
+<span class="c1"># gee_py_modules_dir = site.getsitepackages()[-1]</span>
+<span class="c1"># py_viz_dir = os.path.join(gee_py_modules_dir,geeVizFolder)</span>
+<span class="n">py_viz_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
+<span class="c1"># os.chdir(py_viz_dir)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;geeViz package folder:&quot;</span><span class="p">,</span> <span class="n">py_viz_dir</span><span class="p">)</span>
+
+<span class="c1"># Specify location of files to run</span>
+<span class="n">template</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">py_viz_dir</span><span class="p">,</span> <span class="n">geeViewFolder</span><span class="p">,</span> <span class="s2">&quot;index.html&quot;</span><span class="p">)</span>
+<span class="n">ee_run_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">py_viz_dir</span><span class="p">,</span> <span class="n">geeViewFolder</span><span class="p">,</span> <span class="s2">&quot;src/gee/gee-run/&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">ee_run_dir</span><span class="p">)</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">ee_run_dir</span><span class="p">)</span>
+
+
+<span class="c1">######################################################################</span>
+<span class="c1">######################################################################</span>
+<span class="c1"># Functions</span>
+
+
+<span class="c1">######################################################################</span>
+<span class="c1"># Linear color gradient functions</span>
+<span class="c1">##############################################################</span>
+<span class="c1">##############################################################</span>
+<div class="viewcode-block" id="color_dict_maker">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.color_dict_maker">[docs]</a>
+<span class="k">def</span> <span class="nf">color_dict_maker</span><span class="p">(</span><span class="n">gradient</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Takes in a list of RGB sub-lists and returns dictionary of</span>
+<span class="sd">    colors in RGB and hex form for use in a graphing function</span>
+<span class="sd">    defined later on&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;hex&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">RGB_to_hex</span><span class="p">(</span><span class="n">RGB</span><span class="p">)</span> <span class="k">for</span> <span class="n">RGB</span> <span class="ow">in</span> <span class="n">gradient</span><span class="p">],</span>
+        <span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">RGB</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">RGB</span> <span class="ow">in</span> <span class="n">gradient</span><span class="p">],</span>
+        <span class="s2">&quot;g&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">RGB</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">RGB</span> <span class="ow">in</span> <span class="n">gradient</span><span class="p">],</span>
+        <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">RGB</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">RGB</span> <span class="ow">in</span> <span class="n">gradient</span><span class="p">],</span>
+    <span class="p">}</span></div>
+
+
+
+<span class="c1"># color functions adapted from bsou.io/posts/color-gradients-with-python</span>
+<div class="viewcode-block" id="hex_to_rgb">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.hex_to_rgb">[docs]</a>
+<span class="k">def</span> <span class="nf">hex_to_rgb</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return (red, green, blue) for the color given as #rrggbb.&quot;&quot;&quot;</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">)</span>
+    <span class="n">lv</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">lv</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">lv</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}{</span><span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}{</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}{</span><span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}{</span><span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}{</span><span class="n">value</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">[</span><span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">lv</span> <span class="o">//</span> <span class="mi">3</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">lv</span><span class="p">,</span> <span class="n">lv</span> <span class="o">//</span> <span class="mi">3</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="RGB_to_hex">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.RGB_to_hex">[docs]</a>
+<span class="k">def</span> <span class="nf">RGB_to_hex</span><span class="p">(</span><span class="n">RGB</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;[255,255,255] -&gt; &quot;#FFFFFF&quot; &quot;&quot;&quot;</span>
+    <span class="c1"># Components need to be integers for hex to make sense</span>
+    <span class="n">RGB</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">RGB</span><span class="p">]</span>
+    <span class="k">return</span> <span class="s2">&quot;#&quot;</span> <span class="o">+</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;0</span><span class="si">{0:x}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">if</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="mi">16</span> <span class="k">else</span> <span class="s2">&quot;</span><span class="si">{0:x}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">RGB</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="linear_gradient">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.linear_gradient">[docs]</a>
+<span class="k">def</span> <span class="nf">linear_gradient</span><span class="p">(</span><span class="n">start_hex</span><span class="p">,</span> <span class="n">finish_hex</span><span class="o">=</span><span class="s2">&quot;#FFFFFF&quot;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;returns a gradient list of (n) colors between</span>
+<span class="sd">    two hex colors. start_hex and finish_hex</span>
+<span class="sd">    should be the full six-digit color string,</span>
+<span class="sd">    inlcuding the number sign (&quot;#FFFFFF&quot;)&quot;&quot;&quot;</span>
+    <span class="c1"># Starting and ending colors in RGB form</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">hex_to_rgb</span><span class="p">(</span><span class="n">start_hex</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">hex_to_rgb</span><span class="p">(</span><span class="n">finish_hex</span><span class="p">)</span>
+    <span class="c1"># Initilize a list of the output colors with the starting color</span>
+    <span class="n">RGB_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="p">]</span>
+    <span class="c1"># Calcuate a color at each evenly spaced value of t from 1 to n</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+        <span class="c1"># Interpolate RGB vector for color at the current value of t</span>
+        <span class="n">curr_vector</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">s</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+        <span class="c1"># Add it to our list of output colors</span>
+        <span class="n">RGB_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_vector</span><span class="p">)</span>
+
+    <span class="c1"># print(RGB_list)</span>
+    <span class="k">return</span> <span class="n">color_dict_maker</span><span class="p">(</span><span class="n">RGB_list</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="polylinear_gradient">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.polylinear_gradient">[docs]</a>
+<span class="k">def</span> <span class="nf">polylinear_gradient</span><span class="p">(</span><span class="n">colors</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;returns a list of colors forming linear gradients between</span>
+<span class="sd">    all sequential pairs of colors. &quot;n&quot; specifies the total</span>
+<span class="sd">    number of desired output colors&quot;&quot;&quot;</span>
+    <span class="c1"># The number of colors per individual linear gradient</span>
+    <span class="n">n_out</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="c1"># print((&#39;n&#39;,n))</span>
+    <span class="c1"># print((&#39;n_out&#39;,n_out))</span>
+    <span class="c1"># If we don&#39;t have an even number of color values, we will remove equally spaced values at the end.</span>
+    <span class="n">apply_offset</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">%</span> <span class="n">n_out</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">apply_offset</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">n_out</span> <span class="o">=</span> <span class="n">n_out</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="c1"># print((&#39;new n_out&#39;,n_out))</span>
+
+    <span class="c1"># returns dictionary defined by color_dict()</span>
+    <span class="n">gradient_dict</span> <span class="o">=</span> <span class="n">linear_gradient</span><span class="p">(</span><span class="n">colors</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">colors</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">n_out</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="nb">next</span> <span class="o">=</span> <span class="n">linear_gradient</span><span class="p">(</span><span class="n">colors</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">colors</span><span class="p">[</span><span class="n">col</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">n_out</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;hex&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;g&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">):</span>
+                <span class="c1"># Exclude first point to avoid duplicates</span>
+                <span class="n">gradient_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">next</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">:]</span>
+
+    <span class="c1"># Remove equally spaced values here.</span>
+    <span class="k">if</span> <span class="n">apply_offset</span><span class="p">:</span>
+        <span class="c1"># indList = list(range(len(gradient_dict[&#39;hex&#39;])))</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gradient_dict</span><span class="p">[</span><span class="s2">&quot;hex&quot;</span><span class="p">])</span> <span class="o">-</span> <span class="n">n</span>
+        <span class="n">sliceval</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># print((&#39;len(gradient_dict)&#39;,len(gradient_dict[&#39;hex&#39;])))</span>
+        <span class="c1"># print((&#39;offset&#39;,offset))</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">offset</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">sliceval</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gradient_dict</span><span class="p">[</span><span class="s2">&quot;hex&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="n">i</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">offset</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">gradient_dict</span><span class="p">[</span><span class="s2">&quot;hex&quot;</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">((</span><span class="s2">&quot;sliceval&quot;</span><span class="p">,</span> <span class="n">sliceval</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;hex&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;g&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">):</span>
+            <span class="n">gradient_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gradient_dict</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">if</span> <span class="n">j</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sliceval</span><span class="p">]</span>
+        <span class="c1"># print((&#39;new len dict&#39;, len(gradient_dict[&#39;hex&#39;])))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">gradient_dict</span><span class="p">[</span><span class="s2">&quot;hex&quot;</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">gradient_dict</span><span class="p">[</span><span class="s2">&quot;hex&quot;</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">gradient_dict</span></div>
+
+
+
+<div class="viewcode-block" id="get_poly_gradient_ct">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.get_poly_gradient_ct">[docs]</a>
+<span class="k">def</span> <span class="nf">get_poly_gradient_ct</span><span class="p">(</span><span class="n">palette</span><span class="p">,</span> <span class="nb">min</span><span class="p">,</span> <span class="nb">max</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Take a palette and a set of min and max stretch values to get a 1:1 value to color hex list</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        palette (list): A list of hex code colors that will be interpolated</span>
+
+<span class="sd">        min (int): The min value for the stretch</span>
+
+<span class="sd">        max (int): The max value for the stretch</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list: A list of linearly interpolated hex codes where there is 1:1 color to value from min-max (inclusive)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ramp</span> <span class="o">=</span> <span class="n">polylinear_gradient</span><span class="p">(</span><span class="n">palette</span><span class="p">,</span> <span class="nb">max</span> <span class="o">-</span> <span class="nb">min</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ramp</span><span class="p">[</span><span class="s2">&quot;hex&quot;</span><span class="p">]</span></div>
+
+
+
+<span class="c1"># print(get_poly_gradient_ct([&quot;#FFFF00&quot;, &quot;00F&quot;, &quot;0FF&quot;, &quot;FF0000&quot;], 1, 2))</span>
+
+
+<span class="c1">##############################################################</span>
+<span class="c1">######################################################################</span>
+<span class="c1"># Function to check if being run inside a notebook</span>
+<span class="c1"># Taken from: https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook</span>
+<div class="viewcode-block" id="is_notebook">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.is_notebook">[docs]</a>
+<span class="k">def</span> <span class="nf">is_notebook</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Remove trailing &#39;....&#39; in generated access token</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        accessToken (str): Raw access token</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: Given access token without trailing &#39;....&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">ee</span><span class="o">.</span><span class="n">oauth</span><span class="o">.</span><span class="n">_in_jupyter_shell</span><span class="p">()</span></div>
+
+
+
+<span class="c1">######################################################################</span>
+<span class="c1"># Function for cleaning trailing .... in accessToken</span>
+<div class="viewcode-block" id="cleanAccessToken">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.cleanAccessToken">[docs]</a>
+<span class="k">def</span> <span class="nf">cleanAccessToken</span><span class="p">(</span><span class="n">accessToken</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Remove trailing &#39;....&#39; in generated access token</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        accessToken (str): Raw access token</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: Given access token without trailing &#39;....&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">while</span> <span class="n">accessToken</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;.&quot;</span><span class="p">:</span>
+        <span class="n">accessToken</span> <span class="o">=</span> <span class="n">accessToken</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">accessToken</span></div>
+
+
+
+<span class="c1">######################################################################</span>
+<span class="c1"># Function to get domain base without any folders</span>
+<div class="viewcode-block" id="baseDomain">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.baseDomain">[docs]</a>
+<span class="k">def</span> <span class="nf">baseDomain</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get root domain for a given url</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        url (str): URL to find the base domain of</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: domain of given URL</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">url_parts</span> <span class="o">=</span> <span class="n">urlparse</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">url_parts</span><span class="o">.</span><span class="n">scheme</span><span class="si">}</span><span class="s2">://</span><span class="si">{</span><span class="n">url_parts</span><span class="o">.</span><span class="n">netloc</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<span class="c1">######################################################################</span>
+<span class="c1"># Function for using default GEE refresh token to get an access token for geeView</span>
+<span class="c1"># Updated 12/23 to reflect updated auth methods for GEE</span>
+<div class="viewcode-block" id="refreshToken">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.refreshToken">[docs]</a>
+<span class="k">def</span> <span class="nf">refreshToken</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get a refresh token from currently authenticated ee instance</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: temporary access token</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">credentials</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_persistent_credentials</span><span class="p">()</span>
+    <span class="n">credentials</span><span class="o">.</span><span class="n">refresh</span><span class="p">(</span><span class="n">gReq</span><span class="o">.</span><span class="n">Request</span><span class="p">())</span>
+    <span class="n">accessToken</span> <span class="o">=</span> <span class="n">credentials</span><span class="o">.</span><span class="n">token</span>
+    <span class="c1"># print(credentials.to_json())</span>
+    <span class="n">accessToken</span> <span class="o">=</span> <span class="n">cleanAccessToken</span><span class="p">(</span><span class="n">accessToken</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">accessToken</span></div>
+
+
+
+<span class="c1">######################################################################</span>
+<span class="c1"># Function for using a GEE white-listed service account key to get an access token for geeView</span>
+<div class="viewcode-block" id="serviceAccountToken">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.serviceAccountToken">[docs]</a>
+<span class="k">def</span> <span class="nf">serviceAccountToken</span><span class="p">(</span><span class="n">service_key_file_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get a refresh token from service account key file credentials</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: temporary access token</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">credentials</span> <span class="o">=</span> <span class="n">service_account</span><span class="o">.</span><span class="n">Credentials</span><span class="o">.</span><span class="n">from_service_account_file</span><span class="p">(</span><span class="n">service_key_file_path</span><span class="p">,</span> <span class="n">scopes</span><span class="o">=</span><span class="n">ee</span><span class="o">.</span><span class="n">oauth</span><span class="o">.</span><span class="n">SCOPES</span><span class="p">)</span>
+        <span class="n">credentials</span><span class="o">.</span><span class="n">refresh</span><span class="p">(</span><span class="n">gReq</span><span class="o">.</span><span class="n">Request</span><span class="p">())</span>
+        <span class="n">accessToken</span> <span class="o">=</span> <span class="n">credentials</span><span class="o">.</span><span class="n">token</span>
+        <span class="n">accessToken</span> <span class="o">=</span> <span class="n">cleanAccessToken</span><span class="p">(</span><span class="n">accessToken</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">accessToken</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Failed to utilize service account key file.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<span class="c1">######################################################################</span>
+<span class="c1"># Function for running local web server</span>
+<div class="viewcode-block" id="run_local_server">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.run_local_server">[docs]</a>
+<span class="k">def</span> <span class="nf">run_local_server</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="mi">8001</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Start a local webserver using the Python http.server</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        port (int): Port number to run local server at</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;2&quot;</span><span class="p">:</span>
+        <span class="n">server_name</span> <span class="o">=</span> <span class="s2">&quot;SimpleHTTPServer&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">server_name</span> <span class="o">=</span> <span class="s2">&quot;http.server&quot;</span>
+    <span class="n">cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">py_viz_dir</span><span class="p">)</span>
+    <span class="c1"># print(&#39;cwd&#39;,os.getcwd())</span>
+    <span class="n">python_path</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">executable</span>
+    <span class="k">if</span> <span class="n">python_path</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;pythonw&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">python_path</span> <span class="o">=</span> <span class="n">python_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;pythonw&quot;</span><span class="p">,</span> <span class="s2">&quot;python&quot;</span><span class="p">)</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="s1">&#39;&quot;</span><span class="si">{}</span><span class="s1">&quot; -m </span><span class="si">{}</span><span class="s1">  </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">python_path</span><span class="p">,</span> <span class="n">server_name</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;HTTP server command:&quot;</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">cwd</span><span class="p">)</span></div>
+
+
+
+<span class="c1">######################################################################</span>
+<span class="c1"># Function to see if port is active</span>
+<div class="viewcode-block" id="isPortActive">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.isPortActive">[docs]</a>
+<span class="k">def</span> <span class="nf">isPortActive</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="mi">8001</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    See if a given port number is currently active</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        port (int): Port number to check status of</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: Whether or not the port is already active</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
+    <span class="n">sock</span><span class="o">.</span><span class="n">settimeout</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># 2 Second Timeout</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">connect_ex</span><span class="p">((</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">result</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<span class="c1">######################################################################</span>
+<span class="c1">######################################################################</span>
+<span class="c1">######################################################################</span>
+<span class="c1"># Set up mapper object</span>
+<div class="viewcode-block" id="mapper">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper">[docs]</a>
+<span class="k">class</span> <span class="nc">mapper</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Primary geeViz map setup and manipulation object</span>
+
+<span class="sd">    Map object that is used to manage layers, activated user input methods, and launching the map viewer user interface</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        port (int, default 8001): Which port to user for web server. Sometimes a port will become &quot;stuck,&quot; so this will need set to some other number than what it was set at in previous runs of a given session.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        port (int, default 8001): Which port to user for web server. Sometimes a port will become &quot;stuck,&quot; so this will need set to some other number than what it was set at in previous runs of a given session.</span>
+
+<span class="sd">        proxy_url (str, default None): The proxy url the web server runs through for either Google Colab or Vertex AI Workbench. This is automatically specified in Google Colab, but in Vertex AI Workbench, the `Map.proxy_url` must be specified as the current URL Workbench Notebook is running from (e.g. https://code-dot-region.notebooks.googleusercontent.com/).</span>
+
+<span class="sd">        refreshTokenPath (str, default ee.oauth.get_credentials_path()): Refresh token credentials file path</span>
+
+<span class="sd">        serviceKeyPath (str, default None): Location of a service account key json. If provided, this will be used for authentication inside geeView instead of the refresh token</span>
+
+<span class="sd">        project (str, default  ee.data._cloud_api_user_project): Can override which project geeView will use for authentication. While geeViz will try to find a project if ee.data._cloud_api_user_project isn&#39;t already set (usually by `ee.Initialize(project=&quot;someProjectID&quot;)`) by prompting the user to enter one, in some builds, this does not work. Set this attribute manually if the URL say `project=None` when launching geeView using `Map.view()`.</span>
+
+<span class="sd">        turnOffLayersWhenTimeLapseIsOn (bool, default True): Whether all other layers should be turned off when a time lapse is turned on. This is set to True by default to avoid confusing layer order rendering that can occur when time lapses and non-time lapses are visible at the same time. Often this confusion is fine and visualizing time lapses and other layers is desired. Set `Map.turnOffLayersWhenTimeLapseIsOn` to False in this instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8001</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ee_run_name</span> <span class="o">=</span> <span class="s2">&quot;runGeeViz&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">typeLookup</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;Image&quot;</span><span class="p">:</span> <span class="s2">&quot;geeImage&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ImageCollection&quot;</span><span class="p">:</span> <span class="s2">&quot;geeImageCollection&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Feature&quot;</span><span class="p">:</span> <span class="s2">&quot;geeVectorImage&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;FeatureCollection&quot;</span><span class="p">:</span> <span class="s2">&quot;geeVectorImage&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Geometry&quot;</span><span class="p">:</span> <span class="s2">&quot;geeVectorImage&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;dict&quot;</span><span class="p">:</span> <span class="s2">&quot;geoJSONVector&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">isNotebook</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">oauth</span><span class="o">.</span><span class="n">_in_jupyter_shell</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">isNotebook</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">oauth</span><span class="o">.</span><span class="n">in_jupyter_shell</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">isColab</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">oauth</span><span class="o">.</span><span class="n">_in_colab_shell</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">isColab</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">oauth</span><span class="o">.</span><span class="n">in_colab_shell</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">proxy_url</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">refreshTokenPath</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">oauth</span><span class="o">.</span><span class="n">get_credentials_path</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serviceKeyPath</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queryWindowMode</span> <span class="o">=</span> <span class="s2">&quot;sidePane&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="o">=</span> <span class="n">project_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">turnOffLayersWhenTimeLapseIsOn</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1">######################################################################</span>
+    <span class="c1"># Function for adding a layer to the map</span>
+<div class="viewcode-block" id="mapper.addLayer">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.addLayer">[docs]</a>
+    <span class="k">def</span> <span class="nf">addLayer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">viz</span><span class="o">=</span><span class="p">{},</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds GEE object to the mapper object that will then be added to the map user interface with a `view` call.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image (ImageCollection, Image, Feature, FeatureCollection, Geometry): ee object to add to the map UI.</span>
+<span class="sd">            viz (dict): Primary set of parameters for map visualization, querying, charting, etc. In addition to the parameters supported by the addLayer function in the GEE Code Editor, there are several additional parameters available to help facilitate legend generation, querying, and area summaries. The accepted keys are:</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &quot;min&quot; (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00.,</span>
+
+<span class="sd">                    &quot;max&quot; (int, list, or comma-separated numbers): One numeric value or one per band to map onto FF,</span>
+
+<span class="sd">                    &quot;gain&quot; (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00-FF.,</span>
+
+<span class="sd">                    &quot;bias&quot; (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00-FF.,</span>
+
+<span class="sd">                    &quot;gamma&quot; (int, list, or comma-separated numbers): Gamma correction factor. One numeric value or one per band.,</span>
+
+<span class="sd">                    &quot;palette&quot; (str, list, or comma-separated strings): List of CSS-style color strings (single-band previews only).,</span>
+
+<span class="sd">                    &quot;opacity&quot; (float): a number between 0 and 1 for initially set opacity.,</span>
+
+<span class="sd">                    &quot;layerType&quot; (str, one of geeImage, geeImageCollection, geeVector, geeVectorImage, geoJSONVector): Optional parameter. For vector data (&quot;featureCollection&quot;, &quot;feature&quot;, or &quot;geometry&quot;), you can spcify &quot;geeVector&quot; if you would like to force the vector to be an actual vector object on the client. This can be slow if the ee object is large and/or complex. Otherwise, any &quot;featureCollection&quot;, &quot;feature&quot;, or &quot;geometry&quot; will default to &quot;geeVectorImage&quot; where the vector is rasterized on-the-fly for map rendering. Any querying of the vector will query the underlying vector data though. To add a geojson vector as json, just add the json as the image parameter.,</span>
+
+<span class="sd">                    &quot;reducer&quot; (Reducer, default &#39;ee.Reducer.lastNonNull()&#39;): If an ImageCollection is provided, how to reduce it to create the layer that is shown on the map. Defaults to ee.Reducer.lastNonNull(),</span>
+
+<span class="sd">                    &quot;autoViz&quot; (bool): Whether to take image bandName_class_values, bandName_class_names, bandName_class_palette properties to visualize, create a legend (populates `classLegendDict`), and apply class names to any query functions (populates `queryDict`),</span>
+
+<span class="sd">                    &quot;canQuery&quot; (bool, default True): Whether a layer can be queried when visible.,</span>
+
+<span class="sd">                    &quot;addToLegend&quot; (bool, default True): Whether geeViz should try to create a legend for this layer. Sometimes setting it to `False` is useful for continuous multi-band inputs.,</span>
+
+<span class="sd">                    &quot;classLegendDict&quot; (dict): A dictionary with a key:value of the name:color(hex) to include in legend. This is auto-populated when `autoViz` : True,</span>
+
+<span class="sd">                    &quot;queryDict&quot; (dict): A dictionary with a key:value of the queried number:label to include if queried numeric values have corresponding label names. This is auto-populated when `autoViz` : True,</span>
+
+<span class="sd">                    &quot;queryParams&quot; (dict, optional): Dictionary of additional parameters for querying visible map layers:</span>
+
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;palette&quot; (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.</span>
+<span class="sd">                        }</span>
+
+<span class="sd">                    &quot;legendLabelLeftBefore&quot; (str) : Label for continuous legend on the left before the numeric component,</span>
+
+<span class="sd">                    &quot;legendLabelLeftAfter&quot; (str) : Label for continuous legend on the left after the numeric component,</span>
+
+<span class="sd">                    &quot;legendLabelRightBefore&quot; (str) : Label for continuous legend on the right before the numeric component,</span>
+
+<span class="sd">                    &quot;legendLabelRightAfter&quot; (str) : Label for continuous legend on the right after the numeric component,</span>
+
+<span class="sd">                    &quot;canAreaChart&quot; (bool): whether to include this layer for area charting. If the layer is complex, area charting can be quite slow,</span>
+
+<span class="sd">                    &quot;areaChartParams&quot; (dict, optional): Dictionary of additional parameters for area charting:</span>
+
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;reducer&quot; (Reducer, default `ee.Reducer.mean()` if no bandName_class_values, bandName_class_names, bandName_class_palette properties are available. `ee.Reducer.frequencyHistogram` if those are available or `thematic`:True (see below)): The reducer used to compute zonal summary statistics.,</span>
+
+<span class="sd">                            &quot;crs&quot; (str, default &quot;EPSG:5070&quot;): the coordinate reference system string to use for are chart zonal stats,</span>
+
+<span class="sd">                            &quot;transform&quot; (list, default [30, 0, -2361915, 0, -30, 3177735]): the transform to snap to for zonal stats,</span>
+
+<span class="sd">                            &quot;scale&quot; (int, default None): The spatial resolution to use for zonal stats. Only specify if transform : None.</span>
+
+<span class="sd">                            &quot;line&quot; (bool, default True): Whether to create a line chart,</span>
+
+<span class="sd">                            &quot;sankey&quot; (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a `system:time_start` property set for each image,</span>
+
+<span class="sd">                            &quot;sankeyTransitionPeriods&quot; (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under `Area Tools -&gt; Transition Charting Periods`. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.</span>
+
+<span class="sd">                            &quot;sankeyMinPercentage&quot; (float, default 0.5): The minimum percentage a given class has to be to be shown in the sankey chart.</span>
+
+<span class="sd">                            &quot;thematic&quot; (bool): Whether input has discrete values or not. If True, it forces the reducer to `ee.Reducer.frequencyHistogram()` even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,</span>
+
+<span class="sd">                            &quot;palette&quot; (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart,</span>
+
+<span class="sd">                            &quot;showGrid&quot; (bool, default True): Whether to show the grid lines on the line or bar graph,</span>
+
+<span class="sd">                            &quot;rangeSlider&quot; (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`https://plotly.com/javascript/range-slider/&gt;`)</span>
+
+<span class="sd">                            &quot;barChartMaxClasses&quot; (int, default 20): The maximum number of classes to show for image bar charts. Will automatically only show the top `bartChartMaxClasses` in any image bar chart. Any downloaded csv table will still have all of the class counts.</span>
+<span class="sd">                        }</span>
+
+<span class="sd">                }</span>
+<span class="sd">            name (str): Descriptive name for map layer that will be shown on the map UI</span>
+<span class="sd">            visible (bool, default True): Whether layer should be visible when map UI loads</span>
+
+<span class="sd">        &gt;&gt;&gt; import geeViz.geeView as gv</span>
+<span class="sd">        &gt;&gt;&gt; Map = gv.Map</span>
+<span class="sd">        &gt;&gt;&gt; ee = gv.ee</span>
+<span class="sd">        &gt;&gt;&gt; nlcd = ee.ImageCollection(&quot;USGS/NLCD_RELEASES/2021_REL/NLCD&quot;).select([&#39;landcover&#39;])</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(nlcd, {&quot;autoViz&quot;: True}, &quot;NLCD Land Cover / Land Use 2021&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Layer &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Adding layer: &quot;</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="c1"># Handle reducer if ee object is given</span>
+        <span class="k">if</span> <span class="s2">&quot;reducer&quot;</span> <span class="ow">in</span> <span class="n">viz</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;reducer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;reducer&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;reducer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">viz</span><span class="p">[</span><span class="s2">&quot;reducer&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># Most likely it&#39;s already serialized</span>
+                    <span class="n">e</span> <span class="o">=</span> <span class="n">e</span>
+        <span class="k">if</span> <span class="s2">&quot;areaChartParams&quot;</span> <span class="ow">in</span> <span class="n">viz</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+
+            <span class="k">if</span> <span class="s2">&quot;reducer&quot;</span> <span class="ow">in</span> <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;areaChartParams&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;areaChartParams&quot;</span><span class="p">][</span><span class="s2">&quot;reducer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;areaChartParams&quot;</span><span class="p">][</span><span class="s2">&quot;reducer&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;areaChartParams&quot;</span><span class="p">][</span><span class="s2">&quot;reducer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">viz</span><span class="p">[</span><span class="s2">&quot;areaChartParams&quot;</span><span class="p">][</span><span class="s2">&quot;reducer&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># Most likely it&#39;s already serialized</span>
+                        <span class="n">e</span> <span class="o">=</span> <span class="n">e</span>
+
+        <span class="c1"># Get the id and populate dictionarye</span>
+        <span class="n">idDict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="s2">&quot;layerType&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">viz</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">imageType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">image</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="n">layerType</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">typeLookup</span><span class="p">[</span><span class="n">imageType</span><span class="p">]</span>
+            <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;layerType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">layerType</span>
+            <span class="c1"># print(&quot;Type:&quot;, imageType, viz[&quot;layerType&quot;])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+            <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;item&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">image</span>
+            <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;function&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;addSerializedLayer&quot;</span>
+        <span class="c1"># Handle passing in geojson vector layers</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;item&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+            <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;layerType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;geoJSONVector&quot;</span>
+            <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;function&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;addLayer&quot;</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;objectName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Map&quot;</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;visible&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">visible</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;viz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">viz</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idDict</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+    <span class="c1"># Function for adding a layer to the map</span>
+<div class="viewcode-block" id="mapper.addTimeLapse">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.addTimeLapse">[docs]</a>
+    <span class="k">def</span> <span class="nf">addTimeLapse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">viz</span><span class="o">=</span><span class="p">{},</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds GEE ImageCollection object to the mapper object that will then be added as an interactive time lapse in the map user interface with a `view` call.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image (ImageCollection): ee ImageCollecion object to add to the map UI.</span>
+<span class="sd">            viz (dict): Primary set of parameters for map visualization, querying, charting, etc. These are largely the same as the `addLayer` function. Keys unique to `addTimeLapse` are provided here first. In addition to the parameters supported by the `addLayer` function in the GEE Code Editor, there are several additional parameters available to help facilitate legend generation, querying, and area summaries. The accepted keys are:</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &quot;mosaic&quot; (bool, default False): If an ImageCollection with multiple images per time step is provided, how to reduce it to create the layer that is shown on the map. Uses ee.Reducer.lastNonNull() if True or ee.Reducer.first() if False,</span>
+
+<span class="sd">                    &quot;dateFormat&quot; (str, default &quot;YYYY&quot;): The format of the date to show in the slider. E.g. if your data is annual, generally &quot;YYYY&quot; is best. If it&#39;s monthly, generally &quot;YYYYMM&quot; is best. Daily, generally &quot;YYYYMMdd&quot;...etc.,</span>
+
+<span class="sd">                    &quot;advanceInterval&quot; (str, default &#39;year&#39;): How much to advance each frame when creating each individual mosaic. One of &#39;year&#39;, &#39;month&#39; &#39;week&#39;, &#39;day&#39;, &#39;hour&#39;, &#39;minute&#39;, or &#39;second&#39;.</span>
+
+
+<span class="sd">                    &quot;min&quot; (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00.,</span>
+
+<span class="sd">                    &quot;max&quot; (int, list, or comma-separated numbers): One numeric value or one per band to map onto FF,</span>
+
+<span class="sd">                    &quot;gain&quot; (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00-FF.,</span>
+
+<span class="sd">                    &quot;bias&quot; (int, list, or comma-separated numbers): One numeric value or one per band to map onto 00-FF.,</span>
+
+<span class="sd">                    &quot;gamma&quot; (int, list, or comma-separated numbers): Gamma correction factor. One numeric value or one per band.,</span>
+
+<span class="sd">                    &quot;palette&quot; (str, list, or comma-separated strings): List of CSS-style color strings (single-band previews only).,</span>
+
+<span class="sd">                    &quot;opacity&quot; (float): a number between 0 and 1 for initially set opacity.,</span>
+
+<span class="sd">                    &quot;autoViz&quot; (bool): Whether to take image bandName_class_values, bandName_class_names, bandName_class_palette properties to visualize, create a legend (populates `classLegendDict`), and apply class names to any query functions (populates `queryDict`),</span>
+
+<span class="sd">                    &quot;canQuery&quot; (bool, default True): Whether a layer can be queried when visible.,</span>
+
+<span class="sd">                    &quot;addToLegend&quot; (bool, default True): Whether geeViz should try to create a legend for this layer. Sometimes setting it to `False` is useful for continuous multi-band inputs.,</span>
+
+<span class="sd">                    &quot;classLegendDict&quot; (dict): A dictionary with a key:value of the name:color(hex) to include in legend. This is auto-populated when `autoViz` : True,</span>
+
+<span class="sd">                    &quot;queryDict&quot; (dict): A dictionary with a key:value of the queried number:label to include if queried numeric values have corresponding label names. This is auto-populated when `autoViz` : True,</span>
+
+<span class="sd">                    &quot;queryParams&quot; (dict, optional): Dictionary of additional parameters for querying visible map layers:</span>
+
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;palette&quot; (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.</span>
+<span class="sd">                        }</span>
+
+<span class="sd">                    &quot;legendLabelLeftBefore&quot; (str) : Label for continuous legend on the left before the numeric component,</span>
+
+<span class="sd">                    &quot;legendLabelLeftAfter&quot; (str) : Label for continuous legend on the left after the numeric component,</span>
+
+<span class="sd">                    &quot;legendLabelRightBefore&quot; (str) : Label for continuous legend on the right before the numeric component,</span>
+
+<span class="sd">                    &quot;legendLabelRightAfter&quot; (str) : Label for continuous legend on the right after the numeric component,</span>
+
+<span class="sd">                    &quot;canAreaChart&quot; (bool): whether to include this layer for area charting. If the layer is complex, area charting can be quite slow,</span>
+
+<span class="sd">                    &quot;areaChartParams&quot; (dict, optional): Dictionary of additional parameters for area charting:</span>
+
+<span class="sd">                        {</span>
+<span class="sd">                            &quot;reducer&quot; (Reducer, default `ee.Reducer.mean()` if no bandName_class_values, bandName_class_names, bandName_class_palette properties are available. `ee.Reducer.frequencyHistogram` if those are available or `thematic`:True (see below)): The reducer used to compute zonal summary statistics.,</span>
+
+<span class="sd">                            &quot;line&quot; (bool, default True): Whether to create a line chart,</span>
+
+<span class="sd">                            &quot;sankey&quot; (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a `system:time_start` property set for each image,</span>
+
+<span class="sd">                            &quot;sankeyTransitionPeriods&quot; (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under `Area Tools -&gt; Transition Charting Periods`. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.</span>
+
+<span class="sd">                            &quot;sankeyMinPercentage&quot; (float, default 0.5): The minimum percentage a given class has to be to be shown in the sankey chart.</span>
+
+<span class="sd">                            &quot;thematic&quot; (bool): Whether input has discrete values or not. If True, it forces the reducer to `ee.Reducer.frequencyHistogram()` even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,</span>
+
+<span class="sd">                            &quot;palette&quot; (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart,</span>
+
+<span class="sd">                            &quot;showGrid&quot; (bool, default True): Whethe to show the grid lines on the line or bar graph,</span>
+
+<span class="sd">                            &quot;rangeSlider&quot; (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`&lt;https://plotly.com/javascript/range-slider/&gt;`)</span>
+
+<span class="sd">                            &quot;barChartMaxClasses&quot; (int, default 20): The maximum number of classes to show for image bar charts. Will automatically only show the top `bartChartMaxClasses` in any image bar chart. Any downloaded csv table will still have all of the class counts.</span>
+<span class="sd">                        }</span>
+
+<span class="sd">                }</span>
+<span class="sd">            name (str): Descriptive name for map layer that will be shown on the map UI</span>
+<span class="sd">            visible (bool, default True): Whether layer should be visible when map UI loads</span>
+
+<span class="sd">        &gt;&gt;&gt; import geeViz.geeView as gv</span>
+<span class="sd">        &gt;&gt;&gt; Map = gv.Map</span>
+<span class="sd">        &gt;&gt;&gt; ee = gv.ee</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(ee.Filter.calendarRange(2010, 2023, &quot;year&quot;))</span>
+<span class="sd">        &gt;&gt;&gt; Map.addTimeLapse(lcms.select([&quot;Land_Cover&quot;]), {&quot;autoViz&quot;: True, &quot;mosaic&quot;: True}, &quot;LCMS Land Cover Time Lapse&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addTimeLapse(lcms.select([&quot;Change&quot;]), {&quot;autoViz&quot;: True, &quot;mosaic&quot;: True}, &quot;LCMS Change Time Lapse&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addTimeLapse(lcms.select([&quot;Land_Use&quot;]), {&quot;autoViz&quot;: True, &quot;mosaic&quot;: True}, &quot;LCMS Land Use Time Lapse&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Layer &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Adding layer: &quot;</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="c1"># Handle reducer if ee object is given - delete it</span>
+        <span class="k">if</span> <span class="s2">&quot;reducer&quot;</span> <span class="ow">in</span> <span class="n">viz</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">del</span> <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;reducer&quot;</span><span class="p">]</span>
+
+        <span class="c1"># Handle area charting reducer</span>
+        <span class="k">if</span> <span class="s2">&quot;areaChartParams&quot;</span> <span class="ow">in</span> <span class="n">viz</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+
+            <span class="k">if</span> <span class="s2">&quot;reducer&quot;</span> <span class="ow">in</span> <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;areaChartParams&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;areaChartParams&quot;</span><span class="p">][</span><span class="s2">&quot;reducer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;areaChartParams&quot;</span><span class="p">][</span><span class="s2">&quot;reducer&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;areaChartParams&quot;</span><span class="p">][</span><span class="s2">&quot;reducer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">viz</span><span class="p">[</span><span class="s2">&quot;areaChartParams&quot;</span><span class="p">][</span><span class="s2">&quot;reducer&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># Most likely it&#39;s already serialized</span>
+                        <span class="n">e</span> <span class="o">=</span> <span class="n">e</span>
+        <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;layerType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;ImageCollection&quot;</span>
+        <span class="c1"># Get the id and populate dictionary</span>
+        <span class="n">idDict</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># image.getMapId()</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;objectName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Map&quot;</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;item&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;visible&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">visible</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;viz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">viz</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;function&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;addSerializedTimeLapse&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idDict</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+    <span class="c1"># Function for adding a select layer to the map</span>
+<div class="viewcode-block" id="mapper.addSelectLayer">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.addSelectLayer">[docs]</a>
+    <span class="k">def</span> <span class="nf">addSelectLayer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">featureCollection</span><span class="p">,</span> <span class="n">viz</span><span class="o">=</span><span class="p">{},</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds GEE featureCollection to the mapper object that will then be added as an interactive selection layer in the map user interface with a `view` call. This layer will be availble for selecting areas to include in area summary charts.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            featureCollection (FeatureCollection): ee FeatureCollecion object to add to the map UI as a selectable layer, where each feature is selectable by clicking on it.</span>
+<span class="sd">            viz (dict, optional): Primary set of parameters for map visualization and specifying which feature attribute to use as the feature name (selectLayerNameProperty), etc. In addition to the parameters supported by the `addLayer` function in the GEE Code Editor, there are several additional parameters available to help facilitate legend generation, querying, and area summaries. The accepted keys are:</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &quot;strokeColor&quot; (str, default random color): The color of the selection layer on the map,</span>
+
+<span class="sd">                    &quot;strokeWeight&quot; (int, default 3): The thickness of the polygon outlines,</span>
+
+<span class="sd">                    &quot;selectLayerNameProperty&quot; (str, default first feature attribute with &quot;name&quot; in it or &quot;system:index&quot;): The attribute name to show when a user selects a feature.</span>
+
+
+
+<span class="sd">                }</span>
+<span class="sd">            name (str, default None): Descriptive name for map layer that will be shown on the map UI. Will be auto-populated with `Layer N` if not specified</span>
+
+<span class="sd">        &gt;&gt;&gt; import geeViz.geeView as gv</span>
+<span class="sd">        &gt;&gt;&gt; Map = gv.Map</span>
+<span class="sd">        &gt;&gt;&gt; ee = gv.ee</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms, {&quot;autoViz&quot;: True, &quot;canAreaChart&quot;: True, &quot;areaChartParams&quot;: {&quot;line&quot;: True, &quot;sankey&quot;: True}}, &quot;LCMS&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; mtbsBoundaries = ee.FeatureCollection(&quot;USFS/GTAC/MTBS/burned_area_boundaries/v1&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; mtbsBoundaries = mtbsBoundaries.map(lambda f: f.set(&quot;system:time_start&quot;, f.get(&quot;Ig_Date&quot;)))</span>
+<span class="sd">        &gt;&gt;&gt; Map.addSelectLayer(mtbsBoundaries, {&quot;strokeColor&quot;: &quot;00F&quot;, &quot;selectLayerNameProperty&quot;: &quot;Incid_Name&quot;}, &quot;MTBS Fire Boundaries&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnSelectionAreaCharting()</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Layer &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Adding layer: &quot;</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="c1"># Get the id and populate dictionary</span>
+        <span class="n">idDict</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># image.getMapId()</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;objectName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;Map&quot;</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;item&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">featureCollection</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;visible&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;viz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">viz</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;function&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;addSerializedSelectLayer&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idDict</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+    <span class="c1"># Function for centering on a GEE object that has a geometry</span>
+<div class="viewcode-block" id="mapper.setCenter">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setCenter">[docs]</a>
+    <span class="k">def</span> <span class="nf">setCenter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lng</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Center the map on a specified point and optional zoom on loading</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            lng (int or float): The longitude to center the map on</span>
+<span class="sd">            lat (int or float): The latitude to center the map on</span>
+<span class="sd">            zoom (int, optional): If provided, will force the map to zoom to this level after centering it on the provided coordinates. If not provided, the current zoom level will be used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Map.setCenter(</span><span class="si">{</span><span class="n">lng</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">lat</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">zoom</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">command</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+    <span class="c1"># Function for setting the map zoom</span>
+<div class="viewcode-block" id="mapper.setZoom">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setZoom">[docs]</a>
+    <span class="k">def</span> <span class="nf">setZoom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zoom</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the map zoom level</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            zoom (int): The zoom level to set the map to on loading.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;map.setZoom(</span><span class="si">{</span><span class="n">zoom</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+    <span class="c1"># Function for centering on a GEE object that has a geometry</span>
+<div class="viewcode-block" id="mapper.centerObject">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.centerObject">[docs]</a>
+    <span class="k">def</span> <span class="nf">centerObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Center the map on an object on loading</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            feature (Feature, FeatureCollection, or Geometry): The object to center the map on</span>
+<span class="sd">            zoom (int, optional): If provided, will force the map to zoom to this level after centering it on the object. If not provided, the highest zoom level that allows the feature to be viewed fully will be used.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">bounds</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">geometry</span><span class="p">()</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;EPSG:4326&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">getInfo</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">bounds</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;EPSG:4326&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">getInfo</span><span class="p">())</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="s2">&quot;synchronousCenterObject(&quot;</span> <span class="o">+</span> <span class="n">bounds</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">zoom</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setZoom</span><span class="p">(</span><span class="n">zoom</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+    <span class="c1"># Function for launching the web map after all adding to the map has been completed</span>
+<div class="viewcode-block" id="mapper.view">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.view">[docs]</a>
+    <span class="k">def</span> <span class="nf">view</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">open_browser</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">open_iframe</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">iframe_height</span><span class="o">=</span><span class="mi">525</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compiles all map objects and commands and starts the map server</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            open_browser (bool): Whether or not to open the browser. If unspecified, will automatically be selected depending on whether geeViz is being used in a notebook (False) or not (True).</span>
+
+<span class="sd">            open_iframe (bool): Whether or not to open an iframe. If unspecified, will automatically be selected depending on whether geeViz is being used in a notebook (True) or not (False).</span>
+
+<span class="sd">            iframe_height (int, default 525): The height of the iframe shown if running inside a notebook</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Starting webmap&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Get access token</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceKeyPath</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using default refresh token for geeView&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accessToken</span> <span class="o">=</span> <span class="n">refreshToken</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using service account key for geeView:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceKeyPath</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accessToken</span> <span class="o">=</span> <span class="n">serviceAccountToken</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">serviceKeyPath</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accessToken</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Trying to authenticate to GEE using persistent refresh token.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">accessToken</span> <span class="o">=</span> <span class="n">refreshToken</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">refreshTokenPath</span><span class="p">)</span>
+        <span class="c1"># Set up js code to populate</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="s2">&quot;var layerLoadErrorMessages=[];showMessage(&#39;Loading&#39;,staticTemplates.loadingModal[mode]);</span><span class="se">\n</span><span class="s2">function runGeeViz(){</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+        <span class="c1"># Iterate across each map layer to add js code to</span>
+        <span class="k">for</span> <span class="n">idDict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.</span><span class="si">{}</span><span class="s2">(</span><span class="si">{}</span><span class="s2">,</span><span class="si">{}</span><span class="s2">,&#39;</span><span class="si">{}</span><span class="s2">&#39;,</span><span class="si">{}</span><span class="s2">);&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;objectName&quot;</span><span class="p">],</span>
+                <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;function&quot;</span><span class="p">],</span>
+                <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;item&quot;</span><span class="p">],</span>
+                <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;viz&quot;</span><span class="p">],</span>
+                <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;visible&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+            <span class="p">)</span>
+            <span class="c1"># t = (</span>
+            <span class="c1">#     &quot;try{\n\t&quot;</span>
+            <span class="c1">#     + t</span>
+            <span class="c1">#     + &#39;\n}catch(err){\n\tlayerLoadErrorMessages.push(&quot;Error loading: &#39;</span>
+            <span class="c1">#     + idDict[&quot;name&quot;]</span>
+            <span class="c1">#     + &#39;&lt;br&gt;GEE &quot;+err);}\n&#39;</span>
+            <span class="c1"># )</span>
+
+            <span class="n">lines</span> <span class="o">+=</span> <span class="n">t</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="s1">&#39;if(layerLoadErrorMessages.length&gt;0){showMessage(&quot;Map.addLayer Error List&quot;,layerLoadErrorMessages.join(&quot;&lt;br&gt;&quot;));}</span><span class="se">\n</span><span class="s1">&#39;</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="s2">&quot;setTimeout(function(){if(layerLoadErrorMessages.length===0){$(&#39;#close-modal-button&#39;).click();}}, 2500);</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+        <span class="c1"># Iterate across each map command</span>
+        <span class="k">for</span> <span class="n">mapCommand</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="n">lines</span> <span class="o">+=</span> <span class="n">mapCommand</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+        <span class="c1"># Set location of query outputs</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="s1">&#39;queryWindowMode = &quot;</span><span class="si">{}</span><span class="s1">&quot;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queryWindowMode</span><span class="p">)</span>
+
+        <span class="c1"># Set whether all layers are turned off when a time lapse is turned on</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="s2">&quot;Map.turnOffLayersWhenTimeLapseIsOn = </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">turnOffLayersWhenTimeLapseIsOn</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="s2">&quot;}&quot;</span>
+
+        <span class="c1"># Write out js file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ee_run</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ee_run_dir</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">.js&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ee_run_name</span><span class="p">))</span>
+        <span class="n">oo</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ee_run</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+        <span class="n">oo</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+        <span class="n">oo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="c1"># time.sleep(5)</span>
+
+        <span class="c1"># if not self.isNotebook:</span>
+        <span class="c1">#     self.Map.save(os.path.join(folium_html_folder,folium_html))</span>
+        <span class="c1">#     if not geeView.isPortActive(self.port):</span>
+        <span class="c1">#         print(&#39;Starting local web server at: http://localhost:{}/{}/&#39;.format(self.port,geeView.geeViewFolder))</span>
+        <span class="c1">#         geeView.run_local_server(self.port)</span>
+        <span class="c1">#         print(&#39;Done&#39;)</span>
+        <span class="c1">#     else:</span>
+        <span class="c1">#         print(&#39;Local web server at: http://localhost:{}/{}/ already serving.&#39;.format(self.port,geeView.geeViewFolder))</span>
+        <span class="c1">#     if open_browser:</span>
+        <span class="c1">#         geeView.webbrowser.open(&#39;http://localhost:{}/{}/{}&#39;.format(self.port,geeView.geeViewFolder,folium_html),new = 1)</span>
+
+        <span class="c1"># else:</span>
+        <span class="c1">#     display(self.Map)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">isPortActive</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Starting local web server at: http://localhost:</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">,</span> <span class="n">geeViewFolder</span><span class="p">))</span>
+            <span class="n">run_local_server</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Done&quot;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Local web server at: http://localhost:</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/ already serving.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">,</span> <span class="n">geeViewFolder</span><span class="p">))</span>
+            <span class="c1"># print(&#39;Refresh browser instance&#39;)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;cwd&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">IS_COLAB</span><span class="p">:</span>
+            <span class="n">proxy_js</span> <span class="o">=</span> <span class="s2">&quot;google.colab.kernel.proxyPort(</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
+            <span class="n">proxy_url</span> <span class="o">=</span> <span class="n">eval_js</span><span class="p">(</span><span class="n">proxy_js</span><span class="p">)</span>
+            <span class="n">geeView_proxy_url</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">geeView/?projectID=</span><span class="si">{}</span><span class="s2">&amp;accessToken=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">proxy_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">accessToken</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Colab Proxy URL:&quot;</span><span class="p">,</span> <span class="n">geeView_proxy_url</span><span class="p">)</span>
+            <span class="n">viewerFrame</span> <span class="o">=</span> <span class="n">IFrame</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">geeView_proxy_url</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s2">&quot;100%&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">px&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">iframe_height</span><span class="p">))</span>
+            <span class="n">display</span><span class="p">(</span><span class="n">viewerFrame</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">IS_WORKBENCH</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">proxy_url</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">proxy_url</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Please enter current URL Workbench Notebook is running from (e.g. https://code-dot-region.notebooks.googleusercontent.com/): &quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">proxy_url</span> <span class="o">=</span> <span class="n">baseDomain</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proxy_url</span><span class="p">)</span>
+            <span class="n">geeView_proxy_url</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">/proxy/</span><span class="si">{}</span><span class="s2">/geeView/?projectID=</span><span class="si">{}</span><span class="s2">&amp;accessToken=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proxy_url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">accessToken</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Workbench Proxy URL:&quot;</span><span class="p">,</span> <span class="n">geeView_proxy_url</span><span class="p">)</span>
+            <span class="n">viewerFrame</span> <span class="o">=</span> <span class="n">IFrame</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">geeView_proxy_url</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s2">&quot;100%&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">px&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">iframe_height</span><span class="p">))</span>
+            <span class="n">display</span><span class="p">(</span><span class="n">viewerFrame</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;http://localhost:</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/?projectID=</span><span class="si">{}</span><span class="s2">&amp;accessToken=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">,</span> <span class="n">geeViewFolder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">accessToken</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;geeView URL:&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isNotebook</span> <span class="ow">or</span> <span class="n">open_browser</span><span class="p">:</span>
+                <span class="n">webbrowser</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">new</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">open_browser</span> <span class="o">==</span> <span class="kc">False</span> <span class="ow">and</span> <span class="n">open_iframe</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">IFrame</span> <span class="o">=</span> <span class="n">IFrame</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s2">&quot;100%&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">px&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">iframe_height</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">IFrame</span> <span class="o">=</span> <span class="n">IFrame</span><span class="p">(</span><span class="n">src</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s2">&quot;100%&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">px&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">iframe_height</span><span class="p">))</span>
+                <span class="n">display</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">IFrame</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+<div class="viewcode-block" id="mapper.clearMap">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.clearMap">[docs]</a>
+    <span class="k">def</span> <span class="nf">clearMap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes all map layers and commands - useful if running geeViz in a notebook and don&#39;t want layers/commands from a prior code block to still be included.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="mapper.clearMapLayers">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.clearMapLayers">[docs]</a>
+    <span class="k">def</span> <span class="nf">clearMapLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes all map layers - useful if running geeViz in a notebook and don&#39;t want layers from a prior code block to still be included, but want commands to remain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="mapper.clearMapCommands">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.clearMapCommands">[docs]</a>
+    <span class="k">def</span> <span class="nf">clearMapCommands</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Removes all map commands - useful if running geeViz in a notebook and don&#39;t want commands from a prior code block to still be included, but want layers to remain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+    <span class="c1">######################################################################</span>
+<div class="viewcode-block" id="mapper.setMapTitle">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setMapTitle">[docs]</a>
+    <span class="k">def</span> <span class="nf">setMapTitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the title that appears in the left sidebar header and the page title</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            title (str, default geeViz Data Explorer): The title to appear in the header on the left sidebar as well as the title of the viewer webpage.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">title_command</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Map.setTitle(&quot;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s1">&quot;)&#39;</span>
+        <span class="k">if</span> <span class="n">title_command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">title_command</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+<div class="viewcode-block" id="mapper.setTitle">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setTitle">[docs]</a>
+    <span class="k">def</span> <span class="nf">setTitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the title that appears in the left sidebar header and the page title</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            title (str, default geeViz Data Explorer): The title to appear in the header on the left sidebar as well as the title of the viewer webpage.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setMapTitle</span><span class="p">(</span><span class="n">title</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+    <span class="c1"># Functions to set various click query properties</span>
+<div class="viewcode-block" id="mapper.setQueryCRS">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setQueryCRS">[docs]</a>
+    <span class="k">def</span> <span class="nf">setQueryCRS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">crs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The coordinate reference system string to query layers with</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            crs (str, default &quot;EPSG:5070&quot;): Which projection (CRS) to use for querying map layers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setting click query crs to: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">crs</span><span class="p">))</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Map.setQueryCRS(&quot;</span><span class="si">{</span><span class="n">crs</span><span class="si">}</span><span class="s1">&quot;);&#39;</span>
+        <span class="k">if</span> <span class="n">cmd</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+<div class="viewcode-block" id="mapper.setQueryScale">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setQueryScale">[docs]</a>
+    <span class="k">def</span> <span class="nf">setQueryScale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        What scale to query map layers with. Will also update the size of the box drawn on the map query layers are queried.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            scale (int, default None): The spatial resolution to use for querying map layers in meters. If set, the query transform will be set to None in the map viewer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setting click query scale to: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">scale</span><span class="p">))</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Map.setQueryScale(</span><span class="si">{</span><span class="n">scale</span><span class="si">}</span><span class="s2">);&quot;</span>
+        <span class="k">if</span> <span class="n">cmd</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+<div class="viewcode-block" id="mapper.setQueryTransform">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setQueryTransform">[docs]</a>
+    <span class="k">def</span> <span class="nf">setQueryTransform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transform</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        What transform to query map layers with. Will also update the size of the box drawn on the map query layers are queried.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            transform (list, default [30, 0, -2361915, 0, -30, 3177735]): The snap to grid to use for querying layers on the map. If set, the query scale will be set to None in the map viewer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setting click query transform to: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">transform</span><span class="p">))</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Map.setQueryTransform(</span><span class="si">{</span><span class="n">transform</span><span class="si">}</span><span class="s2">);&quot;</span>
+        <span class="k">if</span> <span class="n">cmd</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+<div class="viewcode-block" id="mapper.setQueryPrecision">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setQueryPrecision">[docs]</a>
+    <span class="k">def</span> <span class="nf">setQueryPrecision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chartPrecision</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">chartDecimalProportion</span><span class="o">=</span><span class="mf">0.25</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        What level of precision to show for queried layers. This avoids showing too many digits after the decimal.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            chartPrecision (int, default 3): Will show the larger of `chartPrecision` decimal places or ceiling(`chartDecimalProportion` * total decimal places). E.g. if the number is 1.12345678, 0.25 of 8 decimal places is 2, so 3 will be used and yield 1.123.</span>
+<span class="sd">            chartDecimalProportion (float, default 0.25): Will show the larger of `chartPrecision` decimal places or `chartDecimalProportion` * total decimal places. E.g. if the number is 1.1234567891234, ceiling(0.25 of 13) decimal places is 4, so 4 will be used and yield 1.1235.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setting click query precision to: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">chartPrecision</span><span class="p">))</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Map.setQueryPrecision(</span><span class="si">{</span><span class="n">chartPrecision</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">chartDecimalProportion</span><span class="si">}</span><span class="s2">);&quot;</span>
+        <span class="k">if</span> <span class="n">cmd</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+<div class="viewcode-block" id="mapper.setQueryDateFormat">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setQueryDateFormat">[docs]</a>
+    <span class="k">def</span> <span class="nf">setQueryDateFormat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">defaultQueryDateFormat</span><span class="o">=</span><span class="s2">&quot;YYYY-MM-dd&quot;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the date format to be used for any dates when querying.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            defaultQueryDateFormat (str, default &quot;YYYY-MM-dd&quot;): The date format string to use for query outputs with dates. To simplify date outputs, &quot;YYYY&quot; is often used instead of the default.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setting default query date format to: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">defaultQueryDateFormat</span><span class="p">))</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Map.setQueryDateFormat(&quot;</span><span class="si">{</span><span class="n">defaultQueryDateFormat</span><span class="si">}</span><span class="s1">&quot;);&#39;</span>
+        <span class="k">if</span> <span class="n">cmd</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+<div class="viewcode-block" id="mapper.setQueryBoxColor">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setQueryBoxColor">[docs]</a>
+    <span class="k">def</span> <span class="nf">setQueryBoxColor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the color of the query box to something other than yellow</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            color (str, default &quot;FFFF00&quot;): Set the default query box color shown on the map by providing a hex color.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setting click query box color to: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">color</span><span class="p">))</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Map.setQueryBoxColor(&quot;</span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s1">&quot;);&#39;</span>
+        <span class="k">if</span> <span class="n">cmd</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+    <span class="c1"># Functions to handle location of query outputs</span>
+    <span class="k">def</span> <span class="nf">setQueryWindowMode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queryWindowMode</span> <span class="o">=</span> <span class="n">mode</span>
+
+<div class="viewcode-block" id="mapper.setQueryToInfoWindow">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setQueryToInfoWindow">[docs]</a>
+    <span class="k">def</span> <span class="nf">setQueryToInfoWindow</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the location of query outputs to an info window popup over the map</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setQueryWindowMode</span><span class="p">(</span><span class="s2">&quot;infoWindow&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mapper.setQueryToSidePane">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setQueryToSidePane">[docs]</a>
+    <span class="k">def</span> <span class="nf">setQueryToSidePane</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the location of query outputs to the right sidebar above the legend</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setQueryWindowMode</span><span class="p">(</span><span class="s2">&quot;sidePane&quot;</span><span class="p">)</span></div>
+
+
+    <span class="c1">######################################################################</span>
+    <span class="c1"># Turn on query inspector</span>
+<div class="viewcode-block" id="mapper.turnOnInspector">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.turnOnInspector">[docs]</a>
+    <span class="k">def</span> <span class="nf">turnOnInspector</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Turn on the query inspector tool upon map loading. This is used frequently so map layers can be queried as soon as the map viewer loads.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query_command</span> <span class="o">=</span> <span class="s2">&quot;Map.turnOnInspector();&quot;</span>
+        <span class="k">if</span> <span class="n">query_command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">query_command</span><span class="p">)</span></div>
+
+
+    <span class="c1"># Turn on area charting</span>
+<div class="viewcode-block" id="mapper.turnOnAutoAreaCharting">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.turnOnAutoAreaCharting">[docs]</a>
+    <span class="k">def</span> <span class="nf">turnOnAutoAreaCharting</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Turn on automatic area charting upon map loading. This will automatically update charts by summarizing any visible layers with &quot;canAreaChart&quot; : True any time the map finishes panning or zooming.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query_command</span> <span class="o">=</span> <span class="s2">&quot;Map.turnOnAutoAreaCharting();&quot;</span>
+        <span class="k">if</span> <span class="n">query_command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">query_command</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mapper.turnOnUserDefinedAreaCharting">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.turnOnUserDefinedAreaCharting">[docs]</a>
+    <span class="k">def</span> <span class="nf">turnOnUserDefinedAreaCharting</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Turn on area charting by a user defined area upon map loading. This will update charts by summarizing any visible layers with &quot;canAreaChart&quot; : True when the user draws an area to summarize and hits the `Chart Selected Areas` button in the user interface under `Area Tools -&gt; User-Defined Area`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query_command</span> <span class="o">=</span> <span class="s2">&quot;Map.turnOnUserDefinedAreaCharting();&quot;</span>
+        <span class="k">if</span> <span class="n">query_command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">query_command</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mapper.turnOnSelectionAreaCharting">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.turnOnSelectionAreaCharting">[docs]</a>
+    <span class="k">def</span> <span class="nf">turnOnSelectionAreaCharting</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Turn on area charting by a user selected area upon map loading. This will update charts by summarizing any visible layers with &quot;canAreaChart&quot; : True when the user selects selection areas to summarize and hits the `Chart Selected Areas` button in the user interface under `Area Tools -&gt; Select an Area on Map`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query_command</span> <span class="o">=</span> <span class="s2">&quot;Map.turnOnSelectionAreaCharting();&quot;</span>
+        <span class="k">if</span> <span class="n">query_command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">query_command</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mapper.addAreaChartLayer">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.addAreaChartLayer">[docs]</a>
+    <span class="k">def</span> <span class="nf">addAreaChartLayer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">{},</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shouldChart</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Use this method to add a layer for area charting that you do not want as a map layer as well. Once you add all area chart layers to the map, you can turn them on using the `Map.populateAreaChartLayerSelect` method. This will create a selection menu inside the `Area Tools -&gt; Area Tools Parameters` menu. You can then turn layers to include in any area charts on and off from that menu.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image (ImageCollection, Image): ee Image or ImageCollection to add to include in area charting.</span>
+<span class="sd">            params (dict): Primary set of parameters for charting setup (colors, chart types, etc), charting, etc. The accepted keys are:</span>
+
+<span class="sd">                {</span>
+
+<span class="sd">                    &quot;reducer&quot; (Reducer, default `ee.Reducer.mean()` if no bandName_class_values, bandName_class_names, bandName_class_palette properties are available. `ee.Reducer.frequencyHistogram` if those are available or `thematic`:True (see below)): The reducer used to compute zonal summary statistics.,</span>
+
+<span class="sd">                    &quot;crs&quot; (str, default &quot;EPSG:5070&quot;): the coordinate reference system string to use for are chart zonal stats,</span>
+
+<span class="sd">                    &quot;transform&quot; (list, default [30, 0, -2361915, 0, -30, 3177735]): the transform to snap to for zonal stats,</span>
+
+<span class="sd">                    &quot;scale&quot; (int, default None): The spatial resolution to use for zonal stats. Only specify if transform : None.</span>
+
+<span class="sd">                    &quot;line&quot; (bool, default True): Whether to create a line chart,</span>
+
+<span class="sd">                    &quot;sankey&quot; (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a `system:time_start` property set for each image,</span>
+
+<span class="sd">                    &quot;sankeyTransitionPeriods&quot; (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under `Area Tools -&gt; Transition Charting Periods`. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.</span>
+
+<span class="sd">                    &quot;sankeyMinPercentage&quot; (float, default 0.5): The minimum percentage a given class has to be to be shown in the sankey chart.</span>
+
+<span class="sd">                    &quot;thematic&quot; (bool): Whether input has discrete values or not. If True, it forces the reducer to `ee.Reducer.frequencyHistogram()` even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,</span>
+
+<span class="sd">                    &quot;palette&quot; (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.</span>
+
+<span class="sd">                }</span>
+<span class="sd">            name (str): Descriptive name for map layer that will be shown on the map UI</span>
+<span class="sd">            shouldChart (bool, optional): Whether layer should be charted when map UI loads</span>
+
+<span class="sd">        &gt;&gt;&gt; import geeViz.geeView as gv</span>
+<span class="sd">        &gt;&gt;&gt; Map = gv.Map</span>
+<span class="sd">        &gt;&gt;&gt; ee = gv.ee</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([&quot;Change_Raw_Probability.*&quot;]), {&quot;reducer&quot;: ee.Reducer.stdDev(), &quot;min&quot;: 0, &quot;max&quot;: 10}, &quot;LCMS Change Prob&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addAreaChartLayer(lcms, {&quot;line&quot;: True, &quot;layerType&quot;: &quot;ImageCollection&quot;}, &quot;LCMS All Thematic Classes Line&quot;, True)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addAreaChartLayer(lcms, {&quot;sankey&quot;: True}, &quot;LCMS All Thematic Classes Sankey&quot;, True)</span>
+<span class="sd">        &gt;&gt;&gt; Map.populateAreaChartLayerSelect()</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnAutoAreaCharting()</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Area Chart Layer &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Adding area chart layer: &quot;</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="c1"># Handle reducer if ee object is given</span>
+        <span class="k">if</span> <span class="s2">&quot;reducer&quot;</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s2">&quot;reducer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s2">&quot;reducer&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">params</span><span class="p">[</span><span class="s2">&quot;reducer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;reducer&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># Most likely it&#39;s already serialized</span>
+                    <span class="n">e</span> <span class="o">=</span> <span class="n">e</span>
+
+        <span class="c1"># Get the id and populate dictionary</span>
+        <span class="n">idDict</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;serialized&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">params</span><span class="p">[</span><span class="s2">&quot;layerType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">image</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
+
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;item&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">image</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;function&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;addLayer&quot;</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;objectName&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;areaChart&quot;</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;visible&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">shouldChart</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;viz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idDict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mapper.populateAreaChartLayerSelect">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.populateAreaChartLayerSelect">[docs]</a>
+    <span class="k">def</span> <span class="nf">populateAreaChartLayerSelect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Once you add all area chart layers to the map, you can turn them on using this method- `Map.populateAreaChartLayerSelect`. This will create a selection menu inside the `Area Tools -&gt; Area Tools Parameters` menu. You can then turn layers to include in any area charts on and off from that menu.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">query_command</span> <span class="o">=</span> <span class="s2">&quot;areaChart.populateChartLayerSelect();&quot;</span>
+
+        <span class="k">if</span> <span class="n">query_command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">query_command</span><span class="p">)</span></div>
+
+
+    <span class="c1"># Functions to handle setting query output y labels</span>
+    <span class="k">def</span> <span class="nf">setYLabelMaxLength</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxLength</span><span class="p">):</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;yLabelMaxLength = </span><span class="si">{</span><span class="n">maxLength</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="n">command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">setYLabelBreakLength</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxLength</span><span class="p">):</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;yLabelBreakLength = </span><span class="si">{</span><span class="n">maxLength</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="n">command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+
+<div class="viewcode-block" id="mapper.setYLabelMaxLines">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setYLabelMaxLines">[docs]</a>
+    <span class="k">def</span> <span class="nf">setYLabelMaxLines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxLines</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the max number of lines each y-axis label can have.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            maxLines (int, default 5): The maximum number of lines each y-axis label can have. Will simply exclude any remaining lines.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;yLabelMaxLines = </span><span class="si">{</span><span class="n">maxLines</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="n">command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">command</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mapper.setYLabelFontSize">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setYLabelFontSize">[docs]</a>
+    <span class="k">def</span> <span class="nf">setYLabelFontSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fontSize</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the size of the font on the y-axis labels. Useful when y-axis labels are too large to fit on the chart.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fontSize (int, default 10): The font size used on the y-axis labels for query charting.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;yLabelFontSize = </span><span class="si">{</span><span class="n">fontSize</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="n">command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">command</span><span class="p">)</span></div>
+
+
+    <span class="c1"># Specify whether layers can be re-ordered by the user</span>
+<div class="viewcode-block" id="mapper.setCanReorderLayers">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setCanReorderLayers">[docs]</a>
+    <span class="k">def</span> <span class="nf">setCanReorderLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canReorderLayers</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set whether layers can be reordered by dragging layer user interface objects. By default all non timelapse and non geojson layers can be reordereed by dragging.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            canReorderLayers (bool): Set whether layers can be reordered by dragging layer user interface objects. By default all non timelapse and non geojson layers can be reordereed by dragging.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Map.canReorderLayers = </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">canReorderLayers</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">;&quot;</span>
+        <span class="k">if</span> <span class="n">command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">command</span><span class="p">)</span></div>
+
+
+    <span class="c1"># Functions to handle batch layer toggling</span>
+<div class="viewcode-block" id="mapper.turnOffAllLayers">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.turnOffAllLayers">[docs]</a>
+    <span class="k">def</span> <span class="nf">turnOffAllLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Turn off all layers added to the mapper object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">update</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;visible&quot;</span><span class="p">:</span> <span class="s2">&quot;false&quot;</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span> <span class="o">=</span> <span class="p">[{</span><span class="o">**</span><span class="n">d</span><span class="p">,</span> <span class="o">**</span><span class="n">update</span><span class="p">}</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="mapper.turnOnAllLayers">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.turnOnAllLayers">[docs]</a>
+    <span class="k">def</span> <span class="nf">turnOnAllLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Turn on all layers added to the mapper object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">update</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;visible&quot;</span><span class="p">:</span> <span class="s2">&quot;true&quot;</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span> <span class="o">=</span> <span class="p">[{</span><span class="o">**</span><span class="n">d</span><span class="p">,</span> <span class="o">**</span><span class="n">update</span><span class="p">}</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span><span class="p">]</span></div>
+</div>
+
+
+
+<span class="c1"># Instantiate Map object</span>
+<span class="n">Map</span> <span class="o">=</span> <span class="n">mapper</span><span class="p">()</span>
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024, Ian Housman, Josh Heyer
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://www.redcastleresources.com/" aria-label="RedCastle Resources Inc"><img src='https://apps.fs.usda.gov/lcms-viewer/src/assets/images/RCR-logo.jpg'  alt='RedCastle Inc. Logo' href='#' title='Click to learn more about RedCastle Resources Inc.'></a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../_static/documentation_options.js?v=9973ac44"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    </body>
+</html>

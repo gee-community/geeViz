@@ -1,0 +1,893 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" />
+
+    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+        <title>Starter geeViz Folium Viewer Notebook - geeViz &#34;2024.8.3&#34; docs</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="../_static/style/custom.css?v=ebb50e13" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #00897b;
+  --color-brand-content: #00897b;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+<div class="announcement">
+  <aside class="announcement-content">
+     <i>geeViz</i> docs are still in development 
+  </aside>
+</div>
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">geeViz "2024.8.3" docs</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">geeViz "2024.8.3" docs</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../overview.html">Overview</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Overview</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.geeView.html">geeViz.geeView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.foliumView.html">geeViz.foliumView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.phEEnoViz.html">geeViz.phEEnoViz</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Details</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../examples.html">Examples</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="geeViewExampleNotebook.html">Starter geeViz geeView Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lcmsViewerExampleNotebook.html">LCMS Viewer Intro Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mapBiomasViewerExampleNotebook.html">Visualizing MapBiomas Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="global_land_cover_example_notebook.html">Visualizing Global Land Cover</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getLandsatWrapperNotebook.html">Create High Quality Landsat Composites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="areaChart_examples.html">Visualizing Area Summaries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geeViz_geeMap_comparison_tutorial.html">A comparison between geeViz and geeMap’s map visualization capabilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LANDTRENDRWrapperNotebook.html">Run LandTrendr and Visualize Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CCDCVizNotebook.html">CCDC Visualization Notebook</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="starter-geeviz-folium-viewer-notebook">
+<h1>Starter geeViz Folium Viewer Notebook<a class="headerlink" href="#starter-geeviz-folium-viewer-notebook" title="Link to this heading">#</a></h1>
+<section id="example-of-how-to-utilize-the-geeviz-s-folium-based-viewer">
+<h2>Example of how to utilize the geeViz’s Folium-based viewer<a class="headerlink" href="#example-of-how-to-utilize-the-geeviz-s-folium-based-viewer" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Example of the functionality of Folium-based viewer vs the original geeView viewer</p></li>
+<li><p>In general, the Folium-based viewer is better for a quick look at data on a map, but the geeView viewer works better if you need to query the data and/or need an annimated time lapse</p></li>
+</ul>
+<p>Copyright 2023 Ian Housman</p>
+<p>Licensed under the Apache License, Version 2.0 (the “License”);
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>   http://www.apache.org/licenses/LICENSE-2.0
+</pre></div>
+</div>
+<p>Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an “AS IS” BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.</p>
+ <p><a href="https://colab.research.google.com/github/gee-community/geeViz/blob/master/examples/geeViewVSFoliumViewerExampleNotebook.ipynb" target="_parent"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg"></a></p><div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import modules</span>
+<span class="c1">####################################################################################################</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">geeViz.getImagesLib</span> <span class="k">as</span> <span class="nn">gil</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="o">!</span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>geeViz
+    <span class="kn">import</span> <span class="nn">geeViz.getImagesLib</span> <span class="k">as</span> <span class="nn">gil</span>
+
+
+<span class="kn">import</span>  <span class="nn">geeViz.foliumView</span> <span class="k">as</span> <span class="nn">fv</span>
+<span class="kn">import</span>  <span class="nn">geeViz.geeView</span> <span class="k">as</span> <span class="nn">gv</span>
+<span class="n">ee</span> <span class="o">=</span> <span class="n">gv</span><span class="o">.</span><span class="n">ee</span>
+
+<span class="c1"># Both have similar objects with similar methods and attributes</span>
+<span class="n">foliumViewMap</span> <span class="o">=</span> <span class="n">fv</span><span class="o">.</span><span class="n">foliumMapper</span><span class="p">()</span>
+<span class="n">geeViewMap</span> <span class="o">=</span> <span class="n">gv</span><span class="o">.</span><span class="n">mapper</span><span class="p">()</span>
+
+<span class="c1"># Set the port</span>
+<span class="n">foliumViewMap</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span><span class="mi">1234</span>
+<span class="n">geeViewMap</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="mi">1234</span>
+
+<span class="c1"># Clear the map </span>
+<span class="n">foliumViewMap</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+<span class="n">geeViewMap</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+<span class="c1">####################################################################################################</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;done&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Initializing GEE
+Cached project id file path: C:\Users\ihousman\.config\earthengine\credentials.proj_id
+Cached project id: rcr-gee-2
+Successfully initialized
+geeViz package folder: c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\geeViz
+done
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Bring in some S2 data</span>
+<span class="n">studyArea</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span><span class="o">.</span><span class="n">Polygon</span><span class="p">(</span>
+        <span class="p">[[[</span><span class="o">-</span><span class="mf">113.21807278537877</span><span class="p">,</span> <span class="mf">41.786028237932015</span><span class="p">],</span>
+          <span class="p">[</span><span class="o">-</span><span class="mf">113.21807278537877</span><span class="p">,</span> <span class="mf">40.595571243156144</span><span class="p">],</span>
+          <span class="p">[</span><span class="o">-</span><span class="mf">111.82280911350377</span><span class="p">,</span> <span class="mf">40.595571243156144</span><span class="p">],</span>
+          <span class="p">[</span><span class="o">-</span><span class="mf">111.82280911350377</span><span class="p">,</span> <span class="mf">41.786028237932015</span><span class="p">]]],</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># Get some example images to view</span>
+<span class="n">s2s</span> <span class="o">=</span> <span class="n">gil</span><span class="o">.</span><span class="n">getProcessedSentinel2Scenes</span><span class="p">(</span><span class="n">studyArea</span><span class="p">,</span><span class="mi">2022</span><span class="p">,</span><span class="mi">2023</span><span class="p">,</span><span class="mi">120</span><span class="p">,</span><span class="mi">150</span><span class="p">)</span>
+<span class="n">postComposite</span> <span class="o">=</span> <span class="n">s2s</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="mi">2023</span><span class="p">,</span><span class="mi">2023</span><span class="p">,</span><span class="s1">&#39;year&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">median</span><span class="p">()</span>
+<span class="n">foliumViewMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">postComposite</span><span class="p">,</span><span class="n">gil</span><span class="o">.</span><span class="n">vizParamsFalse</span><span class="p">,</span><span class="s1">&#39;S2 Median 2023&#39;</span><span class="p">)</span>
+<span class="n">geeViewMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">postComposite</span><span class="p">,</span><span class="n">gil</span><span class="o">.</span><span class="n">vizParamsFalse</span><span class="p">,</span><span class="s1">&#39;S2 Median 2023&#39;</span><span class="p">)</span>
+<span class="n">preComposite</span> <span class="o">=</span> <span class="n">s2s</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="mi">2022</span><span class="p">,</span><span class="mi">2022</span><span class="p">,</span><span class="s1">&#39;year&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">median</span><span class="p">()</span>
+<span class="n">foliumViewMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">preComposite</span><span class="p">,</span><span class="n">gil</span><span class="o">.</span><span class="n">vizParamsFalse</span><span class="p">,</span><span class="s1">&#39;S2 Median 2022&#39;</span><span class="p">,</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">geeViewMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">preComposite</span><span class="p">,</span><span class="n">gil</span><span class="o">.</span><span class="n">vizParamsFalse</span><span class="p">,</span><span class="s1">&#39;S2 Median 2022&#39;</span><span class="p">,</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># Center on the study area and view it</span>
+<span class="n">foliumViewMap</span><span class="o">.</span><span class="n">centerObject</span><span class="p">(</span><span class="n">studyArea</span><span class="p">)</span>
+<span class="n">geeViewMap</span><span class="o">.</span><span class="n">centerObject</span><span class="p">(</span><span class="n">studyArea</span><span class="p">)</span>
+
+<span class="n">foliumViewMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">studyArea</span><span class="p">,{</span><span class="s1">&#39;strokeColor&#39;</span><span class="p">:</span><span class="s1">&#39;F00&#39;</span><span class="p">,</span><span class="s1">&#39;strokeWidth&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">},</span><span class="s1">&#39;Study Area&#39;</span><span class="p">)</span>
+<span class="n">geeViewMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">studyArea</span><span class="p">,{</span><span class="s1">&#39;strokeColor&#39;</span><span class="p">:</span><span class="s1">&#39;F00&#39;</span><span class="p">,</span><span class="s1">&#39;strokeWidth&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">},</span><span class="s1">&#39;Study Area&#39;</span><span class="p">)</span>
+<span class="c1">####################################################################################################</span>
+<span class="c1"># Folium-based map currently does not support interacting (querying) the data, while geeView does</span>
+<span class="n">geeViewMap</span><span class="o">.</span><span class="n">turnOnInspector</span><span class="p">()</span>
+
+<span class="c1"># View the map</span>
+<span class="n">foliumViewMap</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+<span class="n">geeViewMap</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Get Processed Sentinel2: 
+Start date: Apr 30 2022 , End date: May 30 2023
+Using S2 Collection: COPERNICUS/S2_HARMONIZED
+Joining pre-computed cloud probabilities from: COPERNICUS/S2_CLOUD_PROBABILITY
+Setting to aggregate instead of resample 
+Converting S2 data to daily mosaics
+Applying Cloud Probability
+Applying TDOM
+Computing irMean for TDOM
+Computing irStdDev for TDOM
+Adding layer: S2 Median 2023
+Adding layer: S2 Median 2023
+Adding layer: S2 Median 2022
+Adding layer: S2 Median 2022
+Adding layer: Study Area
+Adding layer: Study Area
+</pre></div>
+</div>
+<div class="output text_html"><div style="width:100%;"><div style="position:relative;width:100%;height:0;padding-bottom:60%;"><span style="color:#565656">Make this Notebook Trusted to load map: File -> Trust Notebook</span><iframe srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    
+    &lt;meta http-equiv=&quot;content-type&quot; content=&quot;text/html; charset=UTF-8&quot; /&gt;
+    
+        &lt;script&gt;
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        &lt;/script&gt;
+    
+    &lt;style&gt;html, body {width: 100%;height: 100%;margin: 0;padding: 0;}&lt;/style&gt;
+    &lt;style&gt;#map {position:absolute;top:0;bottom:0;right:0;left:0;}&lt;/style&gt;
+    &lt;script src=&quot;https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://code.jquery.com/jquery-1.12.4.min.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js&quot;&gt;&lt;/script&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css&quot;/&gt;
+    
+            &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no&quot; /&gt;
+            &lt;style&gt;
+                #map_e768368a64f4117a24c2ed1add335c09 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            &lt;/style&gt;
+        
+    &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.js&quot;&gt;&lt;/script&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.css&quot;/&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    
+    
+            &lt;div class=&quot;folium-map&quot; id=&quot;map_e768368a64f4117a24c2ed1add335c09&quot; &gt;&lt;/div&gt;
+        
+&lt;/body&gt;
+&lt;script&gt;
+    
+    
+            var map_e768368a64f4117a24c2ed1add335c09 = L.map(
+                &quot;map_e768368a64f4117a24c2ed1add335c09&quot;,
+                {
+                    center: [0, 0],
+                    crs: L.CRS.EPSG3857,
+                    zoom: 1,
+                    zoomControl: true,
+                    preferCanvas: false,
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_2eb064abc510a2009667247ec503744f = L.tileLayer(
+                &quot;https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png&quot;,
+                {&quot;attribution&quot;: &quot;Data by \u0026copy; \u003ca target=\&quot;_blank\&quot; href=\&quot;http://openstreetmap.org\&quot;\u003eOpenStreetMap\u003c/a\u003e, under \u003ca target=\&quot;_blank\&quot; href=\&quot;http://www.openstreetmap.org/copyright\&quot;\u003eODbL\u003c/a\u003e.&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_e768368a64f4117a24c2ed1add335c09);
+        
+    
+            map_e768368a64f4117a24c2ed1add335c09.fitBounds(
+                [[40.595571243156144, -113.21807278537877], [41.786028237932015, -111.82280911350377]],
+                {}
+            );
+        
+    
+            var tile_layer_318d20fe437657d8826935e48946a9fb = L.tileLayer(
+                &quot;https://mt1.google.com/vt/lyrs=m\u0026x={x}\u0026y={y}\u0026z={z}&quot;,
+                {&quot;attribution&quot;: &quot;Google&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_e768368a64f4117a24c2ed1add335c09);
+        
+    
+            var tile_layer_d8931757b861f4e50b34bdf3c43f7e59 = L.tileLayer(
+                &quot;https://mt1.google.com/vt/lyrs=y\u0026x={x}\u0026y={y}\u0026z={z}&quot;,
+                {&quot;attribution&quot;: &quot;Google&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_e768368a64f4117a24c2ed1add335c09);
+        
+    
+            var tile_layer_5cc0597fd47030f70860adeb11a04e50 = L.tileLayer(
+                &quot;https://earthengine.googleapis.com/v1/projects/rcr-gee-2/maps/878cd4cda12ea625edde2235b25ccfba-4e585685e228e19bfb2c776dfd5fae64/tiles/{z}/{x}/{y}&quot;,
+                {&quot;attribution&quot;: &quot;Google Earth Engine | GeeViz&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_e768368a64f4117a24c2ed1add335c09);
+        
+    
+            var tile_layer_edf797cf5a88a31ffc210b741abf975f = L.tileLayer(
+                &quot;https://earthengine.googleapis.com/v1/projects/rcr-gee-2/maps/e40754b26863dbda6eb4e72f817357eb-aeafa083ba9af0c84a9c23767962bd08/tiles/{z}/{x}/{y}&quot;,
+                {&quot;attribution&quot;: &quot;Google Earth Engine | GeeViz&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_e768368a64f4117a24c2ed1add335c09);
+        
+    
+            var tile_layer_7202c93b8a32531c6cf6e276253ba863 = L.tileLayer(
+                &quot;https://earthengine.googleapis.com/v1/projects/rcr-gee-2/maps/1dd1ca8432e9c77788f5ff204934cb9a-c08173cfa4c18f3d94abda55b7f03d23/tiles/{z}/{x}/{y}&quot;,
+                {&quot;attribution&quot;: &quot;Google Earth Engine&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_e768368a64f4117a24c2ed1add335c09);
+        
+    
+            var layer_control_3e565ea03295a2c2eec652874e417314 = {
+                base_layers : {
+                    &quot;openstreetmap&quot; : tile_layer_2eb064abc510a2009667247ec503744f,
+                },
+                overlays :  {
+                    &quot;Google Maps&quot; : tile_layer_318d20fe437657d8826935e48946a9fb,
+                    &quot;Google Satellite&quot; : tile_layer_d8931757b861f4e50b34bdf3c43f7e59,
+                    &quot;S2 Median 2023&quot; : tile_layer_5cc0597fd47030f70860adeb11a04e50,
+                    &quot;S2 Median 2022&quot; : tile_layer_edf797cf5a88a31ffc210b741abf975f,
+                    &quot;Study Area&quot; : tile_layer_7202c93b8a32531c6cf6e276253ba863,
+                },
+            };
+            L.control.layers(
+                layer_control_3e565ea03295a2c2eec652874e417314.base_layers,
+                layer_control_3e565ea03295a2c2eec652874e417314.overlays,
+                {&quot;autoZIndex&quot;: false, &quot;collapsed&quot;: false, &quot;position&quot;: &quot;topright&quot;}
+            ).addTo(map_e768368a64f4117a24c2ed1add335c09);
+            tile_layer_edf797cf5a88a31ffc210b741abf975f.remove();
+        
+    
+            L.control.fullscreen(
+                {&quot;forceSeparateButton&quot;: false, &quot;position&quot;: &quot;topleft&quot;, &quot;title&quot;: &quot;Full Screen&quot;, &quot;titleCancel&quot;: &quot;Exit Full Screen&quot;}
+            ).addTo(map_e768368a64f4117a24c2ed1add335c09);
+        
+&lt;/script&gt;
+&lt;/html&gt;" style="position:absolute;width:100%;height:100%;left:0;top:0;border:none !important;" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe></div></div></div><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:1234/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:1234/geeView/?projectID=rcr-gee-2&amp;accessToken=ya29.a0AfB_byCP8HcC-KgEexObCBH6V-INd3TohADawsSbQUkAJ6F2610Ejx0YrUgSRrX3Htj0SOzAQndyQJthWGIP64KMLPphHHVovwJkqBIS17C7dV9GCPnhXCLkek5cY-mtkGhxFVjOxcOIYhW9kvnuSE8zRaJkPf9gZn-QykRfPtqRaCgYKAc8SARASFQHGX2MiabXK25SWKqOKCKEVD2Xnlg0179
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:1234/geeView/?projectID=rcr-gee-2&accessToken=ya29.a0AfB_byCP8HcC-KgEexObCBH6V-INd3TohADawsSbQUkAJ6F2610Ejx0YrUgSRrX3Htj0SOzAQndyQJthWGIP64KMLPphHHVovwJkqBIS17C7dV9GCPnhXCLkek5cY-mtkGhxFVjOxcOIYhW9kvnuSE8zRaJkPf9gZn-QykRfPtqRaCgYKAc8SARASFQHGX2MiabXK25SWKqOKCKEVD2Xnlg0179"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div><div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="n">Kernel</span> <span class="n">crashed</span> <span class="k">while</span> <span class="n">executing</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">the</span> <span class="n">current</span> <span class="n">cell</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">previous</span> <span class="n">cell</span><span class="o">.</span> <span class="n">Please</span> <span class="n">review</span> <span class="n">the</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">cell</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="n">to</span> <span class="n">identify</span> <span class="n">a</span> <span class="n">possible</span> <span class="n">cause</span> <span class="n">of</span> <span class="n">the</span> <span class="n">failure</span><span class="o">.</span> <span class="n">Click</span> <span class="o">&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s1">&#39;https://aka.ms/vscodeJupyterKernelCrash&#39;</span><span class="o">&gt;</span><span class="n">here</span><span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;</span> <span class="k">for</span> <span class="n">more</span> <span class="n">info</span><span class="o">.</span> <span class="n">View</span> <span class="n">Jupyter</span> <span class="o">&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s1">&#39;command:jupyter.viewOutput&#39;</span><span class="o">&gt;</span><span class="n">log</span><span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;</span> <span class="k">for</span> <span class="n">further</span> <span class="n">details</span><span class="o">.</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Example of how to turn off all layers in each map</span>
+<span class="n">foliumViewMap</span><span class="o">.</span><span class="n">turnOffAllLayers</span><span class="p">()</span>
+<span class="n">geeViewMap</span><span class="o">.</span><span class="n">turnOffAllLayers</span><span class="p">()</span>
+
+<span class="n">foliumViewMap</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+<span class="n">geeViewMap</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div style="width:100%;"><div style="position:relative;width:100%;height:0;padding-bottom:60%;"><span style="color:#565656">Make this Notebook Trusted to load map: File -> Trust Notebook</span><iframe srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    
+    &lt;meta http-equiv=&quot;content-type&quot; content=&quot;text/html; charset=UTF-8&quot; /&gt;
+    
+        &lt;script&gt;
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        &lt;/script&gt;
+    
+    &lt;style&gt;html, body {width: 100%;height: 100%;margin: 0;padding: 0;}&lt;/style&gt;
+    &lt;style&gt;#map {position:absolute;top:0;bottom:0;right:0;left:0;}&lt;/style&gt;
+    &lt;script src=&quot;https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://code.jquery.com/jquery-1.12.4.min.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js&quot;&gt;&lt;/script&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css&quot;/&gt;
+    
+            &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no&quot; /&gt;
+            &lt;style&gt;
+                #map_75334d5df7d7b6bee93eaa7a6a0444c7 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            &lt;/style&gt;
+        
+    &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.js&quot;&gt;&lt;/script&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.css&quot;/&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    
+    
+            &lt;div class=&quot;folium-map&quot; id=&quot;map_75334d5df7d7b6bee93eaa7a6a0444c7&quot; &gt;&lt;/div&gt;
+        
+&lt;/body&gt;
+&lt;script&gt;
+    
+    
+            var map_75334d5df7d7b6bee93eaa7a6a0444c7 = L.map(
+                &quot;map_75334d5df7d7b6bee93eaa7a6a0444c7&quot;,
+                {
+                    center: [0, 0],
+                    crs: L.CRS.EPSG3857,
+                    zoom: 1,
+                    zoomControl: true,
+                    preferCanvas: false,
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_25d8161bb6085167b21e6c0d242464d7 = L.tileLayer(
+                &quot;https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png&quot;,
+                {&quot;attribution&quot;: &quot;Data by \u0026copy; \u003ca target=\&quot;_blank\&quot; href=\&quot;http://openstreetmap.org\&quot;\u003eOpenStreetMap\u003c/a\u003e, under \u003ca target=\&quot;_blank\&quot; href=\&quot;http://www.openstreetmap.org/copyright\&quot;\u003eODbL\u003c/a\u003e.&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_75334d5df7d7b6bee93eaa7a6a0444c7);
+        
+    
+            map_75334d5df7d7b6bee93eaa7a6a0444c7.fitBounds(
+                [[40.595571243156144, -113.21807278537877], [41.786028237932015, -111.82280911350377]],
+                {}
+            );
+        
+    
+            var tile_layer_2ce97936129ccddd74bbb6ad16a4d8d9 = L.tileLayer(
+                &quot;https://mt1.google.com/vt/lyrs=m\u0026x={x}\u0026y={y}\u0026z={z}&quot;,
+                {&quot;attribution&quot;: &quot;Google&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_75334d5df7d7b6bee93eaa7a6a0444c7);
+        
+    
+            var tile_layer_0804d036b81e7bcd721c727b2c50a1b4 = L.tileLayer(
+                &quot;https://mt1.google.com/vt/lyrs=y\u0026x={x}\u0026y={y}\u0026z={z}&quot;,
+                {&quot;attribution&quot;: &quot;Google&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_75334d5df7d7b6bee93eaa7a6a0444c7);
+        
+    
+            var tile_layer_042de6edf5ac45fd9eb68d13a019582f = L.tileLayer(
+                &quot;https://earthengine.googleapis.com/v1/projects/earthengine-legacy/maps/c2977a270141db4a60d3223bdb36d376-d79c520062fcf4ae3c40e0d1cf9b1b87/tiles/{z}/{x}/{y}&quot;,
+                {&quot;attribution&quot;: &quot;Google Earth Engine | GeeViz&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_75334d5df7d7b6bee93eaa7a6a0444c7);
+        
+    
+            var tile_layer_97f21978a26e782e4c0c8d1902b2fc5c = L.tileLayer(
+                &quot;https://earthengine.googleapis.com/v1/projects/earthengine-legacy/maps/7bb79b310bb924c7447da63b232bd54c-b004f8bada8b318b555422618a4aa837/tiles/{z}/{x}/{y}&quot;,
+                {&quot;attribution&quot;: &quot;Google Earth Engine | GeeViz&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_75334d5df7d7b6bee93eaa7a6a0444c7);
+        
+    
+            var tile_layer_6dc9113cf2448d77165c70967ae4ebab = L.tileLayer(
+                &quot;https://earthengine.googleapis.com/v1/projects/earthengine-legacy/maps/1dd1ca8432e9c77788f5ff204934cb9a-5511903ebecf8b50150d48196845f9ca/tiles/{z}/{x}/{y}&quot;,
+                {&quot;attribution&quot;: &quot;Google Earth Engine&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_75334d5df7d7b6bee93eaa7a6a0444c7);
+        
+    
+            var layer_control_ccd33ae4d9c07922044e2ae5208e3034 = {
+                base_layers : {
+                    &quot;openstreetmap&quot; : tile_layer_25d8161bb6085167b21e6c0d242464d7,
+                },
+                overlays :  {
+                    &quot;Google Maps&quot; : tile_layer_2ce97936129ccddd74bbb6ad16a4d8d9,
+                    &quot;Google Satellite&quot; : tile_layer_0804d036b81e7bcd721c727b2c50a1b4,
+                    &quot;S2 Median 2023&quot; : tile_layer_042de6edf5ac45fd9eb68d13a019582f,
+                    &quot;S2 Median 2022&quot; : tile_layer_97f21978a26e782e4c0c8d1902b2fc5c,
+                    &quot;Study Area&quot; : tile_layer_6dc9113cf2448d77165c70967ae4ebab,
+                },
+            };
+            L.control.layers(
+                layer_control_ccd33ae4d9c07922044e2ae5208e3034.base_layers,
+                layer_control_ccd33ae4d9c07922044e2ae5208e3034.overlays,
+                {&quot;autoZIndex&quot;: false, &quot;collapsed&quot;: false, &quot;position&quot;: &quot;topright&quot;}
+            ).addTo(map_75334d5df7d7b6bee93eaa7a6a0444c7);
+            tile_layer_042de6edf5ac45fd9eb68d13a019582f.remove();
+            tile_layer_97f21978a26e782e4c0c8d1902b2fc5c.remove();
+            tile_layer_6dc9113cf2448d77165c70967ae4ebab.remove();
+        
+    
+            L.control.fullscreen(
+                {&quot;forceSeparateButton&quot;: false, &quot;position&quot;: &quot;topleft&quot;, &quot;title&quot;: &quot;Full Screen&quot;, &quot;titleCancel&quot;: &quot;Exit Full Screen&quot;}
+            ).addTo(map_75334d5df7d7b6bee93eaa7a6a0444c7);
+        
+&lt;/script&gt;
+&lt;/html&gt;" style="position:absolute;width:100%;height:100%;left:0;top:0;border:none !important;" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe></div></div></div><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Starting webmap
+Using default refresh token for geeView: C:\Users\ihousman/.config/earthengine/credentials
+Local web server at: http://localhost:1234/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:1234/geeView/?accessToken=ya29.a0AfB_byDOsd8Sxqh1yHOTFLjQFs94cd7XwHSyQRh0dLvOiNDnG6c-CQzSTltWhhTQwrpSdOJ0EZMbmwLYbt4XoucwMocZE_UQQc3TS3ANb_GQS93dXZZ-bWlxNWwKgjMQxRGAKaMLLq2PCr1Ygj6oRTYoTFTtiOb_yljQIQOGwMh1aCgYKAUESARESFQGOcNnCRlqlgjsR3B67Wby83dvDDQ0179"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Example of how to turn on all layers in each map</span>
+<span class="n">foliumViewMap</span><span class="o">.</span><span class="n">turnOnAllLayers</span><span class="p">()</span>
+<span class="n">geeViewMap</span><span class="o">.</span><span class="n">turnOnAllLayers</span><span class="p">()</span>
+
+<span class="n">foliumViewMap</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+<span class="n">geeViewMap</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div style="width:100%;"><div style="position:relative;width:100%;height:0;padding-bottom:60%;"><span style="color:#565656">Make this Notebook Trusted to load map: File -> Trust Notebook</span><iframe srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    
+    &lt;meta http-equiv=&quot;content-type&quot; content=&quot;text/html; charset=UTF-8&quot; /&gt;
+    
+        &lt;script&gt;
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        &lt;/script&gt;
+    
+    &lt;style&gt;html, body {width: 100%;height: 100%;margin: 0;padding: 0;}&lt;/style&gt;
+    &lt;style&gt;#map {position:absolute;top:0;bottom:0;right:0;left:0;}&lt;/style&gt;
+    &lt;script src=&quot;https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://code.jquery.com/jquery-1.12.4.min.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js&quot;&gt;&lt;/script&gt;
+    &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js&quot;&gt;&lt;/script&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css&quot;/&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css&quot;/&gt;
+    
+            &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no&quot; /&gt;
+            &lt;style&gt;
+                #map_6ae079e70a9a766f5a4c686c2cd27ded {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            &lt;/style&gt;
+        
+    &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.js&quot;&gt;&lt;/script&gt;
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.4.2/Control.FullScreen.min.css&quot;/&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    
+    
+            &lt;div class=&quot;folium-map&quot; id=&quot;map_6ae079e70a9a766f5a4c686c2cd27ded&quot; &gt;&lt;/div&gt;
+        
+&lt;/body&gt;
+&lt;script&gt;
+    
+    
+            var map_6ae079e70a9a766f5a4c686c2cd27ded = L.map(
+                &quot;map_6ae079e70a9a766f5a4c686c2cd27ded&quot;,
+                {
+                    center: [0, 0],
+                    crs: L.CRS.EPSG3857,
+                    zoom: 1,
+                    zoomControl: true,
+                    preferCanvas: false,
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_6ca2cd56fe25139eeb4055e18439f00c = L.tileLayer(
+                &quot;https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png&quot;,
+                {&quot;attribution&quot;: &quot;Data by \u0026copy; \u003ca target=\&quot;_blank\&quot; href=\&quot;http://openstreetmap.org\&quot;\u003eOpenStreetMap\u003c/a\u003e, under \u003ca target=\&quot;_blank\&quot; href=\&quot;http://www.openstreetmap.org/copyright\&quot;\u003eODbL\u003c/a\u003e.&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_6ae079e70a9a766f5a4c686c2cd27ded);
+        
+    
+            map_6ae079e70a9a766f5a4c686c2cd27ded.fitBounds(
+                [[40.595571243156144, -113.21807278537877], [41.786028237932015, -111.82280911350377]],
+                {}
+            );
+        
+    
+            var tile_layer_2ce97936129ccddd74bbb6ad16a4d8d9 = L.tileLayer(
+                &quot;https://mt1.google.com/vt/lyrs=m\u0026x={x}\u0026y={y}\u0026z={z}&quot;,
+                {&quot;attribution&quot;: &quot;Google&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_6ae079e70a9a766f5a4c686c2cd27ded);
+        
+    
+            var tile_layer_0804d036b81e7bcd721c727b2c50a1b4 = L.tileLayer(
+                &quot;https://mt1.google.com/vt/lyrs=y\u0026x={x}\u0026y={y}\u0026z={z}&quot;,
+                {&quot;attribution&quot;: &quot;Google&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_6ae079e70a9a766f5a4c686c2cd27ded);
+        
+    
+            var tile_layer_de4f52f45dcbdd73eaf18ec8d6bb4c8e = L.tileLayer(
+                &quot;https://earthengine.googleapis.com/v1/projects/earthengine-legacy/maps/5206f96be658993e51f71b721788e631-7af46ab593128ac9acae40db4ecc2e94/tiles/{z}/{x}/{y}&quot;,
+                {&quot;attribution&quot;: &quot;Google Earth Engine | GeeViz&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_6ae079e70a9a766f5a4c686c2cd27ded);
+        
+    
+            var tile_layer_d4302cdedbd1a069632aa5eafaa58d8e = L.tileLayer(
+                &quot;https://earthengine.googleapis.com/v1/projects/earthengine-legacy/maps/265338b79f8eee2fa31c73bd685096f2-0cc1ec54c4f36d5263f8ff080ca0da6e/tiles/{z}/{x}/{y}&quot;,
+                {&quot;attribution&quot;: &quot;Google Earth Engine | GeeViz&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_6ae079e70a9a766f5a4c686c2cd27ded);
+        
+    
+            var tile_layer_d197dd002a1454886c87186c28976d42 = L.tileLayer(
+                &quot;https://earthengine.googleapis.com/v1/projects/earthengine-legacy/maps/1dd1ca8432e9c77788f5ff204934cb9a-e60dd8c676d90dd89c0b0788eb9ef802/tiles/{z}/{x}/{y}&quot;,
+                {&quot;attribution&quot;: &quot;Google Earth Engine&quot;, &quot;detectRetina&quot;: false, &quot;maxNativeZoom&quot;: 18, &quot;maxZoom&quot;: 18, &quot;minZoom&quot;: 0, &quot;noWrap&quot;: false, &quot;opacity&quot;: 1, &quot;subdomains&quot;: &quot;abc&quot;, &quot;tms&quot;: false}
+            ).addTo(map_6ae079e70a9a766f5a4c686c2cd27ded);
+        
+    
+            var layer_control_eb1d11e4c51f1cab920d5c85d9b965f0 = {
+                base_layers : {
+                    &quot;openstreetmap&quot; : tile_layer_6ca2cd56fe25139eeb4055e18439f00c,
+                },
+                overlays :  {
+                    &quot;Google Maps&quot; : tile_layer_2ce97936129ccddd74bbb6ad16a4d8d9,
+                    &quot;Google Satellite&quot; : tile_layer_0804d036b81e7bcd721c727b2c50a1b4,
+                    &quot;S2 Median 2023&quot; : tile_layer_de4f52f45dcbdd73eaf18ec8d6bb4c8e,
+                    &quot;S2 Median 2022&quot; : tile_layer_d4302cdedbd1a069632aa5eafaa58d8e,
+                    &quot;Study Area&quot; : tile_layer_d197dd002a1454886c87186c28976d42,
+                },
+            };
+            L.control.layers(
+                layer_control_eb1d11e4c51f1cab920d5c85d9b965f0.base_layers,
+                layer_control_eb1d11e4c51f1cab920d5c85d9b965f0.overlays,
+                {&quot;autoZIndex&quot;: false, &quot;collapsed&quot;: false, &quot;position&quot;: &quot;topright&quot;}
+            ).addTo(map_6ae079e70a9a766f5a4c686c2cd27ded);
+        
+    
+            L.control.fullscreen(
+                {&quot;forceSeparateButton&quot;: false, &quot;position&quot;: &quot;topleft&quot;, &quot;title&quot;: &quot;Full Screen&quot;, &quot;titleCancel&quot;: &quot;Exit Full Screen&quot;}
+            ).addTo(map_6ae079e70a9a766f5a4c686c2cd27ded);
+        
+&lt;/script&gt;
+&lt;/html&gt;" style="position:absolute;width:100%;height:100%;left:0;top:0;border:none !important;" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe></div></div></div><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Starting webmap
+Using default refresh token for geeView: C:\Users\ihousman/.config/earthengine/credentials
+Local web server at: http://localhost:1234/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:1234/geeView/?accessToken=ya29.a0AfB_byAO0CZCortwxzQdQ2_4D6yfEe83swQgfEWh9CWRrLtodkrqIWd8qZ87_Pl3fEFxfvpcXcNlUp6SiCCX-RFF05JX2z5hQT44CgGarN470H2A0sZ3k3WsY_5dJoQx19sLOyVS3q2SZJ_GsUbR3aXj1AR1tSNP2vRjpMCFt509aCgYKAfcSARESFQGOcNnCPBUjkx8XRa1FRt5PMGuKDw0179"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024, Ian Housman, Josh Heyer
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://www.redcastleresources.com/" aria-label="RedCastle Resources Inc"><img src='https://apps.fs.usda.gov/lcms-viewer/src/assets/images/RCR-logo.jpg'  alt='RedCastle Inc. Logo' href='#' title='Click to learn more about RedCastle Resources Inc.'></a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Starter geeViz Folium Viewer Notebook</a><ul>
+<li><a class="reference internal" href="#example-of-how-to-utilize-the-geeviz-s-folium-based-viewer">Example of how to utilize the geeViz’s Folium-based viewer</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=9973ac44"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    </body>
+</html>

@@ -51,8 +51,6 @@
       exportCollection
       exportCompositeCollection
       exportToAssetWrapper
-      exportToAssetWrapper2
-      exportToAssetWrapper3
       exportToCloudStorageWrapper
       exportToDriveWrapper
       fillEmptyCollections
@@ -84,7 +82,6 @@
       getTasseledCap
       harmonizationChastain
       harmonizationRoy
-      illuminationCondition
       illuminationCorrection
       joinCollections
       joinFeatureCollections

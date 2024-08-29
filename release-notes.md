@@ -1,3 +1,19 @@
+# geeViz 2024.7.1 Release Notes
+
+## July 1, 2024
+
+### New Features
+
+- **CloudScore+ cs_cdf band support** - You can now utilize the `"cs_cdf"` band from the cloudScore+ algorithm in any of the Sentinel-2 image prep functions in the `getImagesLib` (`getS2`, `getProcessedSentinel2Scenes`, `getProcessedLandsatAndSentinel2Scenes`, `getSentinel2Wrapper`, `getLandsatAndSentinel2HybridWrapper`) by specifying `cloudScorePlusScore = "cs_cdf"`.
+
+- **LayerType optimizing** - The specification of the `layerType` insize the visualization pareters in a `Map.addLayer` function is now largely unnecessary since an efficient object type method has been added.
+
+### Bug fixes
+
+- Area charting add layer bug fix for adding area chart layers without delcared object type.
+
+---
+
 # geeViz 2024.5.3 Release Notes
 
 ## May 15, 2024

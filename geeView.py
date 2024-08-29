@@ -53,6 +53,13 @@ if IS_COLAB:
 
 # Function to have user input a project id if one is still needed
 def setProject(id):
+    """
+    Sets the project id of an instance of ee
+
+    Args:
+        id (str): Google Cloud Platform project id to use
+
+    """
     global project_id
     project_id = id
     ee.data.setCloudApiUserProject(project_id)
@@ -98,6 +105,13 @@ def getProject(overwrite=False):
 
 ######################################################################
 def verified_initialize(project=None):
+    """
+    Tries to initialize GEE with a given project id. Will error out if initilization fails
+
+    Args:
+        project (str, optional): Whether or not to overwrite a cached project ID file
+
+    """
     ee.Initialize(project=project)
     z = ee.Number(1).getInfo()
     print("Successfully initialized")
@@ -105,6 +119,11 @@ def verified_initialize(project=None):
 
 # Function to handle various exceptions to initializing to GEE
 def robustInitializer():
+    """
+    A method that tries to authenticate and/or initialize GEE if it isn't already successfully initialized. This method tries to handle many different scenarios, but often fails. It is best to initialize to a project prior to importing geeViz
+
+    """
+
     global project_id
 
     try:
@@ -120,11 +139,7 @@ def robustInitializer():
             if str(E).find("Reauthentication is needed") > -1:
                 ee.Authenticate(force=True)
 
-            if (
-                str(E).find("no project found. Call with project")
-                or str(E).find("project is not registered") > -1
-                or str(E).find(" quota project, which is not set by default") > -1
-            ):
+            if str(E).find("no project found. Call with project") or str(E).find("project is not registered") > -1 or str(E).find(" quota project, which is not set by default") > -1:
                 project_id = getProject()
 
             else:
@@ -205,9 +220,7 @@ def RGB_to_hex(RGB):
     """[255,255,255] -> "#FFFFFF" """
     # Components need to be integers for hex to make sense
     RGB = [int(x) for x in RGB]
-    return "#" + "".join(
-        ["0{0:x}".format(v) if v < 16 else "{0:x}".format(v) for v in RGB]
-    )
+    return "#" + "".join(["0{0:x}".format(v) if v < 16 else "{0:x}".format(v) for v in RGB])
 
 
 def linear_gradient(start_hex, finish_hex="#FFFFFF", n=10):
@@ -223,9 +236,7 @@ def linear_gradient(start_hex, finish_hex="#FFFFFF", n=10):
     # Calcuate a color at each evenly spaced value of t from 1 to n
     for t in range(1, n):
         # Interpolate RGB vector for color at the current value of t
-        curr_vector = [
-            int(s[j] + (float(t) / (n - 1)) * (f[j] - s[j])) for j in range(3)
-        ]
+        curr_vector = [int(s[j] + (float(t) / (n - 1)) * (f[j] - s[j])) for j in range(3)]
         # Add it to our list of output colors
         RGB_list.append(curr_vector)
 
@@ -271,9 +282,7 @@ def polylinear_gradient(colors, n):
         print(gradient_dict["hex"])
         print(("sliceval", sliceval))
         for k in ("hex", "r", "g", "b"):
-            gradient_dict[k] = [
-                i for j, i in enumerate(gradient_dict[k]) if j not in sliceval
-            ]
+            gradient_dict[k] = [i for j, i in enumerate(gradient_dict[k]) if j not in sliceval]
         # print(('new len dict', len(gradient_dict['hex'])))
     print(gradient_dict["hex"], len(gradient_dict["hex"]))
     return gradient_dict
@@ -305,6 +314,15 @@ def get_poly_gradient_ct(palette, min, max):
 # Function to check if being run inside a notebook
 # Taken from: https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
 def is_notebook():
+    """
+    Remove trailing '....' in generated access token
+
+    Args:
+        accessToken (str): Raw access token
+
+    Returns:
+        str: Given access token without trailing '....'
+    """
     return ee.oauth._in_jupyter_shell()
 
 
@@ -345,6 +363,12 @@ def baseDomain(url):
 # Function for using default GEE refresh token to get an access token for geeView
 # Updated 12/23 to reflect updated auth methods for GEE
 def refreshToken():
+    """
+    Get a refresh token from currently authenticated ee instance
+
+    Returns:
+        str: temporary access token
+    """
     credentials = ee.data.get_persistent_credentials()
     credentials.refresh(gReq.Request())
     accessToken = credentials.token
@@ -356,10 +380,14 @@ def refreshToken():
 ######################################################################
 # Function for using a GEE white-listed service account key to get an access token for geeView
 def serviceAccountToken(service_key_file_path):
+    """
+    Get a refresh token from service account key file credentials
+
+    Returns:
+        str: temporary access token
+    """
     try:
-        credentials = service_account.Credentials.from_service_account_file(
-            service_key_file_path, scopes=ee.oauth.SCOPES
-        )
+        credentials = service_account.Credentials.from_service_account_file(service_key_file_path, scopes=ee.oauth.SCOPES)
         credentials.refresh(gReq.Request())
         accessToken = credentials.token
         accessToken = cleanAccessToken(accessToken)
@@ -373,6 +401,13 @@ def serviceAccountToken(service_key_file_path):
 ######################################################################
 # Function for running local web server
 def run_local_server(port=8001):
+    """
+    Start a local webserver using the Python http.server
+
+    Args:
+        port (int): Port number to run local server at
+
+    """
     if sys.version[0] == "2":
         server_name = "SimpleHTTPServer"
     else:
@@ -392,6 +427,15 @@ def run_local_server(port=8001):
 ######################################################################
 # Function to see if port is active
 def isPortActive(port=8001):
+    """
+    See if a given port number is currently active
+
+    Args:
+        port (int): Port number to check status of
+
+    Returns:
+        bool: Whether or not the port is already active
+    """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(2)  # 2 Second Timeout
     result = sock.connect_ex(("localhost", port))
@@ -410,8 +454,20 @@ class mapper:
 
     Map object that is used to manage layers, activated user input methods, and launching the map viewer user interface
 
+    Args:
+        port (int, default 8001): Which port to user for web server. Sometimes a port will become "stuck," so this will need set to some other number than what it was set at in previous runs of a given session.
     Attributes:
-        port (int, optional): Which port to user for web server. Sometimes a port will become "stuck," so this will need set to some other number than what it was set at in previous runs of a given session.
+        port (int, default 8001): Which port to user for web server. Sometimes a port will become "stuck," so this will need set to some other number than what it was set at in previous runs of a given session.
+
+        proxy_url (str, default None): The proxy url the web server runs through for either Google Colab or Vertex AI Workbench. This is automatically specified in Google Colab, but in Vertex AI Workbench, the `Map.proxy_url` must be specified as the current URL Workbench Notebook is running from (e.g. https://code-dot-region.notebooks.googleusercontent.com/).
+
+        refreshTokenPath (str, default ee.oauth.get_credentials_path()): Refresh token credentials file path
+
+        serviceKeyPath (str, default None): Location of a service account key json. If provided, this will be used for authentication inside geeView instead of the refresh token
+
+        project (str, default  ee.data._cloud_api_user_project): Can override which project geeView will use for authentication. While geeViz will try to find a project if ee.data._cloud_api_user_project isn't already set (usually by `ee.Initialize(project="someProjectID")`) by prompting the user to enter one, in some builds, this does not work. Set this attribute manually if the URL say `project=None` when launching geeView using `Map.view()`.
+
+        turnOffLayersWhenTimeLapseIsOn (bool, default True): Whether all other layers should be turned off when a time lapse is turned on. This is set to True by default to avoid confusing layer order rendering that can occur when time lapses and non-time lapses are visible at the same time. Often this confusion is fine and visualizing time lapses and other layers is desired. Set `Map.turnOffLayersWhenTimeLapseIsOn` to False in this instance.
     """
 
     def __init__(self, port=8001):
@@ -421,6 +477,14 @@ class mapper:
         self.mapCommandList = []
         self.ee_run_name = "runGeeViz"
 
+        self.typeLookup = {
+            "Image": "geeImage",
+            "ImageCollection": "geeImageCollection",
+            "Feature": "geeVectorImage",
+            "FeatureCollection": "geeVectorImage",
+            "Geometry": "geeVectorImage",
+            "dict": "geoJSONVector",
+        }
         try:
             self.isNotebook = ee.oauth._in_jupyter_shell()
         except:
@@ -436,6 +500,7 @@ class mapper:
         self.serviceKeyPath = None
         self.queryWindowMode = "sidePane"
         self.project = project_id
+        self.turnOffLayersWhenTimeLapseIsOn = True
 
     ######################################################################
     # Function for adding a layer to the map
@@ -462,7 +527,7 @@ class mapper:
 
                     "opacity" (float): a number between 0 and 1 for initially set opacity.,
 
-                    "layerType" (str, one of geeImage, geeImageCollection, geeVector, geeVectorImage): Optional parameter, but if specified, can speed up the initial page loading of geeView since it won't have to figure out the layer type. For vector data ("featureCollection", "feature", or "geometry"), you can spcify "geeVector" if you would like to force the vector to be an actual vector object on the client. This can be slow if the ee object is large and/or complex. Otherwise, any "featureCollection", "feature", or "geometry" will default to "geeVectorImage" where the vector is rasterized on-the-fly for map rendering. Any querying of the vector will query the underlying vector data though.,
+                    "layerType" (str, one of geeImage, geeImageCollection, geeVector, geeVectorImage, geoJSONVector): Optional parameter. For vector data ("featureCollection", "feature", or "geometry"), you can spcify "geeVector" if you would like to force the vector to be an actual vector object on the client. This can be slow if the ee object is large and/or complex. Otherwise, any "featureCollection", "feature", or "geometry" will default to "geeVectorImage" where the vector is rasterized on-the-fly for map rendering. Any querying of the vector will query the underlying vector data though. To add a geojson vector as json, just add the json as the image parameter.,
 
                     "reducer" (Reducer, default 'ee.Reducer.lastNonNull()'): If an ImageCollection is provided, how to reduce it to create the layer that is shown on the map. Defaults to ee.Reducer.lastNonNull(),
 
@@ -517,16 +582,22 @@ class mapper:
 
                             "showGrid" (bool, default True): Whether to show the grid lines on the line or bar graph,
 
-                            "rangeSlider" (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`https://plotly.com/javascript/range-slider/`)
+                            "rangeSlider" (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`https://plotly.com/javascript/range-slider/>`)
 
-
+                            "barChartMaxClasses" (int, default 20): The maximum number of classes to show for image bar charts. Will automatically only show the top `bartChartMaxClasses` in any image bar chart. Any downloaded csv table will still have all of the class counts.
                         }
 
                 }
             name (str): Descriptive name for map layer that will be shown on the map UI
-            visible (bool, optional): Whether layer should be visible when map UI loads
+            visible (bool, default True): Whether layer should be visible when map UI loads
 
-        >>> Map.addLayer(ee.Image(1),{'min':0,'max':1,'palette':'000,FFF},"Example Map Layer",True)
+        >>> import geeViz.geeView as gv
+        >>> Map = gv.Map
+        >>> ee = gv.ee
+        >>> nlcd = ee.ImageCollection("USGS/NLCD_RELEASES/2021_REL/NLCD").select(['landcover'])
+        >>> Map.addLayer(nlcd, {"autoViz": True}, "NLCD Land Cover / Land Use 2021")
+        >>> Map.turnOnInspector()
+        >>> Map.view()
 
 
         """
@@ -537,8 +608,6 @@ class mapper:
 
         # Handle reducer if ee object is given
         if "reducer" in viz.keys():
-            # if str(type(viz['reducer']))=="<class 'ee.Reducer'>":
-            #     viz['reducer'] = eval(viz['reducer'])
 
             try:
                 viz["reducer"] = viz["reducer"].serialize()
@@ -551,26 +620,28 @@ class mapper:
 
             if "reducer" in viz["areaChartParams"].keys():
                 try:
-                    viz["areaChartParams"]["reducer"] = viz["areaChartParams"][
-                        "reducer"
-                    ].serialize()
+                    viz["areaChartParams"]["reducer"] = viz["areaChartParams"]["reducer"].serialize()
                 except Exception as e:
                     try:
-                        viz["areaChartParams"]["reducer"] = eval(
-                            viz["areaChartParams"]["reducer"]
-                        ).serialize()
+                        viz["areaChartParams"]["reducer"] = eval(viz["areaChartParams"]["reducer"]).serialize()
                     except Exception as e:  # Most likely it's already serialized
                         e = e
 
-        # Get the id and populate dictionary
+        # Get the id and populate dictionarye
         idDict = {}
+
+        if "layerType" not in viz.keys():
+            imageType = type(image).__name__
+            layerType = self.typeLookup[imageType]
+            viz["layerType"] = layerType
+            # print("Type:", imageType, viz["layerType"])
         if not isinstance(image, dict):
             image = image.serialize()
             idDict["item"] = image
             idDict["function"] = "addSerializedLayer"
         # Handle passing in geojson vector layers
         else:
-            idDict["item"] = image
+            idDict["item"] = json.dumps(image)
             viz["layerType"] = "geoJSONVector"
             idDict["function"] = "addLayer"
         idDict["objectName"] = "Map"
@@ -611,8 +682,6 @@ class mapper:
                     "palette" (str, list, or comma-separated strings): List of CSS-style color strings (single-band previews only).,
 
                     "opacity" (float): a number between 0 and 1 for initially set opacity.,
-
-                    "layerType" (str, one of geeImage, geeImageCollection, geeVector, geeVectorImage): Optional parameter, but if specified, can speed up the initial page loading of geeView since it won't have to figure out the layer type. For vector data ("featureCollection", "feature", or "geometry"), you can spcify "geeVector" if you would like to force the vector to be an actual vector object on the client. This can be slow if the ee object is large and/or complex. Otherwise, any "featureCollection", "feature", or "geometry" will default to "geeVectorImage" where the vector is rasterized on-the-fly for map rendering. Any querying of the vector will query the underlying vector data though.,
 
                     "autoViz" (bool): Whether to take image bandName_class_values, bandName_class_names, bandName_class_palette properties to visualize, create a legend (populates `classLegendDict`), and apply class names to any query functions (populates `queryDict`),
 
@@ -661,14 +730,22 @@ class mapper:
 
                             "rangeSlider" (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`<https://plotly.com/javascript/range-slider/>`)
 
-
+                            "barChartMaxClasses" (int, default 20): The maximum number of classes to show for image bar charts. Will automatically only show the top `bartChartMaxClasses` in any image bar chart. Any downloaded csv table will still have all of the class counts.
                         }
 
                 }
             name (str): Descriptive name for map layer that will be shown on the map UI
-            visible (bool, optional): Whether layer should be visible when map UI loads
+            visible (bool, default True): Whether layer should be visible when map UI loads
 
-        >>> Map.addTimeLapse(ee.Image(1),{'min':0,'max':1,'palette':'000,FFF},"Example Map Layer",True)
+        >>> import geeViz.geeView as gv
+        >>> Map = gv.Map
+        >>> ee = gv.ee
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter(ee.Filter.calendarRange(2010, 2023, "year"))
+        >>> Map.addTimeLapse(lcms.select(["Land_Cover"]), {"autoViz": True, "mosaic": True}, "LCMS Land Cover Time Lapse")
+        >>> Map.addTimeLapse(lcms.select(["Change"]), {"autoViz": True, "mosaic": True}, "LCMS Change Time Lapse")
+        >>> Map.addTimeLapse(lcms.select(["Land_Use"]), {"autoViz": True, "mosaic": True}, "LCMS Land Use Time Lapse")
+        >>> Map.turnOnInspector()
+        >>> Map.view()
 
 
         """
@@ -686,16 +763,13 @@ class mapper:
 
             if "reducer" in viz["areaChartParams"].keys():
                 try:
-                    viz["areaChartParams"]["reducer"] = viz["areaChartParams"][
-                        "reducer"
-                    ].serialize()
+                    viz["areaChartParams"]["reducer"] = viz["areaChartParams"]["reducer"].serialize()
                 except Exception as e:
                     try:
-                        viz["areaChartParams"]["reducer"] = eval(
-                            viz["areaChartParams"]["reducer"]
-                        ).serialize()
+                        viz["areaChartParams"]["reducer"] = eval(viz["areaChartParams"]["reducer"]).serialize()
                     except Exception as e:  # Most likely it's already serialized
                         e = e
+        viz["layerType"] = "ImageCollection"
         # Get the id and populate dictionary
         idDict = {}  # image.getMapId()
         idDict["objectName"] = "Map"
@@ -728,6 +802,16 @@ class mapper:
                 }
             name (str, default None): Descriptive name for map layer that will be shown on the map UI. Will be auto-populated with `Layer N` if not specified
 
+        >>> import geeViz.geeView as gv
+        >>> Map = gv.Map
+        >>> ee = gv.ee
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms, {"autoViz": True, "canAreaChart": True, "areaChartParams": {"line": True, "sankey": True}}, "LCMS")
+        >>> mtbsBoundaries = ee.FeatureCollection("USFS/GTAC/MTBS/burned_area_boundaries/v1")
+        >>> mtbsBoundaries = mtbsBoundaries.map(lambda f: f.set("system:time_start", f.get("Ig_Date")))
+        >>> Map.addSelectLayer(mtbsBoundaries, {"strokeColor": "00F", "selectLayerNameProperty": "Incid_Name"}, "MTBS Fire Boundaries")
+        >>> Map.turnOnSelectionAreaCharting()
+        >>> Map.view()
         """
         if name == None:
             name = "Layer " + str(self.layerNumber)
@@ -743,6 +827,22 @@ class mapper:
         idDict["viz"] = json.dumps(viz, sort_keys=False)
         idDict["function"] = "addSerializedSelectLayer"
         self.idDictList.append(idDict)
+
+    ######################################################################
+    # Function for centering on a GEE object that has a geometry
+    def setCenter(self, lng, lat, zoom=None):
+        """
+        Center the map on a specified point and optional zoom on loading
+
+        Args:
+            lng (int or float): The longitude to center the map on
+            lat (int or float): The latitude to center the map on
+            zoom (int, optional): If provided, will force the map to zoom to this level after centering it on the provided coordinates. If not provided, the current zoom level will be used.
+        """
+
+        command = f"Map.setCenter({lng},{lat},{json.dumps(zoom)})"
+
+        self.mapCommandList.append(command)
 
     ######################################################################
     # Function for setting the map zoom
@@ -833,6 +933,8 @@ class mapper:
         # Set location of query outputs
         lines += 'queryWindowMode = "{}"\n'.format(self.queryWindowMode)
 
+        # Set whether all layers are turned off when a time lapse is turned on
+        lines += "Map.turnOffLayersWhenTimeLapseIsOn = {}\n".format(str(self.turnOffLayersWhenTimeLapseIsOn).lower())
         lines += "}"
 
         # Write out js file
@@ -857,65 +959,39 @@ class mapper:
         #     display(self.Map)
 
         if not isPortActive(self.port):
-            print(
-                "Starting local web server at: http://localhost:{}/{}/".format(
-                    self.port, geeViewFolder
-                )
-            )
+            print("Starting local web server at: http://localhost:{}/{}/".format(self.port, geeViewFolder))
             run_local_server(self.port)
             print("Done")
 
         else:
-            print(
-                "Local web server at: http://localhost:{}/{}/ already serving.".format(
-                    self.port, geeViewFolder
-                )
-            )
+            print("Local web server at: http://localhost:{}/{}/ already serving.".format(self.port, geeViewFolder))
             # print('Refresh browser instance')
 
         print("cwd", os.getcwd())
         if IS_COLAB:
             proxy_js = "google.colab.kernel.proxyPort({})".format(self.port)
             proxy_url = eval_js(proxy_js)
-            geeView_proxy_url = "{}geeView/?projectID={}&accessToken={}".format(
-                proxy_url, self.project, self.accessToken
-            )
+            geeView_proxy_url = "{}geeView/?projectID={}&accessToken={}".format(proxy_url, self.project, self.accessToken)
             print("Colab Proxy URL:", geeView_proxy_url)
-            viewerFrame = IFrame(
-                src=geeView_proxy_url, width="100%", height="{}px".format(iframe_height)
-            )
+            viewerFrame = IFrame(src=geeView_proxy_url, width="100%", height="{}px".format(iframe_height))
             display(viewerFrame)
         elif IS_WORKBENCH:
             if self.proxy_url == None:
-                self.proxy_url = input(
-                    "Please enter current URL Workbench Notebook is running from (e.g. https://code-dot-region.notebooks.googleusercontent.com/): "
-                )
+                self.proxy_url = input("Please enter current URL Workbench Notebook is running from (e.g. https://code-dot-region.notebooks.googleusercontent.com/): ")
             self.proxy_url = baseDomain(self.proxy_url)
-            geeView_proxy_url = (
-                "{}/proxy/{}/geeView/?projectID={}&accessToken={}".format(
-                    self.proxy_url, self.port, self.project, self.accessToken
-                )
-            )
+            geeView_proxy_url = "{}/proxy/{}/geeView/?projectID={}&accessToken={}".format(self.proxy_url, self.port, self.project, self.accessToken)
             print("Workbench Proxy URL:", geeView_proxy_url)
-            viewerFrame = IFrame(
-                src=geeView_proxy_url, width="100%", height="{}px".format(iframe_height)
-            )
+            viewerFrame = IFrame(src=geeView_proxy_url, width="100%", height="{}px".format(iframe_height))
             display(viewerFrame)
         else:
-            url = "http://localhost:{}/{}/?projectID={}&accessToken={}".format(
-                self.port, geeViewFolder, self.project, self.accessToken
-            )
+            url = "http://localhost:{}/{}/?projectID={}&accessToken={}".format(self.port, geeViewFolder, self.project, self.accessToken)
             print("geeView URL:", url)
             if not self.isNotebook or open_browser:
                 webbrowser.open(url, new=1)
             elif open_browser == False and open_iframe:
-                self.IFrame = IFrame(
-                    src=url, width="100%", height="{}px".format(iframe_height)
-                )
+                self.IFrame = IFrame(src=url, width="100%", height="{}px".format(iframe_height))
             else:
-                self.IFrame = IFrame(
-                    src=url, width="100%", height="{}px".format(iframe_height)
-                )
+                self.IFrame = IFrame(src=url, width="100%", height="{}px".format(iframe_height))
                 display(self.IFrame)
 
     ######################################################################
@@ -925,6 +1001,19 @@ class mapper:
         """
         self.layerNumber = 1
         self.idDictList = []
+        self.mapCommandList = []
+
+    def clearMapLayers(self):
+        """
+        Removes all map layers - useful if running geeViz in a notebook and don't want layers from a prior code block to still be included, but want commands to remain.
+        """
+        self.layerNumber = 1
+        self.idDictList = []
+
+    def clearMapCommands(self):
+        """
+        Removes all map commands - useful if running geeViz in a notebook and don't want commands from a prior code block to still be included, but want layers to remain.
+        """
         self.mapCommandList = []
 
     ######################################################################
@@ -1113,7 +1202,18 @@ class mapper:
 
                 }
             name (str): Descriptive name for map layer that will be shown on the map UI
-            visible (bool, optional): Whether layer should be visible when map UI loads
+            shouldChart (bool, optional): Whether layer should be charted when map UI loads
+
+        >>> import geeViz.geeView as gv
+        >>> Map = gv.Map
+        >>> ee = gv.ee
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select(["Change_Raw_Probability.*"]), {"reducer": ee.Reducer.stdDev(), "min": 0, "max": 10}, "LCMS Change Prob")
+        >>> Map.addAreaChartLayer(lcms, {"line": True, "layerType": "ImageCollection"}, "LCMS All Thematic Classes Line", True)
+        >>> Map.addAreaChartLayer(lcms, {"sankey": True}, "LCMS All Thematic Classes Sankey", True)
+        >>> Map.populateAreaChartLayerSelect()
+        >>> Map.turnOnAutoAreaCharting()
+        >>> Map.view()
 
         """
         if name == None:
@@ -1123,8 +1223,6 @@ class mapper:
 
         # Handle reducer if ee object is given
         if "reducer" in params.keys():
-            # if str(type(viz['reducer']))=="<class 'ee.Reducer'>":
-            #     viz['reducer'] = eval(viz['reducer'])
 
             try:
                 params["reducer"] = params["reducer"].serialize()
@@ -1133,10 +1231,13 @@ class mapper:
                     params["reducer"] = eval(params["reducer"]).serialize()
                 except Exception as e:  # Most likely it's already serialized
                     e = e
-        params["serialized"] = True
+
         # Get the id and populate dictionary
         idDict = {}
+
         if not isinstance(image, dict):
+            params["serialized"] = True
+            params["layerType"] = type(image).__name__
             image = image.serialize()
 
         idDict["item"] = image

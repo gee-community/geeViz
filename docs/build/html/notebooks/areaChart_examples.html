@@ -1,0 +1,1416 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="A comparison between geeViz and geeMap’s map visualization capabilities" href="geeViz_geeMap_comparison_tutorial.html" /><link rel="prev" title="Create High Quality Landsat Composites" href="getLandsatWrapperNotebook.html" />
+
+    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+        <title>Visualizing Area Summaries - geeViz &#34;2024.8.3&#34; docs</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="../_static/style/custom.css?v=ebb50e13" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #00897b;
+  --color-brand-content: #00897b;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+<div class="announcement">
+  <aside class="announcement-content">
+     <i>geeViz</i> docs are still in development 
+  </aside>
+</div>
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">geeViz "2024.8.3" docs</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">geeViz "2024.8.3" docs</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../overview.html">Overview</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Overview</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.geeView.html">geeViz.geeView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.foliumView.html">geeViz.foliumView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.phEEnoViz.html">geeViz.phEEnoViz</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Details</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../examples.html">Examples</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="geeViewExampleNotebook.html">Starter geeViz geeView Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lcmsViewerExampleNotebook.html">LCMS Viewer Intro Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mapBiomasViewerExampleNotebook.html">Visualizing MapBiomas Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="global_land_cover_example_notebook.html">Visualizing Global Land Cover</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getLandsatWrapperNotebook.html">Create High Quality Landsat Composites</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Visualizing Area Summaries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geeViz_geeMap_comparison_tutorial.html">A comparison between geeViz and geeMap’s map visualization capabilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LANDTRENDRWrapperNotebook.html">Run LandTrendr and Visualize Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CCDCVizNotebook.html">CCDC Visualization Notebook</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="visualizing-area-summaries">
+<h1>Visualizing Area Summaries<a class="headerlink" href="#visualizing-area-summaries" title="Link to this heading">#</a></h1>
+<ul class="simple">
+<li><p>It can be difficult to easily summarize GEE imageCollections and images over an area in an interactive environment</p></li>
+<li><p>geeViz’s area charting methods allow for easy interactive charting with minimal additional code</p></li>
+<li><p>This notebook shows several examples of different ways of using the area charting methods with GEE images and imageCollections</p></li>
+</ul>
+<p>Copyright 2024 Ian Housman</p>
+<p>Licensed under the Apache License, Version 2.0 (the “License”);
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at</p>
+<p>http://www.apache.org/licenses/LICENSE-2.0</p>
+<p>Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an “AS IS” BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.</p>
+<p><a href="https://colab.research.google.com/github/gee-community/geeViz/blob/master/examples/areaChart_examples.ipynb" target="_parent"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg"></a></p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Import modules</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span>  <span class="nn">geeViz.geeView</span> <span class="k">as</span> <span class="nn">geeView</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="o">!</span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>geeViz
+    <span class="kn">import</span>  <span class="nn">geeViz.geeView</span> <span class="k">as</span> <span class="nn">geeView</span>
+
+<span class="kn">import</span> <span class="nn">geeViz.getImagesLib</span> <span class="k">as</span> <span class="nn">gil</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="n">ee</span> <span class="o">=</span> <span class="n">geeView</span><span class="o">.</span><span class="n">ee</span>
+<span class="n">Map</span> <span class="o">=</span> <span class="n">geeView</span><span class="o">.</span><span class="n">Map</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;done&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Initializing GEE
+Cached project id file path: C:\Users\ihousman\.config\earthengine\credentials.proj_id
+Cached project id: lcms-292214
+Successfully initialized
+geeViz package folder: c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\geeViz
+done
+</pre></div>
+</div>
+</div>
+</div>
+<ul class="simple">
+<li><p>There are many different formats of data geeViz’s area charting module can handle</p></li>
+<li><p>The most common is charting the percent or area in hectares or acres of thematic classes of an image collection</p></li>
+<li><p>If an imageCollection has <code class="docutils literal notranslate"><span class="pre">class_values</span></code>, <code class="docutils literal notranslate"><span class="pre">class_names</span></code>, <code class="docutils literal notranslate"><span class="pre">class_palette</span></code> properties for its images, all charts will automatically be populated with those names and colors</p></li>
+<li><p>First, we will look at these properties for a couple available images and image collections</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lcms</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;USFS/GTAC/LCMS/v2023-9&quot;</span><span class="p">)</span>
+<span class="n">nlcd</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;USGS/NLCD_RELEASES/2021_REL/NLCD&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;landcover&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">get_props_dataFrames</span><span class="p">(</span><span class="n">props</span><span class="p">,</span><span class="n">bandNames</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="n">props</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">i</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">i</span> <span class="ow">in</span> <span class="n">props</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;_class_&#39;</span><span class="p">)</span><span class="o">&gt;-</span><span class="mi">1</span><span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">bandNames</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">bandNames</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">k</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_class_&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">props</span><span class="o">.</span><span class="n">keys</span><span class="p">()]))</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">bn</span> <span class="ow">in</span> <span class="n">bandNames</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">bn</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;Values&#39;</span><span class="p">:</span><span class="n">props</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">bn</span><span class="si">}</span><span class="s1">_class_values&#39;</span><span class="p">],</span>
+                           <span class="s1">&#39;Names&#39;</span><span class="p">:</span><span class="n">props</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">bn</span><span class="si">}</span><span class="s1">_class_names&#39;</span><span class="p">],</span>
+                           <span class="s1">&#39;Colors&#39;</span><span class="p">:</span><span class="n">props</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">bn</span><span class="si">}</span><span class="s1">_class_palette&#39;</span><span class="p">]})</span>
+        <span class="n">display</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">bn</span><span class="p">]</span><span class="o">=</span><span class="n">df</span>
+    <span class="c1"># return out</span>
+<span class="n">lcms_props</span> <span class="o">=</span> <span class="n">lcms</span><span class="o">.</span><span class="n">first</span><span class="p">()</span><span class="o">.</span><span class="n">toDictionary</span><span class="p">()</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span>
+<span class="n">nlcd_props</span> <span class="o">=</span> <span class="n">nlcd</span><span class="o">.</span><span class="n">first</span><span class="p">()</span><span class="o">.</span><span class="n">toDictionary</span><span class="p">()</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span>
+
+<span class="n">lcms_thematic_bandNames</span> <span class="o">=</span> <span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Change&#39;</span><span class="p">,</span><span class="s1">&#39;Land_Cover&#39;</span><span class="p">,</span><span class="s1">&#39;Land_Use&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">first</span><span class="p">()</span><span class="o">.</span><span class="n">bandNames</span><span class="p">()</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span>
+
+<span class="n">nlcd_landcover_bandNames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;landcover&#39;</span><span class="p">]</span>
+<span class="n">get_props_dataFrames</span><span class="p">(</span><span class="n">lcms_props</span><span class="p">,</span><span class="n">lcms_thematic_bandNames</span><span class="p">)</span>
+<span class="n">get_props_dataFrames</span><span class="p">(</span><span class="n">nlcd_props</span><span class="p">,</span><span class="n">nlcd_landcover_bandNames</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Change
+</pre></div>
+</div>
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Values</th>
+      <th>Names</th>
+      <th>Colors</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>Stable</td>
+      <td>3d4551</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>Slow Loss</td>
+      <td>f39268</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>3</td>
+      <td>Fast Loss</td>
+      <td>d54309</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>4</td>
+      <td>Gain</td>
+      <td>00a398</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>5</td>
+      <td>Non-Processing Area Mask</td>
+      <td>1b1716</td>
+    </tr>
+  </tbody>
+</table>
+</div></div><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Land_Cover
+</pre></div>
+</div>
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Values</th>
+      <th>Names</th>
+      <th>Colors</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>Trees</td>
+      <td>005e00</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>Tall Shrubs &amp; Trees Mix (SEAK Only)</td>
+      <td>008000</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>3</td>
+      <td>Shrubs &amp; Trees Mix</td>
+      <td>00cc00</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>4</td>
+      <td>Grass/Forb/Herb &amp; Trees Mix</td>
+      <td>b3ff1a</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>5</td>
+      <td>Barren &amp; Trees Mix</td>
+      <td>99ff99</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>6</td>
+      <td>Tall Shrubs (SEAK Only)</td>
+      <td>b30088</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>7</td>
+      <td>Shrubs</td>
+      <td>e68a00</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>8</td>
+      <td>Grass/Forb/Herb &amp; Shrubs Mix</td>
+      <td>ffad33</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>9</td>
+      <td>Barren &amp; Shrubs Mix</td>
+      <td>ffe0b3</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>10</td>
+      <td>Grass/Forb/Herb</td>
+      <td>ffff00</td>
+    </tr>
+    <tr>
+      <th>10</th>
+      <td>11</td>
+      <td>Barren &amp; Grass/Forb/Herb Mix</td>
+      <td>aa7700</td>
+    </tr>
+    <tr>
+      <th>11</th>
+      <td>12</td>
+      <td>Barren or Impervious</td>
+      <td>d3bf9b</td>
+    </tr>
+    <tr>
+      <th>12</th>
+      <td>13</td>
+      <td>Snow or Ice</td>
+      <td>ffffff</td>
+    </tr>
+    <tr>
+      <th>13</th>
+      <td>14</td>
+      <td>Water</td>
+      <td>4780f3</td>
+    </tr>
+    <tr>
+      <th>14</th>
+      <td>15</td>
+      <td>Non-Processing Area Mask</td>
+      <td>1b1716</td>
+    </tr>
+  </tbody>
+</table>
+</div></div><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Land_Use
+</pre></div>
+</div>
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Values</th>
+      <th>Names</th>
+      <th>Colors</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>Agriculture</td>
+      <td>efff6b</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>Developed</td>
+      <td>ff2ff8</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>3</td>
+      <td>Forest</td>
+      <td>1b9d0c</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>4</td>
+      <td>Non-Forest Wetland</td>
+      <td>97ffff</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>5</td>
+      <td>Other</td>
+      <td>a1a1a1</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>6</td>
+      <td>Rangeland or Pasture</td>
+      <td>c2b34a</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>7</td>
+      <td>Non-Processing Area Mask</td>
+      <td>1b1716</td>
+    </tr>
+  </tbody>
+</table>
+</div></div><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>landcover
+</pre></div>
+</div>
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Values</th>
+      <th>Names</th>
+      <th>Colors</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>11</td>
+      <td>Open water: areas of open water, generally wit...</td>
+      <td>466b9f</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>12</td>
+      <td>Perennial ice/snow: areas characterized by a p...</td>
+      <td>d1def8</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>21</td>
+      <td>Developed, open space: areas with a mixture of...</td>
+      <td>dec5c5</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>22</td>
+      <td>Developed, low intensity: areas with a mixture...</td>
+      <td>d99282</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>23</td>
+      <td>Developed, medium intensity: areas with a mixt...</td>
+      <td>eb0000</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>24</td>
+      <td>Developed high intensity: highly developed are...</td>
+      <td>ab0000</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>31</td>
+      <td>Barren land (rock/sand/clay): areas of bedrock...</td>
+      <td>b3ac9f</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>41</td>
+      <td>Deciduous forest: areas dominated by trees gen...</td>
+      <td>68ab5f</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>42</td>
+      <td>Evergreen forest: areas dominated by trees gen...</td>
+      <td>1c5f2c</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>43</td>
+      <td>Mixed forest: areas dominated by trees general...</td>
+      <td>b5c58f</td>
+    </tr>
+    <tr>
+      <th>10</th>
+      <td>52</td>
+      <td>Shrub/scrub: areas dominated by shrubs less th...</td>
+      <td>ccb879</td>
+    </tr>
+    <tr>
+      <th>11</th>
+      <td>71</td>
+      <td>Grassland/herbaceous: areas dominated by grama...</td>
+      <td>dfdfc2</td>
+    </tr>
+    <tr>
+      <th>12</th>
+      <td>81</td>
+      <td>Pasture/hay: areas of grasses, legumes, or gra...</td>
+      <td>dcd939</td>
+    </tr>
+    <tr>
+      <th>13</th>
+      <td>82</td>
+      <td>Cultivated crops: areas used for the productio...</td>
+      <td>ab6c28</td>
+    </tr>
+    <tr>
+      <th>14</th>
+      <td>90</td>
+      <td>Woody wetlands: areas where forest or shrublan...</td>
+      <td>b8d9eb</td>
+    </tr>
+    <tr>
+      <th>15</th>
+      <td>95</td>
+      <td>Emergent herbaceous wetlands: areas where pere...</td>
+      <td>6c9fb8</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+<section id="basic-area-charting">
+<h2>Basic Area Charting<a class="headerlink" href="#basic-area-charting" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>This example will show the most basic method for adding area chart layers</p></li>
+<li><p>By setting <code class="docutils literal notranslate"><span class="pre">&quot;canAreaChart&quot;:True</span></code>, the layer will be added to area charting. Available properties (shown above) will be used to set up names and colors</p></li>
+<li><p>Using the <code class="docutils literal notranslate"><span class="pre">Map.turnOnAutoAreaCharting()</span></code> method will turn on autmatic area charting. This will use the map extent as the summary area.</p></li>
+<li><p>Additional methods are <code class="docutils literal notranslate"><span class="pre">Map.turnOnSelectionAreaCharting()</span></code> and <code class="docutils literal notranslate"><span class="pre">Map.turnOnUserDefinedAreaCharting()</span></code> for turning on different methods of providing areas to summarize. You can also change the method being used in the geeView UI under <code class="docutils literal notranslate"><span class="pre">Tools</span> <span class="pre">-&gt;</span> <span class="pre">Area</span> <span class="pre">Tools</span></code></p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Land_Cover&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span><span class="s1">&#39;LCMS Land Cover&#39;</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">nlcd</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;landcover&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span><span class="s1">&#39;NLCD Land Cover&#39;</span><span class="p">)</span>
+
+
+<span class="n">Map</span><span class="o">.</span><span class="n">populateAreaChartLayerSelect</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: LCMS Land Cover
+Adding layer: NLCD Land Cover
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612wQMLwq7kNcRxBK-Pwq6a-ubtzAxgp7T3SbRDxP3hu9I9xUYDhkFL6wd_qB4_vQfqFuFfvoIyTZ5ZDFDZjqaoTpaPn5nzVNXtNnNpFfCIkY3IkHkCqaovMXcBJH4A4VfYDk-OHzTi-QC8JERt1s-eweBKlOU6ikxdSmmG4aCgYKAQYSARESFQHGX2MiWG6Orz6ql17n2OfvvHEcrQ0178
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wQMLwq7kNcRxBK-Pwq6a-ubtzAxgp7T3SbRDxP3hu9I9xUYDhkFL6wd_qB4_vQfqFuFfvoIyTZ5ZDFDZjqaoTpaPn5nzVNXtNnNpFfCIkY3IkHkCqaovMXcBJH4A4VfYDk-OHzTi-QC8JERt1s-eweBKlOU6ikxdSmmG4aCgYKAQYSARESFQHGX2MiWG6Orz6ql17n2OfvvHEcrQ0178"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+</section>
+<section id="line-and-sankey-charts">
+<h2>Line and Sankey Charts<a class="headerlink" href="#line-and-sankey-charts" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>For thematic imageCollections, line and sankey charts are supported</p></li>
+<li><p>You can specify one or both within the <code class="docutils literal notranslate"><span class="pre">areaChartParams</span></code> dictionary. By default, line is chosen. (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;areaChartParams&quot;:{&quot;sankey&quot;:True}</span></code>)</p></li>
+<li><p>Note that sankey charts work well at showing transitions between classes. Since the number of transition classes is the number of classes<sup>2</sup>, if there are many classes, sankey charting will be quite slow and may error out.</p></li>
+<li><p>For sankey charting, you can specify transition periods in the code using the <code class="docutils literal notranslate"><span class="pre">sankeyTransitionPeriods</span></code> key in <code class="docutils literal notranslate"><span class="pre">areaChartParams</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;sankeyTransitionPeriods&quot;:[[1985,1987],[2000,2002],[2020,2022]]</span></code>), or leave it blank and geeViz will try to figure out a good set given the years of the provided imageCollection. Note that if you add imageCollections with different time extents, geeViz will take the intersection for the default years. You can add and change the periods in the geeView UI as well under <code class="docutils literal notranslate"><span class="pre">Tools</span> <span class="pre">-&gt;</span> <span class="pre">Area</span> <span class="pre">Tools</span> <span class="pre">-&gt;</span> <span class="pre">Area</span> <span class="pre">Tools</span> <span class="pre">Parameters</span></code></p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Change&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;sankey&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}},</span><span class="s1">&#39;LCMS Change&#39;</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Land_Cover&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;sankey&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}},</span><span class="s1">&#39;LCMS Land Cover&#39;</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Land_Use&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;sankey&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}},</span><span class="s1">&#39;LCMS Land Use&#39;</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">populateAreaChartLayerSelect</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: LCMS Change
+Adding layer: LCMS Land Cover
+Adding layer: LCMS Land Use
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612yX3qMc40439RT6zwxeruOAxSaRh5sY_L2rYzn3xl7ezbJzdd4j5b3FG3JtP_Jv7B6pDoNVLUUIRSlBReb6-A4GG5wXPkvzg4Qx_IOmXi3maarPNd4yvIScJ6N8XWWfxMhY-0iJp-8vPw4KVhTVR9Sxtry7bZ3pI16NNmQaCgYKAYYSARESFQHGX2MilbEMMLnUBwWKlm61EZ-XkQ0178
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612yX3qMc40439RT6zwxeruOAxSaRh5sY_L2rYzn3xl7ezbJzdd4j5b3FG3JtP_Jv7B6pDoNVLUUIRSlBReb6-A4GG5wXPkvzg4Qx_IOmXi3maarPNd4yvIScJ6N8XWWfxMhY-0iJp-8vPw4KVhTVR9Sxtry7bZ3pI16NNmQaCgYKAYYSARESFQHGX2MilbEMMLnUBwWKlm61EZ-XkQ0178"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+<ul class="simple">
+<li><p>Adding a layer to line and sankey charting is done as follows</p></li>
+<li><p>Any time you specify <code class="docutils literal notranslate"><span class="pre">'line':True,'sankey':True</span></code>, both line and sankey charts will be created</p></li>
+<li><p>This can slow things down a lot if many layers are visible. Also, moving the map, pausing for a second or two, and then moving the map again, many times, can create a long queue and delay charting.</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Change&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;line&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;sankey&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}},</span><span class="s1">&#39;LCMS Change&#39;</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Land_Cover&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;line&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;sankey&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}},</span><span class="s1">&#39;LCMS Land Cover&#39;</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Land_Use&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;line&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;sankey&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}},</span><span class="s1">&#39;LCMS Land Use&#39;</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">populateAreaChartLayerSelect</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: LCMS Change
+Adding layer: LCMS Land Cover
+Adding layer: LCMS Land Use
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612ynRJ_-94l-WypiuR_p0BHURESNSafEjTM0qnF9jDSvL-qOXucOPhaJ4fWNk7NowfaaVijDko_J4bvpWjIkNcnPzLU2phXUe8JGGP529OvjvDgB7m_0b2Y04zC0MgqvpxuyC_7JOPSnWFHWvn88qJhB6odwD6hAVSAaCgYKAfQSARESFQHGX2Mizoa2sdRJ2uMk01vos_m5RA0174
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612ynRJ_-94l-WypiuR_p0BHURESNSafEjTM0qnF9jDSvL-qOXucOPhaJ4fWNk7NowfaaVijDko_J4bvpWjIkNcnPzLU2phXUe8JGGP529OvjvDgB7m_0b2Y04zC0MgqvpxuyC_7JOPSnWFHWvn88qJhB6odwD6hAVSAaCgYKAfQSARESFQHGX2Mizoa2sdRJ2uMk01vos_m5RA0174"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+</section>
+<section id="ways-of-adding-area-charting-layers">
+<h2>Ways of adding area charting layers<a class="headerlink" href="#ways-of-adding-area-charting-layers" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>There are two methods for adding area chart layers. The first is shown above, where when adding a layer using <code class="docutils literal notranslate"><span class="pre">Map.addLayer</span></code>, specify <code class="docutils literal notranslate"><span class="pre">&quot;canAreaChart&quot;:True</span></code>. With this method, if a layer is visible, it will be included in area charting.</p></li>
+<li><p>There are instances where you would like to summarize layers, but may not want them on the map or it is impossible to visualize all the thematic bands you’d like to chart. In this instance, you can use the <code class="docutils literal notranslate"><span class="pre">Map.addAreaChartLayer</span></code> method.</p></li>
+<li><p>If you use the <code class="docutils literal notranslate"><span class="pre">Map.addAreaChartLayer</span></code> method, you will need to use the <code class="docutils literal notranslate"><span class="pre">Map.populateAreaChartLayerSelect()</span></code> method to instantiate a selection menu for choosing which area chart layers should be charted.</p></li>
+<li><p>In this example, we will summarize all thematic classes in LCMS in a single graph. This cannot be displayed on a map, but is an interesting way to look at the summarized data in charts</p></li>
+<li><p>Note that the dictionary of parameters is more or less the same as what you would put in the <code class="docutils literal notranslate"><span class="pre">&quot;areaChartParams&quot;</span></code> if you were to use the <code class="docutils literal notranslate"><span class="pre">Map.addLayer</span></code> method.</p></li>
+<li><p>Note that while multi thematic band image collections can be charted in a single line chart, sankey charts can only support one band per chart. If a multi thematic band image collection is given with <code class="docutils literal notranslate"><span class="pre">&quot;sankey&quot;:True</span></code>, separate sankey charts will be created for each band.</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Change_Raw_Probability.*&#39;</span><span class="p">]),{</span><span class="s1">&#39;reducer&#39;</span><span class="p">:</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">stdDev</span><span class="p">(),</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="mi">10</span><span class="p">},</span><span class="s1">&#39;LCMS Change Prob&#39;</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addAreaChartLayer</span><span class="p">(</span><span class="n">lcms</span><span class="p">,{</span><span class="s1">&#39;line&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;layerType&#39;</span><span class="p">:</span><span class="s1">&#39;ImageCollection&#39;</span><span class="p">},</span><span class="s1">&#39;LCMS All Thematic Classes Line&#39;</span><span class="p">,</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addAreaChartLayer</span><span class="p">(</span><span class="n">lcms</span><span class="p">,{</span><span class="s1">&#39;sankey&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span><span class="s1">&#39;LCMS All Thematic Classes Sankey&#39;</span><span class="p">,</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">populateAreaChartLayerSelect</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: LCMS Change Prob
+Adding area chart layer: LCMS All Thematic Classes Line
+Adding area chart layer: LCMS All Thematic Classes Sankey
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612xctZSopHT8mgPf3-hOOh0X4ep_k3SdjI8JmWbngW0ob6DZXP4s1M6s8jCHad8pyo5FVX_9EK4WLx5USXFIa3yyzJ_cgO9mKGnGfCZGUxAu1Riv6QrmTZbVrBmI_kY_9VfNoNM2gYoGfBMpxtGVk-h5JRvrz0NE0qUaCgYKAbESARESFQHGX2Mio7EntC-E_KCdIl-8KvVbEw0174
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612xctZSopHT8mgPf3-hOOh0X4ep_k3SdjI8JmWbngW0ob6DZXP4s1M6s8jCHad8pyo5FVX_9EK4WLx5USXFIa3yyzJ_cgO9mKGnGfCZGUxAu1Riv6QrmTZbVrBmI_kY_9VfNoNM2gYoGfBMpxtGVk-h5JRvrz0NE0qUaCgYKAbESARESFQHGX2Mio7EntC-E_KCdIl-8KvVbEw0174"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+</section>
+<section id="charting-non-thematic-data">
+<h2>Charting Non-Thematic Data<a class="headerlink" href="#charting-non-thematic-data" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>You can chart continuous data as well. By default, a <code class="docutils literal notranslate"><span class="pre">ee.Reducer.mean()</span></code> will be used. You can use any reducer that returns a single value per image-band (e.g. <code class="docutils literal notranslate"><span class="pre">ee.Reducer.min()</span></code>, <code class="docutils literal notranslate"><span class="pre">ee.Reducer.max()</span></code>, <code class="docutils literal notranslate"><span class="pre">ee.Reducer.stdDev()</span></code> and not <code class="docutils literal notranslate"><span class="pre">ee.Reducer.percentile([0,50,100])</span></code>).</p></li>
+<li><p>You can specify this using <code class="docutils literal notranslate"><span class="pre">&quot;areaChartParams&quot;:{&quot;reducer&quot;:ee.Reducer.mean()}</span></code></p></li>
+<li><p>Optionally, you can provide a color palette to be used. Each band will be assigned to a color in the order given</p></li>
+<li><p>Notice in the example, the reducer for what is shown on the map is different from the zonal summary reducer. In this example, on the map the standard deviation of the probability is shown, while the average over the area is shown in the chart.</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Change_Raw_Probability.*&#39;</span><span class="p">]),</span>
+             <span class="p">{</span><span class="s1">&#39;reducer&#39;</span><span class="p">:</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">stdDev</span><span class="p">(),</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="mi">10</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;palette&#39;</span><span class="p">:</span><span class="s1">&#39;f39268,d54309,00a398&#39;</span><span class="p">}},</span><span class="s1">&#39;LCMS Change Prob&#39;</span><span class="p">)</span>
+
+
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: LCMS Change Prob
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612zyBFmQok8DtUEIp6qTRiXotoUPt8cGbFU4lo03AGaFZCas1Rkx2xDfBF6PPbwyOINwzoURdXUiBcbgO9ytGZBJcvHJjScj3njRFMjUo2HWVeMjhno9wv6KVi0iRh8ZK1nwUM6CBqM9zZSImy4e7NmgDqKYZrEgs5oaCgYKAfQSARESFQHGX2MiejYkUh8WfWmkrq89M0l9Nw0174
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612zyBFmQok8DtUEIp6qTRiXotoUPt8cGbFU4lo03AGaFZCas1Rkx2xDfBF6PPbwyOINwzoURdXUiBcbgO9ytGZBJcvHJjScj3njRFMjUo2HWVeMjhno9wv6KVi0iRh8ZK1nwUM6CBqM9zZSImy4e7NmgDqKYZrEgs5oaCgYKAfQSARESFQHGX2MiejYkUh8WfWmkrq89M0l9Nw0174"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+</section>
+<section id="charting-images">
+<h2>Charting Images<a class="headerlink" href="#charting-images" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>You can also chart images</p></li>
+<li><p>It will behave in a similar fashion to imageCollections, but will show a bar chart</p></li>
+<li><p>If using <code class="docutils literal notranslate"><span class="pre">&quot;autoViz&quot;:True</span></code>, be sure to copy the <code class="docutils literal notranslate"><span class="pre">_class_</span></code> properties back in</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Land_Cover&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span><span class="s1">&#39;LCMS Land Cover&#39;</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Land_Cover&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">mode</span><span class="p">()</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">first</span><span class="p">()</span><span class="o">.</span><span class="n">toDictionary</span><span class="p">()),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span><span class="s1">&#39;LCMS Land Cover Mode&#39;</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">nlcd</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;landcover&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span><span class="s1">&#39;NLCD Land Cover&#39;</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">nlcd</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;landcover&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">mode</span><span class="p">()</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">nlcd</span><span class="o">.</span><span class="n">first</span><span class="p">()</span><span class="o">.</span><span class="n">toDictionary</span><span class="p">()),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span><span class="s1">&#39;NLCD Land Cover Mode&#39;</span><span class="p">)</span>
+
+
+
+
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: LCMS Land Cover
+Adding layer: LCMS Land Cover Mode
+Adding layer: NLCD Land Cover
+Adding layer: NLCD Land Cover Mode
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612zola-FBl5vKB_hlCop1HfVJDqwFITDhbElU4cFuh0EAS0vneY95qkqt4EnuQsh5Ai7RIzWPvztjtaaESDRhZwMRM-096h5-EbbMtN_Fh1tXfwbqbJpAvVcHnoBmjHwIUr3maRrmOZgIKdBj07FytPEc548YQtVRT1BwNAaCgYKARwSARESFQHGX2MiVR4GgV1QjHvlavabzx0A1w0178
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612zola-FBl5vKB_hlCop1HfVJDqwFITDhbElU4cFuh0EAS0vneY95qkqt4EnuQsh5Ai7RIzWPvztjtaaESDRhZwMRM-096h5-EbbMtN_Fh1tXfwbqbJpAvVcHnoBmjHwIUr3maRrmOZgIKdBj07FytPEc548YQtVRT1BwNAaCgYKARwSARESFQHGX2MiVR4GgV1QjHvlavabzx0A1w0178"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+</section>
+<section id="charting-images-without-color-and-name-properties">
+<h2>Charting Images Without Color and Name Properties<a class="headerlink" href="#charting-images-without-color-and-name-properties" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Sometimes you will have an image you add to the map with a min, max, and palette in the viz params that are thematic  or ordinal thematic data. If those images have no class_names, etc properties set, geeViz will try to render the chart properly using the given min, max, and palette if you specify `”areaChartParams”:{“reducer”:ee.Reducer.frequencyHistogram()}</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">getMostRecentChange</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
+        <span class="n">yr</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;system:time_start&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;year&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">yr</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">int16</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">rename</span><span class="p">([</span><span class="s2">&quot;year&quot;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">code</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">copyProperties</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;system:time_start&quot;</span><span class="p">])</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">c</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">wrapper</span><span class="p">)</span>
+
+<span class="n">mostRecentFastLossYear</span> <span class="o">=</span> <span class="n">getMostRecentChange</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Change&#39;</span><span class="p">]),</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">mostRecentFastLossYear</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="mi">1985</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="mi">2023</span><span class="p">,</span><span class="s1">&#39;palette&#39;</span><span class="p">:[</span><span class="s2">&quot;ffffe5&quot;</span><span class="p">,</span> <span class="s2">&quot;fff7bc&quot;</span><span class="p">,</span> <span class="s2">&quot;fee391&quot;</span><span class="p">,</span> <span class="s2">&quot;fec44f&quot;</span><span class="p">,</span> <span class="s2">&quot;fe9929&quot;</span><span class="p">,</span> <span class="s2">&quot;ec7014&quot;</span><span class="p">,</span> <span class="s2">&quot;cc4c02&quot;</span><span class="p">],</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;reducer&#39;</span><span class="p">:</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">frequencyHistogram</span><span class="p">()}},</span> <span class="s2">&quot;Most Recent Fast Loss Year&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: Most Recent Fast Loss Year
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612xsvPX5BWXka2IKux0xyyC3pEN5X_bCjc9Abyt_QnoMxh0Tt3UKrIH4ZmqL7dsll6n3Zh4j55OApJLdFSFgC6zgz59th25UPnIDG-dUbvscsngSoX5Dd7kyf6cm1RAzRxnkG0KCwmtpKTWqMohMFz8sADGkdmojFV0aCgYKAVUSARESFQHGX2Mi7EieXAoH_HzjzIAyP0KgYQ0174
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612xsvPX5BWXka2IKux0xyyC3pEN5X_bCjc9Abyt_QnoMxh0Tt3UKrIH4ZmqL7dsll6n3Zh4j55OApJLdFSFgC6zgz59th25UPnIDG-dUbvscsngSoX5Dd7kyf6cm1RAzRxnkG0KCwmtpKTWqMohMFz8sADGkdmojFV0aCgYKAVUSARESFQHGX2Mi7EieXAoH_HzjzIAyP0KgYQ0174"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+</section>
+<section id="charting-time-lapses">
+<h2>Charting Time Lapses<a class="headerlink" href="#charting-time-lapses" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Time lapses also support area charting. All functionality is the same as the <code class="docutils literal notranslate"><span class="pre">Map.addLayer</span></code> methods.</p></li>
+<li><p>Band names can be specified in the <code class="docutils literal notranslate"><span class="pre">areaChartParams</span></code>. If they are not specified, but <code class="docutils literal notranslate"><span class="pre">bands</span></code> is specified in the visualization parameters, those bands will be used instead. Otherwise, all bands will be shown.</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+<span class="n">composites</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/lcms-tcc-shared/assets/CONUS/Composites/Composite-Collection-yesL7&quot;</span><span class="p">)</span>
+
+<span class="n">years</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1985</span><span class="p">,</span><span class="mi">2024</span><span class="p">))</span>
+
+<span class="c1"># Need to mosaic the tiled outputs for each year</span>
+<span class="n">composites</span> <span class="o">=</span> <span class="p">[</span><span class="n">composites</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="n">yr</span><span class="p">,</span><span class="n">yr</span><span class="p">,</span><span class="s1">&#39;year&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">mosaic</span><span class="p">()</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;system:time_start&#39;</span><span class="p">,</span><span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="o">.</span><span class="n">fromYMD</span><span class="p">(</span><span class="n">yr</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">millis</span><span class="p">())</span> <span class="k">for</span> <span class="n">yr</span> <span class="ow">in</span> <span class="n">years</span><span class="p">]</span>
+<span class="n">composites</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="n">composites</span><span class="p">)</span>
+
+<span class="c1"># Set up visualization parameters</span>
+<span class="n">viz</span> <span class="o">=</span> <span class="n">gil</span><span class="o">.</span><span class="n">vizParamsFalse10k</span>
+<span class="n">viz</span><span class="p">[</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">]</span><span class="o">=</span><span class="kc">True</span>
+<span class="n">viz</span><span class="p">[</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">]</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;bandNames&#39;</span><span class="p">:</span><span class="s1">&#39;blue,green,red,nir,swir1,swir2&#39;</span><span class="p">,</span><span class="s1">&#39;palette&#39;</span><span class="p">:</span><span class="s1">&#39;00D,0D0,D00,D0D,0DD&#39;</span><span class="p">}</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span><span class="p">(</span><span class="n">composites</span><span class="p">,</span><span class="n">gil</span><span class="o">.</span><span class="n">vizParamsFalse10k</span><span class="p">,</span><span class="s1">&#39;Composites&#39;</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: Composites
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612wnYtt-QFEIFqJvxv4tUzZcYEWRZkAv1oqt1OnIrtgzB7lI8Fiv-gDBo5Jm7kwppzNzx5KL8XRoYpN2aMTVzbQYWHUn6OD9yc6u6-3FCw_Ykc26-SFspZma_sjs-0V3OKWqFZsx0KCiuwz5cskNB83el1D24oGm2ZMaCgYKARQSARESFQHGX2Miyj7dkMOvk05oVvAXnq9xBw0174
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wnYtt-QFEIFqJvxv4tUzZcYEWRZkAv1oqt1OnIrtgzB7lI8Fiv-gDBo5Jm7kwppzNzx5KL8XRoYpN2aMTVzbQYWHUn6OD9yc6u6-3FCw_Ykc26-SFspZma_sjs-0V3OKWqFZsx0KCiuwz5cskNB83el1D24oGm2ZMaCgYKARQSARESFQHGX2Miyj7dkMOvk05oVvAXnq9xBw0174"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+</section>
+<section id="charting-thematic-data-without-set-properties">
+<h2>Charting Thematic Data without set properties<a class="headerlink" href="#charting-thematic-data-without-set-properties" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>You can chart thematic datasets that lack values, names, and palette properties by specifying the <code class="docutils literal notranslate"><span class="pre">ee.Reducer.frequencyHistogram()</span></code> as the reducer</p></li>
+<li><p>This is not the best method however</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># LCMAP example</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+
+<span class="n">lcpri</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/sat-io/open-datasets/LCMAP/LCPRI&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;b1&#39;</span><span class="p">],[</span><span class="s1">&#39;LC&#39;</span><span class="p">])</span>
+
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span><span class="p">(</span><span class="n">lcpri</span><span class="p">,{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="mi">9</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s2">&quot;areaChartParams&quot;</span><span class="p">:{</span><span class="s1">&#39;reducer&#39;</span><span class="p">:</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">frequencyHistogram</span><span class="p">()}},</span><span class="s1">&#39;LCMAP LC Primary&#39;</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: LCMAP LC Primary
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612x9FqNyIuBa6Y3Gng0iMMDF33nU_H2SI6QG1_zfzFXeeJHF4OBiWSteiMC8uybgs2Dv4n1pALbwqAVf4SaQ5qLbYjBELqeUtaG546K4T765woRRvpvmHgtc_0iLgMj4lnvSgjEHtQDSDRyUhG20SNp6S0fD6wX6-DCo_FIaCgYKAS8SARESFQHGX2MiZFqvVweHWgcKOOqXrphnBQ0178
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612x9FqNyIuBa6Y3Gng0iMMDF33nU_H2SI6QG1_zfzFXeeJHF4OBiWSteiMC8uybgs2Dv4n1pALbwqAVf4SaQ5qLbYjBELqeUtaG546K4T765woRRvpvmHgtc_0iLgMj4lnvSgjEHtQDSDRyUhG20SNp6S0fD6wX6-DCo_FIaCgYKAS8SARESFQHGX2MiZFqvVweHWgcKOOqXrphnBQ0178"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+<section id="setting-properties-for-charting">
+<h3>Setting properties for charting<a class="headerlink" href="#setting-properties-for-charting" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The easiest way to chart thematic data where each class has a number, name, and color, but lack the preset properties, is to set them on-the-fly</p></li>
+<li><p>These properties can then be used for charting and map rendering</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># LCMAP example</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+<span class="n">lcpri_palette</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;E60000&#39;</span><span class="p">,</span><span class="s1">&#39;A87000&#39;</span><span class="p">,</span><span class="s1">&#39;E3E3C2&#39;</span><span class="p">,</span><span class="s1">&#39;1D6330&#39;</span><span class="p">,</span><span class="s1">&#39;476BA1&#39;</span><span class="p">,</span><span class="s1">&#39;BAD9EB&#39;</span><span class="p">,</span><span class="s1">&#39;FFFFFF&#39;</span><span class="p">,</span><span class="s1">&#39;B3B0A3&#39;</span><span class="p">,</span><span class="s1">&#39;A201FF&#39;</span><span class="p">]</span>
+<span class="n">lc_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Developed&#39;</span><span class="p">,</span><span class="s1">&#39;Cropland&#39;</span><span class="p">,</span><span class="s1">&#39;Grass/Shrub&#39;</span><span class="p">,</span><span class="s1">&#39;Tree Cover&#39;</span><span class="p">,</span><span class="s1">&#39;Water&#39;</span><span class="p">,</span><span class="s1">&#39;Wetlands&#39;</span><span class="p">,</span><span class="s1">&#39;Ice/Snow&#39;</span><span class="p">,</span><span class="s1">&#39;Barren&#39;</span><span class="p">,</span><span class="s1">&#39;Class Change&#39;</span><span class="p">]</span>
+<span class="n">lc_numbers</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">lcpri_palette</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
+<span class="n">lcpri</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/sat-io/open-datasets/LCMAP/LCPRI&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;b1&#39;</span><span class="p">],[</span><span class="s1">&#39;LC&#39;</span><span class="p">])</span>
+
+<span class="n">lcpri</span> <span class="o">=</span> <span class="n">lcpri</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">img</span><span class="p">:</span><span class="n">img</span><span class="o">.</span><span class="n">set</span><span class="p">({</span><span class="s1">&#39;LC_class_values&#39;</span><span class="p">:</span><span class="n">lc_numbers</span><span class="p">,</span><span class="s1">&#39;LC_class_names&#39;</span><span class="p">:</span><span class="n">lc_names</span><span class="p">,</span><span class="s1">&#39;LC_class_palette&#39;</span><span class="p">:</span><span class="n">lcpri_palette</span><span class="p">}))</span>
+
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span><span class="p">(</span><span class="n">lcpri</span><span class="p">,{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;line&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;sankey&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}},</span><span class="s1">&#39;LCMAP LC Primary&#39;</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: LCMAP LC Primary
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612w0Xpz3lD3_5q-SiXf6XpskovT8KHrMbfQWrYCnX-vUO_N1OYitd-M4bc39KuQ99hxzrYL5fyDBPbX8nfWxOaW58QbnAhVfEUJYc8iVdL8-1DZdXTxW8dGzQAHomUMFqQ_I8iNpZGk5cAdHyGl8ZPm7iO19NHb0WRCcoVQaCgYKAfsSARESFQHGX2MiXrZPo8D2qzZVPHBqFUYsBw0178
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612w0Xpz3lD3_5q-SiXf6XpskovT8KHrMbfQWrYCnX-vUO_N1OYitd-M4bc39KuQ99hxzrYL5fyDBPbX8nfWxOaW58QbnAhVfEUJYc8iVdL8-1DZdXTxW8dGzQAHomUMFqQ_I8iNpZGk5cAdHyGl8ZPm7iO19NHb0WRCcoVQaCgYKAfsSARESFQHGX2MiXrZPo8D2qzZVPHBqFUYsBw0178"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+</section>
+</section>
+<section id="comparing-map-output-versions">
+<h2>Comparing map output versions<a class="headerlink" href="#comparing-map-output-versions" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>One common task is to understand the differences between 2 or more model runs. This can be challenging.</p></li>
+<li><p>This example will show three versions of LCMS products and how they relate</p></li>
+<li><p>This approach makes comparing the maps and their respective class counts relatively easy</p></li>
+<li><p>This idea could be adapted to comparing different thematic or continuous outputs</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+<span class="c1"># Bring in 3 different LCMS versions</span>
+<span class="n">lcms_2020</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;USFS/GTAC/LCMS/v2020-5&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="s1">&#39;study_area==&quot;CONUS&quot;&#39;</span><span class="p">)</span>
+<span class="n">lcms_2021</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;USFS/GTAC/LCMS/v2021-7&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="s1">&#39;study_area==&quot;CONUS&quot;&#39;</span><span class="p">)</span>
+<span class="n">lcms_2022</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;USFS/GTAC/LCMS/v2022-8&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="s1">&#39;study_area==&quot;CONUS&quot;&#39;</span><span class="p">)</span>
+<span class="n">lcms_2023</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;USFS/GTAC/LCMS/v2023-9&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="s1">&#39;study_area==&quot;CONUS&quot;&#39;</span><span class="p">)</span>
+
+<span class="c1"># Choose a year to compare (any year 1985-2020)</span>
+<span class="n">year</span> <span class="o">=</span> <span class="mi">2010</span>
+
+<span class="c1"># Filter off the image and set that image to the version year</span>
+<span class="n">lcms_2020</span> <span class="o">=</span> <span class="n">lcms_2020</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="n">year</span><span class="p">,</span><span class="n">year</span><span class="p">,</span><span class="s1">&#39;year&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">first</span><span class="p">()</span><span class="o">.</span><span class="n">set</span><span class="p">({</span><span class="s1">&#39;year&#39;</span><span class="p">:</span><span class="mi">2020</span><span class="p">,</span><span class="s1">&#39;system:time_start&#39;</span><span class="p">:</span><span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="o">.</span><span class="n">fromYMD</span><span class="p">(</span><span class="mi">2020</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">millis</span><span class="p">()})</span>
+<span class="n">lcms_2021</span> <span class="o">=</span> <span class="n">lcms_2021</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="n">year</span><span class="p">,</span><span class="n">year</span><span class="p">,</span><span class="s1">&#39;year&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">first</span><span class="p">()</span><span class="o">.</span><span class="n">set</span><span class="p">({</span><span class="s1">&#39;year&#39;</span><span class="p">:</span><span class="mi">2021</span><span class="p">,</span><span class="s1">&#39;system:time_start&#39;</span><span class="p">:</span><span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="o">.</span><span class="n">fromYMD</span><span class="p">(</span><span class="mi">2021</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">millis</span><span class="p">()})</span>
+<span class="n">lcms_2022</span> <span class="o">=</span> <span class="n">lcms_2022</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="n">year</span><span class="p">,</span><span class="n">year</span><span class="p">,</span><span class="s1">&#39;year&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">first</span><span class="p">()</span><span class="o">.</span><span class="n">set</span><span class="p">({</span><span class="s1">&#39;year&#39;</span><span class="p">:</span><span class="mi">2022</span><span class="p">,</span><span class="s1">&#39;system:time_start&#39;</span><span class="p">:</span><span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="o">.</span><span class="n">fromYMD</span><span class="p">(</span><span class="mi">2022</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">millis</span><span class="p">()})</span>
+<span class="n">lcms_2023</span> <span class="o">=</span> <span class="n">lcms_2023</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="n">year</span><span class="p">,</span><span class="n">year</span><span class="p">,</span><span class="s1">&#39;year&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">first</span><span class="p">()</span><span class="o">.</span><span class="n">set</span><span class="p">({</span><span class="s1">&#39;year&#39;</span><span class="p">:</span><span class="mi">2023</span><span class="p">,</span><span class="s1">&#39;system:time_start&#39;</span><span class="p">:</span><span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="o">.</span><span class="n">fromYMD</span><span class="p">(</span><span class="mi">2023</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">millis</span><span class="p">()})</span>
+
+<span class="c1"># Construct the image collection</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">([</span><span class="n">lcms_2020</span><span class="p">,</span><span class="n">lcms_2021</span><span class="p">,</span><span class="n">lcms_2022</span><span class="p">,</span><span class="n">lcms_2023</span><span class="p">])</span>
+
+<span class="c1"># Add the collection as a timelapse</span>
+<span class="c1"># Will need to specify the transition years as the years used for each image, otherwise geeViz will default to only showing the first and last year</span>
+<span class="c1"># Note that if you specify the sankey transition periods, any periods you enter in the geeViz UI will not be used for that layer</span>
+<span class="k">for</span> <span class="n">bn</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Change&#39;</span><span class="p">,</span><span class="s1">&#39;Land_Cover&#39;</span><span class="p">,</span><span class="s1">&#39;Land_Use&#39;</span><span class="p">]:</span>
+  <span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="n">bn</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;sankey&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span>
+                                                                            <span class="s1">&#39;sankeyTransitionPeriods&#39;</span><span class="p">:[[</span><span class="mi">2020</span><span class="p">,</span><span class="mi">2020</span><span class="p">],[</span><span class="mi">2021</span><span class="p">,</span><span class="mi">2021</span><span class="p">],[</span><span class="mi">2022</span><span class="p">,</span><span class="mi">2022</span><span class="p">],[</span><span class="mi">2023</span><span class="p">,</span><span class="mi">2023</span><span class="p">]]</span>
+                                                                            <span class="p">}},</span> <span class="sa">f</span><span class="s2">&quot;LCMS </span><span class="si">{</span><span class="n">bn</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">,</span><span class="s1">&#39; &#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> Comparison </span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: LCMS Change Comparison 2010
+Adding layer: LCMS Land Cover Comparison 2010
+Adding layer: LCMS Land Use Comparison 2010
+Starting webmap
+Using default refresh token for geeView
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\ee\deprecation.py:202: DeprecationWarning: 
+
+Attention required for USFS/GTAC/LCMS/v2020-5! You are using a deprecated asset.
+To ensure continued functionality, please update it.
+Learn more: https://developers.google.com/earth-engine/datasets/catalog/USFS_GTAC_LCMS_v2020-5
+
+  warnings.warn(warning, category=DeprecationWarning)
+c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\ee\deprecation.py:202: DeprecationWarning: 
+
+Attention required for USFS/GTAC/LCMS/v2021-7! You are using a deprecated asset.
+To ensure continued functionality, please update it.
+Learn more: https://developers.google.com/earth-engine/datasets/catalog/USFS_GTAC_LCMS_v2021-7
+
+  warnings.warn(warning, category=DeprecationWarning)
+c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\ee\deprecation.py:202: DeprecationWarning: 
+
+Attention required for USFS/GTAC/LCMS/v2022-8! You are using a deprecated asset.
+To ensure continued functionality, please update it.
+Learn more: https://developers.google.com/earth-engine/datasets/catalog/USFS_GTAC_LCMS_v2022-8
+
+  warnings.warn(warning, category=DeprecationWarning)
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612wPtKk_ePf9TnMwvoRhqeBo8KprojyyW3GVeKIwAu2XdlfaUTUzws7eZQUrIGyZ4wCS6wIjpw7sUV-eBsoj2z1SSl38d4RhPIEbaN6ZOP8hWAxv07-RMGdJX0o8U4mKiKp92DhI6wg9Lmfz20gZ6wRwHURCbZy2lEsaCgYKAaYSARESFQHGX2Mir_MkV5PgClO-NZQmHUOFbA0174
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wPtKk_ePf9TnMwvoRhqeBo8KprojyyW3GVeKIwAu2XdlfaUTUzws7eZQUrIGyZ4wCS6wIjpw7sUV-eBsoj2z1SSl38d4RhPIEbaN6ZOP8hWAxv07-RMGdJX0o8U4mKiKp92DhI6wg9Lmfz20gZ6wRwHURCbZy2lEsaCgYKAaYSARESFQHGX2Mir_MkV5PgClO-NZQmHUOFbA0174"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+</section>
+<section id="other-charting-summary-zone-selection-methods">
+<h2>Other charting summary zone selection methods<a class="headerlink" href="#other-charting-summary-zone-selection-methods" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>All examples have simply used the map extent as the zone to chart</p></li>
+<li><p>There are other methods available</p></li>
+<li><p>This example will show how to add a featureCollection to interactively select areas to summarize</p></li>
+<li><p>All area selection will happen in the geeViz UI, under <code class="docutils literal notranslate"><span class="pre">Tools</span> <span class="pre">-&gt;</span> <span class="pre">Area</span> <span class="pre">Tools</span> <span class="pre">-&gt;</span> <span class="pre">Select</span> <span class="pre">an</span> <span class="pre">Area</span> <span class="pre">on</span> <span class="pre">Map</span></code></p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+
+<span class="k">for</span> <span class="n">bn</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Change&#39;</span><span class="p">,</span><span class="s1">&#39;Land_Cover&#39;</span><span class="p">,</span><span class="s1">&#39;Land_Use&#39;</span><span class="p">]:</span>
+  <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="n">bn</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span> <span class="sa">f</span><span class="s2">&quot;LCMS </span><span class="si">{</span><span class="n">bn</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">,</span><span class="s1">&#39; &#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">  &quot;</span><span class="p">)</span>
+
+
+<span class="c1"># Bring in MTBS burn boundaries</span>
+<span class="n">mtbsBoundaries</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;USFS/GTAC/MTBS/burned_area_boundaries/v1&quot;</span><span class="p">)</span>
+<span class="n">mtbsBoundaries</span> <span class="o">=</span> <span class="n">mtbsBoundaries</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
+    <span class="k">lambda</span> <span class="n">f</span><span class="p">:</span> <span class="n">f</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;system:time_start&quot;</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Ig_Date&quot;</span><span class="p">))</span>
+<span class="p">)</span>
+
+<span class="c1"># For area charting you can select areas to chart a number of ways. One method is using a map layer that is selectable by clicking on each feature.</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addSelectLayer</span><span class="p">(</span>
+    <span class="n">mtbsBoundaries</span><span class="p">,</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;strokeColor&quot;</span><span class="p">:</span> <span class="s2">&quot;00F&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;selectLayerNameProperty&quot;</span><span class="p">:</span> <span class="s2">&quot;Incid_Name&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;MTBS Fire Boundaries&quot;</span>
+<span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnSelectionAreaCharting</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: LCMS Change  
+Adding layer: LCMS Land Cover  
+Adding layer: LCMS Land Use  
+Adding layer: MTBS Fire Boundaries
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612wgw-djuuUntepLYybAxnaIqxMmFwimfSO5_f-ogEbOUoilTLwc6OseVxRi5qICNp7ekGXx89YwL_ssdQMnarafW5IePMFIBfBALE0QwlQyp58F6ciJeqf04GGg49Id-7qFKwx-m8qAzQRmsEUBQS9y_ZwgbhDtyh0aCgYKAdcSARESFQHGX2MiGY-MWDrEyrXenwTUktiPuw0174
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wgw-djuuUntepLYybAxnaIqxMmFwimfSO5_f-ogEbOUoilTLwc6OseVxRi5qICNp7ekGXx89YwL_ssdQMnarafW5IePMFIBfBALE0QwlQyp58F6ciJeqf04GGg49Id-7qFKwx-m8qAzQRmsEUBQS9y_ZwgbhDtyh0aCgYKAdcSARESFQHGX2MiGY-MWDrEyrXenwTUktiPuw0174"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="geeViz_geeMap_comparison_tutorial.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">A comparison between geeViz and geeMap’s map visualization capabilities</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="getLandsatWrapperNotebook.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Create High Quality Landsat Composites</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024, Ian Housman, Josh Heyer
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://www.redcastleresources.com/" aria-label="RedCastle Resources Inc"><img src='https://apps.fs.usda.gov/lcms-viewer/src/assets/images/RCR-logo.jpg'  alt='RedCastle Inc. Logo' href='#' title='Click to learn more about RedCastle Resources Inc.'></a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Visualizing Area Summaries</a><ul>
+<li><a class="reference internal" href="#basic-area-charting">Basic Area Charting</a></li>
+<li><a class="reference internal" href="#line-and-sankey-charts">Line and Sankey Charts</a></li>
+<li><a class="reference internal" href="#ways-of-adding-area-charting-layers">Ways of adding area charting layers</a></li>
+<li><a class="reference internal" href="#charting-non-thematic-data">Charting Non-Thematic Data</a></li>
+<li><a class="reference internal" href="#charting-images">Charting Images</a></li>
+<li><a class="reference internal" href="#charting-images-without-color-and-name-properties">Charting Images Without Color and Name Properties</a></li>
+<li><a class="reference internal" href="#charting-time-lapses">Charting Time Lapses</a></li>
+<li><a class="reference internal" href="#charting-thematic-data-without-set-properties">Charting Thematic Data without set properties</a><ul>
+<li><a class="reference internal" href="#setting-properties-for-charting">Setting properties for charting</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#comparing-map-output-versions">Comparing map output versions</a></li>
+<li><a class="reference internal" href="#other-charting-summary-zone-selection-methods">Other charting summary zone selection methods</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=9973ac44"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    </body>
+</html>

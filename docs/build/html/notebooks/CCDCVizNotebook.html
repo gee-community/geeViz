@@ -1,0 +1,511 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="prev" title="Run LandTrendr and Visualize Outputs" href="LANDTRENDRWrapperNotebook.html" />
+
+    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+        <title>CCDC Visualization Notebook - geeViz &#34;2024.8.3&#34; docs</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="../_static/style/custom.css?v=ebb50e13" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #00897b;
+  --color-brand-content: #00897b;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+<div class="announcement">
+  <aside class="announcement-content">
+     <i>geeViz</i> docs are still in development 
+  </aside>
+</div>
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">geeViz "2024.8.3" docs</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">geeViz "2024.8.3" docs</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../overview.html">Overview</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Overview</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.geeView.html">geeViz.geeView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.foliumView.html">geeViz.foliumView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.phEEnoViz.html">geeViz.phEEnoViz</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Details</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../examples.html">Examples</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="geeViewExampleNotebook.html">Starter geeViz geeView Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lcmsViewerExampleNotebook.html">LCMS Viewer Intro Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mapBiomasViewerExampleNotebook.html">Visualizing MapBiomas Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="global_land_cover_example_notebook.html">Visualizing Global Land Cover</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getLandsatWrapperNotebook.html">Create High Quality Landsat Composites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="areaChart_examples.html">Visualizing Area Summaries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geeViz_geeMap_comparison_tutorial.html">A comparison between geeViz and geeMap’s map visualization capabilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LANDTRENDRWrapperNotebook.html">Run LandTrendr and Visualize Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">CCDC Visualization Notebook</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="ccdc-visualization-notebook">
+<h1>CCDC Visualization Notebook<a class="headerlink" href="#ccdc-visualization-notebook" title="Link to this heading">#</a></h1>
+<p>Copyright 2024 Ian Housman</p>
+<p>Licensed under the Apache License, Version 2.0 (the “License”);
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>   http://www.apache.org/licenses/LICENSE-2.0
+</pre></div>
+</div>
+<p>Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an “AS IS” BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.</p>
+  <p><a href="https://colab.research.google.com/github/gee-community/geeViz/blob/master/examples/CCDCVizNotebook.ipynb" target="_parent"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg"></a></p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Example of how to visualize CCDC outputs using the Python visualization tools</span>
+<span class="c1">#Adds change products and fitted harmonics from CCDC output to the viewer</span>
+<span class="c1">#The general workflow for CCDC is to run the CCDCWrapper.py script, and then either utilize the harmonic model for a given date</span>
+<span class="c1">#or to use the breaks for change detection. All of this is demonstrated in this example</span>
+<span class="c1">####################################################################################################</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+
+<span class="c1">#Module imports</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">geeViz.getImagesLib</span> <span class="k">as</span> <span class="nn">getImagesLib</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="o">!</span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>geeViz
+    <span class="kn">import</span> <span class="nn">geeViz.getImagesLib</span> <span class="k">as</span> <span class="nn">getImagesLib</span>
+
+
+<span class="kn">import</span> <span class="nn">geeViz.changeDetectionLib</span> <span class="k">as</span> <span class="nn">changeDetectionLib</span>
+<span class="n">ee</span> <span class="o">=</span> <span class="n">getImagesLib</span><span class="o">.</span><span class="n">ee</span>
+<span class="n">Map</span> <span class="o">=</span> <span class="n">getImagesLib</span><span class="o">.</span><span class="n">Map</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+<span class="c1">####################################################################################################</span>
+<span class="c1">#Bring in ccdc image asset</span>
+<span class="c1">#This is assumed to be an image of arrays that is returned from the ee.Algorithms.TemporalSegmentation.Ccdc method</span>
+<span class="n">ccdcImg</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s1">&#39;projects/lcms-292214/assets/CONUS-LCMS/Base-Learners/CCDC-Collection-1984-2022&#39;</span><span class="p">)</span>\
+          <span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;tStart&#39;</span><span class="p">,</span><span class="s1">&#39;tEnd&#39;</span><span class="p">,</span><span class="s1">&#39;tBreak&#39;</span><span class="p">,</span><span class="s1">&#39;changeProb&#39;</span><span class="p">,</span><span class="s1">&#39;red.*&#39;</span><span class="p">,</span><span class="s1">&#39;nir.*&#39;</span><span class="p">,</span><span class="s1">&#39;swir1.*&#39;</span><span class="p">,</span><span class="s1">&#39;swir2.*&#39;</span><span class="p">,</span><span class="s1">&#39;NDVI.*&#39;</span><span class="p">,</span><span class="s1">&#39;NBR.*&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">mosaic</span><span class="p">()</span>
+
+
+<span class="c1">#Specify which harmonics to use when predicting the CCDC model</span>
+<span class="c1">#CCDC exports the first 3 harmonics (1 cycle/yr, 2 cycles/yr, and 3 cycles/yr)</span>
+<span class="c1">#If you only want to see yearly patterns, specify [1]</span>
+<span class="c1">#If you would like a tighter fit in the predicted value, include the second or third harmonic as well [1,2,3]</span>
+<span class="n">whichHarmonics</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span>
+
+<span class="c1">#Whether to fill gaps between segments&#39; end year and the subsequent start year to the break date</span>
+<span class="n">fillGaps</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="c1">#Specify which band to use for loss and gain. </span>
+<span class="c1">#This is most important for the loss and gain magnitude since the year of change will be the same for all years</span>
+<span class="n">changeDetectionBandName</span> <span class="o">=</span> <span class="s1">&#39;NDVI&#39;</span>
+
+<span class="c1"># Choose whether to show the most recent (&#39;mostRecent&#39;) or highest magnitude (&#39;highestMag&#39;) CCDC break</span>
+<span class="n">sortingMethod</span> <span class="o">=</span> <span class="s1">&#39;mostRecent&#39;</span>
+<span class="c1">####################################################################################################</span>
+<span class="c1">#Pull out some info about the ccdc image</span>
+<span class="n">startJulian</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">endJulian</span> <span class="o">=</span> <span class="mi">365</span>
+<span class="n">startYear</span> <span class="o">=</span> <span class="mi">1984</span>
+<span class="n">endYear</span> <span class="o">=</span> <span class="mi">2022</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;done&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Initializing GEE
+Cached project id file path: C:\Users\ihousman\.config\earthengine\credentials.proj_id
+Cached project id: lcms-292214
+Successfully initialized
+geeViz package folder: c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\geeViz
+done
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="mi">1231</span>
+<span class="c1">#Add the raw array image</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">ccdcImg</span><span class="p">,{},</span><span class="s1">&#39;Raw CCDC Output&#39;</span><span class="p">,</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">centerObject</span><span class="p">(</span><span class="n">ccdcImg</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnInspector</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+<span class="c1">#Double click on map to see raw CCDC output image array values</span>
+<span class="c1">#Notice it is difficult to interpret these values as a time series since only breaks and their respective harmonic models are stored</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: Raw CCDC Output
+Starting webmap
+Using default refresh token for geeView
+Starting local web server at: http://localhost:1231/geeView/
+HTTP server command: &quot;c:\Users\ihousman\AppData\Local\Programs\Python\Python311\python.exe&quot; -m http.server  1231
+Done
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:1231/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612xo8NuLiiN-qVOTsN6_fWo8L-qA-KMEypVlah8dd7vv7du6ycGdBpqmXtLmjm4PqyWi6dgovMVT4dJToBYcOWftqXgjoiXqsZvXFt6im8-NCb0hbIW_2jZ9r0N-API6ZLCq6lTUe1GuVK1itP5PcAnD3p9QbBi06-cN9jYaCgYKAe4SARESFQHGX2MiySE5AEDqpNim4FckAreJJg0178
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:1231/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612xo8NuLiiN-qVOTsN6_fWo8L-qA-KMEypVlah8dd7vv7du6ycGdBpqmXtLmjm4PqyWi6dgovMVT4dJToBYcOWftqXgjoiXqsZvXFt6im8-NCb0hbIW_2jZ9r0N-API6ZLCq6lTUe1GuVK1itP5PcAnD3p9QbBi06-cN9jYaCgYKAe4SARESFQHGX2MiySE5AEDqpNim4FckAreJJg0178"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+<span class="c1">#We will not look at more useful ways of visualizing CCDC outputs</span>
+<span class="c1">#First, we will extract the change years and magnitude</span>
+<span class="n">changeObj</span> <span class="o">=</span> <span class="n">changeDetectionLib</span><span class="o">.</span><span class="n">ccdcChangeDetection</span><span class="p">(</span><span class="n">ccdcImg</span><span class="p">,</span><span class="n">changeDetectionBandName</span><span class="p">);</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">changeObj</span><span class="p">[</span><span class="n">sortingMethod</span><span class="p">][</span><span class="s1">&#39;loss&#39;</span><span class="p">][</span><span class="s1">&#39;year&#39;</span><span class="p">],{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="n">startYear</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="n">endYear</span><span class="p">,</span><span class="s1">&#39;palette&#39;</span><span class="p">:</span><span class="n">changeDetectionLib</span><span class="o">.</span><span class="n">lossYearPalette</span><span class="p">},</span><span class="s1">&#39;Loss Year&#39;</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">changeObj</span><span class="p">[</span><span class="n">sortingMethod</span><span class="p">][</span><span class="s1">&#39;loss&#39;</span><span class="p">][</span><span class="s1">&#39;mag&#39;</span><span class="p">],{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span><span class="s1">&#39;palette&#39;</span><span class="p">:</span><span class="n">changeDetectionLib</span><span class="o">.</span><span class="n">lossMagPalette</span><span class="p">},</span><span class="s1">&#39;Loss Mag&#39;</span><span class="p">,</span><span class="kc">False</span><span class="p">);</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">changeObj</span><span class="p">[</span><span class="n">sortingMethod</span><span class="p">][</span><span class="s1">&#39;gain&#39;</span><span class="p">][</span><span class="s1">&#39;year&#39;</span><span class="p">],{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="n">startYear</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="n">endYear</span><span class="p">,</span><span class="s1">&#39;palette&#39;</span><span class="p">:</span><span class="n">changeDetectionLib</span><span class="o">.</span><span class="n">gainYearPalette</span><span class="p">},</span><span class="s1">&#39;Gain Year&#39;</span><span class="p">);</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">changeObj</span><span class="p">[</span><span class="n">sortingMethod</span><span class="p">][</span><span class="s1">&#39;gain&#39;</span><span class="p">][</span><span class="s1">&#39;mag&#39;</span><span class="p">],{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="mf">0.05</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="mf">0.2</span><span class="p">,</span><span class="s1">&#39;palette&#39;</span><span class="p">:</span><span class="n">changeDetectionLib</span><span class="o">.</span><span class="n">gainMagPalette</span><span class="p">},</span><span class="s1">&#39;Gain Mag&#39;</span><span class="p">,</span><span class="kc">False</span><span class="p">);</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnInspector</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+<span class="c1">#Double click on map to see raw years of loss and gain breaks</span>
+<span class="c1">#Notice as you zoom in the layers change since GEE is processing outputs at a given pyramid level</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: Loss Year
+Adding layer: Loss Mag
+Adding layer: Gain Year
+Adding layer: Gain Mag
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:1231/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:1231/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612ymxQGO5RCGsQbYgpf2kcvU3WQ3elAsRecR2Jji0qfK46vnnPdo0QgyfPrej1ZrHgWORgjEjkKpluOW80orIuPQ1fU2eZTEFjNOXUjlrl-9ICejvdczGePj5mkI-1xw1XCAN3ZEbF96d1-Nt_vefr8TNSK-LoZV3tN4qScaCgYKAVsSARESFQHGX2MiHkf20KApp0qbANPl79Relw0178
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:1231/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612ymxQGO5RCGsQbYgpf2kcvU3WQ3elAsRecR2Jji0qfK46vnnPdo0QgyfPrej1ZrHgWORgjEjkKpluOW80orIuPQ1fU2eZTEFjNOXUjlrl-9ICejvdczGePj5mkI-1xw1XCAN3ZEbF96d1-Nt_vefr8TNSK-LoZV3tN4qScaCgYKAVsSARESFQHGX2MiHkf20KApp0qbANPl79Relw0178"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+<span class="c1">#Apply the CCDC harmonic model across a time series</span>
+<span class="c1">#First get a time series of time images </span>
+<span class="n">yearImages</span> <span class="o">=</span> <span class="n">changeDetectionLib</span><span class="o">.</span><span class="n">getTimeImageCollection</span><span class="p">(</span><span class="n">startYear</span><span class="p">,</span><span class="n">endYear</span><span class="p">,</span><span class="n">startJulian</span><span class="p">,</span><span class="n">endJulian</span><span class="p">,</span><span class="mf">0.1</span><span class="p">);</span>
+
+<span class="c1">#Then predict the CCDC models</span>
+<span class="n">fitted</span> <span class="o">=</span> <span class="n">changeDetectionLib</span><span class="o">.</span><span class="n">predictCCDC</span><span class="p">(</span><span class="n">ccdcImg</span><span class="p">,</span><span class="n">yearImages</span><span class="p">,</span><span class="n">fillGaps</span><span class="p">,</span><span class="n">whichHarmonics</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">fitted</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;.*_fitted&#39;</span><span class="p">]),{</span><span class="s1">&#39;opacity&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">},</span><span class="s1">&#39;Fitted CCDC&#39;</span><span class="p">,</span><span class="kc">True</span><span class="p">);</span>
+
+
+<span class="c1"># Synthetic composites visualizing</span>
+<span class="c1"># Take common false color composite bands and visualize them for the next to the last year</span>
+
+<span class="c1"># First get the bands of predicted bands and then split off the name</span>
+<span class="n">fittedBns</span> <span class="o">=</span> <span class="n">fitted</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;.*_fitted&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">first</span><span class="p">()</span><span class="o">.</span><span class="n">bandNames</span><span class="p">()</span>
+<span class="n">bns</span> <span class="o">=</span> <span class="n">fittedBns</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">bn</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="n">bn</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+
+<span class="c1"># Filter down to the next to the last year and a summer date range</span>
+<span class="n">compositeYear</span> <span class="o">=</span> <span class="n">endYear</span><span class="o">-</span><span class="mi">1</span>
+<span class="n">syntheticComposites</span> <span class="o">=</span> <span class="n">fitted</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">fittedBns</span><span class="p">,</span><span class="n">bns</span><span class="p">)</span>\
+    <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="n">compositeYear</span><span class="p">,</span><span class="n">compositeYear</span><span class="p">,</span><span class="s1">&#39;year&#39;</span><span class="p">))</span>
+    <span class="c1"># .filter(ee.Filter.calendarRange(190,250)).first()</span>
+
+<span class="c1"># Visualize output as you would a composite</span>
+<span class="n">getImagesLib</span><span class="o">.</span><span class="n">vizParamsFalse</span><span class="p">[</span><span class="s1">&#39;dateFormat&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;YYMMdd&#39;</span>
+<span class="n">getImagesLib</span><span class="o">.</span><span class="n">vizParamsFalse</span><span class="p">[</span><span class="s1">&#39;advanceInterval&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;day&#39;</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span><span class="p">(</span><span class="n">syntheticComposites</span><span class="p">,</span><span class="n">getImagesLib</span><span class="o">.</span><span class="n">vizParamsFalse</span><span class="p">,</span><span class="sa">f</span><span class="s1">&#39;Synthetic Composite Time Lapse </span><span class="si">{</span><span class="n">compositeYear</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnInspector</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+
+<span class="c1">#No layers will draw, but you can double click on map to see the fitted CCDC time series</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: Fitted CCDC
+Adding layer: Synthetic Composite Time Lapse 2021
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:1231/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:1231/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612wbtEFCJRcgwIEIHweAbscLQVN3pU1hhpz1_cSKdDFT5UXNyUiddDVbGE7ZTEaKYb98zLFj2kBaM__PXriFTg97tZw0SJir4lCz1swGB3rtWtovOJt5-b5yqEzd_PbMhmALJpI-D_DLNIDZUlUvMOMET66riLwr8yEEtoUaCgYKAeISARESFQHGX2MiZY0Ncr5vViST6RwaQLC9-A0178
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:1231/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wbtEFCJRcgwIEIHweAbscLQVN3pU1hhpz1_cSKdDFT5UXNyUiddDVbGE7ZTEaKYb98zLFj2kBaM__PXriFTg97tZw0SJir4lCz1swGB3rtWtovOJt5-b5yqEzd_PbMhmALJpI-D_DLNIDZUlUvMOMET66riLwr8yEEtoUaCgYKAeISARESFQHGX2MiZY0Ncr5vViST6RwaQLC9-A0178"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          <a class="prev-page" href="LANDTRENDRWrapperNotebook.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Run LandTrendr and Visualize Outputs</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024, Ian Housman, Josh Heyer
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://www.redcastleresources.com/" aria-label="RedCastle Resources Inc"><img src='https://apps.fs.usda.gov/lcms-viewer/src/assets/images/RCR-logo.jpg'  alt='RedCastle Inc. Logo' href='#' title='Click to learn more about RedCastle Resources Inc.'></a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=9973ac44"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    </body>
+</html>

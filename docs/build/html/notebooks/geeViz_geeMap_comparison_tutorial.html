@@ -1,0 +1,914 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Run LandTrendr and Visualize Outputs" href="LANDTRENDRWrapperNotebook.html" /><link rel="prev" title="Visualizing Area Summaries" href="areaChart_examples.html" />
+
+    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+        <title>A comparison between geeViz and geeMap’s map visualization capabilities - geeViz &#34;2024.8.3&#34; docs</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="../_static/style/custom.css?v=ebb50e13" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #00897b;
+  --color-brand-content: #00897b;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+<div class="announcement">
+  <aside class="announcement-content">
+     <i>geeViz</i> docs are still in development 
+  </aside>
+</div>
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">geeViz "2024.8.3" docs</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">geeViz "2024.8.3" docs</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../overview.html">Overview</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Overview</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.geeView.html">geeViz.geeView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.foliumView.html">geeViz.foliumView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.phEEnoViz.html">geeViz.phEEnoViz</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Details</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../examples.html">Examples</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="geeViewExampleNotebook.html">Starter geeViz geeView Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lcmsViewerExampleNotebook.html">LCMS Viewer Intro Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mapBiomasViewerExampleNotebook.html">Visualizing MapBiomas Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="global_land_cover_example_notebook.html">Visualizing Global Land Cover</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getLandsatWrapperNotebook.html">Create High Quality Landsat Composites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="areaChart_examples.html">Visualizing Area Summaries</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">A comparison between geeViz and geeMap’s map visualization capabilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LANDTRENDRWrapperNotebook.html">Run LandTrendr and Visualize Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CCDCVizNotebook.html">CCDC Visualization Notebook</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="a-comparison-between-geeviz-and-geemap-s-map-visualization-capabilities">
+<h1>A comparison between geeViz and geeMap’s map visualization capabilities<a class="headerlink" href="#a-comparison-between-geeviz-and-geemap-s-map-visualization-capabilities" title="Link to this heading">#</a></h1>
+<ul class="simple">
+<li><p>Both packages provide methods to visualize and summarize EE objects as well as non-EE-based image services</p></li>
+<li><p>geeViz uses the localhost in a web server. It will run in notbooks, iPython, or a regular script</p></li>
+<li><p>geeMap uses iPython widgets, and therefore needs to run from a notebook or iPython</p></li>
+<li><p>geeViz uses geeMap when appropriate, but still relies on its own map visualization tool for a variety of reasons</p></li>
+<li><p>This is intended to illustrate the basic map functionality of each package. Refer to each packages examples for more in-depth demos</p></li>
+</ul>
+ <p><a href="https://colab.research.google.com/github/gee-community/geeViz/blob/master/examples/geeViz_geeMap_comparison_tutorial.ipynb" target="_parent"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg"></a></p><div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">ee</span>
+
+<span class="c1"># Enter your project ID</span>
+<span class="n">projectID</span> <span class="o">=</span> <span class="s1">&#39;lcms-292214&#39;</span>
+
+<span class="n">ee</span><span class="o">.</span><span class="n">Initialize</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">projectID</span><span class="p">)</span>
+
+
+<span class="kn">import</span> <span class="nn">geemap</span> <span class="k">as</span> <span class="nn">gm</span>
+<span class="kn">import</span> <span class="nn">geeViz.geeView</span> <span class="k">as</span> <span class="nn">gv</span>
+
+
+<span class="n">gvMap</span> <span class="o">=</span> <span class="n">gv</span><span class="o">.</span><span class="n">Map</span>
+<span class="n">gmMap</span> <span class="o">=</span> <span class="n">gm</span><span class="o">.</span><span class="n">Map</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html">
+            <style>
+                .geemap-dark {
+                    --jp-widgets-color: white;
+                    --jp-widgets-label-color: white;
+                    --jp-ui-font-color1: white;
+                    --jp-layout-color2: #454545;
+                    background-color: #383838;
+                }
+                    
+                .geemap-dark .jupyter-button {
+                    --jp-layout-color3: #383838;
+                }
+                
+                .geemap-colab {
+                    background-color: var(--colab-primary-surface-color, white);
+                }
+                    
+                .geemap-colab .jupyter-button {
+                    --jp-layout-color3: var(--colab-primary-surface-color, white);
+                }
+            </style>
+            </div></div>
+</div>
+<section id="first-we-ll-take-a-look-at-the-two-different-map-interfaces">
+<h2>First, we’ll take a look at the two different map interfaces<a class="headerlink" href="#first-we-ll-take-a-look-at-the-two-different-map-interfaces" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># geeMap you simply call the object</span>
+<span class="n">gmMap</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html">
+            <style>
+                .geemap-dark {
+                    --jp-widgets-color: white;
+                    --jp-widgets-label-color: white;
+                    --jp-ui-font-color1: white;
+                    --jp-layout-color2: #454545;
+                    background-color: #383838;
+                }
+                    
+                .geemap-dark .jupyter-button {
+                    --jp-layout-color3: #383838;
+                }
+                
+                .geemap-colab {
+                    background-color: var(--colab-primary-surface-color, white);
+                }
+                    
+                .geemap-colab .jupyter-button {
+                    --jp-layout-color3: var(--colab-primary-surface-color, white);
+                }
+            </style>
+            </div><script type="application/vnd.jupyter.widget-view+json">{"model_id": "f2330ca0a7ca442dbe3731326371427d", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># geeViz you use the view method</span>
+<span class="n">gvMap</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html">
+            <style>
+                .geemap-dark {
+                    --jp-widgets-color: white;
+                    --jp-widgets-label-color: white;
+                    --jp-ui-font-color1: white;
+                    --jp-layout-color2: #454545;
+                    background-color: #383838;
+                }
+                    
+                .geemap-dark .jupyter-button {
+                    --jp-layout-color3: #383838;
+                }
+                
+                .geemap-colab {
+                    background-color: var(--colab-primary-surface-color, white);
+                }
+                    
+                .geemap-colab .jupyter-button {
+                    --jp-layout-color3: var(--colab-primary-surface-color, white);
+                }
+            </style>
+            </div><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AXooCgvgEDNhCDK0uDRpz89SY_IP1QTrcZy4sXuRjC2AakLLpvpHnY4JbpgQuN_aObMEAvqSekQexKUPFqKMjO5dKpTtZz7JLna2PHWIejqpRF1ZAmPRsoe7rV9BRT3m9PnDdmozagQiXui2XI_aIBVL4dq2v8LzdP7mOWEaCgYKAfESARESFQHGX2MiZsnH07ngGCe4E3fpeJEWmw0174
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AXooCgvgEDNhCDK0uDRpz89SY_IP1QTrcZy4sXuRjC2AakLLpvpHnY4JbpgQuN_aObMEAvqSekQexKUPFqKMjO5dKpTtZz7JLna2PHWIejqpRF1ZAmPRsoe7rV9BRT3m9PnDdmozagQiXui2XI_aIBVL4dq2v8LzdP7mOWEaCgYKAfESARESFQHGX2MiZsnH07ngGCe4E3fpeJEWmw0174"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+</section>
+<section id="some-methods-are-similar-between-the-methods-available">
+<h2>Some methods are similar between the methods available<a class="headerlink" href="#some-methods-are-similar-between-the-methods-available" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>addLayer</p></li>
+<li><p>setCenter</p></li>
+<li><p>centerObject</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gmMap</span> <span class="o">=</span> <span class="n">gm</span><span class="o">.</span><span class="n">Map</span><span class="p">()</span>
+
+<span class="n">pt</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span><span class="o">.</span><span class="n">Point</span><span class="p">([</span><span class="o">-</span><span class="mf">111.92926447956665</span><span class="p">,</span> <span class="mf">40.64356771453405</span><span class="p">])</span>
+
+<span class="n">gmMap</span><span class="o">.</span><span class="n">centerObject</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">gvMap</span><span class="o">.</span><span class="n">centerObject</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">gvMap</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+<span class="n">gmMap</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html">
+            <style>
+                .geemap-dark {
+                    --jp-widgets-color: white;
+                    --jp-widgets-label-color: white;
+                    --jp-ui-font-color1: white;
+                    --jp-layout-color2: #454545;
+                    background-color: #383838;
+                }
+                    
+                .geemap-dark .jupyter-button {
+                    --jp-layout-color3: #383838;
+                }
+                
+                .geemap-colab {
+                    background-color: var(--colab-primary-surface-color, white);
+                }
+                    
+                .geemap-colab .jupyter-button {
+                    --jp-layout-color3: var(--colab-primary-surface-color, white);
+                }
+            </style>
+            </div><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AXooCgvtomcjUlHqrrMtMyYQ3xkeyvWoRPwJ_tM5q65sOLXUvOO-DJACMhLbU5evcuZ2Swuaf3DXi_cfPDJzW6J22NdhFg4bo8iMIUjx2qwfPc4eGA0pIEHN0Mr5RkKOxzumlDPBKHAa2INX7OrtgJgzS_j2jrWjiCEo_G8aCgYKAUISARESFQHGX2MiorOf-P_GbrM7fO2kghuJTQ0174
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AXooCgvtomcjUlHqrrMtMyYQ3xkeyvWoRPwJ_tM5q65sOLXUvOO-DJACMhLbU5evcuZ2Swuaf3DXi_cfPDJzW6J22NdhFg4bo8iMIUjx2qwfPc4eGA0pIEHN0Mr5RkKOxzumlDPBKHAa2INX7OrtgJgzS_j2jrWjiCEo_G8aCgYKAUISARESFQHGX2MiorOf-P_GbrM7fO2kghuJTQ0174"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div><script type="application/vnd.jupyter.widget-view+json">{"model_id": "a59ecbc4aae74e50a5f3903142916ddb", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gmMap</span> <span class="o">=</span> <span class="n">gm</span><span class="o">.</span><span class="n">Map</span><span class="p">()</span>
+
+
+<span class="n">gmMap</span><span class="o">.</span><span class="n">setCenter</span><span class="p">(</span><span class="o">-</span><span class="mf">111.92926447956665</span><span class="p">,</span> <span class="mf">40.64356771453405</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">gvMap</span><span class="o">.</span><span class="n">setCenter</span><span class="p">(</span><span class="o">-</span><span class="mf">111.92926447956665</span><span class="p">,</span> <span class="mf">40.64356771453405</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">gvMap</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+<span class="n">gmMap</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html">
+            <style>
+                .geemap-dark {
+                    --jp-widgets-color: white;
+                    --jp-widgets-label-color: white;
+                    --jp-ui-font-color1: white;
+                    --jp-layout-color2: #454545;
+                    background-color: #383838;
+                }
+                    
+                .geemap-dark .jupyter-button {
+                    --jp-layout-color3: #383838;
+                }
+                
+                .geemap-colab {
+                    background-color: var(--colab-primary-surface-color, white);
+                }
+                    
+                .geemap-colab .jupyter-button {
+                    --jp-layout-color3: var(--colab-primary-surface-color, white);
+                }
+            </style>
+            </div><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AXooCgtJHkiDNTHnX1_pSscrZxMjNt9pvKyEtfkWLAUETNAq-mH7v_Cn2tzqKIa4Y271z-7jrnQIuFTCLO_2HkORiSS8HHeyy_fNRCzB86G70832yYkW1m84OkDsMgFl9Kbje3Ipo4C2aK8JWKVMOqJBFiXaY6BRE-nwTd8aCgYKAdISARESFQHGX2Mix0GbebnUwrD7aJVzoBXgrQ0174
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AXooCgtJHkiDNTHnX1_pSscrZxMjNt9pvKyEtfkWLAUETNAq-mH7v_Cn2tzqKIa4Y271z-7jrnQIuFTCLO_2HkORiSS8HHeyy_fNRCzB86G70832yYkW1m84OkDsMgFl9Kbje3Ipo4C2aK8JWKVMOqJBFiXaY6BRE-nwTd8aCgYKAdISARESFQHGX2Mix0GbebnUwrD7aJVzoBXgrQ0174"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div><script type="application/vnd.jupyter.widget-view+json">{"model_id": "6569b3cbe1e1419781ed7504e82afb10", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<ul class="simple">
+<li><p>Adding layers is very similar</p>
+<ul>
+<li><p>geeMap makes the top layer on the map the bottom layer in the layer UI list, while geeViz they appear in the same order as on the map (you can reorder most map layers in geeViz with a drag and drop to reorder)</p></li>
+</ul>
+</li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gmMap</span> <span class="o">=</span> <span class="n">gm</span><span class="o">.</span><span class="n">Map</span><span class="p">()</span>
+
+<span class="c1"># Add Earth Engine dataset</span>
+<span class="n">dem</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="s2">&quot;USGS/SRTMGL1_003&quot;</span><span class="p">)</span>
+<span class="n">landcover</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="s2">&quot;ESA/GLOBCOVER_L4_200901_200912_V2_3&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;landcover&quot;</span><span class="p">)</span>
+<span class="n">landsat7</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="s2">&quot;LANDSAT/LE7_TOA_5YEAR/1999_2003&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
+    <span class="p">[</span><span class="s2">&quot;B1&quot;</span><span class="p">,</span> <span class="s2">&quot;B2&quot;</span><span class="p">,</span> <span class="s2">&quot;B3&quot;</span><span class="p">,</span> <span class="s2">&quot;B4&quot;</span><span class="p">,</span> <span class="s2">&quot;B5&quot;</span><span class="p">,</span> <span class="s2">&quot;B7&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+<span class="n">states</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;TIGER/2018/States&quot;</span><span class="p">)</span>
+
+<span class="c1"># Set visualization parameters.</span>
+<span class="n">vis_params</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">4000</span><span class="p">,</span>
+    <span class="s2">&quot;palette&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;006633&quot;</span><span class="p">,</span> <span class="s2">&quot;E5FFCC&quot;</span><span class="p">,</span> <span class="s2">&quot;662A00&quot;</span><span class="p">,</span> <span class="s2">&quot;D8D8D8&quot;</span><span class="p">,</span> <span class="s2">&quot;F5F5F5&quot;</span><span class="p">],</span>
+<span class="p">}</span>
+
+<span class="c1"># Add Earth Engine layers to Map</span>
+<span class="n">gmMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">dem</span><span class="p">,</span> <span class="n">vis_params</span><span class="p">,</span> <span class="s2">&quot;SRTM DEM&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">gmMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">landcover</span><span class="p">,</span> <span class="p">{},</span> <span class="s2">&quot;Land cover&quot;</span><span class="p">)</span>
+<span class="n">gmMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span>
+    <span class="n">landsat7</span><span class="p">,</span>
+    <span class="p">{</span><span class="s2">&quot;bands&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;B4&quot;</span><span class="p">,</span> <span class="s2">&quot;B3&quot;</span><span class="p">,</span> <span class="s2">&quot;B2&quot;</span><span class="p">],</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">},</span>
+    <span class="s2">&quot;Landsat 7&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">gmMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="p">{},</span> <span class="s2">&quot;US States&quot;</span><span class="p">)</span>
+
+
+<span class="n">gvMap</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+
+<span class="n">gvMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">dem</span><span class="p">,</span> <span class="n">vis_params</span><span class="p">,</span> <span class="s2">&quot;SRTM DEM&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">gvMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">landcover</span><span class="p">,</span> <span class="p">{},</span> <span class="s2">&quot;Land cover&quot;</span><span class="p">)</span>
+<span class="n">gvMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span>
+    <span class="n">landsat7</span><span class="p">,</span>
+    <span class="p">{</span><span class="s2">&quot;bands&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;B4&quot;</span><span class="p">,</span> <span class="s2">&quot;B3&quot;</span><span class="p">,</span> <span class="s2">&quot;B2&quot;</span><span class="p">],</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="s2">&quot;gamma&quot;</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">},</span>
+    <span class="s2">&quot;Landsat 7&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">gvMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">states</span><span class="p">,</span> <span class="p">{},</span> <span class="s2">&quot;US States&quot;</span><span class="p">)</span>
+
+<span class="n">gmMap</span><span class="o">.</span><span class="n">setCenter</span><span class="p">(</span><span class="o">-</span><span class="mf">111.92926447956665</span><span class="p">,</span> <span class="mf">40.64356771453405</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">gvMap</span><span class="o">.</span><span class="n">setCenter</span><span class="p">(</span><span class="o">-</span><span class="mf">111.92926447956665</span><span class="p">,</span> <span class="mf">40.64356771453405</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">gvMap</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+<span class="n">gmMap</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html">
+            <style>
+                .geemap-dark {
+                    --jp-widgets-color: white;
+                    --jp-widgets-label-color: white;
+                    --jp-ui-font-color1: white;
+                    --jp-layout-color2: #454545;
+                    background-color: #383838;
+                }
+                    
+                .geemap-dark .jupyter-button {
+                    --jp-layout-color3: #383838;
+                }
+                
+                .geemap-colab {
+                    background-color: var(--colab-primary-surface-color, white);
+                }
+                    
+                .geemap-colab .jupyter-button {
+                    --jp-layout-color3: var(--colab-primary-surface-color, white);
+                }
+            </style>
+            </div><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: SRTM DEM
+Adding layer: Land cover
+Adding layer: Landsat 7
+Adding layer: US States
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AXooCgt2jXuR_ORQ4rVSJMw4gBgwNkPrdy3LbsdGZXmtBfF5m4ez0cqKlAEhvULItePzt4VZS_kRqMc_uQFyogJjBIJr0aJqU2hVR1Wzlw02hiEB2Z2ObtVqT8TjS3An_DPYQcz18EGyVE_DQ_VAgMET3xlANZSADM1YO58aCgYKAaYSARESFQHGX2MiILfbqpEh0dgLNorL1lvmug0174
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AXooCgt2jXuR_ORQ4rVSJMw4gBgwNkPrdy3LbsdGZXmtBfF5m4ez0cqKlAEhvULItePzt4VZS_kRqMc_uQFyogJjBIJr0aJqU2hVR1Wzlw02hiEB2Z2ObtVqT8TjS3An_DPYQcz18EGyVE_DQ_VAgMET3xlANZSADM1YO58aCgYKAaYSARESFQHGX2MiILfbqpEh0dgLNorL1lvmug0174"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div><script type="application/vnd.jupyter.widget-view+json">{"model_id": "61cdbd4b0ba74fd3a23510d1b5e3c24e", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<ul class="simple">
+<li><p>geeMap and geeViz provide different methods creating legends</p></li>
+<li><p>geeViz will try to populate a legend with any single-band image or imageCollection its given</p></li>
+<li><p>If an image or imageCollection has images with _class_name, _class_value, _class_palette properties, you can use <code class="docutils literal notranslate"><span class="pre">&quot;autoViz&quot;:True</span></code> to populate a legend</p></li>
+<li><p>geeMap provides methods to create legends</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gmMap</span> <span class="o">=</span> <span class="n">gm</span><span class="o">.</span><span class="n">Map</span><span class="p">()</span>
+<span class="n">gvMap</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+<span class="n">legend_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;11 Open Water&quot;</span><span class="p">:</span> <span class="s2">&quot;466b9f&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;12 Perennial Ice/Snow&quot;</span><span class="p">:</span> <span class="s2">&quot;d1def8&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;21 Developed, Open Space&quot;</span><span class="p">:</span> <span class="s2">&quot;dec5c5&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;22 Developed, Low Intensity&quot;</span><span class="p">:</span> <span class="s2">&quot;d99282&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;23 Developed, Medium Intensity&quot;</span><span class="p">:</span> <span class="s2">&quot;eb0000&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;24 Developed High Intensity&quot;</span><span class="p">:</span> <span class="s2">&quot;ab0000&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;31 Barren Land (Rock/Sand/Clay)&quot;</span><span class="p">:</span> <span class="s2">&quot;b3ac9f&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;41 Deciduous Forest&quot;</span><span class="p">:</span> <span class="s2">&quot;68ab5f&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;42 Evergreen Forest&quot;</span><span class="p">:</span> <span class="s2">&quot;1c5f2c&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;43 Mixed Forest&quot;</span><span class="p">:</span> <span class="s2">&quot;b5c58f&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;51 Dwarf Scrub&quot;</span><span class="p">:</span> <span class="s2">&quot;af963c&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;52 Shrub/Scrub&quot;</span><span class="p">:</span> <span class="s2">&quot;ccb879&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;71 Grassland/Herbaceous&quot;</span><span class="p">:</span> <span class="s2">&quot;dfdfc2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;72 Sedge/Herbaceous&quot;</span><span class="p">:</span> <span class="s2">&quot;d1d182&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;73 Lichens&quot;</span><span class="p">:</span> <span class="s2">&quot;a3cc51&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;74 Moss&quot;</span><span class="p">:</span> <span class="s2">&quot;82ba9e&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;81 Pasture/Hay&quot;</span><span class="p">:</span> <span class="s2">&quot;dcd939&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;82 Cultivated Crops&quot;</span><span class="p">:</span> <span class="s2">&quot;ab6c28&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;90 Woody Wetlands&quot;</span><span class="p">:</span> <span class="s2">&quot;b8d9eb&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;95 Emergent Herbaceous Wetlands&quot;</span><span class="p">:</span> <span class="s2">&quot;6c9fb8&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">landcover</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="s2">&quot;USGS/NLCD/NLCD2016&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;landcover&quot;</span><span class="p">)</span>
+<span class="n">gmMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">landcover</span><span class="p">,</span> <span class="p">{},</span> <span class="s2">&quot;NLCD Land Cover&quot;</span><span class="p">)</span>
+
+<span class="n">gmMap</span><span class="o">.</span><span class="n">add_legend</span><span class="p">(</span><span class="n">legend_title</span><span class="o">=</span><span class="s2">&quot;NLCD Land Cover&quot;</span><span class="p">,</span> <span class="n">legend_dict</span><span class="o">=</span><span class="n">legend_dict</span><span class="p">)</span>
+
+
+<span class="n">gvMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">landcover</span><span class="p">,{</span><span class="s1">&#39;classLegendDict&#39;</span><span class="p">:</span><span class="n">legend_dict</span><span class="p">},</span> <span class="s2">&quot;NLCD Land Cover&quot;</span><span class="p">)</span>
+
+<span class="n">gvMap</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+<span class="n">gmMap</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html">
+            <style>
+                .geemap-dark {
+                    --jp-widgets-color: white;
+                    --jp-widgets-label-color: white;
+                    --jp-ui-font-color1: white;
+                    --jp-layout-color2: #454545;
+                    background-color: #383838;
+                }
+                    
+                .geemap-dark .jupyter-button {
+                    --jp-layout-color3: #383838;
+                }
+                
+                .geemap-colab {
+                    background-color: var(--colab-primary-surface-color, white);
+                }
+                    
+                .geemap-colab .jupyter-button {
+                    --jp-layout-color3: var(--colab-primary-surface-color, white);
+                }
+            </style>
+            </div><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: NLCD Land Cover
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AXooCguej_AkK295bC8_WXVH1oBx6imTvMTr0fi635pjMVgupD35Bq_1bdnn2zadU2bK-NnYU0CsiI6qOXRhbY7NvN1JZQpkfZI2pMnwF5q-yHN76fAL_Tn9TgaeJK916yBXDkQdB-1dKdNWJCfuGMIrp8j_0hGv-oTHVU4aCgYKAagSARESFQHGX2Mi4kPnsreTbkT_JrnUIGPU5g0174
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AXooCguej_AkK295bC8_WXVH1oBx6imTvMTr0fi635pjMVgupD35Bq_1bdnn2zadU2bK-NnYU0CsiI6qOXRhbY7NvN1JZQpkfZI2pMnwF5q-yHN76fAL_Tn9TgaeJK916yBXDkQdB-1dKdNWJCfuGMIrp8j_0hGv-oTHVU4aCgYKAagSARESFQHGX2Mi4kPnsreTbkT_JrnUIGPU5g0174"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div><script type="application/vnd.jupyter.widget-view+json">{"model_id": "1e89a15319a1410bac0f1291725bca66", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gmMap</span> <span class="o">=</span> <span class="n">gm</span><span class="o">.</span><span class="n">Map</span><span class="p">()</span>
+<span class="n">gvMap</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+<span class="n">ee_class_table</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+
+<span class="s2">Value	Color	Description</span>
+<span class="s2">0	1c0dff	Water</span>
+<span class="s2">1	05450a	Evergreen needleleaf forest</span>
+<span class="s2">2	086a10	Evergreen broadleaf forest</span>
+<span class="s2">3	54a708	Deciduous needleleaf forest</span>
+<span class="s2">4	78d203	Deciduous broadleaf forest</span>
+<span class="s2">5	009900	Mixed forest</span>
+<span class="s2">6	c6b044	Closed shrublands</span>
+<span class="s2">7	dcd159	Open shrublands</span>
+<span class="s2">8	dade48	Woody savannas</span>
+<span class="s2">9	fbff13	Savannas</span>
+<span class="s2">10	b6ff05	Grasslands</span>
+<span class="s2">11	27ff87	Permanent wetlands</span>
+<span class="s2">12	c24f44	Croplands</span>
+<span class="s2">13	a5a5a5	Urban and built-up</span>
+<span class="s2">14	ff6d4c	Cropland/natural vegetation mosaic</span>
+<span class="s2">15	69fff8	Snow and ice</span>
+<span class="s2">16	f9ffa4	Barren or sparsely vegetated</span>
+<span class="s2">254	ffffff	Unclassified</span>
+
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">landcover</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="s2">&quot;MODIS/051/MCD12Q1/2013_01_01&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;Land_Cover_Type_1&quot;</span><span class="p">)</span>
+
+<span class="n">proj</span> <span class="o">=</span> <span class="n">landcover</span><span class="o">.</span><span class="n">projection</span><span class="p">()</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span>
+<span class="n">gmMap</span><span class="o">.</span><span class="n">setCenter</span><span class="p">(</span><span class="mf">6.746</span><span class="p">,</span> <span class="mf">46.529</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">gmMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">landcover</span><span class="p">,</span> <span class="p">{},</span> <span class="s2">&quot;MODIS Land Cover&quot;</span><span class="p">)</span>
+
+<span class="n">legend_dict</span> <span class="o">=</span> <span class="n">gm</span><span class="o">.</span><span class="n">legend_from_ee</span><span class="p">(</span><span class="n">ee_class_table</span><span class="p">)</span>
+<span class="n">gmMap</span><span class="o">.</span><span class="n">add_legend</span><span class="p">(</span><span class="n">legend_title</span><span class="o">=</span><span class="s2">&quot;MODIS Global Land Cover&quot;</span><span class="p">,</span> <span class="n">legend_dict</span><span class="o">=</span><span class="n">legend_dict</span><span class="p">)</span>
+
+<span class="n">gvMap</span><span class="o">.</span><span class="n">setCenter</span><span class="p">(</span><span class="mf">6.746</span><span class="p">,</span> <span class="mf">46.529</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">gvMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">landcover</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;crs&#39;</span><span class="p">:</span><span class="n">proj</span><span class="p">[</span><span class="s1">&#39;crs&#39;</span><span class="p">],</span><span class="s1">&#39;transform&#39;</span><span class="p">:</span><span class="n">proj</span><span class="p">[</span><span class="s1">&#39;transform&#39;</span><span class="p">],</span><span class="s1">&#39;minZoomSpecifiedScale&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">}},</span> <span class="s2">&quot;MODIS Land Cover&quot;</span><span class="p">)</span>
+
+<span class="n">gvMap</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
+<span class="n">gvMap</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+<span class="n">gmMap</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html">
+            <style>
+                .geemap-dark {
+                    --jp-widgets-color: white;
+                    --jp-widgets-label-color: white;
+                    --jp-ui-font-color1: white;
+                    --jp-layout-color2: #454545;
+                    background-color: #383838;
+                }
+                    
+                .geemap-dark .jupyter-button {
+                    --jp-layout-color3: #383838;
+                }
+                
+                .geemap-colab {
+                    background-color: var(--colab-primary-surface-color, white);
+                }
+                    
+                .geemap-colab .jupyter-button {
+                    --jp-layout-color3: var(--colab-primary-surface-color, white);
+                }
+            </style>
+            </div><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: MODIS Land Cover
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AXooCgvnIz-x3wPxqxNi2bR0QTnSijQwQYf9gP3Jn0fNBA5AnKN96ClZuhPQtqJeU3MlbSTnjU1MjuZcItAPtYg-K3jFtJzMVrrK-r32ztC_4GfNW-Qh6PYnlKazCHTpnv1lpqHEoFq50DD79x7oMRRbQV65PDT6op4i_jIaCgYKAbgSARESFQHGX2MiUVMBX4xesivi5u_FIcn9sQ0174
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AXooCgvnIz-x3wPxqxNi2bR0QTnSijQwQYf9gP3Jn0fNBA5AnKN96ClZuhPQtqJeU3MlbSTnjU1MjuZcItAPtYg-K3jFtJzMVrrK-r32ztC_4GfNW-Qh6PYnlKazCHTpnv1lpqHEoFq50DD79x7oMRRbQV65PDT6op4i_jIaCgYKAbgSARESFQHGX2MiUVMBX4xesivi5u_FIcn9sQ0174"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div><script type="application/vnd.jupyter.widget-view+json">{"model_id": "4f0171640169413983cc7f22b54b1510", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+</section>
+<section id="using-geemap-and-geeviz-together">
+<h2>Using geeMap and geeViz together<a class="headerlink" href="#using-geemap-and-geeviz-together" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Currently, geeViz is integrating the broad functionality of geeMap where appropriate.</p></li>
+<li><p>We feel that many of the conversion functions and data extraction functions work well in a regular Python script, as well as in notebooks in iPython, so we can use them in geeViz as they are</p></li>
+<li><p>As such, geeViz is building dependencies on geeMap</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">shp</span> <span class="o">=</span> <span class="n">gv</span><span class="o">.</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gv</span><span class="o">.</span><span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s2">&quot;data/gadm41_CHE_shp/gadm41_CHE_0.shp&quot;</span><span class="p">)</span>
+
+<span class="n">ch</span> <span class="o">=</span> <span class="n">gm</span><span class="o">.</span><span class="n">shp_to_ee</span><span class="p">(</span><span class="n">shp</span><span class="p">)</span>
+
+<span class="n">gmMap</span> <span class="o">=</span> <span class="n">gm</span><span class="o">.</span><span class="n">Map</span><span class="p">()</span>
+<span class="n">gvMap</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+<span class="n">gvMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">ch</span><span class="p">,{},</span><span class="s1">&#39;Switzerland&#39;</span><span class="p">)</span>
+<span class="n">gmMap</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">ch</span><span class="p">,{},</span><span class="s1">&#39;Switzerland&#39;</span><span class="p">)</span>
+
+<span class="n">gmMap</span><span class="o">.</span><span class="n">centerObject</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+<span class="n">gvMap</span><span class="o">.</span><span class="n">centerObject</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+<span class="n">gvMap</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+<span class="n">gmMap</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html">
+            <style>
+                .geemap-dark {
+                    --jp-widgets-color: white;
+                    --jp-widgets-label-color: white;
+                    --jp-ui-font-color1: white;
+                    --jp-layout-color2: #454545;
+                    background-color: #383838;
+                }
+                    
+                .geemap-dark .jupyter-button {
+                    --jp-layout-color3: #383838;
+                }
+                
+                .geemap-colab {
+                    background-color: var(--colab-primary-surface-color, white);
+                }
+                    
+                .geemap-colab .jupyter-button {
+                    --jp-layout-color3: var(--colab-primary-surface-color, white);
+                }
+            </style>
+            </div><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: Switzerland
+Starting webmap
+Using default refresh token for geeView
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="LANDTRENDRWrapperNotebook.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Run LandTrendr and Visualize Outputs</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="areaChart_examples.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Visualizing Area Summaries</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024, Ian Housman, Josh Heyer
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://www.redcastleresources.com/" aria-label="RedCastle Resources Inc"><img src='https://apps.fs.usda.gov/lcms-viewer/src/assets/images/RCR-logo.jpg'  alt='RedCastle Inc. Logo' href='#' title='Click to learn more about RedCastle Resources Inc.'></a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">A comparison between geeViz and geeMap’s map visualization capabilities</a><ul>
+<li><a class="reference internal" href="#first-we-ll-take-a-look-at-the-two-different-map-interfaces">First, we’ll take a look at the two different map interfaces</a></li>
+<li><a class="reference internal" href="#some-methods-are-similar-between-the-methods-available">Some methods are similar between the methods available</a></li>
+<li><a class="reference internal" href="#using-geemap-and-geeviz-together">Using geeMap and geeViz together</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=9973ac44"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    </body>
+</html>

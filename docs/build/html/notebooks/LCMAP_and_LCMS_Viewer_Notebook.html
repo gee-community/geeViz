@@ -1,0 +1,656 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Create High Quality Landsat Composites" href="getLandsatWrapperNotebook.html" /><link rel="prev" title="Visualizing Global Land Cover" href="global_land_cover_example_notebook.html" />
+
+    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
+        <title>LCMAP and LCMS Outputs Viewer - geeViz &#34;2024.8.3&#34; docs</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=36a5483c" />
+    <link rel="stylesheet" type="text/css" href="../_static/style/custom.css?v=ebb50e13" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #eeffcc;
+  --color-code-foreground: black;
+  --color-brand-primary: #00897b;
+  --color-brand-content: #00897b;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #272822;
+  --color-code-foreground: #f8f8f2;
+  --color-brand-primary: #00bfa5;
+  --color-brand-content: #00bfa5;
+  --font-stack: Roboto, sans-serif;
+  --font-stack--monospace: Courier, monospace;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+<div class="announcement">
+  <aside class="announcement-content">
+     <i>geeViz</i> docs are still in development 
+  </aside>
+</div>
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">geeViz "2024.8.3" docs</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">geeViz "2024.8.3" docs</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../overview.html">Overview</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle navigation of Overview</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.geeView.html">geeViz.geeView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.getImagesLib.html">geeViz.getImagesLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.changeDetectionLib.html">geeViz.changeDetectionLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.taskManagerLib.html">geeViz.taskManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.assetManagerLib.html">geeViz.assetManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.cloudStorageManagerLib.html">geeViz.cloudStorageManagerLib</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.gee2Pandas.html">geeViz.gee2Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.foliumView.html">geeViz.foliumView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../info/geeViz.phEEnoViz.html">geeViz.phEEnoViz</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Details</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../examples.html">Examples</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="geeViewExampleNotebook.html">Starter geeViz geeView Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lcmsViewerExampleNotebook.html">LCMS Viewer Intro Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mapBiomasViewerExampleNotebook.html">Visualizing MapBiomas Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="global_land_cover_example_notebook.html">Visualizing Global Land Cover</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">LCMAP and LCMS Outputs Viewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getLandsatWrapperNotebook.html">Create High Quality Landsat Composites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="areaChart_examples.html">Visualizing Area Summaries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="geeViz_geeMap_comparison_tutorial.html">A comparison between geeViz and geeMap’s map visualization capabilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LANDTRENDRWrapperNotebook.html">Run LandTrendr and Visualize Outputs</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">LCMAP and LCMS Outputs Viewer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CCDCVizNotebook.html">CCDC Visualization Notebook</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="lcmap-and-lcms-outputs-viewer">
+<h1>LCMAP and LCMS Outputs Viewer<a class="headerlink" href="#lcmap-and-lcms-outputs-viewer" title="Link to this heading">#</a></h1>
+<ul class="simple">
+<li><p>This script provides a view of LCMAP and LCMS GEE collections to help understand the strengths of each</p></li>
+<li><p>It displays the land cover and land use products as well as change products from each program</p></li>
+</ul>
+<hr class="docutils" />
+<p>Copyright 2024 Ian Housman</p>
+<p>Licensed under the Apache License, Version 2.0 (the “License”);
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at</p>
+<p>http://www.apache.org/licenses/LICENSE-2.0</p>
+<p>Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an “AS IS” BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.</p>
+<p><a href="https://colab.research.google.com/github/gee-community/geeViz/blob/master/examples/LCMAP_and_LCMS_Viewer_Notebook.ipynb" target="_parent"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg"></a></p><div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span><span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
+
+<span class="c1">#Module imports</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">geeViz.getImagesLib</span> <span class="k">as</span> <span class="nn">getImagesLib</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="o">!</span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>geeViz
+    <span class="kn">import</span> <span class="nn">geeViz.getImagesLib</span> <span class="k">as</span> <span class="nn">getImagesLib</span>
+
+
+<span class="kn">import</span> <span class="nn">geeViz.changeDetectionLib</span> <span class="k">as</span> <span class="nn">changeDetectionLib</span>
+<span class="n">ee</span> <span class="o">=</span> <span class="n">getImagesLib</span><span class="o">.</span><span class="n">ee</span>
+<span class="n">Map</span> <span class="o">=</span> <span class="n">getImagesLib</span><span class="o">.</span><span class="n">Map</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Done
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># User Parameters</span>
+
+<span class="c1"># Define the early time period </span>
+<span class="n">preStartYear</span> <span class="o">=</span> <span class="mi">1985</span>
+<span class="n">preEndYear</span> <span class="o">=</span> <span class="mi">1990</span>
+
+<span class="c1"># Define the more recent time period</span>
+<span class="n">postStartYear</span> <span class="o">=</span> <span class="mi">2020</span>
+<span class="n">postEndYear</span> <span class="o">=</span> <span class="mi">2022</span>
+
+<span class="c1"># Specify whether to add time lapses of products. If True, loading the viewer will take much much much much longer</span>
+<span class="n">addTimelapses</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Done
+</pre></div>
+</div>
+</div>
+</div>
+<section id="bring-in-lcmap-outputs">
+<h2>Bring in LCMAP outputs<a class="headerlink" href="#bring-in-lcmap-outputs" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>This part was adapted from info available in the awesome-gee-community-datasets https://samapriya.github.io/awesome-gee-community-datasets/projects/lcmap/</p></li>
+<li><p>Playground example: https://code.earthengine.google.com/791aa894ce0abfe1a9eb1dc478bbc5d7</p></li>
+<li><p>Their outputs are divided into LC (land cover) and SC (spectral change)</p></li>
+<li><p>More details about their different products can be found here: https://www.sciencedirect.com/science/article/pii/S003442571930375X</p></li>
+<li><p>LCMAP methods can be found here: https://www.sciencedirect.com/science/article/pii/S003442571930375X</p></li>
+<li><p>LCMAP data can be downloaded from: https://www.usgs.gov/core-science-systems/eros/lcmap/lcmap-data-access</p></li>
+<li><p>LCMAP data can also be viewed here: https://eros.usgs.gov/lcmap/viewer/</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lcachg</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/sat-io/open-datasets/LCMAP/LCACHG&quot;</span><span class="p">)</span>
+<span class="n">lcpconf</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/sat-io/open-datasets/LCMAP/LCPCONF&quot;</span><span class="p">)</span>
+<span class="n">lcpri</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/sat-io/open-datasets/LCMAP/LCPRI&quot;</span><span class="p">)</span>
+<span class="n">lcsconf</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/sat-io/open-datasets/LCMAP/LCSCONF&quot;</span><span class="p">)</span>
+<span class="n">lcsec</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/sat-io/open-datasets/LCMAP/LCSEC&quot;</span><span class="p">)</span>
+<span class="n">sclast</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/sat-io/open-datasets/LCMAP/SCLAST&quot;</span><span class="p">)</span>
+<span class="n">scmag</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/sat-io/open-datasets/LCMAP/SCMAG&quot;</span><span class="p">)</span>
+<span class="n">scmqa</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/sat-io/open-datasets/LCMAP/SCMQA&quot;</span><span class="p">)</span>
+<span class="n">scstab</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/sat-io/open-datasets/LCMAP/SCSTAB&quot;</span><span class="p">)</span>
+<span class="n">sctime</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/sat-io/open-datasets/LCMAP/SCTIME&quot;</span><span class="p">)</span>
+
+<span class="c1"># Manually pull in color palettes from Gena&#39;s color palette json</span>
+<span class="c1"># palettes = require(&#39;users/gena/packages:palettes&#39;)</span>
+<span class="c1"># Available here: https://github.com/gee-community/ee-palettes</span>
+<span class="n">lcpri_palette</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;E60000&#39;</span><span class="p">,</span><span class="s1">&#39;A87000&#39;</span><span class="p">,</span><span class="s1">&#39;E3E3C2&#39;</span><span class="p">,</span><span class="s1">&#39;1D6330&#39;</span><span class="p">,</span><span class="s1">&#39;476BA1&#39;</span><span class="p">,</span><span class="s1">&#39;BAD9EB&#39;</span><span class="p">,</span><span class="s1">&#39;FFFFFF&#39;</span><span class="p">,</span><span class="s1">&#39;B3B0A3&#39;</span><span class="p">,</span><span class="s1">&#39;A201FF&#39;</span><span class="p">]</span>
+<span class="n">lc_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Developed&#39;</span><span class="p">,</span><span class="s1">&#39;Cropland&#39;</span><span class="p">,</span><span class="s1">&#39;Grass/Shrub&#39;</span><span class="p">,</span><span class="s1">&#39;Tree Cover&#39;</span><span class="p">,</span><span class="s1">&#39;Water&#39;</span><span class="p">,</span><span class="s1">&#39;Wetlands&#39;</span><span class="p">,</span><span class="s1">&#39;Ice/Snow&#39;</span><span class="p">,</span><span class="s1">&#39;Barren&#39;</span><span class="p">,</span><span class="s1">&#39;Class Change&#39;</span><span class="p">]</span>
+
+<span class="c1"># Set up the LCMAP land cover legend and lookup tables</span>
+<span class="n">lc_legend_dict</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">lc_lookup_dict</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">lc_names</span> <span class="p">)):</span>
+  <span class="n">lc_legend_dict</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;- &#39;</span><span class="o">+</span><span class="n">lc_names</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span><span class="n">lcpri_palette</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> 
+  <span class="n">lc_lookup_dict</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;- &#39;</span><span class="o">+</span><span class="n">lc_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+<span class="c1">#Other palettes found in the Playground example script</span>
+<span class="c1"># lcsec_palette = [&#39;E60000&#39;,&#39;A87000&#39;,&#39;E3E3C2&#39;,&#39;1D6330&#39;,&#39;476BA1&#39;,&#39;BAD9EB&#39;,&#39;FFFFFF&#39;,&#39;B3B0A3&#39;]</span>
+<span class="n">lcachg_palette</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;E60000&#39;</span><span class="p">,</span><span class="s1">&#39;A87000&#39;</span><span class="p">,</span><span class="s1">&#39;E3E3C2&#39;</span><span class="p">,</span><span class="s1">&#39;1D6330&#39;</span><span class="p">,</span><span class="s1">&#39;476BA1&#39;</span><span class="p">,</span><span class="s1">&#39;BAD9EB&#39;</span><span class="p">,</span><span class="s1">&#39;FFFFFF&#39;</span><span class="p">,</span><span class="s1">&#39;B3B0A3&#39;</span><span class="p">,</span><span class="s1">&#39;A201FF&#39;</span><span class="p">]</span>
+<span class="c1"># sclast_palette = [&#39;FFC7AA&#39;,&#39;F87E45&#39;,&#39;CC764E&#39;,&#39;86A7B6&#39;,&#39;46A4EE&#39;,&#39;7954C8&#39;,&#39;7A24AA&#39;,&#39;432172&#39;]</span>
+<span class="c1"># scstab_palette = [&#39;BA4E16&#39;,&#39;EE964D&#39;,&#39;FFE29C&#39;,&#39;F4FBC1&#39;,&#39;E1F3C3&#39;,&#39;BCE6CA&#39;,&#39;46989C&#39;]</span>
+<span class="c1"># scmqa_palette = [&#39;000000&#39;,&#39;A900E6&#39;,&#39;DF73FF&#39;,&#39;F5F5E3&#39;,&#39;DB8A00&#39;,&#39;924900&#39;,&#39;9C9C9C&#39;,&#39;FFFFFF&#39;]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Done
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="bring-in-lcms-gee-collections">
+<h2>Bring in LCMS GEE collections<a class="headerlink" href="#bring-in-lcms-gee-collections" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>LCMS’ homepage can be found here: https://data.fs.usda.gov/geodata/rastergateway/LCMS/index.php</p></li>
+<li><p>LCMS methods are described here: https://data.fs.usda.gov/geodata/rastergateway/LCMS/LCMS_v2021-7_Methods.pdf</p></li>
+<li><p>LCMS data can also be viewed and downloaded here: https://apps.fs.usda.gov/lcms-viewer</p></li>
+<li><p>LCMS GEE data collections are available at:</p>
+<ul>
+<li><p>https://developers.google.com/earth-engine/datasets/catalog/USFS_GTAC_LCMS_v2021-7 (CONUS and Southeastern AK)</p></li>
+<li><p>https://developers.google.com/earth-engine/datasets/catalog/USFS_GTAC_LCMS_v2020-6 (Puerto Rico and US Virgin Islands</p></li>
+</ul>
+</li>
+<li><p>An in-depth look at the model predictor variables that go into making LCMS maps can be found here:</p>
+<ul>
+<li><p>https://apps.fs.usda.gov/lcms-viewer/lcms-base-learner.html</p></li>
+</ul>
+</li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lcms</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;USFS/GTAC/LCMS/v2022-8&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Done
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add time lapses</span>
+
+<span class="c1">#First clear the map in case it has been populated with layers/commands earlier</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+<span class="c1"># Map.addTimeLapse(lcpri,lc_viz,&#39;LCMAP Primary Land Cover&#39;)</span>
+<span class="c1"># Map.addTimeLapse(lcsec,lc_viz,&#39;LCMAP Secondary Land Cover&#39;)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Land_Cover&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span><span class="s1">&#39;LCMS Land Cover&#39;</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Land_Use&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span><span class="s1">&#39;LCMS Land Use&#39;</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">centerObject</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span><span class="o">.</span><span class="n">Polygon</span><span class="p">(</span>
+        <span class="p">[[</span><span class="o">-</span><span class="mf">115.39350883763947</span><span class="p">,</span> <span class="mf">36.32737127837443</span><span class="p">],</span>
+          <span class="p">[</span><span class="o">-</span><span class="mf">115.39350883763947</span><span class="p">,</span> <span class="mf">35.90803695452136</span><span class="p">],</span>
+          <span class="p">[</span><span class="o">-</span><span class="mf">114.27015678685822</span><span class="p">,</span> <span class="mf">35.90803695452136</span><span class="p">],</span>
+          <span class="p">[</span><span class="o">-</span><span class="mf">114.27015678685822</span><span class="p">,</span> <span class="mf">36.32737127837443</span><span class="p">]],</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnInspector</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">setQueryDateFormat</span><span class="p">(</span><span class="s1">&#39;YYYY&#39;</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: LCMS Land Cover
+Adding layer: LCMS Land Use
+Setting default query date format to: YYYY
+Starting webmap
+Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=rcr-gee-2&amp;accessToken=ya29.a0AfB_byAEIHAt8xz3Om23_DPD9m5LbAEvx3foL4jEmhI_9H8HdIwZAg5m6qU9k-ff73hhlHdGudZnyypusYutTC12WUDnY0DejP2r-Q-nVCaEbAVTe__AOvzrA6Sc_HGw1BxkgIUnuzYU5prqdF_ehqFPLcqHA53eZy28ry7vEf30aCgYKAUkSARASFQHGX2MiS7shHseCRgPvY1r7JE6x9Q0179
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=rcr-gee-2&accessToken=ya29.a0AfB_byAEIHAt8xz3Om23_DPD9m5LbAEvx3foL4jEmhI_9H8HdIwZAg5m6qU9k-ff73hhlHdGudZnyypusYutTC12WUDnY0DejP2r-Q-nVCaEbAVTe__AOvzrA6Sc_HGw1BxkgIUnuzYU5prqdF_ehqFPLcqHA53eZy28ry7vEf30aCgYKAUkSARASFQHGX2MiS7shHseCRgPvY1r7JE6x9Q0179"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#This section adds the land cover and land use maps from LCMAP and LCMS</span>
+
+<span class="c1">#First clear the map in case it has been populated with layers/commands earlier</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+<span class="c1"># Set up some visualization dictionaries</span>
+<span class="n">lc_viz</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="mi">9</span><span class="p">,</span><span class="s1">&#39;palette&#39;</span><span class="p">:</span><span class="n">lcpri_palette</span><span class="p">,</span><span class="s1">&#39;classLegendDict&#39;</span><span class="p">:</span><span class="n">lc_legend_dict</span><span class="p">,</span><span class="s1">&#39;queryDict&#39;</span><span class="p">:</span><span class="n">lc_lookup_dict</span><span class="p">}</span>
+<span class="n">loss_viz</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="mi">1985</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="mi">2022</span><span class="p">,</span><span class="s1">&#39;palette&#39;</span><span class="p">:</span><span class="n">changeDetectionLib</span><span class="o">.</span><span class="n">lossYearPalette</span><span class="p">}</span>
+<span class="n">gain_viz</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="mi">1985</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="mi">2022</span><span class="p">,</span><span class="s1">&#39;palette&#39;</span><span class="p">:</span><span class="n">changeDetectionLib</span><span class="o">.</span><span class="n">gainYearPalette</span><span class="p">}</span>
+<span class="n">change_viz</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="mi">1985</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="mi">2022</span><span class="p">,</span><span class="s1">&#39;palette&#39;</span><span class="p">:[</span><span class="s1">&#39;00F&#39;</span><span class="p">,</span><span class="s1">&#39;F0F&#39;</span><span class="p">]}</span>
+
+
+<span class="c1"># Pull the LCMAP pre and post land cover data</span>
+<span class="n">lcmap_pre</span> <span class="o">=</span> <span class="n">lcpri</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="n">preStartYear</span><span class="p">,</span><span class="n">preEndYear</span><span class="p">,</span><span class="s1">&#39;year&#39;</span><span class="p">))</span>
+<span class="n">lcmap_post</span> <span class="o">=</span> <span class="n">lcpri</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="n">postStartYear</span><span class="p">,</span><span class="n">postEndYear</span><span class="p">,</span><span class="s1">&#39;year&#39;</span><span class="p">))</span>
+
+<span class="c1"># Pull the LCMS pre and post land cover data</span>
+<span class="n">lcms_pre</span> <span class="o">=</span> <span class="n">lcms</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="n">preStartYear</span><span class="p">,</span><span class="n">preEndYear</span><span class="p">,</span><span class="s1">&#39;year&#39;</span><span class="p">))</span>
+<span class="n">lcms_post</span> <span class="o">=</span> <span class="n">lcms</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="n">postStartYear</span><span class="p">,</span><span class="n">postEndYear</span><span class="p">,</span><span class="s1">&#39;year&#39;</span><span class="p">))</span>
+
+
+
+<span class="c1"># Add time lapses of LCMAP and LCMS land cover products if specified</span>
+<span class="k">if</span> <span class="n">addTimelapses</span><span class="p">:</span>
+  <span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span><span class="p">(</span><span class="n">lcachg</span><span class="p">,</span><span class="n">lc_viz</span><span class="p">,</span><span class="s1">&#39;LCMAP LC Change&#39;</span><span class="p">)</span>
+  <span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span><span class="p">(</span><span class="n">lcpri</span><span class="p">,</span><span class="n">lc_viz</span><span class="p">,</span><span class="s1">&#39;LCMAP Primary Land Cover&#39;</span><span class="p">)</span>
+  <span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span><span class="p">(</span><span class="n">lcsec</span><span class="p">,</span><span class="n">lc_viz</span><span class="p">,</span><span class="s1">&#39;LCMAP Secondary Land Cover&#39;</span><span class="p">)</span>
+  <span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Land_Cover&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span><span class="s1">&#39;LCMS Land Cover&#39;</span><span class="p">)</span>
+  <span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Land_Use&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span><span class="s1">&#39;LCMS Land Use&#39;</span><span class="p">)</span>
+
+<span class="c1"># Add the early and recent land cover and land use mode maps</span>
+<span class="c1"># LCMAP&#39;s LC outputs combine land cover and land use, so cross-walking these non-mutually exclusive classes to those of LCMS can pose challenges</span>
+<span class="c1"># However, take note how well LCMAP maps agriculture and developed areas - it is much cleaner and seems much more accurate than LCMS.</span>
+<span class="c1"># LCMAP does about as well as LCMS at mapping trees. They both do fairly well in sparse tree cover areas.</span>
+<span class="c1"># Since wetlands are not exclusive of any land cover or land use, it is difficult to tell what land cover is over areas classified by LCMAP as wetland</span>
+<span class="c1"># This is also true of LCMS&#39; non forest wetland land use class - there are areas of rangeland and agriculture that could fall into non forest wetland</span>
+<span class="c1"># One area the LCMS land cover maps do better is with water. </span>
+<span class="c1"># LCMAP LC outputs tend to not change the water extent of fluctuating waterbodies very quickly</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcmap_pre</span><span class="p">,</span><span class="n">lc_viz</span><span class="p">,</span> <span class="s1">&#39;LCMAP LC </span><span class="si">{}</span><span class="s1">-</span><span class="si">{}</span><span class="s1"> mode&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">preStartYear</span><span class="p">,</span><span class="n">preEndYear</span><span class="p">),</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcmap_post</span><span class="p">,</span><span class="n">lc_viz</span><span class="p">,</span> <span class="s1">&#39;LCMAP LC </span><span class="si">{}</span><span class="s1">-</span><span class="si">{}</span><span class="s1"> mode&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">postStartYear</span><span class="p">,</span><span class="n">postEndYear</span><span class="p">),</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;Cover&#39;</span><span class="p">,</span><span class="s1">&#39;Use&#39;</span><span class="p">]:</span>
+  <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms_pre</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Land_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">)]),{</span><span class="s1">&#39;reducer&#39;</span><span class="p">:</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">mode</span><span class="p">(),</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span> <span class="s1">&#39;LCMS L</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">-</span><span class="si">{}</span><span class="s1"> mode&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">preStartYear</span><span class="p">,</span><span class="n">preEndYear</span><span class="p">),</span><span class="kc">False</span><span class="p">)</span>
+  <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms_post</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Land_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">)]),{</span><span class="s1">&#39;reducer&#39;</span><span class="p">:</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">mode</span><span class="p">(),</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span> <span class="s1">&#39;LCMS L</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">-</span><span class="si">{}</span><span class="s1"> mode&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">postStartYear</span><span class="p">,</span><span class="n">postEndYear</span><span class="p">),</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnInspector</span><span class="p">()</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span>  <span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">14</span><span class="p">],</span> <span class="n">line</span> <span class="mi">18</span>
+    <span class="n">lcms_pre</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="n">preStartYear</span><span class="p">,</span><span class="n">preEndYear</span><span class="p">,</span><span class="s1">&#39;year&#39;</span><span class="p">))</span>
+                        <span class="o">^</span>
+<span class="ne">SyntaxError</span>: invalid syntax. Perhaps you forgot a comma?
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># This section adds the change maps from LCMAP and LCMS</span>
+
+<span class="c1">#First clear the map in case it has been populated with layers/commands earlier</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+<span class="c1"># Function for getting a precise change break date from CCDC-based outputs</span>
+<span class="k">def</span> <span class="nf">getYrMskPrecise</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
+  <span class="n">yr</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;system:time_start&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">yr</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mi">365</span><span class="p">))</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">mask</span><span class="p">())</span>
+
+<span class="c1"># Function for getting a more general integer year date of change</span>
+<span class="k">def</span> <span class="nf">getYrMsk</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
+  <span class="n">yr</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;system:time_start&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">yr</span><span class="p">)</span><span class="o">.</span><span class="n">int16</span><span class="p">()</span><span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">mask</span><span class="p">())</span>
+
+<span class="c1"># Find the most recent LCMAP spectral change date (YYYY.dd where .dd is the fraction of the year the break occurred)</span>
+<span class="n">lcmap_change_yr</span>  <span class="o">=</span> <span class="n">sctime</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">getYrMskPrecise</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+<span class="c1"># Pull apart LCMS fast and slow loss and find the most recent year of each </span>
+<span class="n">lcms_fast_loss_yr</span> <span class="o">=</span> <span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Change&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">img</span><span class="p">:</span><span class="n">getYrMsk</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">3</span><span class="p">))))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+<span class="n">lcms_slow_loss_yr</span> <span class="o">=</span> <span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Change&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">img</span><span class="p">:</span><span class="n">getYrMsk</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">2</span><span class="p">))))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+<span class="n">lcms_gain_yr</span> <span class="o">=</span> <span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Change&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">img</span><span class="p">:</span><span class="n">getYrMsk</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">4</span><span class="p">))))</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+
+
+<span class="c1"># As of version 2020.5, LCMS produces vegetation cover slow loss, fast loss, and gain change outputs. </span>
+<span class="c1"># LCMAP version 1.0 produces several change outputs based on the spectral change detected by CCDC</span>
+<span class="c1"># The most analagous change product is the spectral change time (SCTIME)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms_fast_loss_yr</span><span class="p">,</span><span class="n">loss_viz</span><span class="p">,</span><span class="s1">&#39;LCMS Most Recent Fast Loss Year&#39;</span><span class="p">,</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms_slow_loss_yr</span><span class="p">,</span><span class="n">loss_viz</span><span class="p">,</span><span class="s1">&#39;LCMS Most Recent Slow Loss Year&#39;</span><span class="p">,</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms_gain_yr</span><span class="p">,</span><span class="n">gain_viz</span><span class="p">,</span><span class="s1">&#39;LCMS Most Recent Gain Year&#39;</span><span class="p">,</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcmap_change_yr</span><span class="p">,</span><span class="n">change_viz</span><span class="p">,</span><span class="s1">&#39;LCMAP Most Recent SC Date&#39;</span><span class="p">,</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">centerObject</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span><span class="o">.</span><span class="n">Polygon</span><span class="p">(</span>
+        <span class="p">[[[</span><span class="o">-</span><span class="mf">106.91206352513947</span><span class="p">,</span> <span class="mf">41.00173645518866</span><span class="p">],</span>
+          <span class="p">[</span><span class="o">-</span><span class="mf">106.91206352513947</span><span class="p">,</span> <span class="mf">39.97403423419109</span><span class="p">],</span>
+          <span class="p">[</span><span class="o">-</span><span class="mf">105.34101860326447</span><span class="p">,</span> <span class="mf">39.97403423419109</span><span class="p">],</span>
+          <span class="p">[</span><span class="o">-</span><span class="mf">105.34101860326447</span><span class="p">,</span> <span class="mf">41.00173645518866</span><span class="p">]]],</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+
+
+<span class="n">Map</span><span class="o">.</span><span class="n">turnOnInspector</span><span class="p">()</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: LCMS Most Recent Fast Loss Year
+Adding layer: LCMS Most Recent Slow Loss Year
+Adding layer: LCMS Most Recent Gain Year
+Adding layer: LCMAP Most Recent SC Date
+Starting webmap
+Using default refresh token for geeView: C:\Users\ihousman/.config/earthengine/credentials
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+</pre></div>
+</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?accessToken=ya29.a0AfB_byDHdXiCAgQxC9-UfQV6CuRTWZ1zXZly8OulhM6uq8EzzObsA8sQjTG7C5P0JAm6zo9QHL7mnV4rm8JErOINMIWHmynln-FXQESOOAwN2_uMfXFNrwScPfx9g9M3gnzXGUTdfAP13-r003rRO5VpnFmkkwEpSqUjm-IhMbyOaCgYKAaQSARESFQGOcNnCYWVHe3RmCnSboOPhaNhlCg0179"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="getLandsatWrapperNotebook.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Create High Quality Landsat Composites</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="global_land_cover_example_notebook.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Visualizing Global Land Cover</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2024, Ian Housman, Josh Heyer
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            <div class="icons">
+              <a class="muted-link " href="https://www.redcastleresources.com/" aria-label="RedCastle Resources Inc"><img src='https://apps.fs.usda.gov/lcms-viewer/src/assets/images/RCR-logo.jpg'  alt='RedCastle Inc. Logo' href='#' title='Click to learn more about RedCastle Resources Inc.'></a>
+              
+            </div>
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">LCMAP and LCMS Outputs Viewer</a><ul>
+<li><a class="reference internal" href="#bring-in-lcmap-outputs">Bring in LCMAP outputs</a></li>
+<li><a class="reference internal" href="#bring-in-lcms-gee-collections">Bring in LCMS GEE collections</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=9973ac44"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    </body>
+</html>

@@ -256,6 +256,7 @@ lsAndTs = getImagesLib.getLandsatWrapper(
 processedScenes = lsAndTs["processedScenes"]
 processedComposites = lsAndTs["processedComposites"]
 
+
 Map.addTimeLapse(
     processedComposites, getImagesLib.vizParamsFalse, "Composite Timelapse"
 )
