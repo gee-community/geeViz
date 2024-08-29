@@ -2565,6 +2565,7 @@ def getS2(
     convertToDailyMosaics=True,
     addCloudProbability=False,
     addCloudScorePlus=True,
+    cloudScorePlusScore='cs',
 ):
 
     args = formatArgs(locals())
@@ -2694,7 +2695,7 @@ def getS2(
             .filterDate(startDate, endDate.advance(1, "day"))
             .filter(ee.Filter.calendarRange(startJulian, endJulian))
             .filterBounds(studyArea)
-            .select(["cs"], ["cloudScorePlus"])
+            .select([cloudScorePlusScore], ["cloudScorePlus"])
         )
 
         cloudScorePlusIds = ee.List(
@@ -5699,6 +5700,7 @@ def getProcessedSentinel2Scenes(
         convertToDailyMosaics=convertToDailyMosaics,
         addCloudProbability=applyCloudProbability,
         addCloudScorePlus=applyCloudScorePlus,
+        cloudScorePlusScore = cloudScorePlusScore
     )
 
     if applyQABand:
