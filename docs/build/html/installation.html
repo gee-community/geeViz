@@ -241,8 +241,13 @@
         <article role="main">
           <section id="installation">
 <h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">#</a></h1>
-<section id="id1">
-<span id="id2"></span><h2>Installation<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<div class="admonition attention" id="id1">
+<p class="admonition-title">Attention</p>
+<p><cite>geeViz</cite> uses Google Earth Engine (GEE) for much of its functionality. It requires an active Earth Engine account and associated Google Cloud Platform project ID.
+If you have not signed up for GEE, please sign up <a class="reference external" href="https://code.earthengine.google.com/register">here.</a></p>
+</div>
+<section id="installing-geeviz">
+<h2>Installing <cite>geeViz</cite><a class="headerlink" href="#installing-geeviz" title="Link to this heading">#</a></h2>
 <p><cite>geeViz</cite> will try to automatically install the <cite>earthengine-api</cite> package, but sometimes this fails for various reasons. In this instance refer to <a class="reference external" href="https://developers.google.com/earth-engine/guides/python_install">this</a> to troubleshoot.</p>
 <p>You can also manually install the package:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip<span class="w"> </span>install<span class="w"> </span>earthengine-api
@@ -258,6 +263,8 @@
 <span class="n">ee</span><span class="o">.</span><span class="n">Initialize</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="s1">&#39;someProject&#39;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">geeViz.geeView</span> <span class="k">as</span> <span class="nn">gv</span>
 <span class="n">Map</span> <span class="o">=</span> <span class="n">gv</span><span class="o">.</span><span class="n">Map</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">someEEImage</span><span class="p">,{},</span><span class="s1">&#39;Some Image&#39;</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
 </pre></div>
 </div>
 </dd>
@@ -329,7 +336,7 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Installation</a><ul>
-<li><a class="reference internal" href="#id1">Installation</a></li>
+<li><a class="reference internal" href="#installing-geeviz">Installing <cite>geeViz</cite></a></li>
 <li><a class="reference internal" href="#getting-started">Getting Started</a></li>
 </ul>
 </li>

@@ -3,7 +3,13 @@ Installation
 
 .. _installation:
 
-Installation
+.. attention::
+
+   `geeViz` uses Google Earth Engine (GEE) for much of its functionality. It requires an active Earth Engine account and associated Google Cloud Platform project ID.
+   If you have not signed up for GEE, please sign up `here. <https://code.earthengine.google.com/register>`_
+
+
+Installing `geeViz`
 -----------------------------------------
 `geeViz` will try to automatically install the `earthengine-api` package, but sometimes this fails for various reasons. In this instance refer to `this <https://developers.google.com/earth-engine/guides/python_install>`_ to troubleshoot.
 
@@ -31,6 +37,8 @@ While many examples in `geeViz` do not initialize to a project in the example's 
       ee.Initialize(project='someProject')
       import geeViz.geeView as gv 
       Map = gv.Map
+      Map.addLayer(someEEImage,{},'Some Image')
+      Map.view()
       
 
 

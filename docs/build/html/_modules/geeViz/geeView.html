@@ -587,13 +587,11 @@
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.is_notebook">[docs]</a>
 <span class="k">def</span> <span class="nf">is_notebook</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Remove trailing &#39;....&#39; in generated access token</span>
+<span class="sd">    Check if inside Jupyter shell</span>
 
-<span class="sd">    Args:</span>
-<span class="sd">        accessToken (str): Raw access token</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        str: Given access token without trailing &#39;....&#39;</span>
+<span class="sd">        bool: Whether inside Jupyter shell or not</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">ee</span><span class="o">.</span><span class="n">oauth</span><span class="o">.</span><span class="n">_in_jupyter_shell</span><span class="p">()</span></div>
 

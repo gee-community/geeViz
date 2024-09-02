@@ -87,7 +87,7 @@ dark_text_color = "#00bfa5"
 light_text_color = "#00897b"
 
 html_logo = "images/RCR-logo.jpg"
-html_favicon = "favicon.ico"
+# html_favicon = "favicon.ico"
 # html_favicon = html_logo
 pygments_style = "sphinx"
 pygments_dark_style = "monokai"

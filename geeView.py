@@ -315,13 +315,11 @@ def get_poly_gradient_ct(palette, min, max):
 # Taken from: https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
 def is_notebook():
     """
-    Remove trailing '....' in generated access token
+    Check if inside Jupyter shell
 
-    Args:
-        accessToken (str): Raw access token
 
     Returns:
-        str: Given access token without trailing '....'
+        bool: Whether inside Jupyter shell or not
     """
     return ee.oauth._in_jupyter_shell()
 
