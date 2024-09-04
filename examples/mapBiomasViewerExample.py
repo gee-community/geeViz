@@ -1,5 +1,5 @@
 """
-   Copyright 2024 Ian Housman
+   Copyright 2024 Ian Housman, Maria Olga Borja
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -14,12 +14,16 @@
    limitations under the License.
 """
 
-# An example of using geeViz to explore mapBiomas Collection 8 outputs
+
+# An example of using geeViz to explore the MapBiomas latest Collection outputs
 # Adapted from various scripts in https://gee-community-catalog.org/projects/mapbiomas/
 ####################################################################################################
 import os, sys
 
 sys.path.append(os.getcwd())
+
+import ee
+#ee.Initialize(project="lcms-292214")
 
 # Module imports
 import geeViz.geeView as gv
@@ -27,6 +31,9 @@ import geeViz.geeView as gv
 ee = gv.ee
 Map = gv.Map
 Map.clearMap()
+Map.port=8000
+
+
 ####################################################################################################
 # Datasets available here: https://gee-community-catalog.org/projects/mapbiomas/
 
@@ -55,18 +62,20 @@ empty_stack = ee.ImageCollection([ee.Image().byte() for yb in year_bandNames]).t
 
 # Bring in land use land cover datasets and mosaic them
 paths = [
-    "projects/mapbiomas-public/assets/bolivia/collection2/mapbiomas_bolivia_collection2_integration_v1",
-    "projects/mapbiomas-public/assets/peru/collection2/mapbiomas_peru_collection2_integration_v1",
-    "projects/mapbiomas-public/assets/colombia/collection1/mapbiomas_colombia_collection1_integration_v1",
-    "projects/mapbiomas-public/assets/ecuador/collection1/mapbiomas_ecuador_collection1_integration_v1",
-    "projects/mapbiomas-public/assets/venezuela/collection1/mapbiomas_venezuela_collection1_integration_v1",
-    "projects/mapbiomas-public/assets/paraguay/collection1/mapbiomas_paraguay_collection1_integration_v1",
-    "projects/mapbiomas-workspace/public/collection8/mapbiomas_collection80_integration_v1",
-    "projects/mapbiomas-raisg/public/collection5/mapbiomas_raisg_panamazonia_collection5_integration_v1",
-    "projects/MapBiomas_Pampa/public/collection3/mapbiomas_uruguay_collection1_integration_v1",
-    "projects/mapbiomas-public/assets/chile/collection1/mapbiomas_chile_collection1_integration_v1",
-    "projects/mapbiomas-public/assets/argentina/collection1/mapbiomas_argentina_collection1_integration_v1",
+    "projects/mapbiomas-public/assets/bolivia/collection2/mapbiomas_bolivia_collection2_integration_v1",        # 1985-2023
+    "projects/mapbiomas-public/assets/peru/collection2/mapbiomas_peru_collection2_integration_v1",              # 1985-2022
+    "projects/mapbiomas-public/assets/colombia/collection1/mapbiomas_colombia_collection1_integration_v1",      # 1985-2022
+    "projects/mapbiomas-public/assets/ecuador/collection1/mapbiomas_ecuador_collection1_integration_v1",        # 1985-2022
+    "projects/mapbiomas-public/assets/venezuela/collection1/mapbiomas_venezuela_collection1_integration_v1",    # 1985-2022
+    "projects/mapbiomas-public/assets/paraguay/collection1/mapbiomas_paraguay_collection1_integration_v1",      # 1985-2022
+    "projects/mapbiomas-public/assets/brazil/lulc/collection9/mapbiomas_collection90_integration_v1",           # 1985-2023
+    "projects/mapbiomas-raisg/public/collection5/mapbiomas_raisg_panamazonia_collection5_integration_v1",       # 1985-2022
+    "projects/MapBiomas_Pampa/public/collection3/mapbiomas_uruguay_collection1_integration_v1",                 # 1985-2022
+    "projects/mapbiomas-public/assets/chile/collection1/mapbiomas_chile_collection1_integration_v1",            # 2000-2022
+    "projects/mapbiomas-public/assets/argentina/collection1/mapbiomas_argentina_collection1_integration_v1",    # 1998-2022
 ]
+
+
 
 # Bring in each area and fill in empty years
 lulcImg = []
@@ -75,148 +84,185 @@ for path in paths:
 print(ee.Image(paths[0]).projection().getInfo())
 lulcImg = ee.ImageCollection(lulcImg).mosaic()
 
+#Remap level 3 and 4 to level 2 classes
+
+#Map.clearMap()
+#originalClasses = [3, 4, 5, 6, 49, 45, 11, 12, 42, 43, 44, 32, 29, 50, 13, 66, 63, 15, 18, 19, 39, 20, 40, 62, 41, 57, 58, 36, 46, 47, 35, 65, 48, 9, 21, 22, 23, 24, 30, 25, 61, 33, 31, 34, 27]
+#remappedClasses = [3, 4, 5, 6, 49, 45, 11, 12, 12, 12, 12, 32, 29, 50, 13, 66, 63, 15, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 9, 21, 22, 23, 24, 30, 25, 61, 33, 31, 34, 27]
+#print(len(set(remappedClasses)))
+#lulcImg = lulcImg.remap(originalClasses, remappedClasses).select(['remapped']).rename('MBremaped_2007')
+#print(lulcImg.bandNames().getInfo())
+#Map.addLayer(lulcImg)
+#Map.view()
+
+
 # Bring in the names, values, and palette
 names = [
-    "6. Not Observed",
+    # "1. Forest"
     "1.1. Forest Formation",
     "1.2. Savanna Formation",
     "1.3. Mangrove",
-    "1.5. Floodable Forest",
-    "3.3. Forest Plantation",
+    "1.4. Floodable Forest",
+    "1.5. Wooded Sandbank Vegetation",
+    "1.6. Sparse Woodland",
+    # "2. Non Forest Formations"
     "2.1. Wetland",
     "2.2. Grassland",
+    #"2.1.1. Open Grassland",
+    #"2.1.2. Closed Grassland",
+    #"2.1.3. Sparse Grassland",
+    "2.3. Hypersaline Tidal Flat",
+    "2.4. Rocky Outcrop",
+    "2.5. Herbaceous Sandbank Vegetation",
     "2.6. Other Non Forest Formations",
-    "3.1 Pasture",
-    "(mesma cor de 39)",
-    "3.2.1.2. Sugar cane",
+    "2.7. Shrubland",
+    "2.8. Steppe",
+    # "3. Farming"
+    "3.1. Pasture",
+    "3.2. Agriculture",
+    #"3.2.1. Temporary Crop",
+    #"3.2.1.1. Soybean",
+    #"3.2.1.2. Sugar cane",
+    #"3.2.1.3. Rice",
+    #"3.2.1.4. Cotton (beta)",
+    #"3.2.1.5. Other Temporary Crops",
+    #"3.2.1.6. Single Crop",
+    #"3.2.1.7. Multiple Crops",
+    #"3.2.2 Perennial Crop",
+    #"3.2.2.1. Coffee",
+    #"3.2.2.2. Citrus",
+    #"3.2.2.3. Palm Oil (beta)",
+    #"3.2.2.4. Tea",
+    #"3.2.2.5. Other Perennial Crops",
+    "3.3. Forest Plantation",
     "3.4. Mosaic of Uses",
-    "(mesma cor de 25)",
+    # "4. Non Vegetated Areas"
+    "4. Non vegetated area",
     "4.1. Beach, Dune and Sand Spot",
     "4.2. Urban Area",
-    "4.4. Other non Vegetated Areas",
-    "2.4. Rocky Outcrop",
     "4.3. Mining",
-    "5.2. Aquaculture",
-    "2.3. Hypersaline Tidal Flat",
+    "4.4. Other non Vegetated Areas",
+    "2.4. Salt Flat",
+    # "5. Water"
     "5.1. River, Lake and Ocean",
-    "x.x. Glacier",
-    "3.2.1.1. Soybean",
-    "3.2.1.3. Rice",
-    "3.2.1.5. Other Temporary Crops",
-    "3.2.2.1. Pastizal abierto",
-    "3.2.2.1. Pastizal cerrado",
-    "3.2.2.1. Pastizal disperso ",
-    "3.2.2.1. Outros",
-    "3.2.2.1. Coffee",
-    "3.2.2.2. Citrus",
-    "3.2.2.4. Other Perennial Crops",
-    "1.4. Wooded Sandbank Vegetation",
-    "2.5. Herbaceous Sandbank Vegetation",
-    "0.0.0.0. Área urbana (definir cores)",
-    "0.0.0.0. Infraestrutura (definir cores)",
-    "0.0.0.0. Outras Áreas Urbanizadas (definir cores)",
-    "0.0.0.0. Reservatórios (UHE e Abastecimento) (definir cores)",
-    "0.0.0.0. Lagos artificiais e Açudes (definir cores)",
-    "0.0.0.0. Outros corpos d agua artificiais (definir cores)",
-    "0.0.0.0. Cultivo Simple (color temp)",
-    "0.0.0.0. Cultivo Múltiple (color temp)",
-    "0.0.0.0. Salares",
-    "3.2.1.4. Cotton",
+    "5.2. Aquaculture",
+    "5.3. Glacier",
+    # "6. Not Observed"
+    "6. Not Observed"
+    
 ]
 values = [
-    0,
+    # "1. Forest"
     3,
     4,
     5,
     6,
-    9,
+    49,
+    45,
+    # "2. Non Forest Formations"
     11,
     12,
+    #42,
+    #43,
+    #44,
+    32,
+    29,
+    50,
     13,
+    66,
+    63,
+    # "3. Farming"
     15,
     18,
-    20,
+    #19,
+    #39,
+    #20,
+    #40,
+    #62,
+    #41,
+    #57,
+    #58,
+    #36,
+    #46,
+    #47,
+    #35,
+    #65,
+    #48,
+    9,
     21,
+ # "4. Non Vegetated Areas"   
     22,
     23,
     24,
-    25,
-    29,
     30,
-    31,
-    32,
-    33,
-    34,
-    39,
-    40,
-    41,
-    42,
-    43,
-    44,
-    45,
-    46,
-    47,
-    48,
-    49,
-    50,
-    51,
-    52,
-    53,
-    54,
-    55,
-    56,
-    57,
-    58,
+    25,
     61,
-    62,
+    # "5. Water"
+    33,
+    31,
+    34,
+    # "6. Not Observed"
+    27
 ]
+
 palette = [
-    "ffffff",
+    # "1. Forest"
     "1f8d49",
     "7dc975",
     "04381d",
-    "026975",
-    "7a6c00",
+    "007785",
+    "02d659",
+    "807a40",
+    # "2. Non Forest Formations"
     "519799",
     "d6bc74",
+    #"a5b35b",
+    #"c2d26b",
+    #"cbe286",
+    "fc8114",
+    "ffaa5f",
+    "ad5100",
     "d89f5c",
+    "a89358",
+    "ebf8b5",
+    # "3. Farming"
     "edde8e",
-    "f5b3c8",
-    "db7093",
+    "E974ED",
+    #"C27BA0",
+    #"f5b3c8",
+    #"db7093",
+    #"c71585",    
+    #"ff69b4",   
+    #"f54ca9",  
+    #"f99fff",
+    #"d84690",  
+    #"d082de",
+    #"d68fe2",
+    #"9932cc",
+    #"9065d0",
+    #"b9158a",
+    #"e6ccff",
+    "7a5900",
     "ffefc3",
-    "db4d4f",
+    # "4. Non Vegetated Areas"  
+    "d4271e",
     "ffa07a",
     "d4271e",
-    "db4d4f",
-    "ffaa5f",
     "9c0027",
-    "091077",
-    "fc8114",
-    "2532e4",
-    "93dfe6",
-    "f5b3c8",
-    "c71585",
-    "f54ca9",
-    "cca0d4",
-    "dbd26b",
-    "807a40",
-    "e04cfa",
-    "d68fe2",
-    "9932cc",
-    "e6ccff",
-    "02d659",
-    "ad5100",
-    "000000",
-    "000000",
-    "000000",
-    "000000",
-    "000000",
-    "000000",
-    "CC66FF",
-    "FF6666",
+    "db4d4f",
     "f5d5d5",
-    "ff69b4",
+    # "5. Water"
+    "2532e4",
+    "091077",
+    "93dfe6",
+    # "6. Not Observed"
+    "ffffff"
 ]
+
+
+print(len(names))
+print(len(palette))
+print(len(values))
 
 # View palettes source here:
 # var palettes = require('users/mapbiomas/modules:Palettes.js');
@@ -245,15 +291,19 @@ def setupLulc(bn):
 # Convert the image stack into an image collection
 lulcC = ee.ImageCollection(bns.map(setupLulc))
 
+print(lulcC.first().bandNames().getInfo())
 
 # Add the collection to the map
 Map.addTimeLapse(lulcC, {"canAreaChart": True, "autoViz": True, "years": years, "areaChartParams": {"line": True, "sankey": True, "crs": crs, "transform": transform, "scale": scale}}, "MapBiomas LULC")
+#Map.addLayer(lulcC, {"canAreaChart": True, "autoViz": True, "years": years, "areaChartParams": {"line": True, "sankey": False, "crs": crs, "transform": transform, "scale": scale}}, "MapBiomas LULC")
 
 countries = ee.FeatureCollection("FAO/GAUL_SIMPLIFIED_500m/2015/level0")
 Map.addSelectLayer(countries, {}, "Global Country Boundaries")
-# Set up the map
+## Set up the map
 Map.turnOnAutoAreaCharting()
 Map.turnOffLayersWhenTimeLapseIsOn = False
 # Map.turnOnInspector()
-Map.setCenter(-62.8, -3, 4)
+#Map.setCenter(-62.8, -3, 4)
+
 Map.view()
+
