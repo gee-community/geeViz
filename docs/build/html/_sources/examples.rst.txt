@@ -52,6 +52,13 @@ Visualize MapBiomas Datasets
 
    notebooks/mapBiomasViewerExampleNotebook
 
+Visualize Dynamic World
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. toctree::
+
+   notebooks/dynamicWorldExampleNotebook
+
 Visualize the Global Land Cover Dataset
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

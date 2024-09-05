@@ -741,7 +741,7 @@ div.dataTables_info {
 .progress-pulse {
   /* background-color: #222; */
   animation-name: color;
-  animation-duration: 1s;
+  animation-duration: 2s;
   animation-iteration-count: infinite;
   animation-direction: alternate-reverse;
   animation-timing-function: ease;
@@ -1247,7 +1247,7 @@ ul {
 .panel-heading {
   border-top: 0.05rem solid var(--deep-brown-10);
   /* border-bottom: 0.04em solid var(--deep-brown-10); */
-  background-color: var(--transparent) !important;
+  background-color: var(--transparent);
   color: var(--white) !important;
 }
 

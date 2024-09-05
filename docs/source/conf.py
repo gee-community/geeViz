@@ -86,7 +86,7 @@ html_css_files = ["style/custom.css"]
 dark_text_color = "#00bfa5"
 light_text_color = "#00897b"
 
-html_logo = "images/RCR-logo.jpg"
+html_logo = "_static/images/RCR-logo.jpg"
 # html_favicon = "favicon.ico"
 # html_favicon = html_logo
 pygments_style = "sphinx"
@@ -98,6 +98,11 @@ html_title = f"{project} {release} docs"
 
 html_theme_options = {
     "announcement": f"<i>geeViz</i> docs are still in development",
+    "logo": {
+        "text": "My awesome documentation",
+        "image_light": "_static/images/RCR-logo.jpg",
+        "image_dark": "_static/images/RCR-logo.jpg",
+    },
     "light_css_variables": {
         "color-brand-primary": light_text_color,
         "color-brand-content": light_text_color,
