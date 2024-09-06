@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Visualizing Dynamic World" href="dynamicWorldExampleNotebook.html" /><link rel="prev" title="LCMS Viewer Intro Notebook" href="lcmsViewerExampleNotebook.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Visualizing MapBiomas Datasets - geeViz &#34;2024.8.3&#34; docs</title>
+        <title>Visualizing MapBiomas Datasets - geeViz &#34;2024.9.1&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -142,7 +142,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">geeViz "2024.8.3" docs</div></a>
+      <a href="../index.html"><div class="brand">geeViz "2024.9.1" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -168,7 +168,7 @@
     <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.8.3" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.9.1" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -246,7 +246,7 @@
 <li><p>MapBiomas datasets are available as an EE asset as part of the awesome GEE community catelogue</p></li>
 <li><p>See https://gee-community-catalog.org/projects/mapbiomas/ for source documentation</p></li>
 </ul>
-<p>Copyright 2024 Ian Housman</p>
+<p>Copyright 2024 Ian Housman, Maria Olga Borja</p>
 <p>Licensed under the Apache License, Version 2.0 (the “License”);
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at</p>
@@ -264,6 +264,9 @@ limitations under the License.</p>
     <span class="o">!</span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>geeViz
     <span class="kn">import</span>  <span class="nn">geeViz.geeView</span> <span class="k">as</span> <span class="nn">geeView</span>
 
+<span class="c1"># Module to help with class codes, names, colors and collapsing levels of MapBiomas data</span>
+<span class="kn">import</span> <span class="nn">geeViz.examples.mapBiomasLookup</span> <span class="k">as</span> <span class="nn">mbl</span>
+
 <span class="n">ee</span> <span class="o">=</span> <span class="n">geeView</span><span class="o">.</span><span class="n">ee</span>
 <span class="n">Map</span> <span class="o">=</span> <span class="n">geeView</span><span class="o">.</span><span class="n">Map</span>
 
@@ -272,7 +275,12 @@ limitations under the License.</p>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>done
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Initializing GEE
+Cached project id file path: C:\Users\ihousman\.config\earthengine\credentials.proj_id
+Cached project id: lcms-292214
+Successfully initialized
+geeViz package folder: c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\geeViz
+done
 </pre></div>
 </div>
 </div>
@@ -290,9 +298,10 @@ limitations under the License.</p>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Datasets available here: https://gee-community-catalog.org/projects/mapbiomas/</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
+
+
 <span class="c1"># Specify which years to show</span>
 <span class="n">years</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1985</span><span class="p">,</span> <span class="mi">2023</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
-<span class="n">year_bandNames</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;classification_</span><span class="si">{</span><span class="n">yr</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">yr</span> <span class="ow">in</span> <span class="n">years</span><span class="p">]</span>
 
 
 <span class="c1"># Specify projection to use for zonal summaries and map querying</span>
@@ -300,6 +309,10 @@ limitations under the License.</p>
 <span class="n">crs</span> <span class="o">=</span> <span class="s2">&quot;EPSG:4326&quot;</span>
 <span class="n">transform</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="n">scale</span> <span class="o">=</span> <span class="mi">30</span>
+
+<span class="c1"># Choose which level to show (1-4)</span>
+<span class="c1"># Only 1 and 2 work with on-the-fly Sankey charts</span>
+<span class="n">remap_level</span> <span class="o">=</span> <span class="mi">1</span>
 
 
 <span class="n">Map</span><span class="o">.</span><span class="n">setQueryCRS</span><span class="p">(</span><span class="n">crs</span><span class="p">)</span>
@@ -309,210 +322,53 @@ limitations under the License.</p>
     <span class="n">Map</span><span class="o">.</span><span class="n">setQueryTransform</span><span class="p">(</span><span class="n">transform</span><span class="p">)</span>
 
 
-<span class="c1"># Make an empty stack to handle missing years for some areas</span>
-<span class="n">empty_stack</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">([</span><span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">()</span><span class="o">.</span><span class="n">byte</span><span class="p">()</span> <span class="k">for</span> <span class="n">yb</span> <span class="ow">in</span> <span class="n">year_bandNames</span><span class="p">])</span><span class="o">.</span><span class="n">toBands</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">year_bandNames</span><span class="p">)</span>
-
-
 <span class="c1"># Bring in land use land cover datasets and mosaic them</span>
 <span class="n">paths</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;projects/mapbiomas-public/assets/bolivia/collection2/mapbiomas_bolivia_collection2_integration_v1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;projects/mapbiomas-public/assets/peru/collection2/mapbiomas_peru_collection2_integration_v1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;projects/mapbiomas-public/assets/colombia/collection1/mapbiomas_colombia_collection1_integration_v1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;projects/mapbiomas-public/assets/ecuador/collection1/mapbiomas_ecuador_collection1_integration_v1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;projects/mapbiomas-public/assets/venezuela/collection1/mapbiomas_venezuela_collection1_integration_v1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;projects/mapbiomas-public/assets/paraguay/collection1/mapbiomas_paraguay_collection1_integration_v1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;projects/mapbiomas-workspace/public/collection8/mapbiomas_collection80_integration_v1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;projects/mapbiomas-raisg/public/collection5/mapbiomas_raisg_panamazonia_collection5_integration_v1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;projects/MapBiomas_Pampa/public/collection3/mapbiomas_uruguay_collection1_integration_v1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;projects/mapbiomas-public/assets/chile/collection1/mapbiomas_chile_collection1_integration_v1&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;projects/mapbiomas-public/assets/argentina/collection1/mapbiomas_argentina_collection1_integration_v1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;projects/mapbiomas-public/assets/bolivia/collection2/mapbiomas_bolivia_collection2_integration_v1&quot;</span><span class="p">,</span>  <span class="c1"># 1985-2023</span>
+    <span class="s2">&quot;projects/mapbiomas-public/assets/peru/collection2/mapbiomas_peru_collection2_integration_v1&quot;</span><span class="p">,</span>  <span class="c1"># 1985-2022</span>
+    <span class="s2">&quot;projects/mapbiomas-public/assets/colombia/collection1/mapbiomas_colombia_collection1_integration_v1&quot;</span><span class="p">,</span>  <span class="c1"># 1985-2022</span>
+    <span class="s2">&quot;projects/mapbiomas-public/assets/ecuador/collection1/mapbiomas_ecuador_collection1_integration_v1&quot;</span><span class="p">,</span>  <span class="c1"># 1985-2022</span>
+    <span class="s2">&quot;projects/mapbiomas-public/assets/venezuela/collection1/mapbiomas_venezuela_collection1_integration_v1&quot;</span><span class="p">,</span>  <span class="c1"># 1985-2022</span>
+    <span class="s2">&quot;projects/mapbiomas-public/assets/paraguay/collection1/mapbiomas_paraguay_collection1_integration_v1&quot;</span><span class="p">,</span>  <span class="c1"># 1985-2022</span>
+    <span class="s2">&quot;projects/mapbiomas-public/assets/brazil/lulc/collection9/mapbiomas_collection90_integration_v1&quot;</span><span class="p">,</span>  <span class="c1"># 1985-2023</span>
+    <span class="s2">&quot;projects/mapbiomas-raisg/public/collection5/mapbiomas_raisg_panamazonia_collection5_integration_v1&quot;</span><span class="p">,</span>  <span class="c1"># 1985-2022</span>
+    <span class="s2">&quot;projects/MapBiomas_Pampa/public/collection3/mapbiomas_uruguay_collection1_integration_v1&quot;</span><span class="p">,</span>  <span class="c1"># 1985-2022</span>
+    <span class="s2">&quot;projects/mapbiomas-public/assets/chile/collection1/mapbiomas_chile_collection1_integration_v1&quot;</span><span class="p">,</span>  <span class="c1"># 2000-2022</span>
+    <span class="s2">&quot;projects/mapbiomas-public/assets/argentina/collection1/mapbiomas_argentina_collection1_integration_v1&quot;</span><span class="p">,</span>  <span class="c1"># 1998-2022</span>
 <span class="p">]</span>
 
-<span class="c1"># Bring in each area and fill in empty years</span>
-<span class="n">lulcImg</span> <span class="o">=</span> <span class="p">[]</span>
-<span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
-    <span class="n">lulcImg</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">empty_stack</span><span class="o">.</span><span class="n">addBands</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">byte</span><span class="p">(),</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">paths</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">projection</span><span class="p">()</span><span class="o">.</span><span class="n">getInfo</span><span class="p">())</span>
-<span class="n">lulcImg</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="n">lulcImg</span><span class="p">)</span><span class="o">.</span><span class="n">mosaic</span><span class="p">()</span>
-
-<span class="c1"># Bring in the names, values, and palette</span>
-<span class="n">names</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;6. Not Observed&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;1.1. Forest Formation&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;1.2. Savanna Formation&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;1.3. Mangrove&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;1.5. Floodable Forest&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;3.3. Forest Plantation&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2.1. Wetland&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2.2. Grassland&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2.6. Other Non Forest Formations&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;3.1 Pasture&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(mesma cor de 39)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;3.2.1.2. Sugar cane&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;3.4. Mosaic of Uses&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;(mesma cor de 25)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;4.1. Beach, Dune and Sand Spot&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;4.2. Urban Area&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;4.4. Other non Vegetated Areas&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2.4. Rocky Outcrop&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;4.3. Mining&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;5.2. Aquaculture&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2.3. Hypersaline Tidal Flat&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;5.1. River, Lake and Ocean&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;x.x. Glacier&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;3.2.1.1. Soybean&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;3.2.1.3. Rice&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;3.2.1.5. Other Temporary Crops&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;3.2.2.1. Pastizal abierto&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;3.2.2.1. Pastizal cerrado&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;3.2.2.1. Pastizal disperso &quot;</span><span class="p">,</span>
-    <span class="s2">&quot;3.2.2.1. Outros&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;3.2.2.1. Coffee&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;3.2.2.2. Citrus&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;3.2.2.4. Other Perennial Crops&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;1.4. Wooded Sandbank Vegetation&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2.5. Herbaceous Sandbank Vegetation&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;0.0.0.0. Área urbana (definir cores)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;0.0.0.0. Infraestrutura (definir cores)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;0.0.0.0. Outras Áreas Urbanizadas (definir cores)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;0.0.0.0. Reservatórios (UHE e Abastecimento) (definir cores)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;0.0.0.0. Lagos artificiais e Açudes (definir cores)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;0.0.0.0. Outros corpos d agua artificiais (definir cores)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;0.0.0.0. Cultivo Simple (color temp)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;0.0.0.0. Cultivo Múltiple (color temp)&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;0.0.0.0. Salares&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;3.2.1.4. Cotton&quot;</span><span class="p">,</span>
-<span class="p">]</span>
-<span class="n">values</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="mi">0</span><span class="p">,</span>
-    <span class="mi">3</span><span class="p">,</span>
-    <span class="mi">4</span><span class="p">,</span>
-    <span class="mi">5</span><span class="p">,</span>
-    <span class="mi">6</span><span class="p">,</span>
-    <span class="mi">9</span><span class="p">,</span>
-    <span class="mi">11</span><span class="p">,</span>
-    <span class="mi">12</span><span class="p">,</span>
-    <span class="mi">13</span><span class="p">,</span>
-    <span class="mi">15</span><span class="p">,</span>
-    <span class="mi">18</span><span class="p">,</span>
-    <span class="mi">20</span><span class="p">,</span>
-    <span class="mi">21</span><span class="p">,</span>
-    <span class="mi">22</span><span class="p">,</span>
-    <span class="mi">23</span><span class="p">,</span>
-    <span class="mi">24</span><span class="p">,</span>
-    <span class="mi">25</span><span class="p">,</span>
-    <span class="mi">29</span><span class="p">,</span>
-    <span class="mi">30</span><span class="p">,</span>
-    <span class="mi">31</span><span class="p">,</span>
-    <span class="mi">32</span><span class="p">,</span>
-    <span class="mi">33</span><span class="p">,</span>
-    <span class="mi">34</span><span class="p">,</span>
-    <span class="mi">39</span><span class="p">,</span>
-    <span class="mi">40</span><span class="p">,</span>
-    <span class="mi">41</span><span class="p">,</span>
-    <span class="mi">42</span><span class="p">,</span>
-    <span class="mi">43</span><span class="p">,</span>
-    <span class="mi">44</span><span class="p">,</span>
-    <span class="mi">45</span><span class="p">,</span>
-    <span class="mi">46</span><span class="p">,</span>
-    <span class="mi">47</span><span class="p">,</span>
-    <span class="mi">48</span><span class="p">,</span>
-    <span class="mi">49</span><span class="p">,</span>
-    <span class="mi">50</span><span class="p">,</span>
-    <span class="mi">51</span><span class="p">,</span>
-    <span class="mi">52</span><span class="p">,</span>
-    <span class="mi">53</span><span class="p">,</span>
-    <span class="mi">54</span><span class="p">,</span>
-    <span class="mi">55</span><span class="p">,</span>
-    <span class="mi">56</span><span class="p">,</span>
-    <span class="mi">57</span><span class="p">,</span>
-    <span class="mi">58</span><span class="p">,</span>
-    <span class="mi">61</span><span class="p">,</span>
-    <span class="mi">62</span><span class="p">,</span>
-<span class="p">]</span>
-<span class="n">palette</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;ffffff&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;1f8d49&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;7dc975&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;04381d&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;026975&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;7a6c00&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;519799&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;d6bc74&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;d89f5c&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;edde8e&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;f5b3c8&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;db7093&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ffefc3&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;db4d4f&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ffa07a&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;d4271e&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;db4d4f&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ffaa5f&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;9c0027&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;091077&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;fc8114&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;2532e4&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;93dfe6&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;f5b3c8&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;c71585&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;f54ca9&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;cca0d4&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;dbd26b&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;807a40&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;e04cfa&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;d68fe2&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;9932cc&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;e6ccff&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;02d659&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ad5100&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;000000&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;000000&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;000000&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;000000&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;000000&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;000000&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;CC66FF&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;FF6666&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;f5d5d5&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ff69b4&quot;</span><span class="p">,</span>
-<span class="p">]</span>
+<span class="n">stack</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">([</span><span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="o">.</span><span class="n">byte</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">])</span><span class="o">.</span><span class="n">toBands</span><span class="p">()</span>
 
 <span class="c1"># View palettes source here:</span>
 <span class="c1"># var palettes = require(&#39;users/mapbiomas/modules:Palettes.js&#39;);</span>
 
-<span class="c1"># Convert image to image collection</span>
-<span class="n">bns</span> <span class="o">=</span> <span class="n">lulcImg</span><span class="o">.</span><span class="n">bandNames</span><span class="p">()</span>
 
 <span class="n">out_band_name</span> <span class="o">=</span> <span class="s2">&quot;lulc&quot;</span>
 
 
+<span class="c1"># Bring in the names, values, and palette</span>
+<span class="n">remap_info</span> <span class="o">=</span> <span class="n">mbl</span><span class="o">.</span><span class="n">getLevelNRemap</span><span class="p">(</span><span class="n">remap_level</span><span class="p">,</span> <span class="n">out_band_name</span><span class="p">)</span>
+
+
 <span class="c1"># Function to convert a given band into a time-enabled image object</span>
-<span class="k">def</span> <span class="nf">setupLulc</span><span class="p">(</span><span class="n">bn</span><span class="p">):</span>
-    <span class="n">bn</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="n">bn</span><span class="p">)</span>
-    <span class="n">yr</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Number</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">String</span><span class="p">(</span><span class="n">bn</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-    <span class="n">img</span> <span class="o">=</span> <span class="n">lulcImg</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">bn</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">([</span><span class="n">out_band_name</span><span class="p">])</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;system:time_start&quot;</span><span class="p">,</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="o">.</span><span class="n">fromYMD</span><span class="p">(</span><span class="n">yr</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">millis</span><span class="p">())</span>
-    <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
-        <span class="p">{</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">out_band_name</span><span class="si">}</span><span class="s2">_class_names&quot;</span><span class="p">:</span> <span class="n">names</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">out_band_name</span><span class="si">}</span><span class="s2">_class_palette&quot;</span><span class="p">:</span> <span class="n">palette</span><span class="p">,</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">out_band_name</span><span class="si">}</span><span class="s2">_class_values&quot;</span><span class="p">:</span> <span class="n">values</span><span class="p">,</span>
-        <span class="p">}</span>
-    <span class="p">)</span>
+<span class="k">def</span> <span class="nf">setupLulc</span><span class="p">(</span><span class="n">yr</span><span class="p">):</span>
+
+    <span class="n">img</span> <span class="o">=</span> <span class="n">stack</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;.*_</span><span class="si">{</span><span class="n">yr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">firstNonNull</span><span class="p">())</span><span class="o">.</span><span class="n">remap</span><span class="p">(</span><span class="n">remap_info</span><span class="p">[</span><span class="s2">&quot;remap_from&quot;</span><span class="p">],</span> <span class="n">remap_info</span><span class="p">[</span><span class="s2">&quot;remap_to&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">rename</span><span class="p">([</span><span class="n">out_band_name</span><span class="p">])</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;system:time_start&quot;</span><span class="p">,</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="o">.</span><span class="n">fromYMD</span><span class="p">(</span><span class="n">yr</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">millis</span><span class="p">())</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">remap_info</span><span class="p">[</span><span class="s2">&quot;viz_dict&quot;</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">img</span>
 
 
 <span class="c1"># Convert the image stack into an image collection</span>
-<span class="n">lulcC</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="n">bns</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">setupLulc</span><span class="p">))</span>
-
+<span class="n">lulcC</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">([</span><span class="n">setupLulc</span><span class="p">(</span><span class="n">yr</span><span class="p">)</span> <span class="k">for</span> <span class="n">yr</span> <span class="ow">in</span> <span class="n">years</span><span class="p">])</span>
 
 <span class="c1"># Add the collection to the map</span>
-<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lulcC</span><span class="p">,</span> <span class="p">{</span> <span class="s2">&quot;autoViz&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span> <span class="s2">&quot;MapBiomas LULC&quot;</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lulcC</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;autoViz&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span> <span class="s2">&quot;MapBiomas LULC&quot;</span><span class="p">)</span>
 
+<span class="c1">## Set up the map</span>
 
-<span class="c1"># Set up the map</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">turnOnInspector</span><span class="p">()</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">setCenter</span><span class="p">(</span><span class="o">-</span><span class="mf">62.8</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+
 <span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -520,20 +376,21 @@ limitations under the License.</p>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Setting click query crs to: EPSG:4326
 Setting click query scale to: 30
-{&#39;type&#39;: &#39;Projection&#39;, &#39;crs&#39;: &#39;EPSG:4326&#39;, &#39;transform&#39;: [0.0002694945852358564, 0, -70.37258205346872, 0, -0.0002694945852358564, -8.701980157265806]}
 Adding layer: MapBiomas LULC
 Starting webmap
 Using default refresh token for geeView
-Local web server at: http://localhost:8001/geeView/ already serving.
+Starting local web server at: http://localhost:8001/geeView/
+HTTP server command: &quot;c:\Users\ihousman\AppData\Local\Programs\Python\Python311\python.exe&quot; -m http.server  8001
+Done
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612wLjxt_EZcCDhYbwONFwy2sY8CLToCEtB9PT5a1aIN6W_ppVj617ezwUOfEI2Xj-aTsRKOXcyh9eSl74QOYea8NImQCeegyRrJMC33c3bQtHentt6m9FIxe0ZvH_Gfp6B8rBvbhvo1Oj1dE4B7nIMVmgGcmhiAboijwPGMaCgYKAQ4SARESFQHGX2MiyGQjtGYZm5wzmKXeYx8h0g0178
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612y8ZlxJh5tseR6SiuPocMyKlrXzdf5Qzq6KskwfbOwHa9ww08rwL0Q9wsBAwJHaujzpYpbWXBllmZn3SqjX3NAcrHHXy__zLsaAhNNgwiJecXOI9aURNb1ecAngWo_H1O6r5JnMs0dNrcVvPVHtPO9iLCNSpNwoxLwFnk8aCgYKAX8SARESFQHGX2Midtno9Bis8gZowS0Gh0zjmw0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wLjxt_EZcCDhYbwONFwy2sY8CLToCEtB9PT5a1aIN6W_ppVj617ezwUOfEI2Xj-aTsRKOXcyh9eSl74QOYea8NImQCeegyRrJMC33c3bQtHentt6m9FIxe0ZvH_Gfp6B8rBvbhvo1Oj1dE4B7nIMVmgGcmhiAboijwPGMaCgYKAQ4SARESFQHGX2MiyGQjtGYZm5wzmKXeYx8h0g0178"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612y8ZlxJh5tseR6SiuPocMyKlrXzdf5Qzq6KskwfbOwHa9ww08rwL0Q9wsBAwJHaujzpYpbWXBllmZn3SqjX3NAcrHHXy__zLsaAhNNgwiJecXOI9aURNb1ecAngWo_H1O6r5JnMs0dNrcVvPVHtPO9iLCNSpNwoxLwFnk8aCgYKAX8SARESFQHGX2Midtno9Bis8gZowS0Gh0zjmw0178"
             frameborder="0"
             allowfullscreen
             
@@ -559,6 +416,10 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
 <span class="n">countries</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;FAO/GAUL_SIMPLIFIED_500m/2015/level0&quot;</span><span class="p">)</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">addSelectLayer</span><span class="p">(</span><span class="n">countries</span><span class="p">,</span> <span class="p">{},</span> <span class="s2">&quot;Global Country Boundaries&quot;</span><span class="p">)</span>
 
+<span class="n">assetTerritories</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/joaovsiqueira1/MAPBIOMAS/ti_uc&quot;</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addSelectLayer</span><span class="p">(</span><span class="n">assetTerritories</span><span class="p">,</span> <span class="p">{},</span> <span class="s2">&quot;MapBiomas Territories&quot;</span><span class="p">)</span>
+
+
 <span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
 </pre></div>
@@ -567,18 +428,19 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: MapBiomas LULC
 Adding layer: Global Country Boundaries
+Adding layer: MapBiomas Territories
 Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612zj-oux3lveCsO3NUHU-4SFKq0Nqn2lA6T5-GJx3nyfRAFzT4k__RUKy6-mt_AeNs4WZS1F4z671DM4XvbiOLqZyGAyHPLit9lcgVsMcysXeFv0Od1f4_qzp8HXY28ocvJOIACjVYCXjvgD7KdnWtJhjLLwfoRPC8aUcocaCgYKAY0SARESFQHGX2MiLuTX9wEMFB6a5vmZAEUHIg0178
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612x6ne6BHe3XY7j9ocdXwWB_PEPsf231RSnHcDZIYEbXeST4S3SN-B8GrtpqX_fMLOLXcuM6IG2sj-nyV0WjKFU-eGMLcx25tS8NC42Z2KEGm_LkmlI-88hMcTSDCYVB1c1Qx5Rcy_1_fu8ZQpdTgS-2uRyaVIEER3BVqesaCgYKAVQSARESFQHGX2MiStNTxFwZi9bxifrWLjqNnQ0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612zj-oux3lveCsO3NUHU-4SFKq0Nqn2lA6T5-GJx3nyfRAFzT4k__RUKy6-mt_AeNs4WZS1F4z671DM4XvbiOLqZyGAyHPLit9lcgVsMcysXeFv0Od1f4_qzp8HXY28ocvJOIACjVYCXjvgD7KdnWtJhjLLwfoRPC8aUcocaCgYKAY0SARESFQHGX2MiLuTX9wEMFB6a5vmZAEUHIg0178"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612x6ne6BHe3XY7j9ocdXwWB_PEPsf231RSnHcDZIYEbXeST4S3SN-B8GrtpqX_fMLOLXcuM6IG2sj-nyV0WjKFU-eGMLcx25tS8NC42Z2KEGm_LkmlI-88hMcTSDCYVB1c1Qx5Rcy_1_fu8ZQpdTgS-2uRyaVIEER3BVqesaCgYKAVQSARESFQHGX2MiStNTxFwZi9bxifrWLjqNnQ0178"
             frameborder="0"
             allowfullscreen
             
@@ -598,10 +460,18 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMapLayers</span><span class="p">()</span>
 
-<span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span><span class="p">(</span><span class="n">lulcC</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;years&#39;</span><span class="p">:</span><span class="n">years</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;line&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;sankey&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;crs&#39;</span><span class="p">:</span><span class="n">crs</span><span class="p">,</span><span class="s1">&#39;transform&#39;</span><span class="p">:</span><span class="n">transform</span><span class="p">,</span><span class="s1">&#39;scale&#39;</span><span class="p">:</span><span class="n">scale</span><span class="p">}},</span> <span class="s1">&#39;MapBiomas LULC&#39;</span> <span class="p">)</span>
+<span class="c1"># Only allow Sankey charts for levels &lt;=2</span>
+<span class="n">sankey</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">if</span> <span class="n">remap_level</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="n">sankey</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span><span class="p">(</span><span class="n">lulcC</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;years&#39;</span><span class="p">:</span><span class="n">years</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;line&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;sankey&#39;</span><span class="p">:</span><span class="n">sankey</span><span class="p">,</span><span class="s1">&#39;crs&#39;</span><span class="p">:</span><span class="n">crs</span><span class="p">,</span><span class="s1">&#39;transform&#39;</span><span class="p">:</span><span class="n">transform</span><span class="p">,</span><span class="s1">&#39;scale&#39;</span><span class="p">:</span><span class="n">scale</span><span class="p">}},</span> <span class="s1">&#39;MapBiomas LULC&#39;</span> <span class="p">)</span>
 
 <span class="n">countries</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;FAO/GAUL_SIMPLIFIED_500m/2015/level0&quot;</span><span class="p">)</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">addSelectLayer</span><span class="p">(</span><span class="n">countries</span><span class="p">,</span> <span class="p">{},</span> <span class="s2">&quot;Global Country Boundaries&quot;</span><span class="p">)</span>
+
+<span class="n">assetTerritories</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/joaovsiqueira1/MAPBIOMAS/ti_uc&quot;</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addSelectLayer</span><span class="p">(</span><span class="n">assetTerritories</span><span class="p">,</span> <span class="p">{},</span> <span class="s2">&quot;MapBiomas Territories&quot;</span><span class="p">)</span>
 
 <span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
@@ -611,18 +481,19 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: MapBiomas LULC
 Adding layer: Global Country Boundaries
+Adding layer: MapBiomas Territories
 Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612yFBTw-c0i9oBGLnesqa2et_a-LClTLHIirCloc44PYoodXq4IWLi5_v670d2N-CZrBilqgaG1vN3d54Vd5uENVjIxLVJmTO3VuO0kIHAY6FqGoy1tVPotAtN0IENr1FOzRhh7A70xqYK7cbccfNhFS90GSyT7Ys_eS8u4aCgYKATQSARESFQHGX2Mip-lq39gSIPfX3pj1U8FvMg0178
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612zpiC1nWa7Q2n38SOHQdKW5xdZ5JiFJ1rtNUdM3a2YEw7zvXxMSLpW8loQT6dzHsY1sJZxYs30i5_Tlm2PZc860gyG8nfWsq-WtmVNYoeXqm6EJ0N3GDiKJBK2SZXrlhoWfODqskUCNduAdlfCTnGCUMii6JNcKAVg8U64aCgYKAQUSARESFQHGX2Mi23EXnCDVC9LkY4WTMHWm-Q0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612yFBTw-c0i9oBGLnesqa2et_a-LClTLHIirCloc44PYoodXq4IWLi5_v670d2N-CZrBilqgaG1vN3d54Vd5uENVjIxLVJmTO3VuO0kIHAY6FqGoy1tVPotAtN0IENr1FOzRhh7A70xqYK7cbccfNhFS90GSyT7Ys_eS8u4aCgYKATQSARESFQHGX2Mip-lq39gSIPfX3pj1U8FvMg0178"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612zpiC1nWa7Q2n38SOHQdKW5xdZ5JiFJ1rtNUdM3a2YEw7zvXxMSLpW8loQT6dzHsY1sJZxYs30i5_Tlm2PZc860gyG8nfWsq-WtmVNYoeXqm6EJ0N3GDiKJBK2SZXrlhoWfODqskUCNduAdlfCTnGCUMii6JNcKAVg8U64aCgYKAQUSARESFQHGX2Mi23EXnCDVC9LkY4WTMHWm-Q0178"
             frameborder="0"
             allowfullscreen
             
@@ -705,7 +576,7 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=9973ac44"></script>
+</div><script src="../_static/documentation_options.js?v=004b29be"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>
