@@ -5,7 +5,7 @@
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>geeViz.getImagesLib - geeViz &#34;2024.9.1&#34; docs</title>
+        <title>geeViz.getImagesLib - geeViz &#34;2024.9.2&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -141,7 +141,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">geeViz "2024.9.1" docs</div></a>
+      <a href="../../index.html"><div class="brand">geeViz "2024.9.2" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -167,7 +167,7 @@
     <img class="sidebar-logo" src="../../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.9.1" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.9.2" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -2976,6 +2976,79 @@
 
 
 <span class="c1">################################################################</span>
+<span class="c1"># Sentinel-2 collections and bands to use</span>
+<span class="c1"># 3/22 - Changed to using the _HARMONIZED collections following the introduction of a 1000 value offset from Jan 25 2022 onward</span>
+<span class="c1"># These collections account for these differences</span>
+<span class="n">s2CollectionDict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;TOA&quot;</span><span class="p">:</span> <span class="s2">&quot;COPERNICUS/S2_HARMONIZED&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;SR&quot;</span><span class="p">:</span> <span class="s2">&quot;COPERNICUS/S2_SR_HARMONIZED&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">sensorBandDict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;SR&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;B1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B3&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B4&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B5&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B6&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B7&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B8&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B8A&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B9&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B11&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B12&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="s2">&quot;TOA&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;B1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B3&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B4&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B5&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B6&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B7&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B8&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B8A&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B9&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B10&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B11&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B12&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+
+<span class="n">sensorBandNameDict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;SR&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;cb&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;blue&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;green&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;red&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;re1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;re2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;re3&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;nir&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;nir2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;waterVapor&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;swir1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;swir2&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="s2">&quot;TOA&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">&quot;cb&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;blue&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;green&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;red&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;re1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;re2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;re3&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;nir&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;nir2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;waterVapor&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cirrus&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;swir1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;swir2&quot;</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+
+
 <span class="c1"># Function to get Sentinel 2 A and B data into a single collection with meaningful band names for a specified area and date range</span>
 <span class="c1"># Will also join the S2 cloudless cloud probability collection if specified</span>
 <div class="viewcode-block" id="getS2">
@@ -3016,76 +3089,6 @@
 
     <span class="n">toaOrSR</span> <span class="o">=</span> <span class="n">toaOrSR</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
 
-    <span class="c1"># 3/22 - Changed to using the _HARMONIZED collections following the introduction of a 1000 value offset from Jan 25 2022 onward</span>
-    <span class="c1"># These collections account for these differences</span>
-    <span class="n">s2CollectionDict</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;TOA&quot;</span><span class="p">:</span> <span class="s2">&quot;COPERNICUS/S2_HARMONIZED&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;SR&quot;</span><span class="p">:</span> <span class="s2">&quot;COPERNICUS/S2_SR_HARMONIZED&quot;</span><span class="p">,</span>
-    <span class="p">}</span>
-
-    <span class="n">sensorBandDict</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;SR&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;B1&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B2&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B3&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B4&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B5&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B6&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B7&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B8&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B8A&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B9&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B11&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B12&quot;</span><span class="p">,</span>
-        <span class="p">],</span>
-        <span class="s2">&quot;TOA&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;B1&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B2&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B3&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B4&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B5&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B6&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B7&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B8&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B8A&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B9&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B10&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B11&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;B12&quot;</span><span class="p">,</span>
-        <span class="p">],</span>
-    <span class="p">}</span>
-
-    <span class="n">sensorBandNameDict</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;SR&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;cb&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;blue&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;green&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;red&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;re1&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;re2&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;re3&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;nir&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;nir2&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;waterVapor&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;swir1&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;swir2&quot;</span><span class="p">,</span>
-        <span class="p">],</span>
-        <span class="s2">&quot;TOA&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="s2">&quot;cb&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;blue&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;green&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;red&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;re1&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;re2&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;re3&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;nir&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;nir2&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;waterVapor&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;cirrus&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;swir1&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;swir2&quot;</span><span class="p">,</span>
-        <span class="p">],</span>
-    <span class="p">}</span>
     <span class="c1"># Specify S2 continuous bands if resampling is set to something other than near</span>
     <span class="n">s2_continuous_bands</span> <span class="o">=</span> <span class="n">sensorBandNameDict</span><span class="p">[</span><span class="n">toaOrSR</span><span class="p">]</span>
 
@@ -6260,6 +6263,65 @@
 
 <span class="c1">#########################################################################</span>
 <span class="c1">#########################################################################</span>
+<div class="viewcode-block" id="superSimpleGetS2">
+<a class="viewcode-back" href="../../modules.html#geeViz.getImagesLib.superSimpleGetS2">[docs]</a>
+<span class="k">def</span> <span class="nf">superSimpleGetS2</span><span class="p">(</span>
+    <span class="n">studyArea</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span><span class="p">,</span>
+    <span class="n">startDate</span><span class="p">:</span> <span class="nb">str</span> <span class="ow">or</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">,</span>
+    <span class="n">endDate</span><span class="p">:</span> <span class="nb">str</span> <span class="ow">or</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">,</span>
+    <span class="n">toaOrSR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;TOA&quot;</span><span class="p">,</span>
+    <span class="n">applyCloudScorePlus</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">cloudScorePlusThresh</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.6</span><span class="p">,</span>
+    <span class="n">cloudScorePlusScore</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cs&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function retrieves Sentinel-2 satellite imagery from Earth Engine for a specified study area and date range. </span>
+<span class="sd">    It applies the cloudScore+ algorithm unless told otherwise.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        studyArea (ee.Geometry): An Earth Engine geometry object representing the area of interest.</span>
+<span class="sd">        startDate (ee.Date or str): The start date for the image collection in YYYY-MM-DD format.</span>
+<span class="sd">        endDate (ee.Date or str): The end date for the image collection in YYYY-MM-DD format.</span>
+<span class="sd">        toaOrSR (str, optional): Specifies whether to retrieve data in Top-Of-Atmosphere (TOA) reflectance or Surface Reflectance (SR). Defaults to &quot;TOA&quot;.</span>
+<span class="sd">        applyCloudScorePlus (bool, optional): Determines whether to apply cloud filtering based on the Cloud Score Plus product. Defaults to True.</span>
+<span class="sd">        cloudScorePlusThresh (float, optional): Sets the threshold for cloud cover percentage based on Cloud Score Plus. Images with cloud cover exceeding this threshold will be masked out if `applyCloudScorePlus` is True. Defaults to 0.6.</span>
+<span class="sd">        cloudScorePlusScore (str, optional): Specifies the band name within the Cloud Score Plus product containing the cloud cover information. Defaults to &quot;cs&quot;.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ee.ImageCollection: A collection of cloud and cloud-shadow-free Sentinel-2 satellite images filtered by the specified criteria.</span>
+
+
+<span class="sd">    &gt;&gt;&gt; import geeViz.getImagesLib as gil</span>
+<span class="sd">    &gt;&gt;&gt; Map = gil.Map</span>
+<span class="sd">    &gt;&gt;&gt; ee = gil.ee</span>
+<span class="sd">    &gt;&gt;&gt; studyArea = gil.testAreas[&quot;CA&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; composite = gil.superSimpleGetS2(studyArea, &quot;2024-06-01&quot;, &quot;2024-09-30&quot;).median()</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(composite, gil.vizParamsFalse10k, &quot;Sentinel-2 Composite&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(studyArea, {}, &quot;Study Area&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.centerObject(studyArea)</span>
+<span class="sd">    &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">    &gt;&gt;&gt; Map.view()</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">toaOrSR</span> <span class="o">=</span> <span class="n">toaOrSR</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+    <span class="n">s2s</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="n">s2CollectionDict</span><span class="p">[</span><span class="n">toaOrSR</span><span class="p">])</span><span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">startDate</span><span class="p">,</span> <span class="n">endDate</span><span class="p">)</span><span class="o">.</span><span class="n">filterBounds</span><span class="p">(</span><span class="n">studyArea</span><span class="p">)</span>
+
+    <span class="n">s2s</span> <span class="o">=</span> <span class="n">s2s</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">sensorBandDict</span><span class="p">[</span><span class="n">toaOrSR</span><span class="p">],</span> <span class="n">sensorBandNameDict</span><span class="p">[</span><span class="n">toaOrSR</span><span class="p">])</span>
+
+    <span class="n">cloudScorePlus</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="n">cloudScorePlusScore</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;cloudScorePlus&quot;</span><span class="p">])</span>
+
+    <span class="n">s2s</span> <span class="o">=</span> <span class="n">s2s</span><span class="o">.</span><span class="n">linkCollection</span><span class="p">(</span><span class="n">cloudScorePlus</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;cloudScorePlus&quot;</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">applyCloudScorePlus</span><span class="p">:</span>
+        <span class="n">s2s</span> <span class="o">=</span> <span class="n">s2s</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">img</span><span class="p">:</span> <span class="n">img</span><span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s2">&quot;cloudScorePlus&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">gte</span><span class="p">(</span><span class="n">cloudScorePlusThresh</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">s2s</span></div>
+
+
+
+<span class="c1">#########################################################################</span>
+<span class="c1">#########################################################################</span>
 <span class="c1"># Wrapper function for getting Sentinel 2 imagery</span>
 <span class="k">def</span> <span class="nf">getSentinel2Wrapper</span><span class="p">(</span>
     <span class="n">studyArea</span><span class="p">,</span>
@@ -8709,7 +8771,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=004b29be"></script>
+</div><script src="../../_static/documentation_options.js?v=7afd9251"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

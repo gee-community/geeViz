@@ -52,7 +52,7 @@ scale = 30
 
 # Choose which level to show (1-4)
 # Only 1 and 2 work with on-the-fly Sankey charts
-remap_level = 1
+remap_level = 4
 
 
 Map.setQueryCRS(crs)

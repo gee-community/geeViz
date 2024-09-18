@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="geeViz.changeDetectionLib" href="geeViz.changeDetectionLib.html" /><link rel="prev" title="geeViz.geeView" href="geeViz.geeView.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>geeViz.getImagesLib - geeViz &#34;2024.9.1&#34; docs</title>
+        <title>geeViz.getImagesLib - geeViz &#34;2024.9.2&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -142,7 +142,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">geeViz "2024.9.1" docs</div></a>
+      <a href="../index.html"><div class="brand">geeViz "2024.9.2" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -168,7 +168,7 @@
     <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.9.1" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.9.2" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -539,19 +539,22 @@
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">spatioTemporalJoin</span></code>(primary, secondary[, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">synthImage</span></code>(coeffs, dateImage, indexNames, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.getImagesLib.superSimpleGetS2" title="geeViz.getImagesLib.superSimpleGetS2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">superSimpleGetS2</span></code></a>(studyArea, startDate, endDate)</p></td>
+<td><p>This function retrieves Sentinel-2 satellite imagery from Earth Engine for a specified study area and date range.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">synthImage</span></code>(coeffs, dateImage, indexNames, ...)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.getImagesLib.toDB" title="geeViz.getImagesLib.toDB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">toDB</span></code></a>(img)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.getImagesLib.toDB" title="geeViz.getImagesLib.toDB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">toDB</span></code></a>(img)</p></td>
 <td><p>Converts a Sentinel-1 image from natural units to dB.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.getImagesLib.toNatural" title="geeViz.getImagesLib.toNatural"><code class="xref py py-obj docutils literal notranslate"><span class="pre">toNatural</span></code></a>(img)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.getImagesLib.toNatural" title="geeViz.getImagesLib.toNatural"><code class="xref py py-obj docutils literal notranslate"><span class="pre">toNatural</span></code></a>(img)</p></td>
 <td><p>Converts a Sentinel-1 image from dB to natural units.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.getImagesLib.uniqueValues" title="geeViz.getImagesLib.uniqueValues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uniqueValues</span></code></a>(collection, field)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.getImagesLib.uniqueValues" title="geeViz.getImagesLib.uniqueValues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uniqueValues</span></code></a>(collection, field)</p></td>
 <td><p>Finds unique values of a field in an image collection.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="../modules.html#geeViz.getImagesLib.wrapDates" title="geeViz.getImagesLib.wrapDates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wrapDates</span></code></a>(startJulian, endJulian)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="../modules.html#geeViz.getImagesLib.wrapDates" title="geeViz.getImagesLib.wrapDates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wrapDates</span></code></a>(startJulian, endJulian)</p></td>
 <td><p>Wraps dates when the startJulian is greater than the endJulian.</p></td>
 </tr>
 </tbody>
@@ -611,7 +614,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=004b29be"></script>
+</div><script src="../_static/documentation_options.js?v=7afd9251"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

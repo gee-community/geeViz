@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Examples" href="examples.html" /><link rel="prev" title="geeViz.phEEnoViz" href="info/geeViz.phEEnoViz.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Details - geeViz &#34;2024.9.1&#34; docs</title>
+        <title>Details - geeViz &#34;2024.9.2&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -142,7 +142,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">geeViz "2024.9.1" docs</div></a>
+      <a href="index.html"><div class="brand">geeViz "2024.9.2" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -168,7 +168,7 @@
     <img class="sidebar-logo" src="_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.9.1" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.9.2" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -1988,6 +1988,44 @@ Assumes image has bands: ‘brightness’, ‘greenness’, and ‘wetness’.</
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="geeViz.getImagesLib.superSimpleGetS2">
+<span class="sig-prename descclassname"><span class="pre">geeViz.getImagesLib.</span></span><span class="sig-name descname"><span class="pre">superSimpleGetS2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">studyArea</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Geometry</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startDate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endDate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toaOrSR</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'TOA'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">applyCloudScorePlus</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cloudScorePlusThresh</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cloudScorePlusScore</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cs'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ImageCollection</span></span></span><a class="reference internal" href="_modules/geeViz/getImagesLib.html#superSimpleGetS2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geeViz.getImagesLib.superSimpleGetS2" title="Link to this definition">#</a></dt>
+<dd><p>This function retrieves Sentinel-2 satellite imagery from Earth Engine for a specified study area and date range.
+It applies the cloudScore+ algorithm unless told otherwise.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>studyArea</strong> (<em>ee.Geometry</em>) – An Earth Engine geometry object representing the area of interest.</p></li>
+<li><p><strong>startDate</strong> (<em>ee.Date</em><em> or </em><em>str</em>) – The start date for the image collection in YYYY-MM-DD format.</p></li>
+<li><p><strong>endDate</strong> (<em>ee.Date</em><em> or </em><em>str</em>) – The end date for the image collection in YYYY-MM-DD format.</p></li>
+<li><p><strong>toaOrSR</strong> (<em>str</em><em>, </em><em>optional</em>) – Specifies whether to retrieve data in Top-Of-Atmosphere (TOA) reflectance or Surface Reflectance (SR). Defaults to “TOA”.</p></li>
+<li><p><strong>applyCloudScorePlus</strong> (<em>bool</em><em>, </em><em>optional</em>) – Determines whether to apply cloud filtering based on the Cloud Score Plus product. Defaults to True.</p></li>
+<li><p><strong>cloudScorePlusThresh</strong> (<em>float</em><em>, </em><em>optional</em>) – Sets the threshold for cloud cover percentage based on Cloud Score Plus. Images with cloud cover exceeding this threshold will be masked out if <cite>applyCloudScorePlus</cite> is True. Defaults to 0.6.</p></li>
+<li><p><strong>cloudScorePlusScore</strong> (<em>str</em><em>, </em><em>optional</em>) – Specifies the band name within the Cloud Score Plus product containing the cloud cover information. Defaults to “cs”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A collection of cloud and cloud-shadow-free Sentinel-2 satellite images filtered by the specified criteria.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ee.ImageCollection</p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">geeViz.getImagesLib</span> <span class="k">as</span> <span class="nn">gil</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Map</span> <span class="o">=</span> <span class="n">gil</span><span class="o">.</span><span class="n">Map</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ee</span> <span class="o">=</span> <span class="n">gil</span><span class="o">.</span><span class="n">ee</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">studyArea</span> <span class="o">=</span> <span class="n">gil</span><span class="o">.</span><span class="n">testAreas</span><span class="p">[</span><span class="s2">&quot;CA&quot;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">composite</span> <span class="o">=</span> <span class="n">gil</span><span class="o">.</span><span class="n">superSimpleGetS2</span><span class="p">(</span><span class="n">studyArea</span><span class="p">,</span> <span class="s2">&quot;2024-06-01&quot;</span><span class="p">,</span> <span class="s2">&quot;2024-09-30&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">median</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">composite</span><span class="p">,</span> <span class="n">gil</span><span class="o">.</span><span class="n">vizParamsFalse10k</span><span class="p">,</span> <span class="s2">&quot;Sentinel-2 Composite&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">studyArea</span><span class="p">,</span> <span class="p">{},</span> <span class="s2">&quot;Study Area&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Map</span><span class="o">.</span><span class="n">centerObject</span><span class="p">(</span><span class="n">studyArea</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Map</span><span class="o">.</span><span class="n">turnOnInspector</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="geeViz.getImagesLib.toDB">
 <span class="sig-prename descclassname"><span class="pre">geeViz.getImagesLib.</span></span><span class="sig-name descname"><span class="pre">toDB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Image</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Image</span></span></span><a class="reference internal" href="_modules/geeViz/getImagesLib.html#toDB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geeViz.getImagesLib.toDB" title="Link to this definition">#</a></dt>
 <dd><p>Converts a Sentinel-1 image from natural units to dB.</p>
@@ -2272,6 +2310,7 @@ Assumes image has bands: ‘brightness’, ‘greenness’, and ‘wetness’.</
 <li><a class="reference internal" href="#geeViz.getImagesLib.simpleAddTCAngles"><code class="docutils literal notranslate"><span class="pre">simpleAddTCAngles()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.getImagesLib.simpleGetTasseledCap"><code class="docutils literal notranslate"><span class="pre">simpleGetTasseledCap()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.getImagesLib.simpleTDOM2"><code class="docutils literal notranslate"><span class="pre">simpleTDOM2()</span></code></a></li>
+<li><a class="reference internal" href="#geeViz.getImagesLib.superSimpleGetS2"><code class="docutils literal notranslate"><span class="pre">superSimpleGetS2()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.getImagesLib.toDB"><code class="docutils literal notranslate"><span class="pre">toDB()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.getImagesLib.toNatural"><code class="docutils literal notranslate"><span class="pre">toNatural()</span></code></a></li>
 <li><a class="reference internal" href="#geeViz.getImagesLib.uniqueValues"><code class="docutils literal notranslate"><span class="pre">uniqueValues()</span></code></a></li>
@@ -2302,7 +2341,7 @@ Assumes image has bands: ‘brightness’, ‘greenness’, and ‘wetness’.</
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=004b29be"></script>
+</div><script src="_static/documentation_options.js?v=7afd9251"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=32e29ea5"></script>

@@ -1023,7 +1023,18 @@ td {
 .layer-container {
   margin-bottom: 1px;
 }
+.layer-label-lcms {
+  color: #cc4c02 !important;
+}
 
+.layer-label-tcc {
+  color: #080 !important;
+}
+/* .layer-label-lcms,
+.layer-label-tcc {
+  text-shadow: -1px 0 var(--deep-brown-100), 0 1px var(--deep-brown-100),
+    1px 0 var(--deep-brown-100), 0 -1px var(--deep-brown-100);
+} */
 .layer-list {
   padding-bottom: 1px;
   padding-top: 1px;
@@ -1303,7 +1314,10 @@ ul {
   margin-top: -0.75rem;
   margin-bottom: -0.5rem;
 }
-
+.panel-title-svg-xsm {
+  width: 1.15rem;
+  padding-bottom: 0.25rem;
+}
 .panel-title.collapsed > a:after {
   float: right !important;
   content: "\f067";

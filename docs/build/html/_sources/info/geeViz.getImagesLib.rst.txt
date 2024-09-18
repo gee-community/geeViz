@@ -110,6 +110,7 @@
       simpleWaterMask
       smartJoin
       spatioTemporalJoin
+      superSimpleGetS2
       synthImage
       toDB
       toNatural

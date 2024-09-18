@@ -1,3 +1,63 @@
+# geeViz 2024.9.2 Release Notes
+
+## September 18, 2024
+
+### New Features
+
+- **Doc updates** - Continued work improving Documentation website.
+
+- **Simple Sentinel-2** - `getImagesLib.superSimpleGetS2` is a super lightweight function to get analysis-ready Sentinel-2 data integrating the cloudScore+ algorithm. This may be a better option than existing functions that support out-dated legacy methods that are no longer needed since cloudScore+ works so well.
+
+---
+
+# geeViz 2024.9.1 Release Notes
+
+## September 6, 2024
+
+### New Features
+
+- **Doc updates** - Continued work improving Documentation website.
+
+- **MapBiomas Example Rework** - The MapBiomas example script and notebook now integrate a full mosaic of all study areas and the ability to collapse to lower levels of the classification hiearchy.
+
+---
+
+# geeViz 2024.8.3 Release Notes
+
+## August 28, 2024
+
+### New Features
+
+- **Doc updates** - Continued work improving Documentation website - logo bug fix..
+
+---
+
+# geeViz 2024.8.2 Release Notes
+
+## August 28, 2024
+
+### New Features
+
+- **Doc updates** - Continued work improving Documentation website.
+
+- **New and Updated Example Notebooks** - Global Landcover notebook added and updates to MapBiomas example notebook and script.
+
+---
+
+# geeViz 2024.8.1 Release Notes
+
+## August 23, 2024
+
+### New Features
+
+- **Doc updates** - Continued work improving Documentation website. Notably integrating notebook examples into doc website.
+
+### Bug fixes
+
+- Function parameter reordering bug fix for `getImagesLib.getS2`
+
+---
+
 # geeViz 2024.7.1 Release Notes
 
 ## July 1, 2024

@@ -2663,6 +2663,79 @@ def getS1(
 
 
 ################################################################
+# Sentinel-2 collections and bands to use
+# 3/22 - Changed to using the _HARMONIZED collections following the introduction of a 1000 value offset from Jan 25 2022 onward
+# These collections account for these differences
+s2CollectionDict = {
+    "TOA": "COPERNICUS/S2_HARMONIZED",
+    "SR": "COPERNICUS/S2_SR_HARMONIZED",
+}
+
+sensorBandDict = {
+    "SR": [
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6",
+        "B7",
+        "B8",
+        "B8A",
+        "B9",
+        "B11",
+        "B12",
+    ],
+    "TOA": [
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "B6",
+        "B7",
+        "B8",
+        "B8A",
+        "B9",
+        "B10",
+        "B11",
+        "B12",
+    ],
+}
+
+sensorBandNameDict = {
+    "SR": [
+        "cb",
+        "blue",
+        "green",
+        "red",
+        "re1",
+        "re2",
+        "re3",
+        "nir",
+        "nir2",
+        "waterVapor",
+        "swir1",
+        "swir2",
+    ],
+    "TOA": [
+        "cb",
+        "blue",
+        "green",
+        "red",
+        "re1",
+        "re2",
+        "re3",
+        "nir",
+        "nir2",
+        "waterVapor",
+        "cirrus",
+        "swir1",
+        "swir2",
+    ],
+}
+
+
 # Function to get Sentinel 2 A and B data into a single collection with meaningful band names for a specified area and date range
 # Will also join the S2 cloudless cloud probability collection if specified
 def getS2(
@@ -2701,76 +2774,6 @@ def getS2(
 
     toaOrSR = toaOrSR.upper()
 
-    # 3/22 - Changed to using the _HARMONIZED collections following the introduction of a 1000 value offset from Jan 25 2022 onward
-    # These collections account for these differences
-    s2CollectionDict = {
-        "TOA": "COPERNICUS/S2_HARMONIZED",
-        "SR": "COPERNICUS/S2_SR_HARMONIZED",
-    }
-
-    sensorBandDict = {
-        "SR": [
-            "B1",
-            "B2",
-            "B3",
-            "B4",
-            "B5",
-            "B6",
-            "B7",
-            "B8",
-            "B8A",
-            "B9",
-            "B11",
-            "B12",
-        ],
-        "TOA": [
-            "B1",
-            "B2",
-            "B3",
-            "B4",
-            "B5",
-            "B6",
-            "B7",
-            "B8",
-            "B8A",
-            "B9",
-            "B10",
-            "B11",
-            "B12",
-        ],
-    }
-
-    sensorBandNameDict = {
-        "SR": [
-            "cb",
-            "blue",
-            "green",
-            "red",
-            "re1",
-            "re2",
-            "re3",
-            "nir",
-            "nir2",
-            "waterVapor",
-            "swir1",
-            "swir2",
-        ],
-        "TOA": [
-            "cb",
-            "blue",
-            "green",
-            "red",
-            "re1",
-            "re2",
-            "re3",
-            "nir",
-            "nir2",
-            "waterVapor",
-            "cirrus",
-            "swir1",
-            "swir2",
-        ],
-    }
     # Specify S2 continuous bands if resampling is set to something other than near
     s2_continuous_bands = sensorBandNameDict[toaOrSR]
 
@@ -5853,6 +5856,62 @@ def getProcessedSentinel2Scenes(
     s2s = s2s.map(lambda img: addSensorBand(img, "sentinel2", toaOrSR))
 
     return s2s.set(args)
+
+
+#########################################################################
+#########################################################################
+def superSimpleGetS2(
+    studyArea: ee.Geometry,
+    startDate: str or ee.Date,
+    endDate: str or ee.Date,
+    toaOrSR: str = "TOA",
+    applyCloudScorePlus: bool = True,
+    cloudScorePlusThresh: float = 0.6,
+    cloudScorePlusScore: str = "cs",
+) -> ee.ImageCollection:
+    """
+    This function retrieves Sentinel-2 satellite imagery from Earth Engine for a specified study area and date range. 
+    It applies the cloudScore+ algorithm unless told otherwise.
+
+    Args:
+        studyArea (ee.Geometry): An Earth Engine geometry object representing the area of interest.
+        startDate (ee.Date or str): The start date for the image collection in YYYY-MM-DD format.
+        endDate (ee.Date or str): The end date for the image collection in YYYY-MM-DD format.
+        toaOrSR (str, optional): Specifies whether to retrieve data in Top-Of-Atmosphere (TOA) reflectance or Surface Reflectance (SR). Defaults to "TOA".
+        applyCloudScorePlus (bool, optional): Determines whether to apply cloud filtering based on the Cloud Score Plus product. Defaults to True.
+        cloudScorePlusThresh (float, optional): Sets the threshold for cloud cover percentage based on Cloud Score Plus. Images with cloud cover exceeding this threshold will be masked out if `applyCloudScorePlus` is True. Defaults to 0.6.
+        cloudScorePlusScore (str, optional): Specifies the band name within the Cloud Score Plus product containing the cloud cover information. Defaults to "cs".
+
+    Returns:
+        ee.ImageCollection: A collection of cloud and cloud-shadow-free Sentinel-2 satellite images filtered by the specified criteria.
+
+
+    >>> import geeViz.getImagesLib as gil
+    >>> Map = gil.Map
+    >>> ee = gil.ee
+    >>> studyArea = gil.testAreas["CA"]
+    >>> composite = gil.superSimpleGetS2(studyArea, "2024-06-01", "2024-09-30").median()
+    >>> Map.addLayer(composite, gil.vizParamsFalse10k, "Sentinel-2 Composite")
+    >>> Map.addLayer(studyArea, {}, "Study Area")
+    >>> Map.centerObject(studyArea)
+    >>> Map.turnOnInspector()
+    >>> Map.view()
+
+    """
+
+    toaOrSR = toaOrSR.upper()
+
+    s2s = ee.ImageCollection(s2CollectionDict[toaOrSR]).filterDate(startDate, endDate).filterBounds(studyArea)
+
+    s2s = s2s.select(sensorBandDict[toaOrSR], sensorBandNameDict[toaOrSR])
+
+    cloudScorePlus = ee.ImageCollection("GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED").select([cloudScorePlusScore], ["cloudScorePlus"])
+
+    s2s = s2s.linkCollection(cloudScorePlus, ["cloudScorePlus"])
+
+    if applyCloudScorePlus:
+        s2s = s2s.map(lambda img: img.updateMask(img.select(["cloudScorePlus"]).gte(cloudScorePlusThresh)))
+    return s2s
 
 
 #########################################################################
