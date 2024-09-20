@@ -28,7 +28,7 @@ from geeViz.geeView import *
 import geeViz.cloudStorageManagerLib as cml
 import geeViz.assetManagerLib as aml
 import geeViz.taskManagerLib as tml
-import math, ee, json, pdb
+import math, ee, json, pdb, datetime
 from threading import Thread
 
 # %%
@@ -2625,7 +2625,7 @@ def RefinedLee(img: ee.Image) -> ee.Image:
 
 # Load and filter Sentinel-1 GRD data by predefined parameters
 def getS1(
-    studyArea: ee.Geometry,
+    studyArea: ee.Geometry | ee.Feature | ee.FeatureCollection,
     startYear: int,
     endYear: int,
     startJulian: int,
@@ -2739,11 +2739,11 @@ sensorBandNameDict = {
 # Function to get Sentinel 2 A and B data into a single collection with meaningful band names for a specified area and date range
 # Will also join the S2 cloudless cloud probability collection if specified
 def getS2(
-    studyArea: ee.Geometry,
-    startDate: ee.Date,
-    endDate: ee.Date,
-    startJulian: int,
-    endJulian: int,
+    studyArea: ee.Geometry | ee.Feature | ee.FeatureCollection,
+    startDate: ee.Date | datetime.datetime | str,
+    endDate: ee.Date | datetime.datetime | str,
+    startJulian: int = 1,
+    endJulian: int = 365,
     resampleMethod: str = "nearest",
     toaOrSR: str = "TOA",
     convertToDailyMosaics: bool = True,
@@ -2751,12 +2751,12 @@ def getS2(
     addCloudScorePlus: bool = True,
     cloudScorePlusScore: str = "cs",
 ) -> ee.ImageCollection:
-    """Loads and processes Sentinel-2 data for a given area and time period.
+    """Loads Sentinel-2 data for a given area and time period and joins cloud score information. Partially deprecated in favor of the simpler superSimpleGetS2.
 
     Args:
         studyArea: The geographic area of interest.
-        startDate: The start date of the desired data.
-        endDate: The end date of the desired data.
+        startDate: The start date of the desired data. Can be an ee.Date object, datetime object, or date string.
+        endDate: The end date of the desired data. Can be an ee.Date object, datetime object, or date string.
         startJulian: The start Julian day of the desired data.
         endJulian: The end Julian day of the desired data.
         resampleMethod: The resampling method (default: "nearest").
@@ -2766,13 +2766,27 @@ def getS2(
         addCloudScorePlus: Whether to add cloud score plus data (default: True).
         cloudScorePlusScore: The band name for cloud score plus (default: "cs").
 
-
     Returns:
-        An Earth Engine ImageCollection containing the processed Sentinel-2 data.
+        ee.ImageCollection: A collection of Sentinel-2 satellite images filtered by the specified criteria.
+
+
+    >>> import geeViz.getImagesLib as gil
+    >>> Map = gil.Map
+    >>> ee = gil.ee
+    >>> studyArea = gil.testAreas["CA"]
+    >>> composite = gil.getS2(studyArea, "2024-01-01", "2024-12-31", 190, 250).median()
+    >>> Map.addLayer(composite, gil.vizParamsFalse, "Sentinel-2 Composite")
+    >>> Map.addLayer(studyArea, {"canQuery": False}, "Study Area")
+    >>> Map.centerObject(studyArea)
+    >>> Map.turnOnInspector()
+    >>> Map.view()
+
     """
     args = formatArgs(locals())
 
     toaOrSR = toaOrSR.upper()
+    startDate = ee.Date(startDate)
+    endDate = ee.Date(endDate)
 
     # Specify S2 continuous bands if resampling is set to something other than near
     s2_continuous_bands = sensorBandNameDict[toaOrSR]
@@ -2989,26 +3003,26 @@ def applyScaleFactors(image, landsatCollectionVersion):
 ##################################################################
 # Function for acquiring Landsat image collections
 def getLandsat(
-    studyArea,
-    startDate,
-    endDate,
-    startJulian,
-    endJulian,
-    toaOrSR="SR",
-    includeSLCOffL7=False,
-    defringeL5=False,
-    addPixelQA=False,
-    resampleMethod="near",
-    landsatCollectionVersion="C2",
+    studyArea: ee.Geometry | ee.Feature | ee.FeatureCollection,
+    startDate: ee.Date | datetime.datetime | str,
+    endDate: ee.Date | datetime.datetime | str,
+    startJulian: int = 1,
+    endJulian: int = 365,
+    toaOrSR: str = "SR",
+    includeSLCOffL7: bool = False,
+    defringeL5: bool = False,
+    addPixelQA: bool = False,
+    resampleMethod: str = "near",
+    landsatCollectionVersion: str = "C2",
 ):
-    """Retrieves Landsat imagery for a specified study area.
+    """Retrieves Landsat imagery for a specified study area and date range.
 
     Args:
         studyArea (ee.Geometry, ee.Feature, or ee.FeatureCollection): The geographic area of interest.
-        startDate (ee.Date or str): The start date of the desired image range.
-        endDate (ee.Date or str): The end date of the desired image range.
-        startJulian (int): The start Julian day of the desired image range.
-        endJulian (int): The end Julian day of the desired image range.
+        startDate (ee.Date, datetime.datetime, or str): The start date of the desired image range.
+        endDate (ee.Date, datetime.datetime, or str): The end date of the desired image range.
+        startJulian (int, optional): The start Julian day of the desired image range. Defaults to 1.
+        endJulian (int, optional): The end Julian day of the desired image range. Defaults to 365.
         toaOrSR (str, optional): Whether to retrieve TOA or SR data. Defaults to "SR".
         includeSLCOffL7 (bool, optional): Whether to include SLC-off L7 data. Defaults to False.
         defringeL5 (bool, optional): Whether to defringe L5 data. Defaults to False.
@@ -3018,8 +3032,25 @@ def getLandsat(
 
     Returns:
         ee.ImageCollection: A collection of Landsat images meeting the specified criteria.
+
+
+    >>> import geeViz.getImagesLib as gil
+    >>> Map = gil.Map
+    >>> ee = gil.ee
+    >>> studyArea = gil.testAreas["CA"]
+    >>> composite = gil.getLandsat(studyArea, "2024-01-01", "2024-12-31", 190, 250).median()
+    >>> Map.addLayer(composite, gil.vizParamsFalse, "Landsat Composite")
+    >>> Map.addLayer(studyArea, {"canQuery": False}, "Study Area")
+    >>> Map.centerObject(studyArea)
+    >>> Map.turnOnInspector()
+    >>> Map.view()
+
     """
     args = formatArgs(locals())
+
+    toaOrSR = toaOrSR.upper()
+    startDate = ee.Date(startDate)
+    endDate = ee.Date(endDate)
 
     def getLandsatCollection(landsatCollectionVersion, whichC, toaOrSR):
         c = (
@@ -3939,11 +3970,25 @@ def medoidMosaicMSD(inCollection: ee.ImageCollection, medoidIncludeBands: ee.Lis
         An Earth Engine Image representing the medoid mosaic.
 
     Note:
-        * As the data are not normalized in this method, ensuring the medoidIncludeBands have roughly comparable ranges of values
-        helps the function work properly. For example, if temperature is included, it will account for most of the variance
-        thus resulting in a medoid mosaic that will more or less choose values closest to the median temperature only, rather than
-        all the bands
+        * As the data are not normalized in this method, ensuring the medoidIncludeBands have roughly comparable ranges of values helps the function work properly. For example, if temperature is included, it will account for most of the variance thus resulting in a medoid mosaic that will more or less choose values closest to the median temperature only, rather than all the bands
+
         * The function assumes that the image collection has consistent band names and data types.
+
+
+    >>> import geeViz.getImagesLib as gil
+    >>> Map = gil.Map
+    >>> ee = gil.ee
+    >>> studyArea = gil.testAreas["CO"]
+    >>> s2s = gil.superSimpleGetS2(studyArea, "2024-01-01", "2024-12-31", 190, 250)
+    >>> median_composite = s2s.median()
+    >>> medoid_composite = gil.medoidMosaicMSD(s2s, ["green", "red", "nir", "swir1", "swir2"])
+    >>> Map.addLayer(median_composite, gil.vizParamsFalse10k, "Sentinel-2 Median Composite")
+    >>> Map.addLayer(medoid_composite, gil.vizParamsFalse10k, "Sentinel-2 Medoid Composite")
+    >>> Map.addLayer(studyArea, {"canQuery": False}, "Study Area")
+    >>> Map.centerObject(studyArea)
+    >>> Map.turnOnInspector()
+    >>> Map.view()
+
     """
 
     if medoidIncludeBands == None:
@@ -4290,7 +4335,7 @@ def compositeTimeSeries(
         images = yearsTT.map(yrGetter)
         lsT = ee.ImageCollection(ee.FeatureCollection(images).flatten())
 
-        count = lsT.select([0]).count().rename(["compositeObsCount"])
+        count = lsT.select([0]).reduce(ee.Reducer.count()).rename(["compositeObsCount"])
         # Compute median or medoid or apply reducer
         if compositingReducer != None:
             composite = lsT.reduce(compositingReducer)
@@ -4883,18 +4928,49 @@ def despikeCollection(c, absoluteSpike, bandNo):
 # Function to get MODIS data from various collections
 # Will pull from daily or 8-day composite collections based on the boolean variable "daily"
 def getModisData(
-    startYear,
-    endYear,
-    startJulian,
-    endJulian,
-    daily=False,
-    maskWQA=False,
-    zenithThresh=90,
-    useTempInCloudMask=True,
-    addLookAngleBands=False,
-    resampleMethod="near",
+    startYear: int,
+    endYear: int,
+    startJulian: int,
+    endJulian: int,
+    daily: bool = False,
+    maskWQA: bool = False,
+    zenithThresh: int = 90,
+    useTempInCloudMask: bool = True,
+    addLookAngleBands: bool = False,
+    resampleMethod: str = "near",
 ):
+    """
+    Retrieves MODIS imagery from Earth Engine for a specified period. Handles joining all MODIS collections for Terra and Aqua and aligning band names
 
+    Args:
+        startYear (int): The starting year for the data collection.
+        endYear (int): The ending year for the data collection.
+        startJulian (int): The starting Julian day of year for the data collection (1-366).
+        endJulian (int): The ending Julian day of year for the data collection (1-366).
+        daily (bool, optional): Determines whether to retrieve daily or 8-day composite data. Defaults to False (8-day composite).
+        maskWQA (bool, optional): Controls whether to mask pixels based on the Quality Assurance (QA) band. Only applicable for daily data (daily=True). Defaults to False.
+        zenithThresh (float, optional): Sets the threshold for solar zenith angle in degrees. Pixels with zenith angle exceeding this threshold will be masked out. Defaults to 90.
+        useTempInCloudMask (bool, optional): Determines whether to use the thermal band for cloud masking. Defaults to True.
+        addLookAngleBands (bool, optional): Controls whether to include view angle bands in the output. Defaults to False.
+        resampleMethod (str, optional): Specifies the resampling method to apply to the imagery. Valid options include "near", "bilinear", and "bicubic". Defaults to "near" (nearest neighbor).
+
+    Returns:
+        ee.ImageCollection: A collection of MODIS imagery for the specified criteria.
+
+    >>> import geeViz.getImagesLib as gil
+    >>> Map = gil.Map
+    >>> ee = gil.ee
+    >>> crs = gil.common_projections["NLCD_CONUS"]["crs"]
+    >>> transform = gil.common_projections["NLCD_CONUS"]["transform"]
+    >>> scale = 240
+    >>> transform[0] = scale
+    >>> transform[4] = -scale
+    >>> composite = gil.getModisData(2024, 2024, 190, 250, resampleMethod="bicubic").median().reproject(crs, transform)
+    >>> Map.addLayer(composite, gil.vizParamsFalse, "MODIS Composite")
+    >>> Map.setCenter(-111, 41, 7)
+    >>> Map.turnOnInspector()
+    >>> Map.view()
+    """
     # Find which collections to pull from based on daily or 8-day
     if daily == False:
         a250C = modisCDict["eightDaySR250A"]
@@ -5017,35 +5093,85 @@ def getModisData(
     return joined
 
 
+#########################################################################
+#########################################################################
 # Function to get cloud, cloud shadow busted modis images
 # Takes care of matching different modis collections as well
 def getProcessedModis(
-    startYear,
-    endYear,
-    startJulian,
-    endJulian,
-    zenithThresh=90,
-    addLookAngleBands=True,
-    applyCloudScore=True,
-    applyTDOM=True,
-    useTempInCloudMask=True,
-    cloudScoreThresh=20,
-    performCloudScoreOffset=True,
-    cloudScorePctl=10,
-    zScoreThresh=-1,
-    shadowSumThresh=0.35,
-    contractPixels=0,
-    dilatePixels=2.5,
-    shadowSumBands=["nir", "swir2"],
-    resampleMethod="bicubic",
-    preComputedCloudScoreOffset=None,
-    preComputedTDOMIRMean=None,
-    preComputedTDOMIRStdDev=None,
-    addToMap=False,
-    crs="EPSG:4326",
-    scale=250,
-    transform=None,
+    startYear: int,
+    endYear: int,
+    startJulian: int,
+    endJulian: int,
+    zenithThresh: float = 90,
+    addLookAngleBands: bool = True,
+    applyCloudScore: bool = True,
+    applyTDOM: bool = True,
+    useTempInCloudMask: bool = True,
+    cloudScoreThresh: int = 20,
+    performCloudScoreOffset: bool = True,
+    cloudScorePctl: int = 10,
+    zScoreThresh: float = -1,
+    shadowSumThresh: float = 0.35,
+    contractPixels: int = 0,
+    dilatePixels: float = 2.5,
+    shadowSumBands: list[str] = ["nir", "swir2"],
+    resampleMethod: str = "bicubic",
+    preComputedCloudScoreOffset: ee.Image | None = None,
+    preComputedTDOMIRMean: ee.Image | None = None,
+    preComputedTDOMIRStdDev: ee.Image | None = None,
+    addToMap: bool = False,
+    crs: str = "EPSG:4326",
+    scale: int | None = 250,
+    transform: list[int] | None = None,
 ):
+    """
+    Retrieves, processes, and filters MODIS imagery for a specified period.
+
+    This function retrieves daily MODIS imagery from Earth Engine, applies various cloud and
+    cloud shadow masking techniques, and returns a collection of processed images.
+
+    Args:
+        startYear (int): The starting year for the data collection.
+        endYear (int): The ending year for the data collection.
+        startJulian (int): The starting Julian day of year for the data collection (1-366).
+        endJulian (int): The ending Julian day of year for the data collection (1-366).
+        zenithThresh (float, optional): Sets the threshold for solar zenith angle in degrees. Pixels with zenith angle exceeding this threshold will be masked out. Defaults to 90.
+        addLookAngleBands (bool, optional): Controls whether to include view angle bands in the output. Defaults to True.
+        applyCloudScore (bool, optional): Determines whether to apply cloud masking based on the CloudScore simple algorithm adapted to MODIS. Defaults to True.
+        applyTDOM (bool, optional): Determines whether to apply the TDOM (Temporal Dark Outlier Mask)
+        technique for cloud shadow masking. Defaults to True.
+        useTempInCloudMask (bool, optional): Determines whether to use the thermal band for cloud masking during MODIS data retrieval. Defaults to True.
+        cloudScoreThresh (int, optional): Threshold for the CloudScore simple algorithm to classify a pixel as cloudy. Lower number masks out more. Defaults to 20.
+        performCloudScoreOffset (bool, optional): Controls whether to perform an offset correction on the Cloud Score data over bright surfaces. Only use this if bright areas are being masked as clouds. Do not use this in persistently cloud areas. Defaults to True.
+        cloudScorePctl (int, optional): Percentile of the Cloud Score product to use for the offset correction. Defaults to 10.
+        zScoreThresh (float, optional): Threshold for the z-score used in TDOM cloud shadow masking. Pixels with z-scores below this threshold are masked. Defaults to -1.
+        shadowSumThresh (float, optional): Threshold for the sum of reflectance in shadow bands used in TDOM cloud shadow masking. Pixels below this threshold and the zScoreThresh are masked as dark outliers (likely cloud shadows). Defaults to 0.35.
+        contractPixels (int, optional): Number of pixels to contract cloud and shadow masks by. Defaults to 0.
+        dilatePixels (float, optional): Number of pixels to dilate cloud and shadow masks by. Defaults to 2.5.
+        shadowSumBands (list[str], optional): List of band names to use for calculating the sum of reflectance in TDOM cloud shadow masking. Defaults to ["nir", "swir2"].
+        resampleMethod (str, optional): Specifies the resampling method to apply to the imagery. Valid options include "near", "bilinear", and "bicubic". Defaults to "bicubic".
+        preComputedCloudScoreOffset (float | None, optional): Pre-computed Cloud Score offset value to avoid redundant calculations. Defaults to None (automatic calculation).
+        preComputedTDOMIRMean (float | None, optional): Pre-computed mean of the IR band used in TDOM cloud shadow masking to avoid redundant calculations. Defaults to None (automatic calculation).
+        preComputedTDOMIRStdDev (float | None, optional): Pre-computed standard deviation of the IR band used in TDOM cloud shadow masking to avoid redundant calculations. Defaults to None (automatic calculation).
+        addToMap (bool, optional): Controls whether to add intermediate processing steps (masked medians) to the Earth Engine map for visualization purposes. Defaults to False.
+        crs (str, optional): Only used if addToMap is True. Coordinate Reference System (CRS) for the output imagery. Defaults to "EPSG:4326".
+        scale (int | None, optional): Only used if addToMap is True. Scale (resolution) of the output imagery in meters. Defaults to 250.
+        transform (list | None, optional): Only used if addToMap is True. Optional transformation matrix to apply to the output imagery. Defaults to None.
+
+    >>> import geeViz.getImagesLib as gil
+    >>> Map = gil.Map
+    >>> ee = gil.ee
+    >>> crs = gil.common_projections["NLCD_CONUS"]["crs"]
+    >>> transform = gil.common_projections["NLCD_CONUS"]["transform"]
+    >>> scale = 240
+    >>> transform[0] = scale
+    >>> transform[4] = -scale
+    >>> composite = gil.getProcessedModis(2024, 2024, 190, 250).median().reproject(crs, transform)
+    >>> Map.addLayer(composite, gil.vizParamsFalse, "MODIS Composite")
+    >>> Map.setCenter(-111, 41, 7)
+    >>> Map.turnOnInspector()
+    >>> Map.view()
+    """
 
     args = formatArgs(locals())
     if "args" in args.keys():
@@ -5543,73 +5669,86 @@ def getLandsatWrapper(
 #########################################################################
 # Wrapper function for getting Landsat imagery
 def getProcessedLandsatScenes(
-    studyArea,
-    startYear,
-    endYear,
-    startJulian,
-    endJulian,
-    toaOrSR="SR",
-    includeSLCOffL7=False,
-    defringeL5=False,
-    applyCloudScore=False,
-    applyFmaskCloudMask=True,
-    applyTDOM=False,
-    applyFmaskCloudShadowMask=True,
-    applyFmaskSnowMask=False,
-    cloudScoreThresh=10,
-    performCloudScoreOffset=True,
-    cloudScorePctl=10,
-    zScoreThresh=-1,
-    shadowSumThresh=0.35,
-    contractPixels=1.5,
-    dilatePixels=3.5,
-    shadowSumBands=["nir", "swir1"],
-    resampleMethod="near",
-    harmonizeOLI=False,
-    preComputedCloudScoreOffset=None,
-    preComputedTDOMIRMean=None,
-    preComputedTDOMIRStdDev=None,
-    landsatCollectionVersion="C2",
-    verbose=False,
-):
+    studyArea: ee.Geometry | ee.Feature | ee.FeatureCollection,
+    startYear: int,
+    endYear: int,
+    startJulian: int,
+    endJulian: int,
+    toaOrSR: str = "SR",
+    includeSLCOffL7: bool = False,
+    defringeL5: bool = False,
+    applyCloudScore: bool = False,
+    applyFmaskCloudMask: bool = True,
+    applyTDOM: bool = False,
+    applyFmaskCloudShadowMask: bool = True,
+    applyFmaskSnowMask: bool = False,
+    cloudScoreThresh: int = 10,
+    performCloudScoreOffset: bool = True,
+    cloudScorePctl: int = 10,
+    zScoreThresh: float = -1,
+    shadowSumThresh: float = 0.35,
+    contractPixels: float = 1.5,
+    dilatePixels: float = 3.5,
+    shadowSumBands: list[str] = ["nir", "swir1"],
+    resampleMethod: str = "near",
+    harmonizeOLI: bool = False,
+    preComputedCloudScoreOffset: ee.Image | None = None,
+    preComputedTDOMIRMean: ee.Image | None = None,
+    preComputedTDOMIRStdDev: ee.Image | None = None,
+    landsatCollectionVersion: str = "C2",
+    verbose: bool = False,
+) -> ee.ImageCollection:
     """
-    Get Landsat images from all available TM-OLI collections with common bands selected/named, cloud and cloud masking applied, and common indices added.
+    Retrieves, processes, and filters Landsat scenes for a specified area and time period.
 
+    This function retrieves Landsat scenes from Earth Engine, applies various cloud,
+    cloud shadow, and snow masking techniques, calculates common indices, and returns
+    a collection of processed images.
 
     Args:
-      studyArea (FeatureCollection, Feature, Geometry).
-      startYear (int).
-      endYear (int).
-      startJulian (int).
-      endJulian (int).
-      toaOrSR (str) ="SR".
-      includeSLCOffL7=False.
-      defringeL5=False.
-      applyCloudScore=False.
-      applyFmaskCloudMask=True.
-      applyTDOM=False.
-      applyFmaskCloudShadowMask=True.
-      applyFmaskSnowMask=False.
-      cloudScoreThresh=10.
-      performCloudScoreOffset=True.
-      cloudScorePctl=10.
-      zScoreThresh=-1.
-      shadowSumThresh=0.35.
-      contractPixels=1.5.
-      dilatePixels=3.5.
-      shadowSumBands=["nir". "swir1"].
-      resampleMethod="near".
-      harmonizeOLI=False.
-      preComputedCloudScoreOffset=None.
-      preComputedTDOMIRMean=None.
-      preComputedTDOMIRStdDev=None.
-      landsatCollectionVersion="C2".
-      verbose=False.
-        param1 (int): The first parameter.
-        param2 (str): The second parameter.
+        studyArea (ee.Geometry): The geographic area of interest (study area) as an Earth Engine geometry, Feature, or FeatureCollection object.
+        startYear (int): The starting year for the data collection.
+        endYear (int): The ending year for the data collection.
+        startJulian (int): The starting Julian day of year for the data collection (1-365).
+        endJulian (int): The ending Julian day of year for the data collection (1-365).
+        toaOrSR (str, optional): Flag indicating desired reflectance type: "TOA" (Top Of Atmosphere) or "SR" (Surface Reflectance). Defaults to "SR".
+        includeSLCOffL7 (bool, optional): Determines whether to include Landsat 7 SLC-off scenes. Defaults to False.
+        defringeL5 (bool, optional): Determines whether to defringe Landsat 5 scenes. Defaults to False.
+        applyCloudScore (bool, optional): Determines whether to apply cloud masking based on the CloudScore simple algorithm. Defaults to False.
+        applyFmaskCloudMask (bool, optional): Determines whether to apply the Fmask cloud mask. Defaults to True.
+        applyTDOM (bool, optional): Determines whether to apply the TDOM (Temporal Dark Outlier Mask) technique for cloud shadow masking. Defaults to False.
+        applyFmaskCloudShadowMask (bool, optional): Determines whether to apply the Fmask cloud shadow mask. Defaults to True.
+        applyFmaskSnowMask (bool, optional): Determines whether to apply the Fmask snow mask. Defaults to False.
+        cloudScoreThresh (int, optional): Threshold for the CloudScore simple algorithm to classify a pixel as cloudy. Lower number masks out more. Defaults to 10.
+        performCloudScoreOffset (bool, optional): Controls whether to perform an offset correction on the Cloud Score data over bright surfaces. Only use this if bright areas are being masked as clouds. Do not use this in persistently cloud areas. Defaults to True.
+        cloudScorePctl (int, optional): Percentile of the Cloud Score product to use for the offset correction. Defaults to 10.
+        zScoreThresh (float, optional): Threshold for the z-score used in TDOM cloud shadow masking. Pixels with z-scores below this threshold are masked. Defaults to -1.
+        shadowSumThresh (float, optional): Threshold for the sum of reflectance in shadow bands used in TDOM cloud shadow masking. Pixels below this threshold and the zScoreThresh are masked as dark outliers (likely cloud shadows). Defaults to 0.35.
+        contractPixels (float, optional): Number of pixels to contract cloud and shadow masks by. Defaults to 1.5.
+        dilatePixels (float, optional): Number of pixels to dilate cloud and shadow masks by. Defaults to 3.5.
+        shadowSumBands (list[str], optional): List of band names to use for calculating the sum of reflectance in TDOM cloud shadow masking. Defaults to ["nir", "swir1"].
+        resampleMethod (str, optional): Specifies the resampling method to apply to the imagery. Valid options include "near", "bilinear", and "bicubic". Defaults to "near".
+        harmonizeOLI (bool, optional): Determines whether to harmonize OLI data to match TM/ETM+ spectral response. Defaults to False.
+        preComputedCloudScoreOffset (float | None, optional): Pre-computed Cloud Score offset value to avoid redundant calculations. Defaults to None (automatic calculation).
+        preComputedTDOMIRMean (float | None, optional): Pre-computed mean of the IR band used in TDOM cloud shadow masking to avoid redundant calculations. Defaults to None (automatic calculation).
+        preComputedTDOMIRStdDev (float | None, optional): Pre-computed standard deviation of the IR band used in TDOM cloud shadow masking to avoid redundant calculations. Defaults to None (automatic calculation).
+        landsatCollectionVersion (str, optional): Specifies the Landsat collection version to use (e.g., "C1", "C2"). Defaults to "C2".
+        verbose (bool, optional): Controls whether to print additional information during processing. Defaults to False.
 
     Returns:
-        ImageCollection: A collection of Landsat scenes.
+        ee.ImageCollection: A collection of analysis ready, cloud and cloud shadow asked Landsat scenes with common band names.
+
+    >>> import geeViz.getImagesLib as gil
+    >>> Map = gil.Map
+    >>> ee = gil.ee
+    >>> studyArea = gil.testAreas["CO"]
+    >>> composite = gil.getProcessedLandsatScenes(studyArea, 2023, 2023, 190, 250).median()
+    >>> Map.addLayer(composite, gil.vizParamsFalse, "Landsat Composite")
+    >>> Map.addLayer(studyArea, {"canQuery": False}, "Study Area")
+    >>> Map.centerObject(studyArea)
+    >>> Map.turnOnInspector()
+    >>> Map.view()
+
     """
     origin = "Landsat"
     toaOrSR = toaOrSR.upper()
@@ -5861,22 +6000,26 @@ def getProcessedSentinel2Scenes(
 #########################################################################
 #########################################################################
 def superSimpleGetS2(
-    studyArea: ee.Geometry,
-    startDate: str or ee.Date,
-    endDate: str or ee.Date,
+    studyArea: ee.Geometry | ee.Feature | ee.FeatureCollection,
+    startDate: ee.Date | datetime.datetime | str,
+    endDate: ee.Date | datetime.datetime | str,
+    startJulian: int = 1,
+    endJulian: int = 365,
     toaOrSR: str = "TOA",
     applyCloudScorePlus: bool = True,
     cloudScorePlusThresh: float = 0.6,
     cloudScorePlusScore: str = "cs",
 ) -> ee.ImageCollection:
     """
-    This function retrieves Sentinel-2 satellite imagery from Earth Engine for a specified study area and date range. 
+    This function retrieves Sentinel-2 satellite imagery from Earth Engine for a specified study area and date range.
     It applies the cloudScore+ algorithm unless told otherwise.
 
     Args:
         studyArea (ee.Geometry): An Earth Engine geometry object representing the area of interest.
-        startDate (ee.Date or str): The start date for the image collection in YYYY-MM-DD format.
-        endDate (ee.Date or str): The end date for the image collection in YYYY-MM-DD format.
+        startDate (ee.Date, datetime.datetime, or str): The start date for the image collection in YYYY-MM-DD format.
+        endDate (ee.Date, datetime.datetime, or str): The end date for the image collection in YYYY-MM-DD format.
+        startJulian (int, optional): The start Julian day of the desired data. Defaults to 1.
+        endJulian (int, optional): The end Julian day of the desired data. Defaults to 365.
         toaOrSR (str, optional): Specifies whether to retrieve data in Top-Of-Atmosphere (TOA) reflectance or Surface Reflectance (SR). Defaults to "TOA".
         applyCloudScorePlus (bool, optional): Determines whether to apply cloud filtering based on the Cloud Score Plus product. Defaults to True.
         cloudScorePlusThresh (float, optional): Sets the threshold for cloud cover percentage based on Cloud Score Plus. Images with cloud cover exceeding this threshold will be masked out if `applyCloudScorePlus` is True. Defaults to 0.6.
@@ -5890,9 +6033,9 @@ def superSimpleGetS2(
     >>> Map = gil.Map
     >>> ee = gil.ee
     >>> studyArea = gil.testAreas["CA"]
-    >>> composite = gil.superSimpleGetS2(studyArea, "2024-06-01", "2024-09-30").median()
+    >>> composite = gil.superSimpleGetS2(studyArea, "2024-01-01", "2024-12-31", 190, 250).median()
     >>> Map.addLayer(composite, gil.vizParamsFalse10k, "Sentinel-2 Composite")
-    >>> Map.addLayer(studyArea, {}, "Study Area")
+    >>> Map.addLayer(studyArea, {"canQuery": False}, "Study Area")
     >>> Map.centerObject(studyArea)
     >>> Map.turnOnInspector()
     >>> Map.view()
@@ -5900,8 +6043,10 @@ def superSimpleGetS2(
     """
 
     toaOrSR = toaOrSR.upper()
+    startDate = ee.Date(startDate)
+    endDate = ee.Date(endDate)
 
-    s2s = ee.ImageCollection(s2CollectionDict[toaOrSR]).filterDate(startDate, endDate).filterBounds(studyArea)
+    s2s = ee.ImageCollection(s2CollectionDict[toaOrSR]).filterDate(startDate, endDate.advance(1, "day")).filter(ee.Filter.calendarRange(startJulian, endJulian)).filterBounds(studyArea)
 
     s2s = s2s.select(sensorBandDict[toaOrSR], sensorBandNameDict[toaOrSR])
 
@@ -8076,22 +8221,84 @@ def synthImage(coeffs, dateImage, indexNames, harmonics, detrend):
 # UCSB-CHG/CHIRPS/DAILY (precipitation only)
 # and possibly others
 def getClimateWrapper(
-    collectionName,
-    studyArea,
-    startYear,
-    endYear,
-    startJulian,
-    endJulian,
-    timebuffer,
-    weights,
-    compositingReducer,
-    exportComposites=False,
-    exportPathRoot=None,
-    crs=None,
-    transform=None,
-    scale=None,
-    exportBands=None,
-):
+    collectionName: str,
+    studyArea: ee.Geometry | ee.Feature | ee.FeatureCollection,
+    startYear: int,
+    endYear: int,
+    startJulian: int,
+    endJulian: int,
+    timebuffer: int = 0,
+    weights: ee.List | list | None = None,
+    compositingReducer: ee.Reducer | None = None,
+    exportComposites: bool = False,
+    exportPathRoot: str | None = None,
+    crs: str | None = None,
+    transform: list[int] | None = None,
+    scale: int | None = None,
+    exportBands: ee.List | list | None = None,
+) -> ee.ImageCollection:
+    """
+    Wrapper function to retrieve and process climate data from various Earth Engine collections.
+
+    This function supports retrieving climate data from collections like NASA/ORNL/DAYMET_V3,
+    NASA/ORNL/DAYMET_V4, UCSB-CHG/CHIRPS/DAILY (precipitation only), and potentially others. It allows
+    filtering by date, study area, and Julian day, specifying a compositing reducer, and optionally
+    exporting the resulting time series.
+
+    Args:
+        collectionName (str): Name of the Earth Engine collection containing climate data.
+        studyArea (ee.Geometry | ee.Feature | ee.FeatureCollection): The geographic area of interest (study area) as an Earth Engine geometry object.
+        startYear (int): The starting year for the data collection.
+        endYear (int): The ending year for the data collection.
+        startJulian (int): The starting Julian day of year for the data collection (1-365).
+        endJulian (int): The ending Julian day of year for the data collection (1-365).
+        timebuffer (int, optional): Number of years to buffer around each year. Defaults to 0.
+        weights (ee.List | list| None, optional): List of weights for weighted compositing (if applicable
+            to the chosen collection). Defaults to None (equal weights).
+        compositingReducer (ee.Reducer | None, optional): Earth Engine reducer used for compositing
+            daily data into the desired temporal resolution. Defaults to None (may require a reducer
+            depending on the collection).
+        exportComposites (bool, optional): Flag indicating whether to export the resulting time series.
+            Defaults to False.
+        exportPathRoot (str | None, optional): Root path for exporting the composites (if exportComposites
+            is True). Defaults to None (no export).
+        crs (str | None, optional): Earth Engine projection object for the exported composites
+            (if exportComposites is True). Defaults to None (uses the source collection's projection).
+        transform (list[int] | None, optional): Earth Engine transform object for the exported
+            composites (if exportComposites is True). Defaults to None (uses the source collection's transform).
+        scale (int | None, optional): Scale in meters for the exported composites (if exportComposites
+            is True). Defaults to None (uses the source collection's scale).
+        exportBands (ee.List | list | None, optional): List of band names to export from the composites (if
+            exportComposites is True). Defaults to None (all bands from the first image in the collection).
+
+    Returns:
+        ee.ImageCollection: The time series collection of processed climate data.
+
+    >>> import geeViz.getImagesLib as gil
+    >>> Map = gil.Map
+    >>> ee = gil.ee
+    >>> studyArea = gil.testAreas["CO"]
+    >>> startJulian = 274
+    >>> endJulian = 273
+    >>> startYear = 2016
+    >>> endYear = 2023
+    >>> timebuffer = 0
+    >>> weights = [1]
+    >>> compositingReducer = ee.Reducer.mean()
+    >>> collectionName = "NASA/ORNL/DAYMET_V4"
+    >>> exportComposites = False
+    >>> exportPathRoot = "users/username/someCollection"
+    >>> exportBands = ["prcp.*", "tmax.*", "tmin.*"]
+    >>> crs = "EPSG:5070"
+    >>> transform = [1000, 0, -2361915.0, 0, -1000, 3177735.0]
+    >>> scale = None
+    >>> climateComposites = gil.getClimateWrapper(collectionName, studyArea, startYear, endYear, startJulian, endJulian, timebuffer, weights, compositingReducer, exportComposites, exportPathRoot, crs, transform, scale, exportBands)
+    >>> Map.addTimeLapse(climateComposites.select(exportBands), {}, "Climate Composite Time Lapse")
+    >>> Map.addLayer(studyArea, {"strokeColor": "0000FF", "canQuery": False}, "Study Area", True)
+    >>> Map.centerObject(studyArea)
+    >>> Map.turnOnInspector()
+    >>> Map.view()
+    """
     args = formatArgs(locals())
     if "args" in args.keys():
         del args["args"]
@@ -8156,7 +8363,7 @@ def getClimateWrapper(
             exportBands,
         )
 
-    return ts  ####
+    return ts
 
 
 #####################################################################
@@ -8186,29 +8393,68 @@ def customQualityMosaic(inCollection, qualityBand, percentile):
 
 
 #####################################################################
-# On-the-fly basic water masking method
-# This method is used to provide a time-sensitive water mask
-# This method tends to work well if there is no wet snow present
-# Wet snow over flat areas can result in false positives
-# Designed to work with TOA data. SR data will result in false negatives (omission)
 def simpleWaterMask(
-    img,
-    contractPixels=0,
-    slope_thresh=10,
-    elevationImagePath="USGS/3DEP/10m",
-    elevationFocalMeanRadius=5.5,
-):
+    img: ee.Image,
+    contractPixels: int = 0,
+    slope_thresh: float = 10,
+    elevationImagePath: str = "USGS/3DEP/10m",
+    elevationFocalMeanRadius: float = 5.5,
+) -> ee.Image:
+    """
+    Performs a basic on-the-fly water masking for TOA reflectance imagery.
+
+    This function creates a water mask based on thresholds applied to Tasseled Cap angles, brightness, and slope.
+    It's designed for time-sensitive analysis and works well when wet snow is absent. However, wet snow in flat areas
+    can lead to false positives. SR data might cause false negatives (omissions).
+
+    Args:
+        img (ee.Image): The input Earth Engine image (TOA reflectance data recommended).
+        contractPixels (int, optional): Number of pixels to contract the water mask by for morphological closing. Defaults to 0 (no contraction).
+        slope_thresh (float, optional): Threshold for slope (degrees) to identify flat areas suitable for water masking. Defaults to 10.
+        elevationImagePath (str, optional): Path to the Earth Engine image containing elevation data. Defaults to "USGS/3DEP/10m" (10m DEM from USGS 3D Elevation Program).
+        elevationFocalMeanRadius (float, optional): Radius (in meters) for the focal mean filter applied to the elevation data before calculating slope. Defaults to 5.5.
+
+    Returns:
+        ee.Image: The water mask image with a single band named "waterMask".
+
+    >>> import geeViz.getImagesLib as gil
+    >>> Map = gil.Map
+    >>> ee = gil.ee
+    >>> studyArea = gil.testAreas["CO"]
+    >>> s2s = gil.superSimpleGetS2(studyArea, "2024-01-01", "2024-12-31", 190, 250).map(lambda img: gil.getTasseledCap(img.divide(10000)))
+    >>> median_composite = s2s.median()
+    >>> water = gil.simpleWaterMask(median_composite).rename("Water")
+    >>> water = water.selfMask().set({"Water_class_values": [1], "Water_class_names": ["Water"], "Water_class_palette": ["0000DD"]})
+    >>> Map.addLayer(median_composite, gil.vizParamsFalse, "Sentinel-2 Median Composite")
+    >>> Map.addLayer(water, {"autoViz": True}, "Water Mask")
+    >>> Map.addLayer(studyArea, {"canQuery": False}, "Study Area")
+    >>> Map.centerObject(studyArea, 12)
+    >>> Map.turnOnInspector()
+    >>> Map.view()
+    """
+
+    # Add Tasseled Cap angles to the image
     img = addTCAngles(img)
+
+    # Load and resample elevation data
     ned = ee.Image(elevationImagePath).resample("bicubic")
+
+    # Calculate slope using focal mean filtered elevation
     slope = ee.Terrain.slope(ned.focal_mean(elevationFocalMeanRadius))
-    flat = slope.lte(slope_thresh)
 
-    waterMask = img.select(["tcAngleBW"]).gte(-0.05).And(img.select(["tcAngleBG"]).lte(0.05)).And(img.select(["brightness"]).lt(0.3)).And(flat).focal_min(contractPixels)
+    # Identify flat areas based on slope threshold
+    flat = slope.lte(slope_thresh)  # Less than or equal to threshold
 
-    return waterMask.rename(["waterMask"])
+    # Define water mask conditions based on Tasseled Cap angles, brightness, and slope
+    waterMask = img.select(["tcAngleBW"]).gte(-0.05).And(img.select(["tcAngleBG"]).lte(0.05)).And(img.select(["brightness"]).lt(0.3)).And(flat)
+
+    # Apply morphological closing with focal minimum filter
+    waterMask = waterMask.focal_min(contractPixels)
+
+    # Rename the water mask band
+    return waterMask.rename(["waterMask"])  ####################
 
 
-#####################################################################
 # Jeff Ho Method for algal bloom detection
 # https://www.nature.com/articles/s41586-019-1648-7
 

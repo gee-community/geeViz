@@ -23,6 +23,7 @@ sys.path.append(os.getcwd())
 
 # Module imports
 import geeViz.getImagesLib as getImagesLib
+import geeViz.geePalettes as palettes
 
 ee = getImagesLib.ee
 Map = getImagesLib.Map
@@ -35,46 +36,31 @@ today = ee.Date(datetime.datetime.now())
 which_hours = list(range(0, 120 + 1, 6))
 ####################################################################################################
 # Bring in GFS
-gfs = ee.ImageCollection("NOAA/GFS0P25").filter(
-    ee.Filter.gt("creation_time", today.advance(-1, "day").millis())
-)
+gfs = ee.ImageCollection("NOAA/GFS0P25").filter(ee.Filter.gt("creation_time", today.advance(-1, "day").millis()))
 
 # Get the most recent run
-most_recent_forecast = ee.Number.parse(
-    gfs.aggregate_histogram("creation_time").keys().reduce(ee.Reducer.max())
-)
+most_recent_forecast = ee.Number.parse(gfs.aggregate_histogram("creation_time").keys().reduce(ee.Reducer.max()))
 
 # Filter to only include the most recent forecast run and the specified forecast hours
-gfs = gfs.filter(ee.Filter.eq("creation_time", most_recent_forecast)).filter(
-    ee.Filter.inList("forecast_hours", which_hours)
-)
+gfs = gfs.filter(ee.Filter.eq("creation_time", most_recent_forecast)).filter(ee.Filter.inList("forecast_hours", which_hours))
 
 
 # Function to convert wind vectors to direction and magnitude (speed)
 def getSpeedDirection(gfs):
     speed = gfs.select(["u.*"]).hypot(gfs.select(["v.*"])).divide(1000).multiply(3600)
-    direction = (
-        gfs.select(["u.*"])
-        .atan2(gfs.select(["v.*"]))
-        .divide(math.pi)
-        .add(1)
-        .multiply(180)
-    )
-    return (
-        gfs.addBands(ee.Image.cat([speed, direction]).rename(["Speed", "Direction"]))
-        .copyProperties(gfs)
-        .set("system:time_start", gfs.get("forecast_time"))
-    )
+    direction = gfs.select(["u.*"]).atan2(gfs.select(["v.*"])).divide(math.pi).add(1).multiply(180)
+    return gfs.addBands(ee.Image.cat([speed, direction]).rename(["Speed", "Direction"])).copyProperties(gfs).set("system:time_start", gfs.get("forecast_time"))
 
 
 # Convert to wind vectors
 gfs = gfs.map(getSpeedDirection)
 
 # Pulled from https://github.com/gee-community/ee-palettes
-cmOceanThermal = ["042333", "2c3395", "744992", "b15f82", "eb7958", "fbb43d", "e8fa5b"]
-cmOceanSpeed = ["fffdcd", "e1cd73", "aaac20", "5f920c", "187328", "144b2a", "172313"]
-cmOceanTempo = ["fff6f4", "c3d1ba", "7db390", "2a937f", "156d73", "1c455b", "151d44"]
-cmOceanDeep = ["fdfecc", "a5dfa7", "5dbaa4", "488e9e", "3e6495", "3f396c", "281a2c"]
+cmOceanThermal = palettes.cmocean["Thermal"][7]
+cmOceanSpeed = palettes.cmocean["Speed"][7]
+cmOceanTempo = palettes.cmocean["Tempo"][7]
+cmOceanDeep = palettes.cmocean["Deep"][7]
+
 
 # Set up a circular color ramp that's appropriate for direction
 windDirectionPalette = [i for i in cmOceanDeep]

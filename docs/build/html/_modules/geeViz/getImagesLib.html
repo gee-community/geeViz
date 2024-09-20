@@ -5,7 +5,7 @@
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>geeViz.getImagesLib - geeViz &#34;2024.9.2&#34; docs</title>
+        <title>geeViz.getImagesLib - geeViz &#34;2024.9.3&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -141,7 +141,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">geeViz "2024.9.2" docs</div></a>
+      <a href="../../index.html"><div class="brand">geeViz "2024.9.3" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -167,7 +167,7 @@
     <img class="sidebar-logo" src="../../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.9.2" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.9.3" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -269,7 +269,7 @@
 <span class="kn">import</span> <span class="nn">geeViz.cloudStorageManagerLib</span> <span class="k">as</span> <span class="nn">cml</span>
 <span class="kn">import</span> <span class="nn">geeViz.assetManagerLib</span> <span class="k">as</span> <span class="nn">aml</span>
 <span class="kn">import</span> <span class="nn">geeViz.taskManagerLib</span> <span class="k">as</span> <span class="nn">tml</span>
-<span class="kn">import</span> <span class="nn">math</span><span class="o">,</span> <span class="nn">ee</span><span class="o">,</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">pdb</span>
+<span class="kn">import</span> <span class="nn">math</span><span class="o">,</span> <span class="nn">ee</span><span class="o">,</span> <span class="nn">json</span><span class="o">,</span> <span class="nn">pdb</span><span class="o">,</span> <span class="nn">datetime</span>
 <span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
 
 <span class="c1"># %%</span>
@@ -2937,7 +2937,7 @@
 <div class="viewcode-block" id="getS1">
 <a class="viewcode-back" href="../../modules.html#geeViz.getImagesLib.getS1">[docs]</a>
 <span class="k">def</span> <span class="nf">getS1</span><span class="p">(</span>
-    <span class="n">studyArea</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span><span class="p">,</span>
+    <span class="n">studyArea</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">Feature</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">,</span>
     <span class="n">startYear</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">endYear</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">startJulian</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -3054,11 +3054,11 @@
 <div class="viewcode-block" id="getS2">
 <a class="viewcode-back" href="../../modules.html#geeViz.getImagesLib.getS2">[docs]</a>
 <span class="k">def</span> <span class="nf">getS2</span><span class="p">(</span>
-    <span class="n">studyArea</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span><span class="p">,</span>
-    <span class="n">startDate</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">,</span>
-    <span class="n">endDate</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">,</span>
-    <span class="n">startJulian</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">endJulian</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">studyArea</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">Feature</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">,</span>
+    <span class="n">startDate</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span> <span class="o">|</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">endDate</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span> <span class="o">|</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">startJulian</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">endJulian</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">365</span><span class="p">,</span>
     <span class="n">resampleMethod</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;nearest&quot;</span><span class="p">,</span>
     <span class="n">toaOrSR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;TOA&quot;</span><span class="p">,</span>
     <span class="n">convertToDailyMosaics</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -3066,12 +3066,12 @@
     <span class="n">addCloudScorePlus</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">cloudScorePlusScore</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cs&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads and processes Sentinel-2 data for a given area and time period.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Loads Sentinel-2 data for a given area and time period and joins cloud score information. Partially deprecated in favor of the simpler superSimpleGetS2.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        studyArea: The geographic area of interest.</span>
-<span class="sd">        startDate: The start date of the desired data.</span>
-<span class="sd">        endDate: The end date of the desired data.</span>
+<span class="sd">        startDate: The start date of the desired data. Can be an ee.Date object, datetime object, or date string.</span>
+<span class="sd">        endDate: The end date of the desired data. Can be an ee.Date object, datetime object, or date string.</span>
 <span class="sd">        startJulian: The start Julian day of the desired data.</span>
 <span class="sd">        endJulian: The end Julian day of the desired data.</span>
 <span class="sd">        resampleMethod: The resampling method (default: &quot;nearest&quot;).</span>
@@ -3081,13 +3081,27 @@
 <span class="sd">        addCloudScorePlus: Whether to add cloud score plus data (default: True).</span>
 <span class="sd">        cloudScorePlusScore: The band name for cloud score plus (default: &quot;cs&quot;).</span>
 
-
 <span class="sd">    Returns:</span>
-<span class="sd">        An Earth Engine ImageCollection containing the processed Sentinel-2 data.</span>
+<span class="sd">        ee.ImageCollection: A collection of Sentinel-2 satellite images filtered by the specified criteria.</span>
+
+
+<span class="sd">    &gt;&gt;&gt; import geeViz.getImagesLib as gil</span>
+<span class="sd">    &gt;&gt;&gt; Map = gil.Map</span>
+<span class="sd">    &gt;&gt;&gt; ee = gil.ee</span>
+<span class="sd">    &gt;&gt;&gt; studyArea = gil.testAreas[&quot;CA&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; composite = gil.getS2(studyArea, &quot;2024-01-01&quot;, &quot;2024-12-31&quot;, 190, 250).median()</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(composite, gil.vizParamsFalse, &quot;Sentinel-2 Composite&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(studyArea, {&quot;canQuery&quot;: False}, &quot;Study Area&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.centerObject(studyArea)</span>
+<span class="sd">    &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">    &gt;&gt;&gt; Map.view()</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">formatArgs</span><span class="p">(</span><span class="nb">locals</span><span class="p">())</span>
 
     <span class="n">toaOrSR</span> <span class="o">=</span> <span class="n">toaOrSR</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="n">startDate</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">startDate</span><span class="p">)</span>
+    <span class="n">endDate</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">endDate</span><span class="p">)</span>
 
     <span class="c1"># Specify S2 continuous bands if resampling is set to something other than near</span>
     <span class="n">s2_continuous_bands</span> <span class="o">=</span> <span class="n">sensorBandNameDict</span><span class="p">[</span><span class="n">toaOrSR</span><span class="p">]</span>
@@ -3307,26 +3321,26 @@
 <div class="viewcode-block" id="getLandsat">
 <a class="viewcode-back" href="../../modules.html#geeViz.getImagesLib.getLandsat">[docs]</a>
 <span class="k">def</span> <span class="nf">getLandsat</span><span class="p">(</span>
-    <span class="n">studyArea</span><span class="p">,</span>
-    <span class="n">startDate</span><span class="p">,</span>
-    <span class="n">endDate</span><span class="p">,</span>
-    <span class="n">startJulian</span><span class="p">,</span>
-    <span class="n">endJulian</span><span class="p">,</span>
-    <span class="n">toaOrSR</span><span class="o">=</span><span class="s2">&quot;SR&quot;</span><span class="p">,</span>
-    <span class="n">includeSLCOffL7</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">defringeL5</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">addPixelQA</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">resampleMethod</span><span class="o">=</span><span class="s2">&quot;near&quot;</span><span class="p">,</span>
-    <span class="n">landsatCollectionVersion</span><span class="o">=</span><span class="s2">&quot;C2&quot;</span><span class="p">,</span>
+    <span class="n">studyArea</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">Feature</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">,</span>
+    <span class="n">startDate</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span> <span class="o">|</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">endDate</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span> <span class="o">|</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">startJulian</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">endJulian</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">365</span><span class="p">,</span>
+    <span class="n">toaOrSR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;SR&quot;</span><span class="p">,</span>
+    <span class="n">includeSLCOffL7</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">defringeL5</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">addPixelQA</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">resampleMethod</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;near&quot;</span><span class="p">,</span>
+    <span class="n">landsatCollectionVersion</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;C2&quot;</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieves Landsat imagery for a specified study area.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieves Landsat imagery for a specified study area and date range.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        studyArea (ee.Geometry, ee.Feature, or ee.FeatureCollection): The geographic area of interest.</span>
-<span class="sd">        startDate (ee.Date or str): The start date of the desired image range.</span>
-<span class="sd">        endDate (ee.Date or str): The end date of the desired image range.</span>
-<span class="sd">        startJulian (int): The start Julian day of the desired image range.</span>
-<span class="sd">        endJulian (int): The end Julian day of the desired image range.</span>
+<span class="sd">        startDate (ee.Date, datetime.datetime, or str): The start date of the desired image range.</span>
+<span class="sd">        endDate (ee.Date, datetime.datetime, or str): The end date of the desired image range.</span>
+<span class="sd">        startJulian (int, optional): The start Julian day of the desired image range. Defaults to 1.</span>
+<span class="sd">        endJulian (int, optional): The end Julian day of the desired image range. Defaults to 365.</span>
 <span class="sd">        toaOrSR (str, optional): Whether to retrieve TOA or SR data. Defaults to &quot;SR&quot;.</span>
 <span class="sd">        includeSLCOffL7 (bool, optional): Whether to include SLC-off L7 data. Defaults to False.</span>
 <span class="sd">        defringeL5 (bool, optional): Whether to defringe L5 data. Defaults to False.</span>
@@ -3336,8 +3350,25 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        ee.ImageCollection: A collection of Landsat images meeting the specified criteria.</span>
+
+
+<span class="sd">    &gt;&gt;&gt; import geeViz.getImagesLib as gil</span>
+<span class="sd">    &gt;&gt;&gt; Map = gil.Map</span>
+<span class="sd">    &gt;&gt;&gt; ee = gil.ee</span>
+<span class="sd">    &gt;&gt;&gt; studyArea = gil.testAreas[&quot;CA&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; composite = gil.getLandsat(studyArea, &quot;2024-01-01&quot;, &quot;2024-12-31&quot;, 190, 250).median()</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(composite, gil.vizParamsFalse, &quot;Landsat Composite&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(studyArea, {&quot;canQuery&quot;: False}, &quot;Study Area&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.centerObject(studyArea)</span>
+<span class="sd">    &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">    &gt;&gt;&gt; Map.view()</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">formatArgs</span><span class="p">(</span><span class="nb">locals</span><span class="p">())</span>
+
+    <span class="n">toaOrSR</span> <span class="o">=</span> <span class="n">toaOrSR</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="n">startDate</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">startDate</span><span class="p">)</span>
+    <span class="n">endDate</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">endDate</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">getLandsatCollection</span><span class="p">(</span><span class="n">landsatCollectionVersion</span><span class="p">,</span> <span class="n">whichC</span><span class="p">,</span> <span class="n">toaOrSR</span><span class="p">):</span>
         <span class="n">c</span> <span class="o">=</span> <span class="p">(</span>
@@ -4317,11 +4348,25 @@
 <span class="sd">        An Earth Engine Image representing the medoid mosaic.</span>
 
 <span class="sd">    Note:</span>
-<span class="sd">        * As the data are not normalized in this method, ensuring the medoidIncludeBands have roughly comparable ranges of values</span>
-<span class="sd">        helps the function work properly. For example, if temperature is included, it will account for most of the variance</span>
-<span class="sd">        thus resulting in a medoid mosaic that will more or less choose values closest to the median temperature only, rather than</span>
-<span class="sd">        all the bands</span>
+<span class="sd">        * As the data are not normalized in this method, ensuring the medoidIncludeBands have roughly comparable ranges of values helps the function work properly. For example, if temperature is included, it will account for most of the variance thus resulting in a medoid mosaic that will more or less choose values closest to the median temperature only, rather than all the bands</span>
+
 <span class="sd">        * The function assumes that the image collection has consistent band names and data types.</span>
+
+
+<span class="sd">    &gt;&gt;&gt; import geeViz.getImagesLib as gil</span>
+<span class="sd">    &gt;&gt;&gt; Map = gil.Map</span>
+<span class="sd">    &gt;&gt;&gt; ee = gil.ee</span>
+<span class="sd">    &gt;&gt;&gt; studyArea = gil.testAreas[&quot;CO&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; s2s = gil.superSimpleGetS2(studyArea, &quot;2024-01-01&quot;, &quot;2024-12-31&quot;, 190, 250)</span>
+<span class="sd">    &gt;&gt;&gt; median_composite = s2s.median()</span>
+<span class="sd">    &gt;&gt;&gt; medoid_composite = gil.medoidMosaicMSD(s2s, [&quot;green&quot;, &quot;red&quot;, &quot;nir&quot;, &quot;swir1&quot;, &quot;swir2&quot;])</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(median_composite, gil.vizParamsFalse10k, &quot;Sentinel-2 Median Composite&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(medoid_composite, gil.vizParamsFalse10k, &quot;Sentinel-2 Medoid Composite&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(studyArea, {&quot;canQuery&quot;: False}, &quot;Study Area&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.centerObject(studyArea)</span>
+<span class="sd">    &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">    &gt;&gt;&gt; Map.view()</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">medoidIncludeBands</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
@@ -4683,7 +4728,7 @@
         <span class="n">images</span> <span class="o">=</span> <span class="n">yearsTT</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">yrGetter</span><span class="p">)</span>
         <span class="n">lsT</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="n">images</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
 
-        <span class="n">count</span> <span class="o">=</span> <span class="n">lsT</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">([</span><span class="s2">&quot;compositeObsCount&quot;</span><span class="p">])</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">lsT</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">count</span><span class="p">())</span><span class="o">.</span><span class="n">rename</span><span class="p">([</span><span class="s2">&quot;compositeObsCount&quot;</span><span class="p">])</span>
         <span class="c1"># Compute median or medoid or apply reducer</span>
         <span class="k">if</span> <span class="n">compositingReducer</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">composite</span> <span class="o">=</span> <span class="n">lsT</span><span class="o">.</span><span class="n">reduce</span><span class="p">(</span><span class="n">compositingReducer</span><span class="p">)</span>
@@ -5282,19 +5327,52 @@
 <span class="c1">#########################################################################</span>
 <span class="c1"># Function to get MODIS data from various collections</span>
 <span class="c1"># Will pull from daily or 8-day composite collections based on the boolean variable &quot;daily&quot;</span>
+<div class="viewcode-block" id="getModisData">
+<a class="viewcode-back" href="../../modules.html#geeViz.getImagesLib.getModisData">[docs]</a>
 <span class="k">def</span> <span class="nf">getModisData</span><span class="p">(</span>
-    <span class="n">startYear</span><span class="p">,</span>
-    <span class="n">endYear</span><span class="p">,</span>
-    <span class="n">startJulian</span><span class="p">,</span>
-    <span class="n">endJulian</span><span class="p">,</span>
-    <span class="n">daily</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">maskWQA</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">zenithThresh</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span>
-    <span class="n">useTempInCloudMask</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">addLookAngleBands</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">resampleMethod</span><span class="o">=</span><span class="s2">&quot;near&quot;</span><span class="p">,</span>
+    <span class="n">startYear</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">endYear</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">startJulian</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">endJulian</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">daily</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">maskWQA</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">zenithThresh</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">90</span><span class="p">,</span>
+    <span class="n">useTempInCloudMask</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">addLookAngleBands</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">resampleMethod</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;near&quot;</span><span class="p">,</span>
 <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves MODIS imagery from Earth Engine for a specified period. Handles joining all MODIS collections for Terra and Aqua and aligning band names</span>
 
+<span class="sd">    Args:</span>
+<span class="sd">        startYear (int): The starting year for the data collection.</span>
+<span class="sd">        endYear (int): The ending year for the data collection.</span>
+<span class="sd">        startJulian (int): The starting Julian day of year for the data collection (1-366).</span>
+<span class="sd">        endJulian (int): The ending Julian day of year for the data collection (1-366).</span>
+<span class="sd">        daily (bool, optional): Determines whether to retrieve daily or 8-day composite data. Defaults to False (8-day composite).</span>
+<span class="sd">        maskWQA (bool, optional): Controls whether to mask pixels based on the Quality Assurance (QA) band. Only applicable for daily data (daily=True). Defaults to False.</span>
+<span class="sd">        zenithThresh (float, optional): Sets the threshold for solar zenith angle in degrees. Pixels with zenith angle exceeding this threshold will be masked out. Defaults to 90.</span>
+<span class="sd">        useTempInCloudMask (bool, optional): Determines whether to use the thermal band for cloud masking. Defaults to True.</span>
+<span class="sd">        addLookAngleBands (bool, optional): Controls whether to include view angle bands in the output. Defaults to False.</span>
+<span class="sd">        resampleMethod (str, optional): Specifies the resampling method to apply to the imagery. Valid options include &quot;near&quot;, &quot;bilinear&quot;, and &quot;bicubic&quot;. Defaults to &quot;near&quot; (nearest neighbor).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ee.ImageCollection: A collection of MODIS imagery for the specified criteria.</span>
+
+<span class="sd">    &gt;&gt;&gt; import geeViz.getImagesLib as gil</span>
+<span class="sd">    &gt;&gt;&gt; Map = gil.Map</span>
+<span class="sd">    &gt;&gt;&gt; ee = gil.ee</span>
+<span class="sd">    &gt;&gt;&gt; crs = gil.common_projections[&quot;NLCD_CONUS&quot;][&quot;crs&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; transform = gil.common_projections[&quot;NLCD_CONUS&quot;][&quot;transform&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; scale = 240</span>
+<span class="sd">    &gt;&gt;&gt; transform[0] = scale</span>
+<span class="sd">    &gt;&gt;&gt; transform[4] = -scale</span>
+<span class="sd">    &gt;&gt;&gt; composite = gil.getModisData(2024, 2024, 190, 250, resampleMethod=&quot;bicubic&quot;).median().reproject(crs, transform)</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(composite, gil.vizParamsFalse, &quot;MODIS Composite&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.setCenter(-111, 41, 7)</span>
+<span class="sd">    &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">    &gt;&gt;&gt; Map.view()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Find which collections to pull from based on daily or 8-day</span>
     <span class="k">if</span> <span class="n">daily</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
         <span class="n">a250C</span> <span class="o">=</span> <span class="n">modisCDict</span><span class="p">[</span><span class="s2">&quot;eightDaySR250A&quot;</span><span class="p">]</span>
@@ -5414,38 +5492,91 @@
     <span class="k">if</span> <span class="n">resampleMethod</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;bilinear&quot;</span><span class="p">,</span> <span class="s2">&quot;bicubic&quot;</span><span class="p">]:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setting resample method to &quot;</span><span class="p">,</span> <span class="n">resampleMethod</span><span class="p">)</span>
         <span class="n">joined</span> <span class="o">=</span> <span class="n">joined</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">setResample</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">joined</span>
+    <span class="k">return</span> <span class="n">joined</span></div>
 
 
+
+<span class="c1">#########################################################################</span>
+<span class="c1">#########################################################################</span>
 <span class="c1"># Function to get cloud, cloud shadow busted modis images</span>
 <span class="c1"># Takes care of matching different modis collections as well</span>
+<div class="viewcode-block" id="getProcessedModis">
+<a class="viewcode-back" href="../../modules.html#geeViz.getImagesLib.getProcessedModis">[docs]</a>
 <span class="k">def</span> <span class="nf">getProcessedModis</span><span class="p">(</span>
-    <span class="n">startYear</span><span class="p">,</span>
-    <span class="n">endYear</span><span class="p">,</span>
-    <span class="n">startJulian</span><span class="p">,</span>
-    <span class="n">endJulian</span><span class="p">,</span>
-    <span class="n">zenithThresh</span><span class="o">=</span><span class="mi">90</span><span class="p">,</span>
-    <span class="n">addLookAngleBands</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">applyCloudScore</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">applyTDOM</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">useTempInCloudMask</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">cloudScoreThresh</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
-    <span class="n">performCloudScoreOffset</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">cloudScorePctl</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-    <span class="n">zScoreThresh</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">shadowSumThresh</span><span class="o">=</span><span class="mf">0.35</span><span class="p">,</span>
-    <span class="n">contractPixels</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-    <span class="n">dilatePixels</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span>
-    <span class="n">shadowSumBands</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;nir&quot;</span><span class="p">,</span> <span class="s2">&quot;swir2&quot;</span><span class="p">],</span>
-    <span class="n">resampleMethod</span><span class="o">=</span><span class="s2">&quot;bicubic&quot;</span><span class="p">,</span>
-    <span class="n">preComputedCloudScoreOffset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">preComputedTDOMIRMean</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">preComputedTDOMIRStdDev</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">addToMap</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">crs</span><span class="o">=</span><span class="s2">&quot;EPSG:4326&quot;</span><span class="p">,</span>
-    <span class="n">scale</span><span class="o">=</span><span class="mi">250</span><span class="p">,</span>
-    <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">startYear</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">endYear</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">startJulian</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">endJulian</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">zenithThresh</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">90</span><span class="p">,</span>
+    <span class="n">addLookAngleBands</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">applyCloudScore</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">applyTDOM</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">useTempInCloudMask</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">cloudScoreThresh</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="n">performCloudScoreOffset</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">cloudScorePctl</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">zScoreThresh</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">shadowSumThresh</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.35</span><span class="p">,</span>
+    <span class="n">contractPixels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">dilatePixels</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">,</span>
+    <span class="n">shadowSumBands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;nir&quot;</span><span class="p">,</span> <span class="s2">&quot;swir2&quot;</span><span class="p">],</span>
+    <span class="n">resampleMethod</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;bicubic&quot;</span><span class="p">,</span>
+    <span class="n">preComputedCloudScoreOffset</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">preComputedTDOMIRMean</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">preComputedTDOMIRStdDev</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">addToMap</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">crs</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;EPSG:4326&quot;</span><span class="p">,</span>
+    <span class="n">scale</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mi">250</span><span class="p">,</span>
+    <span class="n">transform</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves, processes, and filters MODIS imagery for a specified period.</span>
+
+<span class="sd">    This function retrieves daily MODIS imagery from Earth Engine, applies various cloud and</span>
+<span class="sd">    cloud shadow masking techniques, and returns a collection of processed images.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        startYear (int): The starting year for the data collection.</span>
+<span class="sd">        endYear (int): The ending year for the data collection.</span>
+<span class="sd">        startJulian (int): The starting Julian day of year for the data collection (1-366).</span>
+<span class="sd">        endJulian (int): The ending Julian day of year for the data collection (1-366).</span>
+<span class="sd">        zenithThresh (float, optional): Sets the threshold for solar zenith angle in degrees. Pixels with zenith angle exceeding this threshold will be masked out. Defaults to 90.</span>
+<span class="sd">        addLookAngleBands (bool, optional): Controls whether to include view angle bands in the output. Defaults to True.</span>
+<span class="sd">        applyCloudScore (bool, optional): Determines whether to apply cloud masking based on the CloudScore simple algorithm adapted to MODIS. Defaults to True.</span>
+<span class="sd">        applyTDOM (bool, optional): Determines whether to apply the TDOM (Temporal Dark Outlier Mask)</span>
+<span class="sd">        technique for cloud shadow masking. Defaults to True.</span>
+<span class="sd">        useTempInCloudMask (bool, optional): Determines whether to use the thermal band for cloud masking during MODIS data retrieval. Defaults to True.</span>
+<span class="sd">        cloudScoreThresh (int, optional): Threshold for the CloudScore simple algorithm to classify a pixel as cloudy. Lower number masks out more. Defaults to 20.</span>
+<span class="sd">        performCloudScoreOffset (bool, optional): Controls whether to perform an offset correction on the Cloud Score data over bright surfaces. Only use this if bright areas are being masked as clouds. Do not use this in persistently cloud areas. Defaults to True.</span>
+<span class="sd">        cloudScorePctl (int, optional): Percentile of the Cloud Score product to use for the offset correction. Defaults to 10.</span>
+<span class="sd">        zScoreThresh (float, optional): Threshold for the z-score used in TDOM cloud shadow masking. Pixels with z-scores below this threshold are masked. Defaults to -1.</span>
+<span class="sd">        shadowSumThresh (float, optional): Threshold for the sum of reflectance in shadow bands used in TDOM cloud shadow masking. Pixels below this threshold and the zScoreThresh are masked as dark outliers (likely cloud shadows). Defaults to 0.35.</span>
+<span class="sd">        contractPixels (int, optional): Number of pixels to contract cloud and shadow masks by. Defaults to 0.</span>
+<span class="sd">        dilatePixels (float, optional): Number of pixels to dilate cloud and shadow masks by. Defaults to 2.5.</span>
+<span class="sd">        shadowSumBands (list[str], optional): List of band names to use for calculating the sum of reflectance in TDOM cloud shadow masking. Defaults to [&quot;nir&quot;, &quot;swir2&quot;].</span>
+<span class="sd">        resampleMethod (str, optional): Specifies the resampling method to apply to the imagery. Valid options include &quot;near&quot;, &quot;bilinear&quot;, and &quot;bicubic&quot;. Defaults to &quot;bicubic&quot;.</span>
+<span class="sd">        preComputedCloudScoreOffset (float | None, optional): Pre-computed Cloud Score offset value to avoid redundant calculations. Defaults to None (automatic calculation).</span>
+<span class="sd">        preComputedTDOMIRMean (float | None, optional): Pre-computed mean of the IR band used in TDOM cloud shadow masking to avoid redundant calculations. Defaults to None (automatic calculation).</span>
+<span class="sd">        preComputedTDOMIRStdDev (float | None, optional): Pre-computed standard deviation of the IR band used in TDOM cloud shadow masking to avoid redundant calculations. Defaults to None (automatic calculation).</span>
+<span class="sd">        addToMap (bool, optional): Controls whether to add intermediate processing steps (masked medians) to the Earth Engine map for visualization purposes. Defaults to False.</span>
+<span class="sd">        crs (str, optional): Only used if addToMap is True. Coordinate Reference System (CRS) for the output imagery. Defaults to &quot;EPSG:4326&quot;.</span>
+<span class="sd">        scale (int | None, optional): Only used if addToMap is True. Scale (resolution) of the output imagery in meters. Defaults to 250.</span>
+<span class="sd">        transform (list | None, optional): Only used if addToMap is True. Optional transformation matrix to apply to the output imagery. Defaults to None.</span>
+
+<span class="sd">    &gt;&gt;&gt; import geeViz.getImagesLib as gil</span>
+<span class="sd">    &gt;&gt;&gt; Map = gil.Map</span>
+<span class="sd">    &gt;&gt;&gt; ee = gil.ee</span>
+<span class="sd">    &gt;&gt;&gt; crs = gil.common_projections[&quot;NLCD_CONUS&quot;][&quot;crs&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; transform = gil.common_projections[&quot;NLCD_CONUS&quot;][&quot;transform&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; scale = 240</span>
+<span class="sd">    &gt;&gt;&gt; transform[0] = scale</span>
+<span class="sd">    &gt;&gt;&gt; transform[4] = -scale</span>
+<span class="sd">    &gt;&gt;&gt; composite = gil.getProcessedModis(2024, 2024, 190, 250).median().reproject(crs, transform)</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(composite, gil.vizParamsFalse, &quot;MODIS Composite&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.setCenter(-111, 41, 7)</span>
+<span class="sd">    &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">    &gt;&gt;&gt; Map.view()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">args</span> <span class="o">=</span> <span class="n">formatArgs</span><span class="p">(</span><span class="nb">locals</span><span class="p">())</span>
     <span class="k">if</span> <span class="s2">&quot;args&quot;</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -5529,7 +5660,8 @@
 
     <span class="n">modisImages</span> <span class="o">=</span> <span class="n">modisImages</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">simpleAddIndices</span><span class="p">)</span>
     <span class="n">modisImages</span> <span class="o">=</span> <span class="n">modisImages</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">img</span><span class="p">:</span> <span class="n">img</span><span class="o">.</span><span class="n">float</span><span class="p">())</span>
-    <span class="k">return</span> <span class="n">modisImages</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">modisImages</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+
 
 
 <span class="c1">#########################################################################</span>
@@ -5945,73 +6077,86 @@
 <div class="viewcode-block" id="getProcessedLandsatScenes">
 <a class="viewcode-back" href="../../modules.html#geeViz.getImagesLib.getProcessedLandsatScenes">[docs]</a>
 <span class="k">def</span> <span class="nf">getProcessedLandsatScenes</span><span class="p">(</span>
-    <span class="n">studyArea</span><span class="p">,</span>
-    <span class="n">startYear</span><span class="p">,</span>
-    <span class="n">endYear</span><span class="p">,</span>
-    <span class="n">startJulian</span><span class="p">,</span>
-    <span class="n">endJulian</span><span class="p">,</span>
-    <span class="n">toaOrSR</span><span class="o">=</span><span class="s2">&quot;SR&quot;</span><span class="p">,</span>
-    <span class="n">includeSLCOffL7</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">defringeL5</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">applyCloudScore</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">applyFmaskCloudMask</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">applyTDOM</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">applyFmaskCloudShadowMask</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">applyFmaskSnowMask</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">cloudScoreThresh</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-    <span class="n">performCloudScoreOffset</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">cloudScorePctl</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-    <span class="n">zScoreThresh</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">shadowSumThresh</span><span class="o">=</span><span class="mf">0.35</span><span class="p">,</span>
-    <span class="n">contractPixels</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>
-    <span class="n">dilatePixels</span><span class="o">=</span><span class="mf">3.5</span><span class="p">,</span>
-    <span class="n">shadowSumBands</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;nir&quot;</span><span class="p">,</span> <span class="s2">&quot;swir1&quot;</span><span class="p">],</span>
-    <span class="n">resampleMethod</span><span class="o">=</span><span class="s2">&quot;near&quot;</span><span class="p">,</span>
-    <span class="n">harmonizeOLI</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">preComputedCloudScoreOffset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">preComputedTDOMIRMean</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">preComputedTDOMIRStdDev</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">landsatCollectionVersion</span><span class="o">=</span><span class="s2">&quot;C2&quot;</span><span class="p">,</span>
-    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<span class="p">):</span>
+    <span class="n">studyArea</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">Feature</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">,</span>
+    <span class="n">startYear</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">endYear</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">startJulian</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">endJulian</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">toaOrSR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;SR&quot;</span><span class="p">,</span>
+    <span class="n">includeSLCOffL7</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">defringeL5</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">applyCloudScore</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">applyFmaskCloudMask</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">applyTDOM</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">applyFmaskCloudShadowMask</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">applyFmaskSnowMask</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">cloudScoreThresh</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">performCloudScoreOffset</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">cloudScorePctl</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">zScoreThresh</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">shadowSumThresh</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.35</span><span class="p">,</span>
+    <span class="n">contractPixels</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.5</span><span class="p">,</span>
+    <span class="n">dilatePixels</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3.5</span><span class="p">,</span>
+    <span class="n">shadowSumBands</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;nir&quot;</span><span class="p">,</span> <span class="s2">&quot;swir1&quot;</span><span class="p">],</span>
+    <span class="n">resampleMethod</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;near&quot;</span><span class="p">,</span>
+    <span class="n">harmonizeOLI</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">preComputedCloudScoreOffset</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">preComputedTDOMIRMean</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">preComputedTDOMIRStdDev</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">landsatCollectionVersion</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;C2&quot;</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Get Landsat images from all available TM-OLI collections with common bands selected/named, cloud and cloud masking applied, and common indices added.</span>
+<span class="sd">    Retrieves, processes, and filters Landsat scenes for a specified area and time period.</span>
 
+<span class="sd">    This function retrieves Landsat scenes from Earth Engine, applies various cloud,</span>
+<span class="sd">    cloud shadow, and snow masking techniques, calculates common indices, and returns</span>
+<span class="sd">    a collection of processed images.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">      studyArea (FeatureCollection, Feature, Geometry).</span>
-<span class="sd">      startYear (int).</span>
-<span class="sd">      endYear (int).</span>
-<span class="sd">      startJulian (int).</span>
-<span class="sd">      endJulian (int).</span>
-<span class="sd">      toaOrSR (str) =&quot;SR&quot;.</span>
-<span class="sd">      includeSLCOffL7=False.</span>
-<span class="sd">      defringeL5=False.</span>
-<span class="sd">      applyCloudScore=False.</span>
-<span class="sd">      applyFmaskCloudMask=True.</span>
-<span class="sd">      applyTDOM=False.</span>
-<span class="sd">      applyFmaskCloudShadowMask=True.</span>
-<span class="sd">      applyFmaskSnowMask=False.</span>
-<span class="sd">      cloudScoreThresh=10.</span>
-<span class="sd">      performCloudScoreOffset=True.</span>
-<span class="sd">      cloudScorePctl=10.</span>
-<span class="sd">      zScoreThresh=-1.</span>
-<span class="sd">      shadowSumThresh=0.35.</span>
-<span class="sd">      contractPixels=1.5.</span>
-<span class="sd">      dilatePixels=3.5.</span>
-<span class="sd">      shadowSumBands=[&quot;nir&quot;. &quot;swir1&quot;].</span>
-<span class="sd">      resampleMethod=&quot;near&quot;.</span>
-<span class="sd">      harmonizeOLI=False.</span>
-<span class="sd">      preComputedCloudScoreOffset=None.</span>
-<span class="sd">      preComputedTDOMIRMean=None.</span>
-<span class="sd">      preComputedTDOMIRStdDev=None.</span>
-<span class="sd">      landsatCollectionVersion=&quot;C2&quot;.</span>
-<span class="sd">      verbose=False.</span>
-<span class="sd">        param1 (int): The first parameter.</span>
-<span class="sd">        param2 (str): The second parameter.</span>
+<span class="sd">        studyArea (ee.Geometry): The geographic area of interest (study area) as an Earth Engine geometry, Feature, or FeatureCollection object.</span>
+<span class="sd">        startYear (int): The starting year for the data collection.</span>
+<span class="sd">        endYear (int): The ending year for the data collection.</span>
+<span class="sd">        startJulian (int): The starting Julian day of year for the data collection (1-365).</span>
+<span class="sd">        endJulian (int): The ending Julian day of year for the data collection (1-365).</span>
+<span class="sd">        toaOrSR (str, optional): Flag indicating desired reflectance type: &quot;TOA&quot; (Top Of Atmosphere) or &quot;SR&quot; (Surface Reflectance). Defaults to &quot;SR&quot;.</span>
+<span class="sd">        includeSLCOffL7 (bool, optional): Determines whether to include Landsat 7 SLC-off scenes. Defaults to False.</span>
+<span class="sd">        defringeL5 (bool, optional): Determines whether to defringe Landsat 5 scenes. Defaults to False.</span>
+<span class="sd">        applyCloudScore (bool, optional): Determines whether to apply cloud masking based on the CloudScore simple algorithm. Defaults to False.</span>
+<span class="sd">        applyFmaskCloudMask (bool, optional): Determines whether to apply the Fmask cloud mask. Defaults to True.</span>
+<span class="sd">        applyTDOM (bool, optional): Determines whether to apply the TDOM (Temporal Dark Outlier Mask) technique for cloud shadow masking. Defaults to False.</span>
+<span class="sd">        applyFmaskCloudShadowMask (bool, optional): Determines whether to apply the Fmask cloud shadow mask. Defaults to True.</span>
+<span class="sd">        applyFmaskSnowMask (bool, optional): Determines whether to apply the Fmask snow mask. Defaults to False.</span>
+<span class="sd">        cloudScoreThresh (int, optional): Threshold for the CloudScore simple algorithm to classify a pixel as cloudy. Lower number masks out more. Defaults to 10.</span>
+<span class="sd">        performCloudScoreOffset (bool, optional): Controls whether to perform an offset correction on the Cloud Score data over bright surfaces. Only use this if bright areas are being masked as clouds. Do not use this in persistently cloud areas. Defaults to True.</span>
+<span class="sd">        cloudScorePctl (int, optional): Percentile of the Cloud Score product to use for the offset correction. Defaults to 10.</span>
+<span class="sd">        zScoreThresh (float, optional): Threshold for the z-score used in TDOM cloud shadow masking. Pixels with z-scores below this threshold are masked. Defaults to -1.</span>
+<span class="sd">        shadowSumThresh (float, optional): Threshold for the sum of reflectance in shadow bands used in TDOM cloud shadow masking. Pixels below this threshold and the zScoreThresh are masked as dark outliers (likely cloud shadows). Defaults to 0.35.</span>
+<span class="sd">        contractPixels (float, optional): Number of pixels to contract cloud and shadow masks by. Defaults to 1.5.</span>
+<span class="sd">        dilatePixels (float, optional): Number of pixels to dilate cloud and shadow masks by. Defaults to 3.5.</span>
+<span class="sd">        shadowSumBands (list[str], optional): List of band names to use for calculating the sum of reflectance in TDOM cloud shadow masking. Defaults to [&quot;nir&quot;, &quot;swir1&quot;].</span>
+<span class="sd">        resampleMethod (str, optional): Specifies the resampling method to apply to the imagery. Valid options include &quot;near&quot;, &quot;bilinear&quot;, and &quot;bicubic&quot;. Defaults to &quot;near&quot;.</span>
+<span class="sd">        harmonizeOLI (bool, optional): Determines whether to harmonize OLI data to match TM/ETM+ spectral response. Defaults to False.</span>
+<span class="sd">        preComputedCloudScoreOffset (float | None, optional): Pre-computed Cloud Score offset value to avoid redundant calculations. Defaults to None (automatic calculation).</span>
+<span class="sd">        preComputedTDOMIRMean (float | None, optional): Pre-computed mean of the IR band used in TDOM cloud shadow masking to avoid redundant calculations. Defaults to None (automatic calculation).</span>
+<span class="sd">        preComputedTDOMIRStdDev (float | None, optional): Pre-computed standard deviation of the IR band used in TDOM cloud shadow masking to avoid redundant calculations. Defaults to None (automatic calculation).</span>
+<span class="sd">        landsatCollectionVersion (str, optional): Specifies the Landsat collection version to use (e.g., &quot;C1&quot;, &quot;C2&quot;). Defaults to &quot;C2&quot;.</span>
+<span class="sd">        verbose (bool, optional): Controls whether to print additional information during processing. Defaults to False.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        ImageCollection: A collection of Landsat scenes.</span>
+<span class="sd">        ee.ImageCollection: A collection of analysis ready, cloud and cloud shadow asked Landsat scenes with common band names.</span>
+
+<span class="sd">    &gt;&gt;&gt; import geeViz.getImagesLib as gil</span>
+<span class="sd">    &gt;&gt;&gt; Map = gil.Map</span>
+<span class="sd">    &gt;&gt;&gt; ee = gil.ee</span>
+<span class="sd">    &gt;&gt;&gt; studyArea = gil.testAreas[&quot;CO&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; composite = gil.getProcessedLandsatScenes(studyArea, 2023, 2023, 190, 250).median()</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(composite, gil.vizParamsFalse, &quot;Landsat Composite&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(studyArea, {&quot;canQuery&quot;: False}, &quot;Study Area&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.centerObject(studyArea)</span>
+<span class="sd">    &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">    &gt;&gt;&gt; Map.view()</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">origin</span> <span class="o">=</span> <span class="s2">&quot;Landsat&quot;</span>
     <span class="n">toaOrSR</span> <span class="o">=</span> <span class="n">toaOrSR</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
@@ -6266,22 +6411,26 @@
 <div class="viewcode-block" id="superSimpleGetS2">
 <a class="viewcode-back" href="../../modules.html#geeViz.getImagesLib.superSimpleGetS2">[docs]</a>
 <span class="k">def</span> <span class="nf">superSimpleGetS2</span><span class="p">(</span>
-    <span class="n">studyArea</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span><span class="p">,</span>
-    <span class="n">startDate</span><span class="p">:</span> <span class="nb">str</span> <span class="ow">or</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">,</span>
-    <span class="n">endDate</span><span class="p">:</span> <span class="nb">str</span> <span class="ow">or</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">,</span>
+    <span class="n">studyArea</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">Feature</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">,</span>
+    <span class="n">startDate</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span> <span class="o">|</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">endDate</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span> <span class="o">|</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">startJulian</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">endJulian</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">365</span><span class="p">,</span>
     <span class="n">toaOrSR</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;TOA&quot;</span><span class="p">,</span>
     <span class="n">applyCloudScorePlus</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">cloudScorePlusThresh</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.6</span><span class="p">,</span>
     <span class="n">cloudScorePlusScore</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cs&quot;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This function retrieves Sentinel-2 satellite imagery from Earth Engine for a specified study area and date range. </span>
+<span class="sd">    This function retrieves Sentinel-2 satellite imagery from Earth Engine for a specified study area and date range.</span>
 <span class="sd">    It applies the cloudScore+ algorithm unless told otherwise.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        studyArea (ee.Geometry): An Earth Engine geometry object representing the area of interest.</span>
-<span class="sd">        startDate (ee.Date or str): The start date for the image collection in YYYY-MM-DD format.</span>
-<span class="sd">        endDate (ee.Date or str): The end date for the image collection in YYYY-MM-DD format.</span>
+<span class="sd">        startDate (ee.Date, datetime.datetime, or str): The start date for the image collection in YYYY-MM-DD format.</span>
+<span class="sd">        endDate (ee.Date, datetime.datetime, or str): The end date for the image collection in YYYY-MM-DD format.</span>
+<span class="sd">        startJulian (int, optional): The start Julian day of the desired data. Defaults to 1.</span>
+<span class="sd">        endJulian (int, optional): The end Julian day of the desired data. Defaults to 365.</span>
 <span class="sd">        toaOrSR (str, optional): Specifies whether to retrieve data in Top-Of-Atmosphere (TOA) reflectance or Surface Reflectance (SR). Defaults to &quot;TOA&quot;.</span>
 <span class="sd">        applyCloudScorePlus (bool, optional): Determines whether to apply cloud filtering based on the Cloud Score Plus product. Defaults to True.</span>
 <span class="sd">        cloudScorePlusThresh (float, optional): Sets the threshold for cloud cover percentage based on Cloud Score Plus. Images with cloud cover exceeding this threshold will be masked out if `applyCloudScorePlus` is True. Defaults to 0.6.</span>
@@ -6295,9 +6444,9 @@
 <span class="sd">    &gt;&gt;&gt; Map = gil.Map</span>
 <span class="sd">    &gt;&gt;&gt; ee = gil.ee</span>
 <span class="sd">    &gt;&gt;&gt; studyArea = gil.testAreas[&quot;CA&quot;]</span>
-<span class="sd">    &gt;&gt;&gt; composite = gil.superSimpleGetS2(studyArea, &quot;2024-06-01&quot;, &quot;2024-09-30&quot;).median()</span>
+<span class="sd">    &gt;&gt;&gt; composite = gil.superSimpleGetS2(studyArea, &quot;2024-01-01&quot;, &quot;2024-12-31&quot;, 190, 250).median()</span>
 <span class="sd">    &gt;&gt;&gt; Map.addLayer(composite, gil.vizParamsFalse10k, &quot;Sentinel-2 Composite&quot;)</span>
-<span class="sd">    &gt;&gt;&gt; Map.addLayer(studyArea, {}, &quot;Study Area&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(studyArea, {&quot;canQuery&quot;: False}, &quot;Study Area&quot;)</span>
 <span class="sd">    &gt;&gt;&gt; Map.centerObject(studyArea)</span>
 <span class="sd">    &gt;&gt;&gt; Map.turnOnInspector()</span>
 <span class="sd">    &gt;&gt;&gt; Map.view()</span>
@@ -6305,8 +6454,10 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">toaOrSR</span> <span class="o">=</span> <span class="n">toaOrSR</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="n">startDate</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">startDate</span><span class="p">)</span>
+    <span class="n">endDate</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">endDate</span><span class="p">)</span>
 
-    <span class="n">s2s</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="n">s2CollectionDict</span><span class="p">[</span><span class="n">toaOrSR</span><span class="p">])</span><span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">startDate</span><span class="p">,</span> <span class="n">endDate</span><span class="p">)</span><span class="o">.</span><span class="n">filterBounds</span><span class="p">(</span><span class="n">studyArea</span><span class="p">)</span>
+    <span class="n">s2s</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="n">s2CollectionDict</span><span class="p">[</span><span class="n">toaOrSR</span><span class="p">])</span><span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">startDate</span><span class="p">,</span> <span class="n">endDate</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;day&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="n">startJulian</span><span class="p">,</span> <span class="n">endJulian</span><span class="p">))</span><span class="o">.</span><span class="n">filterBounds</span><span class="p">(</span><span class="n">studyArea</span><span class="p">)</span>
 
     <span class="n">s2s</span> <span class="o">=</span> <span class="n">s2s</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">sensorBandDict</span><span class="p">[</span><span class="n">toaOrSR</span><span class="p">],</span> <span class="n">sensorBandNameDict</span><span class="p">[</span><span class="n">toaOrSR</span><span class="p">])</span>
 
@@ -8481,23 +8632,87 @@
 <span class="c1"># NASA/ORNL/DAYMET_V4</span>
 <span class="c1"># UCSB-CHG/CHIRPS/DAILY (precipitation only)</span>
 <span class="c1"># and possibly others</span>
+<div class="viewcode-block" id="getClimateWrapper">
+<a class="viewcode-back" href="../../modules.html#geeViz.getImagesLib.getClimateWrapper">[docs]</a>
 <span class="k">def</span> <span class="nf">getClimateWrapper</span><span class="p">(</span>
-    <span class="n">collectionName</span><span class="p">,</span>
-    <span class="n">studyArea</span><span class="p">,</span>
-    <span class="n">startYear</span><span class="p">,</span>
-    <span class="n">endYear</span><span class="p">,</span>
-    <span class="n">startJulian</span><span class="p">,</span>
-    <span class="n">endJulian</span><span class="p">,</span>
-    <span class="n">timebuffer</span><span class="p">,</span>
-    <span class="n">weights</span><span class="p">,</span>
-    <span class="n">compositingReducer</span><span class="p">,</span>
-    <span class="n">exportComposites</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-    <span class="n">exportPathRoot</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">crs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">scale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">exportBands</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-<span class="p">):</span>
+    <span class="n">collectionName</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">studyArea</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">Feature</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">,</span>
+    <span class="n">startYear</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">endYear</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">startJulian</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">endJulian</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">timebuffer</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">List</span> <span class="o">|</span> <span class="nb">list</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">compositingReducer</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">exportComposites</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">exportPathRoot</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">crs</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">transform</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">scale</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">exportBands</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">List</span> <span class="o">|</span> <span class="nb">list</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper function to retrieve and process climate data from various Earth Engine collections.</span>
+
+<span class="sd">    This function supports retrieving climate data from collections like NASA/ORNL/DAYMET_V3,</span>
+<span class="sd">    NASA/ORNL/DAYMET_V4, UCSB-CHG/CHIRPS/DAILY (precipitation only), and potentially others. It allows</span>
+<span class="sd">    filtering by date, study area, and Julian day, specifying a compositing reducer, and optionally</span>
+<span class="sd">    exporting the resulting time series.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        collectionName (str): Name of the Earth Engine collection containing climate data.</span>
+<span class="sd">        studyArea (ee.Geometry | ee.Feature | ee.FeatureCollection): The geographic area of interest (study area) as an Earth Engine geometry object.</span>
+<span class="sd">        startYear (int): The starting year for the data collection.</span>
+<span class="sd">        endYear (int): The ending year for the data collection.</span>
+<span class="sd">        startJulian (int): The starting Julian day of year for the data collection (1-365).</span>
+<span class="sd">        endJulian (int): The ending Julian day of year for the data collection (1-365).</span>
+<span class="sd">        timebuffer (int, optional): Number of years to buffer around each year. Defaults to 0.</span>
+<span class="sd">        weights (ee.List | list| None, optional): List of weights for weighted compositing (if applicable</span>
+<span class="sd">            to the chosen collection). Defaults to None (equal weights).</span>
+<span class="sd">        compositingReducer (ee.Reducer | None, optional): Earth Engine reducer used for compositing</span>
+<span class="sd">            daily data into the desired temporal resolution. Defaults to None (may require a reducer</span>
+<span class="sd">            depending on the collection).</span>
+<span class="sd">        exportComposites (bool, optional): Flag indicating whether to export the resulting time series.</span>
+<span class="sd">            Defaults to False.</span>
+<span class="sd">        exportPathRoot (str | None, optional): Root path for exporting the composites (if exportComposites</span>
+<span class="sd">            is True). Defaults to None (no export).</span>
+<span class="sd">        crs (str | None, optional): Earth Engine projection object for the exported composites</span>
+<span class="sd">            (if exportComposites is True). Defaults to None (uses the source collection&#39;s projection).</span>
+<span class="sd">        transform (list[int] | None, optional): Earth Engine transform object for the exported</span>
+<span class="sd">            composites (if exportComposites is True). Defaults to None (uses the source collection&#39;s transform).</span>
+<span class="sd">        scale (int | None, optional): Scale in meters for the exported composites (if exportComposites</span>
+<span class="sd">            is True). Defaults to None (uses the source collection&#39;s scale).</span>
+<span class="sd">        exportBands (ee.List | list | None, optional): List of band names to export from the composites (if</span>
+<span class="sd">            exportComposites is True). Defaults to None (all bands from the first image in the collection).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ee.ImageCollection: The time series collection of processed climate data.</span>
+
+<span class="sd">    &gt;&gt;&gt; import geeViz.getImagesLib as gil</span>
+<span class="sd">    &gt;&gt;&gt; Map = gil.Map</span>
+<span class="sd">    &gt;&gt;&gt; ee = gil.ee</span>
+<span class="sd">    &gt;&gt;&gt; studyArea = gil.testAreas[&quot;CO&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; startJulian = 274</span>
+<span class="sd">    &gt;&gt;&gt; endJulian = 273</span>
+<span class="sd">    &gt;&gt;&gt; startYear = 2016</span>
+<span class="sd">    &gt;&gt;&gt; endYear = 2023</span>
+<span class="sd">    &gt;&gt;&gt; timebuffer = 0</span>
+<span class="sd">    &gt;&gt;&gt; weights = [1]</span>
+<span class="sd">    &gt;&gt;&gt; compositingReducer = ee.Reducer.mean()</span>
+<span class="sd">    &gt;&gt;&gt; collectionName = &quot;NASA/ORNL/DAYMET_V4&quot;</span>
+<span class="sd">    &gt;&gt;&gt; exportComposites = False</span>
+<span class="sd">    &gt;&gt;&gt; exportPathRoot = &quot;users/username/someCollection&quot;</span>
+<span class="sd">    &gt;&gt;&gt; exportBands = [&quot;prcp.*&quot;, &quot;tmax.*&quot;, &quot;tmin.*&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; crs = &quot;EPSG:5070&quot;</span>
+<span class="sd">    &gt;&gt;&gt; transform = [1000, 0, -2361915.0, 0, -1000, 3177735.0]</span>
+<span class="sd">    &gt;&gt;&gt; scale = None</span>
+<span class="sd">    &gt;&gt;&gt; climateComposites = gil.getClimateWrapper(collectionName, studyArea, startYear, endYear, startJulian, endJulian, timebuffer, weights, compositingReducer, exportComposites, exportPathRoot, crs, transform, scale, exportBands)</span>
+<span class="sd">    &gt;&gt;&gt; Map.addTimeLapse(climateComposites.select(exportBands), {}, &quot;Climate Composite Time Lapse&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(studyArea, {&quot;strokeColor&quot;: &quot;0000FF&quot;, &quot;canQuery&quot;: False}, &quot;Study Area&quot;, True)</span>
+<span class="sd">    &gt;&gt;&gt; Map.centerObject(studyArea)</span>
+<span class="sd">    &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">    &gt;&gt;&gt; Map.view()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">formatArgs</span><span class="p">(</span><span class="nb">locals</span><span class="p">())</span>
     <span class="k">if</span> <span class="s2">&quot;args&quot;</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
         <span class="k">del</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;args&quot;</span><span class="p">]</span>
@@ -8562,7 +8777,8 @@
             <span class="n">exportBands</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">ts</span>  <span class="c1">####</span>
+    <span class="k">return</span> <span class="n">ts</span></div>
+
 
 
 <span class="c1">#####################################################################</span>
@@ -8592,29 +8808,71 @@
 
 
 <span class="c1">#####################################################################</span>
-<span class="c1"># On-the-fly basic water masking method</span>
-<span class="c1"># This method is used to provide a time-sensitive water mask</span>
-<span class="c1"># This method tends to work well if there is no wet snow present</span>
-<span class="c1"># Wet snow over flat areas can result in false positives</span>
-<span class="c1"># Designed to work with TOA data. SR data will result in false negatives (omission)</span>
+<div class="viewcode-block" id="simpleWaterMask">
+<a class="viewcode-back" href="../../modules.html#geeViz.getImagesLib.simpleWaterMask">[docs]</a>
 <span class="k">def</span> <span class="nf">simpleWaterMask</span><span class="p">(</span>
-    <span class="n">img</span><span class="p">,</span>
-    <span class="n">contractPixels</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-    <span class="n">slope_thresh</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-    <span class="n">elevationImagePath</span><span class="o">=</span><span class="s2">&quot;USGS/3DEP/10m&quot;</span><span class="p">,</span>
-    <span class="n">elevationFocalMeanRadius</span><span class="o">=</span><span class="mf">5.5</span><span class="p">,</span>
-<span class="p">):</span>
+    <span class="n">img</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span>
+    <span class="n">contractPixels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">slope_thresh</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">elevationImagePath</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;USGS/3DEP/10m&quot;</span><span class="p">,</span>
+    <span class="n">elevationFocalMeanRadius</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.5</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs a basic on-the-fly water masking for TOA reflectance imagery.</span>
+
+<span class="sd">    This function creates a water mask based on thresholds applied to Tasseled Cap angles, brightness, and slope.</span>
+<span class="sd">    It&#39;s designed for time-sensitive analysis and works well when wet snow is absent. However, wet snow in flat areas</span>
+<span class="sd">    can lead to false positives. SR data might cause false negatives (omissions).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        img (ee.Image): The input Earth Engine image (TOA reflectance data recommended).</span>
+<span class="sd">        contractPixels (int, optional): Number of pixels to contract the water mask by for morphological closing. Defaults to 0 (no contraction).</span>
+<span class="sd">        slope_thresh (float, optional): Threshold for slope (degrees) to identify flat areas suitable for water masking. Defaults to 10.</span>
+<span class="sd">        elevationImagePath (str, optional): Path to the Earth Engine image containing elevation data. Defaults to &quot;USGS/3DEP/10m&quot; (10m DEM from USGS 3D Elevation Program).</span>
+<span class="sd">        elevationFocalMeanRadius (float, optional): Radius (in meters) for the focal mean filter applied to the elevation data before calculating slope. Defaults to 5.5.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ee.Image: The water mask image with a single band named &quot;waterMask&quot;.</span>
+
+<span class="sd">    &gt;&gt;&gt; import geeViz.getImagesLib as gil</span>
+<span class="sd">    &gt;&gt;&gt; Map = gil.Map</span>
+<span class="sd">    &gt;&gt;&gt; ee = gil.ee</span>
+<span class="sd">    &gt;&gt;&gt; studyArea = gil.testAreas[&quot;CO&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; s2s = gil.superSimpleGetS2(studyArea, &quot;2024-01-01&quot;, &quot;2024-12-31&quot;, 190, 250).map(lambda img: gil.getTasseledCap(img.divide(10000)))</span>
+<span class="sd">    &gt;&gt;&gt; median_composite = s2s.median()</span>
+<span class="sd">    &gt;&gt;&gt; water = gil.simpleWaterMask(median_composite).rename(&quot;Water&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; water = water.selfMask().set({&quot;Water_class_values&quot;: [1], &quot;Water_class_names&quot;: [&quot;Water&quot;], &quot;Water_class_palette&quot;: [&quot;0000DD&quot;]})</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(median_composite, gil.vizParamsFalse, &quot;Sentinel-2 Median Composite&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(water, {&quot;autoViz&quot;: True}, &quot;Water Mask&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(studyArea, {&quot;canQuery&quot;: False}, &quot;Study Area&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.centerObject(studyArea, 12)</span>
+<span class="sd">    &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">    &gt;&gt;&gt; Map.view()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Add Tasseled Cap angles to the image</span>
     <span class="n">img</span> <span class="o">=</span> <span class="n">addTCAngles</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+
+    <span class="c1"># Load and resample elevation data</span>
     <span class="n">ned</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">elevationImagePath</span><span class="p">)</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="s2">&quot;bicubic&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Calculate slope using focal mean filtered elevation</span>
     <span class="n">slope</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Terrain</span><span class="o">.</span><span class="n">slope</span><span class="p">(</span><span class="n">ned</span><span class="o">.</span><span class="n">focal_mean</span><span class="p">(</span><span class="n">elevationFocalMeanRadius</span><span class="p">))</span>
-    <span class="n">flat</span> <span class="o">=</span> <span class="n">slope</span><span class="o">.</span><span class="n">lte</span><span class="p">(</span><span class="n">slope_thresh</span><span class="p">)</span>
 
-    <span class="n">waterMask</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s2">&quot;tcAngleBW&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">gte</span><span class="p">(</span><span class="o">-</span><span class="mf">0.05</span><span class="p">)</span><span class="o">.</span><span class="n">And</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s2">&quot;tcAngleBG&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">lte</span><span class="p">(</span><span class="mf">0.05</span><span class="p">))</span><span class="o">.</span><span class="n">And</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s2">&quot;brightness&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">lt</span><span class="p">(</span><span class="mf">0.3</span><span class="p">))</span><span class="o">.</span><span class="n">And</span><span class="p">(</span><span class="n">flat</span><span class="p">)</span><span class="o">.</span><span class="n">focal_min</span><span class="p">(</span><span class="n">contractPixels</span><span class="p">)</span>
+    <span class="c1"># Identify flat areas based on slope threshold</span>
+    <span class="n">flat</span> <span class="o">=</span> <span class="n">slope</span><span class="o">.</span><span class="n">lte</span><span class="p">(</span><span class="n">slope_thresh</span><span class="p">)</span>  <span class="c1"># Less than or equal to threshold</span>
 
-    <span class="k">return</span> <span class="n">waterMask</span><span class="o">.</span><span class="n">rename</span><span class="p">([</span><span class="s2">&quot;waterMask&quot;</span><span class="p">])</span>
+    <span class="c1"># Define water mask conditions based on Tasseled Cap angles, brightness, and slope</span>
+    <span class="n">waterMask</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s2">&quot;tcAngleBW&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">gte</span><span class="p">(</span><span class="o">-</span><span class="mf">0.05</span><span class="p">)</span><span class="o">.</span><span class="n">And</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s2">&quot;tcAngleBG&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">lte</span><span class="p">(</span><span class="mf">0.05</span><span class="p">))</span><span class="o">.</span><span class="n">And</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s2">&quot;brightness&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">lt</span><span class="p">(</span><span class="mf">0.3</span><span class="p">))</span><span class="o">.</span><span class="n">And</span><span class="p">(</span><span class="n">flat</span><span class="p">)</span>
+
+    <span class="c1"># Apply morphological closing with focal minimum filter</span>
+    <span class="n">waterMask</span> <span class="o">=</span> <span class="n">waterMask</span><span class="o">.</span><span class="n">focal_min</span><span class="p">(</span><span class="n">contractPixels</span><span class="p">)</span>
+
+    <span class="c1"># Rename the water mask band</span>
+    <span class="k">return</span> <span class="n">waterMask</span><span class="o">.</span><span class="n">rename</span><span class="p">([</span><span class="s2">&quot;waterMask&quot;</span><span class="p">])</span>  <span class="c1">####################</span></div>
 
 
-<span class="c1">#####################################################################</span>
+
 <span class="c1"># Jeff Ho Method for algal bloom detection</span>
 <span class="c1"># https://www.nature.com/articles/s41586-019-1648-7</span>
 
@@ -8771,7 +9029,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=7afd9251"></script>
+</div><script src="../../_static/documentation_options.js?v=e5bf06cb"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

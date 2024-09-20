@@ -5,7 +5,7 @@
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>geeViz.geeView - geeViz &#34;2024.9.2&#34; docs</title>
+        <title>geeViz.geeView - geeViz &#34;2024.9.3&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -141,7 +141,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">geeViz "2024.9.2" docs</div></a>
+      <a href="../../index.html"><div class="brand">geeViz "2024.9.3" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -167,7 +167,7 @@
     <img class="sidebar-logo" src="../../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.9.2" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.9.3" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -414,19 +414,17 @@
 <span class="n">robustInitializer</span><span class="p">()</span>
 <span class="c1">######################################################################</span>
 <span class="c1"># Set up GEE and paths</span>
-<span class="c1"># robustInitializer()</span>
 <span class="n">geeVizFolder</span> <span class="o">=</span> <span class="s2">&quot;geeViz&quot;</span>
 <span class="n">geeViewFolder</span> <span class="o">=</span> <span class="s2">&quot;geeView&quot;</span>
+
 <span class="c1"># Set up template web viewer</span>
 <span class="c1"># Do not change</span>
 <span class="n">cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
 
 <span class="n">paths</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span>
 
-<span class="c1"># gee_py_modules_dir = site.getsitepackages()[-1]</span>
-<span class="c1"># py_viz_dir = os.path.join(gee_py_modules_dir,geeVizFolder)</span>
 <span class="n">py_viz_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
-<span class="c1"># os.chdir(py_viz_dir)</span>
+
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;geeViz package folder:&quot;</span><span class="p">,</span> <span class="n">py_viz_dir</span><span class="p">)</span>
 
 <span class="c1"># Specify location of files to run</span>
@@ -439,15 +437,13 @@
 <span class="c1">######################################################################</span>
 <span class="c1">######################################################################</span>
 <span class="c1"># Functions</span>
-
-
 <span class="c1">######################################################################</span>
 <span class="c1"># Linear color gradient functions</span>
 <span class="c1">##############################################################</span>
 <span class="c1">##############################################################</span>
 <div class="viewcode-block" id="color_dict_maker">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.color_dict_maker">[docs]</a>
-<span class="k">def</span> <span class="nf">color_dict_maker</span><span class="p">(</span><span class="n">gradient</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">color_dict_maker</span><span class="p">(</span><span class="n">gradient</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Takes in a list of RGB sub-lists and returns dictionary of</span>
 <span class="sd">    colors in RGB and hex form for use in a graphing function</span>
 <span class="sd">    defined later on&quot;&quot;&quot;</span>
@@ -463,7 +459,7 @@
 <span class="c1"># color functions adapted from bsou.io/posts/color-gradients-with-python</span>
 <div class="viewcode-block" id="hex_to_rgb">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.hex_to_rgb">[docs]</a>
-<span class="k">def</span> <span class="nf">hex_to_rgb</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">hex_to_rgb</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return (red, green, blue) for the color given as #rrggbb.&quot;&quot;&quot;</span>
     <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">)</span>
     <span class="n">lv</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -477,7 +473,7 @@
 
 <div class="viewcode-block" id="RGB_to_hex">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.RGB_to_hex">[docs]</a>
-<span class="k">def</span> <span class="nf">RGB_to_hex</span><span class="p">(</span><span class="n">RGB</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">RGB_to_hex</span><span class="p">(</span><span class="n">RGB</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;[255,255,255] -&gt; &quot;#FFFFFF&quot; &quot;&quot;&quot;</span>
     <span class="c1"># Components need to be integers for hex to make sense</span>
     <span class="n">RGB</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">RGB</span><span class="p">]</span>
@@ -487,7 +483,7 @@
 
 <div class="viewcode-block" id="linear_gradient">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.linear_gradient">[docs]</a>
-<span class="k">def</span> <span class="nf">linear_gradient</span><span class="p">(</span><span class="n">start_hex</span><span class="p">,</span> <span class="n">finish_hex</span><span class="o">=</span><span class="s2">&quot;#FFFFFF&quot;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">linear_gradient</span><span class="p">(</span><span class="n">start_hex</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">finish_hex</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;#FFFFFF&quot;</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;returns a gradient list of (n) colors between</span>
 <span class="sd">    two hex colors. start_hex and finish_hex</span>
 <span class="sd">    should be the full six-digit color string,</span>
@@ -511,20 +507,18 @@
 
 <div class="viewcode-block" id="polylinear_gradient">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.polylinear_gradient">[docs]</a>
-<span class="k">def</span> <span class="nf">polylinear_gradient</span><span class="p">(</span><span class="n">colors</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">polylinear_gradient</span><span class="p">(</span><span class="n">colors</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;returns a list of colors forming linear gradients between</span>
 <span class="sd">    all sequential pairs of colors. &quot;n&quot; specifies the total</span>
 <span class="sd">    number of desired output colors&quot;&quot;&quot;</span>
     <span class="c1"># The number of colors per individual linear gradient</span>
     <span class="n">n_out</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>
-    <span class="c1"># print((&#39;n&#39;,n))</span>
-    <span class="c1"># print((&#39;n_out&#39;,n_out))</span>
+
     <span class="c1"># If we don&#39;t have an even number of color values, we will remove equally spaced values at the end.</span>
     <span class="n">apply_offset</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">if</span> <span class="n">n</span> <span class="o">%</span> <span class="n">n_out</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">apply_offset</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">n_out</span> <span class="o">=</span> <span class="n">n_out</span> <span class="o">+</span> <span class="mi">1</span>
-        <span class="c1"># print((&#39;new n_out&#39;,n_out))</span>
 
     <span class="c1"># returns dictionary defined by color_dict()</span>
     <span class="n">gradient_dict</span> <span class="o">=</span> <span class="n">linear_gradient</span><span class="p">(</span><span class="n">colors</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">colors</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">n_out</span><span class="p">)</span>
@@ -538,27 +532,22 @@
 
     <span class="c1"># Remove equally spaced values here.</span>
     <span class="k">if</span> <span class="n">apply_offset</span><span class="p">:</span>
-        <span class="c1"># indList = list(range(len(gradient_dict[&#39;hex&#39;])))</span>
         <span class="n">offset</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">gradient_dict</span><span class="p">[</span><span class="s2">&quot;hex&quot;</span><span class="p">])</span> <span class="o">-</span> <span class="n">n</span>
         <span class="n">sliceval</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="c1"># print((&#39;len(gradient_dict)&#39;,len(gradient_dict[&#39;hex&#39;])))</span>
-        <span class="c1"># print((&#39;offset&#39;,offset))</span>
 
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">offset</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">sliceval</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gradient_dict</span><span class="p">[</span><span class="s2">&quot;hex&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="n">i</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">offset</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">gradient_dict</span><span class="p">[</span><span class="s2">&quot;hex&quot;</span><span class="p">])</span>
-        <span class="nb">print</span><span class="p">((</span><span class="s2">&quot;sliceval&quot;</span><span class="p">,</span> <span class="n">sliceval</span><span class="p">))</span>
+
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;hex&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;g&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">):</span>
             <span class="n">gradient_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gradient_dict</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">if</span> <span class="n">j</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sliceval</span><span class="p">]</span>
-        <span class="c1"># print((&#39;new len dict&#39;, len(gradient_dict[&#39;hex&#39;])))</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">gradient_dict</span><span class="p">[</span><span class="s2">&quot;hex&quot;</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">gradient_dict</span><span class="p">[</span><span class="s2">&quot;hex&quot;</span><span class="p">]))</span>
+
     <span class="k">return</span> <span class="n">gradient_dict</span></div>
 
 
 
 <div class="viewcode-block" id="get_poly_gradient_ct">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.get_poly_gradient_ct">[docs]</a>
-<span class="k">def</span> <span class="nf">get_poly_gradient_ct</span><span class="p">(</span><span class="n">palette</span><span class="p">,</span> <span class="nb">min</span><span class="p">,</span> <span class="nb">max</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">get_poly_gradient_ct</span><span class="p">(</span><span class="n">palette</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">min</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">max</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Take a palette and a set of min and max stretch values to get a 1:1 value to color hex list</span>
 
@@ -571,13 +560,16 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        list: A list of linearly interpolated hex codes where there is 1:1 color to value from min-max (inclusive)</span>
+
+<span class="sd">    &gt;&gt;&gt; import geeViz.geeView as gv</span>
+<span class="sd">    &gt;&gt;&gt; viz = {&quot;palette&quot;: [&quot;#FFFF00&quot;, &quot;00F&quot;, &quot;0FF&quot;, &quot;FF0000&quot;], &quot;min&quot;: 1, &quot;max&quot;: 20}</span>
+<span class="sd">    &gt;&gt;&gt; color_ramp = gv.get_poly_gradient_ct(viz[&quot;palette&quot;], viz[&quot;min&quot;], viz[&quot;max&quot;])</span>
+<span class="sd">    &gt;&gt;&gt; print(&quot;Color ramp:&quot;, color_ramp)</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">ramp</span> <span class="o">=</span> <span class="n">polylinear_gradient</span><span class="p">(</span><span class="n">palette</span><span class="p">,</span> <span class="nb">max</span> <span class="o">-</span> <span class="nb">min</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">ramp</span><span class="p">[</span><span class="s2">&quot;hex&quot;</span><span class="p">]</span></div>
 
-
-
-<span class="c1"># print(get_poly_gradient_ct([&quot;#FFFF00&quot;, &quot;00F&quot;, &quot;0FF&quot;, &quot;FF0000&quot;], 1, 2))</span>
 
 
 <span class="c1">##############################################################</span>
@@ -686,7 +678,7 @@
 <span class="c1"># Function for running local web server</span>
 <div class="viewcode-block" id="run_local_server">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.run_local_server">[docs]</a>
-<span class="k">def</span> <span class="nf">run_local_server</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="mi">8001</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">run_local_server</span><span class="p">(</span><span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8001</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Start a local webserver using the Python http.server</span>
 
@@ -715,7 +707,7 @@
 <span class="c1"># Function to see if port is active</span>
 <div class="viewcode-block" id="isPortActive">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.isPortActive">[docs]</a>
-<span class="k">def</span> <span class="nf">isPortActive</span><span class="p">(</span><span class="n">port</span><span class="o">=</span><span class="mi">8001</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">isPortActive</span><span class="p">(</span><span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8001</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    See if a given port number is currently active</span>
 
@@ -762,7 +754,7 @@
 <span class="sd">        turnOffLayersWhenTimeLapseIsOn (bool, default True): Whether all other layers should be turned off when a time lapse is turned on. This is set to True by default to avoid confusing layer order rendering that can occur when time lapses and non-time lapses are visible at the same time. Often this confusion is fine and visualizing time lapses and other layers is desired. Set `Map.turnOffLayersWhenTimeLapseIsOn` to False in this instance.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8001</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8001</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">port</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span> <span class="o">=</span> <span class="p">[]</span>
@@ -798,7 +790,7 @@
     <span class="c1"># Function for adding a layer to the map</span>
 <div class="viewcode-block" id="mapper.addLayer">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.addLayer">[docs]</a>
-    <span class="k">def</span> <span class="nf">addLayer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">viz</span><span class="o">=</span><span class="p">{},</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">addLayer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">Feature</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">,</span> <span class="n">viz</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">visible</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adds GEE object to the mapper object that will then be added to the map user interface with a `view` call.</span>
 
@@ -896,9 +888,12 @@
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Layer &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span><span class="p">)</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Layer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Adding layer: &quot;</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="c1"># Make sure not to update viz dictionary elsewhere</span>
+        <span class="n">viz</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">viz</span><span class="p">)</span>
 
         <span class="c1"># Handle reducer if ee object is given</span>
         <span class="k">if</span> <span class="s2">&quot;reducer&quot;</span> <span class="ow">in</span> <span class="n">viz</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -928,7 +923,7 @@
             <span class="n">imageType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">image</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
             <span class="n">layerType</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">typeLookup</span><span class="p">[</span><span class="n">imageType</span><span class="p">]</span>
             <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;layerType&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">layerType</span>
-            <span class="c1"># print(&quot;Type:&quot;, imageType, viz[&quot;layerType&quot;])</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">image</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
             <span class="n">idDict</span><span class="p">[</span><span class="s2">&quot;item&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">image</span>
@@ -950,7 +945,7 @@
     <span class="c1"># Function for adding a layer to the map</span>
 <div class="viewcode-block" id="mapper.addTimeLapse">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.addTimeLapse">[docs]</a>
-    <span class="k">def</span> <span class="nf">addTimeLapse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">viz</span><span class="o">=</span><span class="p">{},</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">addTimeLapse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">,</span> <span class="n">viz</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">visible</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adds GEE ImageCollection object to the mapper object that will then be added as an interactive time lapse in the map user interface with a `view` call.</span>
 
@@ -1051,6 +1046,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Adding layer: &quot;</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
 
+        <span class="c1"># Make sure not to update viz dictionary elsewhere</span>
+        <span class="n">viz</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">viz</span><span class="p">)</span>
+
         <span class="c1"># Handle reducer if ee object is given - delete it</span>
         <span class="k">if</span> <span class="s2">&quot;reducer&quot;</span> <span class="ow">in</span> <span class="n">viz</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">del</span> <span class="n">viz</span><span class="p">[</span><span class="s2">&quot;reducer&quot;</span><span class="p">]</span>
@@ -1082,7 +1080,7 @@
     <span class="c1"># Function for adding a select layer to the map</span>
 <div class="viewcode-block" id="mapper.addSelectLayer">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.addSelectLayer">[docs]</a>
-    <span class="k">def</span> <span class="nf">addSelectLayer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">featureCollection</span><span class="p">,</span> <span class="n">viz</span><span class="o">=</span><span class="p">{},</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">addSelectLayer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">featureCollection</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">,</span> <span class="n">viz</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Adds GEE featureCollection to the mapper object that will then be added as an interactive selection layer in the map user interface with a `view` call. This layer will be availble for selecting areas to include in area summary charts.</span>
 
@@ -1116,6 +1114,10 @@
         <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Layer &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Make sure not to update viz dictionary elsewhere</span>
+        <span class="n">viz</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">viz</span><span class="p">)</span>
+
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Adding layer: &quot;</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
 
         <span class="c1"># Get the id and populate dictionary</span>
@@ -1133,7 +1135,7 @@
     <span class="c1"># Function for centering on a GEE object that has a geometry</span>
 <div class="viewcode-block" id="mapper.setCenter">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setCenter">[docs]</a>
-    <span class="k">def</span> <span class="nf">setCenter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lng</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setCenter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lng</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">lat</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">zoom</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Center the map on a specified point and optional zoom on loading</span>
 
@@ -1141,6 +1143,10 @@
 <span class="sd">            lng (int or float): The longitude to center the map on</span>
 <span class="sd">            lat (int or float): The latitude to center the map on</span>
 <span class="sd">            zoom (int, optional): If provided, will force the map to zoom to this level after centering it on the provided coordinates. If not provided, the current zoom level will be used.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; Map.setCenter(-111,41,10)</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Map.setCenter(</span><span class="si">{</span><span class="n">lng</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">lat</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">zoom</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
@@ -1152,12 +1158,16 @@
     <span class="c1"># Function for setting the map zoom</span>
 <div class="viewcode-block" id="mapper.setZoom">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setZoom">[docs]</a>
-    <span class="k">def</span> <span class="nf">setZoom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zoom</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setZoom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zoom</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the map zoom level</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            zoom (int): The zoom level to set the map to on loading.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; Map.setZoom(10)</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;map.setZoom(</span><span class="si">{</span><span class="n">zoom</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
 
@@ -1166,13 +1176,20 @@
     <span class="c1"># Function for centering on a GEE object that has a geometry</span>
 <div class="viewcode-block" id="mapper.centerObject">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.centerObject">[docs]</a>
-    <span class="k">def</span> <span class="nf">centerObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">centerObject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Geometry</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">Feature</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">zoom</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Center the map on an object on loading</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            feature (Feature, FeatureCollection, or Geometry): The object to center the map on</span>
 <span class="sd">            zoom (int, optional): If provided, will force the map to zoom to this level after centering it on the object. If not provided, the highest zoom level that allows the feature to be viewed fully will be used.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; pt = ee.Geometry.Point([-111, 41])</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(pt.buffer(10), {}, &quot;Plot&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.centerObject(pt)</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">bounds</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">geometry</span><span class="p">()</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;EPSG:4326&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">getInfo</span><span class="p">())</span>
@@ -1190,7 +1207,7 @@
     <span class="c1"># Function for launching the web map after all adding to the map has been completed</span>
 <div class="viewcode-block" id="mapper.view">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.view">[docs]</a>
-    <span class="k">def</span> <span class="nf">view</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">open_browser</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">open_iframe</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">iframe_height</span><span class="o">=</span><span class="mi">525</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">view</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">open_browser</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">open_iframe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">iframe_height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">525</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compiles all map objects and commands and starts the map server</span>
 
@@ -1200,6 +1217,12 @@
 <span class="sd">            open_iframe (bool): Whether or not to open an iframe. If unspecified, will automatically be selected depending on whether geeViz is being used in a notebook (True) or not (False).</span>
 
 <span class="sd">            iframe_height (int, default 525): The height of the iframe shown if running inside a notebook</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms, {&quot;autoViz&quot;: True, &quot;canAreaChart&quot;: True, &quot;areaChartParams&quot;: {&quot;line&quot;: True, &quot;sankey&quot;: True}}, &quot;LCMS&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Starting webmap&quot;</span><span class="p">)</span>
 
@@ -1254,22 +1277,8 @@
         <span class="n">oo</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ee_run</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
         <span class="n">oo</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
         <span class="n">oo</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-        <span class="c1"># time.sleep(5)</span>
 
-        <span class="c1"># if not self.isNotebook:</span>
-        <span class="c1">#     self.Map.save(os.path.join(folium_html_folder,folium_html))</span>
-        <span class="c1">#     if not geeView.isPortActive(self.port):</span>
-        <span class="c1">#         print(&#39;Starting local web server at: http://localhost:{}/{}/&#39;.format(self.port,geeView.geeViewFolder))</span>
-        <span class="c1">#         geeView.run_local_server(self.port)</span>
-        <span class="c1">#         print(&#39;Done&#39;)</span>
-        <span class="c1">#     else:</span>
-        <span class="c1">#         print(&#39;Local web server at: http://localhost:{}/{}/ already serving.&#39;.format(self.port,geeView.geeViewFolder))</span>
-        <span class="c1">#     if open_browser:</span>
-        <span class="c1">#         geeView.webbrowser.open(&#39;http://localhost:{}/{}/{}&#39;.format(self.port,geeView.geeViewFolder,folium_html),new = 1)</span>
-
-        <span class="c1"># else:</span>
-        <span class="c1">#     display(self.Map)</span>
-
+        <span class="c1"># Find if port is already active and only start it if it is not</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">isPortActive</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">):</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Starting local web server at: http://localhost:</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">,</span> <span class="n">geeViewFolder</span><span class="p">))</span>
             <span class="n">run_local_server</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
@@ -1277,8 +1286,8 @@
 
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Local web server at: http://localhost:</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">/ already serving.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">,</span> <span class="n">geeViewFolder</span><span class="p">))</span>
-            <span class="c1"># print(&#39;Refresh browser instance&#39;)</span>
 
+        <span class="c1"># Open viewer in browser or iframe in notebook</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;cwd&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">())</span>
         <span class="k">if</span> <span class="n">IS_COLAB</span><span class="p">:</span>
             <span class="n">proxy_js</span> <span class="o">=</span> <span class="s2">&quot;google.colab.kernel.proxyPort(</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
@@ -1313,6 +1322,13 @@
     <span class="k">def</span> <span class="nf">clearMap</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Removes all map layers and commands - useful if running geeViz in a notebook and don&#39;t want layers/commands from a prior code block to still be included.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms, {&quot;autoViz&quot;: True}, &quot;LCMS&quot;) # Layer</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector() # Command</span>
+<span class="sd">        &gt;&gt;&gt; Map.clearMap() # Clear map layer and commands</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1324,6 +1340,13 @@
     <span class="k">def</span> <span class="nf">clearMapLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Removes all map layers - useful if running geeViz in a notebook and don&#39;t want layers from a prior code block to still be included, but want commands to remain.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms, {&quot;autoViz&quot;: True}, &quot;LCMS&quot;) # Layer - this will be removed</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector() # Command - this will remain (even though there will be no layers to query)</span>
+<span class="sd">        &gt;&gt;&gt; Map.clearMapLayers() # Clear map layer only and leave commands</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layerNumber</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span> <span class="o">=</span> <span class="p">[]</span></div>
@@ -1334,6 +1357,13 @@
     <span class="k">def</span> <span class="nf">clearMapCommands</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Removes all map commands - useful if running geeViz in a notebook and don&#39;t want commands from a prior code block to still be included, but want layers to remain.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms, {&quot;autoViz&quot;: True}, &quot;LCMS&quot;) # Layer</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector() # Command - this will be removed</span>
+<span class="sd">        &gt;&gt;&gt; Map.clearMapCommands() # Clear map comands only and leave layers</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span> <span class="o">=</span> <span class="p">[]</span></div>
 
@@ -1347,6 +1377,13 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            title (str, default geeViz Data Explorer): The title to appear in the header on the left sidebar as well as the title of the viewer webpage.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms, {&quot;autoViz&quot;: True}, &quot;LCMS&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setMapTitle(&quot;&lt;h2&gt;A Custom Title!!!&lt;/h2&gt;&quot;)  # Set custom map title</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">title_command</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Map.setTitle(&quot;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s1">&quot;)&#39;</span>
         <span class="k">if</span> <span class="n">title_command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
@@ -1358,10 +1395,18 @@
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setTitle">[docs]</a>
     <span class="k">def</span> <span class="nf">setTitle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Redundant function for setMapTitle.</span>
 <span class="sd">        Set the title that appears in the left sidebar header and the page title</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            title (str, default geeViz Data Explorer): The title to appear in the header on the left sidebar as well as the title of the viewer webpage.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms, {&quot;autoViz&quot;: True}, &quot;LCMS&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setMapTitle(&quot;&lt;h2&gt;A Custom Title!!!&lt;/h2&gt;&quot;)  # Set custom map title</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setMapTitle</span><span class="p">(</span><span class="n">title</span><span class="p">)</span></div>
 
@@ -1370,15 +1415,27 @@
     <span class="c1"># Functions to set various click query properties</span>
 <div class="viewcode-block" id="mapper.setQueryCRS">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setQueryCRS">[docs]</a>
-    <span class="k">def</span> <span class="nf">setQueryCRS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">crs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setQueryCRS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">crs</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The coordinate reference system string to query layers with</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            crs (str, default &quot;EPSG:5070&quot;): Which projection (CRS) to use for querying map layers.</span>
+
+<span class="sd">        &gt;&gt;&gt; import geeViz.getImagesLib as gil</span>
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; crs = gil.common_projections[&quot;NLCD_AK&quot;][&quot;crs&quot;]</span>
+<span class="sd">        &gt;&gt;&gt; transform = gil.common_projections[&quot;NLCD_AK&quot;][&quot;transform&quot;]</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;SEAK&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms, {&quot;autoViz&quot;: True}, &quot;LCMS&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setQueryCRS(crs)</span>
+<span class="sd">        &gt;&gt;&gt; Map.setQueryTransform(transform)</span>
+<span class="sd">        &gt;&gt;&gt; Map.setCenter(-144.36390353, 60.20479529215, 8)</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setting click query crs to: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">crs</span><span class="p">))</span>
-        <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Map.setQueryCRS(&quot;</span><span class="si">{</span><span class="n">crs</span><span class="si">}</span><span class="s1">&quot;);&#39;</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Map.setQueryCRS(&#39;</span><span class="si">{</span><span class="n">crs</span><span class="si">}</span><span class="s2">&#39;);&quot;</span>
         <span class="k">if</span> <span class="n">cmd</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
 
@@ -1386,12 +1443,24 @@
     <span class="c1">######################################################################</span>
 <div class="viewcode-block" id="mapper.setQueryScale">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setQueryScale">[docs]</a>
-    <span class="k">def</span> <span class="nf">setQueryScale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setQueryScale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        What scale to query map layers with. Will also update the size of the box drawn on the map query layers are queried.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            scale (int, default None): The spatial resolution to use for querying map layers in meters. If set, the query transform will be set to None in the map viewer.</span>
+
+<span class="sd">        &gt;&gt;&gt; import geeViz.getImagesLib as gil</span>
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; s2s = gil.superSimpleGetS2(ee.Geometry.Point([-107.61, 37.85]), &quot;2024-01-01&quot;, &quot;2024-12-31&quot;, 190, 250)</span>
+<span class="sd">        &gt;&gt;&gt; projection = s2s.first().select([&quot;nir&quot;]).projection().getInfo()</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(s2s.median(), gil.vizParamsFalse10k, &quot;Sentinel-2 Composite&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setQueryCRS(projection[&quot;crs&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; Map.setQueryScale(projection[&quot;transform&quot;][0])</span>
+<span class="sd">        &gt;&gt;&gt; Map.centerObject(s2s.first())</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setting click query scale to: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">scale</span><span class="p">))</span>
         <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Map.setQueryScale(</span><span class="si">{</span><span class="n">scale</span><span class="si">}</span><span class="s2">);&quot;</span>
@@ -1402,12 +1471,24 @@
     <span class="c1">######################################################################</span>
 <div class="viewcode-block" id="mapper.setQueryTransform">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setQueryTransform">[docs]</a>
-    <span class="k">def</span> <span class="nf">setQueryTransform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transform</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setQueryTransform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transform</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        What transform to query map layers with. Will also update the size of the box drawn on the map query layers are queried.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            transform (list, default [30, 0, -2361915, 0, -30, 3177735]): The snap to grid to use for querying layers on the map. If set, the query scale will be set to None in the map viewer.</span>
+
+<span class="sd">        &gt;&gt;&gt; import geeViz.getImagesLib as gil</span>
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; s2s = gil.superSimpleGetS2(ee.Geometry.Point([-107.61, 37.85]), &quot;2024-01-01&quot;, &quot;2024-12-31&quot;, 190, 250)</span>
+<span class="sd">        &gt;&gt;&gt; projection = s2s.first().select([&quot;nir&quot;]).projection().getInfo()</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(s2s.median(), gil.vizParamsFalse10k, &quot;Sentinel-2 Composite&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setQueryCRS(projection[&quot;crs&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; Map.setQueryTransform(projection[&quot;transform&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; Map.centerObject(s2s.first())</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setting click query transform to: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">transform</span><span class="p">))</span>
         <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Map.setQueryTransform(</span><span class="si">{</span><span class="n">transform</span><span class="si">}</span><span class="s2">);&quot;</span>
@@ -1418,13 +1499,27 @@
     <span class="c1">######################################################################</span>
 <div class="viewcode-block" id="mapper.setQueryPrecision">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setQueryPrecision">[docs]</a>
-    <span class="k">def</span> <span class="nf">setQueryPrecision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chartPrecision</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">chartDecimalProportion</span><span class="o">=</span><span class="mf">0.25</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setQueryPrecision</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chartPrecision</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">chartDecimalProportion</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        What level of precision to show for queried layers. This avoids showing too many digits after the decimal.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            chartPrecision (int, default 3): Will show the larger of `chartPrecision` decimal places or ceiling(`chartDecimalProportion` * total decimal places). E.g. if the number is 1.12345678, 0.25 of 8 decimal places is 2, so 3 will be used and yield 1.123.</span>
 <span class="sd">            chartDecimalProportion (float, default 0.25): Will show the larger of `chartPrecision` decimal places or `chartDecimalProportion` * total decimal places. E.g. if the number is 1.1234567891234, ceiling(0.25 of 13) decimal places is 4, so 4 will be used and yield 1.1235.</span>
+
+<span class="sd">        &gt;&gt;&gt; import geeViz.getImagesLib as gil</span>
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; s2s = gil.superSimpleGetS2(ee.Geometry.Point([-107.61, 37.85]), &quot;2024-01-01&quot;, &quot;2024-12-31&quot;, 190, 250).select([&quot;blue&quot;, &quot;green&quot;, &quot;red&quot;, &quot;nir&quot;, &quot;swir1&quot;, &quot;swir2&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; projection = s2s.first().select([&quot;nir&quot;]).projection().getInfo()</span>
+<span class="sd">        &gt;&gt;&gt; s2s = s2s.map(lambda img: ee.Image(img).divide(10000).set(&quot;system:time_start&quot;,img.date().millis()))</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(s2s, gil.vizParamsFalse, &quot;Sentinel-2 Images&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(s2s.median(), gil.vizParamsFalse, &quot;Sentinel-2 Composite&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setQueryCRS(projection[&quot;crs&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; Map.setQueryTransform(projection[&quot;transform&quot;])</span>
+<span class="sd">        &gt;&gt;&gt; Map.setQueryPrecision(chartPrecision=2, chartDecimalProportion=0.1)</span>
+<span class="sd">        &gt;&gt;&gt; Map.centerObject(s2s.first())</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setting click query precision to: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">chartPrecision</span><span class="p">))</span>
         <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Map.setQueryPrecision(</span><span class="si">{</span><span class="n">chartPrecision</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">chartDecimalProportion</span><span class="si">}</span><span class="s2">);&quot;</span>
@@ -1435,12 +1530,21 @@
     <span class="c1">######################################################################</span>
 <div class="viewcode-block" id="mapper.setQueryDateFormat">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setQueryDateFormat">[docs]</a>
-    <span class="k">def</span> <span class="nf">setQueryDateFormat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">defaultQueryDateFormat</span><span class="o">=</span><span class="s2">&quot;YYYY-MM-dd&quot;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setQueryDateFormat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">defaultQueryDateFormat</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;YYYY-MM-dd&quot;</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the date format to be used for any dates when querying.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            defaultQueryDateFormat (str, default &quot;YYYY-MM-dd&quot;): The date format string to use for query outputs with dates. To simplify date outputs, &quot;YYYY&quot; is often used instead of the default.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([1]), {&quot;autoViz&quot;: True}, &quot;LCMS Land Cover&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([0]), {&quot;autoViz&quot;: True}, &quot;LCMS Change&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setQueryDateFormat(&quot;YYYY&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setting default query date format to: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">defaultQueryDateFormat</span><span class="p">))</span>
         <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Map.setQueryDateFormat(&quot;</span><span class="si">{</span><span class="n">defaultQueryDateFormat</span><span class="si">}</span><span class="s1">&quot;);&#39;</span>
@@ -1451,12 +1555,19 @@
     <span class="c1">######################################################################</span>
 <div class="viewcode-block" id="mapper.setQueryBoxColor">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setQueryBoxColor">[docs]</a>
-    <span class="k">def</span> <span class="nf">setQueryBoxColor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setQueryBoxColor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the color of the query box to something other than yellow</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            color (str, default &quot;FFFF00&quot;): Set the default query box color shown on the map by providing a hex color.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([1]), {&quot;autoViz&quot;: True}, &quot;LCMS Land Cover&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setQueryBoxColor(&quot;0FF&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setting click query box color to: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">color</span><span class="p">))</span>
         <span class="n">cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Map.setQueryBoxColor(&quot;</span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s1">&quot;);&#39;</span>
@@ -1474,6 +1585,13 @@
     <span class="k">def</span> <span class="nf">setQueryToInfoWindow</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the location of query outputs to an info window popup over the map</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([1]), {&quot;autoViz&quot;: True}, &quot;LCMS Land Cover&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setQueryToInfoWindow()</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setQueryWindowMode</span><span class="p">(</span><span class="s2">&quot;infoWindow&quot;</span><span class="p">)</span></div>
 
@@ -1483,6 +1601,13 @@
     <span class="k">def</span> <span class="nf">setQueryToSidePane</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the location of query outputs to the right sidebar above the legend</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([1]), {&quot;autoViz&quot;: True}, &quot;LCMS Land Cover&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setQueryToSidePane()</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setQueryWindowMode</span><span class="p">(</span><span class="s2">&quot;sidePane&quot;</span><span class="p">)</span></div>
 
@@ -1494,6 +1619,12 @@
     <span class="k">def</span> <span class="nf">turnOnInspector</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Turn on the query inspector tool upon map loading. This is used frequently so map layers can be queried as soon as the map viewer loads.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([1]), {&quot;autoViz&quot;: True}, &quot;LCMS Land Cover&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">query_command</span> <span class="o">=</span> <span class="s2">&quot;Map.turnOnInspector();&quot;</span>
         <span class="k">if</span> <span class="n">query_command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
@@ -1506,6 +1637,12 @@
     <span class="k">def</span> <span class="nf">turnOnAutoAreaCharting</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Turn on automatic area charting upon map loading. This will automatically update charts by summarizing any visible layers with &quot;canAreaChart&quot; : True any time the map finishes panning or zooming.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([1]), {&quot;autoViz&quot;: True,&#39;canAreaChart&#39;:True}, &quot;LCMS Land Cover&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnAutoAreaCharting()</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">query_command</span> <span class="o">=</span> <span class="s2">&quot;Map.turnOnAutoAreaCharting();&quot;</span>
         <span class="k">if</span> <span class="n">query_command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
@@ -1517,6 +1654,12 @@
     <span class="k">def</span> <span class="nf">turnOnUserDefinedAreaCharting</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Turn on area charting by a user defined area upon map loading. This will update charts by summarizing any visible layers with &quot;canAreaChart&quot; : True when the user draws an area to summarize and hits the `Chart Selected Areas` button in the user interface under `Area Tools -&gt; User-Defined Area`.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([1]), {&quot;autoViz&quot;: True,&#39;canAreaChart&#39;:True}, &quot;LCMS Land Cover&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnUserDefinedAreaCharting()</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">query_command</span> <span class="o">=</span> <span class="s2">&quot;Map.turnOnUserDefinedAreaCharting();&quot;</span>
         <span class="k">if</span> <span class="n">query_command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
@@ -1528,6 +1671,15 @@
     <span class="k">def</span> <span class="nf">turnOnSelectionAreaCharting</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Turn on area charting by a user selected area upon map loading. This will update charts by summarizing any visible layers with &quot;canAreaChart&quot; : True when the user selects selection areas to summarize and hits the `Chart Selected Areas` button in the user interface under `Area Tools -&gt; Select an Area on Map`.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([1]), {&quot;autoViz&quot;: True,&#39;canAreaChart&#39;:True}, &quot;LCMS Land Cover&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; mtbsBoundaries = ee.FeatureCollection(&quot;USFS/GTAC/MTBS/burned_area_boundaries/v1&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; mtbsBoundaries = mtbsBoundaries.map(lambda f: f.set(&quot;system:time_start&quot;, f.get(&quot;Ig_Date&quot;)))</span>
+<span class="sd">        &gt;&gt;&gt; Map.addSelectLayer(mtbsBoundaries, {&quot;strokeColor&quot;: &quot;00F&quot;, &quot;selectLayerNameProperty&quot;: &quot;Incid_Name&quot;}, &quot;MTBS Fire Boundaries&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnSelectionAreaCharting()</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">query_command</span> <span class="o">=</span> <span class="s2">&quot;Map.turnOnSelectionAreaCharting();&quot;</span>
         <span class="k">if</span> <span class="n">query_command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
@@ -1536,7 +1688,7 @@
 
 <div class="viewcode-block" id="mapper.addAreaChartLayer">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.addAreaChartLayer">[docs]</a>
-    <span class="k">def</span> <span class="nf">addAreaChartLayer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">{},</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">shouldChart</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">addAreaChartLayer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span> <span class="o">|</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">shouldChart</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Use this method to add a layer for area charting that you do not want as a map layer as well. Once you add all area chart layers to the map, you can turn them on using the `Map.populateAreaChartLayerSelect` method. This will create a selection menu inside the `Area Tools -&gt; Area Tools Parameters` menu. You can then turn layers to include in any area charts on and off from that menu.</span>
 
@@ -1621,6 +1773,17 @@
     <span class="k">def</span> <span class="nf">populateAreaChartLayerSelect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Once you add all area chart layers to the map, you can turn them on using this method- `Map.populateAreaChartLayerSelect`. This will create a selection menu inside the `Area Tools -&gt; Area Tools Parameters` menu. You can then turn layers to include in any area charts on and off from that menu.</span>
+
+<span class="sd">        &gt;&gt;&gt; import geeViz.geeView as gv</span>
+<span class="sd">        &gt;&gt;&gt; Map = gv.Map</span>
+<span class="sd">        &gt;&gt;&gt; ee = gv.ee</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([&quot;Change_Raw_Probability.*&quot;]), {&quot;reducer&quot;: ee.Reducer.stdDev(), &quot;min&quot;: 0, &quot;max&quot;: 10}, &quot;LCMS Change Prob&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addAreaChartLayer(lcms, {&quot;line&quot;: True, &quot;layerType&quot;: &quot;ImageCollection&quot;}, &quot;LCMS All Thematic Classes Line&quot;, True)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addAreaChartLayer(lcms, {&quot;sankey&quot;: True}, &quot;LCMS All Thematic Classes Sankey&quot;, True)</span>
+<span class="sd">        &gt;&gt;&gt; Map.populateAreaChartLayerSelect()</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnAutoAreaCharting()</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">query_command</span> <span class="o">=</span> <span class="s2">&quot;areaChart.populateChartLayerSelect();&quot;</span>
 
@@ -1629,15 +1792,49 @@
 
 
     <span class="c1"># Functions to handle setting query output y labels</span>
-    <span class="k">def</span> <span class="nf">setYLabelMaxLength</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxLength</span><span class="p">):</span>
+<div class="viewcode-block" id="mapper.setYLabelMaxLength">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setYLabelMaxLength">[docs]</a>
+    <span class="k">def</span> <span class="nf">setYLabelMaxLength</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxLength</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the maximum length a Y axis label can have in charts</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            maxLength (int, default 30): Maximum number of characters in a Y axis label.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([1]), {&quot;autoViz&quot;: True}, &quot;LCMS Land Cover&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.setYLabelMaxLength(10)  # Double-click on map to inspect area. Change to a larger number and rerun to see how Y labels are impacted</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setCenter(-109.446, 43.620, 12)</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;yLabelMaxLength = </span><span class="si">{</span><span class="n">maxLength</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">if</span> <span class="n">command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">command</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="nf">setYLabelBreakLength</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxLength</span><span class="p">):</span>
+
+<div class="viewcode-block" id="mapper.setYLabelBreakLength">
+<a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setYLabelBreakLength">[docs]</a>
+    <span class="k">def</span> <span class="nf">setYLabelBreakLength</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maxLength</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the maximum length per line a Y axis label can have in charts</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            maxLength (int, default 10): Maximum number of characters in each line of a Y axis label. Will break total characters (setYLabelMaxLength) until maxLines (setYLabelMaxLines) is reached</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([1]), {&quot;autoViz&quot;: True}, &quot;LCMS Land Cover&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.setYLabelBreakLength(5)  # Double-click on map to inspect area. Change to a larger number and rerun to see how Y labels are impacted</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setCenter(-109.446, 43.620, 12)</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;yLabelBreakLength = </span><span class="si">{</span><span class="n">maxLength</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">if</span> <span class="n">command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">command</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="mapper.setYLabelMaxLines">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setYLabelMaxLines">[docs]</a>
@@ -1647,6 +1844,14 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            maxLines (int, default 5): The maximum number of lines each y-axis label can have. Will simply exclude any remaining lines.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([1]), {&quot;autoViz&quot;: True}, &quot;LCMS Land Cover&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.setYLabelMaxLines(3)  # Double-click on map to inspect area. Change to a larger number and rerun to see how Y labels are impacted</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setCenter(-109.446, 43.620, 12)</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;yLabelMaxLines = </span><span class="si">{</span><span class="n">maxLines</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">if</span> <span class="n">command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
@@ -1655,12 +1860,20 @@
 
 <div class="viewcode-block" id="mapper.setYLabelFontSize">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setYLabelFontSize">[docs]</a>
-    <span class="k">def</span> <span class="nf">setYLabelFontSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fontSize</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setYLabelFontSize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fontSize</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the size of the font on the y-axis labels. Useful when y-axis labels are too large to fit on the chart.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            fontSize (int, default 10): The font size used on the y-axis labels for query charting.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([1]), {&quot;autoViz&quot;: True}, &quot;LCMS Land Cover&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.setYLabelFontSize(8)  # Double-click on map to inspect area. Change to a different number and rerun to see how Y labels are impacted</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setCenter(-109.446, 43.620, 12)</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;yLabelFontSize = </span><span class="si">{</span><span class="n">fontSize</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">if</span> <span class="n">command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
@@ -1670,12 +1883,22 @@
     <span class="c1"># Specify whether layers can be re-ordered by the user</span>
 <div class="viewcode-block" id="mapper.setCanReorderLayers">
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.setCanReorderLayers">[docs]</a>
-    <span class="k">def</span> <span class="nf">setCanReorderLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canReorderLayers</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">setCanReorderLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">canReorderLayers</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set whether layers can be reordered by dragging layer user interface objects. By default all non timelapse and non geojson layers can be reordereed by dragging.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            canReorderLayers (bool): Set whether layers can be reordered by dragging layer user interface objects. By default all non timelapse and non geojson layers can be reordereed by dragging.</span>
+<span class="sd">            canReorderLayers (bool, default True): Set whether layers can be reordered by dragging layer user interface objects. By default all non timelapse and non geojson layers can be reordereed by dragging.</span>
+
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([2]), {&quot;autoViz&quot;: True}, &quot;LCMS Land Use&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([1]), {&quot;autoViz&quot;: True}, &quot;LCMS Land Cover&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([0]), {&quot;autoViz&quot;: True}, &quot;LCMS Change&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setCanReorderLayers(False) # Notice you cannot drag and reorder layers. Change to True and rerun and notice you now can drag layers to reorder</span>
+<span class="sd">        &gt;&gt;&gt; Map.setCenter(-109.446, 43.620, 12)</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">command</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Map.canReorderLayers = </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">canReorderLayers</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s2">;&quot;</span>
         <span class="k">if</span> <span class="n">command</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapCommandList</span><span class="p">:</span>
@@ -1687,7 +1910,20 @@
 <a class="viewcode-back" href="../../modules.html#geeViz.geeView.mapper.turnOffAllLayers">[docs]</a>
     <span class="k">def</span> <span class="nf">turnOffAllLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Turn off all layers added to the mapper object</span>
+<span class="sd">        Turn off all layers added to the mapper object. Typically used in notebooks or iPython when you want to allow existing layers to remain, but want to turn them all off.</span>
+
+<span class="sd">        &gt;&gt;&gt; #%%</span>
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([2]), {&quot;autoViz&quot;: True}, &quot;LCMS Land Use&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([1]), {&quot;autoViz&quot;: True}, &quot;LCMS Land Cover&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setCenter(-109.446, 43.620, 5)</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
+<span class="sd">        &gt;&gt;&gt; #%%</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOffAllLayers()</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([0]), {&quot;autoViz&quot;: True}, &quot;LCMS Change&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">update</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;visible&quot;</span><span class="p">:</span> <span class="s2">&quot;false&quot;</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span> <span class="o">=</span> <span class="p">[{</span><span class="o">**</span><span class="n">d</span><span class="p">,</span> <span class="o">**</span><span class="n">update</span><span class="p">}</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span><span class="p">]</span></div>
@@ -1698,6 +1934,19 @@
     <span class="k">def</span> <span class="nf">turnOnAllLayers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Turn on all layers added to the mapper object</span>
+
+<span class="sd">        &gt;&gt;&gt; #%%</span>
+<span class="sd">        &gt;&gt;&gt; from geeViz.geeView import *</span>
+<span class="sd">        &gt;&gt;&gt; lcms = ee.ImageCollection(&quot;USFS/GTAC/LCMS/v2023-9&quot;).filter(&#39;study_area==&quot;CONUS&quot;&#39;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([2]), {&quot;autoViz&quot;: True}, &quot;LCMS Land Use&quot;,False)</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([1]), {&quot;autoViz&quot;: True}, &quot;LCMS Land Cover&quot;,False)</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnInspector()</span>
+<span class="sd">        &gt;&gt;&gt; Map.setCenter(-109.446, 43.620, 5)</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
+<span class="sd">        &gt;&gt;&gt; #%%</span>
+<span class="sd">        &gt;&gt;&gt; Map.turnOnAllLayers()</span>
+<span class="sd">        &gt;&gt;&gt; Map.addLayer(lcms.select([0]), {&quot;autoViz&quot;: True}, &quot;LCMS Change&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; Map.view()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">update</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;visible&quot;</span><span class="p">:</span> <span class="s2">&quot;true&quot;</span><span class="p">}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span> <span class="o">=</span> <span class="p">[{</span><span class="o">**</span><span class="n">d</span><span class="p">,</span> <span class="o">**</span><span class="n">update</span><span class="p">}</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">idDictList</span><span class="p">]</span></div>
@@ -1742,7 +1991,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=7afd9251"></script>
+</div><script src="../../_static/documentation_options.js?v=e5bf06cb"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

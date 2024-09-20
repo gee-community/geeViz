@@ -161,19 +161,17 @@ setProject(ee.data._cloud_api_user_project)
 robustInitializer()
 ######################################################################
 # Set up GEE and paths
-# robustInitializer()
 geeVizFolder = "geeViz"
 geeViewFolder = "geeView"
+
 # Set up template web viewer
 # Do not change
 cwd = os.getcwd()
 
 paths = sys.path
 
-# gee_py_modules_dir = site.getsitepackages()[-1]
-# py_viz_dir = os.path.join(gee_py_modules_dir,geeVizFolder)
 py_viz_dir = os.path.dirname(__file__)
-# os.chdir(py_viz_dir)
+
 print("geeViz package folder:", py_viz_dir)
 
 # Specify location of files to run
@@ -186,13 +184,11 @@ if os.path.exists(ee_run_dir) == False:
 ######################################################################
 ######################################################################
 # Functions
-
-
 ######################################################################
 # Linear color gradient functions
 ##############################################################
 ##############################################################
-def color_dict_maker(gradient):
+def color_dict_maker(gradient: list[list[int]]) -> dict:
     """Takes in a list of RGB sub-lists and returns dictionary of
     colors in RGB and hex form for use in a graphing function
     defined later on"""
@@ -205,7 +201,7 @@ def color_dict_maker(gradient):
 
 
 # color functions adapted from bsou.io/posts/color-gradients-with-python
-def hex_to_rgb(value):
+def hex_to_rgb(value: str) -> tuple:
     """Return (red, green, blue) for the color given as #rrggbb."""
     value = value.lstrip("#")
     lv = len(value)
@@ -216,14 +212,14 @@ def hex_to_rgb(value):
     return tuple(int(value[i : i + lv // 3], 16) for i in range(0, lv, lv // 3))
 
 
-def RGB_to_hex(RGB):
+def RGB_to_hex(RGB: list[int]) -> str:
     """[255,255,255] -> "#FFFFFF" """
     # Components need to be integers for hex to make sense
     RGB = [int(x) for x in RGB]
     return "#" + "".join(["0{0:x}".format(v) if v < 16 else "{0:x}".format(v) for v in RGB])
 
 
-def linear_gradient(start_hex, finish_hex="#FFFFFF", n=10):
+def linear_gradient(start_hex: str, finish_hex: str = "#FFFFFF", n: int = 10) -> dict:
     """returns a gradient list of (n) colors between
     two hex colors. start_hex and finish_hex
     should be the full six-digit color string,
@@ -244,20 +240,18 @@ def linear_gradient(start_hex, finish_hex="#FFFFFF", n=10):
     return color_dict_maker(RGB_list)
 
 
-def polylinear_gradient(colors, n):
+def polylinear_gradient(colors: list[str], n: int):
     """returns a list of colors forming linear gradients between
     all sequential pairs of colors. "n" specifies the total
     number of desired output colors"""
     # The number of colors per individual linear gradient
     n_out = int(float(n) / (len(colors) - 1)) + 1
-    # print(('n',n))
-    # print(('n_out',n_out))
+
     # If we don't have an even number of color values, we will remove equally spaced values at the end.
     apply_offset = False
     if n % n_out != 0:
         apply_offset = True
         n_out = n_out + 1
-        # print(('new n_out',n_out))
 
     # returns dictionary defined by color_dict()
     gradient_dict = linear_gradient(colors[0], colors[1], n_out)
@@ -271,24 +265,19 @@ def polylinear_gradient(colors, n):
 
     # Remove equally spaced values here.
     if apply_offset:
-        # indList = list(range(len(gradient_dict['hex'])))
         offset = len(gradient_dict["hex"]) - n
         sliceval = []
-        # print(('len(gradient_dict)',len(gradient_dict['hex'])))
-        # print(('offset',offset))
 
         for i in range(1, offset + 1):
             sliceval.append(int(len(gradient_dict["hex"]) * i / float(offset + 2)))
-        print(gradient_dict["hex"])
-        print(("sliceval", sliceval))
+
         for k in ("hex", "r", "g", "b"):
             gradient_dict[k] = [i for j, i in enumerate(gradient_dict[k]) if j not in sliceval]
-        # print(('new len dict', len(gradient_dict['hex'])))
-    print(gradient_dict["hex"], len(gradient_dict["hex"]))
+
     return gradient_dict
 
 
-def get_poly_gradient_ct(palette, min, max):
+def get_poly_gradient_ct(palette: list[str], min: int, max: int) -> list[str]:
     """
     Take a palette and a set of min and max stretch values to get a 1:1 value to color hex list
 
@@ -301,12 +290,15 @@ def get_poly_gradient_ct(palette, min, max):
 
     Returns:
         list: A list of linearly interpolated hex codes where there is 1:1 color to value from min-max (inclusive)
+
+    >>> import geeViz.geeView as gv
+    >>> viz = {"palette": ["#FFFF00", "00F", "0FF", "FF0000"], "min": 1, "max": 20}
+    >>> color_ramp = gv.get_poly_gradient_ct(viz["palette"], viz["min"], viz["max"])
+    >>> print("Color ramp:", color_ramp)
+
     """
     ramp = polylinear_gradient(palette, max - min + 1)
     return ramp["hex"]
-
-
-# print(get_poly_gradient_ct(["#FFFF00", "00F", "0FF", "FF0000"], 1, 2))
 
 
 ##############################################################
@@ -398,7 +390,7 @@ def serviceAccountToken(service_key_file_path):
 
 ######################################################################
 # Function for running local web server
-def run_local_server(port=8001):
+def run_local_server(port: int = 8001):
     """
     Start a local webserver using the Python http.server
 
@@ -424,7 +416,7 @@ def run_local_server(port=8001):
 
 ######################################################################
 # Function to see if port is active
-def isPortActive(port=8001):
+def isPortActive(port: int = 8001):
     """
     See if a given port number is currently active
 
@@ -468,7 +460,7 @@ class mapper:
         turnOffLayersWhenTimeLapseIsOn (bool, default True): Whether all other layers should be turned off when a time lapse is turned on. This is set to True by default to avoid confusing layer order rendering that can occur when time lapses and non-time lapses are visible at the same time. Often this confusion is fine and visualizing time lapses and other layers is desired. Set `Map.turnOffLayersWhenTimeLapseIsOn` to False in this instance.
     """
 
-    def __init__(self, port=8001):
+    def __init__(self, port: int = 8001):
         self.port = port
         self.layerNumber = 1
         self.idDictList = []
@@ -502,7 +494,7 @@ class mapper:
 
     ######################################################################
     # Function for adding a layer to the map
-    def addLayer(self, image, viz={}, name=None, visible=True):
+    def addLayer(self, image: ee.Image | ee.ImageCollection | ee.Geometry | ee.Feature | ee.FeatureCollection, viz: dict = {}, name: str | None = None, visible: bool = True):
         """
         Adds GEE object to the mapper object that will then be added to the map user interface with a `view` call.
 
@@ -600,9 +592,12 @@ class mapper:
 
         """
         if name == None:
-            name = "Layer " + str(self.layerNumber)
+            name = f"Layer {self.layerNumber}"
             self.layerNumber += 1
         print("Adding layer: " + name)
+
+        # Make sure not to update viz dictionary elsewhere
+        viz = dict(viz)
 
         # Handle reducer if ee object is given
         if "reducer" in viz.keys():
@@ -632,7 +627,7 @@ class mapper:
             imageType = type(image).__name__
             layerType = self.typeLookup[imageType]
             viz["layerType"] = layerType
-            # print("Type:", imageType, viz["layerType"])
+
         if not isinstance(image, dict):
             image = image.serialize()
             idDict["item"] = image
@@ -651,7 +646,7 @@ class mapper:
 
     ######################################################################
     # Function for adding a layer to the map
-    def addTimeLapse(self, image, viz={}, name=None, visible=True):
+    def addTimeLapse(self, image: ee.ImageCollection, viz: dict = {}, name: str | None = None, visible: bool = True):
         """
         Adds GEE ImageCollection object to the mapper object that will then be added as an interactive time lapse in the map user interface with a `view` call.
 
@@ -752,6 +747,9 @@ class mapper:
             self.layerNumber += 1
         print("Adding layer: " + name)
 
+        # Make sure not to update viz dictionary elsewhere
+        viz = dict(viz)
+
         # Handle reducer if ee object is given - delete it
         if "reducer" in viz.keys():
             del viz["reducer"]
@@ -780,7 +778,7 @@ class mapper:
 
     ######################################################################
     # Function for adding a select layer to the map
-    def addSelectLayer(self, featureCollection, viz={}, name=None):
+    def addSelectLayer(self, featureCollection: ee.FeatureCollection, viz: dict = {}, name: str | None = None):
         """
         Adds GEE featureCollection to the mapper object that will then be added as an interactive selection layer in the map user interface with a `view` call. This layer will be availble for selecting areas to include in area summary charts.
 
@@ -814,6 +812,10 @@ class mapper:
         if name == None:
             name = "Layer " + str(self.layerNumber)
             self.layerNumber += 1
+
+        # Make sure not to update viz dictionary elsewhere
+        viz = dict(viz)
+
         print("Adding layer: " + name)
 
         # Get the id and populate dictionary
@@ -828,7 +830,7 @@ class mapper:
 
     ######################################################################
     # Function for centering on a GEE object that has a geometry
-    def setCenter(self, lng, lat, zoom=None):
+    def setCenter(self, lng: float, lat: float, zoom: int | None = None):
         """
         Center the map on a specified point and optional zoom on loading
 
@@ -836,6 +838,10 @@ class mapper:
             lng (int or float): The longitude to center the map on
             lat (int or float): The latitude to center the map on
             zoom (int, optional): If provided, will force the map to zoom to this level after centering it on the provided coordinates. If not provided, the current zoom level will be used.
+
+        >>> from geeViz.geeView import *
+        >>> Map.setCenter(-111,41,10)
+        >>> Map.view()
         """
 
         command = f"Map.setCenter({lng},{lat},{json.dumps(zoom)})"
@@ -844,24 +850,35 @@ class mapper:
 
     ######################################################################
     # Function for setting the map zoom
-    def setZoom(self, zoom):
+    def setZoom(self, zoom: int):
         """
         Set the map zoom level
 
         Args:
             zoom (int): The zoom level to set the map to on loading.
+
+        >>> from geeViz.geeView import *
+        >>> Map.setZoom(10)
+        >>> Map.view()
         """
         self.mapCommandList.append(f"map.setZoom({zoom})")
 
     ######################################################################
     # Function for centering on a GEE object that has a geometry
-    def centerObject(self, feature, zoom=None):
+    def centerObject(self, feature: ee.Geometry | ee.Feature | ee.FeatureCollection | ee.Image, zoom: int | None = None):
         """
         Center the map on an object on loading
 
         Args:
             feature (Feature, FeatureCollection, or Geometry): The object to center the map on
             zoom (int, optional): If provided, will force the map to zoom to this level after centering it on the object. If not provided, the highest zoom level that allows the feature to be viewed fully will be used.
+
+        >>> from geeViz.geeView import *
+        >>> pt = ee.Geometry.Point([-111, 41])
+        >>> Map.addLayer(pt.buffer(10), {}, "Plot")
+        >>> Map.centerObject(pt)
+        >>> Map.view()
+
         """
         try:
             bounds = json.dumps(feature.geometry().bounds(100, "EPSG:4326").getInfo())
@@ -876,7 +893,7 @@ class mapper:
 
     ######################################################################
     # Function for launching the web map after all adding to the map has been completed
-    def view(self, open_browser=None, open_iframe=None, iframe_height=525):
+    def view(self, open_browser: bool | None = None, open_iframe: bool | None = None, iframe_height: int = 525):
         """
         Compiles all map objects and commands and starts the map server
 
@@ -886,6 +903,12 @@ class mapper:
             open_iframe (bool): Whether or not to open an iframe. If unspecified, will automatically be selected depending on whether geeViz is being used in a notebook (True) or not (False).
 
             iframe_height (int, default 525): The height of the iframe shown if running inside a notebook
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms, {"autoViz": True, "canAreaChart": True, "areaChartParams": {"line": True, "sankey": True}}, "LCMS")
+        >>> Map.turnOnInspector()
+        >>> Map.view()
         """
         print("Starting webmap")
 
@@ -940,22 +963,8 @@ class mapper:
         oo = open(self.ee_run, "w")
         oo.writelines(lines)
         oo.close()
-        # time.sleep(5)
 
-        # if not self.isNotebook:
-        #     self.Map.save(os.path.join(folium_html_folder,folium_html))
-        #     if not geeView.isPortActive(self.port):
-        #         print('Starting local web server at: http://localhost:{}/{}/'.format(self.port,geeView.geeViewFolder))
-        #         geeView.run_local_server(self.port)
-        #         print('Done')
-        #     else:
-        #         print('Local web server at: http://localhost:{}/{}/ already serving.'.format(self.port,geeView.geeViewFolder))
-        #     if open_browser:
-        #         geeView.webbrowser.open('http://localhost:{}/{}/{}'.format(self.port,geeView.geeViewFolder,folium_html),new = 1)
-
-        # else:
-        #     display(self.Map)
-
+        # Find if port is already active and only start it if it is not
         if not isPortActive(self.port):
             print("Starting local web server at: http://localhost:{}/{}/".format(self.port, geeViewFolder))
             run_local_server(self.port)
@@ -963,8 +972,8 @@ class mapper:
 
         else:
             print("Local web server at: http://localhost:{}/{}/ already serving.".format(self.port, geeViewFolder))
-            # print('Refresh browser instance')
 
+        # Open viewer in browser or iframe in notebook
         print("cwd", os.getcwd())
         if IS_COLAB:
             proxy_js = "google.colab.kernel.proxyPort({})".format(self.port)
@@ -996,6 +1005,13 @@ class mapper:
     def clearMap(self):
         """
         Removes all map layers and commands - useful if running geeViz in a notebook and don't want layers/commands from a prior code block to still be included.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms, {"autoViz": True}, "LCMS") # Layer
+        >>> Map.turnOnInspector() # Command
+        >>> Map.clearMap() # Clear map layer and commands
+        >>> Map.view()
         """
         self.layerNumber = 1
         self.idDictList = []
@@ -1004,6 +1020,13 @@ class mapper:
     def clearMapLayers(self):
         """
         Removes all map layers - useful if running geeViz in a notebook and don't want layers from a prior code block to still be included, but want commands to remain.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms, {"autoViz": True}, "LCMS") # Layer - this will be removed
+        >>> Map.turnOnInspector() # Command - this will remain (even though there will be no layers to query)
+        >>> Map.clearMapLayers() # Clear map layer only and leave commands
+        >>> Map.view()
         """
         self.layerNumber = 1
         self.idDictList = []
@@ -1011,6 +1034,13 @@ class mapper:
     def clearMapCommands(self):
         """
         Removes all map commands - useful if running geeViz in a notebook and don't want commands from a prior code block to still be included, but want layers to remain.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms, {"autoViz": True}, "LCMS") # Layer
+        >>> Map.turnOnInspector() # Command - this will be removed
+        >>> Map.clearMapCommands() # Clear map comands only and leave layers
+        >>> Map.view()
         """
         self.mapCommandList = []
 
@@ -1021,6 +1051,13 @@ class mapper:
 
         Args:
             title (str, default geeViz Data Explorer): The title to appear in the header on the left sidebar as well as the title of the viewer webpage.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms, {"autoViz": True}, "LCMS")
+        >>> Map.turnOnInspector()
+        >>> Map.setMapTitle("<h2>A Custom Title!!!</h2>")  # Set custom map title
+        >>> Map.view()
         """
         title_command = f'Map.setTitle("{title}")'
         if title_command not in self.mapCommandList:
@@ -1029,34 +1066,66 @@ class mapper:
     ######################################################################
     def setTitle(self, title):
         """
+        Redundant function for setMapTitle.
         Set the title that appears in the left sidebar header and the page title
 
         Args:
             title (str, default geeViz Data Explorer): The title to appear in the header on the left sidebar as well as the title of the viewer webpage.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms, {"autoViz": True}, "LCMS")
+        >>> Map.turnOnInspector()
+        >>> Map.setMapTitle("<h2>A Custom Title!!!</h2>")  # Set custom map title
+        >>> Map.view()
         """
         self.setMapTitle(title)
 
     ######################################################################
     # Functions to set various click query properties
-    def setQueryCRS(self, crs):
+    def setQueryCRS(self, crs: str):
         """
         The coordinate reference system string to query layers with
 
         Args:
             crs (str, default "EPSG:5070"): Which projection (CRS) to use for querying map layers.
+
+        >>> import geeViz.getImagesLib as gil
+        >>> from geeViz.geeView import *
+        >>> crs = gil.common_projections["NLCD_AK"]["crs"]
+        >>> transform = gil.common_projections["NLCD_AK"]["transform"]
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="SEAK"')
+        >>> Map.addLayer(lcms, {"autoViz": True}, "LCMS")
+        >>> Map.turnOnInspector()
+        >>> Map.setQueryCRS(crs)
+        >>> Map.setQueryTransform(transform)
+        >>> Map.setCenter(-144.36390353, 60.20479529215, 8)
+        >>> Map.view()
         """
         print("Setting click query crs to: {}".format(crs))
-        cmd = f'Map.setQueryCRS("{crs}");'
+        cmd = f"Map.setQueryCRS('{crs}');"
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
     ######################################################################
-    def setQueryScale(self, scale):
+    def setQueryScale(self, scale: int):
         """
         What scale to query map layers with. Will also update the size of the box drawn on the map query layers are queried.
 
         Args:
             scale (int, default None): The spatial resolution to use for querying map layers in meters. If set, the query transform will be set to None in the map viewer.
+
+        >>> import geeViz.getImagesLib as gil
+        >>> from geeViz.geeView import *
+        >>> s2s = gil.superSimpleGetS2(ee.Geometry.Point([-107.61, 37.85]), "2024-01-01", "2024-12-31", 190, 250)
+        >>> projection = s2s.first().select(["nir"]).projection().getInfo()
+        >>> Map.addLayer(s2s.median(), gil.vizParamsFalse10k, "Sentinel-2 Composite")
+        >>> Map.turnOnInspector()
+        >>> Map.setQueryCRS(projection["crs"])
+        >>> Map.setQueryScale(projection["transform"][0])
+        >>> Map.centerObject(s2s.first())
+        >>> Map.view()
+
         """
         print("Setting click query scale to: {}".format(scale))
         cmd = f"Map.setQueryScale({scale});"
@@ -1064,12 +1133,24 @@ class mapper:
             self.mapCommandList.append(cmd)
 
     ######################################################################
-    def setQueryTransform(self, transform):
+    def setQueryTransform(self, transform: list[int]):
         """
         What transform to query map layers with. Will also update the size of the box drawn on the map query layers are queried.
 
         Args:
             transform (list, default [30, 0, -2361915, 0, -30, 3177735]): The snap to grid to use for querying layers on the map. If set, the query scale will be set to None in the map viewer.
+
+        >>> import geeViz.getImagesLib as gil
+        >>> from geeViz.geeView import *
+        >>> s2s = gil.superSimpleGetS2(ee.Geometry.Point([-107.61, 37.85]), "2024-01-01", "2024-12-31", 190, 250)
+        >>> projection = s2s.first().select(["nir"]).projection().getInfo()
+        >>> Map.addLayer(s2s.median(), gil.vizParamsFalse10k, "Sentinel-2 Composite")
+        >>> Map.turnOnInspector()
+        >>> Map.setQueryCRS(projection["crs"])
+        >>> Map.setQueryTransform(projection["transform"])
+        >>> Map.centerObject(s2s.first())
+        >>> Map.view()
+
         """
         print("Setting click query transform to: {}".format(transform))
         cmd = f"Map.setQueryTransform({transform});"
@@ -1077,13 +1158,27 @@ class mapper:
             self.mapCommandList.append(cmd)
 
     ######################################################################
-    def setQueryPrecision(self, chartPrecision=3, chartDecimalProportion=0.25):
+    def setQueryPrecision(self, chartPrecision: int = 3, chartDecimalProportion: float = 0.25):
         """
         What level of precision to show for queried layers. This avoids showing too many digits after the decimal.
 
         Args:
             chartPrecision (int, default 3): Will show the larger of `chartPrecision` decimal places or ceiling(`chartDecimalProportion` * total decimal places). E.g. if the number is 1.12345678, 0.25 of 8 decimal places is 2, so 3 will be used and yield 1.123.
             chartDecimalProportion (float, default 0.25): Will show the larger of `chartPrecision` decimal places or `chartDecimalProportion` * total decimal places. E.g. if the number is 1.1234567891234, ceiling(0.25 of 13) decimal places is 4, so 4 will be used and yield 1.1235.
+
+        >>> import geeViz.getImagesLib as gil
+        >>> from geeViz.geeView import *
+        >>> s2s = gil.superSimpleGetS2(ee.Geometry.Point([-107.61, 37.85]), "2024-01-01", "2024-12-31", 190, 250).select(["blue", "green", "red", "nir", "swir1", "swir2"])
+        >>> projection = s2s.first().select(["nir"]).projection().getInfo()
+        >>> s2s = s2s.map(lambda img: ee.Image(img).divide(10000).set("system:time_start",img.date().millis()))
+        >>> Map.addLayer(s2s, gil.vizParamsFalse, "Sentinel-2 Images")
+        >>> Map.addLayer(s2s.median(), gil.vizParamsFalse, "Sentinel-2 Composite")
+        >>> Map.turnOnInspector()
+        >>> Map.setQueryCRS(projection["crs"])
+        >>> Map.setQueryTransform(projection["transform"])
+        >>> Map.setQueryPrecision(chartPrecision=2, chartDecimalProportion=0.1)
+        >>> Map.centerObject(s2s.first())
+        >>> Map.view()
         """
         print("Setting click query precision to: {}".format(chartPrecision))
         cmd = f"Map.setQueryPrecision({chartPrecision},{chartDecimalProportion});"
@@ -1091,12 +1186,21 @@ class mapper:
             self.mapCommandList.append(cmd)
 
     ######################################################################
-    def setQueryDateFormat(self, defaultQueryDateFormat="YYYY-MM-dd"):
+    def setQueryDateFormat(self, defaultQueryDateFormat: str = "YYYY-MM-dd"):
         """
         Set the date format to be used for any dates when querying.
 
         Args:
             defaultQueryDateFormat (str, default "YYYY-MM-dd"): The date format string to use for query outputs with dates. To simplify date outputs, "YYYY" is often used instead of the default.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select([1]), {"autoViz": True}, "LCMS Land Cover")
+        >>> Map.addLayer(lcms.select([0]), {"autoViz": True}, "LCMS Change")
+        >>> Map.turnOnInspector()
+        >>> Map.setQueryDateFormat("YYYY")
+        >>> Map.view()
+
         """
         print("Setting default query date format to: {}".format(defaultQueryDateFormat))
         cmd = f'Map.setQueryDateFormat("{defaultQueryDateFormat}");'
@@ -1104,12 +1208,19 @@ class mapper:
             self.mapCommandList.append(cmd)
 
     ######################################################################
-    def setQueryBoxColor(self, color):
+    def setQueryBoxColor(self, color: str):
         """
         Set the color of the query box to something other than yellow
 
         Args:
             color (str, default "FFFF00"): Set the default query box color shown on the map by providing a hex color.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select([1]), {"autoViz": True}, "LCMS Land Cover")
+        >>> Map.turnOnInspector()
+        >>> Map.setQueryBoxColor("0FF")
+        >>> Map.view()
         """
         print("Setting click query box color to: {}".format(color))
         cmd = f'Map.setQueryBoxColor("{color}");'
@@ -1124,12 +1235,26 @@ class mapper:
     def setQueryToInfoWindow(self):
         """
         Set the location of query outputs to an info window popup over the map
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select([1]), {"autoViz": True}, "LCMS Land Cover")
+        >>> Map.turnOnInspector()
+        >>> Map.setQueryToInfoWindow()
+        >>> Map.view()
         """
         self.setQueryWindowMode("infoWindow")
 
     def setQueryToSidePane(self):
         """
         Set the location of query outputs to the right sidebar above the legend
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select([1]), {"autoViz": True}, "LCMS Land Cover")
+        >>> Map.turnOnInspector()
+        >>> Map.setQueryToSidePane()
+        >>> Map.view()
         """
         self.setQueryWindowMode("sidePane")
 
@@ -1138,6 +1263,12 @@ class mapper:
     def turnOnInspector(self):
         """
         Turn on the query inspector tool upon map loading. This is used frequently so map layers can be queried as soon as the map viewer loads.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select([1]), {"autoViz": True}, "LCMS Land Cover")
+        >>> Map.turnOnInspector()
+        >>> Map.view()
         """
         query_command = "Map.turnOnInspector();"
         if query_command not in self.mapCommandList:
@@ -1147,6 +1278,12 @@ class mapper:
     def turnOnAutoAreaCharting(self):
         """
         Turn on automatic area charting upon map loading. This will automatically update charts by summarizing any visible layers with "canAreaChart" : True any time the map finishes panning or zooming.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select([1]), {"autoViz": True,'canAreaChart':True}, "LCMS Land Cover")
+        >>> Map.turnOnAutoAreaCharting()
+        >>> Map.view()
         """
         query_command = "Map.turnOnAutoAreaCharting();"
         if query_command not in self.mapCommandList:
@@ -1155,6 +1292,12 @@ class mapper:
     def turnOnUserDefinedAreaCharting(self):
         """
         Turn on area charting by a user defined area upon map loading. This will update charts by summarizing any visible layers with "canAreaChart" : True when the user draws an area to summarize and hits the `Chart Selected Areas` button in the user interface under `Area Tools -> User-Defined Area`.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select([1]), {"autoViz": True,'canAreaChart':True}, "LCMS Land Cover")
+        >>> Map.turnOnUserDefinedAreaCharting()
+        >>> Map.view()
         """
         query_command = "Map.turnOnUserDefinedAreaCharting();"
         if query_command not in self.mapCommandList:
@@ -1163,12 +1306,21 @@ class mapper:
     def turnOnSelectionAreaCharting(self):
         """
         Turn on area charting by a user selected area upon map loading. This will update charts by summarizing any visible layers with "canAreaChart" : True when the user selects selection areas to summarize and hits the `Chart Selected Areas` button in the user interface under `Area Tools -> Select an Area on Map`.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select([1]), {"autoViz": True,'canAreaChart':True}, "LCMS Land Cover")
+        >>> mtbsBoundaries = ee.FeatureCollection("USFS/GTAC/MTBS/burned_area_boundaries/v1")
+        >>> mtbsBoundaries = mtbsBoundaries.map(lambda f: f.set("system:time_start", f.get("Ig_Date")))
+        >>> Map.addSelectLayer(mtbsBoundaries, {"strokeColor": "00F", "selectLayerNameProperty": "Incid_Name"}, "MTBS Fire Boundaries")
+        >>> Map.turnOnSelectionAreaCharting()
+        >>> Map.view()
         """
         query_command = "Map.turnOnSelectionAreaCharting();"
         if query_command not in self.mapCommandList:
             self.mapCommandList.append(query_command)
 
-    def addAreaChartLayer(self, image, params={}, name=None, shouldChart=True):
+    def addAreaChartLayer(self, image: ee.Image | ee.ImageCollection, params: dict = {}, name: str | None = None, shouldChart: bool = True):
         """
         Use this method to add a layer for area charting that you do not want as a map layer as well. Once you add all area chart layers to the map, you can turn them on using the `Map.populateAreaChartLayerSelect` method. This will create a selection menu inside the `Area Tools -> Area Tools Parameters` menu. You can then turn layers to include in any area charts on and off from that menu.
 
@@ -1250,6 +1402,17 @@ class mapper:
     def populateAreaChartLayerSelect(self):
         """
         Once you add all area chart layers to the map, you can turn them on using this method- `Map.populateAreaChartLayerSelect`. This will create a selection menu inside the `Area Tools -> Area Tools Parameters` menu. You can then turn layers to include in any area charts on and off from that menu.
+
+        >>> import geeViz.geeView as gv
+        >>> Map = gv.Map
+        >>> ee = gv.ee
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select(["Change_Raw_Probability.*"]), {"reducer": ee.Reducer.stdDev(), "min": 0, "max": 10}, "LCMS Change Prob")
+        >>> Map.addAreaChartLayer(lcms, {"line": True, "layerType": "ImageCollection"}, "LCMS All Thematic Classes Line", True)
+        >>> Map.addAreaChartLayer(lcms, {"sankey": True}, "LCMS All Thematic Classes Sankey", True)
+        >>> Map.populateAreaChartLayerSelect()
+        >>> Map.turnOnAutoAreaCharting()
+        >>> Map.view()
         """
         query_command = "areaChart.populateChartLayerSelect();"
 
@@ -1257,12 +1420,40 @@ class mapper:
             self.mapCommandList.append(query_command)
 
     # Functions to handle setting query output y labels
-    def setYLabelMaxLength(self, maxLength):
+    def setYLabelMaxLength(self, maxLength: int):
+        """
+        Set the maximum length a Y axis label can have in charts
+
+        Args:
+            maxLength (int, default 30): Maximum number of characters in a Y axis label.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select([1]), {"autoViz": True}, "LCMS Land Cover")
+        >>> Map.setYLabelMaxLength(10)  # Double-click on map to inspect area. Change to a larger number and rerun to see how Y labels are impacted
+        >>> Map.turnOnInspector()
+        >>> Map.setCenter(-109.446, 43.620, 12)
+        >>> Map.view()
+        """
         command = f"yLabelMaxLength = {maxLength}"
         if command not in self.mapCommandList:
             self.mapCommandList.append(command)
 
-    def setYLabelBreakLength(self, maxLength):
+    def setYLabelBreakLength(self, maxLength: int):
+        """
+        Set the maximum length per line a Y axis label can have in charts
+
+        Args:
+            maxLength (int, default 10): Maximum number of characters in each line of a Y axis label. Will break total characters (setYLabelMaxLength) until maxLines (setYLabelMaxLines) is reached
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select([1]), {"autoViz": True}, "LCMS Land Cover")
+        >>> Map.setYLabelBreakLength(5)  # Double-click on map to inspect area. Change to a larger number and rerun to see how Y labels are impacted
+        >>> Map.turnOnInspector()
+        >>> Map.setCenter(-109.446, 43.620, 12)
+        >>> Map.view()
+        """
         command = f"yLabelBreakLength = {maxLength}"
         if command not in self.mapCommandList:
             self.mapCommandList.append(command)
@@ -1273,29 +1464,55 @@ class mapper:
 
         Args:
             maxLines (int, default 5): The maximum number of lines each y-axis label can have. Will simply exclude any remaining lines.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select([1]), {"autoViz": True}, "LCMS Land Cover")
+        >>> Map.setYLabelMaxLines(3)  # Double-click on map to inspect area. Change to a larger number and rerun to see how Y labels are impacted
+        >>> Map.turnOnInspector()
+        >>> Map.setCenter(-109.446, 43.620, 12)
+        >>> Map.view()
         """
         command = f"yLabelMaxLines = {maxLines}"
         if command not in self.mapCommandList:
             self.mapCommandList.append(command)
 
-    def setYLabelFontSize(self, fontSize):
+    def setYLabelFontSize(self, fontSize: int):
         """
         Set the size of the font on the y-axis labels. Useful when y-axis labels are too large to fit on the chart.
 
         Args:
             fontSize (int, default 10): The font size used on the y-axis labels for query charting.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select([1]), {"autoViz": True}, "LCMS Land Cover")
+        >>> Map.setYLabelFontSize(8)  # Double-click on map to inspect area. Change to a different number and rerun to see how Y labels are impacted
+        >>> Map.turnOnInspector()
+        >>> Map.setCenter(-109.446, 43.620, 12)
+        >>> Map.view()
         """
         command = f"yLabelFontSize = {fontSize}"
         if command not in self.mapCommandList:
             self.mapCommandList.append(command)
 
     # Specify whether layers can be re-ordered by the user
-    def setCanReorderLayers(self, canReorderLayers):
+    def setCanReorderLayers(self, canReorderLayers: bool):
         """
         Set whether layers can be reordered by dragging layer user interface objects. By default all non timelapse and non geojson layers can be reordereed by dragging.
 
         Args:
-            canReorderLayers (bool): Set whether layers can be reordered by dragging layer user interface objects. By default all non timelapse and non geojson layers can be reordereed by dragging.
+            canReorderLayers (bool, default True): Set whether layers can be reordered by dragging layer user interface objects. By default all non timelapse and non geojson layers can be reordereed by dragging.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select([2]), {"autoViz": True}, "LCMS Land Use")
+        >>> Map.addLayer(lcms.select([1]), {"autoViz": True}, "LCMS Land Cover")
+        >>> Map.addLayer(lcms.select([0]), {"autoViz": True}, "LCMS Change")
+        >>> Map.turnOnInspector()
+        >>> Map.setCanReorderLayers(False) # Notice you cannot drag and reorder layers. Change to True and rerun and notice you now can drag layers to reorder
+        >>> Map.setCenter(-109.446, 43.620, 12)
+        >>> Map.view()
         """
         command = f"Map.canReorderLayers = {str(canReorderLayers).lower()};"
         if command not in self.mapCommandList:
@@ -1304,7 +1521,20 @@ class mapper:
     # Functions to handle batch layer toggling
     def turnOffAllLayers(self):
         """
-        Turn off all layers added to the mapper object
+        Turn off all layers added to the mapper object. Typically used in notebooks or iPython when you want to allow existing layers to remain, but want to turn them all off.
+
+        >>> #%%
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select([2]), {"autoViz": True}, "LCMS Land Use")
+        >>> Map.addLayer(lcms.select([1]), {"autoViz": True}, "LCMS Land Cover")
+        >>> Map.turnOnInspector()
+        >>> Map.setCenter(-109.446, 43.620, 5)
+        >>> Map.view()
+        >>> #%%
+        >>> Map.turnOffAllLayers()
+        >>> Map.addLayer(lcms.select([0]), {"autoViz": True}, "LCMS Change")
+        >>> Map.view()
         """
         update = {"visible": "false"}
         self.idDictList = [{**d, **update} for d in self.idDictList]
@@ -1312,6 +1542,19 @@ class mapper:
     def turnOnAllLayers(self):
         """
         Turn on all layers added to the mapper object
+
+        >>> #%%
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms.select([2]), {"autoViz": True}, "LCMS Land Use",False)
+        >>> Map.addLayer(lcms.select([1]), {"autoViz": True}, "LCMS Land Cover",False)
+        >>> Map.turnOnInspector()
+        >>> Map.setCenter(-109.446, 43.620, 5)
+        >>> Map.view()
+        >>> #%%
+        >>> Map.turnOnAllLayers()
+        >>> Map.addLayer(lcms.select([0]), {"autoViz": True}, "LCMS Change")
+        >>> Map.view()
         """
         update = {"visible": "true"}
         self.idDictList = [{**d, **update} for d in self.idDictList]

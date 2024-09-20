@@ -1,3 +1,19 @@
+# geeViz 2024.9.3 Release Notes
+
+## September 20, 2024
+
+### New Features
+
+- **Doc updates** - Continued work improving Documentation website. Numerous function-wise examples added to the code.
+
+- **GEE Palettes Integration** - Converted Gena's EE Palettes json to a Python script/module. Use the module as `import geeViz.geePalettes as palettes`
+
+### Bug fixes
+
+- `Map.addLayer` and `Map.addTimeLapse` functions now create a copy of the `viz` param dictionary. If you passed a dictionary, and then reused that in another layer call, the `layerType` key was then populated and wouldn't be updated, this resulting in an object type error. By creating a copy, the dictionary isn't changed outside the function.
+
+---
+
 # geeViz 2024.9.2 Release Notes
 
 ## September 18, 2024
