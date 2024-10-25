@@ -534,7 +534,9 @@ class mapper:
                     "queryParams" (dict, optional): Dictionary of additional parameters for querying visible map layers:
 
                         {
-                            "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.
+                            "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.,
+
+                            "yLabel" (str, optional): Y axis label for query charts. This is  useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired label for the Y axis.
                         }
 
                     "legendLabelLeftBefore" (str) : Label for continuous legend on the left before the numeric component,
@@ -575,6 +577,8 @@ class mapper:
                             "rangeSlider" (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`https://plotly.com/javascript/range-slider/>`)
 
                             "barChartMaxClasses" (int, default 20): The maximum number of classes to show for image bar charts. Will automatically only show the top `bartChartMaxClasses` in any image bar chart. Any downloaded csv table will still have all of the class counts.
+
+                            "minZoomSpecifiedScale" (int, default 11): The map zoom level where any lower zoom level, not including this zoom level, will multiply the spatial resolution used for the zonal stats by 2 for each lower zoom level. E.g. if the `minZoomSpecifiedScale` is 9 and the `scale` is 30, any zoom level >= 9 will compute zonal stats at 30m spatial resolution. Then, at zoom level 8, it will be 60m. Zoom level 7 will be 120m, etc.
                         }
 
                 }
@@ -626,6 +630,11 @@ class mapper:
         if "layerType" not in viz.keys():
             imageType = type(image).__name__
             layerType = self.typeLookup[imageType]
+            if imageType == "Geometry":
+                image = ee.FeatureCollection([ee.Feature(image)])
+            elif imageType == "Feature":
+                image = ee.FeatureCollection([image])
+                print(layerType)
             viz["layerType"] = layerType
 
         if not isinstance(image, dict):
@@ -689,7 +698,9 @@ class mapper:
                     "queryParams" (dict, optional): Dictionary of additional parameters for querying visible map layers:
 
                         {
-                            "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.
+                            "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.,
+
+                            "yLabel" (str, optional): Y axis label for query charts. This is  useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired label for the Y axis.
                         }
 
                     "legendLabelLeftBefore" (str) : Label for continuous legend on the left before the numeric component,
@@ -707,6 +718,12 @@ class mapper:
                         {
                             "reducer" (Reducer, default `ee.Reducer.mean()` if no bandName_class_values, bandName_class_names, bandName_class_palette properties are available. `ee.Reducer.frequencyHistogram` if those are available or `thematic`:True (see below)): The reducer used to compute zonal summary statistics.,
 
+                            "crs" (str, default "EPSG:5070"): the coordinate reference system string to use for are chart zonal stats,
+
+                            "transform" (list, default [30, 0, -2361915, 0, -30, 3177735]): the transform to snap to for zonal stats,
+
+                            "scale" (int, default None): The spatial resolution to use for zonal stats. Only specify if transform : None.
+
                             "line" (bool, default True): Whether to create a line chart,
 
                             "sankey" (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a `system:time_start` property set for each image,
@@ -719,11 +736,13 @@ class mapper:
 
                             "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart,
 
-                            "showGrid" (bool, default True): Whethe to show the grid lines on the line or bar graph,
+                            "showGrid" (bool, default True): Whether to show the grid lines on the line or bar graph,
 
-                            "rangeSlider" (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`<https://plotly.com/javascript/range-slider/>`)
+                            "rangeSlider" (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`https://plotly.com/javascript/range-slider/>`)
 
                             "barChartMaxClasses" (int, default 20): The maximum number of classes to show for image bar charts. Will automatically only show the top `bartChartMaxClasses` in any image bar chart. Any downloaded csv table will still have all of the class counts.
+
+                            "minZoomSpecifiedScale" (int, default 11): The map zoom level where any lower zoom level, not including this zoom level, will multiply the spatial resolution used for the zonal stats by 2 for each lower zoom level. E.g. if the `minZoomSpecifiedScale` is 9 and the `scale` is 30, any zoom level >= 9 will compute zonal stats at 30m spatial resolution. Then, at zoom level 8, it will be 60m. Zoom level 7 will be 120m, etc.
                         }
 
                 }
@@ -923,7 +942,7 @@ class mapper:
                 print("Trying to authenticate to GEE using persistent refresh token.")
                 self.accessToken = refreshToken(self.refreshTokenPath)
         # Set up js code to populate
-        lines = "var layerLoadErrorMessages=[];showMessage('Loading',staticTemplates.loadingModal[mode]);\nfunction runGeeViz(){\n"
+        lines = "var layerLoadErrorMessages=[];showMessage('Loading',staticTemplates.loadingModal[mode]);function runGeeViz(){"
 
         # Iterate across each map layer to add js code to
         for idDict in self.idDictList:
@@ -944,19 +963,19 @@ class mapper:
             # )
 
             lines += t
-        lines += 'if(layerLoadErrorMessages.length>0){showMessage("Map.addLayer Error List",layerLoadErrorMessages.join("<br>"));}\n'
-        lines += "setTimeout(function(){if(layerLoadErrorMessages.length===0){$('#close-modal-button').click();}}, 2500);\n"
+        lines += 'if(layerLoadErrorMessages.length>0){showMessage("Map.addLayer Error List",layerLoadErrorMessages.join("<br>"));};'
+        lines += "setTimeout(function(){if(layerLoadErrorMessages.length===0){$('#close-modal-button').click();}}, 2500);"
 
         # Iterate across each map command
         for mapCommand in self.mapCommandList:
-            lines += mapCommand + "\n"
+            lines += mapCommand + ";"
 
         # Set location of query outputs
-        lines += 'queryWindowMode = "{}"\n'.format(self.queryWindowMode)
+        lines += 'queryWindowMode = "{}";'.format(self.queryWindowMode)
 
         # Set whether all layers are turned off when a time lapse is turned on
-        lines += "Map.turnOffLayersWhenTimeLapseIsOn = {}\n".format(str(self.turnOffLayersWhenTimeLapseIsOn).lower())
-        lines += "}"
+        lines += "Map.turnOffLayersWhenTimeLapseIsOn = {};".format(str(self.turnOffLayersWhenTimeLapseIsOn).lower())
+        lines += "};"
 
         # Write out js file
         self.ee_run = os.path.join(ee_run_dir, "{}.js".format(self.ee_run_name))
@@ -1103,7 +1122,7 @@ class mapper:
         >>> Map.view()
         """
         print("Setting click query crs to: {}".format(crs))
-        cmd = f"Map.setQueryCRS('{crs}');"
+        cmd = f"Map.setQueryCRS('{crs}')"
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
@@ -1128,7 +1147,7 @@ class mapper:
 
         """
         print("Setting click query scale to: {}".format(scale))
-        cmd = f"Map.setQueryScale({scale});"
+        cmd = f"Map.setQueryScale({scale})"
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
@@ -1153,7 +1172,7 @@ class mapper:
 
         """
         print("Setting click query transform to: {}".format(transform))
-        cmd = f"Map.setQueryTransform({transform});"
+        cmd = f"Map.setQueryTransform({transform})"
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
@@ -1181,7 +1200,7 @@ class mapper:
         >>> Map.view()
         """
         print("Setting click query precision to: {}".format(chartPrecision))
-        cmd = f"Map.setQueryPrecision({chartPrecision},{chartDecimalProportion});"
+        cmd = f"Map.setQueryPrecision({chartPrecision},{chartDecimalProportion})"
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
@@ -1203,7 +1222,7 @@ class mapper:
 
         """
         print("Setting default query date format to: {}".format(defaultQueryDateFormat))
-        cmd = f'Map.setQueryDateFormat("{defaultQueryDateFormat}");'
+        cmd = f'Map.setQueryDateFormat("{defaultQueryDateFormat}")'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
@@ -1223,7 +1242,7 @@ class mapper:
         >>> Map.view()
         """
         print("Setting click query box color to: {}".format(color))
-        cmd = f'Map.setQueryBoxColor("{color}");'
+        cmd = f'Map.setQueryBoxColor("{color}")'
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
@@ -1270,7 +1289,7 @@ class mapper:
         >>> Map.turnOnInspector()
         >>> Map.view()
         """
-        query_command = "Map.turnOnInspector();"
+        query_command = "Map.turnOnInspector()"
         if query_command not in self.mapCommandList:
             self.mapCommandList.append(query_command)
 
@@ -1285,7 +1304,7 @@ class mapper:
         >>> Map.turnOnAutoAreaCharting()
         >>> Map.view()
         """
-        query_command = "Map.turnOnAutoAreaCharting();"
+        query_command = "Map.turnOnAutoAreaCharting()"
         if query_command not in self.mapCommandList:
             self.mapCommandList.append(query_command)
 
@@ -1299,7 +1318,7 @@ class mapper:
         >>> Map.turnOnUserDefinedAreaCharting()
         >>> Map.view()
         """
-        query_command = "Map.turnOnUserDefinedAreaCharting();"
+        query_command = "Map.turnOnUserDefinedAreaCharting()"
         if query_command not in self.mapCommandList:
             self.mapCommandList.append(query_command)
 
@@ -1316,7 +1335,7 @@ class mapper:
         >>> Map.turnOnSelectionAreaCharting()
         >>> Map.view()
         """
-        query_command = "Map.turnOnSelectionAreaCharting();"
+        query_command = "Map.turnOnSelectionAreaCharting()"
         if query_command not in self.mapCommandList:
             self.mapCommandList.append(query_command)
 
@@ -1414,7 +1433,7 @@ class mapper:
         >>> Map.turnOnAutoAreaCharting()
         >>> Map.view()
         """
-        query_command = "areaChart.populateChartLayerSelect();"
+        query_command = "areaChart.populateChartLayerSelect()"
 
         if query_command not in self.mapCommandList:
             self.mapCommandList.append(query_command)

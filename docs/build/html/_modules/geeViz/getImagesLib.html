@@ -5,7 +5,7 @@
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>geeViz.getImagesLib - geeViz &#34;2024.9.3&#34; docs</title>
+        <title>geeViz.getImagesLib - geeViz &#34;2024.10.1&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b76e3c8a" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -141,7 +141,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">geeViz "2024.9.3" docs</div></a>
+      <a href="../../index.html"><div class="brand">geeViz "2024.10.1" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -167,7 +167,7 @@
     <img class="sidebar-logo" src="../../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.9.3" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.10.1" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -6433,8 +6433,8 @@
 <span class="sd">        endJulian (int, optional): The end Julian day of the desired data. Defaults to 365.</span>
 <span class="sd">        toaOrSR (str, optional): Specifies whether to retrieve data in Top-Of-Atmosphere (TOA) reflectance or Surface Reflectance (SR). Defaults to &quot;TOA&quot;.</span>
 <span class="sd">        applyCloudScorePlus (bool, optional): Determines whether to apply cloud filtering based on the Cloud Score Plus product. Defaults to True.</span>
-<span class="sd">        cloudScorePlusThresh (float, optional): Sets the threshold for cloud cover percentage based on Cloud Score Plus. Images with cloud cover exceeding this threshold will be masked out if `applyCloudScorePlus` is True. Defaults to 0.6.</span>
-<span class="sd">        cloudScorePlusScore (str, optional): Specifies the band name within the Cloud Score Plus product containing the cloud cover information. Defaults to &quot;cs&quot;.</span>
+<span class="sd">        cloudScorePlusThresh (float, optional): Sets the threshold for cloud cover percentage based on Cloud Score Plus. Images with cloud cover exceeding this threshold will be masked out if `applyCloudScorePlus` is True. A higher value will mask out more pixels (call them cloud/cloud-shadow). Defaults to 0.6.</span>
+<span class="sd">        cloudScorePlusScore (str, optional): One of &quot;cs&quot; - Tends to mask out more. Commits ephemeral water, but doesn&#39;t omit cloud shadows as much or &quot;cs_cdf&quot; - Tends to mask out less, notably fewer water bodies and shadows. This can result in omitting cloud shadows, but not committing ephemeral water as a cloud shadow. Specifies the band name within the Cloud Score Plus product containing the cloud cover information. Defaults to &quot;cs&quot;.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        ee.ImageCollection: A collection of cloud and cloud-shadow-free Sentinel-2 satellite images filtered by the specified criteria.</span>
@@ -8825,11 +8825,11 @@
 <span class="sd">    can lead to false positives. SR data might cause false negatives (omissions).</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        img (ee.Image): The input Earth Engine image (TOA reflectance data recommended).</span>
+<span class="sd">        img (ee.Image): The input Earth Engine image (TOA reflectance data recommended) with Tasseled Cap transformation bands added. You may need to run `getTasseledCap` to add these bands.</span>
 <span class="sd">        contractPixels (int, optional): Number of pixels to contract the water mask by for morphological closing. Defaults to 0 (no contraction).</span>
 <span class="sd">        slope_thresh (float, optional): Threshold for slope (degrees) to identify flat areas suitable for water masking. Defaults to 10.</span>
 <span class="sd">        elevationImagePath (str, optional): Path to the Earth Engine image containing elevation data. Defaults to &quot;USGS/3DEP/10m&quot; (10m DEM from USGS 3D Elevation Program).</span>
-<span class="sd">        elevationFocalMeanRadius (float, optional): Radius (in meters) for the focal mean filter applied to the elevation data before calculating slope. Defaults to 5.5.</span>
+<span class="sd">        elevationFocalMeanRadius (float, optional): Radius (in pixels) for the focal mean filter applied to the elevation data before calculating slope. Defaults to 5.5.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        ee.Image: The water mask image with a single band named &quot;waterMask&quot;.</span>
@@ -8838,12 +8838,12 @@
 <span class="sd">    &gt;&gt;&gt; Map = gil.Map</span>
 <span class="sd">    &gt;&gt;&gt; ee = gil.ee</span>
 <span class="sd">    &gt;&gt;&gt; studyArea = gil.testAreas[&quot;CO&quot;]</span>
-<span class="sd">    &gt;&gt;&gt; s2s = gil.superSimpleGetS2(studyArea, &quot;2024-01-01&quot;, &quot;2024-12-31&quot;, 190, 250).map(lambda img: gil.getTasseledCap(img.divide(10000)))</span>
+<span class="sd">    &gt;&gt;&gt; s2s = gil.superSimpleGetS2(studyArea, &quot;2024-01-01&quot;, &quot;2024-12-31&quot;, 190, 250).map(lambda img: gil.getTasseledCap(img.resample(&quot;bicubic&quot;).divide(10000)))</span>
 <span class="sd">    &gt;&gt;&gt; median_composite = s2s.median()</span>
 <span class="sd">    &gt;&gt;&gt; water = gil.simpleWaterMask(median_composite).rename(&quot;Water&quot;)</span>
 <span class="sd">    &gt;&gt;&gt; water = water.selfMask().set({&quot;Water_class_values&quot;: [1], &quot;Water_class_names&quot;: [&quot;Water&quot;], &quot;Water_class_palette&quot;: [&quot;0000DD&quot;]})</span>
-<span class="sd">    &gt;&gt;&gt; Map.addLayer(median_composite, gil.vizParamsFalse, &quot;Sentinel-2 Median Composite&quot;)</span>
-<span class="sd">    &gt;&gt;&gt; Map.addLayer(water, {&quot;autoViz&quot;: True}, &quot;Water Mask&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(median_composite.reproject(&quot;EPSG:32613&quot;, None, 10), gil.vizParamsFalse, &quot;Sentinel-2 Median Composite&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; Map.addLayer(water.reproject(&quot;EPSG:32613&quot;, None, 10), {&quot;autoViz&quot;: True}, &quot;Water Mask&quot;)</span>
 <span class="sd">    &gt;&gt;&gt; Map.addLayer(studyArea, {&quot;canQuery&quot;: False}, &quot;Study Area&quot;)</span>
 <span class="sd">    &gt;&gt;&gt; Map.centerObject(studyArea, 12)</span>
 <span class="sd">    &gt;&gt;&gt; Map.turnOnInspector()</span>
@@ -9029,7 +9029,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=e5bf06cb"></script>
+</div><script src="../../_static/documentation_options.js?v=88e48e32"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

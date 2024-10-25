@@ -26,13 +26,13 @@ geeViz.assetManagerLib includes functions for copying, deleting, uploading, chan
 # --------------------------------------------------------------------------
 #           ASSETMANAGERLIB.PY
 # --------------------------------------------------------------------------
-#%%
+# %%
 import geeViz.geeView
 import sys, ee, os, shutil, subprocess, datetime, calendar, json, glob
 import time, logging, pdb
 
 taskLimit = 10
-#%%
+# %%
 #############################################################################################
 #               Functions to update ACL
 #############################################################################################
@@ -223,19 +223,11 @@ def assetsize(asset):
     elif header == "IMAGE":
         collc = ee.Image(asset)
         print("")
-        print(
-            str(asset)
-            + " ===> "
-            + str(humansize(collc.get("system:asset_size").getInfo()))
-        )
+        print(str(asset) + " ===> " + str(humansize(collc.get("system:asset_size").getInfo())))
     elif header == "TABLE":
         collc = ee.FeatureCollection(asset)
         print("")
-        print(
-            str(asset)
-            + " ===> "
-            + str(humansize(collc.get("system:asset_size").getInfo()))
-        )
+        print(str(asset) + " ===> " + str(humansize(collc.get("system:asset_size").getInfo())))
     elif header == "FOLDER":
         b = subprocess.check_output("earthengine du " + asset + " -s", shell=True)
         num = subprocess.check_output("earthengine ls " + asset, shell=True)
@@ -250,13 +242,16 @@ def assetsize(asset):
 #############################################################################################
 # Wrapper function to upload to google cloudStorage
 # Bucket must already exist
-def upload_to_gcs(image_dir, gs_bucket, image_extension=".tif", copy_or_sync="copy"):
+def upload_to_gcs(image_dir, gs_bucket, image_extension=".tif", copy_or_sync="copy", overwrite=False):
+    if gs_bucket.find("gs://") == -1:
+        gs_bucket = f"gs://{gs_bucket}"
+    overwrite_str = "-n "
+    if overwrite:
+        overwrite_str = ""
     if copy_or_sync == "copy":
-        call_str = (
-            'gsutil.cmd -m cp "' + image_dir + "*" + image_extension + '" ' + gs_bucket
-        )
+        call_str = f'gsutil.cmd -m cp {overwrite_str}"{image_dir}*{image_extension}" {gs_bucket}'
     else:
-        call_str = 'gsutil.cmd -m  rsync "' + image_dir + '" ' + gs_bucket
+        call_str = f'gsutil.cmd -m rsync {overwrite_str}"{image_dir}" {gs_bucket}'
     print(call_str)
     call = subprocess.Popen(call_str)
     call.wait()
@@ -480,9 +475,7 @@ def create_image_collection(full_path_to_collection):
         print("Collection " + full_path_to_collection + " already exists")
     else:
         try:
-            ee.data.createAsset(
-                {"type": ee.data.ASSET_TYPE_IMAGE_COLL}, full_path_to_collection
-            )
+            ee.data.createAsset({"type": ee.data.ASSET_TYPE_IMAGE_COLL}, full_path_to_collection)
             print("New collection " + full_path_to_collection + " created")
         except Exception as E:
             print("Could not create: ", full_path_to_collection)
@@ -505,9 +498,7 @@ def create_asset(asset_path, asset_type=ee.data.ASSET_TYPE_FOLDER, recursive=Tru
         path_temp = project_root
         for sub_directory in sub_directories[:-1]:
             path_temp = f"{path_temp}/{sub_directory}"
-            create_asset(
-                path_temp, asset_type=ee.data.ASSET_TYPE_FOLDER, recursive=False
-            )
+            create_asset(path_temp, asset_type=ee.data.ASSET_TYPE_FOLDER, recursive=False)
 
     if ee_asset_exists(asset_path):
         print("Asset " + asset_path + " already exists")
@@ -525,8 +516,7 @@ def verify_path(path):
     response = ee.data.getInfo(path)
     if not response:
         logging.error(
-            "%s is not a valid destination. Make sure full path is provided e.g. users/user/nameofcollection "
-            "or projects/myproject/myfolder/newcollection and that you have write access there.",
+            "%s is not a valid destination. Make sure full path is provided e.g. users/user/nameofcollection " "or projects/myproject/myfolder/newcollection and that you have write access there.",
             path,
         )
         sys.exit(1)
@@ -599,9 +589,7 @@ def getDate(year, month, day):
 
 
 def setDate(assetPath, year, month, day):
-    ee.data.updateAsset(
-        assetPath, {"start_time": getDate(year, month, day)}, ["start_time"]
-    )
+    ee.data.updateAsset(assetPath, {"start_time": getDate(year, month, day)}, ["start_time"])
 
 
 #########################################################################
@@ -631,18 +619,10 @@ def ingestImageFromGCS(
             gcsURIs = [gcsURIs]
 
         # Repeat the pyramiding policy and no data value if only one is provided
-        if (
-            bandNames != None
-            and pyramidingPolicy != None
-            and str(type(pyramidingPolicy)).find("'str'") > -1
-        ):
+        if bandNames != None and pyramidingPolicy != None and str(type(pyramidingPolicy)).find("'str'") > -1:
             pyramidingPolicy = [pyramidingPolicy] * len(bandNames)
 
-        if (
-            bandNames != None
-            and noDataValues != None
-            and str(type(noDataValues)).find("'list'") == -1
-        ):
+        if bandNames != None and noDataValues != None and str(type(noDataValues)).find("'list'") == -1:
             noDataValues = [noDataValues] * len(bandNames)
 
         # Set up the manifest
@@ -664,13 +644,7 @@ def ingestImageFromGCS(
             if propIn in properties.keys():
                 d = properties[propIn]
                 if str(type(d)).find("ee.ee_date.Date") > -1:
-                    d = (
-                        d.format("YYYY-MM-dd")
-                        .cat("T")
-                        .cat(d.format("HH:mm:SS"))
-                        .cat("Z")
-                        .getInfo()
-                    )
+                    d = d.format("YYYY-MM-dd").cat("T").cat(d.format("HH:mm:SS")).cat("Z").getInfo()
                 params[propOut] = d
                 properties.pop(propIn)
 
@@ -703,7 +677,7 @@ def uploadToGEEImageAsset(
     properties=None,
     pyramidingPolicy=None,
     noDataValues=None,
-    parallel_threshold = '150M',
+    parallel_threshold="150M",
     gsutil_path="C:/Program Files (x86)/Google/Cloud SDK/google-cloud-sdk/bin/gsutil.cmd",
 ):
     # List all local files with specified name or wildcard name and make GCS paths for each file
@@ -711,7 +685,7 @@ def uploadToGEEImageAsset(
     gcsURIs = [gcsBucket + "/" + os.path.basename(tif) for tif in localTifs]
 
     # Upload files to GCS (will not overwrite)
-    uploadCommand = '"{}" -o "GSUtil:parallel_composite_upload_threshold="{}" " -m cp -n -r {} {}'.format(gsutil_path,parallel_threshold,localTif,gcsBucket)
+    uploadCommand = '"{}" -o "GSUtil:parallel_composite_upload_threshold="{}" " -m cp -n -r {} {}'.format(gsutil_path, parallel_threshold, localTif, gcsBucket)
     call = subprocess.Popen(uploadCommand)
     call.wait()
 
@@ -725,5 +699,6 @@ def uploadToGEEImageAsset(
         pyramidingPolicy=pyramidingPolicy,
         noDataValues=noDataValues,
     )
+
 
 #########################################################################

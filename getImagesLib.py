@@ -6022,8 +6022,8 @@ def superSimpleGetS2(
         endJulian (int, optional): The end Julian day of the desired data. Defaults to 365.
         toaOrSR (str, optional): Specifies whether to retrieve data in Top-Of-Atmosphere (TOA) reflectance or Surface Reflectance (SR). Defaults to "TOA".
         applyCloudScorePlus (bool, optional): Determines whether to apply cloud filtering based on the Cloud Score Plus product. Defaults to True.
-        cloudScorePlusThresh (float, optional): Sets the threshold for cloud cover percentage based on Cloud Score Plus. Images with cloud cover exceeding this threshold will be masked out if `applyCloudScorePlus` is True. Defaults to 0.6.
-        cloudScorePlusScore (str, optional): Specifies the band name within the Cloud Score Plus product containing the cloud cover information. Defaults to "cs".
+        cloudScorePlusThresh (float, optional): Sets the threshold for cloud cover percentage based on Cloud Score Plus. Images with cloud cover exceeding this threshold will be masked out if `applyCloudScorePlus` is True. A higher value will mask out more pixels (call them cloud/cloud-shadow). Defaults to 0.6.
+        cloudScorePlusScore (str, optional): One of "cs" - Tends to mask out more. Commits ephemeral water, but doesn't omit cloud shadows as much or "cs_cdf" - Tends to mask out less, notably fewer water bodies and shadows. This can result in omitting cloud shadows, but not committing ephemeral water as a cloud shadow. Specifies the band name within the Cloud Score Plus product containing the cloud cover information. Defaults to "cs".
 
     Returns:
         ee.ImageCollection: A collection of cloud and cloud-shadow-free Sentinel-2 satellite images filtered by the specified criteria.
@@ -8408,11 +8408,11 @@ def simpleWaterMask(
     can lead to false positives. SR data might cause false negatives (omissions).
 
     Args:
-        img (ee.Image): The input Earth Engine image (TOA reflectance data recommended).
+        img (ee.Image): The input Earth Engine image (TOA reflectance data recommended) with Tasseled Cap transformation bands added. You may need to run `getTasseledCap` to add these bands.
         contractPixels (int, optional): Number of pixels to contract the water mask by for morphological closing. Defaults to 0 (no contraction).
         slope_thresh (float, optional): Threshold for slope (degrees) to identify flat areas suitable for water masking. Defaults to 10.
         elevationImagePath (str, optional): Path to the Earth Engine image containing elevation data. Defaults to "USGS/3DEP/10m" (10m DEM from USGS 3D Elevation Program).
-        elevationFocalMeanRadius (float, optional): Radius (in meters) for the focal mean filter applied to the elevation data before calculating slope. Defaults to 5.5.
+        elevationFocalMeanRadius (float, optional): Radius (in pixels) for the focal mean filter applied to the elevation data before calculating slope. Defaults to 5.5.
 
     Returns:
         ee.Image: The water mask image with a single band named "waterMask".
@@ -8421,12 +8421,12 @@ def simpleWaterMask(
     >>> Map = gil.Map
     >>> ee = gil.ee
     >>> studyArea = gil.testAreas["CO"]
-    >>> s2s = gil.superSimpleGetS2(studyArea, "2024-01-01", "2024-12-31", 190, 250).map(lambda img: gil.getTasseledCap(img.divide(10000)))
+    >>> s2s = gil.superSimpleGetS2(studyArea, "2024-01-01", "2024-12-31", 190, 250).map(lambda img: gil.getTasseledCap(img.resample("bicubic").divide(10000)))
     >>> median_composite = s2s.median()
     >>> water = gil.simpleWaterMask(median_composite).rename("Water")
     >>> water = water.selfMask().set({"Water_class_values": [1], "Water_class_names": ["Water"], "Water_class_palette": ["0000DD"]})
-    >>> Map.addLayer(median_composite, gil.vizParamsFalse, "Sentinel-2 Median Composite")
-    >>> Map.addLayer(water, {"autoViz": True}, "Water Mask")
+    >>> Map.addLayer(median_composite.reproject("EPSG:32613", None, 10), gil.vizParamsFalse, "Sentinel-2 Median Composite")
+    >>> Map.addLayer(water.reproject("EPSG:32613", None, 10), {"autoViz": True}, "Water Mask")
     >>> Map.addLayer(studyArea, {"canQuery": False}, "Study Area")
     >>> Map.centerObject(studyArea, 12)
     >>> Map.turnOnInspector()

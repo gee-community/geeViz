@@ -1,3 +1,21 @@
+# geeViz 2024.10.1 Release Notes
+
+## October 25, 2024
+
+### New Features
+
+- **geeView UI Layout Enhancements** - UI has had minor enhancements to improve use of space and alignment.
+
+- **upload_to_gcs overwrite setting** - `assetManagerLib.upload_to_gcs` `overwite` parameter. By default, it is now set to `False`. This can be a breaking change since before it was unset, leaving it to essentially be `overwrite = True`.
+
+- **cloudStorageManager new functions** - `cloudStorageManager.list_files`, `cloudStorageManager.bucket_exists`, and `cloudStorageManager.create_bucket` functions to facilitate various cloud storage tasks.
+
+- **geeView query yLabel setting** - Can now set the `yLabel` (`vizParams["queryParams"]["yLabel"]`) to label the y axis of a query chart. See pydoc for `Map.addLayer` and `Map.addTimeLapse` for details.
+
+- **geeView minZoomSpecifiedScale** - Can now set min zoom level to start changing zonal stats reduction scale changes (`vizParams["areaChartParams"]["minZoomSpecifiedScale"]`). This is useful to avoid memory errors, but ideally, can be set to a lower zoom level if possible. See pydoc for `Map.addLayer` and `Map.addTimeLapse` for details.
+
+---
+
 # geeViz 2024.9.3 Release Notes
 
 ## September 20, 2024

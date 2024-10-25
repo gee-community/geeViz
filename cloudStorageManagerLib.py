@@ -30,7 +30,7 @@ from google.cloud import storage
 # Function to list all blobs in a bucket
 # Returns a list of blob objects
 # Use the blob.name to get the name
-def list_blobs(bucket_name):
+def list_blobs(bucket_name: str) -> list:
     # storage client instance
     storage_client = storage.Client(project=geeViz.geeView.project_id)
 
@@ -40,6 +40,32 @@ def list_blobs(bucket_name):
     # list files stored in bucket
     all_blobs = bucket.list_blobs()
     return list(all_blobs)
+
+
+def list_files(bucket_name: str) -> list[str]:
+    return [f.name for f in list_blobs(bucket_name)]
+
+
+def bucket_exists(bucket_name: str) -> bool:
+    """See if a GCS bucket exists"""
+    # storage client instance
+    storage_client = storage.Client(project=geeViz.geeView.project_id)
+
+    # get bucket by name
+    bucket = storage_client.bucket(bucket_name)
+
+    return bucket.exists()
+
+
+def create_bucket(bucket_name: str):
+    # Initialize a client
+    storage_client = storage.Client(project=geeViz.geeView.project_id)
+
+    # Create a new bucket
+    bucket = storage_client.create_bucket(bucket_name)
+
+    print(f"Bucket {bucket.name} created.")
+    return bucket
 
 
 ######################################################################
@@ -67,9 +93,7 @@ def rename_blobs(bucket_name, old_name, new_name):
 # Return wether a filename exists or not
 def gcs_exists(bucket, filename):
     storage_client = storage.Client(project=geeViz.geeView.project_id)
-    stats = storage.Blob(bucket=storage_client.bucket(bucket), name=filename).exists(
-        storage_client
-    )
+    stats = storage.Blob(bucket=storage_client.bucket(bucket), name=filename).exists(storage_client)
     return stats
 
 
@@ -78,9 +102,7 @@ def gcs_exists(bucket, filename):
 # Delete a specified filename
 def delete_blob(bucket, filename):
     storage_client = storage.Client(project=geeViz.geeView.project_id)
-    out = storage.Blob(bucket=storage_client.bucket(bucket), name=filename).delete(
-        storage_client
-    )
+    out = storage.Blob(bucket=storage_client.bucket(bucket), name=filename).delete(storage_client)
     print("Deleted:", filename)
 
 
