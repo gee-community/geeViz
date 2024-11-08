@@ -45,6 +45,13 @@ Visualize multi-temporal `imageCollections`
 
    notebooks/lcmsViewerExampleNotebook
 
+Visualize Annual NLCD
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. toctree::
+
+   notebooks/Annual_NLCD_Viewer_Notebook
+
 Visualize MapBiomas Datasets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

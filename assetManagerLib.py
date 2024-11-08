@@ -60,6 +60,11 @@ def updateACL(assetName, writers=[], all_users_can_read=True, readers=[]):
 # --------------------------------------------------------------------------------------------
 
 
+def listAssets(folder: str) -> list[str]:
+    """List assets within a given asset folder or imageCollection"""
+    return [i["id"] for i in ee.data.listAssets({"parent": folder})["assets"]]
+
+
 # Function for updating all assets under a given folder level in GEE
 def batchUpdateAcl(folder, writers=[], all_users_can_read=True, readers=[]):
     # Update ACL for folders first, then find all images within them.

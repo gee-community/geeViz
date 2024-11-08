@@ -1,3 +1,15 @@
+# geeViz 2024.11.1 Release Notes
+
+## November 8, 2024
+
+### New Features
+
+- **CCDC Feathering Documentation** - The ability to combine two CCDC raw array `ee.Image` outputs for prediction and change detection has been streamlined and included in examples `examples.CCDCVizNotebook` and `examples.CCDCViz`, along with improved Pydocs.
+
+- **Annual NLCD Example Notebook** - New notebook for Annual NLCD has been included in `examples.Annual_NLCD_Viewer_Notebook`. This notebook walks through how to visualize, summarize, and explore Annua NLCD products.
+
+---
+
 # geeViz 2024.10.1 Release Notes
 
 ## October 25, 2024

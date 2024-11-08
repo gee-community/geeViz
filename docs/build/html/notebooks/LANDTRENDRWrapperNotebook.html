@@ -6,8 +6,8 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="CCDC Visualization Notebook" href="CCDCVizNotebook.html" /><link rel="prev" title="A comparison between geeViz and geeMap’s map visualization capabilities" href="geeViz_geeMap_comparison_tutorial.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Run LandTrendr and Visualize Outputs - geeViz &#34;2024.10.1&#34; docs</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b76e3c8a" />
+        <title>Run LandTrendr and Visualize Outputs - geeViz &#34;2024.11.1&#34; docs</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -142,7 +142,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">geeViz "2024.10.1" docs</div></a>
+      <a href="../index.html"><div class="brand">geeViz "2024.11.1" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -168,7 +168,7 @@
     <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.10.1" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.11.1" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -194,6 +194,7 @@
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../examples.html">Examples</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="geeViewExampleNotebook.html">Starter geeViz geeView Notebook</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lcmsViewerExampleNotebook.html">LCMS Viewer Intro Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Annual_NLCD_Viewer_Notebook.html">Annual NLCD <code class="docutils literal notranslate"><span class="pre">geeViz</span></code> Viewer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mapBiomasViewerExampleNotebook.html">Visualizing MapBiomas Datasets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dynamicWorldExampleNotebook.html">Visualizing Dynamic World</a></li>
 <li class="toctree-l2"><a class="reference internal" href="global_land_cover_example_notebook.html">Visualizing Global Land Cover</a></li>
@@ -289,7 +290,7 @@ limitations under the License.</p>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Initializing GEE
 Cached project id file path: C:\Users\ihousman\.config\earthengine\credentials.proj_id
-Cached project id: rcr-gee-2
+Cached project id: lcms-292214
 Successfully initialized
 geeViz package folder: c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\geeViz
 done
@@ -320,7 +321,7 @@ done
 <span class="c1"># pre-computed stats for cloudScore and TDOM, this does not </span>
 <span class="c1"># matter</span>
 <span class="n">startYear</span> <span class="o">=</span> <span class="mi">1990</span>  
-<span class="n">endYear</span> <span class="o">=</span> <span class="mi">2023</span>
+<span class="n">endYear</span> <span class="o">=</span> <span class="mi">2024</span>
 
 
 
@@ -431,7 +432,7 @@ done
 <span class="n">Map1</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
 
 <span class="c1">#Bring in Hansen data and add it to the map</span>
-<span class="n">hansen</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="s2">&quot;UMD/hansen/global_forest_change_2022_v1_10&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;lossyear&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span><span class="o">.</span><span class="n">int16</span><span class="p">()</span>
+<span class="n">hansen</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="s2">&quot;UMD/hansen/global_forest_change_2023_v1_11&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;lossyear&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span><span class="o">.</span><span class="n">int16</span><span class="p">()</span>
 <span class="n">hansen</span> <span class="o">=</span> <span class="n">hansen</span><span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">hansen</span><span class="o">.</span><span class="n">neq</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span><span class="o">.</span><span class="n">And</span><span class="p">(</span><span class="n">hansen</span><span class="o">.</span><span class="n">gte</span><span class="p">(</span><span class="n">startYear</span><span class="p">))</span><span class="o">.</span><span class="n">And</span><span class="p">(</span><span class="n">hansen</span><span class="o">.</span><span class="n">lte</span><span class="p">(</span><span class="n">endYear</span><span class="p">)))</span>
 <span class="n">Map1</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">hansen</span><span class="p">,{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="n">startYear</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="n">endYear</span><span class="p">,</span><span class="s1">&#39;palette&#39;</span><span class="p">:</span><span class="n">cdl</span><span class="o">.</span><span class="n">lossYearPalette</span><span class="p">},</span><span class="s1">&#39;Hansen Loss Year&#39;</span><span class="p">,</span><span class="kc">True</span><span class="p">)</span>
 
@@ -445,18 +446,17 @@ done
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: Hansen Loss Year
 Starting webmap
-Using default refresh token for geeView: C:\Users\ihousman/.config/earthengine/credentials
-Starting local web server at: http://localhost:1231/geeView/
-HTTP server command: &quot;c:\Users\ihousman\AppData\Local\Programs\Python\Python311\python.exe&quot; -m http.server  1231
-Done
+Using default refresh token for geeView
+Local web server at: http://localhost:1231/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:1231/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZDAyPF5nRhKZA4tLqBJuKamOPKUJlYPXvx_4IPBza3iLvVBpwhpLrSWfOt_OIBrm_MZDnYKUCiBCdOrjuuREK9QG5HxYeZ3Dz-EwcqD7vl6Dm1W2HCtAVz8b_5Ldhzh3Mo69gzUZ1NvWa4hgsq6eoGh_O5iETqEAyo_3sIaCgYKAZ0SARESFQHGX2MiTPzEKVCYqICaTZoILxhr4Q0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:1231/geeView/?accessToken=ya29.a0AfB_byCXSCN1kBGCPTcm19TScrENwWcYHkhNujfaAd9U39LZKY9eOy9Vco_bv4sq0ayeuzA6-GwAJ-YeNJwAxDBIevFErWIiVEGfW91-0VW97pLhMj7S7bm9Jep0wD8r-nBsiCRcchNSIQ5CZpR8wbRX76HkMalRpcKSInXDo80waCgYKAYoSARESFQHGX2MiY1RhS39if2CP2lFBIMsbdg0179"
+            src="http://localhost:1231/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZDAyPF5nRhKZA4tLqBJuKamOPKUJlYPXvx_4IPBza3iLvVBpwhpLrSWfOt_OIBrm_MZDnYKUCiBCdOrjuuREK9QG5HxYeZ3Dz-EwcqD7vl6Dm1W2HCtAVz8b_5Ldhzh3Mo69gzUZ1NvWa4hgsq6eoGh_O5iETqEAyo_3sIaCgYKAZ0SARESFQHGX2MiTPzEKVCYqICaTZoILxhr4Q0178"
             frameborder="0"
             allowfullscreen
             
@@ -492,7 +492,7 @@ cwd a:\GEE\gee_py_modules_package\geeViz\examples
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Get Processed Landsat: 
-Start date: Jun 01 1990 , End date: Sep 30 2023
+Start date: Jun 01 1990 , End date: Sep 29 2024
 Applying scale factors for C2 L4 data
 Applying scale factors for C2 L5 data
 Applying scale factors for C2 L8 data
@@ -503,16 +503,17 @@ Applying Fmask Cloud Mask
 Applying Fmask Shadow Mask
 Adding layer: Composite Time Series
 Starting webmap
-Using default refresh token for geeView: C:\Users\ihousman/.config/earthengine/credentials
+Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZBeTiKfQyHMwd8gXMqd7OJSPWvEdkLXj21ZHHomYbeqVxXPnAYhldyu5siFLHUaDATMB1dQuBcF4WEAd0BdG97m9iFuLEe5Kq0CvE5ikXsvkdVVRKhSHka14FEDl2o4-PDlG4a0-cfLM-TU96aOkTbiWH9cEhbTf62AoWsaCgYKAX8SARESFQHGX2MiQosDow0Kr8IqVtQ6Q81KMg0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?accessToken=ya29.a0AfB_byCSBfaxavNGpctthjVUbwNyJ6c9X5iSn3ExdKagz6tLe--XGIH8gOgvhtpFNSTcybTSVbU_bwUCxYlRdkz4qnGWqyeUSL1sCWFvuuP6wVLijDIeDU95JEwHQ77zjGzfP7ocC3EbSw_ot3pmPXHWo8OQDJH9LqpE017eoPWGaCgYKAYQSARESFQHGX2Mix-DWzHxv4y_I1FI0q0oYQA0179"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZBeTiKfQyHMwd8gXMqd7OJSPWvEdkLXj21ZHHomYbeqVxXPnAYhldyu5siFLHUaDATMB1dQuBcF4WEAd0BdG97m9iFuLEe5Kq0CvE5ikXsvkdVVRKhSHka14FEDl2o4-PDlG4a0-cfLM-TU96aOkTbiWH9cEhbTf62AoWsaCgYKAX8SARESFQHGX2MiQosDow0Kr8IqVtQ6Q81KMg0178"
             frameborder="0"
             allowfullscreen
             
@@ -552,16 +553,17 @@ Adding layer: 1 NBR Gain Magnitude
 Adding layer: 1 NBR Gain Duration
 Adding layer: Study Area
 Starting webmap
-Using default refresh token for geeView: C:\Users\ihousman/.config/earthengine/credentials
+Using default refresh token for geeView
 Local web server at: http://localhost:1231/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:1231/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZBbdJ7B_a_E-eZ8D8xiEyKbPNP9fin7igxNZDffmCiWDn0YQ-jm7jTDj7YdiKU-yLB-VqCwmr-efOQ-jCveOUE3siDXMM8mKgqKs-VesI-FbrNaAF5odepkdqaJCtC4rRCVlVAhcGeeGIa928g9FxgHVpqUQmK-R33eZQgaCgYKAfwSARESFQHGX2MipsP5wJR8PGEeQWtKmu85RA0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:1231/geeView/?accessToken=ya29.a0AfB_byBBFaEJVZrMYeqt76YZc7mZkw0ZM6pFQqFgsNOywdRg8-udFY2USiT0DYCZCZ6SZKDKPAN81VH_jf5G3KHsCW-Dg_2jhUVtUDYNOMZrivqxwPwzN49neRl1WOIRqSD-ylrGo0MYEkOeg8iROKLhYFvvmPqLYCAU37oQeoNnaCgYKAXISARESFQHGX2MikY6n3BiSHh6VGIH-wfEIDQ0179"
+            src="http://localhost:1231/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZBbdJ7B_a_E-eZ8D8xiEyKbPNP9fin7igxNZDffmCiWDn0YQ-jm7jTDj7YdiKU-yLB-VqCwmr-efOQ-jCveOUE3siDXMM8mKgqKs-VesI-FbrNaAF5odepkdqaJCtC4rRCVlVAhcGeeGIa928g9FxgHVpqUQmK-R33eZQgaCgYKAfwSARESFQHGX2MipsP5wJR8PGEeQWtKmu85RA0178"
             frameborder="0"
             allowfullscreen
             
@@ -620,12 +622,6 @@ cwd a:\GEE\gee_py_modules_package\geeViz\examples
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>LT_Test_LT_LossGain_Stack_NBR_1990_2023_152_273 currently exists or is being exported and overwrite = False. Set overwite = True if you would like to overwite any existing asset or asset exporting task
-LT_Test_LT_Raw_NBR_1990_2023_152_273 currently exists or is being exported and overwrite = False. Set overwite = True if you would like to overwite any existing asset or asset exporting task
-</pre></div>
-</div>
-</div>
 </div>
 </section>
 
@@ -681,7 +677,7 @@ LT_Test_LT_Raw_NBR_1990_2023_152_273 currently exists or is being exported and o
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=88e48e32"></script>
+</div><script src="../_static/documentation_options.js?v=f42824bd"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

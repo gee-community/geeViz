@@ -1,0 +1,330 @@
+{
+  "cells": [
+    {
+      "attachments": {},
+      "cell_type": "markdown",
+      "id": "ff459534",
+      "metadata": {},
+      "source": [
+        "## Annual NLCD `geeViz` Viewer\n",
+        "* This script provides a view of annual NLCD: https://gee-community-catalog.org/projects/annual_nlcd/\n",
+        "* It displays the land cover/land use and impervious products as well as change products\n",
+        "____\n",
+        "\n",
+        "Copyright 2024 Ian Housman\n",
+        "\n",
+        "Licensed under the Apache License, Version 2.0 (the \"License\");\n",
+        "you may not use this file except in compliance with the License.\n",
+        "You may obtain a copy of the License at\n",
+        "\n",
+        "   http://www.apache.org/licenses/LICENSE-2.0\n",
+        "\n",
+        "Unless required by applicable law or agreed to in writing, software\n",
+        "distributed under the License is distributed on an \"AS IS\" BASIS,\n",
+        "WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n",
+        "See the License for the specific language governing permissions and\n",
+        "limitations under the License.\n",
+        "\n",
+        "\n",
+        "<p><a href=\"https://colab.research.google.com/github/gee-community/geeViz/blob/master/examples/Annual_NLCD_Viewer_Notebook.ipynb\" target=\"_parent\"><img alt=\"Open in Colab\" src=\"https://colab.research.google.com/assets/colab-badge.svg\"></a></p>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 1,
+      "id": "1245c2d1",
+      "metadata": {
+        "scrolled": false
+      },
+      "outputs": [
+        {
+          "name": "stdout",
+          "output_type": "stream",
+          "text": [
+            "Initializing GEE\n",
+            "Cached project id file path: C:\\Users\\ihousman\\.config\\earthengine\\credentials.proj_id\n",
+            "Cached project id: lcms-292214\n",
+            "Successfully initialized\n",
+            "geeViz package folder: c:\\Users\\ihousman\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\geeViz\n",
+            "Done\n"
+          ]
+        }
+      ],
+      "source": [
+        "import os,sys\n",
+        "sys.path.append(os.getcwd())\n",
+        "\n",
+        "#Module imports\n",
+        "try:\n",
+        "    import geeViz.geeView as gv\n",
+        "except:\n",
+        "    !python -m pip install geeViz\n",
+        "    import geeViz.geeView as gv\n",
+        "\n",
+        "\n",
+        "\n",
+        "ee = gv.ee\n",
+        "Map = gv.Map\n",
+        "\n",
+        "print('Done')"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "id": "657a556a",
+      "metadata": {},
+      "source": [
+        "### View and explore NLCD Land Cover and Land Use\n",
+        "\n",
+        "Adapted from: https://code.earthengine.google.com/?scriptPath=users%2Fsat-io%2Fawesome-gee-catalog-examples%3Aregional-landuse-landcover%2FNLCD-ANNUAL-LANDCOVER\n",
+        "\n",
+        "This example allows you to quickly visualize and summarize Annual NLCD Land Cover and Land Use outputs"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 2,
+      "id": "a588e083",
+      "metadata": {},
+      "outputs": [
+        {
+          "name": "stdout",
+          "output_type": "stream",
+          "text": [
+            "Adding layer: Annual NLCD Land Cover and Land Use\n",
+            "Starting webmap\n",
+            "Using default refresh token for geeView\n",
+            "Local web server at: http://localhost:8001/geeView/ already serving.\n",
+            "cwd a:\\GEE\\gee_py_modules_package\\geeViz\\examples\n",
+            "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZD-2hE4zpnI8NJKUt4_02wk992Om0m7YtTm6Y2R97S72Ip9JmVUER6ZjV0-WQupzNPn6X0tFYtFawNQ1RwU1FallYERbk4e3gsYdeaJ5Zxbl6UaNkP-FNMxYh5KRH46vcsutilk5dsaR3lsqEpk0zj-nb7VqhqPyuWzqJQaCgYKAfQSARESFQHGX2MifTX1JvE4SnD3BED9et6TrQ0178\n"
+          ]
+        },
+        {
+          "data": {
+            "text/html": [
+              "\n",
+              "        <iframe\n",
+              "            width=\"100%\"\n",
+              "            height=\"525px\"\n",
+              "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZD-2hE4zpnI8NJKUt4_02wk992Om0m7YtTm6Y2R97S72Ip9JmVUER6ZjV0-WQupzNPn6X0tFYtFawNQ1RwU1FallYERbk4e3gsYdeaJ5Zxbl6UaNkP-FNMxYh5KRH46vcsutilk5dsaR3lsqEpk0zj-nb7VqhqPyuWzqJQaCgYKAfQSARESFQHGX2MifTX1JvE4SnD3BED9et6TrQ0178\"\n",
+              "            frameborder=\"0\"\n",
+              "            allowfullscreen\n",
+              "            \n",
+              "        ></iframe>\n",
+              "        "
+            ],
+            "text/plain": [
+              "<IPython.lib.display.IFrame at 0x141a35edc90>"
+            ]
+          },
+          "metadata": {},
+          "output_type": "display_data"
+        }
+      ],
+      "source": [
+        "Map.clearMap()\n",
+        "\n",
+        "nlcd_landcover = ee.ImageCollection(\"projects/sat-io/open-datasets/USGS/ANNUAL_NLCD/LANDCOVER\")\n",
+        "# Zoom somewhere with a lot of change\n",
+        "Map.setCenter(-115.1393, 36.1408,10)\n",
+        "\n",
+        "# Use the GEE built-in properties for symbology by setting the properties as follows\n",
+        "landCoverVizProps = {'LC_class_values': [11, 12, 21, 22, 23, 24, 31, 41, 42, 43, 52, 71, 81, 82, 90, 95],\n",
+        "'LC_class_palette' : [\n",
+        "  '466b9f', 'd1def8', 'dec5c5', 'd99282', 'eb0000', 'ab0000',\n",
+        "  'b3ac9f', '68ab5f', '1c5f2c', 'b5c58f', 'ccb879', 'dfdfc2', \n",
+        "  'dcd939', 'ab6c28', 'b8d9eb', '6c9fb8'\n",
+        "],\n",
+        "'LC_class_names' : [\n",
+        "  \"Open Water\", \"Perennial Ice/Snow\", \"Developed, Open Space\", \"Developed, Low Intensity\", \n",
+        "  \"Developed, Medium Intensity\", \"Developed, High Intensity\", \"Barren Land\", \n",
+        "  \"Deciduous Forest\", \"Evergreen Forest\", \"Mixed Forest\", \"Shrub/Scrub\", \n",
+        "  \"Grassland/Herbaceous\", \"Pasture/Hay\", \"Cultivated Crops\", \"Woody Wetlands\", \n",
+        "  \"Emergent Herbaceous Wetlands\"\n",
+        "]\n",
+        "}\n",
+        "\n",
+        "lc_vizParams = {'reducer':ee.Reducer.mode(),'autoViz':True,'canAreaChart':True,'areaChartParams':{'line':True,'sankey':True,'sankeyMinPercentage':0.1}}\n",
+        "\n",
+        "nlcd_landcover = nlcd_landcover.map(lambda img:img.rename('LC').set(landCoverVizProps))\n",
+        "\n",
+        "addLayerFun = Map.addTimeLapse # Specify Map.addLayer or Map.addTimeLapse\n",
+        "addLayerFun(nlcd_landcover,lc_vizParams,'Annual NLCD Land Cover and Land Use')\n",
+        "\n",
+        "\n",
+        "# Map.turnOnInspector()\n",
+        "Map.turnOnAutoAreaCharting()\n",
+        "Map.view()"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "id": "f037d31c",
+      "metadata": {},
+      "source": [
+        "### View and explore Annual NLCD Fractional Impervious Surface\n",
+        "\n",
+        "This will show a time-lapse of the Annual NLCD Fractional Impervious Surface and Impervious Descriptor datasets. It will also provide zonal summaries as charts."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 5,
+      "id": "6ec8ed53",
+      "metadata": {
+        "scrolled": false
+      },
+      "outputs": [
+        {
+          "name": "stdout",
+          "output_type": "stream",
+          "text": [
+            "Adding layer: NLCD Percent Impervious\n",
+            "Adding layer: NLCD Percent Impervious Descriptor\n",
+            "Starting webmap\n",
+            "Using default refresh token for geeView\n",
+            "Local web server at: http://localhost:8001/geeView/ already serving.\n",
+            "cwd a:\\GEE\\gee_py_modules_package\\geeViz\\examples\n",
+            "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZALYZtgDsLpausqQADJi8v081gIZf6Djgca7qPs-fb-ZOPVebWeAgVzixxNXa6s-iDPPCsW0R5LpTxHKIhfwGQAkRBE_yKnqiS8nYguR2rPwPJF-cZ-xjmqsknyjVMsKlbeQ3fg4XcIlqSDxLUKVhcPm3Hp79EYnj7LH1YaCgYKAfMSARESFQHGX2Mit5GphslgrWK74G8VdW915Q0178\n"
+          ]
+        },
+        {
+          "data": {
+            "text/html": [
+              "\n",
+              "        <iframe\n",
+              "            width=\"100%\"\n",
+              "            height=\"525px\"\n",
+              "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZALYZtgDsLpausqQADJi8v081gIZf6Djgca7qPs-fb-ZOPVebWeAgVzixxNXa6s-iDPPCsW0R5LpTxHKIhfwGQAkRBE_yKnqiS8nYguR2rPwPJF-cZ-xjmqsknyjVMsKlbeQ3fg4XcIlqSDxLUKVhcPm3Hp79EYnj7LH1YaCgYKAfMSARESFQHGX2Mit5GphslgrWK74G8VdW915Q0178\"\n",
+              "            frameborder=\"0\"\n",
+              "            allowfullscreen\n",
+              "            \n",
+              "        ></iframe>\n",
+              "        "
+            ],
+            "text/plain": [
+              "<IPython.lib.display.IFrame at 0x141a2510f90>"
+            ]
+          },
+          "metadata": {},
+          "output_type": "display_data"
+        }
+      ],
+      "source": [
+        "Map.clearMap()\n",
+        "\n",
+        "fractional_impervious_surface_vizParams= {'canAreaChart':True,'min': 1, 'max': 100, 'palette': ['#d3d3d3', '#c9b1b1', '#b38484', '#e75454', '#ff7fbf', '#cc66cc', '#9933cc', '#660099']}\n",
+        "impervious_descriptor_vizParams = {'reducer':ee.Reducer.mode(),'autoViz':True,'canAreaChart':True,'areaChartParams':{'line':True,'sankey':True,'sankeyMinPercentage':0.1}}\n",
+        "\n",
+        "imperviousDescriptorVizProps = {'ID_class_values':[0,1,2],'ID_class_palette':['000000', '2171b5', 'f6ec27'],'ID_class_names':['No Data','Roads','Urban']}\n",
+        "\n",
+        "nlcd_fractional_impervious_surface = ee.ImageCollection(\"projects/sat-io/open-datasets/USGS/ANNUAL_NLCD/FRACTIONAL_IMPERVIOUS_SURFACE\")\n",
+        "nlcd_impervious_descriptor = ee.ImageCollection(\"projects/sat-io/open-datasets/USGS/ANNUAL_NLCD/IMPERVIOUS_DESCRIPTOR\")\n",
+        "nlcd_impervious_descriptor = nlcd_impervious_descriptor.select([0],['ID']).map(lambda img:img.set(imperviousDescriptorVizProps))\n",
+        "\n",
+        "addLayerFun = Map.addTimeLapse # Specify Map.addLayer or Map.addTimeLapse\n",
+        "addLayerFun(nlcd_fractional_impervious_surface,fractional_impervious_surface_vizParams,'NLCD Percent Impervious')\n",
+        "addLayerFun(nlcd_impervious_descriptor,impervious_descriptor_vizParams,'NLCD Percent Impervious Descriptor')\n",
+        "\n",
+        "\n",
+        "Map.turnOnAutoAreaCharting()\n",
+        "# Map.turnOnInspector()\n",
+        "Map.view()"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "id": "d39ba3b9",
+      "metadata": {},
+      "source": [
+        "### View and explore Annual NLCD Spectral Change\n",
+        "\n",
+        "This example will show the day of year of spectral change\n",
+        "\n",
+        "Note that 0 is not set to null by default, and therefore will be resampled as actual data as you zoom out. While it is masked in this example, you will have to zoom in to zoom level ~12 or so to start seeing 0 values all being set to null."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 6,
+      "id": "ca2b2776",
+      "metadata": {},
+      "outputs": [
+        {
+          "name": "stdout",
+          "output_type": "stream",
+          "text": [
+            "Adding layer: Spectral Change DOY\n",
+            "Starting webmap\n",
+            "Using default refresh token for geeView\n",
+            "Local web server at: http://localhost:8001/geeView/ already serving.\n",
+            "cwd a:\\GEE\\gee_py_modules_package\\geeViz\\examples\n",
+            "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZBpjUKkcj61hy4n6qjPS3wx2br_s3v-0MqOb6xyUAyJIadcHawOM7dNdNhba_q4BiJhLy0hIU151-9NNlGSxLQpXSHnEW2X-m-jN87-taAqRkg8-oWEV7k0OkztV9Qmappm2_S02LqxHQ_mmFzyJCFQU2L8SKE8taoLdlQaCgYKAWQSARESFQHGX2MiN0cpx0tY0nkXNddO6-Yq4g0178\n"
+          ]
+        },
+        {
+          "data": {
+            "text/html": [
+              "\n",
+              "        <iframe\n",
+              "            width=\"100%\"\n",
+              "            height=\"525px\"\n",
+              "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZBpjUKkcj61hy4n6qjPS3wx2br_s3v-0MqOb6xyUAyJIadcHawOM7dNdNhba_q4BiJhLy0hIU151-9NNlGSxLQpXSHnEW2X-m-jN87-taAqRkg8-oWEV7k0OkztV9Qmappm2_S02LqxHQ_mmFzyJCFQU2L8SKE8taoLdlQaCgYKAWQSARESFQHGX2MiN0cpx0tY0nkXNddO6-Yq4g0178\"\n",
+              "            frameborder=\"0\"\n",
+              "            allowfullscreen\n",
+              "            \n",
+              "        ></iframe>\n",
+              "        "
+            ],
+            "text/plain": [
+              "<IPython.lib.display.IFrame at 0x141a36aa490>"
+            ]
+          },
+          "metadata": {},
+          "output_type": "display_data"
+        }
+      ],
+      "source": [
+        "Map.clearMap()\n",
+        "spectral_change_doy_vizParams= {'canAreaChart':True,'min': 1, 'max': 366, 'palette': ['#6a0dad', '#483d8b', '#1e90ff', '#00fa9a', '#32cd32', '#ffff00', '#ff8c00', '#ff4500', '#ff0000']}\n",
+        "\n",
+        "nlcd_spectral_change_doy = ee.ImageCollection(\"projects/sat-io/open-datasets/USGS/ANNUAL_NLCD/SPECTRAL_CHANGE_DOY\")\n",
+        "\n",
+        "# Mask out 0 values since they are not masked out by default - does not work with lower zoom levels\n",
+        "nlcd_spectral_change_doy  = nlcd_spectral_change_doy.map(lambda img:img.selfMask())\n",
+        "\n",
+        "addLayerFun = Map.addTimeLapse\n",
+        "addLayerFun(nlcd_spectral_change_doy,spectral_change_doy_vizParams,'Spectral Change DOY')\n",
+        "\n",
+        "Map.turnOnInspector()\n",
+        "Map.view()"
+      ]
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "display_name": "Python 3",
+      "language": "python",
+      "name": "python3"
+    },
+    "language_info": {
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "file_extension": ".py",
+      "mimetype": "text/x-python",
+      "name": "python",
+      "nbconvert_exporter": "python",
+      "pygments_lexer": "ipython3",
+      "version": "3.11.4"
+    },
+    "vscode": {
+      "interpreter": {
+        "hash": "369f2c481f4da34e4445cda3fffd2e751bd1c4d706f27375911949ba6bb62e1c"
+      }
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5
+}

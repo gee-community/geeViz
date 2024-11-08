@@ -32,6 +32,7 @@
       is_leap_year
       julian_to_calendar
       limitTasks
+      listAssets
       moveImages
       now
       setDate

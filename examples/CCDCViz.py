@@ -33,27 +33,45 @@ Map.clearMap()
 ####################################################################################################
 # Bring in ccdc image asset
 # This is assumed to be an image of arrays that is returned from the ee.Algorithms.TemporalSegmentation.Ccdc method
-ccdcImg = (
-    ee.ImageCollection(
-        "projects/lcms-292214/assets/CONUS-LCMS/Base-Learners/CCDC-Collection-1984-2022"
-    )
-    .select(
-        [
-            "tStart",
-            "tEnd",
-            "tBreak",
-            "changeProb",
-            "red.*",
-            "nir.*",
-            "swir1.*",
-            "swir2.*",
-            "NDVI.*",
-            "NBR.*",
-        ]
-    )
-    .mosaic()
-)
-# ccdcImg = ee.ImageCollection('projects/lcms-292214/assets/R8/PR_USVI/Base-Learners/CCDC-Landsat_1984_2020').mosaic()
+ccdcBands = [
+    "tStart",
+    "tEnd",
+    "tBreak",
+    "changeProb",
+    "red.*",
+    "nir.*",
+    "swir1.*",
+    "swir2.*",
+    "NDVI.*",
+    "NBR.*",
+]
+ccdcImg1 = ee.ImageCollection("projects/lcms-292214/assets/CONUS-LCMS/Base-Learners/CCDC-Collection-1984-2022").select(ccdcBands).mosaic()
+ccdcImg2 = ee.ImageCollection("projects/lcms-292214/assets/CONUS-LCMS/Base-Learners/CCDC-Feathered-Collection").select(ccdcBands).mosaic()
+
+
+# Important parameters - when to feather the two together
+# Has to fall within the overlapping period of the two runs
+# In general, the longer the period, the better.
+# Keeping it away from the very first and very last year of either of the runs is a good idea
+featheringStartYear = 2014
+featheringEndYear = 2021
+
+# We will be visualizing both dense (multiple per year) and annual (one per year) outputs
+# We will set up different date ranges for each of these
+# Set a date range and date step (proportion of year - 1 = annual, 0.1 = 10 images per year)
+# 245 is a good startJulian and endJulian if step = 1. Set startJulian to 1 and endJulian to 365 and step to 0.1 to see seasonality
+annualStartYear = 1984
+annualEndYear = 2024
+annualStartJulian = 245
+annualEndJulian = 245
+annualStep = 1
+
+denseStartYear = 2012
+denseEndYear = 2024
+denseStartJulian = 1
+denseEndJulian = 365
+denseStep = 0.1
+
 # Specify which harmonics to use when predicting the CCDC model
 # CCDC exports the first 3 harmonics (1 cycle/yr, 2 cycles/yr, and 3 cycles/yr)
 # If you only want to see yearly patterns, specify [1]
@@ -71,21 +89,17 @@ changeDetectionBandName = "NDVI"
 # Choose whether to show the most recent ('mostRecent') or highest magnitude ('highestMag') CCDC break
 sortingMethod = "mostRecent"
 ####################################################################################################
-# Pull out some info about the ccdc image
-startJulian = 1
-endJulian = 365
-startYear = 1984
-endYear = 2021
 
 # Add the raw array image
-Map.addLayer(ccdcImg, {"opacity": 0}, "Raw CCDC Output", False)
+Map.addLayer(ccdcImg1, {"opacity": 0}, "Raw CCDC Output 1984-2022", False)
+Map.addLayer(ccdcImg2, {"opacity": 0}, "Raw CCDC Output 2014-2024", False)
 
 # Extract the change years and magnitude
-changeObj = changeDetectionLib.ccdcChangeDetection(ccdcImg, changeDetectionBandName)
+changeObj = changeDetectionLib.ccdcChangeDetection(ccdcImg1, changeDetectionBandName)
 
 Map.addLayer(
     changeObj[sortingMethod]["loss"]["year"],
-    {"min": startYear, "max": endYear, "palette": changeDetectionLib.lossYearPalette},
+    {"min": annualStartYear, "max": annualEndYear, "palette": changeDetectionLib.lossYearPalette},
     "Loss Year",
 )
 Map.addLayer(
@@ -96,7 +110,7 @@ Map.addLayer(
 )
 Map.addLayer(
     changeObj[sortingMethod]["gain"]["year"],
-    {"min": startYear, "max": endYear, "palette": changeDetectionLib.gainYearPalette},
+    {"min": annualStartYear, "max": annualEndYear, "palette": changeDetectionLib.gainYearPalette},
     "Gain Year",
 )
 Map.addLayer(
@@ -108,32 +122,56 @@ Map.addLayer(
 
 # Apply the CCDC harmonic model across a time series
 # First get a time series of time images
-yearImages = changeDetectionLib.getTimeImageCollection(
-    startYear, endYear, startJulian, endJulian, 0.1
-)
+timeImagesDense = changeDetectionLib.simpleGetTimeImageCollection(denseStartYear, denseEndYear, denseStartJulian, denseEndJulian, denseStep)
+timeImagesAnnual = changeDetectionLib.simpleGetTimeImageCollection(annualStartYear, annualEndYear, annualStartJulian, annualEndJulian, annualStep)
 
-# Then predict the CCDC models
-fitted = changeDetectionLib.predictCCDC(ccdcImg, yearImages, fillGaps, whichHarmonics)
-Map.addLayer(fitted.select([".*_fitted"]), {"opacity": 0}, "Fitted CCDC", True)
-Map.addLayer(
-    fitted.filter(ee.Filter.calendarRange(1990, 1990, "year")).select([".*_fitted"]),
-    {"opacity": 0},
-    "Fitted CCDC 1990",
-    True,
-)
+
+# Choose which band to show
+fitted_band = "NDVI_CCDC_fitted"
+
+
+# Get fitted for early, late, and combined
+annualFittedFeathered = changeDetectionLib.predictCCDC([ccdcImg1, ccdcImg2], timeImagesAnnual, fillGaps, whichHarmonics, featheringStartYear, featheringEndYear)
+annualFittedEarly = changeDetectionLib.predictCCDC(ccdcImg1, timeImagesAnnual, fillGaps, whichHarmonics)
+annualFittedLate = changeDetectionLib.predictCCDC(ccdcImg2, timeImagesAnnual, fillGaps, whichHarmonics)
+
+denseFittedFeathered = changeDetectionLib.predictCCDC([ccdcImg1, ccdcImg2], timeImagesDense, fillGaps, whichHarmonics, featheringStartYear, featheringEndYear)
+denseFittedEarlyAllBands = changeDetectionLib.predictCCDC(ccdcImg1, timeImagesDense, fillGaps, whichHarmonics)
+denseFittedLate = changeDetectionLib.predictCCDC(ccdcImg2, timeImagesDense, fillGaps, whichHarmonics)
+
+
+# Give each unique band names
+annualFittedFeathered = annualFittedFeathered.select([fitted_band], [f"{fitted_band}_Combined"])
+annualFittedEarly = annualFittedEarly.select([fitted_band], [f"{fitted_band}_Early"])
+annualFittedLate = annualFittedLate.select([fitted_band], [f"{fitted_band}_Late"])
+
+denseFittedFeathered = denseFittedFeathered.select([fitted_band], [f"{fitted_band}_Combined"])
+denseFittedEarly = denseFittedEarlyAllBands.select([fitted_band], [f"{fitted_band}_Early"])
+denseFittedLate = denseFittedLate.select([fitted_band], [f"{fitted_band}_Late"])
+
+
+# Join all 3
+annualJoined = annualFittedEarly.linkCollection(annualFittedLate, [f"{fitted_band}_Late"], None, "system:time_start")
+annualJoined = annualJoined.linkCollection(annualFittedFeathered, [f"{fitted_band}_Combined"], None, "system:time_start")
+
+denseJoined = denseFittedEarly.linkCollection(denseFittedLate, [f"{fitted_band}_Late"], None, "system:time_start")
+denseJoined = denseJoined.linkCollection(denseFittedFeathered, [f"{fitted_band}_Combined"], None, "system:time_start")
+
+# Show on map
+Map.addLayer(annualJoined, {"reducer": ee.Reducer.mean(), "min": 0.3, "max": 0.8}, "Combined CCDC Annual", True)
+Map.addLayer(denseJoined, {"reducer": ee.Reducer.mean(), "min": 0.3, "max": 0.8}, "Combined CCDC Dense", True)
+
 
 # Synthetic composites visualizing
 # Take common false color composite bands and visualize them for the next to the last year
 
 # First get the bands of predicted bands and then split off the name
-fittedBns = fitted.select([".*_fitted"]).first().bandNames()
+fittedBns = denseFittedEarlyAllBands.select([".*_fitted.*"]).first().bandNames()
 bns = fittedBns.map(lambda bn: ee.String(bn).split("_").get(0))
 
 # Filter down to the next to the last year and a summer date range
-compositeYear = endYear - 1
-syntheticComposites = fitted.select(fittedBns, bns).filter(
-    ee.Filter.calendarRange(compositeYear, compositeYear, "year")
-)
+exampleYear = 2019
+syntheticComposites = denseFittedEarlyAllBands.select(fittedBns, bns).filter(ee.Filter.calendarRange(exampleYear, exampleYear, "year"))
 # .filter(ee.Filter.calendarRange(190,250)).first()
 
 # Visualize output as you would a composite
@@ -142,13 +180,10 @@ getImagesLib.vizParamsFalse["advanceInterval"] = "day"
 Map.addTimeLapse(
     syntheticComposites,
     getImagesLib.vizParamsFalse,
-    f"Synthetic Composite Time Lapse {compositeYear}",
+    f"Synthetic Composite Time Lapse {exampleYear}",
 )
-####################################################################################################
-# Load the study region
-studyArea = ccdcImg.geometry()
-Map.addLayer(studyArea, {"strokeColor": "0000FF"}, "Study Area", False)
-# Map.centerObject(studyArea)
+
 ####################################################################################################
 Map.turnOnInspector()
+Map.setCenter(-86.6, 35, 10)
 Map.view()

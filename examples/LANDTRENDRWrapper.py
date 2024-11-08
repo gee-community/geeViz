@@ -54,7 +54,7 @@ endJulian = 273
 # pre-computed stats for cloudScore and TDOM, this does not
 # matter
 startYear = 1990
-endYear = 2023
+endYear = 2024
 
 
 # Choose band or index
@@ -145,15 +145,8 @@ scale = None
 ####################################################################################################
 # Start function calls
 ####################################################################################################
-hansen = (
-    ee.Image("UMD/hansen/global_forest_change_2023_v1_11")
-    .select(["lossyear"])
-    .add(2000)
-    .int16()
-)
-hansen = hansen.updateMask(
-    hansen.neq(2000).And(hansen.gte(startYear)).And(hansen.lte(endYear))
-)
+hansen = ee.Image("UMD/hansen/global_forest_change_2023_v1_11").select(["lossyear"]).add(2000).int16()
+hansen = hansen.updateMask(hansen.neq(2000).And(hansen.gte(startYear)).And(hansen.lte(endYear)))
 Map.addLayer(
     hansen,
     {"min": startYear, "max": endYear, "palette": cdl.lossYearPalette},
@@ -169,18 +162,10 @@ Map.addLayer(
 # If the reflectance values were scaled by 10000, the spikeThreshold would be around 9000
 # and a recoveryThreshold around 2500
 
-allImages = gil.getProcessedLandsatScenes(
-    studyArea, startYear, endYear, startJulian, endJulian
-).select([indexName])
+allImages = gil.getProcessedLandsatScenes(studyArea, startYear, endYear, startJulian, endJulian).select([indexName])
 dummyImage = allImages.first()
 composites = ee.ImageCollection(
-    ee.List.sequence(startYear, endYear).map(
-        lambda yr: gil.fillEmptyCollections(
-            allImages.filter(ee.Filter.calendarRange(yr, yr, "year")), dummyImage
-        )
-        .median()
-        .set("system:time_start", ee.Date.fromYMD(yr, 6, 1).millis())
-    )
+    ee.List.sequence(startYear, endYear).map(lambda yr: gil.fillEmptyCollections(allImages.filter(ee.Filter.calendarRange(yr, yr, "year")), dummyImage).median().set("system:time_start", ee.Date.fromYMD(yr, 6, 1).millis()))
 )
 
 # Run LANDTRENDR
@@ -239,9 +224,7 @@ if exportLTLossGain:
 
     # print(outObj)
     # Export output
-    gil.exportToAssetWrapper(
-        lossGainStack, exportName, exportPath, outObj, studyArea, scale, crs, transform
-    )
+    gil.exportToAssetWrapper(lossGainStack, exportName, exportPath, outObj, studyArea, scale, crs, transform)
 
 
 # Export raw LandTrendr array image
@@ -259,9 +242,7 @@ if exportLTVertexArray:
         }
     )
     rawLTForExport = rawLTForExport.set(run_params)
-    exportName = "{}_LT_Raw_{}_{}_{}_{}_{}".format(
-        outputName, indexName, startYear, endYear, startJulian, endJulian
-    )
+    exportName = "{}_LT_Raw_{}_{}_{}_{}_{}".format(outputName, indexName, startYear, endYear, startJulian, endJulian)
     exportPath = exportPathRoot + "/" + exportName
     gil.exportToAssetWrapper(
         rawLTForExport,

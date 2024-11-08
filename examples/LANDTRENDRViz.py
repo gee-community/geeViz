@@ -38,7 +38,7 @@ Map.port = 1234
 # Specify which years to look at
 # Available years are 1984-2021
 startYear = 1984
-endYear = 2023
+endYear = 2024
 
 # Which property stores which band/index LandTrendr was run across
 bandPropertyName = "band"
@@ -52,9 +52,7 @@ bandNames = None
 arrayMode = True
 ####################################################################################################
 # Bring in LCMS LandTrendr outputs (see other examples that include LCMS final data)
-lt = ee.ImageCollection(
-    "projects/lcms-tcc-shared/assets/CONUS/Base-Learners/LandTrendr-Collection"
-)
+lt = ee.ImageCollection("projects/lcms-tcc-shared/assets/CONUS/Base-Learners/LandTrendr-Collection")
 print(
     "Available bands/indices:",
     lt.aggregate_histogram(bandPropertyName).keys().getInfo(),

@@ -63,6 +63,7 @@
       simpleCCDCPrediction
       simpleCCDCPredictionAnnualized
       simpleCCDCPredictionWrapper
+      simpleGetTimeImageCollection
       simpleLANDTRENDR
       simpleLTFit
       simpleRawLTToVertices

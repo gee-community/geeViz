@@ -114,11 +114,7 @@ def arrayToTimeSeries(tsArray, yearsArray, possibleYears, bandName):
         masked = masked.where(l.eq(0), dummyImage).arrayGet([-1])
 
         # Remask nulls
-        masked = (
-            masked.updateMask(masked.neq(noDateValue))
-            .rename([bandName])
-            .set("system:time_start", ee.Date.fromYMD(yr, 6, 1).millis())
-        )
+        masked = masked.updateMask(masked.neq(noDateValue)).rename([bandName]).set("system:time_start", ee.Date.fromYMD(yr, 6, 1).millis())
 
         return masked
 
@@ -143,31 +139,15 @@ def extractDisturbance(lt, distDir, params, mmu):
     # thirdMask = numberOfVertices.gte(4)
     # Map.addLayer(numberOfVertices,{min:2,max:4},'number of vertices',false)
     # construct segment start and end point years and index values
-    left = vertices.arraySlice(
-        1, 0, -1
-    )  # slice out the vertices as the start of segments
-    right = vertices.arraySlice(
-        1, 1, None
-    )  # slice out the vertices as the end of segments
-    startYear = left.arraySlice(
-        0, 0, 1
-    )  # get year dimension of LT data from the segment start vertices
-    startVal = left.arraySlice(
-        0, 2, 3
-    )  # get spectral index dimension of LT data from the segment start vertices
-    endYear = right.arraySlice(
-        0, 0, 1
-    )  # get year dimension of LT data from the segment end vertices
-    endVal = right.arraySlice(
-        0, 2, 3
-    )  # get spectral index dimension of LT data from the segment end vertices
+    left = vertices.arraySlice(1, 0, -1)  # slice out the vertices as the start of segments
+    right = vertices.arraySlice(1, 1, None)  # slice out the vertices as the end of segments
+    startYear = left.arraySlice(0, 0, 1)  # get year dimension of LT data from the segment start vertices
+    startVal = left.arraySlice(0, 2, 3)  # get spectral index dimension of LT data from the segment start vertices
+    endYear = right.arraySlice(0, 0, 1)  # get year dimension of LT data from the segment end vertices
+    endVal = right.arraySlice(0, 2, 3)  # get spectral index dimension of LT data from the segment end vertices
 
-    dur = endYear.subtract(
-        startYear
-    )  # subtract the segment start year from the segment end year to calculate the duration of segments
-    mag = endVal.subtract(
-        startVal
-    )  # substract the segment start index value from the segment end index value to calculate the delta of segments
+    dur = endYear.subtract(startYear)  # subtract the segment start year from the segment end year to calculate the duration of segments
+    mag = endVal.subtract(startVal)  # substract the segment start index value from the segment end index value to calculate the delta of segments
 
     # concatenate segment start year, delta, duration, and starting spectral index value to an array
     distImg = ee.Image.cat([startYear.add(1), mag, dur, startVal.multiply(-1)]).toArray(
@@ -178,26 +158,14 @@ def extractDisturbance(lt, distDir, params, mmu):
     distImgSorted = distImg.arraySort(mag.multiply(-1))
 
     # slice out the first (greatest) delta
-    tempDistImg1 = distImgSorted.arraySlice(1, 0, 1).unmask(
-        ee.Image(ee.Array([[0], [0], [0], [0]]))
-    )
-    tempDistImg2 = distImgSorted.arraySlice(1, 1, 2).unmask(
-        ee.Image(ee.Array([[0], [0], [0], [0]]))
-    )
-    tempDistImg3 = distImgSorted.arraySlice(1, 2, 3).unmask(
-        ee.Image(ee.Array([[0], [0], [0], [0]]))
-    )
+    tempDistImg1 = distImgSorted.arraySlice(1, 0, 1).unmask(ee.Image(ee.Array([[0], [0], [0], [0]])))
+    tempDistImg2 = distImgSorted.arraySlice(1, 1, 2).unmask(ee.Image(ee.Array([[0], [0], [0], [0]])))
+    tempDistImg3 = distImgSorted.arraySlice(1, 2, 3).unmask(ee.Image(ee.Array([[0], [0], [0], [0]])))
 
     # make an image from the array of attributes for the greatest disturbance
-    finalDistImg1 = tempDistImg1.arrayProject([0]).arrayFlatten(
-        [["yod", "mag", "dur", "preval"]]
-    )
-    finalDistImg2 = tempDistImg2.arrayProject([0]).arrayFlatten(
-        [["yod", "mag", "dur", "preval"]]
-    )
-    finalDistImg3 = tempDistImg3.arrayProject([0]).arrayFlatten(
-        [["yod", "mag", "dur", "preval"]]
-    )
+    finalDistImg1 = tempDistImg1.arrayProject([0]).arrayFlatten([["yod", "mag", "dur", "preval"]])
+    finalDistImg2 = tempDistImg2.arrayProject([0]).arrayFlatten([["yod", "mag", "dur", "preval"]])
+    finalDistImg3 = tempDistImg3.arrayProject([0]).arrayFlatten([["yod", "mag", "dur", "preval"]])
 
     # filter out disturbances based on user settings
     def filterDisturbances(finalDistImg):
@@ -208,11 +176,7 @@ def extractDisturbance(lt, distDir, params, mmu):
         #       .and(finalDistImg.select(['mag']).gt(0))                    # and is greater than 0
         #       .and(finalDistImg.select(['preval']).gt(params.pre_val))
         longTermDisturbance = finalDistImg.select(["dur"]).gte(15)
-        longTermThreshold = (
-            finalDistImg.select(["mag"])
-            .gte(params["tree_loss20"])
-            .And(longTermDisturbance)
-        )
+        longTermThreshold = finalDistImg.select(["mag"]).gte(params["tree_loss20"]).And(longTermDisturbance)
         threshold = finalDistImg.select(["mag"]).gte(params["tree_loss1"])
 
         return finalDistImg.updateMask(threshold.Or(longTermThreshold))
@@ -224,15 +188,8 @@ def extractDisturbance(lt, distDir, params, mmu):
     def applyMMU(finalDistImg):
         # patchify based on disturbances having the same year of detection
         # count the number of pixel in a candidate patch
-        mmuPatches = (
-            finalDistImg.select(["yod.*"])
-            .int16()
-            .connectedPixelCount(mmu, True)
-            .gte(mmu)
-        )  # are the the number of pixels per candidate patch greater than user-defined minimum mapping unit?
-        return finalDistImg.updateMask(
-            mmuPatches
-        )  # mask the pixels/patches that are less than minimum mapping unit
+        mmuPatches = finalDistImg.select(["yod.*"]).int16().connectedPixelCount(mmu, True).gte(mmu)  # are the the number of pixels per candidate patch greater than user-defined minimum mapping unit?
+        return finalDistImg.updateMask(mmuPatches)  # mask the pixels/patches that are less than minimum mapping unit
 
     # patchify the remaining disturbance pixels using a minimum mapping unit
     if mmu > 1:
@@ -242,9 +199,7 @@ def extractDisturbance(lt, distDir, params, mmu):
         finalDistImg2 = applyMMU(finalDistImg2)
         finalDistImg3 = applyMMU(finalDistImg3)
 
-    return finalDistImg1.addBands(finalDistImg2).addBands(
-        finalDistImg3
-    )  # return the filtered greatest disturbance attribute image
+    return finalDistImg1.addBands(finalDistImg2).addBands(finalDistImg3)  # return the filtered greatest disturbance attribute image
 
 
 # -------------------------------------------------------------------------
@@ -256,18 +211,12 @@ def extractDisturbance(lt, distDir, params, mmu):
 
 # ----- FUNCTION TO EXTRACT VERTICES FROM LT RESULTS AND STACK BANDS -----
 def getLTvertStack(LTresult, run_params):
-    emptyArray = (
-        []
-    )  # make empty array to hold another array whose length will vary depending on maxSegments parameter
-    vertLabels = (
-        []
-    )  # make empty array to hold band names whose length will vary depending on maxSegments parameter
+    emptyArray = []  # make empty array to hold another array whose length will vary depending on maxSegments parameter
+    vertLabels = []  # make empty array to hold band names whose length will vary depending on maxSegments parameter
     # iString                                      # initialize variable to hold vertex number
     # loop through the maximum number of vertices in segmentation and fill empty arrays:
     for i in range(1, run_params["maxSegments"] + 2):
-        vertLabels.append(
-            "vert_" + str(i)
-        )  # define vertex number as string, make a band name for given vertex
+        vertLabels.append("vert_" + str(i))  # define vertex number as string, make a band name for given vertex
         emptyArray.append(0)  # fill in emptyArray
 
     zeros = ee.Image(
@@ -296,14 +245,7 @@ def getLTvertStack(LTresult, run_params):
     # .toArray() # ...concatenates the 3 row x 7 col 'zeros' matrix band to the vertOnly data so that there are at least 7 vertice slots represented - in most cases there are now > 7 slots filled but those will be truncated in the next step
     # .arraySlice()...before this line runs the array has 3 rows and between 9 and 14 cols depending on how many vertices were found during segmentation for a given pixel. this step truncates the cols at 7 (the max verts allowed) so we are left with a 3 row X 7 col array
     # .arrayFlatten()...this takes the 2-d array and makes it 1-d by stacking the unique sets of rows and cols into bands. there will be 7 bands (vertices) for vertYear, followed by 7 bands (vertices) for rawVert, followed by 7 bands (vertices) for fittedVert, according to the 'lbls' list
-    ltVertStack = (
-        LTresult.arrayMask(vmask)
-        .arraySlice(0, 0, 3)
-        .addBands(zeros)
-        .toArray(1)
-        .arraySlice(1, 0, run_params["maxSegments"] + 1)
-        .arrayFlatten(lbls, "")
-    )
+    ltVertStack = LTresult.arrayMask(vmask).arraySlice(0, 0, 3).addBands(zeros).toArray(1).arraySlice(1, 0, run_params["maxSegments"] + 1).arrayFlatten(lbls, "")
 
     return ltVertStack  # return the stack
 
@@ -312,15 +254,9 @@ def getLTvertStack(LTresult, run_params):
 def getLTStack(LTresult, maxVertices, bandNames):
 
     nBands = len(bandNames)
-    emptyArray = (
-        []
-    )  # make empty array to hold another array whose length will vary depending on maxSegments parameter
-    vertLabels = (
-        []
-    )  # make empty array to hold band names whose length will vary depending on maxSegments parameter
-    for i in range(
-        1, maxVertices + 1
-    ):  # loop through the maximum number of vertices in segmentation and fill empty arrays
+    emptyArray = []  # make empty array to hold another array whose length will vary depending on maxSegments parameter
+    vertLabels = []  # make empty array to hold band names whose length will vary depending on maxSegments parameter
+    for i in range(1, maxVertices + 1):  # loop through the maximum number of vertices in segmentation and fill empty arrays
         vertLabels.append(str(i))  # make a band name for given vertex
         emptyArray.append(-32768)  # fill in emptyArray
 
@@ -329,9 +265,7 @@ def getLTStack(LTresult, maxVertices, bandNames):
     for i in range(1, nBands + 1):
         emptyArrayList.append(emptyArray)
 
-    zeros = ee.Image(
-        ee.Array(emptyArrayList)
-    )  # make an image to fill holes in result 'LandTrendr' array where vertices found is not equal to maxSegments parameter plus 1
+    zeros = ee.Image(ee.Array(emptyArrayList))  # make an image to fill holes in result 'LandTrendr' array where vertices found is not equal to maxSegments parameter plus 1
 
     lbls = [
         bandNames,
@@ -340,12 +274,7 @@ def getLTStack(LTresult, maxVertices, bandNames):
 
     # slices out the 4th row of a 4 row x N col (N = number of years in annual stack) matrix, which identifies vertices - contains only 0s and 1s, where 1 is a vertex (referring to spectral-temporal segmentation) year and 0 is not
 
-    ltVertStack = (
-        LTresult.addBands(zeros)
-        .toArray(1)
-        .arraySlice(1, 0, maxVertices)
-        .arrayFlatten(lbls, "")
-    )
+    ltVertStack = LTresult.addBands(zeros).toArray(1).arraySlice(1, 0, maxVertices).arrayFlatten(lbls, "")
     # Line by line comments taken from call above
     # LTresult:                       # uses the sliced out isVert row as a mask to only include vertice in this data - after this a pixel will only contain as many "bands" are there are vertices for that pixel - min of 2 to max of 7.
     # .addBands(zeros):               # ...adds the 3 row x 7 col 'zeros' matrix as a band to the vertOnly array - this is an intermediate step to the goal of filling in the vertOnly data so that there are 7 vertice slots represented in the data - right now there is a mix of lengths from 2 to 7
@@ -371,13 +300,7 @@ def rawLTToVertices(rawLT, indexName=None, multBy=10000, vertexNoData=-32768):
     rmse = rawLT.select(["rmse"]).multiply(multBy)
     vertices = ltArray.arraySlice(0, 3, 4)
     ltArray = ltArray.arrayMask(vertices)
-    minObservationsNeededMask = (
-        ltArray.arraySlice(0, 1, 2)
-        .arraySlice(1, 0, 1)
-        .neq(vertexNoData)
-        .arrayProject([0])
-        .arrayFlatten([["test"]])
-    )
+    minObservationsNeededMask = ltArray.arraySlice(0, 1, 2).arraySlice(1, 0, 1).neq(vertexNoData).arrayProject([0]).arrayFlatten([["test"]])
 
     ltArray = ltArray.arrayMask(ee.Image(ee.Array([[1], [0], [1], [0]])))
     l = ltArray.arrayLength(1)
@@ -405,17 +328,11 @@ def landtrendrWrapper(
         noDataValue = -1.0 * noDataValue
 
     # ----- RUN LANDTRENDR -----
-    ltCollection = processedComposites.select(indexName).map(
-        lambda img: ee.Image(multBands(img, distDir, 1))
-    )  # .unmask(noDataValue)
+    ltCollection = processedComposites.select(indexName).map(lambda img: ee.Image(multBands(img, distDir, 1)))  # .unmask(noDataValue)
 
     # Map.addLayer(ltCollection,{},'ltCollection',false)
-    run_params["timeSeries"] = (
-        ltCollection  # add LT collection to the segmentation run parameter object
-    )
-    lt = ee.Algorithms.TemporalSegmentation.LandTrendr(
-        **run_params
-    )  # run LandTrendr spectral temporal segmentation algorithm
+    run_params["timeSeries"] = ltCollection  # add LT collection to the segmentation run parameter object
+    lt = ee.Algorithms.TemporalSegmentation.LandTrendr(**run_params)  # run LandTrendr spectral temporal segmentation algorithm
 
     #########################################################################################################
     ###### RUN THE GREATEST DISTURBANCE EXTRACT FUNCTION #####
@@ -424,9 +341,7 @@ def landtrendrWrapper(
     # run the dist extract function
     distImg = extractDisturbance(lt.select("LandTrendr"), distDir, distParams, mmu)
     distImgBandNames = distImg.bandNames()
-    distImgBandNames = distImgBandNames.map(
-        lambda bn: ee.String(indexName).cat("_").cat(bn)
-    )
+    distImgBandNames = distImgBandNames.map(lambda bn: ee.String(indexName).cat("_").cat(bn))
     distImg = distImg.rename(distImgBandNames)
 
     # Convert to collection
@@ -436,9 +351,7 @@ def landtrendrWrapper(
     if distDir == -1:
         ltFitted = ltFitted.multiply(-1)
 
-    fittedCollection = arrayToTimeSeries(
-        ltFitted, ltYear, ee.List.sequence(startYear, endYear), "LT_Fitted_" + indexName
-    )
+    fittedCollection = arrayToTimeSeries(ltFitted, ltYear, ee.List.sequence(startYear, endYear), "LT_Fitted_" + indexName)
 
     # Convert to single image
     vertStack = getLTvertStack(rawLT, run_params)
@@ -461,9 +374,7 @@ def getRawAndFittedLT(rawTs, lt, startYear, endYear, indexName="Band", distDir=-
         ltFitted = ltFitted.multiply(-1)
 
     # Convert array to an imageCollection
-    fittedCollection = arrayToTimeSeries(
-        ltFitted, ltYear, ee.List.sequence(startYear, endYear), "LT_Fitted_" + indexName
-    )
+    fittedCollection = arrayToTimeSeries(ltFitted, ltYear, ee.List.sequence(startYear, endYear), "LT_Fitted_" + indexName)
 
     # Join raw time series with fitted
     joinedTS = joinCollections(rawTs, fittedCollection)
@@ -535,9 +446,7 @@ def runLANDTRENDR(ts, bandName, run_params=None):
     rawLT = ee.Algorithms.TemporalSegmentation.LandTrendr(**run_params)
 
     # Get vertex-only fitted values and multiply the fitted values
-    return (
-        LTExportPrep(rawLT, distDir).set("band", bandName).set("run_params", run_params)
-    )
+    return LTExportPrep(rawLT, distDir).set("band", bandName).set("run_params", run_params)
 
 
 ###########################################################
@@ -547,22 +456,14 @@ def LTLossGainExportPrep(lossGainDict, indexName="Bn", multBy=10000):
     gainStack = lossGainDict["gainStack"]
 
     # Convert to byte/int16 if possible to save space
-    lossThematic = (
-        lossStack.select([".*_yr_.*"])
-        .int16()
-        .addBands(lossStack.select([".*_dur_.*"]).byte())
-    )
+    lossThematic = lossStack.select([".*_yr_.*"]).int16().addBands(lossStack.select([".*_dur_.*"]).byte())
     lossContinuous = lossStack.select([".*_mag_.*", ".*_slope_.*"]).multiply(multBy)
     if abs(multBy) == 10000:
         lossContinuous = lossContinuous.int16()
 
     lossStack = lossThematic.addBands(lossContinuous)
 
-    gainThematic = (
-        gainStack.select([".*_yr_.*"])
-        .int16()
-        .addBands(gainStack.select([".*_dur_.*"]).byte())
-    )
+    gainThematic = gainStack.select([".*_yr_.*"]).int16().addBands(gainStack.select([".*_dur_.*"]).byte())
     gainContinuous = gainStack.select([".*_mag_.*", ".*_slope_.*"]).multiply(multBy)
     if abs(multBy) == 10000:
         gainContinuous = gainContinuous.int16()
@@ -594,7 +495,7 @@ def addLossGainToMap(
         indexName = bns[0].split("_")[0]
         howManyToPull = list(set([int(bn.split("_")[-1]) for bn in bns]))
     else:
-        howManyToPull = list(range(1,howManyToPull + 1))
+        howManyToPull = list(range(1, howManyToPull + 1))
     # Set up viz params
     vizParamsLossYear = {"min": startYear, "max": endYear, "palette": lossYearPalette}
     vizParamsLossMag = {"min": lossMagMin, "max": lossMagMax, "palette": lossMagPalette}
@@ -613,46 +514,56 @@ def addLossGainToMap(
     for i in howManyToPull:
 
         lossStackI = lossGainStack.select([".*_loss_.*_" + str(i)])
+        lossStackYrMaskI = lossStackI.select([".*_loss_yr.*"]).gte(startYear).And(lossStackI.select([".*_loss_yr.*"]).lte(endYear))
+        lossStackI = lossStackI.updateMask(lossStackYrMaskI)
+
         gainStackI = lossGainStack.select([".*_gain_.*_" + str(i)])
-        # print(lossStackI.select(['loss_yr.*']).getInfo())
+        gainStackYrMaskI = gainStackI.select([".*_gain_yr.*"]).gte(startYear).And(gainStackI.select([".*_gain_yr.*"]).lte(endYear))
+        gainStackI = gainStackI.updateMask(gainStackYrMaskI)
+
         showLossYear = False
         if i == 1:
             showLossYear = True
+
+        iString = f"{i} "
+        if howManyToPull == [1]:
+            iString = ""
+
         Map.addLayer(
             lossStackI.select([".*_loss_yr.*"]),
             vizParamsLossYear,
-            str(i) + " " + indexName + " Loss Year",
+            "LandTrendr " + iString + indexName + " Loss Year",
             showLossYear,
         )
         Map.addLayer(
             lossStackI.select([".*_loss_mag.*"]),
             vizParamsLossMag,
-            str(i) + " " + indexName + " Loss Magnitude",
+            "LandTrendr " + iString + indexName + " Loss Magnitude",
             False,
         )
         Map.addLayer(
             lossStackI.select([".*_loss_dur.*"]),
             vizParamsDuration,
-            str(i) + " " + indexName + " Loss Duration",
+            "LandTrendr " + iString + indexName + " Loss Duration",
             False,
         )
 
         Map.addLayer(
             gainStackI.select([".*_gain_yr.*"]),
             vizParamsGainYear,
-            str(i) + " " + indexName + " Gain Year",
+            "LandTrendr " + iString + indexName + " Gain Year",
             False,
         )
         Map.addLayer(
             gainStackI.select([".*_gain_mag.*"]),
             vizParamsGainMag,
-            str(i) + " " + indexName + " Gain Magnitude",
+            "LandTrendr " + iString + indexName + " Gain Magnitude",
             False,
         )
         Map.addLayer(
             gainStackI.select([".*_gain_dur.*"]),
             vizParamsDuration,
-            str(i) + " " + indexName + " Gain Duration",
+            "LandTrendr " + iString + indexName + " Gain Duration",
             False,
         )
 
@@ -814,14 +725,10 @@ def LANDTRENDRVertStack(composites, indexName, run_params, startYear, endYear):
 def LANDTRENDRFitMagSlopeDiffCollection(ts, indexName, run_params):
 
     startYear = ee.Date(ts.first().get("system:time_start")).get("year")
-    endYear = ee.Date(
-        ts.sort("system:time_start", False).first().get("system:time_start")
-    ).get("year")
+    endYear = ee.Date(ts.sort("system:time_start", False).first().get("system:time_start")).get("year")
 
     # Run LandTrendr and convert to VertStack format
-    ltStack = ee.Image(
-        LANDTRENDRVertStack(ts, indexName, run_params, startYear, endYear)
-    )
+    ltStack = ee.Image(LANDTRENDRVertStack(ts, indexName, run_params, startYear, endYear))
     ltStack = ee.Image(LT_VT_vertStack_multBands(ltStack, "landtrendr", 10000))
 
     # Convert to durFitMagSlope format
@@ -882,9 +789,7 @@ def LT_VT_vertStack_multBands(img, verdet_or_landtrendr, multBy):
 # Simplified method to convert LANDTRENDR stack to annual collection of
 # Duration, fitted, magnitude, slope, and diff
 # Improved handling of start year delay found in older method
-def simpleLTFit(
-    ltStack, startYear, endYear, indexName="bn", arrayMode=True, maxSegs=6, multBy=1
-):
+def simpleLTFit(ltStack, startYear, endYear, indexName="bn", arrayMode=True, maxSegs=6, multBy=1):
     indexName = ee.String(indexName)
 
     # Set up output band names
@@ -902,22 +807,8 @@ def simpleLTFit(
         zeros = ee.Image(ee.Array([0]).repeat(0, maxSegs + 2))
         yrBns = ["yrs_{}".format(i) for i in range(1, maxSegs + 2)]
         fitBns = ["fit_{}".format(i) for i in range(1, maxSegs + 2)]
-        yrs = (
-            ltStack.arraySlice(0, 0, 1)
-            .arrayProject([1])
-            .arrayCat(zeros, 0)
-            .arraySlice(0, 0, maxSegs + 1)
-            .arrayFlatten([yrBns])
-            .selfMask()
-        )
-        fit = (
-            ltStack.arraySlice(0, 1, 2)
-            .arrayProject([1])
-            .arrayCat(zeros, 0)
-            .arraySlice(0, 0, maxSegs + 1)
-            .arrayFlatten([fitBns])
-            .updateMask(yrs.mask())
-        )
+        yrs = ltStack.arraySlice(0, 0, 1).arrayProject([1]).arrayCat(zeros, 0).arraySlice(0, 0, maxSegs + 1).arrayFlatten([yrBns]).selfMask()
+        fit = ltStack.arraySlice(0, 1, 2).arrayProject([1]).arrayCat(zeros, 0).arraySlice(0, 0, maxSegs + 1).arrayFlatten([fitBns]).updateMask(yrs.mask())
 
     else:
         yrs = ltStack.select("yrs_.*").selfMask()
@@ -962,17 +853,11 @@ def simpleLTFit(
         fitDiff = segSlope.multiply(tDiff)
         fitted = fitStart.add(fitDiff)
 
-        formatted = (
-            ee.Image.cat([segDur, fitted, segDiff, segSlope, fitDiff])
-            .rename(outBns)
-            .set("system:time_start", ee.Date.fromYMD(yr, 6, 1).millis())
-        )
+        formatted = ee.Image.cat([segDur, fitted, segDiff, segSlope, fitDiff]).rename(outBns).set("system:time_start", ee.Date.fromYMD(yr, 6, 1).millis())
 
         return formatted
 
-    out = ee.ImageCollection(
-        ee.List.sequence(startYear, endYear).map(lambda yr: getYearValues(yr))
-    )
+    out = ee.ImageCollection(ee.List.sequence(startYear, endYear).map(lambda yr: getYearValues(yr)))
     return out
 
 
@@ -1000,9 +885,7 @@ def batchSimpleLTFit(
         ltt = ltt.reduce(mosaicReducer).rename(bns)
 
         if lt_fit == None:
-            lt_fit = simpleLTFit(
-                ltt, startYear, endYear, bn, arrayMode, maxSegs, multBy
-            )
+            lt_fit = simpleLTFit(ltt, startYear, endYear, bn, arrayMode, maxSegs, multBy)
         else:
             lt_fit = joinCollections(
                 lt_fit,
@@ -1066,54 +949,35 @@ def fitStackToCollection(stack, maxSegments, startYear, endYear):
             yrDur = segDur.updateMask(yrImage)
             yrMag = segMag.updateMask(yrImage)
             yrSlope = segSlope.updateMask(yrImage)
-            yrFit = segFitRight.subtract(
-                yrSlope.multiply(segYearsRight.subtract(yr))
-            ).updateMask(yrImage)
+            yrFit = segFitRight.subtract(yrSlope.multiply(segYearsRight.subtract(yr))).updateMask(yrImage)
 
             # Get the difference from the
-            diffFromLeft = (
-                yrFit.subtract(segFitLeft).updateMask(yrImage).rename(["diff"])
-            )
+            diffFromLeft = yrFit.subtract(segFitLeft).updateMask(yrImage).rename(["diff"])
             # relativeDiffFromLeft = diffFromLeft.divide(segMag.abs()).updateMask(yrImage).rename(['rel_yr_diff_left']).multiply(10000)
 
             # diffFromRight =yrFit.subtract(segFitRight).updateMask(yrImage).rename(['yr_diff_right'])
             # relativeDiffFromRight = diffFromRight.divide(segMag.abs()).updateMask(yrImage).rename(['rel_yr_diff_right']).multiply(10000)
             # Stack it up
-            out = (
-                yrDur.addBands(yrFit)
-                .addBands(yrMag)
-                .addBands(yrSlope)
-                .addBands(diffFromLeft)
-            )
+            out = yrDur.addBands(yrFit).addBands(yrMag).addBands(yrSlope).addBands(diffFromLeft)
 
             out = out.set("system:time_start", ee.Date.fromYMD(yr, 6, 1).millis())
             return out
 
-        annualCollection = ee.FeatureCollection(
-            ee.List.sequence(startYear, endYear).map(lambda yr: annualizer(yr))
-        )
+        annualCollection = ee.FeatureCollection(ee.List.sequence(startYear, endYear).map(lambda yr: annualizer(yr)))
         return annualCollection
 
-    yrDurMagSlope = ee.FeatureCollection(
-        ee.List.sequence(1, maxSegments).map(lambda i: segmentLooper(i))
-    )
+    yrDurMagSlope = ee.FeatureCollection(ee.List.sequence(1, maxSegments).map(lambda i: segmentLooper(i)))
 
     # Convert to an image collection
     yrDurMagSlope = ee.ImageCollection(yrDurMagSlope.flatten())
 
     # Collapse each given year to the single segment with data
     def cleaner(yrDurMagSlope, yr):
-        yrDurMagSlopeT = yrDurMagSlope.filter(
-            ee.Filter.calendarRange(yr, yr, "year")
-        ).mosaic()
-        yrDurMagSlopeT = yrDurMagSlopeT.set(
-            "system:time_start", ee.Date.fromYMD(yr, 6, 1).millis()
-        )
+        yrDurMagSlopeT = yrDurMagSlope.filter(ee.Filter.calendarRange(yr, yr, "year")).mosaic()
+        yrDurMagSlopeT = yrDurMagSlopeT.set("system:time_start", ee.Date.fromYMD(yr, 6, 1).millis())
         return yrDurMagSlopeT
 
-    yrDurMagSlopeCleaned = ee.ImageCollection.fromImages(
-        ee.List.sequence(startYear, endYear).map(lambda yr: cleaner(yrDurMagSlope, yr))
-    )
+    yrDurMagSlopeCleaned = ee.ImageCollection.fromImages(ee.List.sequence(startYear, endYear).map(lambda yr: cleaner(yrDurMagSlope, yr)))
 
     return yrDurMagSlopeCleaned
 
@@ -1131,9 +995,7 @@ def convertStack_To_DurFitMagSlope(stackCollection, VTorLT):
     maxSegments = stackCollection.first().get("maxSegments")
     startYear = stackCollection.first().get("startYear")
     endYear = stackCollection.first().get("endYear")
-    indexList = (
-        ee.Dictionary(stackCollection.aggregate_histogram("band")).keys().getInfo()
-    )
+    indexList = ee.Dictionary(stackCollection.aggregate_histogram("band")).keys().getInfo()
 
     # Set up output collection to populate
     outputCollection = []
@@ -1142,23 +1004,17 @@ def convertStack_To_DurFitMagSlope(stackCollection, VTorLT):
         stack = stackCollection.filter(ee.Filter.eq("band", indexName)).first()
 
         # Convert to image collection
-        yrDurMagSlopeCleaned = fitStackToCollection(
-            stack, maxSegments, startYear, endYear
-        )
+        yrDurMagSlopeCleaned = fitStackToCollection(stack, maxSegments, startYear, endYear)
 
         # Rename
         bns = ee.Image(yrDurMagSlopeCleaned.first()).bandNames()
-        outBns = bns.map(
-            lambda bn: ee.String(indexName).cat("_" + VTorLT + "_").cat(bn)
-        )
+        outBns = bns.map(lambda bn: ee.String(indexName).cat("_" + VTorLT + "_").cat(bn))
         yrDurMagSlopeCleaned = yrDurMagSlopeCleaned.select(bns, outBns)
 
         if outputCollection == []:
             outputCollection = yrDurMagSlopeCleaned
         else:
-            outputCollection = joinCollections(
-                outputCollection, yrDurMagSlopeCleaned, False
-            )
+            outputCollection = joinCollections(outputCollection, yrDurMagSlopeCleaned, False)
 
     return outputCollection
 
@@ -1195,19 +1051,12 @@ def convertToLossGain(
         duration = diff.arraySlice(0, 0, 1).multiply(-1)
         fittedMag = diff.arraySlice(0, 1, 2)
         # Set up array for sorting
-        forSorting = (
-            right.arraySlice(0, 0, 1)
-            .arrayCat(duration, 0)
-            .arrayCat(fittedMag, 0)
-            .arrayCat(slopes, 0)
-        )
+        forSorting = right.arraySlice(0, 0, 1).arrayCat(duration, 0).arrayCat(fittedMag, 0).arrayCat(slopes, 0)
 
     elif format == "vertStack":
         print("Converting LandTrendr OR Verdet from vertStack format to Gain & Loss")
 
-        baseMask = ltStack.select(
-            [0]
-        ).mask()  # Will fail on completely masked pixels. Have to work around and then remask later.
+        baseMask = ltStack.select([0]).mask()  # Will fail on completely masked pixels. Have to work around and then remask later.
         ltStack = ltStack.unmask(255)  # Set masked pixels to 255
 
         yrs = ltStack.select("yrs.*").toArray()
@@ -1222,12 +1071,7 @@ def convertToLossGain(
         fittedMag = diff.arraySlice(0, 1, 2)
         duration = diff.arraySlice(0, 0, 1).multiply(-1)
         slopes = fittedMag.divide(duration)
-        forSorting = (
-            right.arraySlice(0, 0, 1)
-            .arrayCat(duration, 0)
-            .arrayCat(fittedMag, 0)
-            .arrayCat(slopes, 0)
-        )
+        forSorting = right.arraySlice(0, 0, 1).arrayCat(duration, 0).arrayCat(fittedMag, 0).arrayCat(slopes, 0)
         forSorting = forSorting.updateMask(baseMask)
 
     # Apply thresholds
@@ -1269,12 +1113,8 @@ def convertToLossGain(
     gainSortValue = gainColumnDict[chooseWhichGain]
 
     # Pull the sort column and multiply it
-    lossSortBy = forLossSorting.arraySlice(
-        0, lossSortValue[0], lossSortValue[0] + 1
-    ).multiply(lossSortValue[1])
-    gainSortBy = forGainSorting.arraySlice(
-        0, gainSortValue[0], gainSortValue[0] + 1
-    ).multiply(gainSortValue[1])
+    lossSortBy = forLossSorting.arraySlice(0, lossSortValue[0], lossSortValue[0] + 1).multiply(lossSortValue[1])
+    gainSortBy = forGainSorting.arraySlice(0, gainSortValue[0], gainSortValue[0] + 1).multiply(gainSortValue[1])
 
     # Sort the loss and gain and slice off the first column
     lossAfterForSorting = forLossSorting.arraySort(lossSortBy)
@@ -1350,16 +1190,12 @@ def linearInterp(imgcol, frame=32, nodata=0):
     # Images after, sorted in descending order (so closest is last).
     # f1 = maxDiff.and(ee.Filter.lessThanOrEquals(time, null, time))
     f1 = ee.Filter.And(maxDiff, ee.Filter.lessThanOrEquals(**cond))
-    c1 = ee.Join.saveAll(
-        **{"matchesKey": "after", "ordering": time, "ascending": False}
-    ).apply(imgcol, imgcol, f1)
+    c1 = ee.Join.saveAll(**{"matchesKey": "after", "ordering": time, "ascending": False}).apply(imgcol, imgcol, f1)
 
     # Images before, sorted in ascending order (so closest is last).
     # f2 = maxDiff.and(ee.Filter.greaterThanOrEquals(time, null, time))
     f2 = ee.Filter.And(maxDiff, ee.Filter.greaterThanOrEquals(**cond))
-    c2 = ee.Join.saveAll(
-        **{"matchesKey": "before", "ordering": time, "ascending": True}
-    ).apply(c1, imgcol, f2)
+    c2 = ee.Join.saveAll(**{"matchesKey": "before", "ordering": time, "ascending": True}).apply(c1, imgcol, f2)
 
     # print(c2, 'c2')
     # img = ee.Image(c2.toList(1, 15).get(0))
@@ -1381,9 +1217,7 @@ def linearInterp(imgcol, frame=32, nodata=0):
         x1 = before.select("time").double()
         x2 = after.select("time").double()
         now = ee.Image.constant(img.date().millis()).double()
-        ratio = now.subtract(x1).divide(
-            x2.subtract(x1)
-        )  # this is zero anywhere x1 = x2
+        ratio = now.subtract(x1).divide(x2.subtract(x1))  # this is zero anywhere x1 = x2
         # Compute the interpolated image.
         before = before.select(bns)  # remove time band now
         after = after.select(bns)
@@ -1408,9 +1242,7 @@ def linearInterp(imgcol, frame=32, nodata=0):
 # Will return a linearally interpolated date value where they were missing
 # Where there are only values on one side, it will cast out the mean date of year offset
 # for all years prior to or after actual data being available
-def new_interp_date(
-    dateYr, dateCollection, max_window=10, dummyImage=None, extrapolate=True
-):
+def new_interp_date(dateYr, dateCollection, max_window=10, dummyImage=None, extrapolate=True):
 
     # Find the year
     year = dateYr.date().get("year")
@@ -1440,26 +1272,17 @@ def new_interp_date(
             .rename(["left"])
             .float()
         )
-        yrLeft = (
-            ee.Image(yrLeft).updateMask(dateYrLeft.mask()).rename(["left_year"]).int16()
-        )
+        yrLeft = ee.Image(yrLeft).updateMask(dateYrLeft.mask()).rename(["left_year"]).int16()
         dateYrRight = (
             fillEmptyCollections(
-                dateCollection.filter(
-                    ee.Filter.calendarRange(yrRight, yrRight, "year")
-                ),
+                dateCollection.filter(ee.Filter.calendarRange(yrRight, yrRight, "year")),
                 dummyImage,
             )
             .first()
             .rename(["right"])
             .float()
         )
-        yrRight = (
-            ee.Image(yrRight)
-            .updateMask(dateYrRight.mask())
-            .rename(["right_year"])
-            .int16()
-        )
+        yrRight = ee.Image(yrRight).updateMask(dateYrRight.mask()).rename(["right_year"]).int16()
         return ee.Image.cat([dateYrLeft, yrLeft, dateYrRight, yrRight])
 
     window_stack = ee.ImageCollection(window_years.map(getWindow))
@@ -1468,15 +1291,7 @@ def new_interp_date(
     window_first = window_stack.reduce(ee.Reducer.firstNonNull())
 
     # Find the difference in date per year (will be close to 1)
-    slope = (
-        window_first.select(["right_first"])
-        .subtract(window_first.select(["left_first"]))
-        .divide(
-            window_first.select(["right_year_first"]).subtract(
-                window_first.select(["left_year_first"])
-            )
-        )
-    )
+    slope = window_first.select(["right_first"]).subtract(window_first.select(["left_first"])).divide(window_first.select(["right_year_first"]).subtract(window_first.select(["left_year_first"])))
 
     # Compute the interpolated value
     interpolated = ee.Image(year).subtract(window_first.select(["left_year_first"]))
@@ -1488,35 +1303,17 @@ def new_interp_date(
 
     # Extrapolate using the mean date offset
     if extrapolate:
-        extrapolate_left = (
-            window_stack.map(
-                lambda img: img.select(["right"]).subtract(img.select(["right_year"]))
-            )
-            .mean()
-            .add(year)
-        )
-        extrapolate_right = (
-            window_stack.map(
-                lambda img: img.select(["left"]).subtract(img.select(["left_year"]))
-            )
-            .mean()
-            .add(year)
-        )
+        extrapolate_left = window_stack.map(lambda img: img.select(["right"]).subtract(img.select(["right_year"]))).mean().add(year)
+        extrapolate_right = window_stack.map(lambda img: img.select(["left"]).subtract(img.select(["left_year"]))).mean().add(year)
         dateYrOut = ee.Image(dateYrOut).unmask(extrapolate_left)
         dateYrOut = ee.Image(dateYrOut).unmask(extrapolate_right)
     return dateYrOut
 
 
 # Wrapper function to handle date interpolation for
-def new_interp_date_collection(
-    dateCollection, max_window=20, dummyImage=None, extrapolate=True
-):
+def new_interp_date_collection(dateCollection, max_window=20, dummyImage=None, extrapolate=True):
     dummyImage = dateCollection.first()
-    interpolated = dateCollection.map(
-        lambda dateImg: new_interp_date(
-            dateImg, dateCollection, max_window, dummyImage, extrapolate
-        )
-    )
+    interpolated = dateCollection.map(lambda dateImg: new_interp_date(dateImg, dateCollection, max_window, dummyImage, extrapolate))
     return interpolated
 
 
@@ -1528,36 +1325,18 @@ def applyLinearInterp(composites, nYearsInterpolate):
     composites = composites.select(["red", "green", "blue", "nir", "swir1", "swir2"])
 
     # Find pixels/years with no data
-    masks = composites.map(
-        lambda img: img.mask()
-        .reduce(ee.Reducer.min())
-        .byte()
-        .copyProperties(img, img.propertyNames())
-    ).select([0])
-    masks = masks.map(
-        lambda img: img.rename([ee.Date(img.get("system:time_start")).format("YYYY")])
-    )
+    masks = composites.map(lambda img: img.mask().reduce(ee.Reducer.min()).byte().copyProperties(img, img.propertyNames())).select([0])
+    masks = masks.map(lambda img: img.rename([ee.Date(img.get("system:time_start")).format("YYYY")]))
     masks = masks.toBands()
 
     # rename bands to better names
     origNames = masks.bandNames()
     # print('mask bandNames', origNames.getInfo())
-    newNames = origNames.map(
-        lambda bandName: ee.String(bandName).replace("null", "mask")
-    )
-    masks = (
-        masks.select(origNames, newNames)
-        .set("creationDate", datetime.strftime(datetime.now(), "%Y%m%d"))
-        .set("mask", True)
-    )
+    newNames = origNames.map(lambda bandName: ee.String(bandName).replace("null", "mask"))
+    masks = masks.select(origNames, newNames).set("creationDate", datetime.strftime(datetime.now(), "%Y%m%d")).set("mask", True)
 
     # Perform linear interpolation
-    composites = (
-        linearInterp(composites, 365 * nYearsInterpolate, -32768)
-        .map(simpleAddIndices)
-        .map(getTasseledCap)
-        .map(simpleAddTCAngles)
-    )
+    composites = linearInterp(composites, 365 * nYearsInterpolate, -32768).map(simpleAddIndices).map(getTasseledCap).map(simpleAddTCAngles)
 
     outDict = {"composites": composites, "masks": masks}
     return outDict
@@ -1572,20 +1351,14 @@ def applyLinearInterp(composites, nYearsInterpolate):
 def applyVerdetScaling(ts, indexName, correctionFactor):
     distDir = changeDirDict[indexName]
     # tsT = ts.map(lambda img: multBands(img, 1, -distDir)) # Apply change in direction first
-    tsT = ts.map(
-        lambda img: addToImage(img, 1)
-    )  # Then add 1 to image to get rid of any negatives
-    tsT = tsT.map(
-        lambda img: multBands(img, 1, correctionFactor)
-    )  # Finally we can apply scaling.
+    tsT = ts.map(lambda img: addToImage(img, 1))  # Then add 1 to image to get rid of any negatives
+    tsT = tsT.map(lambda img: multBands(img, 1, correctionFactor))  # Finally we can apply scaling.
     return tsT
 
 
 def undoVerdetScaling(fitted, indexName, correctionFactor):
     distDir = changeDirDict[indexName]
-    fitted = ee.Image(
-        multBands(fitted, 1, 1.0 / correctionFactor)
-    )  # Undo scaling first
+    fitted = ee.Image(multBands(fitted, 1, 1.0 / correctionFactor))  # Undo scaling first
     fitted = addToImage(fitted, -1)  # Undo getting rid of negatives
     # fitted = multBands(fitted, 1, -distDir) #Finally, undo change in direction # LSC 10/19, this is not working as intended. Decided to just comment it out as I believe it is an unnecessary step.
     return fitted
@@ -1606,9 +1379,7 @@ def updateVerdetMasks(img, linearInterpMasks):
 def prepTimeSeriesForVerdet(ts, indexName, run_params, correctionFactor):
     # Get the start and end years
     startYear = ee.Date(ts.first().get("system:time_start")).get("year")
-    endYear = ee.Date(
-        ts.sort("system:time_start", False).first().get("system:time_start")
-    ).get("year")
+    endYear = ee.Date(ts.sort("system:time_start", False).first().get("system:time_start")).get("year")
 
     # Get single band time series and set its direction so that a loss in veg is going up
     ts = ts.select([indexName])
@@ -1656,9 +1427,7 @@ def VERDETVertStack(
     endYear = prepDict["endYear"]
 
     # Run VERDET
-    verdet = ee.Algorithms.TemporalSegmentation.Verdet(**run_params).arraySlice(
-        0, 1, None
-    )
+    verdet = ee.Algorithms.TemporalSegmentation.Verdet(**run_params).arraySlice(0, 1, None)
 
     # Get all possible years
     tsYearRight = ee.Image(
@@ -1678,11 +1447,7 @@ def VERDETVertStack(
     vVertices = vCurvature.abs().gte(0.00001)
 
     # Append vertices to the start and end of the time series al la LANDTRENDR
-    vVertices = (
-        ee.Image(ee.Array([1]))
-        .arrayCat(vVertices, 0)
-        .arrayCat(ee.Image(ee.Array([1])), 0)
-    )
+    vVertices = ee.Image(ee.Array([1])).arrayCat(vVertices, 0).arrayCat(ee.Image(ee.Array([1])), 0)
     # Mask out vertex years
     tsYearRight = tsYearRight.arrayMask(vVertices)
     # Find the duration of each segment
@@ -1695,9 +1460,7 @@ def VERDETVertStack(
     mag = verdet.multiply(dur)
 
     # Get the fitted values
-    fitted = (
-        ee.Image(run_params["timeSeries"].limit(3).mean()).toArray().arrayCat(mag, 0)
-    )
+    fitted = ee.Image(run_params["timeSeries"].limit(3).mean()).toArray().arrayCat(mag, 0)
     fitted = fitted.arrayAccum(0, ee.Reducer.sum()).arraySlice(0, 1, None)
     # Undo scaling of fitted values
     fitted = undoVerdetScaling(fitted, indexName, correctionFactor)
@@ -1706,9 +1469,7 @@ def VERDETVertStack(
     forStack = tsYearRight.addBands(fitted).toArray(1)
 
     # Convert to stack and mask out any pixels that didn't have an observation in every image
-    stack = getLTStack(
-        forStack.arrayTranspose(), maxSegments + 1, ["yrs_", "fit_"]
-    ).updateMask(countMask)
+    stack = getLTStack(forStack.arrayTranspose(), maxSegments + 1, ["yrs_", "fit_"]).updateMask(countMask)
 
     # Set Properties
     stack = stack.set(
@@ -1742,12 +1503,8 @@ def VERDETFitMagSlopeDiffCollection(
 ):
 
     # Run Verdet and convert to vertStack format
-    vtStack = VERDETVertStack(
-        composites, indexName, run_params, maxSegments, correctionFactor, doLinearInterp
-    )
-    vtStack = ee.Image(
-        LT_VT_vertStack_multBands(vtStack, "verdet", 10000)
-    )  # This needs to happen before the fitStackToCollection() step
+    vtStack = VERDETVertStack(composites, indexName, run_params, maxSegments, correctionFactor, doLinearInterp)
+    vtStack = ee.Image(LT_VT_vertStack_multBands(vtStack, "verdet", 10000))  # This needs to happen before the fitStackToCollection() step
 
     # Convert to durFitMagSlope format
     durFitMagSlope = convertStack_To_DurFitMagSlope(vtStack, "VT")
@@ -1763,34 +1520,22 @@ def VERDETFitMagSlopeDiffCollection(
 
 # Wrapper for applying VERDET slightly more simply
 # Returns annual collection of verdet slope
-def verdetAnnualSlope(
-    tsIndex, indexName, startYear, endYear, alpha, tolerance=0.0001
-):  # ,alpha = 1/3.0):
+def verdetAnnualSlope(tsIndex, indexName, startYear, endYear, alpha, tolerance=0.0001):  # ,alpha = 1/3.0):
     # Apply VERDET
     run_params = {
         "timeSeries": tsIndex,
         "tolerance": tolerance,  # default = 0.0001
         "alpha": alpha,
     }  # default = 1/3.0
-    verdet = ee.Algorithms.TemporalSegmentation.Verdet(**run_params).arraySlice(
-        0, 1, None
-    )
+    verdet = ee.Algorithms.TemporalSegmentation.Verdet(**run_params).arraySlice(0, 1, None)
     print("indexName: " + indexName)
     # Map.addLayer(verdet,{},'verdet '+indexName)
-    tsYear = (
-        tsIndex.map(addYearBand)
-        .select([1])
-        .toArray()
-        .arraySlice(0, 1, None)
-        .arrayProject([0])
-    )
+    tsYear = tsIndex.map(addYearBand).select([1]).toArray().arraySlice(0, 1, None).arrayProject([0])
 
     # Find possible years to convert back to collection with
     # possibleYears = ee.List.sequence(startYear+1,endYear)
     possibleYears = ee.List.sequence(startYear, endYear)
-    verdetC = arrayToTimeSeries(
-        verdet, tsYear, possibleYears, "VERDET_fitted_" + indexName + "_slope"
-    )
+    verdetC = arrayToTimeSeries(verdet, tsYear, possibleYears, "VERDET_fitted_" + indexName + "_slope")
 
     return verdetC
 
@@ -1811,11 +1556,7 @@ def getSegmentParamsForYear(ccdc, yearImg):
     segIndices = bandNames.map(lambda bn: ee.Number.parse(ee.String(bn).slice(1, None)))
     blankRaster = ee.Image.constant(segIndices)
     firstBandName = ee.String(bandNames.get(0))
-    outBandNames = (
-        ccdc.select([firstBandName.cat(".*coef.*"), firstBandName.cat(".*RMSE")])
-        .bandNames()
-        .map(lambda bn: ee.String(bn).split("S1_").get(1))
-    )
+    outBandNames = ccdc.select([firstBandName.cat(".*coef.*"), firstBandName.cat(".*RMSE")]).bandNames().map(lambda bn: ee.String(bn).split("S1_").get(1))
 
     # Find areas where the date is less than the end of the segment
     yearMask = end.gte(yearImg)  # start.lte(yearImg).and(end.gte(yearImg));
@@ -1823,9 +1564,7 @@ def getSegmentParamsForYear(ccdc, yearImg):
     # Handle no segments at target date
     # If date is after latest segment, force to use last segment coeffs
     validPixels = yearMask.reduce(ee.Reducer.max())
-    yearMask = yearMask.where(
-        end.eq(end.reduce(ee.Reducer.max())).And(validPixels.Not()), 1
-    )
+    yearMask = yearMask.where(end.eq(end.reduce(ee.Reducer.max())).And(validPixels.Not()), 1)
 
     # Apply mask to blank raster and then pull the first valid value (earliest segment that ends after target date)
     blankRaster = blankRaster.updateMask(yearMask)
@@ -1834,9 +1573,7 @@ def getSegmentParamsForYear(ccdc, yearImg):
     yearMask = yearMask.updateMask(blankRaster)
 
     # Set up blank raster
-    out = ee.Image.constant(ee.List.repeat(0, outBandNames.length())).rename(
-        outBandNames
-    )
+    out = ee.Image.constant(ee.List.repeat(0, outBandNames.length())).rename(outBandNames)
 
     # Iterate across each segment and unmask coefficients if they're the valid segment
     def unmaskValidCoefficients(bn, out):
@@ -1854,9 +1591,7 @@ def getSegmentParamsForYear(ccdc, yearImg):
         out = out.where(coeffs.mask(), coeffs)
         return out
 
-    out = ee.Image(
-        bandNames.iterate(lambda bn, out: unmaskValidCoefficients(bn, out), out)
-    )
+    out = ee.Image(bandNames.iterate(lambda bn, out: unmaskValidCoefficients(bn, out), out))
 
     return out
 
@@ -2094,12 +1829,7 @@ def predictModel(c, model, bandNames=None):
     # Predict model
     def pModel(img):
         cActual = img.select(bandNames)
-        out = (
-            img.select(["year"])
-            .multiply(slopes)
-            .add(img.select(["constant"]).multiply(intercepts))
-            .rename(predictedBandNames)
-        )
+        out = img.select(["year"]).multiply(slopes).add(img.select(["constant"]).multiply(intercepts)).rename(predictedBandNames)
         return cActual.addBands(out).copyProperties(img, ["system:time_start"])
 
     predicted = c.map(pModel)
@@ -2123,11 +1853,7 @@ def getLinearFit(c, bandNames=None):
     selectOrder = ee.List([["constant", "year"], bandNames]).flatten()
 
     # Fit model
-    model = (
-        c.select(selectOrder)
-        .reduce(ee.Reducer.linearRegression(2, bandNames.length()))
-        .select([0])
-    )
+    model = c.select(selectOrder).reduce(ee.Reducer.linearRegression(2, bandNames.length())).select([0])
 
     # Convert model to image
     model = model.arrayTranspose().arrayFlatten([bandNames, ["intercept", "slope"]])
@@ -2171,9 +1897,7 @@ def zAndTrendChangeDetection(
 
     outNames = map(lambda bn: bn + "_Z", indexNames)
 
-    analysisStartYear = max(
-        startYear + baselineLength + baselineGap, startYear + epochLength - 1
-    )
+    analysisStartYear = max(startYear + baselineLength + baselineGap, startYear + epochLength - 1)
 
     years = ee.List.sequence(analysisStartYear, endYear, 1).getInfo()
     julians = ee.List.sequence(startJulian, endJulian - nDays, nDays).getInfo()
@@ -2196,27 +1920,19 @@ def zAndTrendChangeDetection(
         jdEnd = jd.add(nDays)
 
         # Get the baseline images
-        blImages = allScenes.filter(
-            ee.Filter.calendarRange(blStartYear, blEndYear, "year")
-        ).filter(ee.Filter.calendarRange(jdStart, jdEnd))
+        blImages = allScenes.filter(ee.Filter.calendarRange(blStartYear, blEndYear, "year")).filter(ee.Filter.calendarRange(jdStart, jdEnd))
         blImages = fillEmptyCollections(blImages, dummyScene)
 
         # Mask out where not enough observations
         blCounts = blImages.count()
-        blImages = blImages.map(
-            lambda img: img.updateMask(blCounts.gte(minBaselineObservationsNeeded))
-        )
+        blImages = blImages.map(lambda img: img.updateMask(blCounts.gte(minBaselineObservationsNeeded)))
 
         # Get the z analysis images
-        analysisImages = allScenes.filter(
-            ee.Filter.calendarRange(yr, yr, "year")
-        ).filter(ee.Filter.calendarRange(jdStart, jdEnd))
+        analysisImages = allScenes.filter(ee.Filter.calendarRange(yr, yr, "year")).filter(ee.Filter.calendarRange(jdStart, jdEnd))
         analysisImages = fillEmptyCollections(analysisImages, dummyScene)
 
         # Get the images for the trend analysis
-        trendImages = allScenes.filter(
-            ee.Filter.calendarRange(trendStartYear, yr, "year")
-        ).filter(ee.Filter.calendarRange(jdStart, jdEnd))
+        trendImages = allScenes.filter(ee.Filter.calendarRange(trendStartYear, yr, "year")).filter(ee.Filter.calendarRange(jdStart, jdEnd))
         trendImages = fillEmptyCollections(trendImages, dummyScene)
 
         # Convert to annual stack if selected
@@ -2231,14 +1947,7 @@ def zAndTrendChangeDetection(
         blMean = blImages.mean()
         blStd = blImages.reduce(ee.Reducer.stdDev())
 
-        analysisImagesZ = (
-            ee.ImageCollection(
-                analysisImages.map(lambda img: img.subtract(blMean).divide(blStd))
-            )
-            .reduce(zReducer)
-            .rename(outNames)
-            .multiply(10)
-        )
+        analysisImagesZ = ee.ImageCollection(analysisImages.map(lambda img: img.subtract(blMean).divide(blStd))).reduce(zReducer).rename(outNames).multiply(10)
 
         # Set up the output
         outName = (
@@ -2264,9 +1973,7 @@ def zAndTrendChangeDetection(
             .set(
                 {
                     "system:time_start": imageStartDate,
-                    "system:time_end": ee.Date.fromYMD(yr, 1, 1)
-                    .advance(jdEnd, "day")
-                    .millis(),
+                    "system:time_end": ee.Date.fromYMD(yr, 1, 1).advance(jdEnd, "day").millis(),
                     "baselineYrs": baselineLength,
                     "baselineStartYear": blStartYear,
                     "baselineEndYear": blEndYear,
@@ -2296,9 +2003,7 @@ def zAndTrendChangeDetection(
 
     print(yjdList)
 
-    zAndTrendCollection = ee.ImageCollection.fromImages(
-        [processYrJd(yjd) for yjd in yjdList]
-    )
+    zAndTrendCollection = ee.ImageCollection.fromImages([processYrJd(yjd) for yjd in yjdList])
 
     # return zAndTrendCollection
 
@@ -2323,9 +2028,7 @@ def thresholdZAndTrend(
     trendCollection = zAndTrendCollection.select(".*_slope")
 
     zChange = thresholdChange(zCollection, -zThresh, dir).select(".*_change")
-    trendChange = thresholdChange(trendCollection, -slopeThresh, dir).select(
-        ".*_change"
-    )
+    trendChange = thresholdChange(trendCollection, -slopeThresh, dir).select(".*_change")
 
     return [zChange, trendChange]
 
@@ -2354,9 +2057,7 @@ def simpleCCDCPrediction(img, timeBandName, whichHarmonics, whichBands):
 
     # Set up which harmonics to select
 
-    harmSelect = ee.List(whichHarmonics).map(
-        lambda n: ee.String(".*").cat(ee.Number(n).format())
-    )
+    harmSelect = ee.List(whichHarmonics).map(lambda n: ee.String(".*").cat(ee.Number(n).format()))
 
     # Select the harmonics specified
     sins = img.select([".*_SIN.*"])
@@ -2379,9 +2080,7 @@ def simpleCCDCPrediction(img, timeBandName, whichHarmonics, whichBands):
             ]
         ).reduce(ee.Reducer.sum())
 
-    predicted = (
-        ee.ImageCollection(list(map(predHelper, whichBands))).toBands().rename(outBns)
-    )
+    predicted = ee.ImageCollection(list(map(predHelper, whichBands))).toBands().rename(outBns)
     return img.addBands(predicted)
 
 
@@ -2390,20 +2089,9 @@ def simpleCCDCPrediction(img, timeBandName, whichHarmonics, whichBands):
 # It is also assumed that the time format is yyyy.ff where the .ff is the proportion of the year
 # The whichHarmonics options are [1,2,3] - denoting which harmonics to include
 def simpleCCDCPredictionWrapper(c, timeBandName, whichHarmonics):
-    whichBands = (
-        ee.Image(c.first())
-        .select([".*_INTP"])
-        .bandNames()
-        .map(lambda bn: ee.String(bn).split("_").get(0))
-    )
-    whichBands = (
-        ee.Dictionary(whichBands.reduce(ee.Reducer.frequencyHistogram()))
-        .keys()
-        .getInfo()
-    )
-    out = c.map(
-        lambda img: simpleCCDCPrediction(img, timeBandName, whichHarmonics, whichBands)
-    )
+    whichBands = ee.Image(c.first()).select([".*_INTP"]).bandNames().map(lambda bn: ee.String(bn).split("_").get(0))
+    whichBands = ee.Dictionary(whichBands.reduce(ee.Reducer.frequencyHistogram())).keys().getInfo()
+    out = c.map(lambda img: simpleCCDCPrediction(img, timeBandName, whichHarmonics, whichBands))
     return out
 
 
@@ -2422,9 +2110,7 @@ def getCCDCSegCoeffs(timeImg, ccdcImg, fillGaps):
     coeffs = ccdcImg.select(coeffKeys)
     bns = coeffs.bandNames()
     nBns = bns.length()
-    harmonicTag = ee.List(
-        ["INTP", "SLP", "COS1", "SIN1", "COS2", "SIN2", "COS3", "SIN3"]
-    )
+    harmonicTag = ee.List(["INTP", "SLP", "COS1", "SIN1", "COS2", "SIN2", "COS3", "SIN3"])
 
     # Get coeffs, start and end times
     coeffs = coeffs.toArray(2)
@@ -2449,15 +2135,8 @@ def getCCDCSegCoeffs(timeImg, ccdcImg, fillGaps):
     )
 
     # Set up a mask for segments that the time band intersects
-    tMask = (
-        tStarts.lt(timeImg).And(tEnds.gte(timeImg)).arrayRepeat(1, 1).arrayRepeat(2, 1)
-    )
-    coeffs = (
-        coeffs.arrayMask(tMask)
-        .arrayProject([2, 1])
-        .arrayTranspose(1, 0)
-        .arrayFlatten([bns, harmonicTag])
-    )
+    tMask = tStarts.lt(timeImg).And(tEnds.gte(timeImg)).arrayRepeat(1, 1).arrayRepeat(2, 1)
+    coeffs = coeffs.arrayMask(tMask).arrayProject([2, 1]).arrayTranspose(1, 0).arrayFlatten([bns, harmonicTag])
 
     # If time band doesn't intersect any segments, set it to null
     coeffs = coeffs.updateMask(coeffs.reduce(ee.Reducer.max()).neq(0))
@@ -2491,24 +2170,13 @@ def annualizeCCDC(
 
     # Create image collection of images with the proper time stamp as well as a 'year' band with the year fraction.
     if annualizeWithCompositeDates and compositeCollection != None:
-        timeImgs = getTimeImageCollectionFromComposites(
-            compositeCollection, startYear, endYear, interpolateCompositeDates
-        )
+        timeImgs = getTimeImageCollectionFromComposites(compositeCollection, startYear, endYear, interpolateCompositeDates)
     else:
-        timeImgs = getTimeImageCollection(
-            startYear, endYear, startJulian, endJulian, 1, yearStartMonth, yearStartDay
-        )
+        timeImgs = getTimeImageCollection(startYear, endYear, startJulian, endJulian, 1, yearStartMonth, yearStartDay)
 
     # If selected, add a constant amount of time to last end segment to make sure the last year is annualized correctly.
     # tEndExtrapolationPeriod should be a fraction of a year.
-    finalTEnd = (
-        ccdcImg.select("tEnd")
-        .arraySlice(0, -1, None)
-        .rename("tEnd")
-        .arrayGet(0)
-        .add(tEndExtrapolationPeriod)
-        .toArray(0)
-    )
+    finalTEnd = ccdcImg.select("tEnd").arraySlice(0, -1, None).rename("tEnd").arrayGet(0).add(tEndExtrapolationPeriod).toArray(0)
     tEnds = ccdcImg.select("tEnd")
     tEnds = tEnds.arraySlice(0, 0, -1).arrayCat(finalTEnd, 0).rename("tEnd")
     ccdcImg = ccdcImg.addBands(tEnds, None, True)
@@ -2521,25 +2189,12 @@ def annualizeCCDC(
 # Using annualized time series, get fitted values and slopes from fitted values.
 def getFitSlopeCCDC(annualSegCoeffs, startYear, endYear):
     # Predict across each time image
-    whichBands = (
-        ee.Image(annualSegCoeffs.first())
-        .select([".*_INTP"])
-        .bandNames()
-        .map(lambda bn: ee.String(bn).split("_").get(0))
-    )
-    whichBands = ee.Dictionary(
-        whichBands.reduce(ee.Reducer.frequencyHistogram())
-    ).keys()
-    fitted = annualSegCoeffs.map(
-        lambda img: simpleCCDCPredictionAnnualized(img, "year", whichBands)
-    )
+    whichBands = ee.Image(annualSegCoeffs.first()).select([".*_INTP"]).bandNames().map(lambda bn: ee.String(bn).split("_").get(0))
+    whichBands = ee.Dictionary(whichBands.reduce(ee.Reducer.frequencyHistogram())).keys()
+    fitted = annualSegCoeffs.map(lambda img: simpleCCDCPredictionAnnualized(img, "year", whichBands))
 
     # Get back-casted slope using the fitted values
-    diff = ee.ImageCollection(
-        ee.List.sequence(ee.Number(startYear).add(ee.Number(1)), endYear).map(
-            lambda rightYear: yearlySlope(rightYear, fitted)
-        )
-    )
+    diff = ee.ImageCollection(ee.List.sequence(ee.Number(startYear).add(ee.Number(1)), endYear).map(lambda rightYear: yearlySlope(rightYear, fitted)))
 
     # Rename bands
     bandNames = diff.first().bandNames()
@@ -2551,26 +2206,10 @@ def getFitSlopeCCDC(annualSegCoeffs, startYear, endYear):
 
 def yearlySlope(rightYear, fitted):
     leftYear = ee.Number(rightYear).subtract(1)
-    rightFitted = ee.Image(
-        fitted.filter(ee.Filter.calendarRange(rightYear, rightYear, "year")).first()
-    )
-    leftFitted = ee.Image(
-        fitted.filter(ee.Filter.calendarRange(leftYear, leftYear, "year")).first()
-    )
-    slopeNames = (
-        rightFitted.select([".*_fitted"])
-        .bandNames()
-        .map(
-            lambda name: ee.String(ee.String(name).split("_fitted").get(0)).cat(
-                ee.String("_fitSlope")
-            )
-        )
-    )
-    slope = (
-        rightFitted.select([".*_fitted"])
-        .subtract(leftFitted.select([".*_fitted"]))
-        .rename(slopeNames)
-    )
+    rightFitted = ee.Image(fitted.filter(ee.Filter.calendarRange(rightYear, rightYear, "year")).first())
+    leftFitted = ee.Image(fitted.filter(ee.Filter.calendarRange(leftYear, leftYear, "year")).first())
+    slopeNames = rightFitted.select([".*_fitted"]).bandNames().map(lambda name: ee.String(ee.String(name).split("_fitted").get(0)).cat(ee.String("_fitSlope")))
+    slope = rightFitted.select([".*_fitted"]).subtract(leftFitted.select([".*_fitted"])).rename(slopeNames)
     return rightFitted.addBands(slope)
 
 
@@ -2608,13 +2247,51 @@ def simpleCCDCPredictionAnnualized(img, timeBandName, whichBands):
 
 ###################################################################################
 # Wrapper function for predicting CCDC across a set of time images
-def predictCCDC(ccdcImg, timeImgs, fillGaps, whichHarmonics):
-    timeBandName = ee.Image(timeImgs.first()).select([0]).bandNames().get(0)
-    # Add the segment-appropriate coefficients to each time image
-    timeImgs = timeImgs.map(lambda img: getCCDCSegCoeffs(img, ccdcImg, fillGaps))
+def predictCCDC(
+    ccdcImg: list[ee.Image, ee.Image] | ee.Image,
+    timeImgs: ee.ImageCollection,
+    fillGaps: bool = True,
+    whichHarmonics: list[int] = [1, 2, 3],
+    featherStartYr: int = 2015,
+    featherEndYr: int = 2021,
+) -> ee.ImageCollection:
+    """
+    Takes one or two raw CCDC `ee.Image` array outputs, an `ee.ImageCollection` of time images, and returns a time-series `ee.ImageCollection` with harmonic coefficients and fitted values
 
-    # Predict across each time image
-    return simpleCCDCPredictionWrapper(timeImgs, timeBandName, whichHarmonics)
+    Args:
+        ccdcImg (list[ee.Image, ee.Image] | ee.Image): A raw CCDC `ee.Image` array or list of two raw CCDC `ee.Image` arrays. If a list of 2 images is provided, feathering will automatically be performed. Note that any pixel that is null in either CCDC image will result in a null value in the predicted output.
+        timeImgs (ee.ImageCollection): An `ee.ImageCollection` of time images usually from functions such as `simpleGetTimeImageCollection`.
+        fillGaps (bool, optional): Whether to fill gaps between segments. If false, outputs can have blank values mid time-series. Defaults to True.
+        whichHarmonics (list[int], optional): Which harmonics to include in fitted outputs forreturned time-series. Defaults to [1,2,3].
+        featherStartYear (int, optional): If a list of 2 images is provided as `ccdcImg`, this is the first year of the window used for feathering the two time-series together. Defaults to 2015.
+        featherEndYear (int, optional): If a list of 2 images is provided as `ccdcImg`, this is the last year (inclusive) of the window used for feathering the two time-series together. Defaults to 2021.
+
+
+    Returns:
+        ee.ImageCollection: A collection of CCDC coefficients and fitted values.
+
+    >>> import geeViz.changeDetectionLib as cdl
+    >>> Map = cdl.Map
+    >>> ee = cdl.ee
+    >>> ccdcBandNames = ["tStart", "tEnd", "tBreak", "changeProb", "swir1.*", "NDVI.*"]
+    >>> timeImgs = cdl.simpleGetTimeImageCollection(startYear=1984, endYear=2024, startJulian=1, endJulian=365, step=0.1)
+    >>> ccdcImg1 = ee.ImageCollection("projects/lcms-292214/assets/CONUS-LCMS/Base-Learners/CCDC-Collection-1984-2022").select(ccdcBandNames).mosaic()
+    >>> ccdcImg2 = ee.ImageCollection("projects/lcms-292214/assets/CONUS-LCMS/Base-Learners/CCDC-Feathered-Collection").select(ccdcBandNames).mosaic()
+    >>> fittedFeathered = cdl.predictCCDC(ccdcImg=[ccdcImg1, ccdcImg2], timeImgs=timeImgs, fillGaps=True, whichHarmonics=[1, 2, 3], featherStartYr=2015, featherEndYr=2021)
+    >>> Map.addLayer(fittedFeathered.select([".*_CCDC_fitted"]), {"reducer": ee.Reducer.mean(), "min": 0.3, "max": 0.8}, "Combined CCDC", True)
+    >>> Map.turnOnInspector()
+    >>> Map.setCenter(-88, 36, 12)
+    >>> Map.view()
+    """
+    timeBandName = ee.Image(timeImgs.first()).select([0]).bandNames().get(0)
+    if type(ccdcImg).__name__ == "list":
+        ccdcCoeffs1 = timeImgs.map(lambda img: getCCDCSegCoeffs(img, ccdcImg[0], fillGaps))
+        ccdcCoeffs2 = timeImgs.map(lambda img: getCCDCSegCoeffs(img, ccdcImg[1], fillGaps))
+        ccdcCoeffsCombined = batchFeatherCCDCImgs(ccdcCoeffs1, ccdcCoeffs2, featherStartYr, featherEndYr)
+    else:
+        ccdcCoeffsCombined = timeImgs.map(lambda img: getCCDCSegCoeffs(img, ccdcImg, fillGaps))
+
+    return simpleCCDCPredictionWrapper(ccdcCoeffsCombined, timeBandName, whichHarmonics)
 
 
 ###################################################################################
@@ -2637,16 +2314,10 @@ def getTimeImageCollection(
         img = ee.Image(n).float().rename(["year"])
         y = n.int16()
         fraction = n.subtract(y)
-        d = (
-            ee.Date.fromYMD(y.subtract(ee.Number(1)), 12, 31)
-            .advance(fraction, "year")
-            .millis()
-        )
+        d = ee.Date.fromYMD(y.subtract(ee.Number(1)), 12, 31).advance(fraction, "year").millis()
         return img.set("system:time_start", d)
 
-    monthDayFraction = ee.Number.parse(
-        ee.Date.fromYMD(startYear, yearStartMonth, yearStartDay).format("DDD")
-    ).divide(365)
+    monthDayFraction = ee.Number.parse(ee.Date.fromYMD(startYear, yearStartMonth, yearStartDay).format("DDD")).divide(365)
     yearImages = ee.ImageCollection(
         ee.List.sequence(
             ee.Number(startYear).add(monthDayFraction),
@@ -2654,9 +2325,54 @@ def getTimeImageCollection(
             step,
         ).map(getYrImage)
     )
-    return yearImages.filter(
-        ee.Filter.calendarRange(startYear, endYear, "year")
-    ).filter(ee.Filter.calendarRange(startJulian, endJulian))
+    return yearImages.filter(ee.Filter.calendarRange(startYear, endYear, "year")).filter(ee.Filter.calendarRange(startJulian, endJulian))
+
+
+# Rework of above function to be impler and less buggy for small steps
+# This method ensures the startJulian is the start for each year, regardless of step interval
+def simpleGetTimeImageCollection(
+    startYear: int,
+    endYear: int,
+    startJulian: int = 1,
+    endJulian: int = 365,
+    step: float = 0.1,
+):
+    """
+    Provides a time series of year and decimal days `ee.ImageCollection`. This is useful for CCDC predictions
+
+    Args:
+        startYear (int): The starting year for returned time-series.
+        endYear (int): The ending year for the returned time-series.
+        startJulian (int): The starting Julian day of year for returned time-series (1-365).
+        endJulian (int): The ending Julian day of year for returned time-series (1-365).
+        step (float, optional): Fraction of a year for each output in returned time-series (~0.01-1). Defaults to 0.1.
+
+    Returns:
+        ee.ImageCollection: A collection of time images.
+
+    >>> import geeViz.changeDetectionLib as cdl
+    >>> Map = cdl.Map
+    >>> ee = cdl.ee
+    >>> timeImgs = cdl.simpleGetTimeImageCollection(startYear = 1984, endYear = 2024, startJulian = 1, endJulian = 365, step = 0.1)
+    >>> Map.addLayer(timeImgs, {}, "Time Images", True)
+    >>> Map.turnOnInspector()
+    >>> Map.view()
+    """
+    startDayFraction = startJulian / 365
+    endDayFraction = endJulian / 365
+    years = ee.List.sequence(startYear, endYear)
+    dates = ee.List(years.map(lambda yr: ee.List.sequence(ee.Number(yr).add(startDayFraction), ee.Number(yr).add(endDayFraction), step))).flatten()
+
+    def getYrImage(n):
+        n = ee.Number(n)
+        img = ee.Image(n).float().rename(["year"])
+        y = n.int16()
+        fraction = n.subtract(y)
+        d = ee.Date.fromYMD(y, 1, 1).advance(fraction, "year").advance(-1, "day").millis()
+        return img.set("system:time_start", d)
+
+    yearImages = ee.ImageCollection(dates.map(getYrImage))
+    return yearImages
 
 
 # This creates an image collection in the same format as getTimeImageCollection(), but gets the pixel-wise dates from a composite collection
@@ -2716,31 +2432,13 @@ def getTimeImageCollectionFromComposites(
         startYear = compositeCollection.first().date().get("year")
         print("Found start year: {}".format(startYear.getInfo()))
     if endYear == None:
-        endYear = (
-            compositeCollection.sort("system:time_start", False)
-            .first()
-            .date()
-            .get("year")
-        )
+        endYear = compositeCollection.sort("system:time_start", False).first().date().get("year")
         print("Found end year: {}".format(endYear.getInfo()))
 
-    dates = compositeCollection.map(
-        lambda img: img.select(["year"])
-        .add(img.select(["julianDay"]).divide(365))
-        .float()
-        .copyProperties(img, ["system:time_start"])
-    )
+    dates = compositeCollection.map(lambda img: img.select(["year"]).add(img.select(["julianDay"]).divide(365)).float().copyProperties(img, ["system:time_start"]))
     dummyImage = dates.first()
 
-    datesFilled = ee.ImageCollection(
-        ee.List.sequence(startYear, endYear).map(
-            lambda yr: fillEmptyCollections(
-                dates.filter(ee.Filter.calendarRange(yr, yr, "year")), dummyImage
-            )
-            .first()
-            .set("system:time_start", ee.Date.fromYMD(yr, 6, 1).millis())
-        )
-    )
+    datesFilled = ee.ImageCollection(ee.List.sequence(startYear, endYear).map(lambda yr: fillEmptyCollections(dates.filter(ee.Filter.calendarRange(yr, yr, "year")), dummyImage).first().set("system:time_start", ee.Date.fromYMD(yr, 6, 1).millis())))
 
     if interpolate:
         print("Interpolating composite time images")
@@ -2755,14 +2453,47 @@ def getTimeImageCollectionFromComposites(
 
 
 ###################################################################################
-# Function for getting change years and magnitudes for a specified band from CCDC outputs
-# Only change from the breaks is extracted
-# As of now, if a segment has a high slope value, this method will not extract that
-def ccdcChangeDetection(ccdcImg, bandName):
+def ccdcChangeDetection(ccdcImg: list[ee.Image, ee.Image] | ee.Image, bandName: str, startYear: None | int = None, endYear: None | int = None) -> dict:
+    """
+    Function for getting change years and magnitudes for a specified band from CCDC outputs
+    Only change from the breaks is extracted. As of now, if a segment has a high slope value, this method will not extract that.
+    If combining two CCDC raw outputs provide them as a list of two images for the `ccdcImg` parameter.
+
+    Args:
+        ccdcImg (list[ee.Image, ee.Image] | ee.Image): A raw CCDC `ee.Image` array or list of two raw CCDC `ee.Image` arrays. If a list of 2 images is provided, they will automatically be combined.
+        bandName (str): The band name to use for magnitude of change.
+        startYear (None | int): The start of the time window. If left as None, all years in the input CCDC images will be included. Defaults to None.
+        endYear (None | int): The end of the time window (inclusive). If left as None, all years in the input CCDC images will be included. Defaults to None.
+
+    Returns:
+        dict: A dictionary of various CCDC change metrics.
+
+    >>> import geeViz.changeDetectionLib as cdl
+    >>> Map = cdl.Map
+    >>> ee = cdl.ee
+    >>> changeDetectionBandName = "NDVI"
+    >>> ccdcChangeBandNames = ["tBreak", "changeProb", f"{changeDetectionBandName}.*"]
+    >>> sortingMethod = "mostRecent"
+    >>> ccdcImg1 = ee.ImageCollection("projects/lcms-292214/assets/CONUS-LCMS/Base-Learners/CCDC-Collection-1984-2022").select(ccdcChangeBandNames).mosaic()
+    >>> ccdcImg2 = ee.ImageCollection("projects/lcms-292214/assets/CONUS-LCMS/Base-Learners/CCDC-Feathered-Collection").select(ccdcChangeBandNames).mosaic()
+    >>> changeObjCombined = cdl.ccdcChangeDetection([ccdcImg1, ccdcImg2], changeDetectionBandName)
+    >>> Map.addLayer(changeObjCombined[sortingMethod]["loss"]["year"], {"min": 1984, "max": 2024, "palette": cdl.lossYearPalette}, "Loss Year")
+    >>> Map.addLayer(changeObjCombined[sortingMethod]["loss"]["mag"], {"min": -0.5, "max": -0.1, "palette": cdl.lossMagPalette}, "Loss Mag", False)
+    >>> Map.addLayer(changeObjCombined[sortingMethod]["gain"]["year"], {"min": 1984, "max": 2024, "palette": cdl.gainYearPalette}, "Gain Year")
+    >>> Map.addLayer(changeObjCombined[sortingMethod]["gain"]["mag"], {"min": 0.05, "max": 0.2, "palette": cdl.gainMagPalette}, "Gain Mag", False)
+    >>> Map.turnOnInspector()
+    >>> Map.setCenter(-88, 36, 12)
+    >>> Map.view()
+    """
     magKeys = [".*_magnitude"]
     tBreakKeys = ["tBreak"]
     changeProbKeys = ["changeProb"]
     changeProbThresh = 1
+    changeBands = [f"{bandName}_magnitude", "tBreak", "changeProb"]
+
+    # Combine ccdc images if two are provided
+    if type(ccdcImg).__name__ == "list":
+        ccdcImg = ccdcImg[0].select(changeBands).arrayCat(ccdcImg[1].select(changeBands), 0)
 
     # Pull out pieces from CCDC output
     magnitudes = ccdcImg.select(magKeys)
@@ -2783,91 +2514,52 @@ def ccdcChangeDetection(ccdcImg, bandName):
     changeMaskSortedByYear = changeMask.arraySort(breaks)
 
     # Get the loss and gain years and magnitudes for each sorting method
-    highestMagLossYear = breaksSortedByMag.arraySlice(0, 0, 1).arrayFlatten(
-        [["loss_year"]]
-    )
-    highestMagLossMag = magnitudesSortedByMag.arraySlice(0, 0, 1).arrayFlatten(
-        [["loss_mag"]]
-    )
-    highestMagLossMask = changeMaskSortedByMag.arraySlice(0, 0, 1).arrayFlatten(
-        [["loss_mask"]]
-    )
+    highestMagLossYear = breaksSortedByMag.arraySlice(0, 0, 1).arrayFlatten([["loss_year"]])
+    highestMagLossMag = magnitudesSortedByMag.arraySlice(0, 0, 1).arrayFlatten([["loss_mag"]])
+    highestMagLossMask = changeMaskSortedByMag.arraySlice(0, 0, 1).arrayFlatten([["loss_mask"]])
 
-    highestMagLossYear = highestMagLossYear.updateMask(
-        highestMagLossMag.lt(0).And(highestMagLossMask)
-    )
-    highestMagLossMag = highestMagLossMag.updateMask(
-        highestMagLossMag.lt(0).And(highestMagLossMask)
-    )
+    highestMagLossYear = highestMagLossYear.updateMask(highestMagLossMag.lt(0).And(highestMagLossMask))
+    highestMagLossMag = highestMagLossMag.updateMask(highestMagLossMag.lt(0).And(highestMagLossMask))
 
-    highestMagGainYear = breaksSortedByMag.arraySlice(0, -1, None).arrayFlatten(
-        [["gain_year"]]
-    )
-    highestMagGainMag = magnitudesSortedByMag.arraySlice(0, -1, None).arrayFlatten(
-        [["gain_mag"]]
-    )
-    highestMagGainMask = changeMaskSortedByMag.arraySlice(0, -1, None).arrayFlatten(
-        [["gain_mask"]]
-    )
+    highestMagGainYear = breaksSortedByMag.arraySlice(0, -1, None).arrayFlatten([["gain_year"]])
+    highestMagGainMag = magnitudesSortedByMag.arraySlice(0, -1, None).arrayFlatten([["gain_mag"]])
+    highestMagGainMask = changeMaskSortedByMag.arraySlice(0, -1, None).arrayFlatten([["gain_mask"]])
 
-    highestMagGainYear = highestMagGainYear.updateMask(
-        highestMagGainMag.gt(0).And(highestMagGainMask)
-    )
-    highestMagGainMag = highestMagGainMag.updateMask(
-        highestMagGainMag.gt(0).And(highestMagGainMask)
-    )
+    highestMagGainYear = highestMagGainYear.updateMask(highestMagGainMag.gt(0).And(highestMagGainMask))
+    highestMagGainMag = highestMagGainMag.updateMask(highestMagGainMag.gt(0).And(highestMagGainMask))
 
-    mostRecentLossYear = (
-        breaksSortedByYear.arrayMask(magnitudesSortedByYear.lt(0))
-        .arrayPad([1])
-        .arraySlice(0, -1, None)
-        .arrayFlatten([["loss_year"]])
-    )
-    mostRecentLossMag = (
-        magnitudesSortedByYear.arrayMask(magnitudesSortedByYear.lt(0))
-        .arrayPad([1])
-        .arraySlice(0, -1, None)
-        .arrayFlatten([["loss_mag"]])
-    )
-    mostRecentLossMask = (
-        changeMaskSortedByYear.arrayMask(magnitudesSortedByYear.lt(0))
-        .arrayPad([1])
-        .arraySlice(0, -1, None)
-        .arrayFlatten([["loss_mask"]])
-    )
+    mostRecentLossYear = breaksSortedByYear.arrayMask(magnitudesSortedByYear.lt(0)).arrayPad([1]).arraySlice(0, -1, None).arrayFlatten([["loss_year"]])
+    mostRecentLossMag = magnitudesSortedByYear.arrayMask(magnitudesSortedByYear.lt(0)).arrayPad([1]).arraySlice(0, -1, None).arrayFlatten([["loss_mag"]])
+    mostRecentLossMask = changeMaskSortedByYear.arrayMask(magnitudesSortedByYear.lt(0)).arrayPad([1]).arraySlice(0, -1, None).arrayFlatten([["loss_mask"]])
 
-    mostRecentLossYear = mostRecentLossYear.updateMask(
-        mostRecentLossMag.lt(0).And(mostRecentLossMask)
-    )
-    mostRecentLossMag = mostRecentLossMag.updateMask(
-        mostRecentLossMag.lt(0).And(mostRecentLossMask)
-    )
+    mostRecentLossYear = mostRecentLossYear.updateMask(mostRecentLossMag.lt(0).And(mostRecentLossMask))
+    mostRecentLossMag = mostRecentLossMag.updateMask(mostRecentLossMag.lt(0).And(mostRecentLossMask))
 
-    mostRecentGainYear = (
-        breaksSortedByYear.arrayMask(magnitudesSortedByYear.gt(0))
-        .arrayPad([1])
-        .arraySlice(0, -1, None)
-        .arrayFlatten([["gain_year"]])
-    )
-    mostRecentGainMag = (
-        magnitudesSortedByYear.arrayMask(magnitudesSortedByYear.gt(0))
-        .arrayPad([1])
-        .arraySlice(0, -1, None)
-        .arrayFlatten([["gain_mag"]])
-    )
-    mostRecentGainMask = (
-        changeMaskSortedByYear.arrayMask(magnitudesSortedByYear.gt(0))
-        .arrayPad([1])
-        .arraySlice(0, -1, None)
-        .arrayFlatten([["gain_mask"]])
-    )
+    mostRecentGainYear = breaksSortedByYear.arrayMask(magnitudesSortedByYear.gt(0)).arrayPad([1]).arraySlice(0, -1, None).arrayFlatten([["gain_year"]])
+    mostRecentGainMag = magnitudesSortedByYear.arrayMask(magnitudesSortedByYear.gt(0)).arrayPad([1]).arraySlice(0, -1, None).arrayFlatten([["gain_mag"]])
+    mostRecentGainMask = changeMaskSortedByYear.arrayMask(magnitudesSortedByYear.gt(0)).arrayPad([1]).arraySlice(0, -1, None).arrayFlatten([["gain_mask"]])
 
-    mostRecentGainYear = mostRecentGainYear.updateMask(
-        mostRecentGainMag.gt(0).And(mostRecentGainMask)
-    )
-    mostRecentGainMag = mostRecentGainMag.updateMask(
-        mostRecentGainMag.gt(0).And(mostRecentGainMask)
-    )
+    mostRecentGainYear = mostRecentGainYear.updateMask(mostRecentGainMag.gt(0).And(mostRecentGainMask))
+    mostRecentGainMag = mostRecentGainMag.updateMask(mostRecentGainMag.gt(0).And(mostRecentGainMask))
+
+    if startYear != None and endYear != None:
+        mostRecentLossYearMask = mostRecentLossYear.gte(startYear).And(mostRecentLossYear.lt(endYear + 1))
+
+        mostRecentGainYearMask = mostRecentGainYear.gte(startYear).And(mostRecentGainYear.lt(endYear + 1))
+
+        highestMagLossYearMask = highestMagLossYear.gte(startYear).And(highestMagLossYear.lt(endYear + 1))
+
+        highestMagGainYearMask = highestMagGainYear.gte(startYear).And(highestMagGainYear.lt(endYear + 1))
+
+        mostRecentLossYear = mostRecentLossYear.updateMask(mostRecentLossYearMask)
+        mostRecentGainYear = mostRecentGainYear.updateMask(mostRecentGainYearMask)
+        highestMagLossYear = highestMagLossYear.updateMask(highestMagLossYearMask)
+        highestMagGainYear = highestMagGainYear.updateMask(highestMagGainYearMask)
+
+        mostRecentLossMag = mostRecentLossMag.updateMask(mostRecentLossYearMask)
+        mostRecentGainMag = mostRecentGainMag.updateMask(mostRecentGainYearMask)
+        highestMagLossMag = highestMagLossMag.updateMask(highestMagLossYearMask)
+        highestMagGainMag = highestMagGainMag.updateMask(highestMagGainYearMask)
 
     return {
         "mostRecent": {
@@ -2882,11 +2574,11 @@ def ccdcChangeDetection(ccdcImg, bandName):
 
 
 ###################################################################################
-# Function to feather two CCDC collections together based on overlapping data time periods and weights
-# The feather years are the overlapping years between the two CCDC collections that are used in weighting
-def featherCCDCImgs(
-    joinedCCDCImg, ccdcBnds, coeffs1_bns, coeffs2_bns, featherStartYr, featherEndYr
-):
+def featherCCDCImgs(joinedCCDCImg: ee.Image, ccdcBnds: list | ee.List, coeffs1_bns: list | ee.List, coeffs2_bns: list | ee.List, featherStartYr: int, featherEndYr: int) -> ee.Image:
+    """
+    Function to feather two CCDC collections together based on overlapping data time periods and weights
+    The feather years are the overlapping years between the two CCDC collections that are used in weighting
+    """
     yr = ee.Number.parse(joinedCCDCImg.date().format("YYYY.DDD"))
 
     # Find difference between end and start feather years for weighting in feathering
@@ -2898,21 +2590,25 @@ def featherCCDCImgs(
     c1 = joinedCCDCImg.select(coeffs1_bns)
     c2 = joinedCCDCImg.select(coeffs2_bns)
 
-    w1 = c1.mask().multiply(weight)
+    m1 = c1.mask()
+    m2 = c2.mask()
 
-    w2 = c2.mask().multiply(ee.Number(1).subtract(weight))
+    w1 = m1.multiply(weight)
+
+    w2 = m2.multiply(ee.Number(1).subtract(weight))
     c1 = c1.unmask(0).multiply(w1)
     c2 = c2.unmask(0).multiply(w2)
-    avg = c1.add(c2).divide(w1.add(w2))
+    avg = c1.add(c2).divide(w1.add(w2)).mask(m1.Or(m2))
     avg = avg.set("weight", weight)
     return avg.rename(ccdcBnds).copyProperties(joinedCCDCImg, ["system:time_start"])
 
 
-# Wrapper function to join annualized CCDC images from two different CCDC collections, and iterate across images and apply featherCCDCImgs function
-# The feather years are the overlapping years between the two CCDC collections that are used in weighting
-def batchFeatherCCDCImgs(
-    ccdcAnnualizedCol1, ccdcAnnualizedCol2, featherStartYr, featherEndYr
-):
+###################################################################################
+def batchFeatherCCDCImgs(ccdcAnnualizedCol1: ee.ImageCollection, ccdcAnnualizedCol2: ee.ImageCollection, featherStartYr: int, featherEndYr: int) -> ee.ImageCollection:
+    """
+    Wrapper function to join annualized CCDC images from two different CCDC collections, and iterate across images and apply featherCCDCImgs function
+    The feather years are the overlapping years between the two CCDC collections that are used in weighting
+    """
     # Get coeffs band info and rename bands for joined Collection
     coeffs1 = ccdcAnnualizedCol1.select(["year", ".*_coefs_.*"])
     coeffs2 = ccdcAnnualizedCol2.select(["year", ".*_coefs_.*"])
@@ -2925,12 +2621,12 @@ def batchFeatherCCDCImgs(
     coeffs2 = coeffs2.select(bns, coeffs2_bns)
 
     # Join CCDC images together for feathering
-    coeffs_joined = joinCollections(coeffs1, coeffs2)
+    # coeffs_joined = joinCollections(coeffs1, coeffs2)
+    coeffs_joined = coeffs1.linkCollection(coeffs2, coeffs2_bns, None, "system:time_start")
 
     # Apply featherCCDCImgs across images
-    ccdcCol_coeffs_avg = coeffs_joined.map(
-        lambda img: featherCCDCImgs(
-            img, bns, coeffs1_bns, coeffs2_bns, featherStartYr, featherEndYr
-        )
-    )
+    ccdcCol_coeffs_avg = coeffs_joined.map(lambda img: featherCCDCImgs(img, bns, coeffs1_bns, coeffs2_bns, featherStartYr, featherEndYr))
     return ccdcCol_coeffs_avg
+
+
+###################################################################################
