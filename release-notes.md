@@ -1,3 +1,17 @@
+# geeViz 2024.11.2 Release Notes
+
+## November 11, 2024
+
+### New Features
+
+- **geeViz.geeView Enanced Error Handling** - geeViz.geeView no longer falls back on default credentials if loading fails. The error messaging has been improved to help users navigate likely causes of loading failures so they can continue to use the same credentials on the Python and javaScript side (using a temporary access token) of geeViz.geeView.
+
+### Bug fixes
+
+- `examples.CCDCVizNotebook` endYear bug fix. The endYear was set to 2024, but needed set to 2022 for the first few code blocks.
+
+---
+
 # geeViz 2024.11.1 Release Notes
 
 ## November 8, 2024

@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Visualizing MapBiomas Datasets" href="mapBiomasViewerExampleNotebook.html" /><link rel="prev" title="LCMS Viewer Intro Notebook" href="lcmsViewerExampleNotebook.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Annual NLCD geeViz Viewer - geeViz &#34;2024.11.1&#34; docs</title>
+        <title>Annual NLCD geeViz Viewer - geeViz &#34;2024.11.2&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -142,7 +142,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">geeViz "2024.11.1" docs</div></a>
+      <a href="../index.html"><div class="brand">geeViz "2024.11.2" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -168,7 +168,7 @@
     <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.11.1" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.11.2" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -280,12 +280,7 @@ limitations under the License.</p>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Initializing GEE
-Cached project id file path: C:\Users\ihousman\.config\earthengine\credentials.proj_id
-Cached project id: lcms-292214
-Successfully initialized
-geeViz package folder: c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\geeViz
-Done
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Done
 </pre></div>
 </div>
 </div>
@@ -338,14 +333,14 @@ Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZD-2hE4zpnI8NJKUt4_02wk992Om0m7YtTm6Y2R97S72Ip9JmVUER6ZjV0-WQupzNPn6X0tFYtFawNQ1RwU1FallYERbk4e3gsYdeaJ5Zxbl6UaNkP-FNMxYh5KRH46vcsutilk5dsaR3lsqEpk0zj-nb7VqhqPyuWzqJQaCgYKAfQSARESFQHGX2MifTX1JvE4SnD3BED9et6TrQ0178
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZBUBXezc6xttXaCq0WuwuuEp5720zhPBMybcBmwQcFMbs_NecpObnotAUQz6ZHGFZ48wJI1Sri6U099apNO2Cgr-zs940pb6t4v8czb374-eD9fZu0D6mnKFhj4D0DWsnyoivzJlirxwJxJhRCs5vFiWg7G59sfUI1hr5waCgYKAXsSARESFQHGX2MiJ3qogLz8PseDAi4ikMdTJg0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZD-2hE4zpnI8NJKUt4_02wk992Om0m7YtTm6Y2R97S72Ip9JmVUER6ZjV0-WQupzNPn6X0tFYtFawNQ1RwU1FallYERbk4e3gsYdeaJ5Zxbl6UaNkP-FNMxYh5KRH46vcsutilk5dsaR3lsqEpk0zj-nb7VqhqPyuWzqJQaCgYKAfQSARESFQHGX2MifTX1JvE4SnD3BED9et6TrQ0178"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZBUBXezc6xttXaCq0WuwuuEp5720zhPBMybcBmwQcFMbs_NecpObnotAUQz6ZHGFZ48wJI1Sri6U099apNO2Cgr-zs940pb6t4v8czb374-eD9fZu0D6mnKFhj4D0DWsnyoivzJlirxwJxJhRCs5vFiWg7G59sfUI1hr5waCgYKAXsSARESFQHGX2MiJ3qogLz8PseDAi4ikMdTJg0178"
             frameborder="0"
             allowfullscreen
             
@@ -360,20 +355,24 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
 
+<span class="c1"># Set up visualization parameters </span>
 <span class="n">fractional_impervious_surface_vizParams</span><span class="o">=</span> <span class="p">{</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s1">&#39;palette&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;#d3d3d3&#39;</span><span class="p">,</span> <span class="s1">&#39;#c9b1b1&#39;</span><span class="p">,</span> <span class="s1">&#39;#b38484&#39;</span><span class="p">,</span> <span class="s1">&#39;#e75454&#39;</span><span class="p">,</span> <span class="s1">&#39;#ff7fbf&#39;</span><span class="p">,</span> <span class="s1">&#39;#cc66cc&#39;</span><span class="p">,</span> <span class="s1">&#39;#9933cc&#39;</span><span class="p">,</span> <span class="s1">&#39;#660099&#39;</span><span class="p">]}</span>
 <span class="n">impervious_descriptor_vizParams</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;reducer&#39;</span><span class="p">:</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">mode</span><span class="p">(),</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;line&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;sankey&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;sankeyMinPercentage&#39;</span><span class="p">:</span><span class="mf">0.1</span><span class="p">}}</span>
 
 <span class="n">imperviousDescriptorVizProps</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;ID_class_values&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span><span class="s1">&#39;ID_class_palette&#39;</span><span class="p">:[</span><span class="s1">&#39;000000&#39;</span><span class="p">,</span> <span class="s1">&#39;2171b5&#39;</span><span class="p">,</span> <span class="s1">&#39;f6ec27&#39;</span><span class="p">],</span><span class="s1">&#39;ID_class_names&#39;</span><span class="p">:[</span><span class="s1">&#39;No Data&#39;</span><span class="p">,</span><span class="s1">&#39;Roads&#39;</span><span class="p">,</span><span class="s1">&#39;Urban&#39;</span><span class="p">]}</span>
 
+<span class="c1"># Bring in collections and set viz properties</span>
 <span class="n">nlcd_fractional_impervious_surface</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/sat-io/open-datasets/USGS/ANNUAL_NLCD/FRACTIONAL_IMPERVIOUS_SURFACE&quot;</span><span class="p">)</span>
 <span class="n">nlcd_impervious_descriptor</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/sat-io/open-datasets/USGS/ANNUAL_NLCD/IMPERVIOUS_DESCRIPTOR&quot;</span><span class="p">)</span>
 <span class="n">nlcd_impervious_descriptor</span> <span class="o">=</span> <span class="n">nlcd_impervious_descriptor</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="mi">0</span><span class="p">],[</span><span class="s1">&#39;ID&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">img</span><span class="p">:</span><span class="n">img</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">imperviousDescriptorVizProps</span><span class="p">))</span>
 
+<span class="c1"># Add layers to the map</span>
 <span class="n">addLayerFun</span> <span class="o">=</span> <span class="n">Map</span><span class="o">.</span><span class="n">addTimeLapse</span> <span class="c1"># Specify Map.addLayer or Map.addTimeLapse</span>
 <span class="n">addLayerFun</span><span class="p">(</span><span class="n">nlcd_fractional_impervious_surface</span><span class="p">,</span><span class="n">fractional_impervious_surface_vizParams</span><span class="p">,</span><span class="s1">&#39;NLCD Percent Impervious&#39;</span><span class="p">)</span>
 <span class="n">addLayerFun</span><span class="p">(</span><span class="n">nlcd_impervious_descriptor</span><span class="p">,</span><span class="n">impervious_descriptor_vizParams</span><span class="p">,</span><span class="s1">&#39;NLCD Percent Impervious Descriptor&#39;</span><span class="p">)</span>
 
 
+<span class="c1"># View the map</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
 <span class="c1"># Map.turnOnInspector()</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
@@ -387,14 +386,14 @@ Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZALYZtgDsLpausqQADJi8v081gIZf6Djgca7qPs-fb-ZOPVebWeAgVzixxNXa6s-iDPPCsW0R5LpTxHKIhfwGQAkRBE_yKnqiS8nYguR2rPwPJF-cZ-xjmqsknyjVMsKlbeQ3fg4XcIlqSDxLUKVhcPm3Hp79EYnj7LH1YaCgYKAfMSARESFQHGX2Mit5GphslgrWK74G8VdW915Q0178
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZD51cbEj3BJuT9MD_VxnDbdGkYhZFeNitx1pjG3DRra8E21GR7sKMbDUJ9LLJIfSNWwe2Rm6ieJS2grQZMClatlPl0RchGFD0WjkH0NOQv9__NpP85uK3amyw1SCDhSswdYUKgUsswxRlVroGEGhTw9zBQsDrh0RBracyMaCgYKATQSARESFQHGX2Mif6k2SMZW3mIcAtMHOBR9NA0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZALYZtgDsLpausqQADJi8v081gIZf6Djgca7qPs-fb-ZOPVebWeAgVzixxNXa6s-iDPPCsW0R5LpTxHKIhfwGQAkRBE_yKnqiS8nYguR2rPwPJF-cZ-xjmqsknyjVMsKlbeQ3fg4XcIlqSDxLUKVhcPm3Hp79EYnj7LH1YaCgYKAfMSARESFQHGX2Mit5GphslgrWK74G8VdW915Q0178"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZD51cbEj3BJuT9MD_VxnDbdGkYhZFeNitx1pjG3DRra8E21GR7sKMbDUJ9LLJIfSNWwe2Rm6ieJS2grQZMClatlPl0RchGFD0WjkH0NOQv9__NpP85uK3amyw1SCDhSswdYUKgUsswxRlVroGEGhTw9zBQsDrh0RBracyMaCgYKATQSARESFQHGX2Mif6k2SMZW3mIcAtMHOBR9NA0178"
             frameborder="0"
             allowfullscreen
             
@@ -409,7 +408,7 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
-<span class="n">spectral_change_doy_vizParams</span><span class="o">=</span> <span class="p">{</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mi">366</span><span class="p">,</span> <span class="s1">&#39;palette&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;#6a0dad&#39;</span><span class="p">,</span> <span class="s1">&#39;#483d8b&#39;</span><span class="p">,</span> <span class="s1">&#39;#1e90ff&#39;</span><span class="p">,</span> <span class="s1">&#39;#00fa9a&#39;</span><span class="p">,</span> <span class="s1">&#39;#32cd32&#39;</span><span class="p">,</span> <span class="s1">&#39;#ffff00&#39;</span><span class="p">,</span> <span class="s1">&#39;#ff8c00&#39;</span><span class="p">,</span> <span class="s1">&#39;#ff4500&#39;</span><span class="p">,</span> <span class="s1">&#39;#ff0000&#39;</span><span class="p">]}</span>
+<span class="n">spectral_change_doy_vizParams</span><span class="o">=</span> <span class="p">{</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;reducer&#39;</span><span class="p">:</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">mode</span><span class="p">()},</span><span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mi">366</span><span class="p">,</span> <span class="s1">&#39;palette&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;#6a0dad&#39;</span><span class="p">,</span> <span class="s1">&#39;#483d8b&#39;</span><span class="p">,</span> <span class="s1">&#39;#1e90ff&#39;</span><span class="p">,</span> <span class="s1">&#39;#00fa9a&#39;</span><span class="p">,</span> <span class="s1">&#39;#32cd32&#39;</span><span class="p">,</span> <span class="s1">&#39;#ffff00&#39;</span><span class="p">,</span> <span class="s1">&#39;#ff8c00&#39;</span><span class="p">,</span> <span class="s1">&#39;#ff4500&#39;</span><span class="p">,</span> <span class="s1">&#39;#ff0000&#39;</span><span class="p">]}</span>
 
 <span class="n">nlcd_spectral_change_doy</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s2">&quot;projects/sat-io/open-datasets/USGS/ANNUAL_NLCD/SPECTRAL_CHANGE_DOY&quot;</span><span class="p">)</span>
 
@@ -430,14 +429,14 @@ Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZBpjUKkcj61hy4n6qjPS3wx2br_s3v-0MqOb6xyUAyJIadcHawOM7dNdNhba_q4BiJhLy0hIU151-9NNlGSxLQpXSHnEW2X-m-jN87-taAqRkg8-oWEV7k0OkztV9Qmappm2_S02LqxHQ_mmFzyJCFQU2L8SKE8taoLdlQaCgYKAWQSARESFQHGX2MiN0cpx0tY0nkXNddO6-Yq4g0178
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZDOw7snwA-nBYiE9b1EYSE5gLHZS7wxuTGzHtNlrm7LMHDDrPJMpMLs1O6FjS44_v_FUUrpXNiJc-SpQralQG3SVNhqb-l_PV0NPLpwUKO6xwodCOdL7nHVvlKtWxD5WFl6H17z9FH1h5RsyvMsZAK6yBJzHXbkiB2o7OUaCgYKAZ8SARESFQHGX2MiE0KOlcU1Ti8H6feVwDu-LA0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZBpjUKkcj61hy4n6qjPS3wx2br_s3v-0MqOb6xyUAyJIadcHawOM7dNdNhba_q4BiJhLy0hIU151-9NNlGSxLQpXSHnEW2X-m-jN87-taAqRkg8-oWEV7k0OkztV9Qmappm2_S02LqxHQ_mmFzyJCFQU2L8SKE8taoLdlQaCgYKAWQSARESFQHGX2MiN0cpx0tY0nkXNddO6-Yq4g0178"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZDOw7snwA-nBYiE9b1EYSE5gLHZS7wxuTGzHtNlrm7LMHDDrPJMpMLs1O6FjS44_v_FUUrpXNiJc-SpQralQG3SVNhqb-l_PV0NPLpwUKO6xwodCOdL7nHVvlKtWxD5WFl6H17z9FH1h5RsyvMsZAK6yBJzHXbkiB2o7OUaCgYKAZ8SARESFQHGX2MiE0KOlcU1Ti8H6feVwDu-LA0178"
             frameborder="0"
             allowfullscreen
             
@@ -520,7 +519,7 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=f42824bd"></script>
+</div><script src="../_static/documentation_options.js?v=8e9e9f52"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

@@ -25,7 +25,7 @@ geeViz.geeView is the core module for managing GEE objects on the geeViz mapper 
 # Intended to work within the geeViz package
 ######################################################################
 # Import modules
-import ee, sys, os, webbrowser, json, socket, subprocess, site, time, requests, google
+import ee, sys, os, webbrowser, json, socket, subprocess, site, datetime, requests, google
 from google.auth.transport import requests as gReq
 from google.oauth2 import service_account
 
@@ -935,12 +935,16 @@ class mapper:
         if self.serviceKeyPath == None:
             print("Using default refresh token for geeView")
             self.accessToken = refreshToken()
+            self.accessTokenCreationTime = int(datetime.datetime.now().timestamp() * 1000)
         else:
             print("Using service account key for geeView:", self.serviceKeyPath)
             self.accessToken = serviceAccountToken(self.serviceKeyPath)
             if self.accessToken == None:
                 print("Trying to authenticate to GEE using persistent refresh token.")
                 self.accessToken = refreshToken(self.refreshTokenPath)
+                self.accessTokenCreationTime = int(datetime.datetime.now().timestamp() * 1000)
+            else:
+                self.accessTokenCreationTime = None
         # Set up js code to populate
         lines = "var layerLoadErrorMessages=[];showMessage('Loading',staticTemplates.loadingModal[mode]);function runGeeViz(){"
 
@@ -994,10 +998,11 @@ class mapper:
 
         # Open viewer in browser or iframe in notebook
         print("cwd", os.getcwd())
+
         if IS_COLAB:
             proxy_js = "google.colab.kernel.proxyPort({})".format(self.port)
             proxy_url = eval_js(proxy_js)
-            geeView_proxy_url = "{}geeView/?projectID={}&accessToken={}".format(proxy_url, self.project, self.accessToken)
+            geeView_proxy_url = "{}geeView/?projectID={}&accessToken={}&accessTokenCreationTime={}".format(proxy_url, self.project, self.accessToken, self.accessTokenCreationTime)
             print("Colab Proxy URL:", geeView_proxy_url)
             viewerFrame = IFrame(src=geeView_proxy_url, width="100%", height="{}px".format(iframe_height))
             display(viewerFrame)
@@ -1005,12 +1010,12 @@ class mapper:
             if self.proxy_url == None:
                 self.proxy_url = input("Please enter current URL Workbench Notebook is running from (e.g. https://code-dot-region.notebooks.googleusercontent.com/): ")
             self.proxy_url = baseDomain(self.proxy_url)
-            geeView_proxy_url = "{}/proxy/{}/geeView/?projectID={}&accessToken={}".format(self.proxy_url, self.port, self.project, self.accessToken)
+            geeView_proxy_url = "{}/proxy/{}/geeView/?projectID={}&accessToken={}&accessTokenCreationTime={}".format(self.proxy_url, self.port, self.project, self.accessToken, self.accessTokenCreationTime)
             print("Workbench Proxy URL:", geeView_proxy_url)
             viewerFrame = IFrame(src=geeView_proxy_url, width="100%", height="{}px".format(iframe_height))
             display(viewerFrame)
         else:
-            url = "http://localhost:{}/{}/?projectID={}&accessToken={}".format(self.port, geeViewFolder, self.project, self.accessToken)
+            url = "http://localhost:{}/{}/?projectID={}&accessToken={}&accessTokenCreationTime={}".format(self.port, geeViewFolder, self.project, self.accessToken, self.accessTokenCreationTime)
             print("geeView URL:", url)
             if not self.isNotebook or open_browser:
                 webbrowser.open(url, new=1)

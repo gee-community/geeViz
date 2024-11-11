@@ -34,6 +34,7 @@ Map = geeView.Map
 # Clear any layers added to Map object
 # If map is not cleared, layers are simply appended to the existing list of layers if layers have been added previously
 Map.clearMap()
+Map.port = 1234
 ####################################################################################################
 # Bring in NLCD 2011
 nlcd = ee.Image("USGS/NLCD_RELEASES/2016_REL/2011")

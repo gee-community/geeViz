@@ -31,7 +31,7 @@
     },
     {
       "cell_type": "code",
-      "execution_count": 1,
+      "execution_count": 2,
       "id": "1245c2d1",
       "metadata": {
         "scrolled": false
@@ -41,11 +41,6 @@
           "name": "stdout",
           "output_type": "stream",
           "text": [
-            "Initializing GEE\n",
-            "Cached project id file path: C:\\Users\\ihousman\\.config\\earthengine\\credentials.proj_id\n",
-            "Cached project id: lcms-292214\n",
-            "Successfully initialized\n",
-            "geeViz package folder: c:\\Users\\ihousman\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages\\geeViz\n",
             "Done\n"
           ]
         }
@@ -83,7 +78,7 @@
     },
     {
       "cell_type": "code",
-      "execution_count": 2,
+      "execution_count": 4,
       "id": "a588e083",
       "metadata": {},
       "outputs": [
@@ -96,7 +91,7 @@
             "Using default refresh token for geeView\n",
             "Local web server at: http://localhost:8001/geeView/ already serving.\n",
             "cwd a:\\GEE\\gee_py_modules_package\\geeViz\\examples\n",
-            "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZD-2hE4zpnI8NJKUt4_02wk992Om0m7YtTm6Y2R97S72Ip9JmVUER6ZjV0-WQupzNPn6X0tFYtFawNQ1RwU1FallYERbk4e3gsYdeaJ5Zxbl6UaNkP-FNMxYh5KRH46vcsutilk5dsaR3lsqEpk0zj-nb7VqhqPyuWzqJQaCgYKAfQSARESFQHGX2MifTX1JvE4SnD3BED9et6TrQ0178\n"
+            "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZBUBXezc6xttXaCq0WuwuuEp5720zhPBMybcBmwQcFMbs_NecpObnotAUQz6ZHGFZ48wJI1Sri6U099apNO2Cgr-zs940pb6t4v8czb374-eD9fZu0D6mnKFhj4D0DWsnyoivzJlirxwJxJhRCs5vFiWg7G59sfUI1hr5waCgYKAXsSARESFQHGX2MiJ3qogLz8PseDAi4ikMdTJg0178\n"
           ]
         },
         {
@@ -106,7 +101,7 @@
               "        <iframe\n",
               "            width=\"100%\"\n",
               "            height=\"525px\"\n",
-              "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZD-2hE4zpnI8NJKUt4_02wk992Om0m7YtTm6Y2R97S72Ip9JmVUER6ZjV0-WQupzNPn6X0tFYtFawNQ1RwU1FallYERbk4e3gsYdeaJ5Zxbl6UaNkP-FNMxYh5KRH46vcsutilk5dsaR3lsqEpk0zj-nb7VqhqPyuWzqJQaCgYKAfQSARESFQHGX2MifTX1JvE4SnD3BED9et6TrQ0178\"\n",
+              "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZBUBXezc6xttXaCq0WuwuuEp5720zhPBMybcBmwQcFMbs_NecpObnotAUQz6ZHGFZ48wJI1Sri6U099apNO2Cgr-zs940pb6t4v8czb374-eD9fZu0D6mnKFhj4D0DWsnyoivzJlirxwJxJhRCs5vFiWg7G59sfUI1hr5waCgYKAXsSARESFQHGX2MiJ3qogLz8PseDAi4ikMdTJg0178\"\n",
               "            frameborder=\"0\"\n",
               "            allowfullscreen\n",
               "            \n",
@@ -114,7 +109,7 @@
               "        "
             ],
             "text/plain": [
-              "<IPython.lib.display.IFrame at 0x141a35edc90>"
+              "<IPython.lib.display.IFrame at 0x215031b1310>"
             ]
           },
           "metadata": {},
@@ -185,7 +180,7 @@
             "Using default refresh token for geeView\n",
             "Local web server at: http://localhost:8001/geeView/ already serving.\n",
             "cwd a:\\GEE\\gee_py_modules_package\\geeViz\\examples\n",
-            "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZALYZtgDsLpausqQADJi8v081gIZf6Djgca7qPs-fb-ZOPVebWeAgVzixxNXa6s-iDPPCsW0R5LpTxHKIhfwGQAkRBE_yKnqiS8nYguR2rPwPJF-cZ-xjmqsknyjVMsKlbeQ3fg4XcIlqSDxLUKVhcPm3Hp79EYnj7LH1YaCgYKAfMSARESFQHGX2Mit5GphslgrWK74G8VdW915Q0178\n"
+            "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZD51cbEj3BJuT9MD_VxnDbdGkYhZFeNitx1pjG3DRra8E21GR7sKMbDUJ9LLJIfSNWwe2Rm6ieJS2grQZMClatlPl0RchGFD0WjkH0NOQv9__NpP85uK3amyw1SCDhSswdYUKgUsswxRlVroGEGhTw9zBQsDrh0RBracyMaCgYKATQSARESFQHGX2Mif6k2SMZW3mIcAtMHOBR9NA0178\n"
           ]
         },
         {
@@ -195,7 +190,7 @@
               "        <iframe\n",
               "            width=\"100%\"\n",
               "            height=\"525px\"\n",
-              "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZALYZtgDsLpausqQADJi8v081gIZf6Djgca7qPs-fb-ZOPVebWeAgVzixxNXa6s-iDPPCsW0R5LpTxHKIhfwGQAkRBE_yKnqiS8nYguR2rPwPJF-cZ-xjmqsknyjVMsKlbeQ3fg4XcIlqSDxLUKVhcPm3Hp79EYnj7LH1YaCgYKAfMSARESFQHGX2Mit5GphslgrWK74G8VdW915Q0178\"\n",
+              "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZD51cbEj3BJuT9MD_VxnDbdGkYhZFeNitx1pjG3DRra8E21GR7sKMbDUJ9LLJIfSNWwe2Rm6ieJS2grQZMClatlPl0RchGFD0WjkH0NOQv9__NpP85uK3amyw1SCDhSswdYUKgUsswxRlVroGEGhTw9zBQsDrh0RBracyMaCgYKATQSARESFQHGX2Mif6k2SMZW3mIcAtMHOBR9NA0178\"\n",
               "            frameborder=\"0\"\n",
               "            allowfullscreen\n",
               "            \n",
@@ -203,7 +198,7 @@
               "        "
             ],
             "text/plain": [
-              "<IPython.lib.display.IFrame at 0x141a2510f90>"
+              "<IPython.lib.display.IFrame at 0x21502fc2ed0>"
             ]
           },
           "metadata": {},
@@ -213,20 +208,24 @@
       "source": [
         "Map.clearMap()\n",
         "\n",
+        "# Set up visualization parameters \n",
         "fractional_impervious_surface_vizParams= {'canAreaChart':True,'min': 1, 'max': 100, 'palette': ['#d3d3d3', '#c9b1b1', '#b38484', '#e75454', '#ff7fbf', '#cc66cc', '#9933cc', '#660099']}\n",
         "impervious_descriptor_vizParams = {'reducer':ee.Reducer.mode(),'autoViz':True,'canAreaChart':True,'areaChartParams':{'line':True,'sankey':True,'sankeyMinPercentage':0.1}}\n",
         "\n",
         "imperviousDescriptorVizProps = {'ID_class_values':[0,1,2],'ID_class_palette':['000000', '2171b5', 'f6ec27'],'ID_class_names':['No Data','Roads','Urban']}\n",
         "\n",
+        "# Bring in collections and set viz properties\n",
         "nlcd_fractional_impervious_surface = ee.ImageCollection(\"projects/sat-io/open-datasets/USGS/ANNUAL_NLCD/FRACTIONAL_IMPERVIOUS_SURFACE\")\n",
         "nlcd_impervious_descriptor = ee.ImageCollection(\"projects/sat-io/open-datasets/USGS/ANNUAL_NLCD/IMPERVIOUS_DESCRIPTOR\")\n",
         "nlcd_impervious_descriptor = nlcd_impervious_descriptor.select([0],['ID']).map(lambda img:img.set(imperviousDescriptorVizProps))\n",
         "\n",
+        "# Add layers to the map\n",
         "addLayerFun = Map.addTimeLapse # Specify Map.addLayer or Map.addTimeLapse\n",
         "addLayerFun(nlcd_fractional_impervious_surface,fractional_impervious_surface_vizParams,'NLCD Percent Impervious')\n",
         "addLayerFun(nlcd_impervious_descriptor,impervious_descriptor_vizParams,'NLCD Percent Impervious Descriptor')\n",
         "\n",
         "\n",
+        "# View the map\n",
         "Map.turnOnAutoAreaCharting()\n",
         "# Map.turnOnInspector()\n",
         "Map.view()"
@@ -246,7 +245,7 @@
     },
     {
       "cell_type": "code",
-      "execution_count": 6,
+      "execution_count": 7,
       "id": "ca2b2776",
       "metadata": {},
       "outputs": [
@@ -259,7 +258,7 @@
             "Using default refresh token for geeView\n",
             "Local web server at: http://localhost:8001/geeView/ already serving.\n",
             "cwd a:\\GEE\\gee_py_modules_package\\geeViz\\examples\n",
-            "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZBpjUKkcj61hy4n6qjPS3wx2br_s3v-0MqOb6xyUAyJIadcHawOM7dNdNhba_q4BiJhLy0hIU151-9NNlGSxLQpXSHnEW2X-m-jN87-taAqRkg8-oWEV7k0OkztV9Qmappm2_S02LqxHQ_mmFzyJCFQU2L8SKE8taoLdlQaCgYKAWQSARESFQHGX2MiN0cpx0tY0nkXNddO6-Yq4g0178\n"
+            "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZDOw7snwA-nBYiE9b1EYSE5gLHZS7wxuTGzHtNlrm7LMHDDrPJMpMLs1O6FjS44_v_FUUrpXNiJc-SpQralQG3SVNhqb-l_PV0NPLpwUKO6xwodCOdL7nHVvlKtWxD5WFl6H17z9FH1h5RsyvMsZAK6yBJzHXbkiB2o7OUaCgYKAZ8SARESFQHGX2MiE0KOlcU1Ti8H6feVwDu-LA0178\n"
           ]
         },
         {
@@ -269,7 +268,7 @@
               "        <iframe\n",
               "            width=\"100%\"\n",
               "            height=\"525px\"\n",
-              "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZBpjUKkcj61hy4n6qjPS3wx2br_s3v-0MqOb6xyUAyJIadcHawOM7dNdNhba_q4BiJhLy0hIU151-9NNlGSxLQpXSHnEW2X-m-jN87-taAqRkg8-oWEV7k0OkztV9Qmappm2_S02LqxHQ_mmFzyJCFQU2L8SKE8taoLdlQaCgYKAWQSARESFQHGX2MiN0cpx0tY0nkXNddO6-Yq4g0178\"\n",
+              "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZDOw7snwA-nBYiE9b1EYSE5gLHZS7wxuTGzHtNlrm7LMHDDrPJMpMLs1O6FjS44_v_FUUrpXNiJc-SpQralQG3SVNhqb-l_PV0NPLpwUKO6xwodCOdL7nHVvlKtWxD5WFl6H17z9FH1h5RsyvMsZAK6yBJzHXbkiB2o7OUaCgYKAZ8SARESFQHGX2MiE0KOlcU1Ti8H6feVwDu-LA0178\"\n",
               "            frameborder=\"0\"\n",
               "            allowfullscreen\n",
               "            \n",
@@ -277,7 +276,7 @@
               "        "
             ],
             "text/plain": [
-              "<IPython.lib.display.IFrame at 0x141a36aa490>"
+              "<IPython.lib.display.IFrame at 0x215031e53d0>"
             ]
           },
           "metadata": {},
@@ -286,7 +285,7 @@
       ],
       "source": [
         "Map.clearMap()\n",
-        "spectral_change_doy_vizParams= {'canAreaChart':True,'min': 1, 'max': 366, 'palette': ['#6a0dad', '#483d8b', '#1e90ff', '#00fa9a', '#32cd32', '#ffff00', '#ff8c00', '#ff4500', '#ff0000']}\n",
+        "spectral_change_doy_vizParams= {'canAreaChart':True,'areaChartParams':{'reducer':ee.Reducer.mode()},'min': 1, 'max': 366, 'palette': ['#6a0dad', '#483d8b', '#1e90ff', '#00fa9a', '#32cd32', '#ffff00', '#ff8c00', '#ff4500', '#ff0000']}\n",
         "\n",
         "nlcd_spectral_change_doy = ee.ImageCollection(\"projects/sat-io/open-datasets/USGS/ANNUAL_NLCD/SPECTRAL_CHANGE_DOY\")\n",
         "\n",

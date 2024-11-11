@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="A comparison between geeViz and geeMap’s map visualization capabilities" href="geeViz_geeMap_comparison_tutorial.html" /><link rel="prev" title="Create High Quality Landsat Composites" href="getLandsatWrapperNotebook.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Visualizing Area Summaries - geeViz &#34;2024.11.1&#34; docs</title>
+        <title>Visualizing Area Summaries - geeViz &#34;2024.11.2&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -142,7 +142,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">geeViz "2024.11.1" docs</div></a>
+      <a href="../index.html"><div class="brand">geeViz "2024.11.2" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -168,7 +168,7 @@
     <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.11.1" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.11.2" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -717,7 +717,7 @@ done
 <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">nlcd</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;landcover&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span><span class="s1">&#39;NLCD Land Cover&#39;</span><span class="p">)</span>
 
 
-<span class="n">Map</span><span class="o">.</span><span class="n">populateAreaChartLayerSelect</span><span class="p">()</span>
+
 <span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
 </pre></div>
@@ -730,14 +730,14 @@ Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612wQMLwq7kNcRxBK-Pwq6a-ubtzAxgp7T3SbRDxP3hu9I9xUYDhkFL6wd_qB4_vQfqFuFfvoIyTZ5ZDFDZjqaoTpaPn5nzVNXtNnNpFfCIkY3IkHkCqaovMXcBJH4A4VfYDk-OHzTi-QC8JERt1s-eweBKlOU6ikxdSmmG4aCgYKAQYSARESFQHGX2MiWG6Orz6ql17n2OfvvHEcrQ0178
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZCy74lFqH2vRSdWO9AxdxhsWLoXMyaXKztQ6KCGiMsZtDbVRqjjy3sVc_QHU5SYzbIoRtbDGoSYdacixwNzYHFisGaIYahCPHGrVTl_DyFOMtEgR6jIPu9eyBSuapjLr2z8eQ24tJrFO9W4_1yUNBIoOIPyfp-M1MTIQcsaCgYKAXgSARESFQHGX2MiiJf-wwurrDTgOcGV0IBG3g0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wQMLwq7kNcRxBK-Pwq6a-ubtzAxgp7T3SbRDxP3hu9I9xUYDhkFL6wd_qB4_vQfqFuFfvoIyTZ5ZDFDZjqaoTpaPn5nzVNXtNnNpFfCIkY3IkHkCqaovMXcBJH4A4VfYDk-OHzTi-QC8JERt1s-eweBKlOU6ikxdSmmG4aCgYKAQYSARESFQHGX2MiWG6Orz6ql17n2OfvvHEcrQ0178"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZCy74lFqH2vRSdWO9AxdxhsWLoXMyaXKztQ6KCGiMsZtDbVRqjjy3sVc_QHU5SYzbIoRtbDGoSYdacixwNzYHFisGaIYahCPHGrVTl_DyFOMtEgR6jIPu9eyBSuapjLr2z8eQ24tJrFO9W4_1yUNBIoOIPyfp-M1MTIQcsaCgYKAXgSARESFQHGX2MiiJf-wwurrDTgOcGV0IBG3g0178"
             frameborder="0"
             allowfullscreen
             
@@ -763,7 +763,7 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
 
 <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Land_Use&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;sankey&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}},</span><span class="s1">&#39;LCMS Land Use&#39;</span><span class="p">)</span>
 
-<span class="n">Map</span><span class="o">.</span><span class="n">populateAreaChartLayerSelect</span><span class="p">()</span>
+
 <span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
 </pre></div>
@@ -777,14 +777,14 @@ Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612yX3qMc40439RT6zwxeruOAxSaRh5sY_L2rYzn3xl7ezbJzdd4j5b3FG3JtP_Jv7B6pDoNVLUUIRSlBReb6-A4GG5wXPkvzg4Qx_IOmXi3maarPNd4yvIScJ6N8XWWfxMhY-0iJp-8vPw4KVhTVR9Sxtry7bZ3pI16NNmQaCgYKAYYSARESFQHGX2MilbEMMLnUBwWKlm61EZ-XkQ0178
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZAPJGhuHoXMi1_W2i7it9dBch7wHfEjM6luJgaT0hfxJUKzbbdZ2_w4uoF_FPptBoPWxaP2L6gf16U9kMJnNusrnWOLiIi8ywHi7k1FP1v5vwI2Eju0GUCV1xlO5eYFGYuUGNEhEG3NwtVRCTUcHd1ROQkJ5rfx6XdNzUoaCgYKAbsSARESFQHGX2MiUTznMNdubA5F5YD9d4aV_Q0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612yX3qMc40439RT6zwxeruOAxSaRh5sY_L2rYzn3xl7ezbJzdd4j5b3FG3JtP_Jv7B6pDoNVLUUIRSlBReb6-A4GG5wXPkvzg4Qx_IOmXi3maarPNd4yvIScJ6N8XWWfxMhY-0iJp-8vPw4KVhTVR9Sxtry7bZ3pI16NNmQaCgYKAYYSARESFQHGX2MilbEMMLnUBwWKlm61EZ-XkQ0178"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZAPJGhuHoXMi1_W2i7it9dBch7wHfEjM6luJgaT0hfxJUKzbbdZ2_w4uoF_FPptBoPWxaP2L6gf16U9kMJnNusrnWOLiIi8ywHi7k1FP1v5vwI2Eju0GUCV1xlO5eYFGYuUGNEhEG3NwtVRCTUcHd1ROQkJ5rfx6XdNzUoaCgYKAbsSARESFQHGX2MiUTznMNdubA5F5YD9d4aV_Q0178"
             frameborder="0"
             allowfullscreen
             
@@ -806,7 +806,7 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
 
 <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Land_Use&#39;</span><span class="p">]),{</span><span class="s1">&#39;autoViz&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;canAreaChart&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;areaChartParams&#39;</span><span class="p">:{</span><span class="s1">&#39;line&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;sankey&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}},</span><span class="s1">&#39;LCMS Land Use&#39;</span><span class="p">)</span>
 
-<span class="n">Map</span><span class="o">.</span><span class="n">populateAreaChartLayerSelect</span><span class="p">()</span>
+
 <span class="n">Map</span><span class="o">.</span><span class="n">turnOnAutoAreaCharting</span><span class="p">()</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
 </pre></div>
@@ -820,14 +820,14 @@ Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612ynRJ_-94l-WypiuR_p0BHURESNSafEjTM0qnF9jDSvL-qOXucOPhaJ4fWNk7NowfaaVijDko_J4bvpWjIkNcnPzLU2phXUe8JGGP529OvjvDgB7m_0b2Y04zC0MgqvpxuyC_7JOPSnWFHWvn88qJhB6odwD6hAVSAaCgYKAfQSARESFQHGX2Mizoa2sdRJ2uMk01vos_m5RA0174
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZDaLFoiiGYiKvmGmH1tBTNzNtGwr5C2QA0aCSuaV7mt_yuBytef5AZ2wU8H3IxgBZOA0Q2hkK33PTAxOp5vZ8Dvr912cdV3igxxnPLW76O1mfM0Viw_6BAB9q1ImB6BZEoOY5Cvwj2zNxC_Emn6PUmsWmcFITd5YQynpyEaCgYKAcUSARESFQHGX2MikAxeure5i3ICBvmn8fhBew0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612ynRJ_-94l-WypiuR_p0BHURESNSafEjTM0qnF9jDSvL-qOXucOPhaJ4fWNk7NowfaaVijDko_J4bvpWjIkNcnPzLU2phXUe8JGGP529OvjvDgB7m_0b2Y04zC0MgqvpxuyC_7JOPSnWFHWvn88qJhB6odwD6hAVSAaCgYKAfQSARESFQHGX2Mizoa2sdRJ2uMk01vos_m5RA0174"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZDaLFoiiGYiKvmGmH1tBTNzNtGwr5C2QA0aCSuaV7mt_yuBytef5AZ2wU8H3IxgBZOA0Q2hkK33PTAxOp5vZ8Dvr912cdV3igxxnPLW76O1mfM0Viw_6BAB9q1ImB6BZEoOY5Cvwj2zNxC_Emn6PUmsWmcFITd5YQynpyEaCgYKAcUSARESFQHGX2MikAxeure5i3ICBvmn8fhBew0178"
             frameborder="0"
             allowfullscreen
             
@@ -851,7 +851,7 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
 
 <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">lcms</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;Change_Raw_Probability.*&#39;</span><span class="p">]),{</span><span class="s1">&#39;reducer&#39;</span><span class="p">:</span><span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">stdDev</span><span class="p">(),</span><span class="s1">&#39;min&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;max&#39;</span><span class="p">:</span><span class="mi">10</span><span class="p">},</span><span class="s1">&#39;LCMS Change Prob&#39;</span><span class="p">)</span>
 
-<span class="n">Map</span><span class="o">.</span><span class="n">addAreaChartLayer</span><span class="p">(</span><span class="n">lcms</span><span class="p">,{</span><span class="s1">&#39;line&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;layerType&#39;</span><span class="p">:</span><span class="s1">&#39;ImageCollection&#39;</span><span class="p">},</span><span class="s1">&#39;LCMS All Thematic Classes Line&#39;</span><span class="p">,</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addAreaChartLayer</span><span class="p">(</span><span class="n">lcms</span><span class="p">,{</span><span class="s1">&#39;line&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span><span class="s1">&#39;LCMS All Thematic Classes Line&#39;</span><span class="p">,</span><span class="kc">False</span><span class="p">)</span>
 
 <span class="n">Map</span><span class="o">.</span><span class="n">addAreaChartLayer</span><span class="p">(</span><span class="n">lcms</span><span class="p">,{</span><span class="s1">&#39;sankey&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">},</span><span class="s1">&#39;LCMS All Thematic Classes Sankey&#39;</span><span class="p">,</span><span class="kc">True</span><span class="p">)</span>
 
@@ -870,14 +870,14 @@ Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612xctZSopHT8mgPf3-hOOh0X4ep_k3SdjI8JmWbngW0ob6DZXP4s1M6s8jCHad8pyo5FVX_9EK4WLx5USXFIa3yyzJ_cgO9mKGnGfCZGUxAu1Riv6QrmTZbVrBmI_kY_9VfNoNM2gYoGfBMpxtGVk-h5JRvrz0NE0qUaCgYKAbESARESFQHGX2Mio7EntC-E_KCdIl-8KvVbEw0174
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZA8sI8DEEcCRJIs9FfoFoDJPukpaeamD89f0q2qh9SM_i0-7OSQruSG8jXHkvH4_UzUyD1pOZ-cwZZlwFHy8twKhstWc0Oo5orG_TRwL1wC6xEHv737Xro4b7CykJuiBR168Ej_uWJ5JPGwCN1NlV6Qtt-wfYXBOusJEpUaCgYKAdUSARESFQHGX2MiyzjFyNwf2q3kecg_F-rFvg0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612xctZSopHT8mgPf3-hOOh0X4ep_k3SdjI8JmWbngW0ob6DZXP4s1M6s8jCHad8pyo5FVX_9EK4WLx5USXFIa3yyzJ_cgO9mKGnGfCZGUxAu1Riv6QrmTZbVrBmI_kY_9VfNoNM2gYoGfBMpxtGVk-h5JRvrz0NE0qUaCgYKAbESARESFQHGX2Mio7EntC-E_KCdIl-8KvVbEw0174"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZA8sI8DEEcCRJIs9FfoFoDJPukpaeamD89f0q2qh9SM_i0-7OSQruSG8jXHkvH4_UzUyD1pOZ-cwZZlwFHy8twKhstWc0Oo5orG_TRwL1wC6xEHv737Xro4b7CykJuiBR168Ej_uWJ5JPGwCN1NlV6Qtt-wfYXBOusJEpUaCgYKAdUSARESFQHGX2MiyzjFyNwf2q3kecg_F-rFvg0178"
             frameborder="0"
             allowfullscreen
             
@@ -1107,14 +1107,14 @@ Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612x9FqNyIuBa6Y3Gng0iMMDF33nU_H2SI6QG1_zfzFXeeJHF4OBiWSteiMC8uybgs2Dv4n1pALbwqAVf4SaQ5qLbYjBELqeUtaG546K4T765woRRvpvmHgtc_0iLgMj4lnvSgjEHtQDSDRyUhG20SNp6S0fD6wX6-DCo_FIaCgYKAS8SARESFQHGX2MiZFqvVweHWgcKOOqXrphnBQ0178
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612wJKTBG90sE7YjOsGwKAT2Io1SgHDHujjFffA7UVFDdzD6ieoa1LRPSj3JE0Rr_EbjdhU-m_tOgjjzBG9_JdmjzTH0wV35j206vk4iET5lr4Ij7hzaXnNi6UsXr2Nx24JjWdXdVCVekeJ4uxVWX_Frrk2xx7k1ALut5UBUaCgYKAQkSARESFQHGX2MihFCE1dDZKNyehV8R3vhoxQ0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612x9FqNyIuBa6Y3Gng0iMMDF33nU_H2SI6QG1_zfzFXeeJHF4OBiWSteiMC8uybgs2Dv4n1pALbwqAVf4SaQ5qLbYjBELqeUtaG546K4T765woRRvpvmHgtc_0iLgMj4lnvSgjEHtQDSDRyUhG20SNp6S0fD6wX6-DCo_FIaCgYKAS8SARESFQHGX2MiZFqvVweHWgcKOOqXrphnBQ0178"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wJKTBG90sE7YjOsGwKAT2Io1SgHDHujjFffA7UVFDdzD6ieoa1LRPSj3JE0Rr_EbjdhU-m_tOgjjzBG9_JdmjzTH0wV35j206vk4iET5lr4Ij7hzaXnNi6UsXr2Nx24JjWdXdVCVekeJ4uxVWX_Frrk2xx7k1ALut5UBUaCgYKAQkSARESFQHGX2MihFCE1dDZKNyehV8R3vhoxQ0178"
             frameborder="0"
             allowfullscreen
             
@@ -1154,14 +1154,14 @@ Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612w0Xpz3lD3_5q-SiXf6XpskovT8KHrMbfQWrYCnX-vUO_N1OYitd-M4bc39KuQ99hxzrYL5fyDBPbX8nfWxOaW58QbnAhVfEUJYc8iVdL8-1DZdXTxW8dGzQAHomUMFqQ_I8iNpZGk5cAdHyGl8ZPm7iO19NHb0WRCcoVQaCgYKAfsSARESFQHGX2MiXrZPo8D2qzZVPHBqFUYsBw0178
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612wadT88_g9U59GK--fr1PF-tM6S-z-5cRPTW7qhCoO8BaezIKVSxtIfsaz2_tQt2DaSH5xKD2u-AKbY5vRznLUC92QBoKLerlwwL7OapgmO2fIcc8IjWpW3gDMMfU3szuY6ShHWj7HiFGAw_ARd_T4970y6zGHieyeL9N4aCgYKAYwSARESFQHGX2MiXVVic5V0ZDr0FPFtD2QLeA0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612w0Xpz3lD3_5q-SiXf6XpskovT8KHrMbfQWrYCnX-vUO_N1OYitd-M4bc39KuQ99hxzrYL5fyDBPbX8nfWxOaW58QbnAhVfEUJYc8iVdL8-1DZdXTxW8dGzQAHomUMFqQ_I8iNpZGk5cAdHyGl8ZPm7iO19NHb0WRCcoVQaCgYKAfsSARESFQHGX2MiXrZPo8D2qzZVPHBqFUYsBw0178"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wadT88_g9U59GK--fr1PF-tM6S-z-5cRPTW7qhCoO8BaezIKVSxtIfsaz2_tQt2DaSH5xKD2u-AKbY5vRznLUC92QBoKLerlwwL7OapgmO2fIcc8IjWpW3gDMMfU3szuY6ShHWj7HiFGAw_ARd_T4970y6zGHieyeL9N4aCgYKAYwSARESFQHGX2MiXVVic5V0ZDr0FPFtD2QLeA0178"
             frameborder="0"
             allowfullscreen
             
@@ -1408,7 +1408,7 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=f42824bd"></script>
+</div><script src="../_static/documentation_options.js?v=8e9e9f52"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

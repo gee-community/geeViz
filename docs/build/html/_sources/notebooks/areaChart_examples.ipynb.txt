@@ -606,7 +606,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 3,
+   "execution_count": 6,
    "metadata": {},
    "outputs": [
     {
@@ -619,7 +619,7 @@
       "Using default refresh token for geeView\n",
       "Local web server at: http://localhost:8001/geeView/ already serving.\n",
       "cwd a:\\GEE\\gee_py_modules_package\\geeViz\\examples\n",
-      "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wQMLwq7kNcRxBK-Pwq6a-ubtzAxgp7T3SbRDxP3hu9I9xUYDhkFL6wd_qB4_vQfqFuFfvoIyTZ5ZDFDZjqaoTpaPn5nzVNXtNnNpFfCIkY3IkHkCqaovMXcBJH4A4VfYDk-OHzTi-QC8JERt1s-eweBKlOU6ikxdSmmG4aCgYKAQYSARESFQHGX2MiWG6Orz6ql17n2OfvvHEcrQ0178\n"
+      "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZCy74lFqH2vRSdWO9AxdxhsWLoXMyaXKztQ6KCGiMsZtDbVRqjjy3sVc_QHU5SYzbIoRtbDGoSYdacixwNzYHFisGaIYahCPHGrVTl_DyFOMtEgR6jIPu9eyBSuapjLr2z8eQ24tJrFO9W4_1yUNBIoOIPyfp-M1MTIQcsaCgYKAXgSARESFQHGX2MiiJf-wwurrDTgOcGV0IBG3g0178\n"
      ]
     },
     {
@@ -629,7 +629,7 @@
        "        <iframe\n",
        "            width=\"100%\"\n",
        "            height=\"525px\"\n",
-       "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wQMLwq7kNcRxBK-Pwq6a-ubtzAxgp7T3SbRDxP3hu9I9xUYDhkFL6wd_qB4_vQfqFuFfvoIyTZ5ZDFDZjqaoTpaPn5nzVNXtNnNpFfCIkY3IkHkCqaovMXcBJH4A4VfYDk-OHzTi-QC8JERt1s-eweBKlOU6ikxdSmmG4aCgYKAQYSARESFQHGX2MiWG6Orz6ql17n2OfvvHEcrQ0178\"\n",
+       "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZCy74lFqH2vRSdWO9AxdxhsWLoXMyaXKztQ6KCGiMsZtDbVRqjjy3sVc_QHU5SYzbIoRtbDGoSYdacixwNzYHFisGaIYahCPHGrVTl_DyFOMtEgR6jIPu9eyBSuapjLr2z8eQ24tJrFO9W4_1yUNBIoOIPyfp-M1MTIQcsaCgYKAXgSARESFQHGX2MiiJf-wwurrDTgOcGV0IBG3g0178\"\n",
        "            frameborder=\"0\"\n",
        "            allowfullscreen\n",
        "            \n",
@@ -637,7 +637,7 @@
        "        "
       ],
       "text/plain": [
-       "<IPython.lib.display.IFrame at 0x295dbda1150>"
+       "<IPython.lib.display.IFrame at 0x1eaab431590>"
       ]
      },
      "metadata": {},
@@ -652,7 +652,7 @@
     "Map.addLayer(nlcd.select(['landcover']),{'autoViz':True,'canAreaChart':True},'NLCD Land Cover')\n",
     "\n",
     "\n",
-    "Map.populateAreaChartLayerSelect()\n",
+    "\n",
     "Map.turnOnAutoAreaCharting()\n",
     "Map.view()"
    ]
@@ -688,7 +688,7 @@
       "Using default refresh token for geeView\n",
       "Local web server at: http://localhost:8001/geeView/ already serving.\n",
       "cwd a:\\GEE\\gee_py_modules_package\\geeViz\\examples\n",
-      "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612yX3qMc40439RT6zwxeruOAxSaRh5sY_L2rYzn3xl7ezbJzdd4j5b3FG3JtP_Jv7B6pDoNVLUUIRSlBReb6-A4GG5wXPkvzg4Qx_IOmXi3maarPNd4yvIScJ6N8XWWfxMhY-0iJp-8vPw4KVhTVR9Sxtry7bZ3pI16NNmQaCgYKAYYSARESFQHGX2MilbEMMLnUBwWKlm61EZ-XkQ0178\n"
+      "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZAPJGhuHoXMi1_W2i7it9dBch7wHfEjM6luJgaT0hfxJUKzbbdZ2_w4uoF_FPptBoPWxaP2L6gf16U9kMJnNusrnWOLiIi8ywHi7k1FP1v5vwI2Eju0GUCV1xlO5eYFGYuUGNEhEG3NwtVRCTUcHd1ROQkJ5rfx6XdNzUoaCgYKAbsSARESFQHGX2MiUTznMNdubA5F5YD9d4aV_Q0178\n"
      ]
     },
     {
@@ -698,7 +698,7 @@
        "        <iframe\n",
        "            width=\"100%\"\n",
        "            height=\"525px\"\n",
-       "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612yX3qMc40439RT6zwxeruOAxSaRh5sY_L2rYzn3xl7ezbJzdd4j5b3FG3JtP_Jv7B6pDoNVLUUIRSlBReb6-A4GG5wXPkvzg4Qx_IOmXi3maarPNd4yvIScJ6N8XWWfxMhY-0iJp-8vPw4KVhTVR9Sxtry7bZ3pI16NNmQaCgYKAYYSARESFQHGX2MilbEMMLnUBwWKlm61EZ-XkQ0178\"\n",
+       "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZAPJGhuHoXMi1_W2i7it9dBch7wHfEjM6luJgaT0hfxJUKzbbdZ2_w4uoF_FPptBoPWxaP2L6gf16U9kMJnNusrnWOLiIi8ywHi7k1FP1v5vwI2Eju0GUCV1xlO5eYFGYuUGNEhEG3NwtVRCTUcHd1ROQkJ5rfx6XdNzUoaCgYKAbsSARESFQHGX2MiUTznMNdubA5F5YD9d4aV_Q0178\"\n",
        "            frameborder=\"0\"\n",
        "            allowfullscreen\n",
        "            \n",
@@ -706,7 +706,7 @@
        "        "
       ],
       "text/plain": [
-       "<IPython.lib.display.IFrame at 0x295b4ee3b50>"
+       "<IPython.lib.display.IFrame at 0x1eaab431750>"
       ]
      },
      "metadata": {},
@@ -722,7 +722,7 @@
     "\n",
     "Map.addLayer(lcms.select(['Land_Use']),{'autoViz':True,'canAreaChart':True,'areaChartParams':{'sankey':True}},'LCMS Land Use')\n",
     "\n",
-    "Map.populateAreaChartLayerSelect()\n",
+    "\n",
     "Map.turnOnAutoAreaCharting()\n",
     "Map.view()"
    ]
@@ -740,7 +740,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 5,
+   "execution_count": 7,
    "metadata": {},
    "outputs": [
     {
@@ -754,7 +754,7 @@
       "Using default refresh token for geeView\n",
       "Local web server at: http://localhost:8001/geeView/ already serving.\n",
       "cwd a:\\GEE\\gee_py_modules_package\\geeViz\\examples\n",
-      "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612ynRJ_-94l-WypiuR_p0BHURESNSafEjTM0qnF9jDSvL-qOXucOPhaJ4fWNk7NowfaaVijDko_J4bvpWjIkNcnPzLU2phXUe8JGGP529OvjvDgB7m_0b2Y04zC0MgqvpxuyC_7JOPSnWFHWvn88qJhB6odwD6hAVSAaCgYKAfQSARESFQHGX2Mizoa2sdRJ2uMk01vos_m5RA0174\n"
+      "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZDaLFoiiGYiKvmGmH1tBTNzNtGwr5C2QA0aCSuaV7mt_yuBytef5AZ2wU8H3IxgBZOA0Q2hkK33PTAxOp5vZ8Dvr912cdV3igxxnPLW76O1mfM0Viw_6BAB9q1ImB6BZEoOY5Cvwj2zNxC_Emn6PUmsWmcFITd5YQynpyEaCgYKAcUSARESFQHGX2MikAxeure5i3ICBvmn8fhBew0178\n"
      ]
     },
     {
@@ -764,7 +764,7 @@
        "        <iframe\n",
        "            width=\"100%\"\n",
        "            height=\"525px\"\n",
-       "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612ynRJ_-94l-WypiuR_p0BHURESNSafEjTM0qnF9jDSvL-qOXucOPhaJ4fWNk7NowfaaVijDko_J4bvpWjIkNcnPzLU2phXUe8JGGP529OvjvDgB7m_0b2Y04zC0MgqvpxuyC_7JOPSnWFHWvn88qJhB6odwD6hAVSAaCgYKAfQSARESFQHGX2Mizoa2sdRJ2uMk01vos_m5RA0174\"\n",
+       "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZDaLFoiiGYiKvmGmH1tBTNzNtGwr5C2QA0aCSuaV7mt_yuBytef5AZ2wU8H3IxgBZOA0Q2hkK33PTAxOp5vZ8Dvr912cdV3igxxnPLW76O1mfM0Viw_6BAB9q1ImB6BZEoOY5Cvwj2zNxC_Emn6PUmsWmcFITd5YQynpyEaCgYKAcUSARESFQHGX2MikAxeure5i3ICBvmn8fhBew0178\"\n",
        "            frameborder=\"0\"\n",
        "            allowfullscreen\n",
        "            \n",
@@ -772,7 +772,7 @@
        "        "
       ],
       "text/plain": [
-       "<IPython.lib.display.IFrame at 0x1a6d3691250>"
+       "<IPython.lib.display.IFrame at 0x1eaa9ad0ad0>"
       ]
      },
      "metadata": {},
@@ -788,7 +788,7 @@
     "\n",
     "Map.addLayer(lcms.select(['Land_Use']),{'autoViz':True,'canAreaChart':True,'areaChartParams':{'line':True,'sankey':True}},'LCMS Land Use')\n",
     "\n",
-    "Map.populateAreaChartLayerSelect()\n",
+    "\n",
     "Map.turnOnAutoAreaCharting()\n",
     "Map.view()"
    ]
@@ -810,7 +810,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 6,
+   "execution_count": 9,
    "metadata": {},
    "outputs": [
     {
@@ -824,7 +824,7 @@
       "Using default refresh token for geeView\n",
       "Local web server at: http://localhost:8001/geeView/ already serving.\n",
       "cwd a:\\GEE\\gee_py_modules_package\\geeViz\\examples\n",
-      "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612xctZSopHT8mgPf3-hOOh0X4ep_k3SdjI8JmWbngW0ob6DZXP4s1M6s8jCHad8pyo5FVX_9EK4WLx5USXFIa3yyzJ_cgO9mKGnGfCZGUxAu1Riv6QrmTZbVrBmI_kY_9VfNoNM2gYoGfBMpxtGVk-h5JRvrz0NE0qUaCgYKAbESARESFQHGX2Mio7EntC-E_KCdIl-8KvVbEw0174\n"
+      "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZA8sI8DEEcCRJIs9FfoFoDJPukpaeamD89f0q2qh9SM_i0-7OSQruSG8jXHkvH4_UzUyD1pOZ-cwZZlwFHy8twKhstWc0Oo5orG_TRwL1wC6xEHv737Xro4b7CykJuiBR168Ej_uWJ5JPGwCN1NlV6Qtt-wfYXBOusJEpUaCgYKAdUSARESFQHGX2MiyzjFyNwf2q3kecg_F-rFvg0178\n"
      ]
     },
     {
@@ -834,7 +834,7 @@
        "        <iframe\n",
        "            width=\"100%\"\n",
        "            height=\"525px\"\n",
-       "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612xctZSopHT8mgPf3-hOOh0X4ep_k3SdjI8JmWbngW0ob6DZXP4s1M6s8jCHad8pyo5FVX_9EK4WLx5USXFIa3yyzJ_cgO9mKGnGfCZGUxAu1Riv6QrmTZbVrBmI_kY_9VfNoNM2gYoGfBMpxtGVk-h5JRvrz0NE0qUaCgYKAbESARESFQHGX2Mio7EntC-E_KCdIl-8KvVbEw0174\"\n",
+       "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZA8sI8DEEcCRJIs9FfoFoDJPukpaeamD89f0q2qh9SM_i0-7OSQruSG8jXHkvH4_UzUyD1pOZ-cwZZlwFHy8twKhstWc0Oo5orG_TRwL1wC6xEHv737Xro4b7CykJuiBR168Ej_uWJ5JPGwCN1NlV6Qtt-wfYXBOusJEpUaCgYKAdUSARESFQHGX2MiyzjFyNwf2q3kecg_F-rFvg0178\"\n",
        "            frameborder=\"0\"\n",
        "            allowfullscreen\n",
        "            \n",
@@ -842,7 +842,7 @@
        "        "
       ],
       "text/plain": [
-       "<IPython.lib.display.IFrame at 0x1a6d3d4bc50>"
+       "<IPython.lib.display.IFrame at 0x1eaabac5f50>"
       ]
      },
      "metadata": {},
@@ -854,7 +854,7 @@
     "\n",
     "Map.addLayer(lcms.select(['Change_Raw_Probability.*']),{'reducer':ee.Reducer.stdDev(),'min':0,'max':10},'LCMS Change Prob')\n",
     "\n",
-    "Map.addAreaChartLayer(lcms,{'line':True,'layerType':'ImageCollection'},'LCMS All Thematic Classes Line',False)\n",
+    "Map.addAreaChartLayer(lcms,{'line':True},'LCMS All Thematic Classes Line',False)\n",
     "\n",
     "Map.addAreaChartLayer(lcms,{'sankey':True},'LCMS All Thematic Classes Sankey',True)\n",
     "\n",
@@ -1158,7 +1158,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 7,
+   "execution_count": 5,
    "metadata": {},
    "outputs": [
     {
@@ -1170,7 +1170,7 @@
       "Using default refresh token for geeView\n",
       "Local web server at: http://localhost:8001/geeView/ already serving.\n",
       "cwd a:\\GEE\\gee_py_modules_package\\geeViz\\examples\n",
-      "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612x9FqNyIuBa6Y3Gng0iMMDF33nU_H2SI6QG1_zfzFXeeJHF4OBiWSteiMC8uybgs2Dv4n1pALbwqAVf4SaQ5qLbYjBELqeUtaG546K4T765woRRvpvmHgtc_0iLgMj4lnvSgjEHtQDSDRyUhG20SNp6S0fD6wX6-DCo_FIaCgYKAS8SARESFQHGX2MiZFqvVweHWgcKOOqXrphnBQ0178\n"
+      "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wJKTBG90sE7YjOsGwKAT2Io1SgHDHujjFffA7UVFDdzD6ieoa1LRPSj3JE0Rr_EbjdhU-m_tOgjjzBG9_JdmjzTH0wV35j206vk4iET5lr4Ij7hzaXnNi6UsXr2Nx24JjWdXdVCVekeJ4uxVWX_Frrk2xx7k1ALut5UBUaCgYKAQkSARESFQHGX2MihFCE1dDZKNyehV8R3vhoxQ0178\n"
      ]
     },
     {
@@ -1180,7 +1180,7 @@
        "        <iframe\n",
        "            width=\"100%\"\n",
        "            height=\"525px\"\n",
-       "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612x9FqNyIuBa6Y3Gng0iMMDF33nU_H2SI6QG1_zfzFXeeJHF4OBiWSteiMC8uybgs2Dv4n1pALbwqAVf4SaQ5qLbYjBELqeUtaG546K4T765woRRvpvmHgtc_0iLgMj4lnvSgjEHtQDSDRyUhG20SNp6S0fD6wX6-DCo_FIaCgYKAS8SARESFQHGX2MiZFqvVweHWgcKOOqXrphnBQ0178\"\n",
+       "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wJKTBG90sE7YjOsGwKAT2Io1SgHDHujjFffA7UVFDdzD6ieoa1LRPSj3JE0Rr_EbjdhU-m_tOgjjzBG9_JdmjzTH0wV35j206vk4iET5lr4Ij7hzaXnNi6UsXr2Nx24JjWdXdVCVekeJ4uxVWX_Frrk2xx7k1ALut5UBUaCgYKAQkSARESFQHGX2MihFCE1dDZKNyehV8R3vhoxQ0178\"\n",
        "            frameborder=\"0\"\n",
        "            allowfullscreen\n",
        "            \n",
@@ -1188,7 +1188,7 @@
        "        "
       ],
       "text/plain": [
-       "<IPython.lib.display.IFrame at 0x295db753010>"
+       "<IPython.lib.display.IFrame at 0x21ad4a47d90>"
       ]
      },
      "metadata": {},
@@ -1222,7 +1222,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 8,
+   "execution_count": 6,
    "metadata": {},
    "outputs": [
     {
@@ -1234,7 +1234,7 @@
       "Using default refresh token for geeView\n",
       "Local web server at: http://localhost:8001/geeView/ already serving.\n",
       "cwd a:\\GEE\\gee_py_modules_package\\geeViz\\examples\n",
-      "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612w0Xpz3lD3_5q-SiXf6XpskovT8KHrMbfQWrYCnX-vUO_N1OYitd-M4bc39KuQ99hxzrYL5fyDBPbX8nfWxOaW58QbnAhVfEUJYc8iVdL8-1DZdXTxW8dGzQAHomUMFqQ_I8iNpZGk5cAdHyGl8ZPm7iO19NHb0WRCcoVQaCgYKAfsSARESFQHGX2MiXrZPo8D2qzZVPHBqFUYsBw0178\n"
+      "geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wadT88_g9U59GK--fr1PF-tM6S-z-5cRPTW7qhCoO8BaezIKVSxtIfsaz2_tQt2DaSH5xKD2u-AKbY5vRznLUC92QBoKLerlwwL7OapgmO2fIcc8IjWpW3gDMMfU3szuY6ShHWj7HiFGAw_ARd_T4970y6zGHieyeL9N4aCgYKAYwSARESFQHGX2MiXVVic5V0ZDr0FPFtD2QLeA0178\n"
      ]
     },
     {
@@ -1244,7 +1244,7 @@
        "        <iframe\n",
        "            width=\"100%\"\n",
        "            height=\"525px\"\n",
-       "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612w0Xpz3lD3_5q-SiXf6XpskovT8KHrMbfQWrYCnX-vUO_N1OYitd-M4bc39KuQ99hxzrYL5fyDBPbX8nfWxOaW58QbnAhVfEUJYc8iVdL8-1DZdXTxW8dGzQAHomUMFqQ_I8iNpZGk5cAdHyGl8ZPm7iO19NHb0WRCcoVQaCgYKAfsSARESFQHGX2MiXrZPo8D2qzZVPHBqFUYsBw0178\"\n",
+       "            src=\"http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wadT88_g9U59GK--fr1PF-tM6S-z-5cRPTW7qhCoO8BaezIKVSxtIfsaz2_tQt2DaSH5xKD2u-AKbY5vRznLUC92QBoKLerlwwL7OapgmO2fIcc8IjWpW3gDMMfU3szuY6ShHWj7HiFGAw_ARd_T4970y6zGHieyeL9N4aCgYKAYwSARESFQHGX2MiXVVic5V0ZDr0FPFtD2QLeA0178\"\n",
        "            frameborder=\"0\"\n",
        "            allowfullscreen\n",
        "            \n",
@@ -1252,7 +1252,7 @@
        "        "
       ],
       "text/plain": [
-       "<IPython.lib.display.IFrame at 0x295dd476550>"
+       "<IPython.lib.display.IFrame at 0x21afe18ff10>"
       ]
      },
      "metadata": {},
