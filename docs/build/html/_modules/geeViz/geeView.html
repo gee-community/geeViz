@@ -5,7 +5,7 @@
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>geeViz.geeView - geeViz &#34;2024.11.2&#34; docs</title>
+        <title>geeViz.geeView - geeViz &#34;2024.11.3&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -141,7 +141,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">geeViz "2024.11.2" docs</div></a>
+      <a href="../../index.html"><div class="brand">geeViz "2024.11.3" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -167,7 +167,7 @@
     <img class="sidebar-logo" src="../../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.11.2" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.11.3" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -820,6 +820,8 @@
 
 <span class="sd">                    &quot;autoViz&quot; (bool): Whether to take image bandName_class_values, bandName_class_names, bandName_class_palette properties to visualize, create a legend (populates `classLegendDict`), and apply class names to any query functions (populates `queryDict`),</span>
 
+<span class="sd">                    &quot;includeClassValues&quot; (bool, default True): Whether to include the numeric value of each class in the legend when `&quot;autoViz&quot;:True`.</span>
+
 <span class="sd">                    &quot;canQuery&quot; (bool, default True): Whether a layer can be queried when visible.,</span>
 
 <span class="sd">                    &quot;addToLegend&quot; (bool, default True): Whether geeViz should try to create a legend for this layer. Sometimes setting it to `False` is useful for continuous multi-band inputs.,</span>
@@ -861,9 +863,13 @@
 
 <span class="sd">                            &quot;sankey&quot; (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a `system:time_start` property set for each image,</span>
 
-<span class="sd">                            &quot;sankeyTransitionPeriods&quot; (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under `Area Tools -&gt; Transition Charting Periods`. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.</span>
+<span class="sd">                            &quot;chartLabelMaxWidth&quot; (int, default 40): The maximum number of characters, including spaces, allowed in a single line of a chart class label. The class name will be broken at this number of characters, including spaces, to go to the next line,</span>
 
-<span class="sd">                            &quot;sankeyMinPercentage&quot; (float, default 0.5): The minimum percentage a given class has to be to be shown in the sankey chart.</span>
+<span class="sd">                            &quot;chartLabelMaxLength&quot; (int, default 100): The maximum number of characters, including spaces, allowed in a chart class label. Any class name with more characters, including spaces, than this number will be cut off at this number of characters,</span>
+
+<span class="sd">                            &quot;sankeyTransitionPeriods&quot; (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under `Area Tools -&gt; Transition Charting Periods`. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer,</span>
+
+<span class="sd">                            &quot;sankeyMinPercentage&quot; (float, default 0.5): The minimum percentage a given class has to be to be shown in the sankey chart,</span>
 
 <span class="sd">                            &quot;thematic&quot; (bool): Whether input has discrete values or not. If True, it forces the reducer to `ee.Reducer.frequencyHistogram()` even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,</span>
 
@@ -871,11 +877,17 @@
 
 <span class="sd">                            &quot;showGrid&quot; (bool, default True): Whether to show the grid lines on the line or bar graph,</span>
 
-<span class="sd">                            &quot;rangeSlider&quot; (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`https://plotly.com/javascript/range-slider/&gt;`)</span>
+<span class="sd">                            &quot;rangeSlider&quot; (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`https://plotly.com/javascript/range-slider/&gt;`),</span>
 
-<span class="sd">                            &quot;barChartMaxClasses&quot; (int, default 20): The maximum number of classes to show for image bar charts. Will automatically only show the top `bartChartMaxClasses` in any image bar chart. Any downloaded csv table will still have all of the class counts.</span>
+<span class="sd">                            &quot;barChartMaxClasses&quot; (int, default 20): The maximum number of classes to show for image bar charts. Will automatically only show the top `bartChartMaxClasses` in any image bar chart. Any downloaded csv table will still have all of the class counts,</span>
 
-<span class="sd">                            &quot;minZoomSpecifiedScale&quot; (int, default 11): The map zoom level where any lower zoom level, not including this zoom level, will multiply the spatial resolution used for the zonal stats by 2 for each lower zoom level. E.g. if the `minZoomSpecifiedScale` is 9 and the `scale` is 30, any zoom level &gt;= 9 will compute zonal stats at 30m spatial resolution. Then, at zoom level 8, it will be 60m. Zoom level 7 will be 120m, etc.</span>
+<span class="sd">                            &quot;minZoomSpecifiedScale&quot; (int, default 11): The map zoom level where any lower zoom level, not including this zoom level, will multiply the spatial resolution used for the zonal stats by 2 for each lower zoom level. E.g. if the `minZoomSpecifiedScale` is 9 and the `scale` is 30, any zoom level &gt;= 9 will compute zonal stats at 30m spatial resolution. Then, at zoom level 8, it will be 60m. Zoom level 7 will be 120m, etc,</span>
+
+<span class="sd">                            &quot;chartPrecision&quot; (int, default 3): Used to override the default global precision settings for a specific area charting layer. See `setQueryPrecision` for setting the global charting precision. When specified, for this specific area charting layer, will show the larger of `chartPrecision` decimal places or ceiling(`chartDecimalProportion` * total decimal places). E.g. if the number is 1.12345678, 0.25 of 8 decimal places is 2, so 3 will be used and yield 1.123,</span>
+
+<span class="sd">                            &quot;chartDecimalProportion&quot; (float, default 0.25): Used to override the default global precision settings for a specific area charting layer. See `setQueryPrecision` for setting the global charting precision. When specified, for this specific area charting layer, will show the larger of `chartPrecision` decimal places or `chartDecimalProportion` * total decimal places. E.g. if the number is 1.1234567891234, ceiling(0.25 of 13) decimal places is 4, so 4 will be used and yield 1.1235,</span>
+
+<span class="sd">                            &quot;hovermode&quot; (str, default &quot;closest&quot;): The mode to show hover text in area summary charts. Options include &quot;closest&quot;, &quot;x&quot;, &quot;y&quot;, &quot;x unified&quot;, and &quot;y unified&quot;,</span>
 <span class="sd">                        }</span>
 
 <span class="sd">                }</span>
@@ -987,6 +999,8 @@
 
 <span class="sd">                    &quot;autoViz&quot; (bool): Whether to take image bandName_class_values, bandName_class_names, bandName_class_palette properties to visualize, create a legend (populates `classLegendDict`), and apply class names to any query functions (populates `queryDict`),</span>
 
+<span class="sd">                    &quot;includeClassValues&quot; (bool, default True): Whether to include the numeric value of each class in the legend when `&quot;autoViz&quot;:True`.</span>
+
 <span class="sd">                    &quot;canQuery&quot; (bool, default True): Whether a layer can be queried when visible.,</span>
 
 <span class="sd">                    &quot;addToLegend&quot; (bool, default True): Whether geeViz should try to create a legend for this layer. Sometimes setting it to `False` is useful for continuous multi-band inputs.,</span>
@@ -1028,9 +1042,13 @@
 
 <span class="sd">                            &quot;sankey&quot; (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a `system:time_start` property set for each image,</span>
 
-<span class="sd">                            &quot;sankeyTransitionPeriods&quot; (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under `Area Tools -&gt; Transition Charting Periods`. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.</span>
+<span class="sd">                            &quot;chartLabelMaxWidth&quot; (int, default 40): The maximum number of characters, including spaces, allowed in a single line of a chart class label. The class name will be broken at this number of characters, including spaces, to go to the next line,</span>
 
-<span class="sd">                            &quot;sankeyMinPercentage&quot; (float, default 0.5): The minimum percentage a given class has to be to be shown in the sankey chart.</span>
+<span class="sd">                            &quot;chartLabelMaxLength&quot; (int, default 100): The maximum number of characters, including spaces, allowed in a chart class label. Any class name with more characters, including spaces, than this number will be cut off at this number of characters,</span>
+
+<span class="sd">                            &quot;sankeyTransitionPeriods&quot; (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under `Area Tools -&gt; Transition Charting Periods`. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer,</span>
+
+<span class="sd">                            &quot;sankeyMinPercentage&quot; (float, default 0.5): The minimum percentage a given class has to be to be shown in the sankey chart,</span>
 
 <span class="sd">                            &quot;thematic&quot; (bool): Whether input has discrete values or not. If True, it forces the reducer to `ee.Reducer.frequencyHistogram()` even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,</span>
 
@@ -1038,11 +1056,17 @@
 
 <span class="sd">                            &quot;showGrid&quot; (bool, default True): Whether to show the grid lines on the line or bar graph,</span>
 
-<span class="sd">                            &quot;rangeSlider&quot; (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`https://plotly.com/javascript/range-slider/&gt;`)</span>
+<span class="sd">                            &quot;rangeSlider&quot; (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`https://plotly.com/javascript/range-slider/&gt;`),</span>
 
-<span class="sd">                            &quot;barChartMaxClasses&quot; (int, default 20): The maximum number of classes to show for image bar charts. Will automatically only show the top `bartChartMaxClasses` in any image bar chart. Any downloaded csv table will still have all of the class counts.</span>
+<span class="sd">                            &quot;barChartMaxClasses&quot; (int, default 20): The maximum number of classes to show for image bar charts. Will automatically only show the top `bartChartMaxClasses` in any image bar chart. Any downloaded csv table will still have all of the class counts,</span>
 
-<span class="sd">                            &quot;minZoomSpecifiedScale&quot; (int, default 11): The map zoom level where any lower zoom level, not including this zoom level, will multiply the spatial resolution used for the zonal stats by 2 for each lower zoom level. E.g. if the `minZoomSpecifiedScale` is 9 and the `scale` is 30, any zoom level &gt;= 9 will compute zonal stats at 30m spatial resolution. Then, at zoom level 8, it will be 60m. Zoom level 7 will be 120m, etc.</span>
+<span class="sd">                            &quot;minZoomSpecifiedScale&quot; (int, default 11): The map zoom level where any lower zoom level, not including this zoom level, will multiply the spatial resolution used for the zonal stats by 2 for each lower zoom level. E.g. if the `minZoomSpecifiedScale` is 9 and the `scale` is 30, any zoom level &gt;= 9 will compute zonal stats at 30m spatial resolution. Then, at zoom level 8, it will be 60m. Zoom level 7 will be 120m, etc,</span>
+
+<span class="sd">                            &quot;chartPrecision&quot; (int, default 3): Used to override the default global precision settings for a specific area charting layer. See `setQueryPrecision` for setting the global charting precision. When specified, for this specific area charting layer, will show the larger of `chartPrecision` decimal places or ceiling(`chartDecimalProportion` * total decimal places). E.g. if the number is 1.12345678, 0.25 of 8 decimal places is 2, so 3 will be used and yield 1.123,</span>
+
+<span class="sd">                            &quot;chartDecimalProportion&quot; (float, default 0.25): Used to override the default global precision settings for a specific area charting layer. See `setQueryPrecision` for setting the global charting precision. When specified, for this specific area charting layer, will show the larger of `chartPrecision` decimal places or `chartDecimalProportion` * total decimal places. E.g. if the number is 1.1234567891234, ceiling(0.25 of 13) decimal places is 4, so 4 will be used and yield 1.1235,</span>
+
+<span class="sd">                            &quot;hovermode&quot; (str, default &quot;closest&quot;): The mode to show hover text in area summary charts. Options include &quot;closest&quot;, &quot;x&quot;, &quot;y&quot;, &quot;x unified&quot;, and &quot;y unified&quot;,</span>
 <span class="sd">                        }</span>
 
 <span class="sd">                }</span>
@@ -1735,13 +1759,31 @@
 
 <span class="sd">                    &quot;sankey&quot; (bool, default False): Whether to create Sankey charts - only available for thematic (discrete) inputs that have a `system:time_start` property set for each image,</span>
 
-<span class="sd">                    &quot;sankeyTransitionPeriods&quot; (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under `Area Tools -&gt; Transition Charting Periods`. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer.</span>
+<span class="sd">                    &quot;chartLabelMaxWidth&quot; (int, default 40): The maximum number of characters, including spaces, allowed in a single line of a chart class label. The class name will be broken at this number of characters, including spaces, to go to the next line,</span>
 
-<span class="sd">                    &quot;sankeyMinPercentage&quot; (float, default 0.5): The minimum percentage a given class has to be to be shown in the sankey chart.</span>
+<span class="sd">                    &quot;chartLabelMaxLength&quot; (int, default 100): The maximum number of characters, including spaces, allowed in a chart class label. Any class name with more characters, including spaces, than this number will be cut off at this number of characters,</span>
+
+<span class="sd">                    &quot;sankeyTransitionPeriods&quot; (list of lists, default None): The years to use as transition periods for sankey charts (e.g. [[1985,1987],[2000,2002],[2020,2022]]). If not provided, users can enter years in the map user interface under `Area Tools -&gt; Transition Charting Periods`. These will automatically be used for any layers where no sankeyTransitionPeriods were provided. If years are provided, the years in the user interface will not be used for that layer,</span>
+
+<span class="sd">                    &quot;sankeyMinPercentage&quot; (float, default 0.5): The minimum percentage a given class has to be to be shown in the sankey chart,</span>
 
 <span class="sd">                    &quot;thematic&quot; (bool): Whether input has discrete values or not. If True, it forces the reducer to `ee.Reducer.frequencyHistogram()` even if not specified and even if bandName_class_values, bandName_class_names, bandName_class_palette properties are not available,</span>
 
-<span class="sd">                    &quot;palette&quot; (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.</span>
+<span class="sd">                    &quot;palette&quot; (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart,</span>
+
+<span class="sd">                    &quot;showGrid&quot; (bool, default True): Whether to show the grid lines on the line or bar graph,</span>
+
+<span class="sd">                    &quot;rangeSlider&quot; (bool,default False): Whether to include the x-axis range selector on the bottom of each graph (`https://plotly.com/javascript/range-slider/&gt;`),</span>
+
+<span class="sd">                    &quot;barChartMaxClasses&quot; (int, default 20): The maximum number of classes to show for image bar charts. Will automatically only show the top `bartChartMaxClasses` in any image bar chart. Any downloaded csv table will still have all of the class counts,</span>
+
+<span class="sd">                    &quot;minZoomSpecifiedScale&quot; (int, default 11): The map zoom level where any lower zoom level, not including this zoom level, will multiply the spatial resolution used for the zonal stats by 2 for each lower zoom level. E.g. if the `minZoomSpecifiedScale` is 9 and the `scale` is 30, any zoom level &gt;= 9 will compute zonal stats at 30m spatial resolution. Then, at zoom level 8, it will be 60m. Zoom level 7 will be 120m, etc,</span>
+
+<span class="sd">                    &quot;chartPrecision&quot; (int, default 3): Used to override the default global precision settings for a specific area charting layer. See `setQueryPrecision` for setting the global charting precision. When specified, for this specific area charting layer, will show the larger of `chartPrecision` decimal places or ceiling(`chartDecimalProportion` * total decimal places). E.g. if the number is 1.12345678, 0.25 of 8 decimal places is 2, so 3 will be used and yield 1.123,</span>
+
+<span class="sd">                    &quot;chartDecimalProportion&quot; (float, default 0.25): Used to override the default global precision settings for a specific area charting layer. See `setQueryPrecision` for setting the global charting precision. When specified, for this specific area charting layer, will show the larger of `chartPrecision` decimal places or `chartDecimalProportion` * total decimal places. E.g. if the number is 1.1234567891234, ceiling(0.25 of 13) decimal places is 4, so 4 will be used and yield 1.1235,</span>
+
+<span class="sd">                    &quot;hovermode&quot; (str, default &quot;closest&quot;): The mode to show hover text in area summary charts. Options include &quot;closest&quot;, &quot;x&quot;, &quot;y&quot;, &quot;x unified&quot;, and &quot;y unified&quot;,</span>
 
 <span class="sd">                }</span>
 <span class="sd">            name (str): Descriptive name for map layer that will be shown on the map UI</span>
@@ -2016,7 +2058,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=8e9e9f52"></script>
+</div><script src="../../_static/documentation_options.js?v=11dc0bc8"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

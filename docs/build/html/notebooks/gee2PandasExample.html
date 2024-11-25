@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Examples of how to work between GEE and Pandas - geeViz &#34;2024.11.2&#34; docs</title>
+        <title>Examples of how to work between GEE and Pandas - geeViz &#34;2024.11.3&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -142,7 +142,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">geeViz "2024.11.2" docs</div></a>
+      <a href="../index.html"><div class="brand">geeViz "2024.11.3" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -168,7 +168,7 @@
     <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.11.2" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.11.3" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -259,7 +259,9 @@ limitations under the License.</p>
 <li><p>Example of the functionality of gee2Pandas module</p></li>
 <li><p>Use this module to go between local data and GEE for more general data science/statistical analysis</p></li>
 </ul>
- <p><a href="https://colab.research.google.com/github/gee-community/geeViz/blob/master/examples/gee2PandasExample.ipynb" target="_parent"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg"></a></p><div class="cell docutils container">
+<p><a class="reference external" href="https://github.com/gee-community/geeviz/blob/master/examples/gee2PandasExample.ipynb"><img alt="github" src="https://img.shields.io/badge/-see%20sources-white?logo=github&amp;labelColor=555" /></a>
+<a class="reference external" href="https://colab.research.google.com/github/gee-community/geeViz/blob/master/examples/gee2PandasExample.ipynb"><img alt="github" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+<div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import Modules</span>
 <span class="k">try</span><span class="p">:</span>
@@ -287,11 +289,15 @@ limitations under the License.</p>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Initializing GEE
 Cached project id file path: C:\Users\ihousman\.config\earthengine\credentials.proj_id
-Cached project id: rcr-gee-2
-Successfully initialized
+Cached project id: lcms-292214
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>*** Earth Engine *** Share your feedback by taking our Annual Developer Satisfaction Survey: https://google.qualtrics.com/jfe/form/SV_0JLhFqfSY1uiEaW?source=Init
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Successfully initialized
 geeViz package folder: c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\geeViz
 PyTables is not installed. No support for HDF output.
-SQLalchemy is not installed. No support for SQL output.
 done
 </pre></div>
 </div>
@@ -339,13 +345,10 @@ done
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Get Processed Sentinel2: 
 Start date: Jun 09 2021 , End date: Jul 08 2024
 Using S2 Collection: COPERNICUS/S2_HARMONIZED
-Joining pre-computed cloud probabilities from: COPERNICUS/S2_CLOUD_PROBABILITY
+Joining pre-computed cloudScore+ from: GOOGLE/CLOUD_SCORE_PLUS/V1/S2_HARMONIZED
 Setting to aggregate instead of resample 
 Converting S2 data to daily mosaics
-Applying Cloud Probability
-Applying TDOM
-Computing irMean for TDOM
-Computing irStdDev for TDOM
+Applying cloudScore+
 Adding layer: S2 Median 2023
 Adding layer: S2 Water 2023
 Adding layer: Water_Transition_2022-2023
@@ -353,18 +356,19 @@ Adding layer: S2 Median 2022
 Adding layer: S2 Water 2022
 Adding layer: Study Area
 Starting webmap
-Using default refresh token for geeView: C:\Users\ihousman/.config/earthengine/credentials
+Using default refresh token for geeView
 Starting local web server at: http://localhost:1233/geeView/
 HTTP server command: &quot;c:\Users\ihousman\AppData\Local\Programs\Python\Python311\python.exe&quot; -m http.server  1233
 Done
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:1233/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZC7rbMaygDhJcMEQ0u5_tqi4RCJz5duLi9eQYcy-Zzhz3T9dcmPOnEuD0NwEy27M9Wnr2GSc0ECMwXaMemmVP2iroa_MGOFvl4Jp5RU4pA_zrwQ4C3d28ntB0uOzARn-lg_onfuT40HjsqVZRaofbnYbto04qT8lqbp4P0aCgYKAQ0SARESFQHGX2MiU_0uj5D6U3SDTAv6wwgP7A0178&amp;accessTokenCreationTime=1732565631149
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:1233/geeView/?accessToken=ya29.a0AfB_byCZlKWr_wNglvPnwIlhsvl2o_a-UGMYnKsZretlHKxmFRstiMjlO2zh9B-5PpDSTBXCEASQwmRsc5Q90Ml2lh7V3ZHf80VHmE0-A1-yC-F0pEqxeoiSo6nRzD1PjcJcAUryaDSuGu8f7YyYdiPbM57hu97TIcnQICzVW3YdaCgYKAbcSARESFQHGX2Mi4FI0ueC7eAf33OxoxxrgoA0179"
+            src="http://localhost:1233/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZC7rbMaygDhJcMEQ0u5_tqi4RCJz5duLi9eQYcy-Zzhz3T9dcmPOnEuD0NwEy27M9Wnr2GSc0ECMwXaMemmVP2iroa_MGOFvl4Jp5RU4pA_zrwQ4C3d28ntB0uOzARn-lg_onfuT40HjsqVZRaofbnYbto04qT8lqbp4P0aCgYKAQ0SARESFQHGX2MiU_0uj5D6U3SDTAv6wwgP7A0178&accessTokenCreationTime=1732565631149"
             frameborder="0"
             allowfullscreen
             
@@ -395,16 +399,17 @@ cwd a:\GEE\gee_py_modules_package\geeViz\examples
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: Sample
 /tmp\gee2Pandas_test_csv.csv  already exists
 Starting webmap
-Using default refresh token for geeView: C:\Users\ihousman/.config/earthengine/credentials
+Using default refresh token for geeView
 Local web server at: http://localhost:1233/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:1233/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZA_pdYBT8Da3RV0VuNIO82RcHCoJBkvgRzVPbMvNB7-Nymd8Z0PytK-lQbvzobDzcQ0mw8Gic89IlORedmyBcpl7W-V6L0lPtE-sX94emQUnKtxAr5IkIFinQiHPrJscFcVfvQ9jlO9DOwcmFTGAnWYk7QK6wcDXohDsIMaCgYKAYcSARESFQHGX2MiRPp-2OrqyFbvRcc9_zvJlg0178&amp;accessTokenCreationTime=1732565635250
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:1233/geeView/?accessToken=ya29.a0AfB_byAWzIbQWX1R13jaoLXnJwmXqr3DnM92bAFn7qVruPZOId9LVuSS343sVmF2vlGvrvVoh52nPUdJnPdjp3LMWp89mW8QVOhNVDfCAyIrXxOaYW6dIIQD25s_qq2wlEfRoArqK-b1G-iCgHHNpStPZSrVAcwG1ex4U2eXoUruaCgYKAeISARESFQGOcNnCJaW-wJEbWABmbJXCHmacWQ0179"
+            src="http://localhost:1233/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZA_pdYBT8Da3RV0VuNIO82RcHCoJBkvgRzVPbMvNB7-Nymd8Z0PytK-lQbvzobDzcQ0mw8Gic89IlORedmyBcpl7W-V6L0lPtE-sX94emQUnKtxAr5IkIFinQiHPrJscFcVfvQ9jlO9DOwcmFTGAnWYk7QK6wcDXohDsIMaCgYKAYcSARESFQHGX2MiRPp-2OrqyFbvRcc9_zvJlg0178&accessTokenCreationTime=1732565635250"
             frameborder="0"
             allowfullscreen
             
@@ -438,12 +443,10 @@ cwd a:\GEE\gee_py_modules_package\geeViz\examples
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">importlib</span> <span class="kn">import</span> <span class="n">reload</span>
-<span class="n">reload</span><span class="p">(</span><span class="n">g2p</span><span class="p">)</span>
-<span class="c1"># Now go from a local csv to a GEE featureCollection</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Now go from a local csv to a GEE featureCollection</span>
 <span class="n">fc</span> <span class="o">=</span> <span class="n">g2p</span><span class="o">.</span><span class="n">tableToFeatureCollection</span><span class="p">(</span><span class="n">out_csv</span><span class="p">)</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">clearMap</span><span class="p">()</span>
-<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">fc</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">f</span><span class="p">:</span><span class="n">ee</span><span class="o">.</span><span class="n">Feature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">buffer</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="o">.</span><span class="n">bounds</span><span class="p">()),{},</span><span class="s1">&#39;Test Sample&#39;</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">fc</span><span class="p">,{</span><span class="s1">&#39;styleParams&#39;</span><span class="p">:{</span><span class="s1">&#39;pointSize&#39;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;color&#39;</span><span class="p">:</span><span class="s1">&#39;0DF&#39;</span><span class="p">}},</span><span class="s1">&#39;Test Sample&#39;</span><span class="p">)</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">turnOnInspector</span><span class="p">()</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">centerObject</span><span class="p">(</span><span class="n">fc</span><span class="p">)</span>
 <span class="n">Map</span><span class="o">.</span><span class="n">view</span><span class="p">()</span>
@@ -453,16 +456,17 @@ cwd a:\GEE\gee_py_modules_package\geeViz\examples
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: Test Sample
 Starting webmap
-Using default refresh token for geeView: C:\Users\ihousman/.config/earthengine/credentials
+Using default refresh token for geeView
 Local web server at: http://localhost:1233/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:1233/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZDuAuuThPvzPHAPlCNFGvzYQShuqqqN0i2vdB4dxVkn1LYXnb42sCaCBoboFD4-SYtRTg1kkmK-aWFKssUhmA-E9PQyXyR4Za3sVJnaEalIHtgYvLXkQ1DOYmFybz6cEMDntPVHLX30KagvUS0Kw0-aPPMUneuEG2gwJz0aCgYKATMSARESFQHGX2MiuDZhAcXWgIBJLVWdu6OINQ0178&amp;accessTokenCreationTime=1732565803239
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:1233/geeView/?accessToken=ya29.a0AfB_byBKiso6aSEksz2oaf-b_vK7wcRhjuZp5MCOa56nUGcwOsZPswtP6Tc43z2FZTrHggm4NjlKAZItkt6nRjo5BlZNKqsU2TFSuM9djhTWghrT5Yqb75hFq8RME4u4BaedNrKLVnejeXhnw8m0xZA5wt8-bAxaK0T-ruANewYlaCgYKAWwSARESFQGOcNnCHkauWsrOsMHUXSl6lipjFA0179"
+            src="http://localhost:1233/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZDuAuuThPvzPHAPlCNFGvzYQShuqqqN0i2vdB4dxVkn1LYXnb42sCaCBoboFD4-SYtRTg1kkmK-aWFKssUhmA-E9PQyXyR4Za3sVJnaEalIHtgYvLXkQ1DOYmFybz6cEMDntPVHLX30KagvUS0Kw0-aPPMUneuEG2gwJz0aCgYKATMSARESFQHGX2MiuDZhAcXWgIBJLVWdu6OINQ0178&accessTokenCreationTime=1732565803239"
             frameborder="0"
             allowfullscreen
             
@@ -505,7 +509,7 @@ cwd a:\GEE\gee_py_modules_package\geeViz\examples
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=8e9e9f52"></script>
+</div><script src="../_static/documentation_options.js?v=11dc0bc8"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

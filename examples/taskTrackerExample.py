@@ -1,5 +1,5 @@
 """
-   Copyright 2023 Ian Housman
+   Copyright 2024 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -14,13 +14,15 @@
    limitations under the License.
 """
 
-#Example of how to utilize the Python GEE task tracking
-#This will run a function that will show tasks that are running as well as ready
+# Example of how to utilize the Python GEE task tracking
+# This will run a function that will show tasks that are running as well as ready
 ####################################################################################################
-#Import modules
-import os,sys
+# Import modules
+import os, sys
+
 sys.path.append(os.getcwd())
 
 from geeViz.taskManagerLib import *
+
 ####################################################################################################
 trackTasks()

@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Annual NLCD geeViz Viewer" href="Annual_NLCD_Viewer_Notebook.html" /><link rel="prev" title="Starter geeViz geeView Notebook" href="geeViewExampleNotebook.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>LCMS Viewer Intro Notebook - geeViz &#34;2024.11.2&#34; docs</title>
+        <title>LCMS Viewer Intro Notebook - geeViz &#34;2024.11.3&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -142,7 +142,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">geeViz "2024.11.2" docs</div></a>
+      <a href="../index.html"><div class="brand">geeViz "2024.11.3" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -168,7 +168,7 @@
     <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.11.2" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.11.3" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -243,16 +243,11 @@
         <article role="main">
           <section id="lcms-viewer-intro-notebook">
 <h1>LCMS Viewer Intro Notebook<a class="headerlink" href="#lcms-viewer-intro-notebook" title="Link to this heading">#</a></h1>
-<blockquote>
-<div><ul class="simple">
-<li><p>Based on https://github.com/google/earthengine-community/blob/master/datasets/scripts/LCMS_Visualization.js</p></li>
-<li><p>Copyright 2024 The Google Earth Engine Community Authors</p></li>
+<ul class="simple">
+<li><p>Based on https://github.com/google/earthengine-community/blob/master/datasets/scripts/LCMS_Visualization.js
+Copyright 2024 The Google Earth Engine Community Authors</p></li>
 </ul>
-</div></blockquote>
-<blockquote>
-<div><blockquote>
-<div><ul class="simple">
-<li><p>Licensed under the Apache License, Version 2.0 (the “License”);
+<p>Licensed under the Apache License, Version 2.0 (the “License”);
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 https://www.apache.org/licenses/LICENSE-2.0
@@ -260,20 +255,15 @@ Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an “AS IS” BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
-limitations under the License.</p></li>
-</ul>
-</div></blockquote>
-</div></blockquote>
-<blockquote>
-<div><blockquote>
-<div><ul class="simple">
+limitations under the License.</p>
+<ul class="simple">
 <li><p>Example script for visualizing LCMS change summaries, land cover, and land use.</p></li>
 <li><p>A more in-depth visualization of LCMS products is available at: <a class="reference external" href="https://apps.fs.usda.gov/lcms-viewer/index.html">https://apps.fs.usda.gov/lcms-viewer/index.html</a></p></li>
 <li><p>Contact sm.fs.lcms&#64;usda.gov with any questions or specific data requests.</p></li>
 </ul>
-</div></blockquote>
-</div></blockquote>
-<p><a href="https://colab.research.google.com/github/gee-community/geeViz/blob/master/examples/lcmsViewerExampleNotebook.ipynb" target="_parent"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg"></a></p><div class="cell docutils container">
+<p><a class="reference external" href="https://github.com/gee-community/geeviz/blob/master/examples/lcmsViewerExampleNotebook.ipynb"><img alt="github" src="https://img.shields.io/badge/-see%20sources-white?logo=github&amp;labelColor=555" /></a>
+<a class="reference external" href="https://colab.research.google.com/github/gee-community/geeViz/blob/master/examples/lcmsViewerExampleNotebook.ipynb"><img alt="github" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+<div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Boiler plate</span>
 <span class="c1">#Import modules</span>
@@ -605,18 +595,19 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: LCMS Change Time Lapse
+Setting default query date format to: YYYY
 Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=rcr-gee-2&amp;accessToken=ya29.a0AfB_byBQwMDTqBKFllZQoa1bn5jPRXI0esx1cUuwXOzvbx-m_E327RkL0jDeU8DAGBhn1DZJM0awgBoTJW5L2X4oVycGZxD9fzORXakpgzOl9S2TJ0hgeWFF1-mytXLSUiGcZoG3XVyS4H5stTvugxvOLLPfcTNPA4Z6KJsEhu-GaCgYKAUASARASFQHGX2Mi7D0qnuquWaFbHJnW_oe2qw0179
+geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612wkLZ5nkrRefktkInWr4bG1xoFijDRm4zKqEkOSY5SlJkshjY8c8xPH0opFivgsSvpi-zs-EMn4cghA5Q9vvm7dszHkaSY2xuMWT94ACWv_8wy0D-nhVOi29Oo5fQ5wmHrYHpnRzBiH6SF3RyS-9rr7i3VwptGM3yc1aokaCgYKAUQSARESFQHGX2MiEKkp7i2adXQeQErg-zELAw0178
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=rcr-gee-2&accessToken=ya29.a0AfB_byBQwMDTqBKFllZQoa1bn5jPRXI0esx1cUuwXOzvbx-m_E327RkL0jDeU8DAGBhn1DZJM0awgBoTJW5L2X4oVycGZxD9fzORXakpgzOl9S2TJ0hgeWFF1-mytXLSUiGcZoG3XVyS4H5stTvugxvOLLPfcTNPA4Z6KJsEhu-GaCgYKAUASARASFQHGX2Mi7D0qnuquWaFbHJnW_oe2qw0179"
+            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612wkLZ5nkrRefktkInWr4bG1xoFijDRm4zKqEkOSY5SlJkshjY8c8xPH0opFivgsSvpi-zs-EMn4cghA5Q9vvm7dszHkaSY2xuMWT94ACWv_8wy0D-nhVOi29Oo5fQ5wmHrYHpnRzBiH6SF3RyS-9rr7i3VwptGM3yc1aokaCgYKAUQSARESFQHGX2MiEKkp7i2adXQeQErg-zELAw0178"
             frameborder="0"
             allowfullscreen
             
@@ -699,7 +690,7 @@ geeView URL: http://localhost:8001/geeView/?projectID=rcr-gee-2&amp;accessToken=
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=8e9e9f52"></script>
+</div><script src="../_static/documentation_options.js?v=11dc0bc8"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

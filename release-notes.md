@@ -1,3 +1,17 @@
+# geeViz 2024.11.3 Release Notes
+
+## November 25, 2024
+
+### New Features
+
+- **geeViz.geeView Enanced Image Area Charting** - geeViz.geeView aera charting for thematic images now tries to optimize the orientation of the bar chart based on the length of the class labels. Any chart with long class label lengths will be a horizontal bar chart. Short class labels will remain a vertical bar chart as it has always been. Also, the Plotly `autoMargin` functionality is now used for these charts.
+
+### Bug fixes
+
+- Area Charting Tools UI is not only visible if an area charting layer has been added to the map. Previously, the UI would show an older area charting UI if no area charting layers had been added the map.
+
+---
+
 # geeViz 2024.11.2 Release Notes
 
 ## November 11, 2024

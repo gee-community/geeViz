@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Visualizing Area Summaries" href="areaChart_examples.html" /><link rel="prev" title="LCMAP and LCMS Outputs Viewer" href="LCMAP_and_LCMS_Viewer_Notebook.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Create High Quality Landsat Composites - geeViz &#34;2024.11.2&#34; docs</title>
+        <title>Create High Quality Landsat Composites - geeViz &#34;2024.11.3&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -142,7 +142,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">geeViz "2024.11.2" docs</div></a>
+      <a href="../index.html"><div class="brand">geeViz "2024.11.3" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -168,7 +168,7 @@
     <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.11.2" docs</span>
+  <span class="sidebar-brand-text">geeViz "2024.11.3" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -256,7 +256,9 @@ distributed under the License is distributed on an “AS IS” BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.</p>
-<p><a href="https://colab.research.google.com/github/gee-community/geeViz/blob/master/examples/getLandsatWrapperNotebook.ipynb" target="_parent"><img alt="Open in Colab" src="https://colab.research.google.com/assets/colab-badge.svg"></a></p><div class="cell docutils container">
+<p><a class="reference external" href="https://github.com/gee-community/geeviz/blob/master/examples/getLandsatWrapperNotebook.ipynb"><img alt="github" src="https://img.shields.io/badge/-see%20sources-white?logo=github&amp;labelColor=555" /></a>
+<a class="reference external" href="https://colab.research.google.com/github/gee-community/geeViz/blob/master/examples/getLandsatWrapperNotebook.ipynb"><img alt="github" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+<div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Example of how to get Landsat data using the getImagesLib and view outputs using the Python visualization tools</span>
 <span class="c1">#Acquires Landsat data and then adds them to the viewer</span>
@@ -357,25 +359,69 @@ Applying scale factors for C2 L7 data
 Applying scale factors for C2 L9 data
 Applying Fmask Cloud Mask
 Applying Fmask Shadow Mask
-Adding layer: Default Params 2009 153-152
-Type: Image geeImage
-Starting webmap
-Using default refresh token for geeView
-Local web server at: http://localhost:8001/geeView/ already serving.
-cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AXooCgu8EUNhnVn0a7J3kojB9X0Xzzg_L0wQ_9vf3gO85uG1xXah7x1f4h1ZOkwLHZfFf6osd7BJKZmL3FKOjlQ-lkED4Pa8u3pfpMI4pPBR7KdrZI16NOS0KXA8znCkFv3pqSr5qDHoCbnKgSVjrjXuiInj5u744-aV2DsaCgYKARcSARESFQHGX2MiqeVeKwjjA8CVaHytQWVyGA0174
 </pre></div>
 </div>
-<div class="output text_html">
-        <iframe
-            width="100%"
-            height="525px"
-            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AXooCgu8EUNhnVn0a7J3kojB9X0Xzzg_L0wQ_9vf3gO85uG1xXah7x1f4h1ZOkwLHZfFf6osd7BJKZmL3FKOjlQ-lkED4Pa8u3pfpMI4pPBR7KdrZI16NOS0KXA8znCkFv3pqSr5qDHoCbnKgSVjrjXuiInj5u744-aV2DsaCgYKARcSARESFQHGX2MiqeVeKwjjA8CVaHytQWVyGA0174"
-            frameborder="0"
-            allowfullscreen
-            
-        ></iframe>
-        </div></div>
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">TypeError</span><span class="g g-Whitespace">                                 </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">line</span> <span class="mi">28</span>
+<span class="g g-Whitespace">     </span><span class="mi">25</span> <span class="n">endYear</span> <span class="o">=</span> <span class="mi">2009</span>
+<span class="g g-Whitespace">     </span><span class="mi">27</span> <span class="c1">#Call on master wrapper function to get Landat scenes and composites</span>
+<span class="ne">---&gt; </span><span class="mi">28</span> <span class="n">lsAndTs</span> <span class="o">=</span> <span class="n">getImagesLib</span><span class="o">.</span><span class="n">getLandsatWrapper</span><span class="p">(</span><span class="n">studyArea</span><span class="p">,</span><span class="n">startYear</span><span class="p">,</span><span class="n">endYear</span><span class="p">,</span><span class="n">startJulian</span><span class="p">,</span><span class="n">endJulian</span><span class="p">)</span>
+<span class="g g-Whitespace">     </span><span class="mi">31</span> <span class="c1">#Separate into scenes and composites for subsequent analysis</span>
+<span class="g g-Whitespace">     </span><span class="mi">32</span> <span class="n">processedScenes</span> <span class="o">=</span> <span class="n">lsAndTs</span><span class="p">[</span><span class="s1">&#39;processedScenes&#39;</span><span class="p">]</span>
+
+<span class="nn">File c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\geeViz\getImagesLib.py:5432,</span> in <span class="ni">getLandsatWrapper</span><span class="nt">(studyArea, startYear, endYear, startJulian, endJulian, timebuffer, weights, compositingMethod, toaOrSR, includeSLCOffL7, defringeL5, applyCloudScore, applyFmaskCloudMask, applyTDOM, applyFmaskCloudShadowMask, applyFmaskSnowMask, cloudScoreThresh, performCloudScoreOffset, cloudScorePctl, zScoreThresh, shadowSumThresh, contractPixels, dilatePixels, correctIllumination, correctScale, exportComposites, outputName, exportPathRoot, crs, transform, scale, resampleMethod, preComputedCloudScoreOffset, preComputedTDOMIRMean, preComputedTDOMIRStdDev, compositingReducer, harmonizeOLI, landsatCollectionVersion, overwrite, verbose)</span>
+<span class="g g-Whitespace">   </span><span class="mi">5429</span>     <span class="n">ls</span> <span class="o">=</span> <span class="n">ls</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">img</span><span class="p">:</span> <span class="n">addZenithAzimuth</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">toaOrSR</span><span class="p">))</span>
+<span class="g g-Whitespace">   </span><span class="mi">5431</span> <span class="c1"># Create composite time series</span>
+<span class="ne">-&gt; </span><span class="mi">5432</span> <span class="n">ts</span> <span class="o">=</span> <span class="n">compositeTimeSeries</span><span class="p">(</span>
+<span class="g g-Whitespace">   </span><span class="mi">5433</span>     <span class="n">ls</span><span class="o">=</span><span class="n">ls</span><span class="p">,</span>
+<span class="g g-Whitespace">   </span><span class="mi">5434</span>     <span class="n">startYear</span><span class="o">=</span><span class="n">startYear</span><span class="p">,</span>
+<span class="g g-Whitespace">   </span><span class="mi">5435</span>     <span class="n">endYear</span><span class="o">=</span><span class="n">endYear</span><span class="p">,</span>
+<span class="g g-Whitespace">   </span><span class="mi">5436</span>     <span class="n">startJulian</span><span class="o">=</span><span class="n">startJulian</span><span class="p">,</span>
+<span class="g g-Whitespace">   </span><span class="mi">5437</span>     <span class="n">endJulian</span><span class="o">=</span><span class="n">endJulian</span><span class="p">,</span>
+<span class="g g-Whitespace">   </span><span class="mi">5438</span>     <span class="n">timebuffer</span><span class="o">=</span><span class="n">timebuffer</span><span class="p">,</span>
+<span class="g g-Whitespace">   </span><span class="mi">5439</span>     <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
+<span class="g g-Whitespace">   </span><span class="mi">5440</span>     <span class="n">compositingMethod</span><span class="o">=</span><span class="n">compositingMethod</span><span class="p">,</span>
+<span class="g g-Whitespace">   </span><span class="mi">5441</span>     <span class="n">compositingReducer</span><span class="o">=</span><span class="n">compositingReducer</span><span class="p">,</span>
+<span class="g g-Whitespace">   </span><span class="mi">5442</span> <span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">5444</span> <span class="c1"># Correct illumination</span>
+<span class="g g-Whitespace">   </span><span class="mi">5445</span> <span class="k">if</span> <span class="n">correctIllumination</span><span class="p">:</span>
+
+<span class="nn">File c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\geeViz\getImagesLib.py:4315,</span> in <span class="ni">compositeTimeSeries</span><span class="nt">(ls, startYear, endYear, startJulian, endJulian, timebuffer, weights, compositingMethod, compositingReducer)</span>
+<span class="g g-Whitespace">   </span><span class="mi">4300</span>     <span class="k">return</span> <span class="n">composite</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+<span class="g g-Whitespace">   </span><span class="mi">4301</span>         <span class="p">{</span>
+<span class="g g-Whitespace">   </span><span class="mi">4302</span>             <span class="s2">&quot;system:time_start&quot;</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="o">.</span><span class="n">fromYMD</span><span class="p">(</span><span class="n">year</span> <span class="o">+</span> <span class="n">yearWithMajority</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">millis</span><span class="p">(),</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">4311</span>         <span class="p">}</span>
+<span class="g g-Whitespace">   </span><span class="mi">4312</span>     <span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">4314</span> <span class="c1"># Iterate across each year</span>
+<span class="ne">-&gt; </span><span class="mi">4315</span> <span class="n">ts</span> <span class="o">=</span> <span class="p">[</span><span class="n">yearCompositeGetter</span><span class="p">(</span><span class="n">yr</span><span class="p">)</span> <span class="k">for</span> <span class="n">yr</span> <span class="ow">in</span> <span class="n">ee</span><span class="o">.</span><span class="n">List</span><span class="o">.</span><span class="n">sequence</span><span class="p">(</span><span class="n">startYear</span> <span class="o">+</span> <span class="n">timebuffer</span><span class="p">,</span> <span class="n">endYear</span> <span class="o">-</span> <span class="n">timebuffer</span><span class="p">)</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()]</span>
+<span class="g g-Whitespace">   </span><span class="mi">4316</span> <span class="n">ts</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">4318</span> <span class="k">return</span> <span class="n">ts</span>
+
+<span class="nn">File c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\geeViz\getImagesLib.py:4315,</span> in <span class="ni">&lt;listcomp&gt;</span><span class="nt">(.0)</span>
+<span class="g g-Whitespace">   </span><span class="mi">4300</span>     <span class="k">return</span> <span class="n">composite</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+<span class="g g-Whitespace">   </span><span class="mi">4301</span>         <span class="p">{</span>
+<span class="g g-Whitespace">   </span><span class="mi">4302</span>             <span class="s2">&quot;system:time_start&quot;</span><span class="p">:</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="o">.</span><span class="n">fromYMD</span><span class="p">(</span><span class="n">year</span> <span class="o">+</span> <span class="n">yearWithMajority</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">millis</span><span class="p">(),</span>
+   <span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">4311</span>         <span class="p">}</span>
+<span class="g g-Whitespace">   </span><span class="mi">4312</span>     <span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">4314</span> <span class="c1"># Iterate across each year</span>
+<span class="ne">-&gt; </span><span class="mi">4315</span> <span class="n">ts</span> <span class="o">=</span> <span class="p">[</span><span class="n">yearCompositeGetter</span><span class="p">(</span><span class="n">yr</span><span class="p">)</span> <span class="k">for</span> <span class="n">yr</span> <span class="ow">in</span> <span class="n">ee</span><span class="o">.</span><span class="n">List</span><span class="o">.</span><span class="n">sequence</span><span class="p">(</span><span class="n">startYear</span> <span class="o">+</span> <span class="n">timebuffer</span><span class="p">,</span> <span class="n">endYear</span> <span class="o">-</span> <span class="n">timebuffer</span><span class="p">)</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()]</span>
+<span class="g g-Whitespace">   </span><span class="mi">4316</span> <span class="n">ts</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">4318</span> <span class="k">return</span> <span class="n">ts</span>
+
+<span class="nn">File c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\geeViz\getImagesLib.py:4290,</span> in <span class="ni">compositeTimeSeries.&lt;locals&gt;.yearCompositeGetter</span><span class="nt">(year)</span>
+<span class="g g-Whitespace">   </span><span class="mi">4287</span> <span class="n">images</span> <span class="o">=</span> <span class="n">yearsTT</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">yrGetter</span><span class="p">)</span>
+<span class="g g-Whitespace">   </span><span class="mi">4288</span> <span class="n">lsT</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="n">images</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+<span class="ne">-&gt; </span><span class="mi">4290</span> <span class="n">count</span> <span class="o">=</span> <span class="n">lsT</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">([</span><span class="s2">&quot;compositeObsCount&quot;</span><span class="p">])</span>
+<span class="g g-Whitespace">   </span><span class="mi">4291</span> <span class="c1"># Compute median or medoid or apply reducer</span>
+<span class="g g-Whitespace">   </span><span class="mi">4292</span> <span class="k">if</span> <span class="n">compositingReducer</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+
+<span class="ne">TypeError</span>: Collection.count() missing 1 required positional argument: &#39;property&#39;
+</pre></div>
+</div>
+</div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -665,7 +711,7 @@ This is just one example. Other parameters include changing date ranges, and red
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=8e9e9f52"></script>
+</div><script src="../_static/documentation_options.js?v=11dc0bc8"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

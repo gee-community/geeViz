@@ -25,6 +25,7 @@ geeViz.taskManagerLib facilitates the monitoring and deleting of GEE export task
 ################################################################################
 # Functions for GEE task management
 
+import geeViz.geeView as gv
 import ee, time, re, os
 from datetime import datetime, timedelta
 
@@ -46,13 +47,7 @@ def trackTasks():
         running_names = [
             [
                 str(i["description"]),
-                str(
-                    timedelta(
-                        seconds=int(
-                            ((time.time() * 1000) - int(i["start_timestamp_ms"])) / 1000
-                        )
-                    )
-                ),
+                str(timedelta(seconds=int(((time.time() * 1000) - int(i["start_timestamp_ms"])) / 1000))),
             ]
             for i in running
         ]
@@ -78,13 +73,7 @@ def trackTasks2(credential_name=None, id_list=None, task_count=1):
         running_names = [
             [
                 str(i["description"]),
-                str(
-                    timedelta(
-                        seconds=int(
-                            ((time.time() * 1000) - int(i["start_timestamp_ms"])) / 1000
-                        )
-                    )
-                ),
+                str(timedelta(seconds=int(((time.time() * 1000) - int(i["start_timestamp_ms"])) / 1000))),
             ]
             for i in running
         ]
@@ -122,13 +111,7 @@ def failedTasks():
     failed_names = [
         [
             str(i["description"]),
-            str(
-                timedelta(
-                    seconds=int(
-                        ((time.time() * 1000) - int(i["start_timestamp_ms"])) / 1000
-                    )
-                )
-            ),
+            str(timedelta(seconds=int(((time.time() * 1000) - int(i["start_timestamp_ms"])) / 1000))),
         ]
         for i in failed
     ]
@@ -177,14 +160,7 @@ def timeTaskList(starttime, endtime):
     epoch = datetime.utcfromtimestamp(0)
     starttime = (starttime - epoch).total_seconds() * 1000.0
     endtime = (endtime - epoch).total_seconds() * 1000.0
-    thisList = [
-        i
-        for i in tasks
-        if (
-            i["creation_timestamp_ms"] >= starttime
-            and i["creation_timestamp_ms"] <= endtime
-        )
-    ]
+    thisList = [i for i in tasks if (i["creation_timestamp_ms"] >= starttime and i["creation_timestamp_ms"] <= endtime)]
     return thisList
 
 
@@ -218,13 +194,7 @@ def jobCompletionTracker(starttime, endtime, check_interval):
         running_names = [
             [
                 str(i["description"]),
-                str(
-                    timedelta(
-                        seconds=int(
-                            ((time.time() * 1000) - int(i["start_timestamp_ms"])) / 1000
-                        )
-                    )
-                ),
+                str(timedelta(seconds=int(((time.time() * 1000) - int(i["start_timestamp_ms"])) / 1000))),
             ]
             for i in running
         ]
@@ -243,12 +213,7 @@ def jobCompletionTracker(starttime, endtime, check_interval):
 # Get list of tasks with specified name/description prefix (e.g. "description" passed to GEE export function)
 def nameTaskList(nameIdentifier):
     tasks = ee.data.getTaskList()
-    thisList = [
-        i
-        for i in tasks
-        if re.findall(nameIdentifier, i["description"])
-        and (i["state"] == "READY" or i["state"] == "RUNNING")
-    ]
+    thisList = [i for i in tasks if re.findall(nameIdentifier, i["description"]) and (i["state"] == "READY" or i["state"] == "RUNNING")]
     return thisList
 
 
@@ -263,9 +228,7 @@ def getEECUS(output_table_name, nameFind=None, overwrite=False):
         completed = [i for i in operations if i["metadata"]["state"] == "SUCCEEDED"]
 
         if nameFind != None:
-            completed = [
-                i for i in completed if i["metadata"]["description"].find(nameFind) > -1
-            ]
+            completed = [i for i in completed if i["metadata"]["description"].find(nameFind) > -1]
         output_table_name = os.path.splitext(output_table_name)[0] + ".csv"
         out_lines = "Name,Run Time, EECU Seconds,Size (megaBytes)\n"
 
