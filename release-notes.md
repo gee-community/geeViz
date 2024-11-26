@@ -1,3 +1,13 @@
+# geeViz 2024.11.4 Release Notes
+
+## November 26, 2024
+
+### Bug fixes
+
+- Follow-on bug fix - Area Charting Tools UI is not only visible if an area charting layer has been added to the map. Previously, the UI would show an older area charting UI if no area charting layers had been added the map.
+
+---
+
 # geeViz 2024.11.3 Release Notes
 
 ## November 25, 2024
