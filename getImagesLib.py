@@ -5396,17 +5396,14 @@ def exportCollection(
 
         if exportToCloud:
             exportToCloudStorageWrapper(
-                imageForExport=composite,
-                outputName=exportName,
-                bucketName=bucket,
-                roi=studyArea,
-                scale=None,
-                crs=None,
-                transform=None,
-                outputNoData=-32768,
-                fileFormat="GeoTIFF",
-                formatOptions={"cloudOptimized": True},
-                overwrite=False,
+                composite,
+                exportName,
+                bucket,
+                studyArea,
+                scale,
+                crs,
+                transform,
+                overwrite,
             )
 
 
