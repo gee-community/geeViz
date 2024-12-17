@@ -5321,6 +5321,9 @@ def exportCollection(
     timebuffer,
     exportBands,
     overwrite=False,
+    exportToAssets=False,
+    exportToCloud = False,
+    bucket = None
 ):
 
     # Take care of date wrapping
@@ -5336,41 +5339,75 @@ def exportCollection(
     collection = collection.select(exportBands)
 
     # Iterate across each year and export image
-    for year in ee.List.sequence(startYear + timebuffer, endYear - timebuffer).getInfo():
+    for year in ee.List.sequence(
+        startYear + timebuffer, endYear - timebuffer
+    ).getInfo():
         print("Exporting:", year)
         # Set up dates
         startYearT = year - timebuffer
         endYearT = year + timebuffer + yearWithMajority
 
         # Get yearly composite
-        composite = collection.filter(ee.Filter.calendarRange(year + yearWithMajority, year + yearWithMajority, "year"))
+        composite = collection.filter(
+            ee.Filter.calendarRange(
+                year + yearWithMajority, year + yearWithMajority, "year"
+            )
+        )
         composite = ee.Image(composite.first()).clip(studyArea)
 
         # Add metadata, cast to integer, and export composite
         composite = composite.set(
             {
-                "system:time_start": ee.Date.fromYMD(year + yearWithMajority, 6, 1).millis(),
+                "system:time_start": ee.Date.fromYMD(
+                    year + yearWithMajority, 6, 1
+                ).millis(),
                 "yearBuffer": timebuffer,
             }
         )
 
         # Export the composite
         # Set up export name and path
-        exportName = outputName + "_" + str(int(startYearT)) + "_" + str(int(endYearT)) + "_" + str(int(startJulian)) + "_" + str(int(endJulian))
+        exportName = (
+            outputName
+            + "_"
+            + str(int(startYearT))
+            + "_"
+            + str(int(endYearT))
+            + "_"
+            + str(int(startJulian))
+            + "_"
+            + str(int(endJulian))
+        )
 
         exportPath = exportPathRoot + "/" + exportName
 
-        exportToAssetWrapper(
-            composite,
-            exportName,
-            exportPath,
-            "mean",
-            studyArea,
-            scale,
-            crs,
-            transform,
-            overwrite,
-        )
+        if exportToAssets:
+            exportToAssetWrapper(
+                composite,
+                exportName,
+                exportPath,
+                "mean",
+                studyArea,
+                scale,
+                crs,
+                transform,
+                overwrite,
+            )
+
+        if exportToCloud:
+            exportToCloudStorageWrapper(
+                imageForExport=composite,
+                outputName=exportName,
+                bucketName=bucket,
+                roi=studyArea,
+                scale=None,
+                crs=None,
+                transform=None,
+                outputNoData=-32768,
+                fileFormat="GeoTIFF",
+                formatOptions={"cloudOptimized": True},
+                overwrite=False,
+            )
 
 
 #########################################################################
@@ -8236,7 +8273,10 @@ def getClimateWrapper(
     transform: list[int] | None = None,
     scale: int | None = None,
     exportBands: ee.List | list | None = None,
-    exportNamePrefix: str = ''
+    exportNamePrefix: str = '',
+    exportToAssets: bool = False,
+    exportToCloud: bool = False,
+    bucket: str = ''
 ) -> ee.ImageCollection:
     """
     Wrapper function to retrieve and process climate data from various Earth Engine collections.
@@ -8272,6 +8312,9 @@ def getClimateWrapper(
         exportBands (ee.List | list | None, optional): List of band names to export from the composites (if
             exportComposites is True). Defaults to None (all bands from the first image in the collection).
         exportNamePrefix (str,optional): Name to place before default name of exported image.
+        exportToAssets (bool): Set to True to export images to earth engine assets.
+        exportToCloud (bool): Set to True to export images to Google Cloud Storage.
+        bucket (str): If exportToCloud is True, images are exported to this Google Cloud storage bucket. 
 
     Returns:
         ee.ImageCollection: The time series collection of processed climate data.
@@ -8295,7 +8338,7 @@ def getClimateWrapper(
     >>> crs = "EPSG:5070"
     >>> transform = [1000, 0, -2361915.0, 0, -1000, 3177735.0]
     >>> scale = None
-    >>> climateComposites = gil.getClimateWrapper(collectionName, studyArea, startYear, endYear, startJulian, endJulian, timebuffer, weights, compositingReducer, exportComposites, exportPathRoot, crs, transform, scale, exportBands, exportNamePrefix)
+    >>> climateComposites = gil.getClimateWrapper(collectionName, studyArea, startYear, endYear, startJulian, endJulian, timebuffer, weights, compositingReducer, exportComposites, exportPathRoot, crs, transform, scale, exportBands, exportNamePrefix,exportToAssets,exportToCloud,bucket)
     >>> Map.addTimeLapse(climateComposites.select(exportBands), {}, "Climate Composite Time Lapse")
     >>> Map.addLayer(studyArea, {"strokeColor": "0000FF", "canQuery": False}, "Study Area", True)
     >>> Map.centerObject(studyArea)
@@ -8364,6 +8407,9 @@ def getClimateWrapper(
             compositingReducer,
             timebuffer,
             exportBands,
+            exportToAssets,
+            exportToCloud,
+            bucket
         )
 
     return ts
