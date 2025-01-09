@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="prev" title="CCDC Visualization Notebook" href="CCDCVizNotebook.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Learn to crosswalk LCMS datasets to different levels - geeViz &#34;2025.1.2&#34; docs</title>
+        <title>Learn to crosswalk LCMS datasets to different levels - geeViz &#34;2025.1.3&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -142,7 +142,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">geeViz "2025.1.2" docs</div></a>
+      <a href="../index.html"><div class="brand">geeViz "2025.1.3" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -168,7 +168,7 @@
     <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2025.1.2" docs</span>
+  <span class="sidebar-brand-text">geeViz "2025.1.3" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -272,7 +272,7 @@ limitations under the License.</p>
     <span class="o">!</span>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>geeViz
     <span class="kn">from</span>  <span class="nn">geeViz.geeView</span> <span class="kn">import</span> <span class="o">*</span>
 
-<span class="kn">import</span> <span class="nn">lcmsLevelLookup</span> <span class="k">as</span> <span class="nn">ll</span>
+<span class="kn">import</span> <span class="nn">geeViz.examples.lcmsLevelLookup</span> <span class="k">as</span> <span class="nn">ll</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">Markdown</span>
@@ -656,25 +656,25 @@ Product: Land Use Level: 1 {&#39;remap_from&#39;: [1, 2, 3, 4, 5, 6, 7], &#39;re
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: Change Level 3
 Adding layer: Change Level 2
 Adding layer: Change Level 1
-Adding layer: Land_Cover Level 4
-Adding layer: Land_Cover Level 3
-Adding layer: Land_Cover Level 2
-Adding layer: Land_Cover Level 1
-Adding layer: Land_Use Level 3
-Adding layer: Land_Use Level 2
-Adding layer: Land_Use Level 1
+Adding layer: Land Cover Level 4
+Adding layer: Land Cover Level 3
+Adding layer: Land Cover Level 2
+Adding layer: Land Cover Level 1
+Adding layer: Land Use Level 3
+Adding layer: Land Use Level 2
+Adding layer: Land Use Level 1
 Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=nlcd-tcc&amp;accessToken=ya29.a0ARW5m752rFVTY4szOYSsHYs8DpQqRhLpfvS8QTlFglscbV_1b8h88V77_rFcKKIJXTHFeVO2ZgnPGwCekjT89ShQV1cXAsPJ2Pe9qAWg001xzaEWx0EJJp0viiWUi8fR6Kjoj6TsNPghCQyvdiRIPG1n3q-GZ3dFBzLQa-s9kAaCgYKAakSARESFQHGX2Mi2FrzTGrHW1wHNAd76hnHHg0177&amp;accessTokenCreationTime=1736374816159
+geeView URL: http://localhost:8001/geeView/?projectID=nlcd-tcc&amp;accessToken=ya29.a0ARW5m77Pc6lM5SB_9pPnl4Kpwy_hm9xnQcv4Cp57tydUS3Y5Vu7S60vF56X1ghxvNG6t8hRYJB9QTi512j93P3mJFQ4m8lEilUGCyj0KsisThXeuEndHAClzfoSfJ7GNEg17a-yrLbichzJKT6otucaVFW3EKYh5Bg2PUwkhxQaCgYKAVASARESFQHGX2MisOJXGmMKn-OHK5RvN47t3g0177&amp;accessTokenCreationTime=1736383668754
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=nlcd-tcc&accessToken=ya29.a0ARW5m752rFVTY4szOYSsHYs8DpQqRhLpfvS8QTlFglscbV_1b8h88V77_rFcKKIJXTHFeVO2ZgnPGwCekjT89ShQV1cXAsPJ2Pe9qAWg001xzaEWx0EJJp0viiWUi8fR6Kjoj6TsNPghCQyvdiRIPG1n3q-GZ3dFBzLQa-s9kAaCgYKAakSARESFQHGX2Mi2FrzTGrHW1wHNAd76hnHHg0177&accessTokenCreationTime=1736374816159"
+            src="http://localhost:8001/geeView/?projectID=nlcd-tcc&accessToken=ya29.a0ARW5m77Pc6lM5SB_9pPnl4Kpwy_hm9xnQcv4Cp57tydUS3Y5Vu7S60vF56X1ghxvNG6t8hRYJB9QTi512j93P3mJFQ4m8lEilUGCyj0KsisThXeuEndHAClzfoSfJ7GNEg17a-yrLbichzJKT6otucaVFW3EKYh5Bg2PUwkhxQaCgYKAVASARESFQHGX2MisOJXGmMKn-OHK5RvN47t3g0177&accessTokenCreationTime=1736383668754"
             frameborder="0"
             allowfullscreen
             
@@ -749,7 +749,7 @@ geeView URL: http://localhost:8001/geeView/?projectID=nlcd-tcc&amp;accessToken=y
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=a0627815"></script>
+</div><script src="../_static/documentation_options.js?v=3f20ec8f"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

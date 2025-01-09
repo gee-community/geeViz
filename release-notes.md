@@ -1,3 +1,13 @@
+# geeViz 2025.1.3 Release Notes
+
+## January 9, 2025
+
+### Bug fixes
+
+- `examples.LCMS_Levels_Viewer_Notebook` import of the `lcmsLevelLookup` script path didn't work in Colab. Not it's imported as part of the geeViz module.
+
+---
+
 # geeViz 2025.1.2 Release Notes
 
 ## January 9, 2025
