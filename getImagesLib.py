@@ -5306,21 +5306,7 @@ def nDayComposites(images, startYear, endYear, startJulian, endJulian, composite
 ###############################################################
 #########################################################################
 def exportCollection(
-    exportPathRoot,
-    outputName,
-    studyArea,
-    crs,
-    transform,
-    scale,
-    collection,
-    startYear,
-    endYear,
-    startJulian,
-    endJulian,
-    compositingReducer,
-    timebuffer,
-    exportBands,
-    overwrite=False,
+    exportPathRoot, outputName, studyArea, crs, transform, scale, collection, startYear, endYear, startJulian, endJulian, compositingReducer, timebuffer, exportBands, overwrite=False, exportToAssets=False, exportToCloud=False, bucket=None
 ):
 
     # Take care of date wrapping
@@ -5360,17 +5346,30 @@ def exportCollection(
 
         exportPath = exportPathRoot + "/" + exportName
 
-        exportToAssetWrapper(
-            composite,
-            exportName,
-            exportPath,
-            "mean",
-            studyArea,
-            scale,
-            crs,
-            transform,
-            overwrite,
-        )
+        if exportToAssets:
+            exportToAssetWrapper(
+                composite,
+                exportName,
+                exportPath,
+                "mean",
+                studyArea,
+                scale,
+                crs,
+                transform,
+                overwrite,
+            )
+
+        if exportToCloud:
+            exportToCloudStorageWrapper(
+                composite,
+                exportName,
+                bucket,
+                studyArea,
+                scale,
+                crs,
+                transform,
+                overwrite,
+            )
 
 
 #########################################################################
@@ -8237,6 +8236,9 @@ def getClimateWrapper(
     scale: int | None = None,
     exportBands: ee.List | list | None = None,
     exportNamePrefix: str = "",
+    exportToAssets: bool = False,
+    exportToCloud: bool = False,
+    bucket: str = "",
 ) -> ee.ImageCollection:
     """
     Wrapper function to retrieve and process climate data from various Earth Engine collections.
@@ -8271,7 +8273,10 @@ def getClimateWrapper(
             is True). Defaults to None (uses the source collection's scale).
         exportBands (ee.List | list | None, optional): List of band names to export from the composites (if
             exportComposites is True). Defaults to None (all bands from the first image in the collection).
-        exportNamePrefix (str,optional): Name to place before default name of exported image.
+        exportNamePrefix (str, optional): Name to place before default name of exported image. Defaults to ''.
+        exportToAssets (bool, optional): Set to True to export images to earth engine assets. Defaults to False.
+        exportToCloud (bool, optional): Set to True to export images to Google Cloud Storage. Defaults to False.
+        bucket (str, optional): If exportToCloud is True, images are exported to this Google Cloud storage bucket. Defaults to '', but will need to be provided if `exportToCloud` is `True`.
 
     Returns:
         ee.ImageCollection: The time series collection of processed climate data.
@@ -8295,7 +8300,7 @@ def getClimateWrapper(
     >>> crs = "EPSG:5070"
     >>> transform = [1000, 0, -2361915.0, 0, -1000, 3177735.0]
     >>> scale = None
-    >>> climateComposites = gil.getClimateWrapper(collectionName, studyArea, startYear, endYear, startJulian, endJulian, timebuffer, weights, compositingReducer, exportComposites, exportPathRoot, crs, transform, scale, exportBands, exportNamePrefix)
+    >>> climateComposites = gil.getClimateWrapper(collectionName, studyArea, startYear, endYear, startJulian, endJulian, timebuffer, weights, compositingReducer, exportComposites, exportPathRoot, crs, transform, scale, exportBands, exportNamePrefix,exportToAssets,exportToCloud,bucket)
     >>> Map.addTimeLapse(climateComposites.select(exportBands), {}, "Climate Composite Time Lapse")
     >>> Map.addLayer(studyArea, {"strokeColor": "0000FF", "canQuery": False}, "Study Area", True)
     >>> Map.centerObject(studyArea)
@@ -8350,20 +8355,7 @@ def getClimateWrapper(
             exportBands = ee.List(ee.Image(ts.first()).bandNames())
 
         exportCollection(
-            exportPathRoot,
-            f'{exportNamePrefix}{collectionName.split("/")[-1]}',
-            studyArea,
-            crs,
-            transform,
-            scale,
-            ts,
-            startYear,
-            endYear,
-            startJulian,
-            endJulian,
-            compositingReducer,
-            timebuffer,
-            exportBands,
+            exportPathRoot, f'{exportNamePrefix}{collectionName.split("/")[-1]}', studyArea, crs, transform, scale, ts, startYear, endYear, startJulian, endJulian, compositingReducer, timebuffer, exportBands, exportToAssets, exportToCloud, bucket
         )
 
     return ts

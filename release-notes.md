@@ -1,3 +1,13 @@
+# geeViz 2025.1.2 Release Notes
+
+## January 9, 2025
+
+### New Features
+
+- **getImagesLib.getClimateWrapper Exporting** - You can now specify whether you'd like to export to Google Cloud Storage or an Earth Engine asset with the `getImagesLib.getClimateWrapper` function.
+
+---
+
 # geeViz 2025.1.1 Release Notes
 
 ## January 9, 2025
