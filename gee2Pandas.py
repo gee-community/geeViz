@@ -6,7 +6,7 @@ geeViz.gee2Pandas facilitates converting GEE objects to tabular formats that wor
 """
 
 """
-   Copyright 2024 Ian Housman
+   Copyright 2025 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -36,13 +36,9 @@ from simpledbf import Dbf5
 # If the output json file already exists, it will read it in
 # Returns the json version of the featureCollection
 # Currently maxNumberOfFeatures > 5000 will error out (need to handle slicing a feature list)
-def featureCollection_to_json(
-    featureCollection, output_json_name, overwrite=False, maxNumberOfFeatures=5000
-):
+def featureCollection_to_json(featureCollection, output_json_name, overwrite=False, maxNumberOfFeatures=5000):
     if not os.path.exists(output_json_name) or overwrite:
-        print(
-            "Converting featureCollection to json:", os.path.basename(output_json_name)
-        )
+        print("Converting featureCollection to json:", os.path.basename(output_json_name))
         t = featureCollection.limit(maxNumberOfFeatures).getInfo()
         o = open(output_json_name, "w")
         o.write(json.dumps(t))
@@ -136,9 +132,7 @@ def robust_featureCollection_to_df(featureCollection, sep="___"):
 
     properties = out_df.columns
     properties_out = [prop.replace(f"properties{sep}", "") for prop in properties]
-    properties_out = [
-        prop.replace(f"geometry{sep}", "geometry.") for prop in properties_out
-    ]
+    properties_out = [prop.replace(f"geometry{sep}", "geometry.") for prop in properties_out]
     prop_dict = dict(zip(properties, properties_out))
     out_df = out_df.rename(columns=prop_dict)
 
@@ -179,17 +173,11 @@ def df_to_geojson(
 
     # Pull all non geo props if none are provided
     if properties == [] or properties == None:
-        properties = [
-            col
-            for col in df.columns
-            if col not in [geometry_type_fieldname, geometry_coordinates_fieldname]
-        ]
+        properties = [col for col in df.columns if col not in [geometry_type_fieldname, geometry_coordinates_fieldname]]
 
     # loop through each row in the dataframe and convert each row to geojson format
     for _, row in df.iterrows():
-        if not pandas.isnull(row[geometry_type_fieldname]) and not pandas.isnull(
-            row[geometry_coordinates_fieldname]
-        ):
+        if not pandas.isnull(row[geometry_type_fieldname]) and not pandas.isnull(row[geometry_coordinates_fieldname]):
             # create a feature
             feature = {
                 "type": "Feature",
@@ -245,11 +233,7 @@ def tableToFeatureCollection(
     elif mode.lower() == "pickle":
         df = pandas.read_pickle(table_path)
     else:
-        raise Exception(
-            "Table format not recognized. Support formats are: {}".format(
-                ",".join(list(mode_dict.keys()))
-            )
-        )
+        raise Exception("Table format not recognized. Support formats are: {}".format(",".join(list(mode_dict.keys()))))
 
     # Convert the time to a user-friendly format of yyyy-mm-DD
     if dateCol == None:
@@ -325,9 +309,7 @@ def imageArrayPixelToDataFrame(
     arrayImage=None,
 ):
     # Pull the values
-    vals = img.reduceRegion(
-        reducer, pt, scale=scale, crs=crs, crsTransform=transform
-    ).getInfo()
+    vals = img.reduceRegion(reducer, pt, scale=scale, crs=crs, crsTransform=transform).getInfo()
 
     # Determine if it is an array image
     # Only handle the first band or a single specified band if it is
@@ -349,9 +331,7 @@ def imageArrayPixelToDataFrame(
         df = pandas.DataFrame(vals, columns=columns, index=index)
 
     else:
-        df = pandas.DataFrame(
-            list(vals.values()), columns=["Values"], index=list(vals.keys())
-        )
+        df = pandas.DataFrame(list(vals.values()), columns=["Values"], index=list(vals.keys()))
     # Set a title if provided
     if title != None:
         df = setDFTitle(df, title)
@@ -373,13 +353,9 @@ def extractPointImageValues(
 ):
     # Pull the values
     ee_image = ee.Image(ee_image)
-    system_props = ee_image.toDictionary(
-        ["system:index", "system:time_start", "system:time_end"]
-    )
+    system_props = ee_image.toDictionary(["system:index", "system:time_start", "system:time_end"])
     props = ee_image.toDictionary()
-    vals = ee.Image(ee_image).reduceRegion(
-        reducer, pt, scale=scale, crs=crs, crsTransform=transform
-    )
+    vals = ee.Image(ee_image).reduceRegion(reducer, pt, scale=scale, crs=crs, crsTransform=transform)
     if includeNonSystemProperties and includeSystemProperties:
         props = system_props.combine(props)
         return props.combine(vals)
@@ -469,12 +445,8 @@ if __name__ == "__main__":
     # featureCollection_to_csv(training_data,out_csv,overwrite = True)
 
     pt = ee.Geometry.Point([-65.8491, 18.2233])
-    comps = ee.ImageCollection(
-        "projects/rcr-gee/assets/lcms-training/lcms-training_module-2_composites"
-    )
-    lt = ee.ImageCollection(
-        "projects/rcr-gee/assets/lcms-training/lcms-training_module-3_landTrendr"
-    )  # .filter(ee.Filter.eq('band','NBR')).first()\
+    comps = ee.ImageCollection("projects/rcr-gee/assets/lcms-training/lcms-training_module-2_composites")
+    lt = ee.ImageCollection("projects/rcr-gee/assets/lcms-training/lcms-training_module-3_landTrendr")  # .filter(ee.Filter.eq('band','NBR')).first()\
     # .select(['LandTrendr'])
 
     # eeObjToDataFrame(ee.Image([1,2,3]),pt,crs = 'EPSG:5070', scale=30,transform = None,title = None,index = None,

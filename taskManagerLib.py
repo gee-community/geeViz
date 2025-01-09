@@ -5,7 +5,7 @@ geeViz.taskManagerLib facilitates the monitoring and deleting of GEE export task
 """
 
 """
-   Copyright 2024 Ian Housman & Leah Campbell
+   Copyright 2025 Ian Housman & Leah Campbell
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

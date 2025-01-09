@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Visualizing Global Land Cover" href="global_land_cover_example_notebook.html" /><link rel="prev" title="Visualizing MapBiomas Datasets" href="mapBiomasViewerExampleNotebook.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Visualizing Dynamic World - geeViz &#34;2024.11.4&#34; docs</title>
+        <title>Visualizing Dynamic World - geeViz &#34;2025.1.1&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -142,7 +142,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">geeViz "2024.11.4" docs</div></a>
+      <a href="../index.html"><div class="brand">geeViz "2025.1.1" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -168,7 +168,7 @@
     <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.11.4" docs</span>
+  <span class="sidebar-brand-text">geeViz "2025.1.1" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -192,7 +192,6 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../modules.html">Details</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../examples.html">Examples</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="geeViewExampleNotebook.html">Starter geeViz geeView Notebook</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lcmsViewerExampleNotebook.html">LCMS Viewer Intro Notebook</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Annual_NLCD_Viewer_Notebook.html">Annual NLCD <code class="docutils literal notranslate"><span class="pre">geeViz</span></code> Viewer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mapBiomasViewerExampleNotebook.html">Visualizing MapBiomas Datasets</a></li>
@@ -205,6 +204,7 @@
 <li class="toctree-l2"><a class="reference internal" href="LANDTRENDRWrapperNotebook.html">Run LandTrendr and Visualize Outputs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="CCDCVizNotebook.html">CCDC Visualization Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LCMS_Levels_Viewer_Notebook.html">Learn to crosswalk LCMS datasets to different levels</a></li>
 </ul>
 </li>
 </ul>
@@ -248,7 +248,7 @@
 <li><p>Each Sentinel-2 image tile has a corresponding output</p></li>
 <li><p>This notebook will run through how to utilize geeViz to visualize and summarize Dynamic World data</p></li>
 </ul>
-<p>Copyright 2024 Ian Housman</p>
+<p>Copyright 2025 Ian Housman</p>
 <p>Licensed under the Apache License, Version 2.0 (the “License”);
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at</p>
@@ -278,8 +278,6 @@ limitations under the License.</p>
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Initializing GEE
-Cached project id file path: C:\Users\ihousman\.config\earthengine\credentials.proj_id
-Cached project id: lcms-292214
 Successfully initialized
 geeViz package folder: c:\Users\ihousman\AppData\Local\Programs\Python\Python311\Lib\site-packages\geeViz
 done
@@ -370,14 +368,14 @@ Starting local web server at: http://localhost:1234/geeView/
 HTTP server command: &quot;c:\Users\ihousman\AppData\Local\Programs\Python\Python311\python.exe&quot; -m http.server  1234
 Done
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:1234/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612yGCqy4-XqRhQqvY_FFaYjrnoQatPaJ93ai0qIqeAtYt_yKOa0_PpRTbgMjzSmUyCEDWYS-gLn4UNL5NmPWwC1KgxJGVhOfj0FTG-s5FEnuukGbvLRYZVH1lMJsFYiIMhaKb9PgfcAwbxVxFjs8l_fuccsBd75lQBepoQMaCgYKAasSARESFQHGX2Mi1F_7ZzfGG7VXwGv70He2qQ0178
+geeView URL: http://localhost:1234/geeView/?projectID=nlcd-tcc&amp;accessToken=ya29.a0ARW5m75TqcaJL16vfbTEjpvUNGdkVxceJJowWkR9e3nGIz1DAJF9TT5CG53D_JOAhq6BwU8ivN2eFW06LfzbguoVmUMMD6PWhRSg1jLiXqVBYAy_vTredi-nwAmjs8AmSifnCt7_Q0y6Fk30wwYhiIY79LAIAtI8OXBsvueDaCgYKARwSARESFQHGX2MiDeCHH2CNSmyw-bUJ4Zi3Rw0175&amp;accessTokenCreationTime=1734999380601
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:1234/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612yGCqy4-XqRhQqvY_FFaYjrnoQatPaJ93ai0qIqeAtYt_yKOa0_PpRTbgMjzSmUyCEDWYS-gLn4UNL5NmPWwC1KgxJGVhOfj0FTG-s5FEnuukGbvLRYZVH1lMJsFYiIMhaKb9PgfcAwbxVxFjs8l_fuccsBd75lQBepoQMaCgYKAasSARESFQHGX2Mi1F_7ZzfGG7VXwGv70He2qQ0178"
+            src="http://localhost:1234/geeView/?projectID=nlcd-tcc&accessToken=ya29.a0ARW5m75TqcaJL16vfbTEjpvUNGdkVxceJJowWkR9e3nGIz1DAJF9TT5CG53D_JOAhq6BwU8ivN2eFW06LfzbguoVmUMMD6PWhRSg1jLiXqVBYAy_vTredi-nwAmjs8AmSifnCt7_Q0y6Fk30wwYhiIY79LAIAtI8OXBsvueDaCgYKARwSARESFQHGX2MiDeCHH2CNSmyw-bUJ4Zi3Rw0175&accessTokenCreationTime=1734999380601"
             frameborder="0"
             allowfullscreen
             
@@ -466,19 +464,19 @@ geeView URL: http://localhost:1234/geeView/?projectID=lcms-292214&amp;accessToke
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: Dynamic World Time-Lapse
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adding layer: Dynamic World Seasonal Time-Lapse
 Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:1234/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:1234/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AcM612xqiGDcaycnSbAGRNruGn9HQEonDtnU8NC3ZU-4c11MRNqY2FyDVexAiOkUoJQFvOJuby2EDrQ3pYSCW9ABfTJypYe2uqcpNuz2V1zBRQnGPAy1X8gyUlhIOb8lOzeIjAhAV7AL9MHYCQHFCJKJ38TTUd7iOMm3b4YXGjEaCgYKASgSARESFQHGX2MixCTtvcDehFDfDtuskh4RcA0178
+geeView URL: http://localhost:1234/geeView/?projectID=nlcd-tcc&amp;accessToken=ya29.a0ARW5m74xCLH7Uz6nRomy8BxVNUiUl1VtugFtjDw0xT4suvonSiF6UJZkAMW4WRvOoAORbLM2mUx-a9_0vvTeGGyZJuvkX5jpalRbxvT4ZBDihxx5pZmv38y9o4b8HEEyF8mupp4RmcCrFFm-tQXXTLsHGD5iqONey7K6d6vbaCgYKAZYSARESFQHGX2MiTMXMJdCkvsq6W_BVDjSuyA0175&amp;accessTokenCreationTime=1734999434795
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:1234/geeView/?projectID=lcms-292214&accessToken=ya29.a0AcM612xqiGDcaycnSbAGRNruGn9HQEonDtnU8NC3ZU-4c11MRNqY2FyDVexAiOkUoJQFvOJuby2EDrQ3pYSCW9ABfTJypYe2uqcpNuz2V1zBRQnGPAy1X8gyUlhIOb8lOzeIjAhAV7AL9MHYCQHFCJKJ38TTUd7iOMm3b4YXGjEaCgYKASgSARESFQHGX2MixCTtvcDehFDfDtuskh4RcA0178"
+            src="http://localhost:1234/geeView/?projectID=nlcd-tcc&accessToken=ya29.a0ARW5m74xCLH7Uz6nRomy8BxVNUiUl1VtugFtjDw0xT4suvonSiF6UJZkAMW4WRvOoAORbLM2mUx-a9_0vvTeGGyZJuvkX5jpalRbxvT4ZBDihxx5pZmv38y9o4b8HEEyF8mupp4RmcCrFFm-tQXXTLsHGD5iqONey7K6d6vbaCgYKAZYSARESFQHGX2MiTMXMJdCkvsq6W_BVDjSuyA0175&accessTokenCreationTime=1734999434795"
             frameborder="0"
             allowfullscreen
             
@@ -615,7 +613,7 @@ geeView URL: http://localhost:1234/geeView/?projectID=lcms-292214&amp;accessToke
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=7bf3e88c"></script>
+</div><script src="../_static/documentation_options.js?v=dad4c3fa"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

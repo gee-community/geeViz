@@ -5,7 +5,7 @@ geeViz.changeDetectionLib is the core module for setting up various change detec
 """
 
 """
-   Copyright 2024 Ian Housman, Leah Campbell, Josh Heyer
+   Copyright 2025 Ian Housman, Leah Campbell, Josh Heyer
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

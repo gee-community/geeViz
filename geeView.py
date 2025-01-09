@@ -6,7 +6,7 @@ geeViz.geeView is the core module for managing GEE objects on the geeViz mapper 
 """
 
 """
-    Copyright 2024 Ian Housman
+    Copyright 2025 Ian Housman
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -114,6 +114,7 @@ def verified_initialize(project=None):
     """
     ee.Initialize(project=project)
     z = ee.Number(1).getInfo()
+    ee.data.setCloudApiUserProject(ee.data._cloud_api_user_project)
     print("Successfully initialized")
 
 
@@ -128,14 +129,17 @@ def robustInitializer():
 
     try:
         z = ee.Number(1).getInfo()
+        project_id = ee.data._cloud_api_user_project
     except:
         print("Initializing GEE")
         if not ee.oauth._valid_credentials_exist():
             ee.Authenticate()
         try:
             verified_initialize(project=ee.data._cloud_api_user_project)
+            project_id = ee.data._cloud_api_user_project
+
         except Exception as E:
-            # print(E)
+
             if str(E).find("Reauthentication is needed") > -1:
                 ee.Authenticate(force=True)
 
@@ -157,7 +161,6 @@ def robustInitializer():
         ee.data.setCloudApiUserProject(project_id)
 
 
-setProject(ee.data._cloud_api_user_project)
 robustInitializer()
 ######################################################################
 # Set up GEE and paths
@@ -172,7 +175,7 @@ paths = sys.path
 
 py_viz_dir = os.path.dirname(__file__)
 
-print("geeViz package folder:", py_viz_dir)
+# print("geeViz package folder:", py_viz_dir)
 
 # Specify location of files to run
 template = os.path.join(py_viz_dir, geeViewFolder, "index.html")

@@ -33,7 +33,7 @@ Python notebook examples
 
 Getting Started using `geeViz`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+LCMS_Levels_Viewer_Notebook
 .. toctree::
    
    notebooks/geeViewExampleNotebook
@@ -122,6 +122,13 @@ Visualize CCDC Outputs
 .. toctree::
 
    notebooks/CCDCVizNotebook
+
+Crosswalk LCMS Levels
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. toctree::
+
+   notebooks/LCMS_Levels_Viewer_Notebook
 
 Other examples
 -----------------------------------------

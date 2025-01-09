@@ -1,5 +1,5 @@
 """
-   Copyright 2024 Ian Housman
+   Copyright 2025 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -224,9 +224,7 @@ runChastainHarmonization = True
 # These have been pre-computed for all CONUS for Landsat and Setinel 2 (separately)
 # and are appropriate to use for any time period within the growing season
 # The cloudScore offset is generally some lower percentile of cloudScores on a pixel-wise basis
-preComputedCloudScoreOffset = getImagesLib.getPrecomputedCloudScoreOffsets(
-    cloudScorePctl
-)
+preComputedCloudScoreOffset = getImagesLib.getPrecomputedCloudScoreOffsets(cloudScorePctl)
 preComputedLandsatCloudScoreOffset = preComputedCloudScoreOffset["landsat"]
 preComputedSentinel2CloudScoreOffset = preComputedCloudScoreOffset["sentinel2"]
 
@@ -342,9 +340,7 @@ processedComposites = processedAndComposites["processedComposites"]
 getImagesLib.vizParamsFalse["years"] = list(range(startYear, endYear + 1))
 
 # Map.addLayer(processedComposites.select(['NDVI','NBR']),{'addToLegend':'false'},'Time Series (NBR and NDVI)',False)
-Map.addTimeLapse(
-    processedComposites, getImagesLib.vizParamsFalse, "Composite Timelapse", False
-)
+Map.addTimeLapse(processedComposites, getImagesLib.vizParamsFalse, "Composite Timelapse", False)
 ####################################################################################################
 # Load the study region
 Map.addLayer(studyArea, {"strokeColor": "0000FF"}, "Study Area", True)

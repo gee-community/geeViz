@@ -8,7 +8,7 @@
       "source": [
         "# LCMS Viewer Intro Notebook\n",
         "* Based on https://github.com/google/earthengine-community/blob/master/datasets/scripts/LCMS_Visualization.js\n",
-        "Copyright 2024 The Google Earth Engine Community Authors\n",
+        "Copyright 2025 The Google Earth Engine Community Authors\n",
         " \t\n",
         "Licensed under the Apache License, Version 2.0 (the \"License\");\n",
         "you may not use this file except in compliance with the License.\n",

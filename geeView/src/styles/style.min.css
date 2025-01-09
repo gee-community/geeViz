@@ -10,7 +10,7 @@
 
   --foo: true;
 
-  --deep-brown-10: #d6d1ca;
+  --deep-brown-10: #d6d1ca; /*original: #d6d1ca possible new one: edeae3*/
   --deep-brown-20: #bfb7b0;
   --deep-brown-30: #aca199;
   --deep-brown-50: #968b83;
@@ -197,7 +197,7 @@ body {
 .btn {
   background-color: var(--black) !important;
   margin: 0px;
-  color: var(--white) !important;
+  color: var(--white);
   outline: none !important;
   vertical-align: middle !important;
 }
@@ -394,21 +394,12 @@ table {
   z-index: 1;
 }
 
-.search-box,
-.form-control {
-  height: 1.5em;
-}
-.input-group-prepend > .search-box {
-  padding-top: 0.5rem;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-}
 #forward-view-button {
   border-radius: 0px 3px 3px 0px;
 }
 .json-input-text-box {
   resize: vertical;
-  max-height: 10rem;
+  max-height: 15rem;
 }
 
 kbd {
@@ -548,11 +539,29 @@ button {
 
 .search-bar {
   padding-left: 2.75rem;
-  padding-right: 1rem;
-  padding-bottom: 0.5rem;
-  padding-top: 0.25rem;
-  font-size: 1.5rem;
-  display: flex;
+  margin-bottom: 0.5rem;
+  width: 95%;
+  height: 1.75rem;
+}
+.search-bar > .btn {
+  background-color: var(--deep-brown-10) !important;
+
+  margin-left: 0px !important;
+  margin-top: 0.25rem !important;
+  cursor: auto !important;
+  font-size: 1rem !important;
+}
+.search-bar > .btn > i {
+  vertical-align: top;
+}
+.search-bar > input {
+  text-align: left;
+  width: 100%;
+  color: var(--deep-brown-100) !important;
+}
+.search-bar > input::placeholder {
+  text-align: left;
+  font-size: 1rem;
 }
 
 /*///////////////////////////////////////////////////////////*/
@@ -737,13 +746,12 @@ div.dataTables_info {
 }
 
 .btn-group > .btn {
-  /* margin-left: 0.5rem !important; */
   padding-bottom: 0px;
   border-radius: 3px;
-  color: var(--deep-brown-20) !important;
-  background-color: var(--deep-brown-100) !important;
+  color: var(--deep-brown-20);
+  background-color: var(--deep-brown-100);
   font-size: 0.75rem;
-  margin-top: 0.5rem !important;
+  margin-top: 0.5rem;
 }
 
 .areaChart-download-btn-group {
@@ -753,7 +761,15 @@ div.dataTables_info {
 .pac-container {
   background-color: var(--deep-brown-20);
 }
-
+.input-group-text,
+.form-control {
+  border: none;
+  height: 1.5rem;
+}
+.share-and-location-buttons {
+  width: 1.8rem;
+  margin-left: 2rem;
+}
 .hr {
   height: 1px;
   border: none;
@@ -903,6 +919,10 @@ div.dataTables_info {
   margin-bottom: 0.25rem;
 }
 
+#transition-period-table.table td,
+#transition-period-table .table th {
+  padding: 0.5rem;
+}
 .query-output-header-title {
   font-weight: bold;
   padding-top: 0.25rem;
@@ -983,13 +1003,12 @@ td {
   z-index: 2;
 }
 
-.legend div span {
+/* .legend div span {
   display: inline-block;
   height: 0.9em;
   margin-right: 0.3em;
   width: 0.9em;
-  font-size: 0.9em;
-}
+} */
 
 .legend-title {
   text-align: left;
@@ -998,39 +1017,37 @@ td {
   font-size: 0.9rem;
 }
 
-.my-legend .legend-scale ul {
+.legend .legend-row-container ul {
   margin: 0;
-  margin-bottovm: 0.3em;
   padding: 0;
   float: left;
   list-style: none;
 }
 
-.my-legend .legend-scale ul li {
-  font-size: 80%;
-  list-style: none;
+.legend .legend-row-container ul li {
+  font-size: 0.75rem;
   margin-left: 0;
-  line-height: 1em;
-  margin-bottom: 0.3em;
+  line-height: 0.75rem;
+  margin-bottom: 0.25rem;
 }
 
-.my-legend ul.legend-labels li span {
+.legend ul.legend-labels li span {
   display: block;
   float: left;
-  height: 1em;
-  width: 2em;
-  margin-right: 0.3em;
+  height: 0.75rem;
+  width: 1.5rem;
+  margin-right: 0.3rem;
   margin-left: 0;
   border: 1px solid #999;
 }
 
-.my-legend .legend-source {
+.legend .legend-source {
   font-size: 70%;
   color: #999;
   clear: both;
 }
 
-.my-legend a {
+.legend a {
   color: #777;
 }
 
@@ -1487,6 +1504,7 @@ a:hover {
 }
 #parameters-collapse-div > div > .sub-panel-heading {
   margin-left: -2.5rem;
+  margin-bottom: 1rem;
 }
 #parameters-collapse-div > .sub-panel-collapse {
   padding-left: 0.5rem;
@@ -1573,6 +1591,22 @@ a:hover {
   vertical-align: middle !important;
 }
 
+.class-color-pickers {
+  max-width: 7rem;
+  height: 1.15rem;
+  background-color: var(--deep-brown-10);
+
+  border: 0px;
+}
+
+.class-color-pickers-table {
+  border-bottom: 1px solid black !important;
+  font-size: 0.85rem;
+}
+.class-color-pickers-table > thead {
+  text-align: center;
+}
+
 /* .drawing-mode-selector{} */
 /*///////////////////////////////////////////////////////////*/
 /*Dropdown styling*/
@@ -1640,10 +1674,15 @@ input[type="date"] {
 textarea {
   resize: none;
   overflow: hidden;
-  min-height: 50px;
-  max-height: 100px;
+  min-height: 4rem;
+  max-height: 10rem;
 }
-
+.selectable-text-list {
+  word-wrap: break-word;
+  user-select: text;
+  padding-left: 1rem;
+  color: var(--deep-brown-100);
+}
 .checkboxList {
   padding-left: 0.2rem;
 }

@@ -5,7 +5,7 @@ geeViz.phEEnoViz facilitates the creation of plots to show the seasonality of an
 """
 
 """
-   Copyright 2024 Ian Housman
+   Copyright 2025 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -74,10 +74,7 @@ def getTableWrapper(
         print("Error encountered:", e)
 
         tryNumber += 1
-        if (
-            tryNumber < maxTries
-            and e.args[0].find(" Parameter 'image' is required") == -1
-        ):
+        if tryNumber < maxTries and e.args[0].find(" Parameter 'image' is required") == -1:
             print("Trying to convert table again. Try number:", tryNumber)
             getTableWrapper(
                 image,
@@ -155,11 +152,7 @@ def getTimeSeriesSample(
         if not os.path.exists(output_table_nameT):
             if "Landsat" in programs and "Sentinel2" in programs:
                 if dummyImage == None:
-                    dummyImage = ee.Image(
-                        getImagesLib.getProcessedLandsatAndSentinel2Scenes(
-                            saBounds, 2019, 2020, 1, 365
-                        ).first()
-                    )
+                    dummyImage = ee.Image(getImagesLib.getProcessedLandsatAndSentinel2Scenes(saBounds, 2019, 2020, 1, 365).first())
 
                 images = getImagesLib.getProcessedLandsatAndSentinel2Scenes(
                     saBounds,
@@ -172,21 +165,11 @@ def getTimeSeriesSample(
                 )
             elif "Sentinel2" in programs:
                 if dummyImage == None:
-                    dummyImage = ee.Image(
-                        getImagesLib.getProcessedSentinel2Scenes(
-                            saBounds, 2019, 2020, 1, 365
-                        ).first()
-                    )
-                images = getImagesLib.getProcessedSentinel2Scenes(
-                    saBounds, yr, yr, startJulian, endJulian
-                )
+                    dummyImage = ee.Image(getImagesLib.getProcessedSentinel2Scenes(saBounds, 2019, 2020, 1, 365).first())
+                images = getImagesLib.getProcessedSentinel2Scenes(saBounds, yr, yr, startJulian, endJulian)
             elif "Landsat" in programs:
                 if dummyImage == None:
-                    dummyImage = ee.Image(
-                        getImagesLib.getProcessedLandsatScenes(
-                            saBounds, 2019, 2020, 1, 365
-                        ).first()
-                    )
+                    dummyImage = ee.Image(getImagesLib.getProcessedLandsatScenes(saBounds, 2019, 2020, 1, 365).first())
                 images = getImagesLib.getProcessedLandsatScenes(
                     saBounds,
                     yr,
@@ -211,9 +194,7 @@ def getTimeSeriesSample(
             # Map.addLayer(images.select(exportBands),{},'Raw Time Series ' + str(yr),True)
 
             # Convert to n day composites
-            composites = getImagesLib.nDayComposites(
-                images, yr, yr, 1, 365, compositePeriod
-            )
+            composites = getImagesLib.nDayComposites(images, yr, yr, 1, 365, compositePeriod)
 
             # Map.addLayer(composites.select(exportBands),{},str(compositePeriod) +' day composites '+str(yr))
 
@@ -226,9 +207,7 @@ def getTimeSeriesSample(
             stack = stack.rename(bns)
 
             # Start export table thread
-            tt = threading.Thread(
-                target=getTableWrapper, args=(stack, randomSample, output_table_nameT)
-            )
+            tt = threading.Thread(target=getTableWrapper, args=(stack, randomSample, output_table_nameT))
             tt.start()
             time.sleep(0.1)
 
@@ -321,19 +300,10 @@ def chartTimeSeriesDistributions(
         if band not in bands:
             bands.append(band)
     for band in bands:
-        output_chart_name = os.path.join(
-            output_dir, output_base_name + "_" + band + ".png"
-        )
+        output_chart_name = os.path.join(output_dir, output_base_name + "_" + band + ".png")
         if not os.path.exists(output_chart_name) or overwrite:
-            title = (
-                " ".join(output_base_name.split("_"))
-                + " "
-                + band
-                + " Distrubution Time Series"
-            )
-            tablesT = [
-                table for table in tables if os.path.basename(table).find(band) > -1
-            ]
+            title = " ".join(output_base_name.split("_")) + " " + band + " Distrubution Time Series"
+            tablesT = [table for table in tables if os.path.basename(table).find(band) > -1]
             # Find the name of the band/index
             index_name = band
 
@@ -362,12 +332,7 @@ def chartTimeSeriesDistributions(
             bins = np.arange(min, max + bin_step, bin_step)
 
             # Get histograms for each date and clip out outlier frequency values
-            hist = np.array(
-                [
-                    np.histogram(data[column], bins=bins, density=True)[0]
-                    for column in columns
-                ]
-            ).transpose()
+            hist = np.array([np.histogram(data[column], bins=bins, density=True)[0] for column in columns]).transpose()
             hist = np.nan_to_num(hist, nan=0)
             hist = hist.clip(np.percentile(hist, 10), np.percentile(hist, 99))
 
@@ -381,9 +346,7 @@ def chartTimeSeriesDistributions(
             # Set up tables for harmonic regression
             for i, column in enumerate(columns):
                 d = dates[i]
-                d1 = date(
-                    int(d.split("-")[0]), int(d.split("-")[1]), int(d.split("-")[2])
-                )
+                d1 = date(int(d.split("-")[0]), int(d.split("-")[1]), int(d.split("-")[2]))
                 delta = d1 - d0
                 delta_fraction = math.modf(delta.days / 365.25)[0]
                 decimal_date = int(d.split("-")[0]) + delta_fraction
@@ -393,9 +356,7 @@ def chartTimeSeriesDistributions(
                 if len(ys) > 3:
                     percentiles.append(np.percentile(ys, [0, 5, 25, 50, 75, 95, 100]))
                 else:
-                    percentiles.append(
-                        [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]
-                    )
+                    percentiles.append([np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
                 xs = np.repeat(decimal_date, len(ys))
                 table_ys = np.append(table_ys, ys)
                 table_xs = np.append(table_xs, xs)
@@ -420,18 +381,14 @@ def chartTimeSeriesDistributions(
             intTerm = np.ones(xs.shape[0])
             harm_1 = np.c_[sin1Term, cos1Term, xs, intTerm]
             harm_1_2 = np.c_[sin1Term, cos1Term, sin2Term, cos2Term, xs, intTerm]
-            harm_1_2_3 = np.c_[
-                sin1Term, cos1Term, sin2Term, cos2Term, sin3Term, cos3Term, xs, intTerm
-            ]
+            harm_1_2_3 = np.c_[sin1Term, cos1Term, sin2Term, cos2Term, sin3Term, cos3Term, xs, intTerm]
 
             harm_1_model = np.linalg.lstsq(harm_1, table_ys, rcond=None)
             harm_1_2_model = np.linalg.lstsq(harm_1_2, table_ys, rcond=None)
             harm_1_2_3_model = np.linalg.lstsq(harm_1_2_3, table_ys, rcond=None)
 
             # print(harm_1_model)
-            peak_1_fraction = math.atan(harm_1_model[0][0] / harm_1_model[0][1]) / (
-                2 * math.pi
-            )
+            peak_1_fraction = math.atan(harm_1_model[0][0] / harm_1_model[0][1]) / (2 * math.pi)
             peak_2_fraction = peak_1_fraction + 0.5
             if peak_1_fraction < 0:
                 peak_1_fraction = 1 + peak_1_fraction
@@ -476,12 +433,8 @@ def chartTimeSeriesDistributions(
                 years[peak_year_i][2:] + f"{peak_date2:03}",
             )
             # print(datetime.datetime.strptime('19'+str(int(peak_date*365)), '%y%j').strftime("%d-%m-%Y"))
-            peak_date = datetime.datetime.strptime(
-                years[peak_year_i][2:] + f"{peak_date:03}", "%y%j"
-            ).strftime("%m-%d")
-            peak_date2 = datetime.datetime.strptime(
-                years[peak_year_i][2:] + f"{peak_date2:03}", "%y%j"
-            ).strftime("%m-%d")
+            peak_date = datetime.datetime.strptime(years[peak_year_i][2:] + f"{peak_date:03}", "%y%j").strftime("%m-%d")
+            peak_date2 = datetime.datetime.strptime(years[peak_year_i][2:] + f"{peak_date2:03}", "%y%j").strftime("%m-%d")
             # print(peak_date)
             # print(peak_date2)
             # Apply harm model
@@ -495,9 +448,7 @@ def chartTimeSeriesDistributions(
             intTerm = np.ones(xs.shape[0])
             harm_1 = np.c_[sin1Term, cos1Term, xs, intTerm]
             harm_1_2 = np.c_[sin1Term, cos1Term, sin2Term, cos2Term, xs, intTerm]
-            harm_1_2_3 = np.c_[
-                sin1Term, cos1Term, sin2Term, cos2Term, sin3Term, cos3Term, xs, intTerm
-            ]
+            harm_1_2_3 = np.c_[sin1Term, cos1Term, sin2Term, cos2Term, sin3Term, cos3Term, xs, intTerm]
             # print('beta hat:',beta_hat[0],xs)
             pred_1 = np.dot(harm_1, harm_1_model[0])
             pred_1_2 = np.dot(harm_1_2, harm_1_2_model[0])
@@ -562,9 +513,7 @@ def chartTimeSeriesDistributions(
             ax.grid(True, which="major", axis="x", linestyle="--", color=font_color)
 
             cbax = fig.add_axes([0.93, 0.11, 0.01, 0.71])
-            legend = plt.legend(
-                handles=harm_line, bbox_to_anchor=(-2.5, 1.08), loc="upper left"
-            )
+            legend = plt.legend(handles=harm_line, bbox_to_anchor=(-2.5, 1.08), loc="upper left")
 
             cb = plt.colorbar(cf, cax=cbax, orientation="vertical")
             cb.ax.tick_params(labelsize=10)
@@ -587,20 +536,10 @@ def chartTimeSeriesDistributions(
             if annotate_harmonic_peaks:
                 print("Annotating peak dates of harmonics")
                 try:
-                    yr_dates = [
-                        i for i in dates if i.split("-")[0] == years[peak_year_i]
-                    ]
-                    m_dates = [
-                        i
-                        for i in yr_dates
-                        if i.split("-")[1] == peak_date.split("-")[0]
-                    ]
+                    yr_dates = [i for i in dates if i.split("-")[0] == years[peak_year_i]]
+                    m_dates = [i for i in yr_dates if i.split("-")[1] == peak_date.split("-")[0]]
                     if len(m_dates) == 0:
-                        m_dates = [
-                            i
-                            for i in yr_dates
-                            if int(i.split("-")[1]) == int(peak_date.split("-")[0]) - 1
-                        ]
+                        m_dates = [i for i in yr_dates if int(i.split("-")[1]) == int(peak_date.split("-")[0]) - 1]
                         print(m_dates)
                     m_dates = m_dates[0]
                     ax.annotate(
@@ -612,18 +551,10 @@ def chartTimeSeriesDistributions(
                         # arrowprops=dict(facecolor='black', shrink=0.05),
                         color=background_color,
                         fontsize="10",
-                        path_effects=[
-                            pe.withStroke(linewidth=2.5, foreground=font_color)
-                        ],
+                        path_effects=[pe.withStroke(linewidth=2.5, foreground=font_color)],
                     )
-                    yr_dates = [
-                        i for i in dates if i.split("-")[0] == years[peak_year_i]
-                    ]
-                    m_dates = [
-                        i
-                        for i in yr_dates
-                        if i.split("-")[1] == peak_date2.split("-")[0]
-                    ][0]
+                    yr_dates = [i for i in dates if i.split("-")[0] == years[peak_year_i]]
+                    m_dates = [i for i in yr_dates if i.split("-")[1] == peak_date2.split("-")[0]][0]
                     ax.annotate(
                         "{} ({})".format(peak_date2, round(peak_2_pred, 3)),
                         xy=(m_dates, peak_2_pred),
@@ -633,9 +564,7 @@ def chartTimeSeriesDistributions(
                         # arrowprops=dict(facecolor='black', shrink=0.05),
                         color=background_color,
                         fontsize="10",
-                        path_effects=[
-                            pe.withStroke(linewidth=2.5, foreground=font_color)
-                        ],
+                        path_effects=[pe.withStroke(linewidth=2.5, foreground=font_color)],
                     )
                 except Exception as e:
                     print(e)

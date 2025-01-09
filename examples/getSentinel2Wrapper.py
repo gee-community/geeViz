@@ -1,5 +1,5 @@
 """
-   Copyright 2023 Ian Housman
+   Copyright 2025 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -193,9 +193,7 @@ resampleMethod = "aggregate"
 # These have been pre-computed for all CONUS for Landsat and Setinel 2 (separately)
 # and are appropriate to use for any time period within the growing season
 # The cloudScore offset is generally some lower percentile of cloudScores on a pixel-wise basis
-preComputedCloudScoreOffset = getImagesLib.getPrecomputedCloudScoreOffsets(
-    cloudScorePctl
-)["sentinel2"]
+preComputedCloudScoreOffset = getImagesLib.getPrecomputedCloudScoreOffsets(cloudScorePctl)["sentinel2"]
 
 # The TDOM stats are the mean and standard deviations of the two IR bands used in TDOM
 # By default, TDOM uses the nir and swir1 bands
@@ -295,9 +293,7 @@ Map.addLayer(
 )
 
 getImagesLib.vizParamsFalse["years"] = list(range(startYear, endYear + 1))
-Map.addTimeLapse(
-    processedComposites, getImagesLib.vizParamsFalse, "Composite Timelapse", False
-)
+Map.addTimeLapse(processedComposites, getImagesLib.vizParamsFalse, "Composite Timelapse", False)
 # Map.addTimeLapse(processedComposites.sel  ect(['compositeObsCount']),{'min':30,'max':100,'palette':'F00,00F'},'Composite Count Timelapse',False)
 
 ####################################################################################################

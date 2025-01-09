@@ -1,5 +1,5 @@
 """
-   Copyright 2023 Ian Housman
+   Copyright 2025 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -164,9 +164,7 @@ resampleMethod = "near"
 # These have been pre-computed for all CONUS for Landsat and Setinel 2 (separately)
 # and are appropriate to use for any time period within the growing season
 # The cloudScore offset is generally some lower percentile of cloudScores on a pixel-wise basis
-preComputedCloudScoreOffset = getImagesLib.getPrecomputedCloudScoreOffsets(
-    cloudScorePctl
-)["landsat"]
+preComputedCloudScoreOffset = getImagesLib.getPrecomputedCloudScoreOffsets(cloudScorePctl)["landsat"]
 
 # The TDOM stats are the mean and standard deviations of the two IR bands used in TDOM
 # By default, TDOM uses the nir and swir1 bands
@@ -257,9 +255,7 @@ processedScenes = lsAndTs["processedScenes"]
 processedComposites = lsAndTs["processedComposites"]
 
 
-Map.addTimeLapse(
-    processedComposites, getImagesLib.vizParamsFalse, "Composite Timelapse"
-)
+Map.addTimeLapse(processedComposites, getImagesLib.vizParamsFalse, "Composite Timelapse")
 ####################################################################################################
 # Load the study region
 Map.addLayer(studyArea, {"strokeColor": "0000FF"}, "Study Area", True)

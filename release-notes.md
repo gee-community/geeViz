@@ -1,3 +1,13 @@
+# geeViz 2025.1.1 Release Notes
+
+## January 9, 2025
+
+### New Features
+
+- **LCMS Classification Levels Notebook** - A new example notebook showing how to crosswalk (remap) LCMS classes to various levels of thematic detail is now provided in `examples.LCMS_Levels_Viewer_Notebook`. This is intended to serve as a companion to a forthcoming LCMS manuscript.
+
+---
+
 # geeViz 2024.11.4 Release Notes
 
 ## November 26, 2024

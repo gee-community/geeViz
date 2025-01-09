@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="A comparison between geeViz and geeMap’s map visualization capabilities" href="geeViz_geeMap_comparison_tutorial.html" /><link rel="prev" title="Create High Quality Landsat Composites" href="getLandsatWrapperNotebook.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>Visualizing Area Summaries - geeViz &#34;2024.11.4&#34; docs</title>
+        <title>Visualizing Area Summaries - geeViz &#34;2025.1.1&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -142,7 +142,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">geeViz "2024.11.4" docs</div></a>
+      <a href="../index.html"><div class="brand">geeViz "2025.1.1" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -168,7 +168,7 @@
     <img class="sidebar-logo" src="../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.11.4" docs</span>
+  <span class="sidebar-brand-text">geeViz "2025.1.1" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -192,7 +192,6 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../modules.html">Details</a></li>
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../examples.html">Examples</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="geeViewExampleNotebook.html">Starter geeViz geeView Notebook</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lcmsViewerExampleNotebook.html">LCMS Viewer Intro Notebook</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Annual_NLCD_Viewer_Notebook.html">Annual NLCD <code class="docutils literal notranslate"><span class="pre">geeViz</span></code> Viewer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mapBiomasViewerExampleNotebook.html">Visualizing MapBiomas Datasets</a></li>
@@ -205,6 +204,7 @@
 <li class="toctree-l2"><a class="reference internal" href="LANDTRENDRWrapperNotebook.html">Run LandTrendr and Visualize Outputs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="CCDCVizNotebook.html">CCDC Visualization Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="LCMS_Levels_Viewer_Notebook.html">Learn to crosswalk LCMS datasets to different levels</a></li>
 </ul>
 </li>
 </ul>
@@ -248,7 +248,7 @@
 <li><p>geeViz’s area charting methods allow for easy interactive charting with minimal additional code</p></li>
 <li><p>This notebook shows several examples of different ways of using the area charting methods with GEE images and imageCollections</p></li>
 </ul>
-<p>Copyright 2024 Ian Housman</p>
+<p>Copyright 2025 Ian Housman</p>
 <p>Licensed under the Apache License, Version 2.0 (the “License”);
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at</p>
@@ -279,7 +279,9 @@ limitations under the License.</p>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>done
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Initializing GEE
+Successfully initialized
+done
 </pre></div>
 </div>
 </div>
@@ -862,9 +864,21 @@ landcover
 Adding layer: NLCD Land Cover
 Starting webmap
 Using default refresh token for geeView
+Local web server at: http://localhost:8001/geeView/ already serving.
+cwd a:\GEE\gee_py_modules_package\geeViz\examples
+geeView URL: http://localhost:8001/geeView/?projectID=nlcd-tcc&amp;accessToken=ya29.a0ARW5m74uR-LsBDxx_E5MUymwQjuFjTZrfe_u2bmib8NU8INhvyyn_sbQP7ajcgvUt3aiR5ArGvbWr6utQjaST3Afjzk1BimI4Me1Ft_9Z1RVR3CKJoBGPUnTCJNsJ5P4PMI_pqd3x6TtMmXm3Vre_-kBqpOL0HAdLHqVIic3DQaCgYKAfsSARESFQHGX2Mir2dchti4-NNdJOeDxy82Ng0177&amp;accessTokenCreationTime=1736455363895
 </pre></div>
 </div>
-</div>
+<div class="output text_html">
+        <iframe
+            width="100%"
+            height="525px"
+            src="http://localhost:8001/geeView/?projectID=nlcd-tcc&accessToken=ya29.a0ARW5m74uR-LsBDxx_E5MUymwQjuFjTZrfe_u2bmib8NU8INhvyyn_sbQP7ajcgvUt3aiR5ArGvbWr6utQjaST3Afjzk1BimI4Me1Ft_9Z1RVR3CKJoBGPUnTCJNsJ5P4PMI_pqd3x6TtMmXm3Vre_-kBqpOL0HAdLHqVIic3DQaCgYKAfsSARESFQHGX2Mir2dchti4-NNdJOeDxy82Ng0177&accessTokenCreationTime=1736455363895"
+            frameborder="0"
+            allowfullscreen
+            
+        ></iframe>
+        </div></div>
 </div>
 </section>
 <section id="line-and-sankey-charts">
@@ -899,14 +913,14 @@ Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZBRE9mjI7Tbvn12JUdNHWBcQvnRwFG-hP61lUO5NJ1i3hUF5MWklT1YsQ2O8JTPO_c9dknJ4tLo2b1iWUDX3YpRH9D_GxcBzfpEkOKxbtzwZD_WgsZ2X5yrxgRqXDSdCClmIPTT7vOM7PivC2CznkBAOmJWgtu42xYKMiAaCgYKATwSARESFQHGX2MiL_SKbyR4o1MbYfhrP8JMSw0178&amp;accessTokenCreationTime=1732072086594
+geeView URL: http://localhost:8001/geeView/?projectID=nlcd-tcc&amp;accessToken=ya29.a0ARW5m75SV3VBTtNUX8Euapr2Q75RJpp6XWrLdOK6pQFsMwelqgAmPLLh1efOFV9JBBhfCw6qsn0CzMQasWV1YJMNG0VuIJ4SkYhOSzOj0TLXGbhCZZy9mA-TweJbajUSHQy0_SJlzHgSTbZIu3qMdsMPwbQZQ9TkKnQqF1XfIQaCgYKAXQSARESFQHGX2Mi8xm4tZmI624ICqTGGILpCg0177&amp;accessTokenCreationTime=1736455389365
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZBRE9mjI7Tbvn12JUdNHWBcQvnRwFG-hP61lUO5NJ1i3hUF5MWklT1YsQ2O8JTPO_c9dknJ4tLo2b1iWUDX3YpRH9D_GxcBzfpEkOKxbtzwZD_WgsZ2X5yrxgRqXDSdCClmIPTT7vOM7PivC2CznkBAOmJWgtu42xYKMiAaCgYKATwSARESFQHGX2MiL_SKbyR4o1MbYfhrP8JMSw0178&accessTokenCreationTime=1732072086594"
+            src="http://localhost:8001/geeView/?projectID=nlcd-tcc&accessToken=ya29.a0ARW5m75SV3VBTtNUX8Euapr2Q75RJpp6XWrLdOK6pQFsMwelqgAmPLLh1efOFV9JBBhfCw6qsn0CzMQasWV1YJMNG0VuIJ4SkYhOSzOj0TLXGbhCZZy9mA-TweJbajUSHQy0_SJlzHgSTbZIu3qMdsMPwbQZQ9TkKnQqF1XfIQaCgYKAXQSARESFQHGX2Mi8xm4tZmI624ICqTGGILpCg0177&accessTokenCreationTime=1736455389365"
             frameborder="0"
             allowfullscreen
             
@@ -942,14 +956,14 @@ Starting webmap
 Using default refresh token for geeView
 Local web server at: http://localhost:8001/geeView/ already serving.
 cwd a:\GEE\gee_py_modules_package\geeViz\examples
-geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToken=ya29.a0AeDClZCo6B7_61baBesuftX5imkCdbgjQ2cDhjfWwwxSln0lW_f7XfITgdSiXVr6J7_lAz_6b7EQ-Xe5TCpBXK4RUjicQGwh4rMOMReEYDZDmspR_UGbQyOcAv_d-F5vjiBfmKeFx-2ZO5E0GXkaW1-vaCjXC5uORbQQR6X_rmQaCgYKAVwSARESFQHGX2MitF33sKGsJctQg4HvPM9Rsg0178&amp;accessTokenCreationTime=1732072108233
+geeView URL: http://localhost:8001/geeView/?projectID=nlcd-tcc&amp;accessToken=ya29.a0ARW5m76O4hp9Is3f3nU_B3J0x05Yg_qfrV1VQf2TQZmNRRi7M1eJfA0KbN4dvBuMPIJG7K1rCnvx7jEnMA8-OP8AbB5NQ_8TdjZiqe8fBCYYoxC0AwIKTi-BdkCQ4LiRa_3fjyP-wWOmEx1PDZc3G1TxPfsPeAS97KBonYc4CAaCgYKAaYSARESFQHGX2MiO1B8tEzFSvCfoM8tDJnlvA0177&amp;accessTokenCreationTime=1736455429557
 </pre></div>
 </div>
 <div class="output text_html">
         <iframe
             width="100%"
             height="525px"
-            src="http://localhost:8001/geeView/?projectID=lcms-292214&accessToken=ya29.a0AeDClZCo6B7_61baBesuftX5imkCdbgjQ2cDhjfWwwxSln0lW_f7XfITgdSiXVr6J7_lAz_6b7EQ-Xe5TCpBXK4RUjicQGwh4rMOMReEYDZDmspR_UGbQyOcAv_d-F5vjiBfmKeFx-2ZO5E0GXkaW1-vaCjXC5uORbQQR6X_rmQaCgYKAVwSARESFQHGX2MitF33sKGsJctQg4HvPM9Rsg0178&accessTokenCreationTime=1732072108233"
+            src="http://localhost:8001/geeView/?projectID=nlcd-tcc&accessToken=ya29.a0ARW5m76O4hp9Is3f3nU_B3J0x05Yg_qfrV1VQf2TQZmNRRi7M1eJfA0KbN4dvBuMPIJG7K1rCnvx7jEnMA8-OP8AbB5NQ_8TdjZiqe8fBCYYoxC0AwIKTi-BdkCQ4LiRa_3fjyP-wWOmEx1PDZc3G1TxPfsPeAS97KBonYc4CAaCgYKAaYSARESFQHGX2MiO1B8tEzFSvCfoM8tDJnlvA0177&accessTokenCreationTime=1736455429557"
             frameborder="0"
             allowfullscreen
             
@@ -1534,7 +1548,7 @@ geeView URL: http://localhost:8001/geeView/?projectID=lcms-292214&amp;accessToke
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=7bf3e88c"></script>
+</div><script src="../_static/documentation_options.js?v=dad4c3fa"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/furo.js?v=32e29ea5"></script>

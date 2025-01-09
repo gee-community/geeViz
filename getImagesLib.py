@@ -6,7 +6,7 @@ geeViz.getImagesLib is the core module for setting up various imageCollections f
 """
 
 """
-   Copyright 2024 Ian Housman
+   Copyright 2025 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -8236,7 +8236,7 @@ def getClimateWrapper(
     transform: list[int] | None = None,
     scale: int | None = None,
     exportBands: ee.List | list | None = None,
-    exportNamePrefix: str = ''
+    exportNamePrefix: str = "",
 ) -> ee.ImageCollection:
     """
     Wrapper function to retrieve and process climate data from various Earth Engine collections.

@@ -3,7 +3,7 @@ Examples of how to use geeViz for numerous use cases. Varies from data processin
 """
 
 """
-   Copyright 2024 Ian Housman
+   Copyright 2025 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -21,4 +21,4 @@ __author__ = "Ian Housman"
 __email__ = "ian.housman@gmail.com"
 
 # Version format yyyy.m.n
-__version__ = "2024.11.4"
+__version__ = "2025.1.1"

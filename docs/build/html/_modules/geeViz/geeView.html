@@ -5,7 +5,7 @@
     <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" />
 
     <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>geeViz.geeView - geeViz &#34;2024.11.4&#34; docs</title>
+        <title>geeViz.geeView - geeViz &#34;2025.1.1&#34; docs</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=135e06be" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
@@ -141,7 +141,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">geeViz "2024.11.4" docs</div></a>
+      <a href="../../index.html"><div class="brand">geeViz "2025.1.1" docs</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -167,7 +167,7 @@
     <img class="sidebar-logo" src="../../_static/RCR-logo.jpg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">geeViz "2024.11.4" docs</span>
+  <span class="sidebar-brand-text">geeViz "2025.1.1" docs</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -191,7 +191,6 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../modules.html">Details</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../../examples.html">Examples</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle navigation of Examples</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../notebooks/geeViewExampleNotebook.html">Starter geeViz geeView Notebook</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../notebooks/lcmsViewerExampleNotebook.html">LCMS Viewer Intro Notebook</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../notebooks/Annual_NLCD_Viewer_Notebook.html">Annual NLCD <code class="docutils literal notranslate"><span class="pre">geeViz</span></code> Viewer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../notebooks/mapBiomasViewerExampleNotebook.html">Visualizing MapBiomas Datasets</a></li>
@@ -204,6 +203,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../../notebooks/LANDTRENDRWrapperNotebook.html">Run LandTrendr and Visualize Outputs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../notebooks/LCMAP_and_LCMS_Viewer_Notebook.html">LCMAP and LCMS Outputs Viewer</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../notebooks/CCDCVizNotebook.html">CCDC Visualization Notebook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../notebooks/LCMS_Levels_Viewer_Notebook.html">Learn to crosswalk LCMS datasets to different levels</a></li>
 </ul>
 </li>
 </ul>
@@ -248,7 +248,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Copyright 2024 Ian Housman</span>
+<span class="sd">    Copyright 2025 Ian Housman</span>
 
 <span class="sd">    Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
 <span class="sd">    you may not use this file except in compliance with the License.</span>
@@ -364,6 +364,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">ee</span><span class="o">.</span><span class="n">Initialize</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">project</span><span class="p">)</span>
     <span class="n">z</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span>
+    <span class="n">ee</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">setCloudApiUserProject</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">_cloud_api_user_project</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Successfully initialized&quot;</span><span class="p">)</span></div>
 
 
@@ -381,14 +382,17 @@
 
     <span class="k">try</span><span class="p">:</span>
         <span class="n">z</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Number</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span>
+        <span class="n">project_id</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">_cloud_api_user_project</span>
     <span class="k">except</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Initializing GEE&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">ee</span><span class="o">.</span><span class="n">oauth</span><span class="o">.</span><span class="n">_valid_credentials_exist</span><span class="p">():</span>
             <span class="n">ee</span><span class="o">.</span><span class="n">Authenticate</span><span class="p">()</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">verified_initialize</span><span class="p">(</span><span class="n">project</span><span class="o">=</span><span class="n">ee</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">_cloud_api_user_project</span><span class="p">)</span>
+            <span class="n">project_id</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">_cloud_api_user_project</span>
+
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">E</span><span class="p">:</span>
-            <span class="c1"># print(E)</span>
+
             <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">E</span><span class="p">)</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;Reauthentication is needed&quot;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
                 <span class="n">ee</span><span class="o">.</span><span class="n">Authenticate</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -411,7 +415,6 @@
 
 
 
-<span class="n">setProject</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">_cloud_api_user_project</span><span class="p">)</span>
 <span class="n">robustInitializer</span><span class="p">()</span>
 <span class="c1">######################################################################</span>
 <span class="c1"># Set up GEE and paths</span>
@@ -426,7 +429,7 @@
 
 <span class="n">py_viz_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;geeViz package folder:&quot;</span><span class="p">,</span> <span class="n">py_viz_dir</span><span class="p">)</span>
+<span class="c1"># print(&quot;geeViz package folder:&quot;, py_viz_dir)</span>
 
 <span class="c1"># Specify location of files to run</span>
 <span class="n">template</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">py_viz_dir</span><span class="p">,</span> <span class="n">geeViewFolder</span><span class="p">,</span> <span class="s2">&quot;index.html&quot;</span><span class="p">)</span>
@@ -2058,7 +2061,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=7bf3e88c"></script>
+</div><script src="../../_static/documentation_options.js?v=dad4c3fa"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/scripts/furo.js?v=32e29ea5"></script>

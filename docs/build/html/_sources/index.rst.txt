@@ -1,6 +1,6 @@
 .. geeViz documentation master file, created by
    sphinx-quickstart on Thu Mar  7 11:03:07 2024.
-   You can adapt this file completely to your liking, but it should at least
+   Adapt this file, but it should at least
    contain the root `toctree` directive.
 
 geeViz Documentation

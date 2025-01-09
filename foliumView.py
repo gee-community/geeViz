@@ -6,7 +6,7 @@ geeViz.foliumView is facilitates viewing GEE objects in Folium. Layers can be ad
 """
 
 """
-   Copyright 2024 Ian Housman
+   Copyright 2025 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -114,11 +114,7 @@ def add_ee_layer(self, ee_object, vis_params, name, visible):
         #     show = visible
         # ).add_to(self)
         # display ee.FeatureCollection()
-        elif (
-            isinstance(ee_object, ee.featurecollection.FeatureCollection)
-            or isinstance(ee_object, ee.feature.Feature)
-            or isinstance(ee_object, ee.geometry.Geometry)
-        ):
+        elif isinstance(ee_object, ee.featurecollection.FeatureCollection) or isinstance(ee_object, ee.feature.Feature) or isinstance(ee_object, ee.geometry.Geometry):
             strokeWidth = 2
             strokeColor = "000"
             if "strokeWidth" in vis_params.keys():
@@ -174,9 +170,7 @@ class foliumMapper:
             self.setMapArg("zoom_start", zoom)
 
     def centerObject(self, ee_object):
-        if isinstance(ee_object, ee.featurecollection.FeatureCollection) or isinstance(
-            ee_object, ee.feature.Feature
-        ):
+        if isinstance(ee_object, ee.featurecollection.FeatureCollection) or isinstance(ee_object, ee.feature.Feature):
             ee_object = ee_object.geometry()
         bounds = ee_object.bounds(500, "EPSG:4326").coordinates().getInfo()[0]
         xs = [i[0] for i in bounds]
@@ -218,9 +212,7 @@ class foliumMapper:
         basemaps["Google Satellite Hybrid"].add_to(self.Map)
 
         for idDict in self.idDictList:
-            self.Map.add_ee_layer(
-                idDict["item"], idDict["viz"], idDict["name"], idDict["visible"]
-            )
+            self.Map.add_ee_layer(idDict["item"], idDict["viz"], idDict["name"], idDict["visible"])
 
         self.Map.add_child(folium.LayerControl(collapsed=False, autoZIndex=False))
 
@@ -230,24 +222,14 @@ class foliumMapper:
         if not self.isNotebook:
             self.Map.save(os.path.join(folium_html_folder, folium_html))
             if not geeView.isPortActive(self.port):
-                print(
-                    "Starting local web server at: http://localhost:{}/{}/".format(
-                        self.port, geeView.geeViewFolder
-                    )
-                )
+                print("Starting local web server at: http://localhost:{}/{}/".format(self.port, geeView.geeViewFolder))
                 geeView.run_local_server(self.port)
                 print("Done")
             else:
-                print(
-                    "Local web server at: http://localhost:{}/{}/ already serving.".format(
-                        self.port, geeView.geeViewFolder
-                    )
-                )
+                print("Local web server at: http://localhost:{}/{}/ already serving.".format(self.port, geeView.geeViewFolder))
             if open_browser:
                 geeView.webbrowser.open(
-                    "http://localhost:{}/{}/{}".format(
-                        self.port, geeView.geeViewFolder, folium_html
-                    ),
+                    "http://localhost:{}/{}/{}".format(self.port, geeView.geeViewFolder, folium_html),
                     new=1,
                 )
 

@@ -1,5 +1,5 @@
 """
-   Copyright 2024 Ian Housman
+   Copyright 2025 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -17,19 +17,21 @@
 # This script provides a view of LCMAP and LCMS GEE collections to help understand the strengths of each
 # It displays the land cover and land use products as well as change products from each program
 ####################################################################################################
-import os,sys
+import os, sys
+
 sys.path.append(os.getcwd())
 
-#Module imports
+# Module imports
 import geeViz.getImagesLib as getImagesLib
 import geeViz.changeDetectionLib as changeDetectionLib
+
 ee = getImagesLib.ee
 Map = getImagesLib.Map
 Map.clearMap()
 ####################################################################################################
 # User Parameters
 
-# Define the early time period 
+# Define the early time period
 preStartYear = 1985
 preEndYear = 1990
 
@@ -65,28 +67,28 @@ sctime = ee.ImageCollection("projects/sat-io/open-datasets/LCMAP/SCTIME")
 # Manually pull in color palettes from Gena's color palette json
 # palettes = require('users/gena/packages:palettes')
 # Available here: https://github.com/gee-community/ee-palettes
-lcpri_palette = ['E60000','A87000','E3E3C2','1D6330','476BA1','BAD9EB','FFFFFF','B3B0A3','A201FF']
-lc_names = ['Developed','Cropland','Grass/Shrub','Tree Cover','Water','Wetlands','Ice/Snow','Barren','Class Change']
+lcpri_palette = ["E60000", "A87000", "E3E3C2", "1D6330", "476BA1", "BAD9EB", "FFFFFF", "B3B0A3", "A201FF"]
+lc_names = ["Developed", "Cropland", "Grass/Shrub", "Tree Cover", "Water", "Wetlands", "Ice/Snow", "Barren", "Class Change"]
 
 # Set up the LCMAP land cover legend and lookup tables
 lc_legend_dict = {}
 lc_lookup_dict = {}
-for i in range(0,len(lc_names )):
-  lc_legend_dict[str(i+1) + '- '+lc_names[i]] =lcpri_palette[i] 
-  lc_lookup_dict[i+1] = str(i+1) + '- '+lc_names[i]
+for i in range(0, len(lc_names)):
+    lc_legend_dict[str(i + 1) + "- " + lc_names[i]] = lcpri_palette[i]
+    lc_lookup_dict[i + 1] = str(i + 1) + "- " + lc_names[i]
 
-#Other palettes found in the Playground example script
+# Other palettes found in the Playground example script
 # lcsec_palette = ['E60000','A87000','E3E3C2','1D6330','476BA1','BAD9EB','FFFFFF','B3B0A3']
-lcachg_palette = ['E60000','A87000','E3E3C2','1D6330','476BA1','BAD9EB','FFFFFF','B3B0A3','A201FF']
+lcachg_palette = ["E60000", "A87000", "E3E3C2", "1D6330", "476BA1", "BAD9EB", "FFFFFF", "B3B0A3", "A201FF"]
 # sclast_palette = ['FFC7AA','F87E45','CC764E','86A7B6','46A4EE','7954C8','7A24AA','432172']
 # scstab_palette = ['BA4E16','EE964D','FFE29C','F4FBC1','E1F3C3','BCE6CA','46989C']
 # scmqa_palette = ['000000','A900E6','DF73FF','F5F5E3','DB8A00','924900','9C9C9C','FFFFFF']
 
 # Set up some visualization dictionaries
-lc_viz = {'reducer':ee.Reducer.mode(),'min':1,'max':9,'palette':lcpri_palette,'classLegendDict':lc_legend_dict,'queryDict':lc_lookup_dict}
-loss_viz = {'min':1985,'max':2022,'palette':changeDetectionLib.lossYearPalette}
-gain_viz = {'min':1985,'max':2022,'palette':changeDetectionLib.gainYearPalette}
-change_viz = {'min':1985,'max':2022,'palette':['00F','F0F']}
+lc_viz = {"reducer": ee.Reducer.mode(), "min": 1, "max": 9, "palette": lcpri_palette, "classLegendDict": lc_legend_dict, "queryDict": lc_lookup_dict}
+loss_viz = {"min": 1985, "max": 2022, "palette": changeDetectionLib.lossYearPalette}
+gain_viz = {"min": 1985, "max": 2022, "palette": changeDetectionLib.gainYearPalette}
+change_viz = {"min": 1985, "max": 2022, "palette": ["00F", "F0F"]}
 
 # Map.addLayer(sctime.max(),{'min':100,'max':292,'palette':['151d44', '156c72', '7eb390', 'fdf5f4', 'db8d77', '9c3060', '340d35']},'SCTIME',True)
 # Map.addLayer(scmag.max(),{'min':651,'max':3700,'palette':['d7f9d0', 'a2d595', '64b463', '129450', '126e45', '1a482f', '122414']},'SCMAG',True)
@@ -99,32 +101,31 @@ change_viz = {'min':1985,'max':2022,'palette':['00F','F0F']}
 # LCMS methods are described here: https://data.fs.usda.gov/geodata/rastergateway/LCMS/LCMS_v2021-7_Methods.pdf
 # LCMS data can also be viewed and downloaded here: https://apps.fs.usda.gov/lcms-viewer
 # LCMS GEE data collections are available at:
-  # https://developers.google.com/earth-engine/datasets/catalog/USFS_GTAC_LCMS_v20201-7 (CONUS and Southeastern AK)
-  # https://developers.google.com/earth-engine/datasets/catalog/USFS_GTAC_LCMS_v2020-6 (Puerto Rico and US Virgin Islands
+# https://developers.google.com/earth-engine/datasets/catalog/USFS_GTAC_LCMS_v20201-7 (CONUS and Southeastern AK)
+# https://developers.google.com/earth-engine/datasets/catalog/USFS_GTAC_LCMS_v2020-6 (Puerto Rico and US Virgin Islands
 # An in-depth look at the model predictor variables that go into making LCMS maps can be found here:https://apps.fs.usda.gov/lcms-viewer/lcms-base-learner.html
-lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2022-8").filter(ee.Filter.eq('study_area','CONUS'))
+lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2022-8").filter(ee.Filter.eq("study_area", "CONUS"))
 ####################################################################################################
 
 ####################################################################################################
-#This section adds the land cover and land use maps from LCMAP and LCMS
+# This section adds the land cover and land use maps from LCMAP and LCMS
 
 # Pull the LCMAP pre and post land cover data
-lcmap_pre = lcpri.filter(ee.Filter.calendarRange(preStartYear,preEndYear,'year'))
-lcmap_post = lcpri.filter(ee.Filter.calendarRange(postStartYear,postEndYear,'year'))
+lcmap_pre = lcpri.filter(ee.Filter.calendarRange(preStartYear, preEndYear, "year"))
+lcmap_post = lcpri.filter(ee.Filter.calendarRange(postStartYear, postEndYear, "year"))
 
 # Pull the LCMS pre and post land cover data
-lcms_pre = lcms.filter(ee.Filter.calendarRange(preStartYear,preEndYear,'year'))
-lcms_post = lcms.filter(ee.Filter.calendarRange(postStartYear,postEndYear,'year'))
-
+lcms_pre = lcms.filter(ee.Filter.calendarRange(preStartYear, preEndYear, "year"))
+lcms_post = lcms.filter(ee.Filter.calendarRange(postStartYear, postEndYear, "year"))
 
 
 # Add time lapses of LCMAP and LCMS land cover products if specified
 if addTimelapses:
-  Map.addTimeLapse(lcachg,lc_viz,'LCMAP LC Change')
-  Map.addTimeLapse(lcpri,lc_viz,'LCMAP Primary Land Cover')
-  Map.addTimeLapse(lcsec,lc_viz,'LCMAP Secondary Land Cover')
-  Map.addTimeLapse(lcms.select(['Land_Cover']),{'autoViz':True},'LCMS Land Cover')
-  Map.addTimeLapse(lcms.select(['Land_Use']),{'autoViz':True},'LCMS Land Use')
+    Map.addTimeLapse(lcachg, lc_viz, "LCMAP LC Change")
+    Map.addTimeLapse(lcpri, lc_viz, "LCMAP Primary Land Cover")
+    Map.addTimeLapse(lcsec, lc_viz, "LCMAP Secondary Land Cover")
+    Map.addTimeLapse(lcms.select(["Land_Cover"]), {"autoViz": True}, "LCMS Land Cover")
+    Map.addTimeLapse(lcms.select(["Land_Use"]), {"autoViz": True}, "LCMS Land Use")
 
 # Add the early and recent land cover and land use mode maps
 # LCMAP's LC outputs combine land cover and land use, so cross-walking these non-mutually exclusive classes to those of LCMS can pose challenges
@@ -132,72 +133,74 @@ if addTimelapses:
 # LCMAP does about as well as LCMS at mapping trees. They both do fairly well in sparse tree cover areas.
 # Since wetlands are not exclusive of any land cover or land use, it is difficult to tell what land cover is over areas classified by LCMAP as wetland
 # This is also true of LCMS' non forest wetland land use class - there are areas of rangeland and agriculture that could fall into non forest wetland
-# One area the LCMS land cover maps do better is with water. 
+# One area the LCMS land cover maps do better is with water.
 # LCMAP LC outputs tend to not change the water extent of fluctuating waterbodies very quickly
-Map.addLayer(lcmap_pre,lc_viz, 'LCMAP LC {}-{} mode'.format(preStartYear,preEndYear),False)
-Map.addLayer(lcmap_post,lc_viz, 'LCMAP LC {}-{} mode'.format(postStartYear,postEndYear),False)
+Map.addLayer(lcmap_pre, lc_viz, "LCMAP LC {}-{} mode".format(preStartYear, preEndYear), False)
+Map.addLayer(lcmap_post, lc_viz, "LCMAP LC {}-{} mode".format(postStartYear, postEndYear), False)
 
-for t in ['Cover','Use']:
-  Map.addLayer(lcms_pre.select(['Land_{}'.format(t)]),{'reducer':ee.Reducer.mode(),'autoViz':True}, 'LCMS L{} {}-{} mode'.format(t[0],preStartYear,preEndYear),False)
-  Map.addLayer(lcms_post.select(['Land_{}'.format(t)]),{'reducer':ee.Reducer.mode(),'autoViz':True}, 'LCMS L{} {}-{} mode'.format(t[0],postStartYear,postEndYear),False)
+for t in ["Cover", "Use"]:
+    Map.addLayer(lcms_pre.select(["Land_{}".format(t)]), {"reducer": ee.Reducer.mode(), "autoViz": True}, "LCMS L{} {}-{} mode".format(t[0], preStartYear, preEndYear), False)
+    Map.addLayer(lcms_post.select(["Land_{}".format(t)]), {"reducer": ee.Reducer.mode(), "autoViz": True}, "LCMS L{} {}-{} mode".format(t[0], postStartYear, postEndYear), False)
 
 ####################################################################################################
 # This section adds the change maps from LCMAP and LCMS
 
+
 # Function for getting a precise change break date from CCDC-based outputs
 def getYrMskPrecise(img):
-  yr = ee.Date(img.get('system:time_start')).get('year')
-  return ee.Image(yr).add(img.divide(365)).float().updateMask(img.mask())
+    yr = ee.Date(img.get("system:time_start")).get("year")
+    return ee.Image(yr).add(img.divide(365)).float().updateMask(img.mask())
+
 
 # Function for getting a more general integer year date of change
 def getYrMsk(img):
-  yr = ee.Date(img.get('system:time_start')).get('year')
-  return ee.Image(yr).int16().updateMask(img.mask())
+    yr = ee.Date(img.get("system:time_start")).get("year")
+    return ee.Image(yr).int16().updateMask(img.mask())
+
 
 # Find the most recent LCMAP spectral change date (YYYY.dd where .dd is the fraction of the year the break occurred)
-lcmap_change_yr  = sctime.map(getYrMskPrecise).max()
+lcmap_change_yr = sctime.map(getYrMskPrecise).max()
 
-# Pull apart LCMS fast and slow loss and find the most recent year of each 
-lcms_fast_loss_yr = lcms.select(['Change']).map(lambda img:getYrMsk(img.updateMask(img.eq(3)))).max()
-lcms_slow_loss_yr = lcms.select(['Change']).map(lambda img:getYrMsk(img.updateMask(img.eq(2)))).max()
-lcms_gain_yr = lcms.select(['Change']).map(lambda img:getYrMsk(img.updateMask(img.eq(4)))).max()
+# Pull apart LCMS fast and slow loss and find the most recent year of each
+lcms_fast_loss_yr = lcms.select(["Change"]).map(lambda img: getYrMsk(img.updateMask(img.eq(3)))).max()
+lcms_slow_loss_yr = lcms.select(["Change"]).map(lambda img: getYrMsk(img.updateMask(img.eq(2)))).max()
+lcms_gain_yr = lcms.select(["Change"]).map(lambda img: getYrMsk(img.updateMask(img.eq(4)))).max()
 
 
-# As of version 2020.5, LCMS produces vegetation cover slow loss, fast loss, and gain change outputs. 
+# As of version 2020.5, LCMS produces vegetation cover slow loss, fast loss, and gain change outputs.
 # LCMAP version 1.0 produces several change outputs based on the spectral change detected by CCDC
 # The most analagous change product is the spectral change time (SCTIME)
-Map.addLayer(lcms_fast_loss_yr,loss_viz,'LCMS Most Recent Fast Loss Year',False)
-Map.addLayer(lcms_slow_loss_yr,loss_viz,'LCMS Most Recent Slow Loss Year',False)
-Map.addLayer(lcms_gain_yr,gain_viz,'LCMS Most Recent Gain Year',False)
+Map.addLayer(lcms_fast_loss_yr, loss_viz, "LCMS Most Recent Fast Loss Year", False)
+Map.addLayer(lcms_slow_loss_yr, loss_viz, "LCMS Most Recent Slow Loss Year", False)
+Map.addLayer(lcms_gain_yr, gain_viz, "LCMS Most Recent Gain Year", False)
 
-Map.addLayer(lcmap_change_yr,change_viz,'LCMAP Most Recent SC Date',True)
+Map.addLayer(lcmap_change_yr, change_viz, "LCMAP Most Recent SC Date", True)
 
 ####################################################################################################
-# Since LCMAP is largely based on CCDC, understanding how the delivered change outputs relate to raw CCDC outputs helps 
+# Since LCMAP is largely based on CCDC, understanding how the delivered change outputs relate to raw CCDC outputs helps
 # identify the strengths and weaknesses of the approach
 
 # Bring in the LCMS CCDC output that is similar to what LCMAP uses
-ccdcImg = ee.ImageCollection('projects/lcms-292214/assets/CONUS-LCMS/Base-Learners/CCDC-Collection-1984-2022')\
-          .select(['tStart','tEnd','tBreak','changeProb','red.*','nir.*','swir1.*','swir2.*','NDVI.*']).mosaic()
+ccdcImg = ee.ImageCollection("projects/lcms-292214/assets/CONUS-LCMS/Base-Learners/CCDC-Collection-1984-2022").select(["tStart", "tEnd", "tBreak", "changeProb", "red.*", "nir.*", "swir1.*", "swir2.*", "NDVI.*"]).mosaic()
 
 # Pull out the most recent date of change
-changeObj = changeDetectionLib.ccdcChangeDetection(ccdcImg,'NDVI');
-Map.addLayer(ccdcImg,{'opacity':0},'RAW CCDC Output',False)
-Map.addLayer(changeObj['mostRecent']['loss']['year'],loss_viz,'LCMS CCDC Most Recent Loss Year')
-Map.addLayer(changeObj['mostRecent']['gain']['year'],gain_viz,'LCMS CCDC Most Recent Gain Year')
+changeObj = changeDetectionLib.ccdcChangeDetection(ccdcImg, "NDVI")
+Map.addLayer(ccdcImg, {"opacity": 0}, "RAW CCDC Output", False)
+Map.addLayer(changeObj["mostRecent"]["loss"]["year"], loss_viz, "LCMS CCDC Most Recent Loss Year")
+Map.addLayer(changeObj["mostRecent"]["gain"]["year"], gain_viz, "LCMS CCDC Most Recent Gain Year")
 
 
 # This produces a chart of the harmonic models from CCDC and the breaks to help further understand how the outputs are created
 # Apply the CCDC harmonic model across a time series
-# First get a time series of time images 
-yearImages = changeDetectionLib.getTimeImageCollection(1984,2022,1,365,0.1)
+# First get a time series of time images
+yearImages = changeDetectionLib.getTimeImageCollection(1984, 2022, 1, 365, 0.1)
 
-#Then predict the CCDC models
-fitted = changeDetectionLib.predictCCDC(ccdcImg,yearImages,False,[1,2,3])
+# Then predict the CCDC models
+fitted = changeDetectionLib.predictCCDC(ccdcImg, yearImages, False, [1, 2, 3])
 
-Map.addLayer(fitted.select(['NDVI_CCDC_fitted']),{'opacity':0},'Fitted CCDC NDVI',True);
+Map.addLayer(fitted.select(["NDVI_CCDC_fitted"]), {"opacity": 0}, "Fitted CCDC NDVI", True)
 ####################################################################################################
-Map.setTitle('LCMAP LCMS Viewer')
+Map.setTitle("LCMAP LCMS Viewer")
 Map.turnOnInspector()
-Map.setQueryDateFormat('YYYY')
+Map.setQueryDateFormat("YYYY")
 Map.view()
