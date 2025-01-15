@@ -1,3 +1,13 @@
+# geeViz 2025.1.4 Release Notes
+
+## January 15, 2025
+
+### New Features
+
+- **geeviz.org migration** - Migrated documentation from https://gee-community.github.io/geeViz/build/html/index.html to the geeviz.org domain
+
+---
+
 # geeViz 2025.1.3 Release Notes
 
 ## January 9, 2025

@@ -16,7 +16,7 @@ Josh Heyer- joshua.heyer@usda.gov
 
 Bonnie Ruefenacht- bonnie.ruefenacht@usda.gov
 
-## [Documentation (in progress)](https://gee-community.github.io/geeViz/build/html/index.html)
+## [Documentation (in progress)](https://geeviz.org/)
 
 ## Installing
 
@@ -26,7 +26,7 @@ Bonnie Ruefenacht- bonnie.ruefenacht@usda.gov
 3. Authenticate using the GEE cli in a cmd prompt (`earthengine authenticate`)
 
 4. You can also install with git. If installing this way, first install the Python GEE package (`pip install earthengine-api`)
-5. Then clone this repository (`git clone https://github.com/rcr-usfs/geeViz`) into your Python's site-packages
+5. Then clone this repository (`git clone https://github.com/gee-community/geeViz`) into your Python's site-packages
 6. To stay up to date, upgrade via PIP (`pip install geeViz --upgrade`) or pull the latest commit (`git pull origin master`)
 7. This repository is also available within the FS gitHub instance (<https://code.fs.usda.gov/forest-service/geeViz>)
 
@@ -60,3 +60,7 @@ Bonnie Ruefenacht- bonnie.ruefenacht@usda.gov
 ## Contributing
 
 1. If you have a great piece of GEE code to share, please contact a POC listed above.
+
+## License
+
+This project is licensed under the Apache 2 License - see the LICENSE file for details

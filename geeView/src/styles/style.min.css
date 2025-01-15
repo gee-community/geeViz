@@ -763,7 +763,7 @@ div.dataTables_info {
 }
 .input-group-text,
 .form-control {
-  border: none;
+  /* border: none; */
   height: 1.5rem;
 }
 .share-and-location-buttons {
@@ -1502,11 +1502,13 @@ a:hover {
   font-weight: 1000 !important;
   cursor: pointer;
 }
-#parameters-collapse-div > div > .sub-panel-heading {
+#parameters-collapse-div > div > .sub-panel-heading,
+#pre-post-dates-div > div > .sub-panel-heading {
   margin-left: -2.5rem;
   margin-bottom: 1rem;
 }
-#parameters-collapse-div > .sub-panel-collapse {
+#parameters-collapse-div > .sub-panel-collapse,
+#pre-post-dates-div > .sub-panel-collapse {
   padding-left: 0.5rem;
 }
 .accordion > h5:first-child {
