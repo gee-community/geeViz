@@ -1,3 +1,13 @@
+# geeViz 2025.1.5 Release Notes
+
+## January 23, 2025
+
+### New Features
+
+- **geeviz.org logo integration** - Updated geeViz branding logo
+
+---
+
 # geeViz 2025.1.4 Release Notes
 
 ## January 15, 2025
