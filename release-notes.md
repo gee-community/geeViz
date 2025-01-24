@@ -1,3 +1,15 @@
+# geeViz 2025.1.6 Release Notes
+
+## January 23, 2025
+
+### Bug fixes
+
+- `phEEnoViz` module bug fix with colormap causing method to fail. See `examples.phEEnoVizWrapper.py` for a working example of how to use this powerful tool.
+
+- `Map.turnOnAutoAreaCharting` bug fix. Occasionally the tool would not activate when this method was called. This method has now been moved to a setTimeout callback, so it should activate more consistently.
+
+---
+
 # geeViz 2025.1.5 Release Notes
 
 ## January 23, 2025

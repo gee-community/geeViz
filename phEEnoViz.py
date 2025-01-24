@@ -484,6 +484,8 @@ def chartTimeSeriesDistributions(
 
             # fig.annotate('local max', xy=(0.5, 0.5))
             cmap = plt.get_cmap("viridis")
+            hist = hist[:, :-1]
+
             cf = plt.pcolormesh(dates, bins, hist, cmap=cmap)  # , vmin = 500)
             degrees = 45
             plt.xticks(rotation=degrees, fontsize=7, ha="right")

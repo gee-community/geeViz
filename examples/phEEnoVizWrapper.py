@@ -33,8 +33,8 @@ output_table_name = "HI_Big_Island_Lava"
 # Set up dates
 # Years can range from 1984-present
 # Julian days can range from 1-365
-startYear = 2009
-endYear = 2021
+startYear = 2017
+endYear = 2025
 startJulian = 1
 endJulian = 365
 
@@ -49,7 +49,7 @@ compositePeriod = 32
 # E.g. ['Landsat','Sentinel2'] will include both Landsat 4-8 and Sentinel 2a and 2b TOA data
 # If choosing both Landsat and Sentinel 2, available bands/indices are limited to those that can be computed
 # Using bands from each (e.g. Sentinel 2 red edge bands would not be available if using only Landsat or Landsat and Sentinel 2)
-programs = ["Landsat"]
+programs = ["Sentinel2"]
 
 # Bands to export.
 # Landsat and Sentinel2 combined band options include: blue, green, red, nir, swir1, swir2, NDVI, NBR, NDMI, brightness, greenness, wetness, bloom2, NDGI
@@ -251,6 +251,6 @@ if __name__ == "__main__":
         howManyHarmonics=howManyHarmonics,
         showChart=showChart,
         annotate_harmonic_peaks=annotate_harmonic_peaks,
-        min_pctl=0.5,
-        max_pctl=99.5,
+        min_pctl=1,
+        max_pctl=99,
     )
