@@ -1,7 +1,7 @@
 """
 Get images and organize them so they are easier to work with
 
-geeViz.getImagesLib is the core module for setting up various imageCollections from GEE. Notably, it facilitates Landsat, Sentinel-2, and MODIS data organization. This module helps avoid many common mistakes in GEE. Most functions ease matching band names, ensuring resampling methods are properly set, date wrapping, and helping with cloud and cloud shadow masking. 
+geeViz.getImagesLib is the core module for setting up various imageCollections from GEE. Notably, it facilitates Landsat, Sentinel-2, and MODIS data organization. This module helps avoid many common mistakes in GEE. Most functions ease matching band names, ensuring resampling methods are properly set, date wrapping, and helping with cloud and cloud shadow masking.
 
 """
 
@@ -5999,7 +5999,7 @@ def getProcessedSentinel2Scenes(
 #########################################################################
 #########################################################################
 def superSimpleGetS2(
-    studyArea: ee.Geometry | ee.Feature | ee.FeatureCollection,
+    studyArea: ee.Geometry | ee.Feature | ee.FeatureCollection | None,
     startDate: ee.Date | datetime.datetime | str,
     endDate: ee.Date | datetime.datetime | str,
     startJulian: int = 1,
@@ -6014,7 +6014,7 @@ def superSimpleGetS2(
     It applies the cloudScore+ algorithm unless told otherwise.
 
     Args:
-        studyArea (ee.Geometry): An Earth Engine geometry object representing the area of interest.
+        studyArea (ee.Geometry, ee.Feature, ee.FeatureCollection, or None, optional): An Earth Engine geometry object representing the area of interest. If set to None, startJulian and endJulian cannot be used. Doing so will cause the image to never render.
         startDate (ee.Date, datetime.datetime, or str): The start date for the image collection in YYYY-MM-DD format.
         endDate (ee.Date, datetime.datetime, or str): The end date for the image collection in YYYY-MM-DD format.
         startJulian (int, optional): The start Julian day of the desired data. Defaults to 1.
@@ -6045,7 +6045,13 @@ def superSimpleGetS2(
     startDate = ee.Date(startDate)
     endDate = ee.Date(endDate)
 
-    s2s = ee.ImageCollection(s2CollectionDict[toaOrSR]).filterDate(startDate, endDate.advance(1, "day")).filter(ee.Filter.calendarRange(startJulian, endJulian)).filterBounds(studyArea)
+    s2s = ee.ImageCollection(s2CollectionDict[toaOrSR]).filterDate(startDate, endDate.advance(1, "day"))
+
+    if studyArea != None:
+        s2s = s2s.filterBounds(studyArea)
+
+        if startJulian != 1 or endJulian != 365:
+            s2s = s2s.filter(ee.Filter.calendarRange(startJulian, endJulian))
 
     s2s = s2s.select(sensorBandDict[toaOrSR], sensorBandNameDict[toaOrSR])
 
@@ -8392,7 +8398,7 @@ def simpleWaterMask(
     img: ee.Image,
     contractPixels: int = 0,
     slope_thresh: float = 10,
-    elevationImagePath: str = "USGS/3DEP/10m",
+    elevationImagePath: str | ee.Image | ee.ImageCollection = "USGS/3DEP/10m",
     elevationFocalMeanRadius: float = 5.5,
 ) -> ee.Image:
     """
@@ -8406,7 +8412,7 @@ def simpleWaterMask(
         img (ee.Image): The input Earth Engine image (TOA reflectance data recommended) with Tasseled Cap transformation bands added. You may need to run `getTasseledCap` to add these bands.
         contractPixels (int, optional): Number of pixels to contract the water mask by for morphological closing. Defaults to 0 (no contraction).
         slope_thresh (float, optional): Threshold for slope (degrees) to identify flat areas suitable for water masking. Defaults to 10.
-        elevationImagePath (str, optional): Path to the Earth Engine image containing elevation data. Defaults to "USGS/3DEP/10m" (10m DEM from USGS 3D Elevation Program).
+        elevationImagePath (str or ee.Image, optional): Path to the Earth Engine image or Earth Engine image or imageCollection object containing elevation data. Defaults to "USGS/3DEP/10m" (10m DEM from USGS 3D Elevation Program).
         elevationFocalMeanRadius (float, optional): Radius (in pixels) for the focal mean filter applied to the elevation data before calculating slope. Defaults to 5.5.
 
     Returns:
@@ -8432,10 +8438,14 @@ def simpleWaterMask(
     img = addTCAngles(img)
 
     # Load and resample elevation data
-    ned = ee.Image(elevationImagePath).resample("bicubic")
+    # Handle different data types
+    edType = type(elevationImagePath).__name__
+    ed = ee.Image(elevationImagePath) if edType == "str" else (ee.ImageCollection(elevationImagePath).mosaic() if edType == "ImageCollection" else elevationImagePath)
+
+    ed = ee.Image(ed).resample("bicubic")
 
     # Calculate slope using focal mean filtered elevation
-    slope = ee.Terrain.slope(ned.focal_mean(elevationFocalMeanRadius))
+    slope = ee.Terrain.slope(ed.focal_mean(elevationFocalMeanRadius))
 
     # Identify flat areas based on slope threshold
     flat = slope.lte(slope_thresh)  # Less than or equal to threshold
@@ -8447,9 +8457,10 @@ def simpleWaterMask(
     waterMask = waterMask.focal_min(contractPixels)
 
     # Rename the water mask band
-    return waterMask.rename(["waterMask"])  ####################
+    return waterMask.rename(["waterMask"])
 
 
+####################
 # Jeff Ho Method for algal bloom detection
 # https://www.nature.com/articles/s41586-019-1648-7
 

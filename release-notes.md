@@ -1,3 +1,37 @@
+# geeViz 2025.3.3 Release Notes
+
+## March 17, 2025
+
+### New Features
+
+- `getImagesLib.simpeWaterMask` `elevationImagePath` `ee.Image | ee.ImageCollection` support - You can now provide an `ee.Image` or `ee.ImageCollection` type input for the `elevationImagePath` parameter. Previously, this had to be a string. Since some elevation assets are `ee.ImageCollections` supporting additional types was needed.
+
+---
+
+# geeViz 2025.3.2 Release Notes
+
+## March 5, 2025
+
+### New Features
+
+- **`getImagesLib.superSimpleGetS2` `studyArea` Optional** - You no longer have to provide a studyArea for the `getImagesLib.superSimpleGetS2` method. This allows for global, map extent focused applications to use this method. When using this method, only the `.filterDate` method will render an output, so `startJulian` and `endJulian` are ignored. Ideally the `startDate` and `endDate` will suffice.
+
+- **`examples.LANDTRENDRWrapperNotebook.ipynb` Improved Markdown** - Improved the markdown for the `examples.LANDTRENDRWrapperNotebook.ipynb` for easier understanding of what is going on.
+
+- **`examples.timeLapseExample.py` Updates** - Updated the assets and visualization methods in `examples.timeLapseExample.py`
+
+---
+
+# geeViz 2025.3.1 Release Notes
+
+## March 3, 2025
+
+### Bug fixes
+
+- `geeViz layer indexing` simplification. Layer IDs are always the name with an index only appended if a layer with the same name was already added.
+
+---
+
 # geeViz 2025.1.6 Release Notes
 
 ## January 23, 2025

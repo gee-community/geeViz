@@ -1,4 +1,47 @@
 """
+This script demonstrates how to run the LANDTRENDR temporal segmentation algorithm and visualize the outputs using Python visualization tools. The script acquires Landsat data, processes it, runs the LANDTRENDR algorithm, and optionally exports the results.
+Modules:
+    - geeViz.getImagesLib as gil
+    - geeViz.changeDetectionLib as cdl
+    - geeViz.taskManagerLib as tml
+User Parameters:
+    - studyArea: The area of interest, can be a featureCollection, feature, or geometry.
+    - startJulian: Starting Julian date for seasonal constraints.
+    - endJulian: Ending Julian date for seasonal constraints.
+    - startYear: Starting year for analysis.
+    - endYear: Ending year for analysis.
+    - indexName: The band or index to use (e.g., NBR, NDMI, NDVI).
+    - howManyToPull: Number of significant loss/gain segments to include.
+    - lossMagThresh: Threshold for loss magnitude.
+    - lossSlopeThresh: Threshold for loss slope.
+    - gainMagThresh: Threshold for gain magnitude.
+    - gainSlopeThresh: Threshold for gain slope.
+    - slowLossDurationThresh: Threshold for slow loss duration.
+    - chooseWhichLoss: Criteria for selecting loss segments.
+    - chooseWhichGain: Criteria for selecting gain segments.
+    - run_params: Parameters for the LANDTRENDR algorithm.
+    - addToMap: Whether to add change outputs to the map.
+    - exportLTLossGain: Whether to export LANDTRENDR loss/gain outputs.
+    - exportLTVertexArray: Whether to export raw LANDTRENDR vertex array.
+    - outputName: Name for the export.
+    - exportPathRoot: Path for exporting composites.
+    - crs: Coordinate reference system.
+    - transform: Transform parameters if scale is None.
+    - scale: Scale if transform is None.
+Functions:
+    - gil.getComposite: Gets the composite image for the specified parameters.
+    - gil.getProcessedLandsatScenes: Gets processed Landsat scenes.
+    - gil.fillEmptyCollections: Fills empty collections with a dummy image.
+    - cdl.simpleLANDTRENDR: Runs the LANDTRENDR algorithm and performs change detection.
+    - gil.exportToAssetWrapper: Exports images to an asset.
+    - tml.trackTasks2: Tracks export tasks.
+Workflow:
+    1. Define user parameters.
+    2. Acquire and process Landsat data.
+    3. Run the LANDTRENDR algorithm.
+    4. Optionally export the results.
+    5. Visualize the study area and results on the map.
+    
    Copyright 2025 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +78,8 @@ Map.clearMap()
 ####################################################################################################
 # Define user parameters:
 
+    # Get composite
+    composite = gil.getComposite(studyArea, startYear, endYear, startJulian, endJulian)
 # Specify study area: Study area
 # Can be a featureCollection, feature, or geometry
 studyArea = gil.testAreas["CA"]

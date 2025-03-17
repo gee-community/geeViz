@@ -42,6 +42,8 @@ conus = ee.Feature(
         [[[-124.85720095425737, 24.959288058753405], [-66.97879243191109, 24.959288058753405], [-66.97879243191109, 49.632344931561455], [-124.85720095425737, 49.632344931561455], [-124.85720095425737, 24.959288058753405]]], None, False
     )
 )
+
+
 Map.addLayer(conus, {"layerType": "geeVector"}, "Conterminous United States for PDSI Time Lapse (double click to zoom to)", False)
 Map.addLayer(gsl, {"layerType": "geeVector"}, "Great Salt Lake Example Area for JRC Water Time Lapse (double click to zoom to)", False)
 Map.addLayer(cambodia, {"layerType": "geeVector"}, "Cambodia Example Area for Hansen Loss Time Lapse (double click to zoom to)", False)
@@ -51,23 +53,20 @@ Map.addLayer(rio, {"layerType": "geeVector"}, "Rio Grande National Forest Exampl
 Map.centerObject(rio)
 
 # Bring in the JRC Surface water data
-water = ee.ImageCollection("JRC/GSW1_0/YearlyHistory")
+water = ee.ImageCollection("JRC/GSW1_4/YearlyHistory")
 
 # Here is an example of creating a lookup dictionary
-waterColors = ["ffffff", "99d9ea", "0000ff"]
-waterLabels = ["1 Not Water", "2 Seasonal Water", "3 Permanent Water"]
-waterDict = {waterLabels[i]: waterColors[i] for i in range(len(waterColors))}
-waterQueryDict = {str(i + 1): waterLabels[i] for i in range(len(waterLabels))}
-
-Map.addTimeLapse(water, {"min": 1, "max": 3, "palette": waterColors, "addToClassLegend": True, "classLegendDict": waterDict, "queryDict": waterQueryDict}, "JRC Surface Water Time Lapse", False)
+waterVizProps = {"water_class_palette": ["ffffff", "99d9ea", "0000ff"], "water_class_names": ["Not Water", "Seasonal Water", "Permanent Water"], "water_class_values": [1, 2, 3]}
+water = water.map(lambda img: img.set(waterVizProps))
+Map.addTimeLapse(water, {"autoViz": True, "canAreaChart": True}, "JRC Surface Water Time Lapse", False)
 
 # Bring in Hansen loss
 declineYearPalette = "ffffe5,fff7bc,fee391,fec44f,fe9929,ec7014,cc4c02"
-hansen = ee.Image("UMD/hansen/global_forest_change_2022_v1_10")
+hansen = ee.Image("UMD/hansen/global_forest_change_2023_v1_11")
 
 hansenLoss = hansen.select(["lossyear"]).add(2000).int16()
 hansenStartYear = 2001
-hansenEndYear = 2022
+hansenEndYear = 2023
 
 hansenYears = ee.List.sequence(hansenStartYear, hansenEndYear)
 
@@ -86,9 +85,9 @@ hansenYearsCli = hansenYears.getInfo()
 Map.addTimeLapse(hansenC, {"min": hansenStartYear, "max": hansenEndYear, "palette": declineYearPalette, "years": hansenYearsCli}, "Hansen Loss Time Lapse")
 
 # Bring in LCMS
-lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2022-8").select(["Change"])
+lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").select(["Change"])
 lcmsStartYear = 1985
-lcmsEndYear = 2022
+lcmsEndYear = 2023
 lcmsYears = ee.List.sequence(lcmsStartYear, lcmsEndYear)
 
 
@@ -107,7 +106,7 @@ Map.addTimeLapse(lcms, {"min": lcmsStartYear, "max": lcmsEndYear, "palette": dec
 
 # Add PDSI time lapse
 pdsiStartYear = 2016
-pdsiEndYear = 2020
+pdsiEndYear = 2024
 pdsi = ee.ImageCollection("GRIDMET/DROUGHT").filter(ee.Filter.calendarRange(pdsiStartYear, pdsiEndYear, "year")).select(["pdsi"])
 
 # Convert 5 day PDSI values into 8 week composites (median)
@@ -115,7 +114,7 @@ pdsi = getImagesLib.nDayComposites(pdsi, pdsiStartYear, pdsiEndYear, 1, 365, 56)
 
 # Add PDSI time lapse
 # This example isn't annual, so the dateFormat and advanceInterval are changed
-Map.addTimeLapse(pdsi, {"min": -5, "max": 5, "palette": "F00,888,00F", "dateFormat": "YYYYMMdd", "advanceInterval": "day"}, "PDSI Time Lapse")
+Map.addTimeLapse(pdsi, {"min": -5, "max": 5, "palette": "F00,888,00F", "dateFormat": "YY-MM-dd", "advanceInterval": "day", "canAreaChart": True}, "PDSI Time Lapse")
 
 Map.turnOnInspector()
 # Final step is to launch the viewer

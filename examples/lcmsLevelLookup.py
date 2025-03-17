@@ -1,17 +1,17 @@
 """
-   Copyright 2025 Ian Housman
+Copyright 2025 Ian Housman
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
 # Module to help with LCMS levels remap crosswalk
@@ -25,27 +25,27 @@ all_lookup = {
         "3": [3, "1B1716", "Non-Processing Area Mask"],
         "1.1": [1, "004E2B", "Tree Vegetated"],
         "1.2": [2, "8DA463", "Non-Tree Vegetated"],
-        "2.1": [3, "D4D4D3", "Non-Vegetated"],
+        "2.1": [3, "893F54", "Non-Vegetated"],
         "3.1": [4, "1B1716", "Non-Processing Area Mask"],
         "1.1.1": [1, "004E2B", "Tree"],
         "1.2.1": [2, "F89A1C", "Shrub"],
         "1.2.2": [3, "E5E98A", "Grass/Forb/Herb"],
-        "2.1.1": [4, "D4D4D3", "Barren or Impervious"],
+        "2.1.1": [4, "893F54", "Barren or Impervious"],
         "2.1.2": [5, "E4F5FD", "Snow or Ice"],
         "2.1.3": [6, "00B6F0", "Water"],
         "3.1.1": [7, "1B1716", "Non-Processing Area Mask"],
         "1.1.1.1": [1, "004E2B", "Tree"],
         "1.1.1.2": [2, "009344", "Tall Shrub & Tree Mix (SEAK Only)"],
         "1.1.1.3": [3, "61BB46", "Shrub & Tree Mix"],
-        "1.1.1.4": [4, "E5E98A", "Grass/Forb/Herb & Tree Mix"],
+        "1.1.1.4": [4, "ACBB67", "Grass/Forb/Herb & Tree Mix"],
         "1.1.1.5": [5, "8B8560", "Barren & Tree Mix"],
         "1.2.1.1": [6, "CAFD4B", "Tall Shrub (SEAK Only)"],
         "1.2.1.2": [7, "F89A1C", "Shrub"],
         "1.2.1.3": [8, "8FA55F", "Grass/Forb/Herb & Shrub Mix"],
         "1.2.1.4": [9, "BEBB8E", "Barren & Shrub Mix"],
-        "1.2.2.1": [10, "FFFF00", "Grass/Forb/Herb"],
+        "1.2.2.1": [10, "E5E98A", "Grass/Forb/Herb"],
         "1.2.2.2": [11, "DDB925", "Barren & Grass/Forb/Herb Mix"],
-        "2.1.1.1": [12, "D4D4D3", "Barren or Impervious"],
+        "2.1.1.1": [12, "893F54", "Barren or Impervious"],
         "2.1.2.1": [13, "E4F5FD", "Snow or Ice"],
         "2.1.3.1": [14, "00B6F0", "Water"],
         "3.1.1.1": [15, "1B1716", "Non-Processing Area Mask"],

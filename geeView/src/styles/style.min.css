@@ -1415,9 +1415,13 @@ ul {
   margin-top: -0.75rem;
   margin-bottom: -0.5rem;
 }
-.panel-title-svg-xsm {
+.panel-title-svg-xsm,
+img.layer-spinner {
   width: 1.15rem;
-  padding-bottom: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+img.initial-loading-spinner {
+  margin-left: -0.1rem;
 }
 .panel-title.collapsed > a:after {
   float: right !important;
