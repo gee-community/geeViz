@@ -1,7 +1,7 @@
 """
 View GEE objects using Python
 
-geeViz.geeView is the core module for managing GEE objects on the geeViz mapper object. geeViz instantiates an instance of the `mapper` class as `Map` by default. Layers can be added to the map using `Map.addLayer` or `Map.addTimeLapse` and then viewed using the `Map.view` method. 
+geeViz.geeView is the core module for managing GEE objects on the geeViz mapper object. geeViz instantiates an instance of the `mapper` class as `Map` by default. Layers can be added to the map using `Map.addLayer` or `Map.addTimeLapse` and then viewed using the `Map.view` method.
 
 """
 
@@ -37,10 +37,7 @@ if sys.version_info[0] < 3:
     import SimpleHTTPServer, SocketServer
 else:
     import http.server, socketserver
-creds_path = ee.oauth.get_credentials_path()
-creds_dir = os.path.dirname(creds_path)
-if not os.path.exists(creds_dir):
-    os.makedirs(creds_dir)
+
 
 IS_COLAB = ee.oauth.in_colab_shell()  # "google.colab" in sys.modules
 IS_WORKBENCH = os.getenv("DL_ANACONDA_HOME") != None
@@ -76,6 +73,11 @@ def getProject(overwrite=False):
         str: The currently selected Google Cloud Platform project id
     """
     global project_id
+
+    creds_path = ee.oauth.get_credentials_path()
+    creds_dir = os.path.dirname(creds_path)
+    if not os.path.exists(creds_dir):
+        os.makedirs(creds_dir)
     provided_project = "{}.proj_id".format(creds_path)
     provided_project = os.path.normpath(provided_project)
 

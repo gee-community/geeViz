@@ -1,3 +1,15 @@
+# geeViz 2025.3.4 Release Notes
+
+## March 21, 2025
+
+### Bug fixes
+
+- `geeViz.geeView` auto-authentication/initialization create directory bug fix. In the past, this module would always try to create a `.config` directory. Not it only does this if it is using the standard refresh token auth method.
+
+- `examples.LANDTRENDRWrapperNotebook` study area bug fix. The `studyArea` was called on before it was declared in the first example. This was removed.
+
+---
+
 # geeViz 2025.3.3 Release Notes
 
 ## March 17, 2025

@@ -8412,7 +8412,7 @@ def simpleWaterMask(
         img (ee.Image): The input Earth Engine image (TOA reflectance data recommended) with Tasseled Cap transformation bands added. You may need to run `getTasseledCap` to add these bands.
         contractPixels (int, optional): Number of pixels to contract the water mask by for morphological closing. Defaults to 0 (no contraction).
         slope_thresh (float, optional): Threshold for slope (degrees) to identify flat areas suitable for water masking. Defaults to 10.
-        elevationImagePath (str or ee.Image, optional): Path to the Earth Engine image or Earth Engine image or imageCollection object containing elevation data. Defaults to "USGS/3DEP/10m" (10m DEM from USGS 3D Elevation Program).
+        elevationImagePath (str or ee.Image or ee.ImageCollection, optional): Path to the Earth Engine image or Earth Engine image or imageCollection object containing elevation data. Defaults to "USGS/3DEP/10m" (10m DEM from USGS 3D Elevation Program).
         elevationFocalMeanRadius (float, optional): Radius (in pixels) for the focal mean filter applied to the elevation data before calculating slope. Defaults to 5.5.
 
     Returns:
