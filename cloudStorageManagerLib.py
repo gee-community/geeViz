@@ -1,7 +1,7 @@
 """
 Helpful functions for managing Google Cloud Storage (GCS) buckets and blobs
 
-geeViz.cloudStorageManagerLib includes functions for renaming, seeing if a blob exists, and deleting blobs. 
+geeViz.cloudStorageManagerLib includes functions for renaming, seeing if a blob exists, and deleting blobs.
 """
 
 """
@@ -31,6 +31,7 @@ from google.cloud import storage
 # Returns a list of blob objects
 # Use the blob.name to get the name
 def list_blobs(bucket_name: str) -> list:
+    """Lists all blob objects in a bucket"""
     # storage client instance
     storage_client = storage.Client(project=geeViz.geeView.project_id)
 
@@ -43,9 +44,11 @@ def list_blobs(bucket_name: str) -> list:
 
 
 def list_files(bucket_name: str) -> list[str]:
+    """List filenames in bucket"""
     return [f.name for f in list_blobs(bucket_name)]
 
 
+######################################################################
 def bucket_exists(bucket_name: str) -> bool:
     """See if a GCS bucket exists"""
     # storage client instance
@@ -57,7 +60,9 @@ def bucket_exists(bucket_name: str) -> bool:
     return bucket.exists()
 
 
+######################################################################
 def create_bucket(bucket_name: str):
+    """Create GCS bucket"""
     # Initialize a client
     storage_client = storage.Client(project=geeViz.geeView.project_id)
 
@@ -92,6 +97,7 @@ def rename_blobs(bucket_name, old_name, new_name):
 ######################################################################
 # Return wether a filename exists or not
 def gcs_exists(bucket, filename):
+    """Return wether a filename exists or not"""
     storage_client = storage.Client(project=geeViz.geeView.project_id)
     stats = storage.Blob(bucket=storage_client.bucket(bucket), name=filename).exists(storage_client)
     return stats
@@ -101,6 +107,7 @@ def gcs_exists(bucket, filename):
 # !! Dangerous !! - cannot be undone
 # Delete a specified filename
 def delete_blob(bucket, filename):
+    """Delete a specified filename"""
     storage_client = storage.Client(project=geeViz.geeView.project_id)
     out = storage.Blob(bucket=storage_client.bucket(bucket), name=filename).delete(storage_client)
     print("Deleted:", filename)

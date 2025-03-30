@@ -1,7 +1,7 @@
 """
 Helpful functions for managing GEE assets
 
-geeViz.assetManagerLib includes functions for copying, deleting, uploading, changing permissions, and more. 
+geeViz.assetManagerLib includes functions for copying, deleting, uploading, changing permissions, and more.
 """
 
 """
