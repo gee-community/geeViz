@@ -126,7 +126,7 @@ def removeGT1(img):
 
 
 processedScenes = processedScenes.map(removeGT1)
-Map.addLayer(processedScenes, {}, "Processed Input Data", False)
+Map.addLayer(processedScenes, {'addToLegend':False}, "Processed Input Data", False)
 
 # Set the scene collection in the ccdcParams
 ccdcParams["collection"] = processedScenes
@@ -139,7 +139,7 @@ ccdc = ee.Image(ee.Algorithms.TemporalSegmentation.Ccdc(**ccdcParams))
 # ccdc = ccdc.setMulti(ccdcParams)
 # ccdc = ee.Image(ccdc)
 
-Map.addLayer(ccdc, {}, "CCDC Output", False)
+Map.addLayer(ccdc, {'addToLegend':False}, "CCDC Output", False)
 
 # Export output
 if exportCCDC:
