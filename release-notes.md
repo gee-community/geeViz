@@ -1,4 +1,13 @@
-# geeViz 2025.3.45 Release Notes
+# geeViz 2025.3.6 Release Notes
+
+## March 31, 2025
+
+### Bug fixes
+
+- `geeViz.geeView` `Map.view()` bug fix for Google Colab. Updated to handle the new Google Colab proxy syntax. The old syntax should work still should they switch back in the future.
+
+---
+# geeViz 2025.3.5 Release Notes
 
 ## March 31, 2025
 

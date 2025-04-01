@@ -1035,7 +1035,7 @@ class mapper:
         if IS_COLAB:
             proxy_js = "google.colab.kernel.proxyPort({})".format(self.port)
             proxy_url = eval_js(proxy_js)
-            geeView_proxy_url = "{}geeView/?projectID={}&accessToken={}&accessTokenCreationTime={}".format(proxy_url, self.project, self.accessToken, self.accessTokenCreationTime)
+            geeView_proxy_url = "{}/geeView/?projectID={}&accessToken={}&accessTokenCreationTime={}".format(proxy_url, self.project, self.accessToken, self.accessTokenCreationTime)
             print("Colab Proxy URL:", geeView_proxy_url)
             viewerFrame = IFrame(src=geeView_proxy_url, width="100%", height="{}px".format(iframe_height))
             display(viewerFrame)
