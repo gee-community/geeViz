@@ -1,3 +1,14 @@
+# geeViz 2025.3.45 Release Notes
+
+## March 31, 2025
+
+### New Features
+
+- **New `examples.LANDTRENDRVizNotebook.ipynb`** - Adapted the `examples.LANDTRENDRViz.py` script to a notebook format. Use this to learn how to take exported LandTrendr outputs and visualize them and use them for change detection.
+
+- **New `examples.Aboveground_Biomass_Viewer_Notebook.ipynb`** - Shows how the visualize and summarize the ESA CCI Global Forest Above Ground Biomass dataset using `geeViz`.
+
+---
 # geeViz 2025.3.4 Release Notes
 
 ## March 21, 2025

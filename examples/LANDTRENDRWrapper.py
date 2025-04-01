@@ -126,8 +126,10 @@ lossSlopeThresh = -0.05
 gainMagThresh = 0.1
 gainSlopeThresh = 0.05
 
+# Number of years of duration to separate between slow and fast loss (>= this number will be called slow loss)
 slowLossDurationThresh = 3
 
+# Which segment to show change from
 # Choose from: 'newest','oldest','largest','smallest','steepest','mostGradual','shortest','longest'
 chooseWhichLoss = "largest"
 chooseWhichGain = "largest"

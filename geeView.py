@@ -543,7 +543,7 @@ class mapper:
                         {
                             "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.,
 
-                            "yLabel" (str, optional): Y axis label for query charts. This is  useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired label for the Y axis.
+                            "yLabel" (str, optional): Y axis label for query charts. This is useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired label for the Y axis.
                         }
 
                     "legendLabelLeftBefore" (str) : Label for continuous legend on the left before the numeric component,
@@ -596,6 +596,8 @@ class mapper:
                             "chartDecimalProportion" (float, default 0.25): Used to override the default global precision settings for a specific area charting layer. See `setQueryPrecision` for setting the global charting precision. When specified, for this specific area charting layer, will show the larger of `chartPrecision` decimal places or `chartDecimalProportion` * total decimal places. E.g. if the number is 1.1234567891234, ceiling(0.25 of 13) decimal places is 4, so 4 will be used and yield 1.1235,
 
                             "hovermode" (str, default "closest"): The mode to show hover text in area summary charts. Options include "closest", "x", "y", "x unified", and "y unified",
+
+                            "yAxisLabel" (str, default an appropriate label based on whether data are thematic or continuous): The Y axis label that will be included in charts. Defaults to a unit of % area for thematic and mean for continuous data,
                         }
 
                 }
@@ -719,7 +721,7 @@ class mapper:
                         {
                             "palette" (list, or comma-separated strings): List of hex codes for colors for charts. This is especially useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired set of colors for each band to have on the chart.,
 
-                            "yLabel" (str, optional): Y axis label for query charts. This is  useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired label for the Y axis.
+                            "yLabel" (str, optional): Y axis label for query charts. This is useful when bandName_class_values, bandName_class_names, bandName_class_palette properties are not available, but there is a desired label for the Y axis.
                         }
 
                     "legendLabelLeftBefore" (str) : Label for continuous legend on the left before the numeric component,
@@ -772,6 +774,8 @@ class mapper:
                             "chartDecimalProportion" (float, default 0.25): Used to override the default global precision settings for a specific area charting layer. See `setQueryPrecision` for setting the global charting precision. When specified, for this specific area charting layer, will show the larger of `chartPrecision` decimal places or `chartDecimalProportion` * total decimal places. E.g. if the number is 1.1234567891234, ceiling(0.25 of 13) decimal places is 4, so 4 will be used and yield 1.1235,
 
                             "hovermode" (str, default "closest"): The mode to show hover text in area summary charts. Options include "closest", "x", "y", "x unified", and "y unified",
+
+                            "yAxisLabel" (str, default an appropriate label based on whether data are thematic or continuous): The Y axis label that will be included in charts. Defaults to a unit of % area for thematic and mean for continuous data,
                         }
 
                 }

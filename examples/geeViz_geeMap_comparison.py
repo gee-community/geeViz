@@ -11,14 +11,9 @@
 # %%
 import ee
 
-# Enter your project ID
-projectID = "lcms-292214"
-
-ee.Initialize(project=projectID)
-
-
-import geemap as gm
 import geeViz.geeView as gv
+import geemap as gm
+
 
 
 gvMap = gv.Map
@@ -227,7 +222,7 @@ gmMap
 # * As such, geeViz is building dependencies on geeMap
 
 # %%
-shp = gv.os.path.join(gv.sys.path[0], "data/gadm41_CHE_shp/gadm41_CHE_0.shp")
+shp = "data/gadm41_CHE_shp/gadm41_CHE_0.shp"
 
 ch = gm.shp_to_ee(shp)
 
