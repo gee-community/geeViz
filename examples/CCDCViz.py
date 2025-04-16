@@ -91,8 +91,8 @@ sortingMethod = "mostRecent"
 ####################################################################################################
 
 # Add the raw array image
-Map.addLayer(ccdcImg1, {"opacity": 0}, "Raw CCDC Output 1984-2022", False)
-Map.addLayer(ccdcImg2, {"opacity": 0}, "Raw CCDC Output 2014-2024", False)
+Map.addLayer(ccdcImg1, {"opacity": 0,"addToLegend":False}, "Raw CCDC Output 1984-2022", False)
+Map.addLayer(ccdcImg2, {"opacity": 0,"addToLegend":False}, "Raw CCDC Output 2014-2024", False)
 
 # Extract the change years and magnitude
 changeObj = changeDetectionLib.ccdcChangeDetection(ccdcImg1, changeDetectionBandName)

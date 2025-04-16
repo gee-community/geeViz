@@ -1,3 +1,17 @@
+# geeViz 2025.4.1 Release Notes
+
+## April 16, 2025
+
+### New Features
+
+- **geeView area charting chartType setting** - Can now set the `chartType` (`vizParams["areaChartParams"]["chartType"]`) to "line", "bar", "stacked-line", and "stacked-bar". This is only used for `ee.ImageCollection` objects. For `ee.Image` objects, the chartType is always "bar". See pydoc for `Map.addLayer`, `Map.addTimeLapse`, and `Map.addAreaChartLayer` for details.
+
+### Bug fixes
+
+- `geeViz.geeView.robustInitializer()` bug fix. Method was broken by some updates to the GEE API returning a number for a project ID. This is now fixed. The new `robustIntializer()` is far simpler than the prior versions, so it will not handle as many scenarios as before. The overall stability should be improved though.
+
+---
+
 # geeViz 2025.3.6 Release Notes
 
 ## March 31, 2025
@@ -7,6 +21,7 @@
 - `geeViz.geeView` `Map.view()` bug fix for Google Colab. Updated to handle the new Google Colab proxy syntax. The old syntax should work still should they switch back in the future.
 
 ---
+
 # geeViz 2025.3.5 Release Notes
 
 ## March 31, 2025
@@ -18,6 +33,7 @@
 - **New `examples.Aboveground_Biomass_Viewer_Notebook.ipynb`** - Shows how the visualize and summarize the ESA CCI Global Forest Above Ground Biomass dataset using `geeViz`.
 
 ---
+
 # geeViz 2025.3.4 Release Notes
 
 ## March 21, 2025
