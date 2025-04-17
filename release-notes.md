@@ -1,5 +1,13 @@
 # geeViz 2025.4.1 Release Notes
 
+## April 17, 2025
+
+### New Features
+- **`assetManagerLib.ingestFromGCSImagesAsBands()`** - New function for ingesting multiple images as bands of a single Earth Engine image asset. Takes a list of dictionaries, with each dictionary containing a key/value for the 'gcsURI' of the input image, and optional keys/values for 'pyramidingPolicy', 'noDataValue', and 'bandName'.
+- **`assetManagerLib.uploadToGEEAssetImagesAsBands()`** - New wrapper function for uploading multiple images to gcloud and manifesting them as bands of a single Earth Engine image asset. Takes a dictionary in which keys are file paths to each image, and values are dictionaries with keys/values for 'pyramidingPolicy', 'noDataValue', and 'bandName'.
+- **`assetManagerLib.uploadTifToGCS()`** - New function for uploading individual tifs to gcloud. Uses `gcloud storage` command instead of `gsutil`.
+- **`assetManagerLib.create_image_collection()`** - This function now takes an optional dictionary as a parameter that defines properties to set for the image collection. 
+
 ## April 16, 2025
 
 ### New Features
