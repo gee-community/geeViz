@@ -57,111 +57,79 @@ def setProject(id):
         id (str): Google Cloud Platform project id to use
 
     """
-    global project_id
-    project_id = id
-    ee.data.setCloudApiUserProject(project_id)
+    
+   
+    ee.data.setCloudApiUserProject(id)
 
-
-def getProject(overwrite=False):
+def simpleSetProject(overwrite=False,verbose=False):
     """
-    Tries to find the current Google Cloud Platform project id
+    Tries to find the current Google Cloud Platform project id and set it
 
     Args:
-        overwrite (bool, optional): Whether or not to overwrite a cached project ID file
+    overwrite (bool, optional): Whether or not to overwrite a cached project ID file
 
-    Returns:
-        str: The currently selected Google Cloud Platform project id
     """
-    global project_id
 
     creds_path = ee.oauth.get_credentials_path()
     creds_dir = os.path.dirname(creds_path)
-    if not os.path.exists(creds_dir):
-        os.makedirs(creds_dir)
+
     provided_project = "{}.proj_id".format(creds_path)
     provided_project = os.path.normpath(provided_project)
 
-    current_project = ee.data._cloud_api_user_project
-
-    if (current_project == None and not os.path.exists(provided_project)) or overwrite:
-
+    if not os.path.exists(provided_project) or overwrite:
         project_id = input("Please enter GEE project ID: ")
 
         print("You entered: {}".format(project_id))
         o = open(provided_project, "w")
         o.write(project_id)
         o.close()
-
-    if current_project != None:
-        project_id = current_project
-    elif os.path.exists(provided_project):
+    else:
         o = open(provided_project, "r")
         project_id = o.read()
-        print("Cached project id file path: {}".format(provided_project))
-        print("Cached project id: {}".format(project_id))
+        if verbose:
+            print("Cached project id file path: {}".format(provided_project))
+            print("Cached project id: {}".format(project_id))
         o.close()
-    ee.data.setCloudApiUserProject(project_id)
+    setProject(project_id)
+    
 
-    return project_id
-
-
-######################################################################
-def verified_initialize(project=None):
-    """
-    Tries to initialize GEE with a given project id. Will error out if initilization fails
-
-    Args:
-        project (str, optional): Whether or not to overwrite a cached project ID file
-
-    """
-    ee.Initialize(project=project)
-    z = ee.Number(1).getInfo()
-    ee.data.setCloudApiUserProject(ee.data._cloud_api_user_project)
-    print("Successfully initialized")
-
-
-# Function to handle various exceptions to initializing to GEE
-def robustInitializer():
+def robustInitializer(verbose: bool = False):
     """
     A method that tries to authenticate and/or initialize GEE if it isn't already successfully initialized. This method tries to handle many different scenarios, but often fails. It is best to initialize to a project prior to importing geeViz
 
     """
 
-    global project_id
-
     try:
         z = ee.Number(1).getInfo()
         project_id = ee.data._cloud_api_user_project
-    except:
-        print("Initializing GEE")
-        if not ee.oauth._valid_credentials_exist():
-            ee.Authenticate()
+        if verbose:
+            print('Found project id set to:',project_id)
+    except Exception as e:
+        print('Earth Engine not initialized. Current Earth Engine best practices recommend running:\nee.Authenticate()\nee.Initialize(project="someProjectID")\nbefore importing geeViz. geeViz will try to authenticate (if needed) and initialize automatically now. If this fails, please run the above commands manually.')
+        if verbose:
+            print('EE error:',e)
+            print("Will try authenticating and initializing GEE")
         try:
-            verified_initialize(project=ee.data._cloud_api_user_project)
-            project_id = ee.data._cloud_api_user_project
+            ee.Authenticate()
+            ee.Initialize(project=ee.data._cloud_api_user_project)
+            print('Successfully initialized GEE')
+        except Exception as e:
+            if verbose:
+                print('EE error:',e)
+            simpleSetProject(False)
 
-        except Exception as E:
-
-            if str(E).find("Reauthentication is needed") > -1:
-                ee.Authenticate(force=True)
-
-            if str(E).find("no project found. Call with project") or str(E).find("project is not registered") > -1 or str(E).find(" quota project, which is not set by default") > -1:
-                project_id = getProject()
-
-            else:
-                project_id = None
             try:
-                verified_initialize(project=project_id)
-            except Exception as E:
-                print(E)
-                try:
-                    project_id = getProject(overwrite=True)
-                    verified_initialize(project=project_id)
-                except Exception as E:
-                    print(E)
-
-        ee.data.setCloudApiUserProject(project_id)
-
+                ee.Initialize(project=ee.data._cloud_api_user_project)
+                z = ee.Number(1).getInfo()
+                print('Successfully initialized GEE')
+            except Exception as e:
+                if verbose:
+                    print('EE error:',e)
+                    print('Will ask for a different project id')
+                simpleSetProject(True)
+                ee.Initialize(project=ee.data._cloud_api_user_project)
+                z = ee.Number(1).getInfo()
+                print('Successfully initialized GEE')
 
 robustInitializer()
 ######################################################################
@@ -494,7 +462,7 @@ class mapper:
         self.refreshTokenPath = ee.oauth.get_credentials_path()
         self.serviceKeyPath = None
         self.queryWindowMode = "sidePane"
-        self.project = project_id
+        self.project = ee.data._cloud_api_user_project
         self.turnOffLayersWhenTimeLapseIsOn = True
 
     ######################################################################
@@ -598,6 +566,8 @@ class mapper:
                             "hovermode" (str, default "closest"): The mode to show hover text in area summary charts. Options include "closest", "x", "y", "x unified", and "y unified",
 
                             "yAxisLabel" (str, default an appropriate label based on whether data are thematic or continuous): The Y axis label that will be included in charts. Defaults to a unit of % area for thematic and mean for continuous data,
+
+                            "chartType" (str, default "line" for `ee.ImageCollection` and "bar" for `ee.Image` objects): The type of chart to show. Options include "line", "bar", "stacked-line", and "stacked-bar". This is only used for `ee.ImageCollection` objects. For `ee.Image` objects, the chartType is always "bar".
                         }
 
                 }
@@ -776,6 +746,8 @@ class mapper:
                             "hovermode" (str, default "closest"): The mode to show hover text in area summary charts. Options include "closest", "x", "y", "x unified", and "y unified",
 
                             "yAxisLabel" (str, default an appropriate label based on whether data are thematic or continuous): The Y axis label that will be included in charts. Defaults to a unit of % area for thematic and mean for continuous data,
+
+                            "chartType" (str, default "line" for `ee.ImageCollection` and "bar" for `ee.Image` objects): The type of chart to show. Options include "line", "bar", "stacked-line", and "stacked-bar". This is only used for `ee.ImageCollection` objects. For `ee.Image` objects, the chartType is always "bar".
                         }
 
                 }
@@ -1424,6 +1396,10 @@ class mapper:
                     "chartDecimalProportion" (float, default 0.25): Used to override the default global precision settings for a specific area charting layer. See `setQueryPrecision` for setting the global charting precision. When specified, for this specific area charting layer, will show the larger of `chartPrecision` decimal places or `chartDecimalProportion` * total decimal places. E.g. if the number is 1.1234567891234, ceiling(0.25 of 13) decimal places is 4, so 4 will be used and yield 1.1235,
 
                     "hovermode" (str, default "closest"): The mode to show hover text in area summary charts. Options include "closest", "x", "y", "x unified", and "y unified",
+
+                    "yAxisLabel" (str, default an appropriate label based on whether data are thematic or continuous): The Y axis label that will be included in charts. Defaults to a unit of % area for thematic and mean for continuous data,
+
+                    "chartType" (str, default "line" for `ee.ImageCollection` and "bar" for `ee.Image` objects): The type of chart to show. Options include "line", "bar", "stacked-line", and "stacked-bar". This is only used for `ee.ImageCollection` objects. For `ee.Image` objects, the chartType is always "bar".
 
                 }
             name (str): Descriptive name for map layer that will be shown on the map UI
