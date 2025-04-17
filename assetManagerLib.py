@@ -245,7 +245,7 @@ def assetsize(asset):
 #############################################################################################
 #       Functions to Upload to Google Cloud Storage and Google Earth Engine Repository
 #############################################################################################
-# Wrapper function to upload to google cloudStorage
+# Wrapper functions to upload to google cloudStorage
 # Bucket must already exist
 def upload_to_gcs(image_dir, gs_bucket, image_extension=".tif", copy_or_sync="copy", overwrite=False):
     if gs_bucket.find("gs://") == -1:
@@ -261,6 +261,21 @@ def upload_to_gcs(image_dir, gs_bucket, image_extension=".tif", copy_or_sync="co
     call = subprocess.Popen(call_str)
     call.wait()
 
+def uploadTifToGCS(tif, gcsBucket, overwrite=False):
+    # Check GCS URI format (no slashes at the end, starts with 'gs://')
+    if gcsBucket[-1] == '/':
+        gcsBucket = gcsBucket[:-1]
+    if gcsBucket.find("gs://") == -1:
+        gcsBucket = f"gs://{gcsBucket}"
+
+    # Specify overwrite
+    overwrite_str = "-n"
+    if overwrite: overwrite_str = ""
+
+    # Upload via GCS CLI
+    uploadCommand = f'gcloud storage cp {tif} {gcsBucket} {overwrite_str}'
+    call = subprocess.Popen(uploadCommand, shell=True)
+    call.wait()
 
 # ---------------------------------------------------------------------------------------------
 # Wrapper function for uploading GEE assets
@@ -475,12 +490,12 @@ def ee_asset_exists(path):
 
 # Adapted from: https://github.com/tracek/gee_asset_manager/blob/master/geebam/helper_functions.py
 # Author: Lukasz Tracewski
-def create_image_collection(full_path_to_collection):
+def create_image_collection(full_path_to_collection, properties=None):
     if ee_asset_exists(full_path_to_collection):
         print("Collection " + full_path_to_collection + " already exists")
     else:
         try:
-            ee.data.createAsset({"type": ee.data.ASSET_TYPE_IMAGE_COLL}, full_path_to_collection)
+            ee.data.createAsset({"type": ee.data.ASSET_TYPE_IMAGE_COLL}, full_path_to_collection, properties=properties)
             print("New collection " + full_path_to_collection + " created")
         except Exception as E:
             print("Could not create: ", full_path_to_collection)
@@ -664,6 +679,93 @@ def ingestImageFromGCS(
     else:
         print(assetPath, "already exists")
 
+#########################################################################
+# Function to ingest multiple tifs from Google Cloud Storage as bands of a single Earth Engine image
+# Follows guidance from: https://developers.google.com/earth-engine/guides/image_manifest
+# The system:time_start and system:time_end properties are handled automatically assuming the proper format or ee Date object is provided
+
+def ingestFromGCSImagesAsBands(gcsURIs,
+    assetPath,
+    overwrite=False,
+    properties=None):
+    '''
+    Function to ingest multiple tifs from Google Cloud Storage as bands of a single Earth Engine image.
+
+    Args:
+        gcsURIs (list) - A list containing gcsURIs to manifest into the Earth Engine image. Optionally, a list of dictionaries with each dictionary containing the 'gcsURI', 'noDataValue', 'bandName', and 'pyramidingPolicy' of each image.
+        assetPath (str) - The GEE path for the output asset (e.g., 'path/in/gee/imageCollection/outputImage').
+        overwrite (bool) - Defaults to False. Whether or not to overwrite the GEE asset if it already exists.
+        properties (dict) - Defaults to None. A dictionary with the properties to set for the output asset.
+    '''
+
+    if overwrite or not ee_asset_exists(assetPath):
+        taskID = ee.data.newTaskId(1)[0]
+
+        # Make sure collection or folder exists
+        create_image_collection(os.path.dirname(assetPath))
+
+        # Handle if single image path is provided - changes to a list of a single dictionary
+        if str(type(gcsURIs)).find("'str'") > -1:
+            gcsURIs = [{"gcsURI": gcsURIs}]
+
+        # Ensure all items of the list are dictionaries and convert if needed
+        elif isinstance(gcsURIs, list):
+            for i, item in enumerate(gcsURIs):
+                if not isinstance(item, dict):
+                    gcsURIs[i] = {'gcsURI': item}
+
+        # Set up the basics of the manifest
+        params = {"name": assetPath, "tilesets": [], "bands": []}
+        
+        # Loop through each item in the gcsURIs list
+        for i, item in enumerate(gcsURIs):
+            # Make sure a gcsURI key exists
+            if "gcsURI" not in item:
+                raise ValueError(f"ERROR: The 'gcsURIs' parameter must be a string, list, or list of dictionaries with a key for 'gcsURI'")
+            
+            # Set up the tileset and band item to add to the manifest
+            tileset_entry = {"id": f"tileset_for_band{i+1}", "sources": [{"uris":[item["gcsURI"]]}]}
+            band_entry = {"tileset_id": f"tileset_for_band{i+1}"}
+
+            # If the user provided a bandName, use it for the ID. Otherwise give a default name.
+            if "bandName" in item:
+                band_entry["id"] = str(item["bandName"])
+            else:
+                band_entry["id"] = f"Band{i+1}"
+
+            # Set up the pyramiding policy and no data values
+            if "pyramidingPolicy" in item:
+                band_entry["pyramidingPolicy"] = item["pyramidingPolicy"]
+            if "noDataValue" in item:
+                band_entry["missing_data"] = {"values": [item["noDataValue"]]}
+            
+            # Append the tileset + band entry to the manifest
+            params["tilesets"].append(tileset_entry)
+            params["bands"].append(band_entry)
+
+        # Handle the date inconsistency in the GEE API
+        def fixDate(propIn, propOut):
+            if propIn in properties.keys():
+                d = properties[propIn]
+                if str(type(d)).find("ee.ee_date.Date") > -1:
+                    d = d.format("YYYY-MM-dd").cat("T").cat(d.format("HH:mm:SS")).cat("Z").getInfo()
+                params[propOut] = d
+                properties.pop(propIn)
+
+        if properties != None:
+            fixDate("system:time_start", "start_time")
+            fixDate("system:time_end", "end_time")
+            params["properties"] = properties
+        print("Ingestion manifest:", params)
+
+        #with open(r'C:\Users\NicholasStorey\TreeMap\testManifest.json', 'w', encoding='utf-8') as f:
+            #json.dump(params, f, indent=4)
+        #quit()
+        ee.data.startIngestion(taskID, params, overwrite)
+        print("Starting ingestion task:", assetPath)
+    else:
+        print(assetPath, "already exists")
+
 
 #########################################################################
 # Function to wrap the entire uploading an image to GEE image asset workflow
@@ -707,3 +809,48 @@ def uploadToGEEImageAsset(
 
 
 #########################################################################
+# Uploads input images to Google Cloud Storage and manifests them as bands of a single Earth Engine image.
+def uploadToGEEAssetImagesAsBands(
+    tif_dict,
+    gcsBucket,
+    assetPath,
+    overwrite=False,
+    properties=None
+):
+    '''
+    Uploads input images to Google Cloud Storage and manifests them as bands of a single Earth Engine image.
+
+    Args:
+        tif_dict (dict) - A dictionary in which the keys are paths to the input images and the values are dictionaries with keys/values for 'pyramidingPolicy', 'noDataValue', and 'bandName'.
+            e.g., { 
+            'path/to/image1': { 'pyramidingPolicy': 'MEAN', 'noDataValue': 3.4028234663852886e+38, 'bandName': 'Canopy Percentage'}, 
+            'path/to/image2': { 'pyramidingPolicy': 'MODE', 'noDataValue': 255, 'bandName': 'Forest Type'}
+            }
+
+        gcsBucket (str) - The url of the GCS bucket to upload images to.
+        assetPath (str) - The GEE path for the output asset (e.g., 'path/in/gee/imageCollection/outputImage').
+        overwrite (bool) - Defaults to False. Whether or not to overwrite the GEE asset if it already exists.
+        properties (dict) - Defaults to None. A dictionary with the properties to set for the output asset.
+
+    Returns:
+        None.
+    '''
+
+    # Make sure tif_dict is a dictionary
+    if not isinstance(tif_dict, dict):
+        raise ValueError("ERROR: tif_dict must be a dictionary.")
+
+    # Upload files to GCS (will not overwrite)
+    for tif in tif_dict.keys():
+        print(f"Uploading {tif} to GCS...")
+        uploadTifToGCS(tif, gcsBucket)
+        tif_dict[tif]["gcsURI"] = gcsBucket + "/" + os.path.basename(tif)
+
+    # Ingest to GEE
+    print(f"Ingesting GCS images as bands...")
+    ingestFromGCSImagesAsBands(
+        tif_dict.values(),
+        assetPath,
+        overwrite=overwrite,
+        properties=properties,
+    )
