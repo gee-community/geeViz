@@ -50,8 +50,8 @@ endJulian = 365
 # well. If using Fmask as the cloud/cloud shadow masking method, or providing
 # pre-computed stats for cloudScore and TDOM, this does not
 # matter
-startYear = 2019
-endYear = 2021
+startYear = 2022
+endYear = 2024
 
 # Specify an annual buffer to include imagery from the same season
 # timeframe from the prior and following year. timeBuffer = 1 will result

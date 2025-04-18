@@ -44,6 +44,20 @@ destination_all_users_can_read = False
 ###################################################################################################
 # Function to get all folders, imageCollections, images, and tables under a given folder or imageCollection level
 def getTree(fromRoot, toRoot, treeList=[]):
+    """
+    Recursively gets all folders, imageCollections, images, and tables under a given folder or imageCollection level.
+
+    Args:
+        fromRoot (str): The source root asset path.
+        toRoot (str): The destination root asset path.
+        treeList (list, optional): List to accumulate results.
+
+    Returns:
+        list: List of [type, fromID, toID] for all assets found.
+
+    Example:
+        >>> getTree('users/source/folder', 'users/dest/folder')
+    """
     pathPrefix = "projects/earthengine-legacy/assets/"
 
     # Clean up the given paths
@@ -91,6 +105,22 @@ def getTree(fromRoot, toRoot, treeList=[]):
 def batchChangePermissions(
     assetList=None, root=None, readers=[], writers=[], all_users_can_read=False
 ):
+    """
+    Sets permissions for all files under a specified root level or for a provided list of assets.
+
+    Args:
+        assetList (list, optional): List of asset IDs to change permissions for.
+        root (str, optional): Root asset path to start from if assetList not provided.
+        readers (list, optional): List of readers.
+        writers (list, optional): List of writers.
+        all_users_can_read (bool, optional): If True, anyone can read.
+
+    Returns:
+        None
+
+    Example:
+        >>> batchChangePermissions(root='users/youruser/folder', writers=['user:someone@gmail.com'])
+    """
     if assetList == None:
         assetList = [i[1] for i in getTree(root, root)]
 
@@ -122,6 +152,23 @@ def copyAssetTree(
     writers=[],
     all_users_can_read=False,
 ):
+    """
+    Copies all folders, imageCollections, images, and tables under a given folder or imageCollection level.
+
+    Args:
+        fromRoot (str): Source root asset path.
+        toRoot (str): Destination root asset path.
+        changePermissions (bool, optional): Whether to change permissions after copy.
+        readers (list, optional): List of readers for permissions.
+        writers (list, optional): List of writers for permissions.
+        all_users_can_read (bool, optional): If True, anyone can read.
+
+    Returns:
+        None
+
+    Example:
+        >>> copyAssetTree('users/source/folder', 'users/dest/folder', changePermissions=True)
+    """
     treeList = getTree(fromRoot, toRoot)
 
     # Iterate across all assets and copy and create when appropriate
@@ -155,6 +202,18 @@ def copyAssetTree(
 ###################################################################################################
 # Function to delete all folders, imageCollections, images, and tables under a given folder or imageCollection level
 def deleteAssetTree(root):
+    """
+    Deletes all folders, imageCollections, images, and tables under a given folder or imageCollection level.
+
+    Args:
+        root (str): Root asset path to delete from.
+
+    Returns:
+        None
+
+    Example:
+        >>> deleteAssetTree('users/youruser/folder')
+    """
     answer = input(
         "Are you sure you want to delete all assets under {}? (y = yes, n = no) ".format(
             root

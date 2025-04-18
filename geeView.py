@@ -105,7 +105,7 @@ def robustInitializer(verbose: bool = False):
         if verbose:
             print('Found project id set to:',project_id)
     except Exception as e:
-        print('Earth Engine not initialized. Current Earth Engine best practices recommend running: `ee.Authenticate()`,`ee.Initialize(project="someProjectID")`, before importing geeViz.\ngeeViz will try to authenticate (if needed) and initialize automatically now. If this fails, please these commands manually.')
+        print('Earth Engine not initialized. Current Earth Engine best practices recommend running: `ee.Authenticate()`,`ee.Initialize(project="someProjectID")`, before importing geeViz.\ngeeViz will try to authenticate (if needed) and initialize automatically now. If this fails, please run these commands manually.')
         if verbose:
             print('EE error:',e)
             print("Will try authenticating and initializing GEE")

@@ -33,24 +33,43 @@ from datetime import datetime, timedelta
 # ------------------------------------------------------------------------------
 #                     Standard Task Tracking
 # ------------------------------------------------------------------------------
-# Standard task tracker - prints number of ready and running tasks each 10 seconds
+
 def now():
+    """Get the current time as a formatted string.
+
+    Returns:
+        str: Current time in "%Y-%m-%d %H:%M:%S" format.
+
+    Example:
+        >>> now()
+        '2025-06-01 12:34:56'
+    """
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
 
 def trackTasks():
+    """Track and print the number of ready and running tasks every 10 seconds, up to 1000 times.
+
+    Example:
+        >>> trackTasks()
+        2 tasks ready 2025-06-01 12:34:56
+        1 tasks running 2025-06-01 12:34:56
+        Running names:
+        ['ExportImage', '0:01:23']
+        ...
+    """
     x = 1
     while x < 1000:
-        tasks = ee.data.getTaskList()
-        ready = [i for i in tasks if i["state"] == "READY"]
-        running = [i for i in tasks if i["state"] == "RUNNING"]
+        tasks = ee.data.getTaskList()  # Get all current tasks
+        ready = [i for i in tasks if i["state"] == "READY"]  # Tasks waiting to run
+        running = [i for i in tasks if i["state"] == "RUNNING"]  # Tasks currently running
         running_names = [
             [
                 str(i["description"]),
                 str(timedelta(seconds=int(((time.time() * 1000) - int(i["start_timestamp_ms"])) / 1000))),
             ]
             for i in running
-        ]
+        ]  # List of running task descriptions and their run times
         now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         print(len(ready), "tasks ready", now)
         print(len(running), "tasks running", now)
@@ -59,15 +78,30 @@ def trackTasks():
             print(rn)
         print()
         print()
-        time.sleep(10)
+        time.sleep(10)  # Wait 10 seconds before next check
         x += 1
 
 
 def trackTasks2(credential_name=None, id_list=None, task_count=1):
+    """Track tasks for a specific credential or list of task IDs, printing status every 5 seconds.
+
+    Args:
+        credential_name (str, optional): Name of the credential to print.
+        id_list (list, optional): List of task descriptions to filter.
+        task_count (int, optional): Initial task count to start tracking.
+
+    Example:
+        >>> trackTasks2(credential_name='user', id_list=['ExportImage'], task_count=1)
+        user
+        1 tasks ready 2025-06-01 12:34:56
+        0 tasks running 2025-06-01 12:34:56
+        Running names:
+        ...
+    """
     while task_count > 0:
         tasks = ee.data.getTaskList()
         if id_list != None:
-            tasks = [i for i in tasks if i["description"] in id_list]
+            tasks = [i for i in tasks if i["description"] in id_list]  # Filter by provided IDs
         ready = [i for i in tasks if i["state"] == "READY"]
         running = [i for i in tasks if i["state"] == "RUNNING"]
         running_names = [
@@ -87,12 +121,23 @@ def trackTasks2(credential_name=None, id_list=None, task_count=1):
             print(rn)
         print()
         print()
-        time.sleep(5)
-        task_count = len(ready) + len(running)
+        time.sleep(5)  # Wait 5 seconds before next check
+        task_count = len(ready) + len(running)  # Continue until no ready or running tasks
 
 
-# Get tasks in an easy-to-use format
 def getTasks(id_list=None):
+    """Get a dictionary of tasks grouped by their state.
+
+    Args:
+        id_list (list, optional): List of task descriptions to filter.
+
+    Returns:
+        dict: Dictionary with keys 'ready', 'running', 'failed', 'completed'.
+
+    Example:
+        >>> getTasks()
+        {'ready': ['ExportImage'], 'running': [], 'failed': [], 'completed': ['ExportTable']}
+    """
     tasks = ee.data.getTaskList()
     if id_list != None:
         tasks = [i for i in tasks if i["description"] in id_list]
@@ -104,8 +149,15 @@ def getTasks(id_list=None):
     return out
 
 
-# Standard task tracker - prints number of ready and running tasks each 10 seconds
 def failedTasks():
+    """Print all failed tasks and their run times.
+
+    Example:
+        >>> failedTasks()
+        Failed names:
+        {'id': 'ABCD', 'state': 'FAILED', ...}
+        ...
+    """
     tasks = ee.data.getTaskList()
     failed = [i for i in tasks if i["state"] == "FAILED"]
     failed_names = [
@@ -124,8 +176,16 @@ def failedTasks():
 # ------------------------------------------------------------------------------
 #                  Cancel Tasks
 # ------------------------------------------------------------------------------
-# Cancels all running tasks
+
 def batchCancel():
+    """Cancel all tasks that are either ready or running.
+
+    Example:
+        >>> batchCancel()
+        Cancelling: ExportImage
+        READY: ExportImage
+        ...
+    """
     tasks = ee.data.getTaskList()
     cancelledTasks = []
     for ind, i in enumerate(tasks):
@@ -139,8 +199,17 @@ def batchCancel():
         print(tasks2[ind]["state"] + ": " + tasks2[ind]["description"])
 
 
-# Cancels all running tasks with identifier in their name
 def cancelByName(nameIdentifier):
+    """Cancel all tasks whose description contains the given identifier.
+
+    Args:
+        nameIdentifier (str): Substring to search for in task descriptions.
+
+    Example:
+        >>> cancelByName('ExportImage')
+        Cancelling ExportImage
+        ...
+    """
     cancelList = nameTaskList(nameIdentifier)
     if cancelList:
         for task in cancelList:
@@ -153,24 +222,50 @@ def cancelByName(nameIdentifier):
 # ------------------------------------------------------------------------------
 #                 Task Tracking Using Time Interval
 # ------------------------------------------------------------------------------
-# Get list of tasks started within a specified time interval
-# Starttime and endtime must be python datetimes, in UTC, e.g. datetime.datetime.utcnow()
+
 def timeTaskList(starttime, endtime):
+    """Get list of tasks started within a specified time interval.
+
+    Args:
+        starttime (datetime): UTC datetime object for interval start.
+        endtime (datetime): UTC datetime object for interval end.
+
+    Returns:
+        list: List of task dicts started within the interval.
+
+    Example:
+        >>> from datetime import datetime, timedelta
+        >>> start = datetime.utcnow() - timedelta(hours=1)
+        >>> end = datetime.utcnow()
+        >>> timeTaskList(start, end)
+        [{'id': 'ABCD', ...}, ...]
+    """
     tasks = ee.data.getTaskList()
     epoch = datetime.utcfromtimestamp(0)
-    starttime = (starttime - epoch).total_seconds() * 1000.0
+    starttime = (starttime - epoch).total_seconds() * 1000.0  # Convert to ms since epoch
     endtime = (endtime - epoch).total_seconds() * 1000.0
     thisList = [i for i in tasks if (i["creation_timestamp_ms"] >= starttime and i["creation_timestamp_ms"] <= endtime)]
     return thisList
 
 
-# Using a start and end time, track the jobs that were started within that time interval
-# Print status updates every minute
-# Only move on when no 'ready' or 'running' jobs remain, i.e. all have completed or failed
-# Then print status of all tasks
-# Starttime and endtime must be python datetimes, in UTC, e.g. datetime.datetime.utcnow()
-# check_interval = seconds between status checks
 def jobCompletionTracker(starttime, endtime, check_interval):
+    """Track completion of all jobs started within a time interval.
+
+    Args:
+        starttime (datetime): UTC datetime object for interval start.
+        endtime (datetime): UTC datetime object for interval end.
+        check_interval (int): Seconds between status checks.
+
+    Returns:
+        list: Lists of ready, running, completed, failed, cancelled, and all tasks.
+
+    Example:
+        >>> from datetime import datetime, timedelta
+        >>> start = datetime.utcnow() - timedelta(hours=1)
+        >>> end = datetime.utcnow()
+        >>> jobCompletionTracker(start, end, 10)
+        ...
+    """
     timeStart = datetime.utcnow()
     thisTasklist = timeTaskList(starttime, endtime)
     for i in thisTasklist:
@@ -210,15 +305,39 @@ def jobCompletionTracker(starttime, endtime, check_interval):
 # ------------------------------------------------------------------------------
 #                 Task Tracking Using Task Name / Description
 # ------------------------------------------------------------------------------
-# Get list of tasks with specified name/description prefix (e.g. "description" passed to GEE export function)
+
 def nameTaskList(nameIdentifier):
+    """Get list of tasks with specified name/description prefix.
+
+    Args:
+        nameIdentifier (str): Substring to search for in task descriptions.
+
+    Returns:
+        list: List of matching task dicts.
+
+    Example:
+        >>> nameTaskList('ExportImage')
+        [{'id': 'ABCD', ...}, ...]
+    """
     tasks = ee.data.getTaskList()
+    # Find tasks whose description matches the identifier and are ready or running
     thisList = [i for i in tasks if re.findall(nameIdentifier, i["description"]) and (i["state"] == "READY" or i["state"] == "RUNNING")]
     return thisList
 
 
-# Function to create a table of successful exports, how long it took, and the EECUs used
 def getEECUS(output_table_name, nameFind=None, overwrite=False):
+    """Create a CSV table of successful exports, including run time, EECU usage, and output size.
+
+    Args:
+        output_table_name (str): Path to output CSV file.
+        nameFind (str, optional): Substring to filter task descriptions.
+        overwrite (bool, optional): Overwrite existing file if True.
+
+    Example:
+        >>> getEECUS('output.csv', nameFind='ExportImage', overwrite=True)
+        Only output extension allowed is .csv. Changing extension to .csv
+        ...
+    """
     if os.path.splitext(output_table_name)[1] != ".csv":
         print("Only output extension allowed is .csv. Changing extension to .csv")
         output_table_name = os.path.splitext(output_table_name)[0] + ".csv"
@@ -236,7 +355,7 @@ def getEECUS(output_table_name, nameFind=None, overwrite=False):
             try:
                 uri = task["metadata"]["destinationUris"][0].split("?asset=")[1]
                 info = ee.data.getAsset(uri)
-                size = float(info["sizeBytes"]) * 1e-6
+                size = float(info["sizeBytes"]) * 1e-6  # Convert bytes to megabytes
             except:
                 size = "NA"
 

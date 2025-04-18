@@ -1,5 +1,15 @@
 # geeViz 2025.4.3 Release Notes
 
+## April 18, 2025
+
+### New Features
+
+- **Additional Pydocs** - Added/updated pydocs throughout the package.
+
+---
+
+# geeViz 2025.4.3 Release Notes
+
 ## April 17, 2025
 
 ### Bug fixes
