@@ -72,6 +72,7 @@ def simpleSetProject(overwrite=False,verbose=False):
 
     creds_path = ee.oauth.get_credentials_path()
     creds_dir = os.path.dirname(creds_path)
+    if not os.path.exists(creds_dir):os.makedirs(creds_dir)
 
     provided_project = "{}.proj_id".format(creds_path)
     provided_project = os.path.normpath(provided_project)
@@ -95,8 +96,7 @@ def simpleSetProject(overwrite=False,verbose=False):
 
 def robustInitializer(verbose: bool = False):
     """
-    A method that tries to authenticate and/or initialize GEE if it isn't already successfully initialized. This method tries to handle many different scenarios, but often fails. It is best to initialize to a project prior to importing geeViz
-
+    A method that tries to authenticate and/or initialize GEE if it isn't already successfully initialized. This method tries to handle many different scenarios, but often fails. It is best to authenticate and initialize to a project prior to importing geeViz
     """
 
     try:
@@ -105,7 +105,7 @@ def robustInitializer(verbose: bool = False):
         if verbose:
             print('Found project id set to:',project_id)
     except Exception as e:
-        print('Earth Engine not initialized. Current Earth Engine best practices recommend running:\nee.Authenticate()\nee.Initialize(project="someProjectID")\nbefore importing geeViz. geeViz will try to authenticate (if needed) and initialize automatically now. If this fails, please run the above commands manually.')
+        print('Earth Engine not initialized. Current Earth Engine best practices recommend running: `ee.Authenticate()`,`ee.Initialize(project="someProjectID")`, before importing geeViz.\ngeeViz will try to authenticate (if needed) and initialize automatically now. If this fails, please these commands manually.')
         if verbose:
             print('EE error:',e)
             print("Will try authenticating and initializing GEE")

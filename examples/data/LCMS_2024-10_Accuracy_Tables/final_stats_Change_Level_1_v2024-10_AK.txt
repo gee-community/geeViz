@@ -1,0 +1,40 @@
+Change
+
+Overall Accuracy: 97.03 +/- 0.07
+Balanced Accuracy: 64.97 +/- 1.44
+Kappa: 0.54
+
+Users Accuracy (100%-Commission Error): 
+Stable: 98.42
+Loss: 56.39
+Gain: 55.47
+
+Users Error: 
+Stable: 0.05
+Loss: 2.71
+Gain: 1.26
+
+Producers Accuracy (100%-Omission Error): 
+Stable: 98.54
+Loss: 36.81
+Gain: 59.57
+
+Producers Error: 
+Stable: 0.05
+Loss: 2.13
+Gain: 1.29
+
+Number of Samples in each class: 
+Stable: 55984
+Loss: 551
+Gain: 1478
+
+#------------------------------------------------------
+Confusion Matrix:
+                         Observed                                   
+                           Stable    Loss    Gain Users_Acc Users_SE
+Predicted Stable         55267.98  311.86  577.52     98.42     0.05
+          Loss             141.70  189.50    4.85     56.39     2.71
+          Gain             675.35   13.51  858.07     55.47     1.26
+          Producers_Acc     98.54   36.81   59.57                   
+          Producers_SE       0.05    2.13    1.29                   

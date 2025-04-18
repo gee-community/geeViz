@@ -1,0 +1,52 @@
+Land_Use
+
+Overall Accuracy: 83.93 +/- 0.06
+Balanced Accuracy: 73.95 +/- 0.27
+Kappa: 0.77
+
+Users Accuracy (100%-Commission Error): 
+Agriculture: 77.46
+Developed: 88.87
+Forest: 88.93
+Other: 81.72
+Rangeland: 83.35
+
+Users Error: 
+Agriculture: 0.14
+Developed: 0.38
+Forest: 0.09
+Other: 0.39
+Rangeland: 0.11
+
+Producers Accuracy (100%-Omission Error): 
+Agriculture: 89.19
+Developed: 37.31
+Forest: 91.07
+Other: 70.93
+Rangeland: 81.25
+
+Producers Error: 
+Agriculture: 0.11
+Developed: 0.38
+Forest: 0.08
+Other: 0.43
+Rangeland: 0.11
+
+Number of Samples in each class: 
+Agriculture: 48074
+Developed: 26132
+Forest: 187755
+Other: 22717
+Rangeland: 65570
+
+#------------------------------------------------------
+Confusion Matrix:
+                           Observed                                                            
+                        Agriculture Developed     Forest    Other  Rangeland Users_Acc Users_SE
+Predicted Agriculture      66628.46   2838.15    1894.62   107.21   14552.31     77.46     0.14
+          Developed          151.83   6118.47     339.82     8.57     266.11     88.87     0.38
+          Forest            1267.45   3505.47  109449.70   922.98    7922.11     88.93     0.09
+          Other               17.59    216.15     320.55  7840.21    1199.69     81.72     0.39
+          Rangeland         6639.14   3718.64    8181.59  2174.25  103720.71     83.35     0.11
+          Producers_Acc       89.19     37.31      91.07    70.93      81.25                   
+          Producers_SE         0.11      0.38       0.08     0.43       0.11                   

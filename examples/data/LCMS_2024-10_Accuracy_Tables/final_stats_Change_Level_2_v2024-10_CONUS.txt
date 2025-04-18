@@ -1,0 +1,82 @@
+Cause_of_Change: Change_Level_2
+
+Overall Accuracy: 92.48 +/- 0.05
+Balanced Accuracy: 29.42 +/- 2.97
+Kappa: 0.40
+
+Users Accuracy (100%-Commission Error): 
+Desiccation: 17.92
+Fire: 71.90
+Veg-Growth: 49.87
+Harvest: 85.22
+Insect-Disease-Drought: 20.98
+Inundation: 14.41
+Mechanical: 25.44
+Other: 0.92
+Stable: 95.73
+Wind: 2.29
+
+Users Error: 
+Desiccation: 3.09
+Fire: 3.70
+Veg-Growth: 0.38
+Harvest: 1.93
+Insect-Disease-Drought: 1.27
+Inundation: 3.27
+Mechanical: 4.05
+Other: 0.21
+Stable: 0.04
+Wind: 2.37
+
+Producers Accuracy (100%-Omission Error): 
+Desiccation: 39.80
+Fire: 36.87
+Veg-Growth: 42.79
+Harvest: 17.00
+Insect-Disease-Drought: 17.30
+Inundation: 23.39
+Mechanical: 6.11
+Other: 11.03
+Stable: 96.58
+Wind: 3.33
+
+Producers Error: 
+Desiccation: 5.89
+Fire: 2.84
+Veg-Growth: 0.35
+Harvest: 0.91
+Insect-Disease-Drought: 1.07
+Inundation: 5.01
+Mechanical: 1.09
+Other: 2.35
+Stable: 0.03
+Wind: 3.43
+
+Number of Samples in each class: 
+Desiccation: 134
+Fire: 398
+Veg-Growth: 31326
+Harvest: 3381
+Insect-Disease-Drought: 2634
+Inundation: 132
+Mechanical: 777
+Other: 299
+Stable: 301757
+Wind: 49
+
+#------------------------------------------------------
+Confusion Matrix (Strata-Weighted):
+                                    Observed                                                                                                                     
+                                 Desiccation    Fire Veg-Growth Harvest Insect-Disease-Drought Inundation Mechanical   Other     Stable   Wind Users_Acc Users_SE
+Predicted Desiccation                  27.53    0.00       1.27    0.00                   1.09       0.00       0.55    0.00     123.22   0.00     17.92     3.09
+          Fire                          0.00  106.21      21.51    2.41                   1.12       0.00       0.17    0.03      16.27   0.00      71.9      3.7
+          Veg-Growth                    2.43   12.31    8552.50  133.78                  27.20       3.53      30.72    3.35    8382.84   1.66     49.87     0.38
+          Harvest                       0.00    5.44       2.44  288.19                   0.91       3.19       5.87    0.34      28.89   2.90     85.22     1.93
+          Insect-Disease-Drought        0.00   17.16      69.02   19.06                 214.34       0.00       0.33    3.81     697.87   0.03     20.98     1.27
+          Inundation                    0.00    0.00       0.18    0.00                   0.00      16.67       0.55    0.00      98.27   0.00     14.41     3.27
+          Mechanical                    0.00    0.00       0.55    6.75                   0.55       0.18      29.48    0.00      78.19   0.17     25.44     4.05
+          Other                         5.19    7.10      43.65  569.10                  33.55       3.99      58.99   19.65    1385.65   5.29      0.92     0.21
+          Stable                       34.02  139.87   11295.43  661.69                 958.81      42.94     353.18  150.92  305791.03  16.41     95.73     0.04
+          Wind                          0.00    0.00       0.34   14.18                   1.25       0.77       2.44    0.00      19.99   0.91      2.29     2.37
+          Producers_Acc                39.80   36.87      42.79   17.00                  17.30      23.39       6.11   11.03      96.58   3.33                   
+          Producers_SE                  5.89    2.84       0.35    0.91                   1.07       5.01       1.09    2.35       0.03   3.43                   

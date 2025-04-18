@@ -1,0 +1,58 @@
+Land_Cover
+
+Overall Accuracy: 79.11 +/- 0.07
+Balanced Accuracy: 71.77 +/- 3.20
+Kappa: 0.70
+
+Users Accuracy (100%-Commission Error): 
+TREES: 90.47
+SHRUBS: 74.22
+GRASS: 74.10
+BARREN: 40.03
+SNOW: 82.65
+WATER: 93.95
+
+Users Error: 
+TREES: 0.08
+SHRUBS: 0.17
+GRASS: 0.12
+BARREN: 0.41
+SNOW: 7.02
+WATER: 0.30
+
+Producers Accuracy (100%-Omission Error): 
+TREES: 85.22
+SHRUBS: 60.53
+GRASS: 86.90
+BARREN: 54.69
+SNOW: 62.30
+WATER: 81.00
+
+Producers Error: 
+TREES: 0.10
+SHRUBS: 0.17
+GRASS: 0.10
+BARREN: 0.48
+SNOW: 7.80
+WATER: 0.46
+
+Number of Samples in each class: 
+TREES: 202848
+SHRUBS: 36067
+GRASS: 78958
+BARREN: 21543
+SNOW: 840
+WATER: 9992
+
+#------------------------------------------------------
+Confusion Matrix:
+                          Observed                                                                
+                             TREES    SHRUBS     GRASS   BARREN   SNOW    WATER Users_Acc Users_SE
+Predicted TREES          116843.92   5987.33   4774.68   921.50   0.35   627.55     90.47     0.08
+          SHRUBS           6578.43  48374.23   8398.92  1828.75   0.00     0.87     74.22     0.17
+          GRASS           12425.55  19746.46  99789.72  2040.16   0.00   658.59      74.1     0.12
+          BARREN           1161.78   5792.38   1645.11  5833.12  14.20   124.02     40.03     0.41
+          SNOW                0.00      0.00      0.00     5.05  24.04     0.00     82.65     7.02
+          WATER             102.28     19.28    228.65    37.54   0.00  6017.32     93.95      0.3
+          Producers_Acc      85.22     60.53     86.90    54.69  62.30    81.00                   
+          Producers_SE        0.10      0.17      0.10     0.48   7.80     0.46                   

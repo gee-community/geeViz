@@ -1,0 +1,40 @@
+Land_Cover
+
+Overall Accuracy: 87.20 +/- 0.06
+Balanced Accuracy: 80.74 +/- 0.21
+Kappa: 0.76
+
+Users Accuracy (100%-Commission Error): 
+TREE_VEG: 90.47
+NON-TREE_VEG: 88.22
+NON-VEG: 57.39
+
+Users Error: 
+TREE_VEG: 0.08
+NON-TREE_VEG: 0.07
+NON-VEG: 0.34
+
+Producers Accuracy (100%-Omission Error): 
+TREE_VEG: 85.22
+NON-TREE_VEG: 90.53
+NON-VEG: 66.48
+
+Producers Error: 
+TREE_VEG: 0.10
+NON-TREE_VEG: 0.07
+NON-VEG: 0.35
+
+Number of Samples in each class: 
+TREE_VEG: 202848
+NON-TREE_VEG: 115025
+NON-VEG: 32375
+
+#------------------------------------------------------
+Confusion Matrix:
+                          Observed                                          
+                          TREE_VEG NON-TREE_VEG   NON-VEG Users_Acc Users_SE
+Predicted TREE_VEG       116843.92     10762.01   1549.40     90.47     0.08
+          NON-TREE_VEG    19003.98    176309.33   4528.37     88.22     0.07
+          NON-VEG          1264.05      7685.42  12055.29     57.39     0.34
+          Producers_Acc      85.22        90.53     66.48                   
+          Producers_SE        0.10         0.07      0.35                   

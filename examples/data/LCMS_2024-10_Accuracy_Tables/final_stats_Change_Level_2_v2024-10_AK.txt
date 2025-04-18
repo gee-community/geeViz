@@ -1,0 +1,82 @@
+Cause_of_Change: Change_Level_2
+
+Overall Accuracy: 96.80 +/- 0.07
+Balanced Accuracy: 23.97 +/- 6.33
+Kappa: 0.41
+
+Users Accuracy (100%-Commission Error): 
+Desiccation: Too few samples to assess accuracy
+Fire: 82.76
+Veg-Growth: 51.33
+Harvest: 64.81
+Insect-Disease-Drought: 6.28
+Inundation: Too few samples to assess accuracy
+Mechanical: Too few samples to assess accuracy
+Other: 0.51
+Stable: 98.48
+Wind: Too few samples to assess accuracy
+
+Users Error: 
+Desiccation: Too few samples to assess accuracy
+Fire: 4.42
+Veg-Growth: 1.47
+Harvest: 15.30
+Insect-Disease-Drought: 4.74
+Inundation: Too few samples to assess accuracy
+Mechanical: Too few samples to assess accuracy
+Other: 0.41
+Stable: 0.05
+Wind: Too few samples to assess accuracy
+
+Producers Accuracy (100%-Omission Error): 
+Desiccation: Too few samples to assess accuracy
+Fire: 53.08
+Veg-Growth: 55.37
+Harvest: 16.90
+Insect-Disease-Drought: 5.24
+Inundation: Too few samples to assess accuracy
+Mechanical: Too few samples to assess accuracy
+Other: 0.55
+Stable: 98.29
+Wind: Too few samples to assess accuracy
+
+Producers Error: 
+Desiccation: Too few samples to assess accuracy
+Fire: 4.68
+Veg-Growth: 1.52
+Harvest: 6.13
+Insect-Disease-Drought: 3.98
+Inundation: Too few samples to assess accuracy
+Mechanical: Too few samples to assess accuracy
+Other: 0.44
+Stable: 0.05
+Wind: Too few samples to assess accuracy
+
+Number of Samples in each class: 
+Desiccation: 2 (Too few samples to assess accuracy)
+Fire: 147
+Veg-Growth: 1477
+Harvest: 101
+Insect-Disease-Drought: 85
+Inundation: 9 (Too few samples to assess accuracy)
+Mechanical: 23 (Too few samples to assess accuracy)
+Other: 185
+Stable: 55984
+Wind: 0
+
+#------------------------------------------------------
+Confusion Matrix (Strata-Weighted):
+                                    Observed                                                                                                                 
+                                 Desiccation   Fire Veg-Growth Harvest Insect-Disease-Drought Inundation Mechanical   Other    Stable Wind Users_Acc Users_SE
+Predicted Desiccation                    0.0   0.00       0.84    0.00                   0.00       0.00       0.00    1.10     36.78  0.0       0.0      0.0
+          Fire                           0.0  60.40       4.94    0.15                   0.00       0.00       0.00    0.00      7.49  0.0     82.76     4.42
+          Veg-Growth                     0.0   2.49     593.27    4.45                   2.81       0.00       0.26    0.61    551.88  0.0     51.33     1.47
+          Harvest                        0.0   2.97       0.00    6.32                   0.00       0.00       0.26    0.07      0.13  0.0     64.81     15.3
+          Insect-Disease-Drought         0.0   0.00       0.57    2.82                   1.64       0.00       0.00    0.00     21.17  0.0      6.28     4.74
+          Inundation                     0.0   0.00       0.84    0.00                   0.00       0.00       0.00    0.00     44.00  0.0       0.0      0.0
+          Mechanical                     0.0   0.00       0.00    0.00                   0.00       0.00       0.29    0.00      0.97  0.0     23.08    37.48
+          Other                          0.0   0.00       1.48    1.13                   0.52       0.07       0.16    1.58    304.04  0.0      0.51     0.41
+          Stable                         2.2  47.94     469.51   22.43                  26.41       4.95       1.87  284.34  55522.07  0.0     98.48     0.05
+          Wind                           0.0   0.00       0.00    0.07                   0.00       0.00       0.00    0.00      0.00  0.0       0.0      0.0
+          Producers_Acc                  0.0  53.08      55.37   16.90                   5.24       0.00      10.24    0.55     98.29  0.0                   
+          Producers_SE                   0.0   4.68       1.52    6.13                   3.98       0.00      17.97    0.44      0.05  0.0                   

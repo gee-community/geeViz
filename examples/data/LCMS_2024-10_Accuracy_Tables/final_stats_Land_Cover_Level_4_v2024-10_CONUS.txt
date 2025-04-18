@@ -1,0 +1,104 @@
+Land_Cover
+
+Overall Accuracy: 67.18 +/- 0.08
+Balanced Accuracy: 40.41 +/- 2.27
+Kappa: 0.57
+
+Users Accuracy (100%-Commission Error): 
+TREES: 82.35
+TS-TREES: Not Modeled
+SHRUBS-TRE: 10.68
+GRASS-TREE: 35.26
+BARREN-TRE: 26.15
+TS: Not Modeled
+SHRUBS: 39.11
+GRASS-SHRU: 38.32
+BARREN-SHR: 34.34
+GRASS: 73.74
+BARREN-GRA: 1.58
+BARREN-IMP: 40.03
+SNOW: 82.65
+WATER: 93.95
+
+Users Error: 
+TREES: 0.11
+TS-TREES: Not Modeled
+SHRUBS-TRE: 1.04
+GRASS-TREE: 0.42
+BARREN-TRE: 3.65
+TS: Not Modeled
+SHRUBS: 0.40
+GRASS-SHRU: 0.24
+BARREN-SHR: 0.50
+GRASS: 0.12
+BARREN-GRA: 0.66
+BARREN-IMP: 0.41
+SNOW: 7.02
+WATER: 0.30
+
+Producers Accuracy (100%-Omission Error): 
+TREES: 93.59
+TS-TREES: Not Modeled
+SHRUBS-TRE: 1.50
+GRASS-TREE: 16.97
+BARREN-TRE: 1.63
+TS: Not Modeled
+SHRUBS: 21.32
+GRASS-SHRU: 40.25
+BARREN-SHR: 23.13
+GRASS: 88.40
+BARREN-GRA: 0.20
+BARREN-IMP: 54.69
+SNOW: 62.30
+WATER: 81.00
+
+Producers Error: 
+TREES: 0.08
+TS-TREES: Not Modeled
+SHRUBS-TRE: 0.15
+GRASS-TREE: 0.23
+BARREN-TRE: 0.26
+TS: Not Modeled
+SHRUBS: 0.25
+GRASS-SHRU: 0.25
+BARREN-SHR: 0.37
+GRASS: 0.10
+BARREN-GRA: 0.08
+BARREN-IMP: 0.48
+SNOW: 7.80
+WATER: 0.46
+
+Number of Samples in each class: 
+TREES: 163335
+TS-TREES: Not Modeled
+SHRUBS-TRE: 10900
+GRASS-TREE: 26494
+BARREN-TRE: 2119
+TS: Not Modeled
+SHRUBS: 13095
+GRASS-SHRU: 15831
+BARREN-SHR: 7141
+GRASS: 75723
+BARREN-GRA: 3235
+BARREN-IMP: 21543
+SNOW: 840
+WATER: 9992
+
+#------------------------------------------------------
+Confusion Matrix:
+                         Observed                                                                                                                                    
+                            TREES SHRUBS-TRE GRASS-TREE BARREN-TRE    SHRUBS GRASS-SHRU BARREN-SHR     GRASS BARREN-GRA BARREN-IMP   SNOW    WATER Users_Acc Users_SE
+Predicted TREES          94704.14    3394.83    9587.66     489.02   1399.95    1184.25      31.53   2759.18      65.99     810.22   0.35   581.85     82.35     0.11
+          SHRUBS-TRE       310.94      94.82     109.76       4.04    203.43     110.39      16.06     36.90       0.00       1.16   0.00     0.00     10.68     1.04
+          GRASS-TREE      2242.73     835.58    4624.44     403.40   1090.87    1355.59     495.61   1824.39      88.04     110.13   0.00    43.29     35.26     0.42
+          BARREN-TRE         0.37       0.00       4.33      37.86     34.66      21.66      43.32      0.18       0.00       0.00   0.00     2.42     26.15     3.65
+          SHRUBS           283.42     387.61    1152.19     138.42   5829.34    4009.42    1372.74   1453.63      36.62     241.95   0.00     0.00     39.11      0.4
+          GRASS-SHRU       180.41     623.53    2576.79     381.75  10259.01   15876.80    4533.47   5328.32     945.74     720.78   0.00     0.87     38.32     0.24
+          BARREN-SHR        17.33     134.30     430.97     271.72   1282.94    2172.26    3038.24    368.78     265.83     866.01   0.00     0.00     34.34      0.5
+          GRASS           2959.94     843.68    8473.98     147.96   6105.01   12325.28     971.54  99037.43     746.62    2031.15   0.00   658.59     73.74     0.12
+          BARREN-GRA         0.00       0.00       0.00       0.00    104.34     121.30     118.98      0.00       5.66       9.01   0.00     0.00      1.58     0.66
+          BARREN-IMP       403.66      17.83     293.72     446.57   1029.34    2257.78    2505.26    999.90     645.21    5833.12  14.20   124.02     40.03     0.41
+          SNOW               0.00       0.00       0.00       0.00      0.00       0.00       0.00      0.00       0.00       5.05  24.04     0.00     82.65     7.02
+          WATER             90.94       3.64       2.79       4.91      1.98      11.28       6.03    226.13       2.52      37.54   0.00  6017.32     93.95      0.3
+          Producers_Acc     93.59       1.50      16.97       1.63     21.32      40.25      23.13     88.40       0.20      54.69  62.30    81.00                   
+          Producers_SE       0.08       0.15       0.23       0.26      0.25       0.25       0.37      0.10       0.08       0.48   7.80     0.46                   

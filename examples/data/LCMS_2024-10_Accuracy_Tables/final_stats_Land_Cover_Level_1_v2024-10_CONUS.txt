@@ -1,0 +1,34 @@
+Land_Cover
+
+Overall Accuracy: 95.71 +/- 0.03
+Balanced Accuracy: 81.89 +/- 0.25
+Kappa: 0.59
+
+Users Accuracy (100%-Commission Error): 
+VEG: 98.15
+NON-VEG: 57.39
+
+Users Error: 
+VEG: 0.02
+NON-VEG: 0.34
+
+Producers Accuracy (100%-Omission Error): 
+VEG: 97.30
+NON-VEG: 66.48
+
+Producers Error: 
+VEG: 0.03
+NON-VEG: 0.35
+
+Number of Samples in each class: 
+VEG: 317873
+NON-VEG: 32375
+
+#------------------------------------------------------
+Confusion Matrix:
+                          Observed                             
+                               VEG   NON-VEG Users_Acc Users_SE
+Predicted VEG            322919.24   6077.77     98.15     0.02
+          NON-VEG          8949.47  12055.29     57.39     0.34
+          Producers_Acc      97.30     66.48                   
+          Producers_SE        0.03      0.35                   
