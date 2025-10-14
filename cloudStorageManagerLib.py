@@ -46,7 +46,7 @@ def list_blobs(bucket_name: str) -> list:
         ...     print(blob.name)
     """
     # storage client instance
-    storage_client = storage.Client(project=geeViz.geeView.project_id)
+    storage_client = storage.Client(project=geeViz.geeView.ee.data._get_state().cloud_api_user_project)
 
     # get bucket by name
     bucket = storage_client.get_bucket(bucket_name)
@@ -92,7 +92,7 @@ def bucket_exists(bucket_name: str) -> bool:
         ...     print("Bucket does not exist.")
     """
     # storage client instance
-    storage_client = storage.Client(project=geeViz.geeView.project_id)
+    storage_client = storage.Client(project=geeViz.geeView.ee.data._get_state().cloud_api_user_project)
 
     # get bucket by name
     bucket = storage_client.bucket(bucket_name)
@@ -116,7 +116,7 @@ def create_bucket(bucket_name: str):
         >>> print(f"Created bucket: {bucket.name}")
     """
     # Initialize a client
-    storage_client = storage.Client(project=geeViz.geeView.project_id)
+    storage_client = storage.Client(project=geeViz.geeView.ee.data._get_state().cloud_api_user_project)
 
     # Create a new bucket
     bucket = storage_client.create_bucket(bucket_name)
@@ -140,7 +140,7 @@ def rename_blobs(bucket_name, old_name, new_name):
         >>> rename_blobs("my-bucket", "old_prefix", "new_prefix")
     """
     # storage client instance
-    storage_client = storage.Client(project=geeViz.geeView.project_id)
+    storage_client = storage.Client(project=geeViz.geeView.ee.data._get_state().cloud_api_user_project)
 
     # get bucket by name
     bucket = storage_client.get_bucket(bucket_name)
@@ -175,11 +175,9 @@ def gcs_exists(bucket, filename):
         ... else:
         ...     print("File does not exist.")
     """
-    storage_client = storage.Client(project=geeViz.geeView.project_id)
+    storage_client = storage.Client(project=geeViz.geeView.ee.data._get_state().cloud_api_user_project)
     stats = storage.Blob(bucket=storage_client.bucket(bucket), name=filename).exists(storage_client)
     return stats
-
-
 ######################################################################
 # !! Dangerous !! - cannot be undone
 # Delete a specified filename
@@ -195,7 +193,7 @@ def delete_blob(bucket, filename):
         >>> delete_blob("my-bucket", "file.txt")
         >>> print("File deleted.")
     """
-    storage_client = storage.Client(project=geeViz.geeView.project_id)
+    storage_client = storage.Client(project=geeViz.geeView.ee.data._get_state().cloud_api_user_project)
     out = storage.Blob(bucket=storage_client.bucket(bucket), name=filename).delete(storage_client)
     print("Deleted:", filename)
 

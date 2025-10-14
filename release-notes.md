@@ -1,3 +1,13 @@
+# geeViz 2025.10.2 Release Notes
+
+## October 14, 2025
+
+
+### Bug fixes
+
+- `geeViz.cloudStorageManager` project_id in `geeViz.geeView` missing. Updated to use the `ee.data._get_state()` method.
+
+---
 # geeViz 2025.10.1 Release Notes
 
 ## October 14, 2025
