@@ -18,4 +18,4 @@ __author__ = "Ian Housman"
 __email__ = "ian.housman@gmail.com"
 
 # Version format yyyy.m.n
-__version__ = "2025.4.5"
+__version__ = "2025.10.1"

@@ -44,17 +44,19 @@ most_recent_forecast = ee.Number.parse(gfs.aggregate_histogram("creation_time").
 # Filter to only include the most recent forecast run and the specified forecast hours
 gfs = gfs.filter(ee.Filter.eq("creation_time", most_recent_forecast)).filter(ee.Filter.inList("forecast_hours", which_hours))
 
+proj = gfs.first().projection().getInfo()
+crs = proj["wkt"]
+print(proj)
 
 # Function to convert wind vectors to direction and magnitude (speed)
 def getSpeedDirection(gfs):
-    speed = gfs.select(["u.*"]).hypot(gfs.select(["v.*"])).divide(1000).multiply(3600)
-    direction = gfs.select(["u.*"]).atan2(gfs.select(["v.*"])).divide(math.pi).add(1).multiply(180)
-    return gfs.addBands(ee.Image.cat([speed, direction]).rename(["Speed", "Direction"])).copyProperties(gfs).set("system:time_start", gfs.get("forecast_time"))
+    speed = gfs.select(["u_component_of_wind_10m_above_ground"]).hypot(gfs.select(["v_component_of_wind_10m_above_ground"])).divide(1000).multiply(3600)
+    direction = gfs.select(["u_component_of_wind_10m_above_ground"]).atan2(gfs.select(["v_component_of_wind_10m_above_ground"])).divide(math.pi).add(1).multiply(180)
+    return ee.Image(gfs.addBands(ee.Image.cat([speed, direction]).rename(["Speed", "Direction"])).copyProperties(gfs).set("system:time_start", gfs.get("forecast_time"))).resample("bicubic")
 
 
 # Convert to wind vectors
 gfs = gfs.map(getSpeedDirection)
-
 # Pulled from https://github.com/gee-community/ee-palettes
 cmOceanThermal = palettes.cmocean["Thermal"][7]
 cmOceanSpeed = palettes.cmocean["Speed"][7]
@@ -68,8 +70,9 @@ cmOceanDeep.reverse()
 windDirectionPalette.extend(cmOceanDeep)
 cmOceanDeep.reverse()
 
+addFunction = Map.addTimeLapse
 # Add collections to the map
-Map.addTimeLapse(
+addFunction(
     gfs.select(["temperature_2m_above_ground"]),
     {
         "min": -20,
@@ -79,10 +82,13 @@ Map.addTimeLapse(
         "advanceInterval": "hour",
         "legendLabelLeftAfter": "C",
         "legendLabelRightAfter": "C",
+        "canAreaChart": True,
+        "areaChartParams":{"scale":27830,"crs":crs,"minZoomSpecifiedScale":5},
+        "reducer":ee.Reducer.mean()
     },
     "Temperature",
 )
-Map.addTimeLapse(
+addFunction(
     gfs.select(["precipitable_water_entire_atmosphere"]),
     {
         "min": 0,
@@ -92,12 +98,15 @@ Map.addTimeLapse(
         "advanceInterval": "hour",
         "legendLabelLeftAfter": "kg/m^2",
         "legendLabelRightAfter": "kg/m^2",
+        "canAreaChart": True,
+        "areaChartParams":{"scale":27830,"crs":crs,"minZoomSpecifiedScale":5},
+        "reducer":ee.Reducer.mean()
     },
     "Precipitable Water",
 )
 
 
-Map.addTimeLapse(
+addFunction(
     gfs.select(["Speed"]),
     {
         "min": 0,
@@ -107,10 +116,13 @@ Map.addTimeLapse(
         "advanceInterval": "hour",
         "legendLabelLeftAfter": "km/h",
         "legendLabelRightAfter": "km/h",
+        "canAreaChart": True,
+        "areaChartParams":{"scale":27830,"crs":crs,"minZoomSpecifiedScale":5},
+        "reducer":ee.Reducer.mean()
     },
     "Wind Speed",
 )
-Map.addTimeLapse(
+addFunction(
     gfs.select(["Direction"]),
     {
         "palette": windDirectionPalette,
@@ -120,6 +132,9 @@ Map.addTimeLapse(
         "advanceInterval": "hour",
         "legendLabelLeftAfter": "degrees",
         "legendLabelRightAfter": "degrees",
+        "canAreaChart": True,
+        "areaChartParams":{"scale":27830,"crs":crs,"minZoomSpecifiedScale":5},
+        "reducer":ee.Reducer.mean()
     },
     "Wind Direction",
 )
@@ -129,6 +144,7 @@ Map.addTimeLapse(
 # View map
 Map.setQueryDateFormat("YYYY-MM-dd HH:mm")
 Map.turnOnInspector()
+Map.port = 1234
 Map.view()
 ####################################################################################################
 ####################################################################################################

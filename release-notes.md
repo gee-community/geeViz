@@ -1,3 +1,13 @@
+# geeViz 2025.10.1 Release Notes
+
+## October 14, 2025
+
+
+### Bug fixes
+
+- `geeViz.geeView.rubustInitializer` auto auth bug fix. Integrated new `ee.data._get_state()` state management method for getting the current project.
+
+---
 # geeViz 2025.4.3 Release Notes
 
 ## April 18, 2025

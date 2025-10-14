@@ -101,7 +101,7 @@ def robustInitializer(verbose: bool = False):
 
     try:
         z = ee.Number(1).getInfo()
-        project_id = ee.data._cloud_api_user_project
+        project_id = ee.data._get_state().cloud_api_user_project
         if verbose:
             print('Found project id set to:',project_id)
     except Exception as e:
@@ -111,7 +111,7 @@ def robustInitializer(verbose: bool = False):
             print("Will try authenticating and initializing GEE")
         try:
             ee.Authenticate()
-            ee.Initialize(project=ee.data._cloud_api_user_project)
+            ee.Initialize(project=ee.data._get_state().cloud_api_user_project)
             print('Successfully initialized GEE')
         except Exception as e:
             if verbose:
@@ -119,7 +119,7 @@ def robustInitializer(verbose: bool = False):
             simpleSetProject(False)
 
             try:
-                ee.Initialize(project=ee.data._cloud_api_user_project)
+                ee.Initialize(project=ee.data._get_state().cloud_api_user_project)
                 z = ee.Number(1).getInfo()
                 print('Successfully initialized GEE')
             except Exception as e:
@@ -127,7 +127,7 @@ def robustInitializer(verbose: bool = False):
                     print('EE error:',e)
                     print('Will ask for a different project id')
                 simpleSetProject(True)
-                ee.Initialize(project=ee.data._cloud_api_user_project)
+                ee.Initialize(project=ee.data._get_state().cloud_api_user_project)
                 z = ee.Number(1).getInfo()
                 print('Successfully initialized GEE')
 
@@ -399,13 +399,18 @@ def isPortActive(port: int = 8001):
     Returns:
         bool: Whether or not the port is already active
     """
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(2)  # 2 Second Timeout
-    result = sock.connect_ex(("localhost", port))
-    if result == 0:
-        return True
-    else:
-        return False
+    # The original code creates a socket and may leave it open (orphaned) if not explicitly closed, 
+    # since it does not use a context manager or explicit close. The revised code uses 
+    # a `with` statement to ensure that the socket is properly closed after use, 
+    # preventing orphan sockets and resource leaks.
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.settimeout(2)  # 2 Second Timeout
+        result = sock.connect_ex(("localhost", port))
+        if result == 0:
+            return True
+        else:
+            return False
 
 
 ######################################################################
@@ -428,7 +433,7 @@ class mapper:
 
         serviceKeyPath (str, default None): Location of a service account key json. If provided, this will be used for authentication inside geeView instead of the refresh token
 
-        project (str, default  ee.data._cloud_api_user_project): Can override which project geeView will use for authentication. While geeViz will try to find a project if ee.data._cloud_api_user_project isn't already set (usually by `ee.Initialize(project="someProjectID")`) by prompting the user to enter one, in some builds, this does not work. Set this attribute manually if the URL say `project=None` when launching geeView using `Map.view()`.
+        project (str, default  ee.data._get_state().cloud_api_user_project): Can override which project geeView will use for authentication. While geeViz will try to find a project if ee.data._get_state().cloud_api_user_project isn't already set (usually by `ee.Initialize(project="someProjectID")`) by prompting the user to enter one, in some builds, this does not work. Set this attribute manually if the URL say `project=None` when launching geeView using `Map.view()`.
 
         turnOffLayersWhenTimeLapseIsOn (bool, default True): Whether all other layers should be turned off when a time lapse is turned on. This is set to True by default to avoid confusing layer order rendering that can occur when time lapses and non-time lapses are visible at the same time. Often this confusion is fine and visualizing time lapses and other layers is desired. Set `Map.turnOffLayersWhenTimeLapseIsOn` to False in this instance.
     """
@@ -462,7 +467,7 @@ class mapper:
         self.refreshTokenPath = ee.oauth.get_credentials_path()
         self.serviceKeyPath = None
         self.queryWindowMode = "sidePane"
-        self.project = ee.data._cloud_api_user_project
+        self.project = ee.data._get_state().cloud_api_user_project
         self.turnOffLayersWhenTimeLapseIsOn = True
 
     ######################################################################
