@@ -1,3 +1,30 @@
+# geeViz 2026.3.1 Release Notes
+
+## March 1, 2026
+
+### Major Update: MCP Server Integration
+
+- **New: MCP (Model Context Protocol) server package**  
+  Introduced `geeViz.mcp`, a robust, modular backend server for advanced Earth Engine workflows. The MCP server exposes 33 execution and introspection tools via an HTTP/REPL interface, enabling:
+    - Interactive code execution in a persistent Python REPL.
+    - Introspection and browsing of live GEE assets (images, collections, tables, folders).
+    - Dynamic querying of Earth Engine API signatures and assets.
+    - Bulk asset management: copy, move, delete, export, upload, and inspect.
+    - Visualization endpoints: generate satellite thumbnails (PNG/GIF), region previews, time series charts, and more for faster AI-assisted exploration.
+    - Enhanced error handling and unified tool endpoints.
+    - Easy integration with Python, LLMs, or browser-based/UIs for rapid interactive development.
+
+  The MCP server enables powerful, scriptable workflows and is usable both as a standalone server and a module. See `geeViz/mcp/README.md` for setup and tool documentation.
+
+
+## February 27, 2026
+
+### New Features
+
+- **MCP (Multi-Command Processor):** Introduces a new advanced backend module for interactive geospatial workflows. MCP enables asset management (copy, move, delete, inspect), visualization tools (map/layer inspection, thumbnails, time series charts), Drive export automation, and more. Designed to facilitate robust LLM- or Python-driven analysis and Earth Engine operations with improved error handling and unified tool endpoints.
+
+
+---
 # geeViz 2025.10.2 Release Notes
 
 ## October 14, 2025

@@ -42,7 +42,7 @@ Workflow:
     4. Optionally export the results.
     5. Visualize the study area and results on the map.
     
-   Copyright 2025 Ian Housman
+   Copyright 2026 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

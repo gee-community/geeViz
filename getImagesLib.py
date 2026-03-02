@@ -6,7 +6,7 @@ geeViz.getImagesLib is the core module for setting up various imageCollections f
 """
 
 """
-   Copyright 2025 Ian Housman
+   Copyright 2026 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

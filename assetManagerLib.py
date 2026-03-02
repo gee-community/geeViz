@@ -5,7 +5,7 @@ geeViz.assetManagerLib includes functions for copying, deleting, uploading, chan
 """
 
 """
-   Copyright 2025 Leah Campbell, Ian Housman, Nicholas Storey
+   Copyright 2026 Leah Campbell, Ian Housman, Nicholas Storey
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

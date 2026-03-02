@@ -1,5 +1,5 @@
 """
-   Copyright 2025 Ian Housman
+   Copyright 2026 Ian Housman
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-
+#%%
 # Example of how to seasonality metrics using harmonic regression with Landsat data
 # Acquires harmonic regression-based seasonality metrics
 ####################################################################################################
@@ -50,13 +50,13 @@ endJulian = 365
 # well. If using Fmask as the cloud/cloud shadow masking method, or providing
 # pre-computed stats for cloudScore and TDOM, this does not
 # matter
-startYear = 2022
-endYear = 2024
+startYear = 2025
+endYear = 2025
 
 # Specify an annual buffer to include imagery from the same season
 # timeframe from the prior and following year. timeBuffer = 1 will result
 # in a 3 year moving window. If you want single-year composites, set to 0
-timebuffer = 1
+timebuffer = 0
 
 
 # Export params
@@ -110,10 +110,37 @@ if seasonalityVizIndexName not in indexNames:
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
+#%%%
+Map.clearMap()
 # Function Calls
-# Get all images
-allScenes = getImagesLib.getProcessedLandsatScenes(studyArea, startYear, endYear, startJulian, endJulian).select(indexNames)
 
+# Bring in USDA NASS Cropland Data Layer
+
+cdl = ee.ImageCollection("USDA/NASS/CDL").filterDate(f'{startYear-1}-01-01', f'{startYear}-12-31').sort('system:time_start',False).first()
+cdl_year = cdl.date().format('yyyy').getInfo()
+cdlProps = cdl.toDictionary()
+cdlProps_new = ee.Dictionary()
+
+props = ['cropland_class_names','cropland_class_values','cropland_class_palette']
+
+for prop in props:
+    values = ee.List(ee.String(cdlProps.get(prop)).split(','))
+    if prop.find('values') != -1:
+        values = ee.List(values.map(lambda n: ee.Number.parse(n)))
+    cdlProps_new = cdlProps_new.set(prop,values)
+print(cdlProps_new.getInfo())
+cdl = cdl.set(cdlProps_new)
+Map.addLayer(cdl,{'autoViz':True},f'{cdl_year} CDL')
+# Get all images
+# allScenes = getImagesLib.getProcessedLandsatScenes(studyArea, startYear, endYear, startJulian, endJulian).select(indexNames)
+allScenes = getImagesLib.superSimpleGetS2(studyArea, f'{startYear}-01-01', f'{endYear}-12-31',startJulian, endJulian)
+def fixImage(img):
+    date = img.date().millis()
+    img = img.select(['blue','green','red','nir','swir1','swir2']).divide(10000).float()
+    
+    img = getImagesLib.simpleAddIndices(img).set('system:time_start',date)
+    return img
+allScenes = allScenes.map(fixImage).select(indexNames)
 # Map.addLayer(allScenes,vizParamsFalse,'median')
 # Map.view()
 # ////////////////////////////////////////////////////////////
@@ -128,7 +155,7 @@ for yr in ee.List.sequence(startYear + timebuffer, endYear - timebuffer, 1).getI
 
     # Get scenes for those dates
     allScenesT = allScenes.filter(ee.Filter.calendarRange(startYearT, endYearT, "year"))
-    print(allScenesT.size().getInfo())
+    
     composite = allScenesT.median()
     Map.addLayer(composite, {"min": 0.1, "max": 0.4}, nameStart + "_median_composite", False)
 
@@ -196,6 +223,8 @@ for yr in ee.List.sequence(startYear + timebuffer, endYear - timebuffer, 1).getI
         outPath = exportPathRoot + "/" + outName
         getImagesLib.exportToAssetWrapper(coeffs, outName, outPath, "mean", studyArea, scale, crs, transform)
     coeffCollection.append(coeffs)
+
+
 ####################################################################################################
 # Load the study region
 Map.addLayer(studyArea, {"strokeColor": "0000FF"}, "Study Area", False)
@@ -204,7 +233,8 @@ Map.centerObject(studyArea)
 ####################################################################################################
 # View map
 Map.turnOnInspector()
-Map.view()
+Map.view(True)
+#%%
 ####################################################################################################
 ####################################################################################################
 # If exporting composites, track the exports

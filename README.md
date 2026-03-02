@@ -22,25 +22,26 @@ Developed by [RedCastle Resources](https://www.redcastleresources.com/), geeViz 
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
-- 🌎 Interactive Map Viewer (launches in your browser)
-- 🔍 Layer toggling, opacity, visualization tools, querying, & area charting
-- ⏳ Dynamic time-lapse creation from GEE `ImageCollections`
-- 📈 Built-in charting & analysis tools (point/polygon, time series, area stats)
-- 📝 Jupyter/Colab support and standalone scripting
-- ⚡ Supports Landsat, Sentinel-2, MODIS, LCMS, LCMAP, and more
-- 🏗️ Extensive examples and ready-to-run wrappers
+- Interactive Map Viewer (launches in your browser)
+- Layer toggling, opacity, visualization tools, querying, & area charting
+- Dynamic time-lapse creation from GEE `ImageCollections`
+- Built-in charting & analysis tools (point/polygon, time series, area stats)
+- Jupyter/Colab support and standalone scripting
+- Supports Landsat, Sentinel-2, MODIS, LCMS, LCMAP, and more
+- Extensive examples and ready-to-run wrappers
+- Built-in [MCP server](https://modelcontextprotocol.io/) for AI coding assistants (Cursor, Claude Code, VS Code Github Copilot, Windsurf, AntiGravity, etc...)
 
 ---
 
-## 🌍 Quick Links
+## Quick Links
 
-- 📦 **PyPI:** [pypi.org/project/geeViz](https://pypi.org/project/geeViz/)
-- 🔗 **Docs/Home:** [geeviz.org](https://geeviz.org/)
-- 📝 **Notebooks & Scripts:** [`examples/`](examples)
-- 👫 **Community Repo:** [github.com/gee-community/geeViz](https://github.com/gee-community/geeViz)
-- 🏛️ **Forest Service GitHub:** [code.fs.usda.gov/forest-service/geeViz](https://code.fs.usda.gov/forest-service/geeViz)
+- **PyPI:** [pypi.org/project/geeViz](https://pypi.org/project/geeViz/)
+- **Docs/Home:** [geeviz.org](https://geeviz.org/)
+- **Notebooks & Scripts:** [`examples/`](examples)
+- **Community Repo:** [github.com/gee-community/geeViz](https://github.com/gee-community/geeViz)
+- **Forest Service GitHub:** [code.fs.usda.gov/forest-service/geeViz](https://code.fs.usda.gov/forest-service/geeViz)
 
 <details>
   <summary><b>JavaScript Version & Related Links</b></summary>
@@ -52,7 +53,7 @@ Developed by [RedCastle Resources](https://www.redcastleresources.com/), geeViz 
 
 ---
 
-## 📚 Documentation & Help
+## Documentation & Help
 
 - [geeViz Documentation and API Reference](https://geeviz.org/)
 - See [`examples/`](examples) for Jupyter/Colab notebooks and scripts.
@@ -60,7 +61,7 @@ Developed by [RedCastle Resources](https://www.redcastleresources.com/), geeViz 
 
 ---
 
-## 🚀 Installation
+## Installation
 
 The fastest way to get started:
 
@@ -105,14 +106,56 @@ _geeViz is also mirrored at [code.fs.usda.gov/forest-service/geeViz](https://cod
 
 ---
 
-## 🛠️ Getting Started
+## AI-Assisted Development (MCP)
+
+geeViz includes a built-in [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server with **33 tools** that give AI coding assistants live access to geeViz and Google Earth Engine. Instead of generating code from training data (which is often wrong or outdated), your AI assistant can look up real function signatures, read actual example scripts, execute and test code, inspect assets, export data, manage tasks, and more.
+
+Works with **Cursor**, **Claude Code**, **VS Code with GitHub Copilot**, **Windsurf**, and any MCP-compatible client. The `mcp` SDK is included as a dependency — no extra install needed.
+
+### Quick setup
+
+1. Add a config file for your editor (see [MCP Server docs](https://geeviz.org/mcp_server.html)):
+    ```json
+    {
+      "mcpServers": {
+        "geeviz": {
+          "command": "python",
+          "args": ["-m", "geeViz.mcp.server"]
+        }
+      }
+    }
+    ```
+2. Copy the agent instructions from `geeViz/mcp/agent-instructions.md` into your editor's instructions file (`.github/copilot-instructions.md`, `.cursorrules`, `CLAUDE.md`, or `.windsurfrules`).
+
+### What the MCP server can do
+
+The 33 tools are organized into nine categories:
+
+| Category | Tools |
+|----------|-------|
+| **Code Execution** | `run_code` — persistent REPL with `ee`, `Map`, `gv`, `gil` pre-loaded; `get_namespace` — inspect live variables; `save_notebook` — export session as `.ipynb` |
+| **API Introspection** | `get_api_reference` — function signatures & docstrings; `list_functions` — browse module contents; `get_example` / `list_examples` — read example scripts |
+| **Dataset Discovery** | `search_datasets` — keyword search across official & community catalogs; `get_dataset_info` — full STAC metadata for any dataset |
+| **Asset Inspection** | `inspect_asset` — bands, CRS, scale, date range, properties; `list_assets` — browse GEE folders; `get_collection_info` — image count, date range, bands |
+| **Visualization** | `get_thumbnail` — PNG for images, animated GIF for collections; `geocode` — place name to coordinates with optional boundary search |
+| **Exports** | `export_to_asset`, `export_to_drive`, `export_to_cloud_storage` — using geeViz wrappers with sensible defaults |
+| **Task Management** | `track_tasks` — check task status; `cancel_tasks` — cancel by name or all |
+| **Data Sampling & Time Series** | `sample_values` — pixel values at a point or region; `get_time_series` — band values over time with optional chart |
+| **Asset Management** | `create_folder`, `delete_asset`, `copy_asset`, `move_asset`, `update_acl` — manage GEE assets and permissions |
+| **Environment** | `get_version_info`, `get_project_info` |
+
+For the complete tool reference, architecture details, and usage examples, see the **[MCP Server README](mcp/README.md)** and the [online MCP Server guide](https://geeviz.org/mcp_server.html).
+
+---
+
+## Getting Started
 
 geeViz comes with ready-to-run examples and templates for fast onboarding.
 
 <table>
 <tr><td>
 
-### ▶️ Example: Launch in Python
+### Example: Launch in Python
 
 Authenticate and then try:
 ```python
@@ -139,14 +182,14 @@ from geeViz.examples import GFSTimeLapse
 
 ---
 
-### 📒 Use with Jupyter & Colab
+### Use with Jupyter & Colab
 
 - Interactive notebooks are in the [`examples/`](examples) directory ([see docs ➔](https://geeviz.org/tutorials/getting-started/)).
 - The geeViz map viewer also works directly inside Jupyter and [Google Colab](https://colab.research.google.com/).
 
 ---
 
-### 🗺️ Features at a Glance
+### Features at a Glance
 
 - **One line mapping:** Map any GEE image or collection instantly
 - **Interactive:** Toggle layers, set opacity, area/point query, and chart
@@ -155,18 +198,18 @@ from geeViz.examples import GFSTimeLapse
 
 ---
 
-## 🙌 Contributing
+## Contributing
 
 We love contributions and new users!
 
 - Share a GEE script, notebook, or suggestion?  
-  📩 [info@geeviz.org](mailto:info@geeviz.org)
+  [info@geeviz.org](mailto:info@geeviz.org)
 - Pull requests & feature requests:  
   [github.com/gee-community/geeViz](https://github.com/gee-community/geeViz)
 
 ---
 
-## 📄 License
+## License
 
 geeViz is released under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0).  
 See the [LICENSE](LICENSE) file for details.
