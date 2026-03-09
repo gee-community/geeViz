@@ -1,7 +1,7 @@
 """
 geeViz MCP (Model Context Protocol) server package.
 
-Exposes an MCP server with 33 execution and introspection tools for
+Exposes an MCP server with 34 execution and introspection tools for
 Earth Engine via geeViz.  Unlike static code snippets, these tools
 execute code in a persistent REPL, inspect live GEE assets, and
 dynamically query API signatures.
@@ -23,7 +23,7 @@ __author__ = "Ian Housman"
 __email__ = "ian.housman@gmail.com"
 
 # Version format yyyy.m.n
-__version__ = "2026.3.1"
+__version__ = "2026.3.2"
 
 __all__ = ["app", "__version__"]
 

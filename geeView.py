@@ -25,7 +25,7 @@ geeViz.geeView is the core module for managing GEE objects on the geeViz mapper 
 # Intended to work within the geeViz package
 ######################################################################
 # Import modules
-import ee, sys, os, webbrowser, json, socket, subprocess, site, datetime, requests, google
+import ee, sys, os, webbrowser, json, socket, subprocess, site, datetime, requests, google, tempfile, signal, time
 from google.auth.transport import requests as gReq
 from google.oauth2 import service_account
 
@@ -381,9 +381,10 @@ def run_local_server(port: int = 8001):
     python_path = sys.executable
     if python_path.find("pythonw") > -1:
         python_path = python_path.replace("pythonw", "python")
-    c = '"{}" -m {}  {}'.format(python_path, server_name, port)
+    c = [python_path, "-m", server_name, str(port)]
     print("HTTP server command:", c)
-    subprocess.Popen(c, shell=True)
+    proc = subprocess.Popen(c)
+    _write_server_state(port, proc.pid, py_viz_dir)
     os.chdir(cwd)
 
 
@@ -411,6 +412,66 @@ def isPortActive(port: int = 8001):
             return True
         else:
             return False
+
+
+######################################################################
+# Server state management helpers
+def _server_state_path(port):
+    """Return path to the server state file for a given port."""
+    return os.path.join(tempfile.gettempdir(), ".geeViz_server_{}.json".format(port))
+
+
+def _read_server_state(port):
+    """Read server state {pid, root_dir} from the temp file. Returns None if missing."""
+    path = _server_state_path(port)
+    if os.path.exists(path):
+        try:
+            with open(path, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return None
+
+
+def _write_server_state(port, pid, root_dir):
+    """Write server state to a temp file keyed by port."""
+    path = _server_state_path(port)
+    with open(path, "w") as f:
+        json.dump({"pid": pid, "root_dir": root_dir, "port": port}, f)
+
+
+def _kill_server(port):
+    """Kill the server process tracked for a given port."""
+    state = _read_server_state(port)
+    if state and "pid" in state:
+        try:
+            os.kill(state["pid"], signal.SIGTERM)
+        except (ProcessLookupError, PermissionError, OSError):
+            pass
+    path = _server_state_path(port)
+    if os.path.exists(path):
+        os.remove(path)
+
+
+def _ensure_server(port):
+    """Ensure an HTTP server on `port` is serving from the current py_viz_dir.
+
+    If a server is running but rooted at a different directory, kill it
+    and start a fresh one.
+    """
+    if isPortActive(port):
+        state = _read_server_state(port)
+        if state and os.path.normcase(state.get("root_dir", "")) != os.path.normcase(py_viz_dir):
+            print("Server on port {} is serving from {}, not {}. Restarting...".format(port, state.get("root_dir"), py_viz_dir))
+            _kill_server(port)
+            time.sleep(1)
+            run_local_server(port)
+        else:
+            print("Local web server at: http://localhost:{}/{}/ already serving.".format(port, geeViewFolder))
+    else:
+        print("Starting local web server at: http://localhost:{}/{}/".format(port, geeViewFolder))
+        run_local_server(port)
+        print("Done")
 
 
 ######################################################################
@@ -997,14 +1058,8 @@ class mapper:
         oo.writelines(lines)
         oo.close()
 
-        # Find if port is already active and only start it if it is not
-        if not isPortActive(self.port):
-            print("Starting local web server at: http://localhost:{}/{}/".format(self.port, geeViewFolder))
-            run_local_server(self.port)
-            print("Done")
-
-        else:
-            print("Local web server at: http://localhost:{}/{}/ already serving.".format(self.port, geeViewFolder))
+        # Ensure the local server is running and serving from the correct directory
+        _ensure_server(self.port)
 
         # Open viewer in browser or iframe in notebook
         print("cwd", os.getcwd())

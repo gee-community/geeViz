@@ -2,7 +2,7 @@
 geeViz MCP Server -- execution and introspection tools for Earth Engine via geeViz.
 
 Unlike static doc snippets, this server executes code, inspects live GEE assets,
-and dynamically queries API signatures. 33 tools replace the previous 49.
+and dynamically queries API signatures. 30 tools replace the previous 49.
 """
 from __future__ import annotations
 
@@ -24,12 +24,11 @@ Environment (optional):
   MCP_PORT        Port for HTTP (default: 8000)
   MCP_PATH        Path for HTTP (default: /mcp)
 
-Tools (33):
+Tools (30):
   run_code                 Execute Python/GEE code in a persistent REPL namespace
-  inspect_asset            Get metadata for any GEE asset
+  inspect_asset            Get metadata for any GEE asset (with optional collection filters)
   get_api_reference        Look up function signatures and docstrings
-  list_functions           List public functions in a geeViz module
-  search_functions         Search across ALL geeViz modules for a function
+  search_functions         Search/list functions across geeViz modules
   get_example              Read source code of a geeViz example script
   list_examples            List available example scripts
   list_assets              List assets in a GEE folder
@@ -37,27 +36,25 @@ Tools (33):
   view_map                 Open the geeView map and return the URL
   get_map_layers           See what layers are currently on the map
   clear_map                Clear all map layers and commands
-  save_script              Save accumulated run_code history to a .py file
+  save_session             Save run_code history to a .py file or .ipynb notebook
   get_version_info         Return geeViz, EE, and Python version info
   get_namespace            Inspect user-defined variables in the REPL
   get_project_info         Return current EE project ID and root assets
-  save_notebook            Save run_code history as a Jupyter notebook
   export_to_asset          Export an ee.Image to a GEE asset (via geeViz wrapper)
   geocode                  Geocode a place name to coordinates / GEE boundaries
   search_datasets          Search the GEE dataset catalog by keyword
-  get_dataset_info         Get detailed STAC metadata for a GEE dataset
+  get_catalog_info         Get detailed STAC metadata for a GEE dataset
   get_thumbnail            Get a PNG/GIF thumbnail of an ee.Image or ImageCollection
   export_to_drive          Export an ee.Image to Google Drive
   export_to_cloud_storage  Export an ee.Image to Google Cloud Storage
   cancel_tasks             Cancel running/ready EE tasks (all or by name)
-  sample_values            Sample pixel values from an ee.Image at a point/region
-  get_time_series          Extract band values over time from an ImageCollection
   delete_asset             Delete a single GEE asset
   copy_asset               Copy a GEE asset to a new location
   move_asset               Move a GEE asset (copy + delete source)
   create_folder            Create a GEE folder or ImageCollection
   update_acl               Update permissions (ACL) on a GEE asset
-  get_collection_info      Get summary info for an ImageCollection
+  extract_and_chart        Extract values and chart ee.Image/ImageCollection (point sample, bar, time series, Sankey)
+  get_reference_data       Look up reference dicts (band mappings, viz params, collection IDs, etc.)
 
 Examples:
   python -m geeViz.mcp.server
@@ -166,6 +163,40 @@ def _load_mcp_image():
 
 _MCPImage = _load_mcp_image()
 
+
+def _load_mcp_context():
+    """Load the Context class from the MCP SDK for progress reporting in tools.
+
+    Uses the same importlib approach as _load_fastmcp() to avoid name conflicts
+    with the geeViz.mcp package.
+    """
+    # Preferred: direct import matches FastMCP's own Context class
+    try:
+        from mcp.server.fastmcp import Context
+        return Context
+    except (ImportError, ModuleNotFoundError, AttributeError):
+        pass
+    # Fallback: load from file in site-packages
+    import site as _site
+    for _sp in _site.getsitepackages():
+        _origin = os.path.join(_sp, "mcp", "server", "fastmcp", "server.py")
+        if os.path.isfile(_origin):
+            try:
+                spec = importlib.util.spec_from_file_location("_geeviz_mcp_sdk_context", _origin)
+                if spec and spec.loader:
+                    mod = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(mod)
+                    return mod.Context
+            except Exception:
+                pass
+    return None
+
+
+_MCPContext = _load_mcp_context()
+# Expose as module-level ``Context`` so typing.get_type_hints() can resolve the
+# annotation in run_code's signature (required for FastMCP context injection).
+Context = _MCPContext
+
 # Load agent instructions from the bundled markdown file.
 # These are injected as the MCP server instructions (like a system prompt)
 # so every connected client automatically knows how to use the tools.
@@ -204,12 +235,13 @@ _MODULE_MAP = {
     "foliumView": "geeViz.foliumView",
     "phEEnoViz": "geeViz.phEEnoViz",
     "cloudStorageManagerLib": "geeViz.cloudStorageManagerLib",
+    "chartingLib": "geeViz.chartingLib",
 }
 
 # Persistent REPL namespace for run_code
 _namespace: dict = {}
 
-# Code history for save_script
+# Code history for save_session
 _code_history: list[str] = []
 _script_dir = os.path.join(_THIS_DIR, "generated_scripts")
 _current_script_path: str | None = None
@@ -232,6 +264,7 @@ def _ensure_initialized():
             "Map": gv.Map,
             "gv": gv,
             "gil": gil,
+            "__builtins__": _make_safe_builtins(),
         })
         _initialized = True
 
@@ -275,18 +308,170 @@ def _save_history_to_file() -> str:
 # Tool 1: run_code
 # ---------------------------------------------------------------------------
 import ast
+import asyncio
 import io
 import contextlib
 import traceback
 
 
+# Collection type names that are dangerous to call .getInfo() on without .limit()
+_COLLECTION_NAMES = {"ImageCollection", "FeatureCollection"}
+
+# ---------------------------------------------------------------------------
+# Security: Tier 1 hardening for run_code
+# ---------------------------------------------------------------------------
+
+# Modules that are blocked from import in run_code. These provide OS/network/process
+# access that is unnecessary for Earth Engine workflows and dangerous if the server
+# is exposed remotely.
+_BLOCKED_MODULES = frozenset({
+    "os", "sys", "subprocess", "socket", "shutil", "ctypes", "signal",
+    "multiprocessing", "threading", "http", "urllib", "requests",
+    "pathlib", "tempfile", "glob", "io", "importlib", "code", "codeop",
+    "pickle", "shelve", "marshal", "builtins",
+})
+
+# Top-level module prefixes that are allowed in import statements.
+# Anything not matching these prefixes AND not in _BLOCKED_MODULES gets a warning
+# (not a hard block) to avoid breaking legitimate but uncommon imports.
+_ALLOWED_MODULE_PREFIXES = (
+    "ee", "geeViz", "json", "datetime", "math", "collections",
+    "numpy", "np", "pandas", "pd", "plotly", "copy", "re",
+    "functools", "itertools", "operator", "statistics",
+    "pprint", "textwrap", "string", "decimal", "fractions",
+)
+
+# Builtins that are blocked from the execution namespace.
+_BLOCKED_BUILTINS = frozenset({
+    "__import__", "eval", "exec", "compile", "open",
+    "breakpoint", "exit", "quit",
+    "globals", "locals", "vars",
+    "getattr", "setattr", "delattr",
+})
+
+
+def _make_safe_builtins() -> dict:
+    """Return a copy of __builtins__ with dangerous functions removed."""
+    import builtins
+    safe = {k: v for k, v in vars(builtins).items() if k not in _BLOCKED_BUILTINS}
+    # Provide a safe __import__ that blocks dangerous modules
+    def _safe_import(name, *args, **kwargs):
+        top = name.split(".")[0]
+        if top in _BLOCKED_MODULES:
+            raise ImportError(
+                f"Import of '{name}' is blocked for security. "
+                f"Only Earth Engine, geeViz, and standard data libraries are allowed."
+            )
+        return __builtins__["__import__"](name, *args, **kwargs) if isinstance(__builtins__, dict) \
+            else builtins.__import__(name, *args, **kwargs)
+    safe["__import__"] = _safe_import
+    return safe
+
+
+def _check_code_patterns(code: str) -> list[str]:
+    """AST analysis: detect risky EE patterns AND blocked security patterns.
+
+    Returns a list of warning/error strings. Strings starting with "BLOCKED:"
+    will cause run_code to refuse execution.
+    """
+    warnings: list[str] = []
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return warnings  # let the executor report syntax errors
+
+    for node in ast.walk(tree):
+        # --- Security: check imports ---
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                top = alias.name.split(".")[0]
+                if top in _BLOCKED_MODULES:
+                    warnings.append(
+                        f"BLOCKED: import of '{alias.name}' is not allowed. "
+                        f"Only Earth Engine, geeViz, and standard data libraries are permitted."
+                    )
+        elif isinstance(node, ast.ImportFrom):
+            if node.module:
+                top = node.module.split(".")[0]
+                if top in _BLOCKED_MODULES:
+                    warnings.append(
+                        f"BLOCKED: import from '{node.module}' is not allowed. "
+                        f"Only Earth Engine, geeViz, and standard data libraries are permitted."
+                    )
+
+        # --- Security: check for dangerous builtin calls ---
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            if node.func.id in ("eval", "exec", "compile", "open", "breakpoint", "__import__"):
+                warnings.append(
+                    f"BLOCKED: call to '{node.func.id}()' is not allowed for security."
+                )
+
+        # --- EE performance: detect .getInfo() calls ---
+        if not (isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "getInfo"):
+            continue
+
+        # Check if .getInfo() is inside a for/while loop
+        for parent in ast.walk(tree):
+            if isinstance(parent, (ast.For, ast.While)):
+                for child in ast.walk(parent):
+                    if child is node:
+                        warnings.append(
+                            "Warning: .getInfo() inside a loop can be very slow. "
+                            "Consider gathering results server-side with ee.List or ee.Dictionary."
+                        )
+                        break
+
+        # Check for .getInfo() on a collection without .limit()
+        target = node.func.value
+        chain = _get_method_chain(target)
+        has_limit = "limit" in chain or "first" in chain
+        has_collection = any(name in _COLLECTION_NAMES for name in chain)
+        if has_collection and not has_limit:
+            warnings.append(
+                "Warning: .getInfo() on a collection without .limit() can be very slow. "
+                "Consider adding .limit(N) or using .first().getInfo()."
+            )
+
+    # Deduplicate while preserving order
+    seen: set[str] = set()
+    unique: list[str] = []
+    for w in warnings:
+        if w not in seen:
+            seen.add(w)
+            unique.append(w)
+    return unique
+
+
+def _get_method_chain(node: ast.AST) -> list[str]:
+    """Walk an attribute/call chain and return method/attribute names encountered."""
+    names: list[str] = []
+    current = node
+    while True:
+        if isinstance(current, ast.Call):
+            current = current.func
+        elif isinstance(current, ast.Attribute):
+            names.append(current.attr)
+            current = current.value
+        elif isinstance(current, ast.Name):
+            names.append(current.id)
+            break
+        else:
+            break
+    return names
+
+
 @app.tool()
-def run_code(code: str, timeout: int = 120, reset: bool = False) -> str:
+async def run_code(code: str, timeout: int = 120, reset: bool = False, ctx: Context = None) -> str:
     """Execute Python/GEE code in a persistent REPL namespace (like Jupyter).
 
     The namespace persists across calls -- variables set in one call are
     available in the next.  Pre-populated with: ee, Map (gv.Map), gv
     (geeViz.geeView), gil (geeViz.getImagesLib).
+
+    While executing, progress heartbeats are sent every ~10 seconds to keep the
+    MCP client connection alive and inform the agent that the tool is still running.
 
     Args:
         code: Python code to execute.
@@ -295,6 +480,7 @@ def run_code(code: str, timeout: int = 120, reset: bool = False) -> str:
                  in background.
         reset: If True, clear the namespace and re-initialize before
                executing.
+        ctx: MCP Context (auto-injected by FastMCP). Used for progress reporting.
 
     Returns:
         JSON with keys: success (bool), stdout, stderr, result, error.
@@ -304,10 +490,31 @@ def run_code(code: str, timeout: int = 120, reset: bool = False) -> str:
     else:
         _ensure_initialized()
 
+    # Static analysis: detect risky and blocked patterns before execution
+    code_warnings = _check_code_patterns(code)
+
+    # Refuse execution if any BLOCKED patterns were found
+    blocked = [w for w in code_warnings if w.startswith("BLOCKED:")]
+    if blocked:
+        return json.dumps({
+            "success": False,
+            "stdout": "",
+            "stderr": "\n".join(blocked),
+            "result": None,
+            "error": "Code was blocked by security policy. " + " ".join(blocked),
+            "script_path": None,
+        })
+
     stdout_buf = io.StringIO()
     stderr_buf = io.StringIO()
     result_holder: list = [None]
     error_holder: list = [None]
+
+    # Save original streams so we can restore them after timeout (redirect_stdout
+    # modifies sys.stdout globally, which would capture the main thread's output
+    # if the exec thread is still running when we time out).
+    _orig_stdout = sys.stdout
+    _orig_stderr = sys.stderr
 
     def _exec():
         try:
@@ -329,23 +536,60 @@ def run_code(code: str, timeout: int = 120, reset: bool = False) -> str:
 
     thread = threading.Thread(target=_exec, daemon=True)
     thread.start()
-    thread.join(timeout=timeout)
+
+    # Heartbeat loop: poll every 1s, report progress every ~10s
+    elapsed = 0.0
+    report_interval = 10
+    poll_interval = 1
+    next_report = report_interval
+    while thread.is_alive() and elapsed < timeout:
+        await asyncio.sleep(min(poll_interval, timeout - elapsed))
+        elapsed += poll_interval
+        if thread.is_alive() and ctx and elapsed >= next_report:
+            next_report += report_interval
+            try:
+                await ctx.report_progress(elapsed, timeout)
+                await ctx.info(f"run_code still executing... ({int(elapsed)}s / {timeout}s)")
+            except Exception:
+                pass  # don't let reporting errors kill the tool
+
+    # Restore original streams in case the thread's redirect is still active
+    # (happens on timeout when the thread's `with` block hasn't exited yet).
+    sys.stdout = _orig_stdout
+    sys.stderr = _orig_stderr
+
+    # Prepend static analysis warnings to stderr
+    stderr_val = stderr_buf.getvalue()
+    if code_warnings:
+        warning_block = "\n".join(code_warnings) + "\n"
+        stderr_val = warning_block + stderr_val
 
     if thread.is_alive():
+        timeout_hints = (
+            f"Execution timed out after {timeout}s. Common causes:\n"
+            "- .getInfo() on a large ImageCollection -- use .limit(N) or inspect_asset with date/region filters\n"
+            "- .getInfo() on a high-res Image over a large region -- use extract_and_chart tool instead\n"
+            "- Complex server-side computation -- break into smaller steps\n"
+            "Note: on Windows, the thread continues in background."
+        )
+        if elapsed >= 60:
+            timeout_hints += (
+                "\nHint: the call ran for over 60s. If this was a .getInfo() call, "
+                "consider using extract_and_chart or inspect_asset tools instead."
+            )
         return json.dumps({
             "success": False,
             "stdout": stdout_buf.getvalue(),
-            "stderr": stderr_buf.getvalue(),
+            "stderr": stderr_val,
             "result": None,
-            "error": f"Execution timed out after {timeout}s. "
-                     "Note: on Windows, the thread continues in background and cannot be force-killed.",
+            "error": timeout_hints,
         })
 
     if error_holder[0]:
         return json.dumps({
             "success": False,
             "stdout": stdout_buf.getvalue(),
-            "stderr": stderr_buf.getvalue(),
+            "stderr": stderr_val,
             "result": None,
             "error": error_holder[0],
             "script_path": None,
@@ -368,7 +612,7 @@ def run_code(code: str, timeout: int = 120, reset: bool = False) -> str:
     return json.dumps({
         "success": True,
         "stdout": stdout_buf.getvalue(),
-        "stderr": stderr_buf.getvalue(),
+        "stderr": stderr_val,
         "result": result_str,
         "error": None,
         "script_path": script_path,
@@ -380,14 +624,28 @@ def run_code(code: str, timeout: int = 120, reset: bool = False) -> str:
 # ---------------------------------------------------------------------------
 
 @app.tool()
-def inspect_asset(asset_id: str) -> str:
+def inspect_asset(
+    asset_id: str,
+    start_date: str = "",
+    end_date: str = "",
+    region_var: str = "",
+) -> str:
     """Get detailed metadata for any GEE asset (Image, ImageCollection, FeatureCollection, etc.).
 
     Returns band names/types, CRS, scale, dimensions, date range, size,
     column names, geometry type, and properties as appropriate.
 
+    For ImageCollections, optional filters can be applied and the response
+    includes image_count, first_date, last_date, and per-band details
+    (name, data_type, crs, scale). This replaces the old get_collection_info tool.
+
     Args:
         asset_id: Full Earth Engine asset ID (e.g. "COPERNICUS/S2_SR_HARMONIZED").
+        start_date: Optional start date filter for ImageCollections (YYYY-MM-DD).
+        end_date: Optional end date filter for ImageCollections (YYYY-MM-DD).
+        region_var: Optional name of an ee.Geometry or ee.FeatureCollection
+                    variable in the REPL namespace for spatial filtering
+                    (ImageCollections only).
 
     Returns:
         JSON with asset metadata.
@@ -411,7 +669,81 @@ def inspect_asset(asset_id: str) -> str:
             asset = ee.Image(asset_id)
 
         elif asset_type in ("IMAGE_COLLECTION", "ImageCollection"):
-            asset = ee.ImageCollection(asset_id).limit(5)
+            # Build filtered collection for summary stats
+            collection = ee.ImageCollection(asset_id)
+
+            filters_applied = {}
+            if start_date:
+                collection = collection.filterDate(start_date, end_date or "2099-01-01")
+                filters_applied["start_date"] = start_date
+                filters_applied["end_date"] = end_date or "2099-01-01"
+            elif end_date:
+                collection = collection.filterDate("1970-01-01", end_date)
+                filters_applied["start_date"] = "1970-01-01"
+                filters_applied["end_date"] = end_date
+
+            if region_var:
+                region = _namespace.get(region_var)
+                if region is None:
+                    return json.dumps({"error": f"Variable {region_var!r} not found in namespace."})
+                if isinstance(region, ee.FeatureCollection):
+                    region = region.geometry()
+                elif not isinstance(region, ee.Geometry):
+                    return json.dumps({
+                        "error": f"Variable {region_var!r} is {type(region).__name__}, "
+                                 "expected ee.Geometry or ee.FeatureCollection.",
+                    })
+                collection = collection.filterBounds(region)
+                filters_applied["region_var"] = region_var
+
+            if filters_applied:
+                result["filters_applied"] = filters_applied
+
+            # Image count
+            try:
+                count = collection.size().getInfo()
+                result["image_count"] = count
+            except Exception as exc:
+                result["image_count_error"] = str(exc)
+                count = None
+
+            if count == 0:
+                result["message"] = "Collection is empty (with applied filters)."
+                return json.dumps(result)
+
+            # Date range
+            try:
+                import datetime as _dt
+                date_range = collection.reduceColumns(
+                    ee.Reducer.minMax(), ["system:time_start"]
+                ).getInfo()
+                min_ms = date_range.get("min")
+                max_ms = date_range.get("max")
+                if min_ms is not None:
+                    result["first_date"] = _dt.datetime.utcfromtimestamp(min_ms / 1000).strftime("%Y-%m-%d")
+                if max_ms is not None:
+                    result["last_date"] = _dt.datetime.utcfromtimestamp(max_ms / 1000).strftime("%Y-%m-%d")
+            except Exception:
+                pass
+
+            # Band info from first image
+            try:
+                first_info = collection.first().getInfo()
+                if first_info and "bands" in first_info:
+                    bands = []
+                    for b in first_info["bands"]:
+                        bands.append({
+                            "name": b.get("id", ""),
+                            "data_type": b.get("data_type", {}).get("precision", ""),
+                            "crs": b.get("crs", ""),
+                            "scale": b.get("crs_transform", [None])[0],
+                        })
+                    result["bands"] = bands
+            except Exception:
+                pass
+
+            # Also include raw metadata from a small sample
+            asset = collection.limit(5)
 
         elif asset_type in ("TABLE", "FeatureCollection"):
             asset = ee.FeatureCollection(asset_id).limit(5)
@@ -470,9 +802,36 @@ def get_api_reference(module: str, function_name: str = "") -> str:
             "docstring": _inspect.getdoc(mod) or "(no module docstring)",
         })
 
-    obj = getattr(mod, function_name, None)
+    # Resolve dotted names (e.g. "mapper.addLayer") by walking the attribute chain
+    obj = None
+    parts = function_name.split(".")
+    try:
+        obj = mod
+        for part in parts:
+            obj = getattr(obj, part)
+    except AttributeError:
+        obj = None
+
+    # Fallback: for geeView, try the mapper class if a bare name isn't found at module level
+    if obj is None and module == "geeView" and len(parts) == 1:
+        mapper_cls = getattr(mod, "mapper", None)
+        if mapper_cls:
+            obj = getattr(mapper_cls, function_name, None)
+            if obj is not None:
+                # Rewrite for clearer output
+                function_name = f"mapper.{function_name}"
+
     if obj is None:
-        return json.dumps({"error": f"{function_name!r} not found in {module}"})
+        # Provide a hint if it might be a mapper method
+        hint = ""
+        if module == "geeView":
+            mapper_cls = getattr(mod, "mapper", None)
+            if mapper_cls:
+                methods = [m for m in dir(mapper_cls) if not m.startswith("_")
+                           and function_name.lower() in m.lower()]
+                if methods:
+                    hint = f" Did you mean: {', '.join('mapper.' + m for m in methods[:5])}?"
+        return json.dumps({"error": f"{function_name!r} not found in {module}.{hint}"})
 
     # Handle classes: show class docstring + public method list
     if _inspect.isclass(obj):
@@ -503,72 +862,109 @@ def get_api_reference(module: str, function_name: str = "") -> str:
 
 
 # ---------------------------------------------------------------------------
-# Tool 4: list_functions
+# Tool 4: search_functions
 # ---------------------------------------------------------------------------
 
 @app.tool()
-def list_functions(module: str, filter: str = "") -> str:
-    """List all public functions and classes in a geeViz module with one-line descriptions.
+def search_functions(query: str = "", module: str = "") -> str:
+    """Search for functions across geeViz modules, or list functions in a specific module.
+
+    Combines search and listing into one tool:
+    - query only → search all modules for matching functions (by name or docstring)
+    - module only → list all public functions in that module
+    - both → search within a specific module
+    - neither → return list of available modules with usage hint
 
     Args:
-        module: Short module name (see get_api_reference for valid names).
-        filter: Optional substring filter (case-insensitive) to narrow results.
-                Useful for getImagesLib which has 100+ functions.
+        query: Search term (case-insensitive). Matched against function names
+               and the first line of their docstrings.
+        module: Short module name to restrict search to a single module.
+                Valid names: geeView, getImagesLib, changeDetectionLib,
+                gee2Pandas, assetManagerLib, taskManagerLib, foliumView,
+                phEEnoViz, cloudStorageManagerLib, chartingLib.
 
     Returns:
-        JSON list of {name, type, description} objects.
+        JSON with matching functions. Each entry has module, name, type, description.
     """
     _ensure_initialized()
 
-    fq = _MODULE_MAP.get(module)
-    if not fq:
+    # Neither query nor module -- list available modules
+    if not query and not module:
         return json.dumps({
-            "error": f"Unknown module: {module!r}. Valid modules: {', '.join(sorted(_MODULE_MAP))}",
+            "modules": sorted(_MODULE_MAP.keys()),
+            "usage": (
+                'Pass module="<name>" to list all functions in a module, '
+                'query="<term>" to search across all modules, '
+                "or both to search within a specific module."
+            ),
         })
 
-    try:
-        mod = importlib.import_module(fq)
-    except Exception as exc:
-        return json.dumps({"error": f"Failed to import {fq}: {exc}"})
+    # Determine which modules to search
+    if module:
+        fq = _MODULE_MAP.get(module)
+        if not fq:
+            return json.dumps({
+                "error": f"Unknown module: {module!r}. Valid modules: {', '.join(sorted(_MODULE_MAP))}",
+            })
+        modules_to_search = {module: fq}
+    else:
+        modules_to_search = _MODULE_MAP
 
-    entries = []
-    for name in sorted(dir(mod)):
-        if name.startswith("_"):
-            continue
-        obj = getattr(mod, name, None)
-        if obj is None:
-            continue
-        if not (callable(obj) or _inspect.isclass(obj)):
-            continue
-        if filter and filter.lower() not in name.lower():
+    q = query.lower() if query else ""
+    results = []
+
+    for short_name, fq_name in modules_to_search.items():
+        try:
+            mod = importlib.import_module(fq_name)
+        except Exception:
             continue
 
-        doc = _inspect.getdoc(obj) or ""
-        first_line = doc.split("\n")[0].strip() if doc else "(no description)"
-        kind = "class" if _inspect.isclass(obj) else "function"
-        entries.append({"name": name, "type": kind, "description": first_line})
+        for name in sorted(dir(mod)):
+            if name.startswith("_"):
+                continue
+            obj = getattr(mod, name, None)
+            if obj is None or not (callable(obj) or _inspect.isclass(obj)):
+                continue
 
-    # For geeView, also list mapper class methods if present
-    if module == "geeView":
-        mapper_cls = getattr(mod, "mapper", None)
-        if mapper_cls and _inspect.isclass(mapper_cls):
-            for mname in sorted(dir(mapper_cls)):
-                if mname.startswith("_"):
-                    continue
-                mobj = getattr(mapper_cls, mname, None)
-                if not callable(mobj):
-                    continue
-                if filter and filter.lower() not in mname.lower():
-                    continue
-                doc = _inspect.getdoc(mobj) or ""
-                first_line = doc.split("\n")[0].strip() if doc else "(no description)"
-                entries.append({
-                    "name": f"mapper.{mname}",
-                    "type": "method",
-                    "description": first_line,
-                })
+            doc = _inspect.getdoc(obj) or ""
+            first_line = doc.split("\n")[0].strip() if doc else "(no description)"
 
-    return json.dumps({"module": module, "count": len(entries), "functions": entries})
+            if q and q not in name.lower() and q not in first_line.lower():
+                continue
+
+            kind = "class" if _inspect.isclass(obj) else "function"
+            results.append({
+                "module": short_name,
+                "name": name,
+                "type": kind,
+                "description": first_line,
+            })
+
+        # For geeView, also include mapper class methods
+        if short_name == "geeView":
+            mapper_cls = getattr(mod, "mapper", None)
+            if mapper_cls and _inspect.isclass(mapper_cls):
+                for mname in sorted(dir(mapper_cls)):
+                    if mname.startswith("_"):
+                        continue
+                    mobj = getattr(mapper_cls, mname, None)
+                    if not callable(mobj):
+                        continue
+
+                    doc = _inspect.getdoc(mobj) or ""
+                    first_line = doc.split("\n")[0].strip() if doc else "(no description)"
+
+                    if q and q not in mname.lower() and q not in first_line.lower():
+                        continue
+
+                    results.append({
+                        "module": short_name,
+                        "name": f"mapper.{mname}",
+                        "type": "method",
+                        "description": first_line,
+                    })
+
+    return json.dumps({"query": query, "module": module, "count": len(results), "results": results})
 
 
 # ---------------------------------------------------------------------------
@@ -908,91 +1304,128 @@ def clear_map() -> str:
 
 
 # ---------------------------------------------------------------------------
-# Tool 12: search_functions
+# Tool 13: save_session
 # ---------------------------------------------------------------------------
 
 @app.tool()
-def search_functions(query: str) -> str:
-    """Search for a function across ALL geeViz modules by name or docstring.
-
-    Unlike list_functions (which searches one module), this searches everything
-    at once. Useful when you don't know which module a function is in.
-
-    Args:
-        query: Search term (case-insensitive). Matched against function names
-               and the first line of their docstrings.
-
-    Returns:
-        JSON list of {module, name, type, description} matches.
-    """
-    _ensure_initialized()
-    q = query.lower()
-    results = []
-
-    for short_name, fq_name in _MODULE_MAP.items():
-        try:
-            mod = importlib.import_module(fq_name)
-        except Exception:
-            continue
-
-        for name in dir(mod):
-            if name.startswith("_"):
-                continue
-            obj = getattr(mod, name, None)
-            if obj is None or not (callable(obj) or _inspect.isclass(obj)):
-                continue
-
-            doc = _inspect.getdoc(obj) or ""
-            first_line = doc.split("\n")[0].strip() if doc else ""
-
-            if q in name.lower() or q in first_line.lower():
-                kind = "class" if _inspect.isclass(obj) else "function"
-                results.append({
-                    "module": short_name,
-                    "name": name,
-                    "type": kind,
-                    "description": first_line or "(no description)",
-                })
-
-    return json.dumps({"query": query, "count": len(results), "results": results})
-
-
-# ---------------------------------------------------------------------------
-# Tool 13: save_script
-# ---------------------------------------------------------------------------
-
-@app.tool()
-def save_script(filename: str = "") -> str:
-    """Save the accumulated run_code history to a standalone .py file.
-
-    The script includes all necessary imports and every successful run_code
-    call in order, so it can be run independently.
+def save_session(filename: str = "", format: str = "py") -> str:
+    """Save the accumulated run_code history to a .py script or .ipynb notebook.
 
     Args:
         filename: Optional custom filename (saved in geeViz/mcp/generated_scripts/).
-                  If omitted, uses the auto-generated session filename.
+                  If omitted, uses a timestamped default. The correct extension
+                  is added automatically based on format.
+        format: Output format -- "py" (default) for a standalone Python script,
+                "ipynb" for a Jupyter notebook.
 
     Returns:
-        JSON with the file path and number of code blocks saved.
+        JSON with the file path and number of code blocks/cells saved.
     """
+    if format not in ("py", "ipynb"):
+        return json.dumps({
+            "error": f"Invalid format: {format!r}. Must be 'py' or 'ipynb'.",
+        })
+
     if not _code_history:
         return json.dumps({
             "error": "No code has been executed yet. Use run_code first.",
         })
 
-    global _current_script_path
-    if filename:
-        if not filename.endswith(".py"):
-            filename += ".py"
-        os.makedirs(_script_dir, exist_ok=True)
-        _current_script_path = os.path.join(_script_dir, filename)
+    if format == "py":
+        global _current_script_path
+        if filename:
+            if not filename.endswith(".py"):
+                filename += ".py"
+            os.makedirs(_script_dir, exist_ok=True)
+            _current_script_path = os.path.join(_script_dir, filename)
 
-    path = _save_history_to_file()
+        path = _save_history_to_file()
+        return json.dumps({
+            "success": True,
+            "script_path": path,
+            "code_blocks": len(_code_history),
+            "message": f"Saved {len(_code_history)} code block(s) to {path}",
+        })
+
+    # format == "ipynb"
+    import datetime
+    os.makedirs(_script_dir, exist_ok=True)
+
+    if filename:
+        if not filename.endswith(".ipynb"):
+            filename += ".ipynb"
+        nb_path = os.path.join(_script_dir, filename)
+    else:
+        ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        nb_path = os.path.join(_script_dir, f"session_{ts}.ipynb")
+
+    # Build notebook structure (nbformat 4.5)
+    cells = []
+
+    # Markdown header cell
+    cells.append({
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "# geeViz MCP Session\n",
+            "\n",
+            f"Auto-generated by geeViz MCP server on {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.\n",
+        ],
+    })
+
+    # Import cell
+    cells.append({
+        "cell_type": "code",
+        "metadata": {},
+        "source": [
+            "import geeViz.geeView as gv\n",
+            "import geeViz.getImagesLib as gil\n",
+            "ee = gv.ee\n",
+            "Map = gv.Map",
+        ],
+        "execution_count": None,
+        "outputs": [],
+    })
+
+    # One code cell per run_code call
+    for i, block in enumerate(_code_history):
+        lines = block.splitlines(True)  # keep line endings
+        # Ensure last line has newline for notebook format
+        if lines and not lines[-1].endswith("\n"):
+            lines[-1] += "\n"
+        cells.append({
+            "cell_type": "code",
+            "metadata": {},
+            "source": lines,
+            "execution_count": None,
+            "outputs": [],
+        })
+
+    notebook = {
+        "nbformat": 4,
+        "nbformat_minor": 5,
+        "metadata": {
+            "kernelspec": {
+                "display_name": "Python 3",
+                "language": "python",
+                "name": "python3",
+            },
+            "language_info": {
+                "name": "python",
+                "version": sys.version.split()[0],
+            },
+        },
+        "cells": cells,
+    }
+
+    with open(nb_path, "w", encoding="utf-8") as f:
+        json.dump(notebook, f, indent=1, ensure_ascii=False)
+
     return json.dumps({
         "success": True,
-        "script_path": path,
-        "code_blocks": len(_code_history),
-        "message": f"Saved {len(_code_history)} code block(s) to {path}",
+        "notebook_path": nb_path,
+        "code_cells": len(_code_history),
+        "message": f"Saved {len(_code_history)} code cell(s) to {nb_path}",
     })
 
 
@@ -1117,7 +1550,7 @@ def get_project_info() -> str:
 
     # Get project ID
     try:
-        project = ee.data._get_cloud_api_user_project()
+        project = ee.data._get_state().cloud_api_user_project
         result["project_id"] = project
     except Exception as exc:
         result["project_id"] = None
@@ -1142,112 +1575,6 @@ def get_project_info() -> str:
             result["assets_error"] = str(exc)
 
     return json.dumps(result)
-
-
-# ---------------------------------------------------------------------------
-# Tool 17: save_notebook
-# ---------------------------------------------------------------------------
-
-@app.tool()
-def save_notebook(filename: str = "") -> str:
-    """Save the accumulated run_code history as a Jupyter notebook (.ipynb).
-
-    Creates one code cell per run_code call, with a markdown header cell
-    and an import cell at the top. Uses nbformat 4.5 structure (plain JSON,
-    no nbformat library required).
-
-    Args:
-        filename: Optional custom filename (saved in geeViz/mcp/generated_scripts/).
-                  If omitted, uses a timestamped default. Extension .ipynb is
-                  added automatically if missing.
-
-    Returns:
-        JSON with the file path and number of code cells saved.
-    """
-    if not _code_history:
-        return json.dumps({
-            "error": "No code has been executed yet. Use run_code first.",
-        })
-
-    import datetime
-    os.makedirs(_script_dir, exist_ok=True)
-
-    if filename:
-        if not filename.endswith(".ipynb"):
-            filename += ".ipynb"
-        nb_path = os.path.join(_script_dir, filename)
-    else:
-        ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        nb_path = os.path.join(_script_dir, f"session_{ts}.ipynb")
-
-    # Build notebook structure (nbformat 4.5)
-    cells = []
-
-    # Markdown header cell
-    cells.append({
-        "cell_type": "markdown",
-        "metadata": {},
-        "source": [
-            "# geeViz MCP Session\n",
-            "\n",
-            f"Auto-generated by geeViz MCP server on {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.\n",
-        ],
-    })
-
-    # Import cell
-    cells.append({
-        "cell_type": "code",
-        "metadata": {},
-        "source": [
-            "import geeViz.geeView as gv\n",
-            "import geeViz.getImagesLib as gil\n",
-            "ee = gv.ee\n",
-            "Map = gv.Map",
-        ],
-        "execution_count": None,
-        "outputs": [],
-    })
-
-    # One code cell per run_code call
-    for i, block in enumerate(_code_history):
-        lines = block.splitlines(True)  # keep line endings
-        # Ensure last line has newline for notebook format
-        if lines and not lines[-1].endswith("\n"):
-            lines[-1] += "\n"
-        cells.append({
-            "cell_type": "code",
-            "metadata": {},
-            "source": lines,
-            "execution_count": None,
-            "outputs": [],
-        })
-
-    notebook = {
-        "nbformat": 4,
-        "nbformat_minor": 5,
-        "metadata": {
-            "kernelspec": {
-                "display_name": "Python 3",
-                "language": "python",
-                "name": "python3",
-            },
-            "language_info": {
-                "name": "python",
-                "version": sys.version.split()[0],
-            },
-        },
-        "cells": cells,
-    }
-
-    with open(nb_path, "w", encoding="utf-8") as f:
-        json.dump(notebook, f, indent=1, ensure_ascii=False)
-
-    return json.dumps({
-        "success": True,
-        "notebook_path": nb_path,
-        "code_cells": len(_code_history),
-        "message": f"Saved {len(_code_history)} code cell(s) to {nb_path}",
-    })
 
 
 # ---------------------------------------------------------------------------
@@ -1680,11 +2007,11 @@ def search_datasets(query: str, source: str = "all", max_results: int = 10) -> s
 
 
 # ---------------------------------------------------------------------------
-# Tool 21: get_dataset_info
+# Tool 21: get_catalog_info
 # ---------------------------------------------------------------------------
 
 @app.tool()
-def get_dataset_info(dataset_id: str) -> str:
+def get_catalog_info(dataset_id: str) -> str:
     """Get detailed STAC metadata for a GEE dataset.
 
     Fetches the full STAC JSON record from earthengine-stac.storage.googleapis.com
@@ -1693,7 +2020,7 @@ def get_dataset_info(dataset_id: str) -> str:
     visualization parameters, provider info, and links.
 
     This is the "drill down" companion to search_datasets -- use
-    search_datasets to find datasets, then get_dataset_info for full details.
+    search_datasets to find datasets, then get_catalog_info for full details.
 
     Only works for official GEE datasets (STAC records don't exist for
     community datasets). For community datasets, use inspect_asset instead.
@@ -2156,278 +2483,7 @@ def cancel_tasks(name_filter: str = "") -> str:
 
 
 # ---------------------------------------------------------------------------
-# Tool 26: sample_values
-# ---------------------------------------------------------------------------
-
-@app.tool()
-def sample_values(
-    image_var: str,
-    geometry_var: str = "",
-    lon: float = None,
-    lat: float = None,
-    scale: int = 30,
-    reducer: str = "first",
-) -> str:
-    """Sample pixel values from an ee.Image at a point or region.
-
-    Provide either lon/lat coordinates for a point sample, or a geometry
-    variable name for a region reduction.
-
-    Args:
-        image_var: Name of the ee.Image variable in the REPL namespace.
-        geometry_var: Optional name of an ee.Geometry or ee.FeatureCollection
-                      variable. Used if lon/lat are not provided.
-        lon: Longitude for a point sample.
-        lat: Latitude for a point sample.
-        scale: Scale in meters for the reduction (default 30).
-        reducer: Reducer to use -- "first", "mean", "median", "min", "max",
-                 "sum", "stdDev", or "count" (default "first").
-
-    Returns:
-        JSON dict of band name -> sampled value.
-    """
-    _ensure_initialized()
-    ee = _namespace["ee"]
-
-    # Look up image
-    image = _namespace.get(image_var)
-    if image is None:
-        return json.dumps({"error": f"Variable {image_var!r} not found in namespace."})
-    if not isinstance(image, ee.Image):
-        return json.dumps({
-            "error": f"Variable {image_var!r} is {type(image).__name__}, not ee.Image.",
-        })
-
-    # Determine geometry
-    if lon is not None and lat is not None:
-        geometry = ee.Geometry.Point([lon, lat])
-    elif geometry_var:
-        geometry = _namespace.get(geometry_var)
-        if geometry is None:
-            return json.dumps({"error": f"Variable {geometry_var!r} not found in namespace."})
-        if isinstance(geometry, ee.FeatureCollection):
-            geometry = geometry.geometry()
-        elif not isinstance(geometry, ee.Geometry):
-            return json.dumps({
-                "error": f"Variable {geometry_var!r} is {type(geometry).__name__}, "
-                         "expected ee.Geometry or ee.FeatureCollection.",
-            })
-    else:
-        return json.dumps({
-            "error": "Provide either lon/lat coordinates or a geometry_var name.",
-        })
-
-    # Map reducer string to ee.Reducer
-    reducer_map = {
-        "first": ee.Reducer.first(),
-        "mean": ee.Reducer.mean(),
-        "median": ee.Reducer.median(),
-        "min": ee.Reducer.min(),
-        "max": ee.Reducer.max(),
-        "sum": ee.Reducer.sum(),
-        "stdDev": ee.Reducer.stdDev(),
-        "count": ee.Reducer.count(),
-    }
-    ee_reducer = reducer_map.get(reducer)
-    if ee_reducer is None:
-        return json.dumps({
-            "error": f"Unknown reducer: {reducer!r}. "
-                     f"Valid: {', '.join(sorted(reducer_map))}",
-        })
-
-    try:
-        result = image.reduceRegion(
-            reducer=ee_reducer,
-            geometry=geometry,
-            scale=scale,
-            maxPixels=1e9,
-        ).getInfo()
-    except Exception as exc:
-        return json.dumps({"error": f"Sample failed: {exc}"})
-
-    return json.dumps({
-        "success": True,
-        "reducer": reducer,
-        "scale": scale,
-        "values": result,
-    })
-
-
-# ---------------------------------------------------------------------------
-# Tool 27: get_time_series
-# ---------------------------------------------------------------------------
-
-# Check for matplotlib at module level
-try:
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    _HAS_MPL = True
-except ImportError:
-    _HAS_MPL = False
-
-
-@app.tool()
-def get_time_series(
-    collection_var: str,
-    geometry_var: str = "",
-    lon: float = None,
-    lat: float = None,
-    band: str = "",
-    start_date: str = "",
-    end_date: str = "",
-    scale: int = 30,
-    reducer: str = "mean",
-):
-    """Extract time series of band values from an ImageCollection.
-
-    Reduces each image in the collection over the given geometry and returns
-    date-value pairs. If matplotlib is available, also returns a line chart PNG.
-
-    Args:
-        collection_var: Name of the ee.ImageCollection variable in the REPL namespace.
-        geometry_var: Optional name of an ee.Geometry or ee.FeatureCollection variable.
-        lon: Longitude for a point sample (used if geometry_var is empty).
-        lat: Latitude for a point sample (used if geometry_var is empty).
-        band: Band name to extract. If empty, uses the first band.
-        start_date: Optional start date filter (YYYY-MM-DD).
-        end_date: Optional end date filter (YYYY-MM-DD).
-        scale: Scale in meters for the reduction (default 30).
-        reducer: Reducer to use -- "mean", "median", "min", "max", "first",
-                 "sum" (default "mean").
-
-    Returns:
-        JSON with date-value data (and a PNG chart image if matplotlib is available).
-    """
-    _ensure_initialized()
-    ee = _namespace["ee"]
-
-    # Look up collection
-    collection = _namespace.get(collection_var)
-    if collection is None:
-        return json.dumps({"error": f"Variable {collection_var!r} not found in namespace."})
-    if not isinstance(collection, ee.ImageCollection):
-        return json.dumps({
-            "error": f"Variable {collection_var!r} is {type(collection).__name__}, "
-                     "not ee.ImageCollection.",
-        })
-
-    # Determine geometry
-    if lon is not None and lat is not None:
-        geometry = ee.Geometry.Point([lon, lat])
-    elif geometry_var:
-        geometry = _namespace.get(geometry_var)
-        if geometry is None:
-            return json.dumps({"error": f"Variable {geometry_var!r} not found in namespace."})
-        if isinstance(geometry, ee.FeatureCollection):
-            geometry = geometry.geometry()
-        elif not isinstance(geometry, ee.Geometry):
-            return json.dumps({
-                "error": f"Variable {geometry_var!r} is {type(geometry).__name__}, "
-                         "expected ee.Geometry or ee.FeatureCollection.",
-            })
-    else:
-        return json.dumps({
-            "error": "Provide either lon/lat coordinates or a geometry_var name.",
-        })
-
-    # Apply date filters
-    if start_date:
-        collection = collection.filterDate(start_date, end_date or "2099-01-01")
-    elif end_date:
-        collection = collection.filterDate("1970-01-01", end_date)
-
-    # Map reducer string
-    reducer_map = {
-        "first": ee.Reducer.first(),
-        "mean": ee.Reducer.mean(),
-        "median": ee.Reducer.median(),
-        "min": ee.Reducer.min(),
-        "max": ee.Reducer.max(),
-        "sum": ee.Reducer.sum(),
-    }
-    ee_reducer = reducer_map.get(reducer)
-    if ee_reducer is None:
-        return json.dumps({
-            "error": f"Unknown reducer: {reducer!r}. "
-                     f"Valid: {', '.join(sorted(reducer_map))}",
-        })
-
-    # Determine band name
-    if not band:
-        try:
-            band = collection.first().bandNames().get(0).getInfo()
-        except Exception as exc:
-            return json.dumps({"error": f"Could not determine band name: {exc}"})
-
-    # Select the band and map reduceRegion over each image
-    collection = collection.select(band)
-
-    def _extract(img):
-        date = img.date().format("YYYY-MM-dd")
-        val = img.reduceRegion(
-            reducer=ee_reducer, geometry=geometry,
-            scale=scale, maxPixels=1e9,
-        ).get(band)
-        return ee.Feature(None, {"date": date, "value": val})
-
-    try:
-        fc = collection.map(_extract)
-        data = fc.getInfo()
-    except Exception as exc:
-        return json.dumps({"error": f"Time series extraction failed: {exc}"})
-
-    # Parse features into date-value list
-    series = []
-    for feat in data.get("features", []):
-        props = feat.get("properties", {})
-        series.append({
-            "date": props.get("date"),
-            "value": props.get("value"),
-        })
-
-    # Sort by date
-    series.sort(key=lambda x: x.get("date") or "")
-
-    # Filter out null values for charting
-    valid_series = [p for p in series if p["value"] is not None and p["date"] is not None]
-
-    # Generate chart if matplotlib is available
-    if _HAS_MPL and valid_series and _MCPImage is not None:
-        try:
-            import datetime as _dt
-            dates = [_dt.datetime.strptime(p["date"], "%Y-%m-%d") for p in valid_series]
-            values = [p["value"] for p in valid_series]
-
-            fig, ax = plt.subplots(figsize=(10, 4))
-            ax.plot(dates, values, marker=".", markersize=3, linewidth=0.8)
-            ax.set_xlabel("Date")
-            ax.set_ylabel(band)
-            ax.set_title(f"Time Series: {band}")
-            fig.autofmt_xdate()
-            fig.tight_layout()
-
-            buf = io.BytesIO()
-            plt.savefig(buf, format="png", bbox_inches="tight", dpi=100)
-            plt.close(fig)
-            buf.seek(0)
-
-            return _MCPImage(data=buf.getvalue(), format="png")
-        except Exception:
-            pass  # Fall through to JSON-only response
-
-    return json.dumps({
-        "success": True,
-        "band": band,
-        "reducer": reducer,
-        "scale": scale,
-        "count": len(series),
-        "series": series,
-    })
-
-
-# ---------------------------------------------------------------------------
-# Tool 28: delete_asset
+# Tool 26: delete_asset
 # ---------------------------------------------------------------------------
 
 @app.tool()
@@ -2463,7 +2519,7 @@ def delete_asset(asset_id: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Tool 29: copy_asset
+# Tool 27: copy_asset
 # ---------------------------------------------------------------------------
 
 @app.tool()
@@ -2512,7 +2568,7 @@ def copy_asset(source_id: str, dest_id: str, overwrite: bool = False) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Tool 30: move_asset
+# Tool 28: move_asset
 # ---------------------------------------------------------------------------
 
 @app.tool()
@@ -2574,7 +2630,7 @@ def move_asset(source_id: str, dest_id: str, overwrite: bool = False) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Tool 31: create_folder
+# Tool 29: create_folder
 # ---------------------------------------------------------------------------
 
 @app.tool()
@@ -2626,7 +2682,7 @@ def create_folder(
 
 
 # ---------------------------------------------------------------------------
-# Tool 32: update_acl
+# Tool 30: update_acl
 # ---------------------------------------------------------------------------
 
 @app.tool()
@@ -2683,105 +2739,369 @@ def update_acl(
 
 
 # ---------------------------------------------------------------------------
-# Tool 33: get_collection_info
+# Tool 32: extract_and_chart
 # ---------------------------------------------------------------------------
 
 @app.tool()
-def get_collection_info(
-    collection_id: str,
+def extract_and_chart(
+    image_var: str = "",
+    collection_var: str = "",
+    geometry_var: str = "",
+    lon: float = None,
+    lat: float = None,
+    buffer_meters: int = 0,
+    band_names: str = "",
     start_date: str = "",
     end_date: str = "",
-    region_var: str = "",
+    scale: int = 30,
+    reducer: str = "",
+    area_format: str = "Percentage",
+    x_axis_property: str = "year",
+    date_format: str = "YYYY",
+    chart_type: str = "lines+markers",
+    stacked: bool = False,
+    palette: str = "",
+    sankey: bool = False,
+    transition_periods: str = "",
+    sankey_band_name: str = "",
+    min_percentage: float = 1.0,
+    feature_label: str = "",
+    title: str = "",
 ) -> str:
-    """Get summary information for an Earth Engine ImageCollection.
+    """Extract values from an ee.Image or ee.ImageCollection and return a
+    Plotly chart as an interactive HTML snippet.
 
-    Loads a collection by asset ID (does NOT require a namespace variable),
-    applies optional date and region filters, and returns image count,
-    date range, band names/types, and spatial extent.
+    This is the single tool for all data extraction and charting workflows.
+    It replaces the old ``sample_values``, ``get_time_series``, and
+    ``zonal_summary`` tools by wrapping ``geeViz.chartingLib.summarize_and_chart``.
+
+    **Point sampling** (like the old ``sample_values``): pass ``lon``/``lat``
+    with ``buffer_meters=0`` and an ``image_var``. Returns raw pixel values
+    via ``reduceRegion`` with no chart.
+
+    **Zonal summary / time series** (like the old ``zonal_summary``): pass
+    ``lon``/``lat`` with ``buffer_meters > 0`` (or a ``geometry_var``) and an
+    ``image_var`` or ``collection_var``. Auto-detects thematic vs continuous
+    data, picks the right reducer, and generates a bar chart (single Image),
+    time series (ImageCollection), or Sankey diagram (``sankey=True``).
+
+    **Grouped bar chart**: pass a ``geometry_var`` pointing at a multi-feature
+    ``ee.FeatureCollection`` and set ``feature_label`` to the property used
+    as row labels. Uses ``reduceRegions`` internally.
 
     Args:
-        collection_id: Full asset ID of the ImageCollection
-                       (e.g. "LANDSAT/LC09/C02/T1_L2").
-        start_date: Optional start date filter (YYYY-MM-DD).
-        end_date: Optional end date filter (YYYY-MM-DD).
-        region_var: Optional name of an ee.Geometry or ee.FeatureCollection
-                    variable for spatial filtering.
+        image_var: Name of an ``ee.Image`` variable in the REPL namespace.
+                   Mutually exclusive with ``collection_var``.
+        collection_var: Name of an ``ee.ImageCollection`` variable in the REPL
+                        namespace. Mutually exclusive with ``image_var``.
+        geometry_var: Name of an ``ee.Geometry``, ``ee.Feature``, or
+                      ``ee.FeatureCollection`` variable for the analysis region.
+        lon: Longitude for a point sample (used if ``geometry_var`` is empty).
+        lat: Latitude for a point sample (used if ``geometry_var`` is empty).
+        buffer_meters: Buffer radius around the point in meters (default 0).
+                       Use 0 for raw point sampling (no chart). Use > 0 for
+                       area-based zonal summary with chart.
+        band_names: Comma-separated band names to include. Auto-detected if empty.
+        start_date: Optional start date filter for collections (YYYY-MM-DD).
+        end_date: Optional end date filter for collections (YYYY-MM-DD).
+        scale: Pixel scale in meters (default 30).
+        reducer: Override the auto-selected reducer. Valid values:
+                 ``"first"``, ``"mean"``, ``"median"``, ``"min"``, ``"max"``,
+                 ``"sum"``, ``"mode"``, ``"stdDev"``, ``"count"``,
+                 ``"frequencyHistogram"``. Leave empty to auto-detect.
+        area_format: Area unit for thematic data -- ``"Percentage"`` (default),
+                     ``"Hectares"``, ``"Acres"``, or ``"Pixels"``.
+        x_axis_property: Property for x-axis labels on ImageCollections
+                         (default ``"year"``).
+        date_format: Earth Engine date format string (default ``"YYYY"``).
+        chart_type: ``"lines+markers"`` (default), ``"lines"``, or ``"bar"``.
+        stacked: Whether to stack series (default False).
+        palette: Comma-separated hex colors for chart series (e.g.
+                 ``"#ff0000,#00ff00,#0000ff"``). Leave empty for auto-detect.
+        sankey: Set True for a Sankey transition diagram (ImageCollection only).
+        transition_periods: JSON list of ``[start, end]`` year pairs for Sankey
+                            (e.g. ``"[[1985,1990],[2000,2005],[2018,2023]]"``).
+        sankey_band_name: Band name for the Sankey analysis (auto-detected if
+                          empty).
+        min_percentage: Minimum percentage threshold for Sankey flows
+                        (default 1.0).
+        feature_label: Property name for per-feature labels when using a
+                       multi-feature ``ee.FeatureCollection``. Triggers
+                       ``reduceRegions`` and produces a grouped bar chart.
+        title: Chart title. Auto-generated if empty.
 
     Returns:
-        JSON with collection statistics.
+        JSON with ``success``, ``summary`` (DataFrame as records), ``chart_html``
+        (Plotly figure as self-contained HTML div), and ``chart_type``.
+        For point sampling (``buffer_meters=0``), returns ``values`` dict instead.
     """
     _ensure_initialized()
     ee = _namespace["ee"]
 
-    try:
-        collection = ee.ImageCollection(collection_id)
-    except Exception as exc:
-        return json.dumps({"error": f"Failed to load collection: {exc}"})
+    # Resolve the EE object
+    if image_var and collection_var:
+        return json.dumps({"error": "Provide image_var OR collection_var, not both."})
+    if not image_var and not collection_var:
+        return json.dumps({"error": "Provide either image_var or collection_var."})
 
-    # Apply filters
-    if start_date:
-        collection = collection.filterDate(start_date, end_date or "2099-01-01")
-    elif end_date:
-        collection = collection.filterDate("1970-01-01", end_date)
+    var_name = image_var or collection_var
+    ee_obj = _namespace.get(var_name)
+    if ee_obj is None:
+        return json.dumps({"error": f"Variable {var_name!r} not found in namespace."})
+    if not isinstance(ee_obj, (ee.Image, ee.ImageCollection)):
+        return json.dumps({
+            "error": f"Variable {var_name!r} is {type(ee_obj).__name__}, "
+                     "expected ee.Image or ee.ImageCollection.",
+        })
 
-    if region_var:
-        region = _namespace.get(region_var)
-        if region is None:
-            return json.dumps({"error": f"Variable {region_var!r} not found in namespace."})
-        if isinstance(region, ee.FeatureCollection):
-            region = region.geometry()
-        elif not isinstance(region, ee.Geometry):
+    # Resolve geometry
+    if lon is not None and lat is not None:
+        point = ee.Geometry.Point([lon, lat])
+        geometry = point.buffer(buffer_meters) if buffer_meters > 0 else point
+    elif geometry_var:
+        geometry = _namespace.get(geometry_var)
+        if geometry is None:
+            return json.dumps({"error": f"Variable {geometry_var!r} not found in namespace."})
+    else:
+        return json.dumps({
+            "error": "Provide either lon/lat coordinates or a geometry_var name.",
+        })
+
+    # ---- Point-sampling fast path (no chart) ----
+    if (
+        lon is not None
+        and lat is not None
+        and buffer_meters == 0
+        and isinstance(ee_obj, ee.Image)
+    ):
+        reducer_map = {
+            "first": ee.Reducer.first(),
+            "mean": ee.Reducer.mean(),
+            "median": ee.Reducer.median(),
+            "min": ee.Reducer.min(),
+            "max": ee.Reducer.max(),
+            "sum": ee.Reducer.sum(),
+            "stdDev": ee.Reducer.stdDev(),
+            "count": ee.Reducer.count(),
+        }
+        ee_reducer = reducer_map.get(reducer or "first")
+        if ee_reducer is None:
             return json.dumps({
-                "error": f"Variable {region_var!r} is {type(region).__name__}, "
-                         "expected ee.Geometry or ee.FeatureCollection.",
+                "error": f"Unknown reducer: {reducer!r}. "
+                         f"Valid: {', '.join(sorted(reducer_map))}",
             })
-        collection = collection.filterBounds(region)
+        try:
+            result = ee_obj.reduceRegion(
+                reducer=ee_reducer,
+                geometry=geometry,
+                scale=scale,
+                maxPixels=1e9,
+            ).getInfo()
+        except Exception as exc:
+            return json.dumps({"error": f"Point sample failed: {exc}"})
 
-    result: dict = {"collection_id": collection_id}
+        return json.dumps({
+            "success": True,
+            "chart_type": "point_sample",
+            "reducer": reducer or "first",
+            "scale": scale,
+            "values": result,
+        })
+
+    # ---- Apply date filters for collections ----
+    if isinstance(ee_obj, ee.ImageCollection):
+        if start_date:
+            ee_obj = ee_obj.filterDate(start_date, end_date or "2099-01-01")
+        elif end_date:
+            ee_obj = ee_obj.filterDate("1970-01-01", end_date)
+
+    # Parse optional parameters
+    bands = [b.strip() for b in band_names.split(",") if b.strip()] or None
+    palette_list = [c.strip() for c in palette.split(",") if c.strip()] or None
+
+    # Build reducer
+    ee_reducer = None
+    if reducer:
+        reducer_map = {
+            "frequencyHistogram": ee.Reducer.frequencyHistogram(),
+            "mean": ee.Reducer.mean(),
+            "median": ee.Reducer.median(),
+            "min": ee.Reducer.min(),
+            "max": ee.Reducer.max(),
+            "sum": ee.Reducer.sum(),
+            "mode": ee.Reducer.mode(),
+            "first": ee.Reducer.first(),
+            "stdDev": ee.Reducer.stdDev(),
+            "count": ee.Reducer.count(),
+        }
+        ee_reducer = reducer_map.get(reducer)
+        if ee_reducer is None:
+            return json.dumps({
+                "error": f"Unknown reducer: {reducer!r}. "
+                         f"Valid: {', '.join(sorted(reducer_map))}",
+            })
+
+    # Parse transition periods
+    t_periods = None
+    if transition_periods:
+        try:
+            t_periods = json.loads(transition_periods)
+        except Exception:
+            return json.dumps({"error": f"Invalid transition_periods JSON: {transition_periods!r}"})
 
     try:
-        count = collection.size().getInfo()
-        result["image_count"] = count
+        import geeViz.chartingLib as cl
+
+        result = cl.summarize_and_chart(
+            ee_obj,
+            geometry,
+            band_names=bands,
+            reducer=ee_reducer,
+            scale=scale,
+            area_format=area_format,
+            x_axis_property=x_axis_property,
+            date_format=date_format,
+            title=title or None,
+            chart_type=chart_type,
+            stacked=stacked,
+            sankey=sankey,
+            transition_periods=t_periods,
+            sankey_band_name=sankey_band_name or None,
+            min_percentage=min_percentage,
+            palette=palette_list,
+            feature_label=feature_label or None,
+        )
     except Exception as exc:
-        return json.dumps({"error": f"Failed to get collection size: {exc}"})
+        return json.dumps({"error": f"extract_and_chart failed: {exc}"})
 
-    if count == 0:
-        result["message"] = "Collection is empty (with applied filters)."
-        return json.dumps(result)
+    # Sankey returns 3-tuple (sankey_df, fig, matrix_df); non-sankey returns 2-tuple
+    if sankey and len(result) == 3:
+        df, fig, matrix_df = result
+        ct = "sankey"
+    else:
+        df, fig = result
+        matrix_df = None
+        ct = "time_series" if isinstance(ee_obj, ee.ImageCollection) else "bar"
 
-    # Date range
+    # Convert DataFrame to records
+    summary = df.reset_index().to_dict(orient="records") if not df.empty else []
+
+    # Convert figure to HTML div
+    chart_html = fig.to_html(full_html=False, include_plotlyjs="cdn")
+
+    out = {
+        "success": True,
+        "chart_type": ct,
+        "row_count": len(summary),
+        "columns": list(df.columns),
+        "summary": summary,
+        "chart_html": chart_html,
+    }
+
+    # Include transition matrix for sankey charts
+    if matrix_df is not None and not matrix_df.empty:
+        out["transition_matrix"] = matrix_df.reset_index().to_dict(orient="records")
+        out["transition_matrix_columns"] = [""] + list(matrix_df.columns)
+
+    # Hint for map integration -- tell the agent to enable area charting
+    out["map_hint"] = (
+        "If you are also adding this data to the map with Map.addLayer(), "
+        "include 'canAreaChart': True in the vizParams dict so the user "
+        "can interactively chart areas in the geeView map. Example: "
+        "Map.addLayer(image, {'min': 0, 'max': 1, 'canAreaChart': True}, 'Layer Name'). "
+        "Also call Map.turnOnAutoAreaCharting() before Map.view() to enable "
+        "automatic area charting when the user pans/zooms."
+    )
+
+    return json.dumps(out)
+
+
+# ---------------------------------------------------------------------------
+# Reference data lookup  (Tool 33)
+# ---------------------------------------------------------------------------
+
+# Mapping of exposed dict names -> getImagesLib attribute + description
+_REFERENCE_DATA: dict[str, dict[str, str]] = {
+    "vizParamsFalse": {"attr": "vizParamsFalse", "description": "False color (SWIR-NIR-Red) visualization parameters"},
+    "vizParamsFalse10k": {"attr": "vizParamsFalse10k", "description": "False color viz params for 10k-scaled data"},
+    "vizParamsTrue": {"attr": "vizParamsTrue", "description": "True color (RGB) visualization parameters"},
+    "vizParamsTrue10k": {"attr": "vizParamsTrue10k", "description": "True color viz params for 10k-scaled data"},
+    "common_projections": {"attr": "common_projections", "description": "Named CRS + transform definitions (NLCD_CONUS, NLCD_AK, NLCD_HI)"},
+    "changeDirDict": {"attr": "changeDirDict", "description": "Spectral index change direction for vegetation loss (1=increase, -1=decrease)"},
+    "chastainCoeffDict": {"attr": "chastainCoeffDict", "description": "Cross-sensor harmonization coefficients (Chastain et al. 2018)"},
+    "s2CollectionDict": {"attr": "s2CollectionDict", "description": "Sentinel-2 processing level -> EE collection ID"},
+    "sensorBandDict": {"attr": "sensorBandDict", "description": "Sentinel-2 processing level -> raw band IDs"},
+    "sensorBandNameDict": {"attr": "sensorBandNameDict", "description": "Sentinel-2 processing level -> standardized band names"},
+    "landsat_C2_L2_rescale_dict": {"attr": "landsat_C2_L2_rescale_dict", "description": "Landsat C1/C2 reflectance + thermal rescaling factors"},
+    "landsatSensorBandDict": {"attr": "landsatSensorBandDict", "description": "Landsat collection/satellite/product -> raw band IDs"},
+    "landsatSensorBandNameDict": {"attr": "landsatSensorBandNameDict", "description": "Landsat collection/product -> standardized band names"},
+    "landsatCollectionDict": {"attr": "landsatCollectionDict", "description": "Landsat collection/satellite/product -> EE collection ID"},
+    "landsatFmaskBandNameDict": {"attr": "landsatFmaskBandNameDict", "description": "Landsat collection version -> QA band name"},
+    "fmaskBitDict": {"attr": "fmaskBitDict", "description": "Landsat collection version -> cloud/shadow/snow bit positions"},
+    "modisCDict": {"attr": "modisCDict", "description": "MODIS product key -> EE collection ID"},
+    "multModisDict": {"attr": "multModisDict", "description": "MODIS scaling factors + band names per product config"},
+    "testAreas": {"attr": "testAreas", "description": "Pre-defined test geometries (CO, CO_North, CA, CA_Small, HI)"},
+}
+
+
+def _make_serializable(obj):
+    """Recursively convert ee objects to JSON-safe values."""
+    if obj is None or isinstance(obj, (str, int, float, bool)):
+        return obj
+    if isinstance(obj, list):
+        return [_make_serializable(v) for v in obj]
+    if isinstance(obj, dict):
+        return {k: _make_serializable(v) for k, v in obj.items()}
+    # ee.Geometry -> GeoJSON via getInfo (fast, client-side struct)
     try:
-        date_range = collection.reduceColumns(
-            ee.Reducer.minMax(), ["system:time_start"]
-        ).getInfo()
-        import datetime as _dt
-        min_ms = date_range.get("min")
-        max_ms = date_range.get("max")
-        if min_ms is not None:
-            result["first_date"] = _dt.datetime.utcfromtimestamp(min_ms / 1000).strftime("%Y-%m-%d")
-        if max_ms is not None:
-            result["last_date"] = _dt.datetime.utcfromtimestamp(max_ms / 1000).strftime("%Y-%m-%d")
+        import ee as _ee
+        if isinstance(obj, _ee.Geometry):
+            return obj.getInfo()
     except Exception:
         pass
+    # Other ee objects -> repr string
+    return repr(obj)
 
-    # Band info from first image
+
+@app.tool()
+def get_reference_data(name: str = "") -> str:
+    """Look up geeViz reference dictionaries (band mappings, collection IDs, viz params, etc.).
+
+    Args:
+        name: Name of the reference dict to retrieve.
+              Pass "" (empty) to list all available dicts with descriptions.
+
+    Returns:
+        JSON string with the dict contents or listing of available dicts.
+    """
+    _ensure_initialized()
+
+    # Listing mode
+    if not name:
+        listing = [
+            {"name": k, "description": v["description"]}
+            for k, v in _REFERENCE_DATA.items()
+        ]
+        return json.dumps({
+            "available": listing,
+            "count": len(listing),
+            "usage": 'Call get_reference_data(name="<dict_name>") to retrieve contents.',
+            "note": "getImagesLib has additional module-level objects not listed here; use run_code to access them.",
+        })
+
+    # Lookup mode
+    entry = _REFERENCE_DATA.get(name)
+    if entry is None:
+        available = sorted(_REFERENCE_DATA.keys())
+        return json.dumps({"error": f"Unknown reference dict: {name!r}", "available": available})
+
     try:
-        first_info = collection.first().getInfo()
-        if first_info and "bands" in first_info:
-            bands = []
-            for b in first_info["bands"]:
-                bands.append({
-                    "name": b.get("id", ""),
-                    "data_type": b.get("data_type", {}).get("precision", ""),
-                    "crs": b.get("crs", ""),
-                    "dimensions": b.get("dimensions"),
-                    "scale": b.get("crs_transform", [None])[0],
-                })
-            result["bands"] = bands
-    except Exception:
-        pass
-
-    return json.dumps(result)
+        import geeViz.getImagesLib as gil
+        raw = getattr(gil, entry["attr"])
+        data = _make_serializable(raw)
+        return json.dumps({"name": name, "description": entry["description"], "data": data})
+    except Exception as exc:
+        return json.dumps({"error": f"Failed to read {name}: {exc}"})
 
 
 # ---------------------------------------------------------------------------

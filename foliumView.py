@@ -352,12 +352,7 @@ class foliumMapper:
 
         if not self.isNotebook:
             self.Map.save(os.path.join(folium_html_folder, folium_html))
-            if not geeView.isPortActive(self.port):
-                print("Starting local web server at: http://localhost:{}/{}/".format(self.port, geeView.geeViewFolder))
-                geeView.run_local_server(self.port)
-                print("Done")
-            else:
-                print("Local web server at: http://localhost:{}/{}/ already serving.".format(self.port, geeView.geeViewFolder))
+            geeView._ensure_server(self.port)
             if open_browser:
                 geeView.webbrowser.open(
                     "http://localhost:{}/{}/{}".format(self.port, geeView.geeViewFolder, folium_html),

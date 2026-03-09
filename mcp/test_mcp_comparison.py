@@ -3,14 +3,18 @@ Three-way comparison: Gemini with no tools vs Google Search vs MCP server.
 
   Run 1: Bare Gemini -- no tools, pure LLM generation from training data
   Run 2: Google Search -- Gemini with built-in Google Search grounding
-  Run 3: MCP Server -- Gemini with live geeViz MCP tools (real server subprocess)
+  Run 3: MCP Server -- Gemini with live geeViz MCP tools (30 tools, real server subprocess)
+
+Setup:
+  1. Create a .env file in the project root with: GOOGLE_API_KEY=your-key-here
+  2. pip install google-genai mcp python-dotenv
 
 Run:
-  set GOOGLE_API_KEY=your-key-here
-  cd C:\RCR\geeVizBuilder
+  cd C:\\RCR\\geeVizBuilder
   python -m geeViz.mcp.test_mcp_comparison
 
-Requires:  pip install google-genai mcp dotenv
+The MCP server dynamically exposes all 30 geeViz tools to Gemini, including:
+  run_code, search_functions, inspect_asset, extract_and_chart, save_session, etc.
 """
 from __future__ import annotations
 
@@ -18,6 +22,9 @@ import asyncio
 import json
 import os
 import sys
+
+import dotenv
+dotenv.load_dotenv()
 
 # ---------------------------------------------------------------------------
 # Path setup
@@ -37,13 +44,10 @@ from mcp.client.stdio import StdioServerParameters, stdio_client
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-MODEL = os.environ.get("GEMINI_MODEL", "gemini-3-flash-preview")
-import dotenv
-dotenv.load_dotenv()    
+MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 API_KEY = os.environ.get("GOOGLE_API_KEY")
 if not API_KEY:
-    sys.exit("Error: GOOGLE_API_KEY not found in .env file.")
-print(f"API_KEY: {API_KEY}")
+    sys.exit("Error: GOOGLE_API_KEY not found. Add GOOGLE_API_KEY=... to a .env file in the project root.")
 PROMPT = (
     "Write a full workflow using s2 data with multi-year change detection near yellowstone from 2018 to 2025."
 )

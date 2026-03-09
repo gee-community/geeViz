@@ -1,3 +1,71 @@
+# geeViz 2026.3.2 Release Notes
+
+## March 5, 2026
+
+### New Features
+### New: Inline Zonal Summary & Charting Library (`geeViz.chartingLib`)
+
+- **New module: `geeViz.chartingLib`**
+  A Python pipeline for running zonal statistics on `ee.Image` / `ee.ImageCollection` objects and producing Plotly charts directly in notebooks. Mirrors the logic from the geeView JS frontend area-charting module.
+    - **Auto-detection:** Automatically detects thematic vs. continuous data from `class_values`, `class_names`, `class_palette` image properties.
+    - **Chart types:** Time series (line/stacked), bar, and Sankey transition diagrams.
+    - **Area formats:** Percentage, Hectares, Acres, or raw Pixels.
+    - **Sankey charts** return both a source-target-value table and a transition matrix (from-class × to-class).
+    - **Convenience function:** `summarize_and_chart()` orchestrates zonal stats and charting in one call.
+    - **Lower-level API:** `get_obj_info()`, `zonal_stats()`, `chart_time_series()`, `chart_bar()`, `chart_sankey()`, `prepare_sankey_data()` for full control.
+    - **Color ramp interpolation:** Palette colors are interpolated across all bars when fewer colors than classes are provided.
+    - **`palette` parameter:** Matches the map-based `palette` convention for specifying custom colors.
+
+### Bug Fixes
+
+#### `chartingLib` Fixes
+
+- **`.toBands()` prefix handling:** Fixed a bug in `prepare_for_reduction()` where non-mosaic ImageCollections (collections with fewer images than x-axis labels) failed to rename bands correctly. `.toBands()` prefixes each band with `system:index_`, which for real collections produces non-numeric prefixes like `LC09_038029_20230613_`. The cleanup code assumed numeric prefixes (`0_`, `1_`). Now pre-computes expected band names (`label----band`) and renames directly.
+- **`copyProperties` in mosaic branch:** Added `.copyProperties(filtered.first())` to the mosaic path so that image properties (e.g. `class_values`, `class_names`, `class_palette`) are preserved through the mosaic operation. Mirrors the JavaScript area-charting implementation.
+- **Sankey chart transition periods:** Fixed `p2 = transition_periods[i]` → `transition_periods[i + 1]` in the Sankey data preparation. The copy-paste error caused each period to be compared to itself rather than the next period, producing empty/incorrect transition diagrams.
+
+#### Local Server Port Collision
+
+- **`geeViz.geeView`**: Fixed a bug where the local HTTP server could be running on the correct port but serving files from a different directory (e.g. a previous project or working directory). The old code only checked `isPortActive(port)` and assumed the existing server was correct. Now `_ensure_server(port)` tracks the server's PID and root directory in a temp-file state (`~/.geeViz_server_{port}.json`), detects mismatched directories, and automatically kills and restarts the server when needed.
+- **`geeViz.foliumView`**: Updated to use the same `_ensure_server()` helper for consistent server management.
+
+### MCP Server Enhancements
+
+- **Tool consolidation (33 → 30 tools):** Merged and renamed tools to reduce agent confusion:
+    - `save_script` + `save_notebook` → **`save_session`** — single tool with `format="py"` or `format="ipynb"` parameter.
+    - `list_functions` merged into **`search_functions`** — accepts optional `query` and/or `module` params. `module` only = list all functions in that module (old `list_functions`), `query` only = search all modules, both = search within a specific module.
+    - `get_collection_info` merged into **`inspect_asset`** — new optional `start_date`, `end_date`, and `region_var` params. For ImageCollections, returns `image_count`, `first_date`, `last_date`, and per-band details.
+    - `get_dataset_info` renamed to **`get_catalog_info`** — clarifies distinction from `inspect_asset` (live EE metadata vs. STAC catalog documentation).
+- **New MCP tool: `extract_and_chart`** (replaces `zonal_summary`)
+  Wraps `chartingLib.summarize_and_chart` for AI agents — returns both a structured `summary` (JSON records) and `chart_html` (interactive Plotly HTML). Auto-detects thematic vs. continuous data, supports bar, time series, Sankey, and grouped bar charts.
+- **`run_code` improvements:**
+    - Now `async` with progress heartbeats every ~10 seconds to keep MCP client connections alive during long-running computations.
+    - Static analysis warnings: detects `.getInfo()` inside loops and `.getInfo()` on collections without `.limit()` before execution.
+    - Improved timeout messages with actionable hints.
+    - Properly restores `sys.stdout`/`sys.stderr` after timeout to prevent stream capture leaks.
+- **`chartingLib` added to introspectable modules:** `get_api_reference` and `search_functions` now support the `chartingLib` module.
+- **`run_code` subprocess:** Server process is now launched with a list argument (`subprocess.Popen(list)`) instead of `shell=True` for improved safety and reliability.
+
+### Documentation Updates
+
+- **`geeViz.chartingLib`** added to Sphinx API reference (`modules.rst`), module overview (`overview.rst`), and homepage feature list (`index.rst`).
+- **MCP server docs (`mcp_server.rst`):** Replaced verbose inline tool reference with a link to the auto-generated API docs at `geeViz.mcp.server`. Added "Why MCP?" comparison table showing 22 common GEE tasks and how the MCP tools compare to a vanilla coding agent.
+- **MCP tool count updated** to 30 across all docs, agent instructions, README, and module docstrings.
+- **Agent instructions (`agent-instructions.md`, `copilot-instructions.md`):** Added Rule 7 (never write manual `reduceRegion` — use `extract_and_chart` or `chartingLib.summarize_and_chart`). Fixed chartingLib example pattern to return structured JSON + HTML instead of `fig.show()`/`print(df)` which are useless to agents. Updated tool list and descriptions for consolidated tools.
+- **`README.md`:** Added `chartingLib` to Key Features and MCP tools table. Updated tool count and descriptions.
+- **`release-notes.md`:** Added this release entry.
+
+### Example Notebook Updates
+
+- **`examples/areaChart_examples.ipynb`:** Now demonstrates both map-based (`canAreaChart`) and inline (`chartingLib`) approaches side-by-side for every example, including NLCD mode, MTBS Burn Severity, LCMS multi-band, composites time series, and version comparison with Sankey.
+
+### Build & Packaging
+
+- **`setup.py`:** Added `plotly` and `mcp` to `install_requires`. Added `mcp/*.py` and `mcp/*.md` to `package_data`. Centralized version string management across all `__init__.py` files. Added `mcp` and `stac` keywords.
+- **`LICENSE`:** Updated copyright year to 2026.
+
+---
+
 # geeViz 2026.3.1 Release Notes
 
 ## March 1, 2026
@@ -15,13 +83,6 @@
     - Easy integration with Python, LLMs, or browser-based/UIs for rapid interactive development.
 
   The MCP server enables powerful, scriptable workflows and is usable both as a standalone server and a module. See `geeViz/mcp/README.md` for setup and tool documentation.
-
-
-## February 27, 2026
-
-### New Features
-
-- **MCP (Multi-Command Processor):** Introduces a new advanced backend module for interactive geospatial workflows. MCP enables asset management (copy, move, delete, inspect), visualization tools (map/layer inspection, thumbnails, time series charts), Drive export automation, and more. Designed to facilitate robust LLM- or Python-driven analysis and Earth Engine operations with improved error handling and unified tool endpoints.
 
 
 ---

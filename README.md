@@ -28,6 +28,7 @@ Developed by [RedCastle Resources](https://www.redcastleresources.com/), geeViz 
 - Layer toggling, opacity, visualization tools, querying, & area charting
 - Dynamic time-lapse creation from GEE `ImageCollections`
 - Built-in charting & analysis tools (point/polygon, time series, area stats)
+- **Inline zonal summary & charting** (`geeViz.chartingLib`) — run zonal stats and produce Plotly charts (time series, bar, Sankey) directly in notebooks
 - Jupyter/Colab support and standalone scripting
 - Supports Landsat, Sentinel-2, MODIS, LCMS, LCMAP, and more
 - Extensive examples and ready-to-run wrappers
@@ -108,7 +109,7 @@ _geeViz is also mirrored at [code.fs.usda.gov/forest-service/geeViz](https://cod
 
 ## AI-Assisted Development (MCP)
 
-geeViz includes a built-in [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server with **33 tools** that give AI coding assistants live access to geeViz and Google Earth Engine. Instead of generating code from training data (which is often wrong or outdated), your AI assistant can look up real function signatures, read actual example scripts, execute and test code, inspect assets, export data, manage tasks, and more.
+geeViz includes a built-in [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server with **32 tools** that give AI coding assistants live access to geeViz and Google Earth Engine. Instead of generating code from training data (which is often wrong or outdated), your AI assistant can look up real function signatures, read actual example scripts, execute and test code, inspect assets, export data, manage tasks, and more.
 
 Works with **Cursor**, **Claude Code**, **VS Code with GitHub Copilot**, **Windsurf**, and any MCP-compatible client. The `mcp` SDK is included as a dependency — no extra install needed.
 
@@ -129,7 +130,7 @@ Works with **Cursor**, **Claude Code**, **VS Code with GitHub Copilot**, **Winds
 
 ### What the MCP server can do
 
-The 33 tools are organized into nine categories:
+The 32 tools are organized into nine categories:
 
 | Category | Tools |
 |----------|-------|
@@ -140,7 +141,7 @@ The 33 tools are organized into nine categories:
 | **Visualization** | `get_thumbnail` — PNG for images, animated GIF for collections; `geocode` — place name to coordinates with optional boundary search |
 | **Exports** | `export_to_asset`, `export_to_drive`, `export_to_cloud_storage` — using geeViz wrappers with sensible defaults |
 | **Task Management** | `track_tasks` — check task status; `cancel_tasks` — cancel by name or all |
-| **Data Sampling & Time Series** | `sample_values` — pixel values at a point or region; `get_time_series` — band values over time with optional chart |
+| **Zonal Summary & Charting** | `extract_and_chart` — extract values and chart `ee.Image` or `ee.ImageCollection` over a point/region; supports point sampling, bar charts, time series, Sankey diagrams, and grouped bar charts via `geeViz.chartingLib` |
 | **Asset Management** | `create_folder`, `delete_asset`, `copy_asset`, `move_asset`, `update_acl` — manage GEE assets and permissions |
 | **Environment** | `get_version_info`, `get_project_info` |
 
