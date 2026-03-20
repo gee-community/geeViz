@@ -94,7 +94,7 @@ Ensure `cwd` is the folder that contains the `geeViz` package so `python -m geeV
 
 | Tool | Description |
 |------|-------------|
-| **`run_code`** | Execute Python/GEE code in a persistent REPL namespace. Variables persist across calls. Pre-populated with `ee`, `Map`, `gv`, `gil`. Supports timeout and namespace reset. |
+| **`run_code`** | Execute Python/GEE code in a persistent REPL namespace. Variables persist across calls. Pre-populated with `ee`, `Map`, `gv`, `gil`, `sal`. Supports timeout and namespace reset. |
 | **`inspect_asset`** | Get detailed metadata for any GEE asset -- bands, CRS, scale, date range, size, columns, properties. For ImageCollections, supports optional date/region filters and returns image count, date range, per-band details. |
 | **`get_api_reference`** | Look up function signatures and docstrings from any geeViz module via Python `inspect`. Always reflects current code. |
 | **`search_functions`** | Search/list functions across geeViz modules. Pass `query` to search all modules, `module` to list one module's functions, or both to search within a module. |
@@ -114,7 +114,7 @@ Ensure `cwd` is the folder that contains the `geeViz` package so `python -m geeV
 | **`export_to_drive`** | Export an `ee.Image` to Google Drive using geeViz's `exportToDriveWrapper`. Region is required. |
 | **`export_to_cloud_storage`** | Export an `ee.Image` to Google Cloud Storage using geeViz's `exportToCloudStorageWrapper`. Defaults to Cloud Optimized GeoTIFF. |
 | **`cancel_tasks`** | Cancel running/ready EE tasks. Cancel all tasks or filter by name substring using geeViz's `taskManagerLib`. |
-| **`extract_and_chart`** | Extract values from an `ee.Image` or `ee.ImageCollection` over a point/region. Handles point sampling (buffer_meters=0), bar charts, time series, Sankey diagrams, and grouped bar charts. Auto-detects thematic data. Wraps `geeViz.chartingLib.summarize_and_chart`. |
+| **`extract_and_chart`** | Extract values from an `ee.Image` or `ee.ImageCollection` over a point/region. Handles point sampling (buffer_meters=0), bar charts, time series, Sankey diagrams, grouped bar charts, and per-feature time series subplots. Auto-detects thematic data. Wraps `geeViz.chartingLib.summarize_and_chart`. |
 | **`delete_asset`** | Delete a single GEE asset. Checks existence before deleting. Single-asset only (not recursive). |
 | **`copy_asset`** | Copy a GEE asset to a new location. Supports overwrite. |
 | **`move_asset`** | Move a GEE asset (copy then delete source). Only deletes source after successful copy. |
@@ -222,6 +222,7 @@ Every geeViz module import triggers `robustInitializer()` at module level, which
 - `Map` -- `gv.Map` (geeView map object)
 - `gv` -- `geeViz.geeView`
 - `gil` -- `geeViz.getImagesLib`
+- `sal` -- `geeViz.getSummaryAreasLib`
 
 Variables set in one `run_code` call are available in subsequent calls. Use `reset=True` to clear and re-initialize.
 

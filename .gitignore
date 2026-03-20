@@ -3,8 +3,11 @@
 .env
 
 /mcp/generated_scripts/
+/mcp/generated_outputs/
 /mcp/dataset_cache/
-
+/mcp/logs/
+.mcp.*
+CLAUDE.md
 
 *.db
 *.ipynb_checkpoints

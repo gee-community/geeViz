@@ -68,6 +68,97 @@ common_projections["NLCD_HI"] = {
     "transform": [30, 0, -342585, 0, -30, 2127135],
 }
 
+######################################################################
+# UTM zone and EPSG code utilities
+######################################################################
+def getUTMZone(longitude: float) -> int:
+    """Return the UTM zone number (1-60) for a given longitude.
+
+    Args:
+        longitude: Longitude in decimal degrees (-180 to 180).
+
+    Returns:
+        UTM zone number (1-60).
+
+    Examples:
+        >>> getUTMZone(-113.15)
+        12
+        >>> getUTMZone(2.35)
+        31
+    """
+    longitude = ((longitude + 180) % 360) - 180  # normalize to [-180, 180)
+    zone = int((longitude + 180) / 6) + 1
+    return min(zone, 60)
+
+
+# Mapping of datum name -> (north EPSG prefix, south EPSG prefix)
+# The full code is prefix * 100 + zone (e.g. WGS84 North zone 12 = 32600 + 12 = 32612)
+_UTM_DATUM_EPSG = {
+    "WGS84":  (326, 327),
+    "NAD83":  (269, 321),   # NAD83 North: EPSG:269xx, South: EPSG:321xx
+    "NAD27":  (267, 267),   # NAD27: EPSG:267xx (North America only, N hemisphere)
+    "WGS72":  (322, 323),
+    "ETRS89": (258, 258),   # ETRS89: EPSG:258xx (Europe only, N hemisphere)
+    "GDA94":  (283, 283),   # GDA94: EPSG:283xx (Australia, S hemisphere)
+    "GDA2020": (78, 78),    # GDA2020: EPSG:78xx (Australia, zones 46-56)
+    "SIRGAS2000": (311, 317),  # SIRGAS2000 North: 311xx, South: 317xx
+}
+
+
+def getUTMEpsg(location, datum: str = "WGS84") -> str:
+    """Return the EPSG code string for a UTM zone given a location and datum.
+
+    Combines :func:`getUTMZone` with a datum lookup to produce the full
+    EPSG code (e.g. ``"EPSG:32612"`` for WGS84 UTM Zone 12N).
+
+    Args:
+        location: One of:
+            - ``[longitude, latitude]`` list/tuple (GEE convention: lon first).
+            - ``ee.Geometry.Point`` — coordinates are extracted via ``.getInfo()``.
+        datum: Datum name. One of ``"WGS84"`` (default), ``"NAD83"``, ``"NAD27"``,
+            ``"WGS72"``, ``"ETRS89"``, ``"GDA94"``, ``"GDA2020"``, ``"SIRGAS2000"``.
+            Case-insensitive.
+
+    Returns:
+        EPSG code string, e.g. ``"EPSG:32612"``.
+
+    Raises:
+        ValueError: If the datum is not recognized or ``location`` is not a
+            supported type.
+
+    Examples:
+        >>> getUTMEpsg([-113.15, 47.15])
+        'EPSG:32612'
+        >>> getUTMEpsg([-113.15, 47.15], datum="NAD83")
+        'EPSG:26912'
+        >>> getUTMEpsg([151.21, -33.86])
+        'EPSG:32756'
+        >>> getUTMEpsg(ee.Geometry.Point([-113.15, 47.15]))
+        'EPSG:32612'
+    """
+    # Parse location into (longitude, latitude)
+    if isinstance(location, ee.Geometry):
+        coords = location.coordinates().getInfo()
+        longitude, latitude = coords[0], coords[1]
+    elif isinstance(location, (list, tuple)) and len(location) >= 2:
+        longitude, latitude = location[0], location[1]
+    else:
+        raise ValueError(
+            f"location must be a [lon, lat] list/tuple or ee.Geometry.Point, "
+            f"got {type(location).__name__}"
+        )
+
+    datum_upper = datum.upper().replace(" ", "").replace("-", "")
+    if datum_upper not in _UTM_DATUM_EPSG:
+        raise ValueError(
+            f"Unknown datum '{datum}'. Supported: {', '.join(sorted(_UTM_DATUM_EPSG.keys()))}"
+        )
+    north_prefix, south_prefix = _UTM_DATUM_EPSG[datum_upper]
+    zone = getUTMZone(longitude)
+    prefix = north_prefix if latitude >= 0 else south_prefix
+    return f"EPSG:{prefix}{zone:02d}"
+
+
 # Direction of  a decrease in photosynthetic vegetation- add any that are missing
 changeDirDict = {
     "blue": 1,
@@ -130,6 +221,24 @@ preComputedTDOMStats = ee.ImageCollection("projects/lcms-tcc-shared/assets/CS-TD
 
 
 def getPrecomputedCloudScoreOffsets(cloudScorePctl=10):
+    """Retrieves precomputed cloud score offset images for Landsat and Sentinel-2.
+
+    These offsets represent a lower percentile of cloud scores on a pixel-wise basis,
+    precomputed for all CONUS. They are appropriate for any time period within the
+    growing season.
+
+    Args:
+        cloudScorePctl (int, optional): The cloud score percentile to use. Defaults to ``10``.
+
+    Returns:
+        dict: A dictionary with keys ``"landsat"`` and ``"sentinel2"``, each containing
+        an ``ee.Image`` of the cloud score offset for that sensor.
+
+    Examples:
+        >>> offsets = getPrecomputedCloudScoreOffsets(10)
+        >>> landsat_offset = offsets["landsat"]
+        >>> sentinel2_offset = offsets["sentinel2"]
+    """
     return {
         "landsat": preComputedCloudScoreOffset.select(["Landsat_CloudScore_p{}".format(cloudScorePctl)]),
         "sentinel2": preComputedCloudScoreOffset.select(["Sentinel2_CloudScore_p{}".format(cloudScorePctl)]),
@@ -137,6 +246,21 @@ def getPrecomputedCloudScoreOffsets(cloudScorePctl=10):
 
 
 def getPrecomputedTDOMStats():
+    """Retrieves precomputed TDOM (Temporal Dark Outlier Mask) statistics for Landsat and Sentinel-2.
+
+    Returns the mean and standard deviation of the NIR and SWIR1 bands, precomputed
+    for all CONUS. These are used by the TDOM cloud shadow masking algorithm.
+
+    Returns:
+        dict: A nested dictionary with keys ``"landsat"`` and ``"sentinel2"``, each
+        containing ``"mean"`` and ``"stdDev"`` keys mapped to ``ee.Image`` objects
+        with the corresponding band statistics.
+
+    Examples:
+        >>> stats = getPrecomputedTDOMStats()
+        >>> landsat_mean = stats["landsat"]["mean"]
+        >>> sentinel2_stddev = stats["sentinel2"]["stdDev"]
+    """
     return {
         "landsat": {
             "mean": preComputedTDOMStats.select(["Landsat_nir_mean", "Landsat_swir1_mean"]),
@@ -155,6 +279,20 @@ def getPrecomputedTDOMStats():
 ######################################################################
 # Function to asynchronously print ee objects
 def printEE(eeObject, message=""):
+    """Asynchronously prints an Earth Engine object by fetching its value in a background thread.
+
+    Args:
+        eeObject (ee.ComputedObject): Any Earth Engine object to print (e.g., ``ee.Image``,
+            ``ee.Number``, ``ee.Dictionary``).
+        message (str, optional): A message to print before the object value. Defaults to ``""``.
+
+    Returns:
+        None
+
+    Examples:
+        >>> img = ee.Image("USGS/SRTMGL1_003")
+        >>> printEE(img.bandNames(), "Band names:")
+    """
     def printIt(eeObject):
         print(message, eeObject.getInfo())
         print()
@@ -167,14 +305,21 @@ def printEE(eeObject, message=""):
 ######################################################################
 # Function to set null value for export or conversion to arrays
 def setNoData(image: ee.Image, noDataValue: float) -> ee.Image:
-    """Sets null values for an image.
+    """Sets null values for an image, replacing masked pixels with a constant.
+
+    Useful for preparing images for export or conversion to arrays where null
+    values are not supported.
 
     Args:
-        image: The input Earth Engine image.
-        noDataValue: The value to assign to null pixels.
+        image (ee.Image): The input Earth Engine image.
+        noDataValue (float): The value to assign to null (masked) pixels.
 
     Returns:
-        An Earth Engine image with null pixels set to the specified noDataValue.
+        ee.Image: The image with null pixels replaced by ``noDataValue``.
+
+    Examples:
+        >>> img = ee.Image("USGS/SRTMGL1_003")
+        >>> filled = setNoData(img, -9999)
     """
     image = image.unmask(noDataValue, False)  # .set('noDataValue', noDataValue)
     return image  # .set(args)
@@ -184,13 +329,21 @@ def setNoData(image: ee.Image, noDataValue: float) -> ee.Image:
 ######################################################################
 # Formats arguments as strings so can be easily set as properties
 def formatArgs(args: dict) -> dict:
-    """Formats arguments as strings for setting as image properties.
+    """Formats arguments as strings for setting as Earth Engine image properties.
+
+    Converts booleans, lists, dicts, and None values to their string representations.
+    Strings and ints are kept as-is. Other types are omitted.
 
     Args:
-        args: A dictionary of arguments.
+        args (dict): A dictionary of arguments to format.
 
     Returns:
-        A dictionary of formatted arguments.
+        dict: A dictionary with values converted to strings or kept as str/int.
+
+    Examples:
+        >>> formatted = formatArgs({"threshold": 0.5, "apply": True, "bands": ["nir", "swir1"]})
+        >>> print(formatted)
+        {'apply': 'True', 'bands': "['nir', 'swir1']"}
     """
     formattedArgs = {}
     for key in args.keys():
@@ -205,14 +358,22 @@ def formatArgs(args: dict) -> dict:
 ######################################################################
 # Functions to perform basic clump and elim
 def sieve(image: ee.Image, mmu: float) -> ee.Image:
-    """Performs clumping and elimination on an image.
+    """Performs clumping and elimination (sieving) on a classified image.
+
+    Removes patches smaller than the minimum mapping unit by replacing them
+    with the focal mode of surrounding pixels.
 
     Args:
-        image: The input Earth Engine image.
-        mmu: The minimum mapping unit.
+        image (ee.Image): The input classified Earth Engine image.
+        mmu (float): The minimum mapping unit in pixels. Patches smaller than
+            this will be replaced by the focal mode.
 
     Returns:
-        An Earth Engine image with clumping and elimination applied.
+        ee.Image: The sieved image with small patches eliminated.
+
+    Examples:
+        >>> classified = ee.Image("USGS/NLCD/NLCD2019").select("landcover")
+        >>> sieved = sieve(classified, 5)
     """
     args = formatArgs(locals())
     connected = image.connectedPixelCount(mmu + 20)
@@ -230,11 +391,20 @@ def sieve(image: ee.Image, mmu: float) -> ee.Image:
 def harmonizationRoy(oli: ee.Image) -> ee.Image:
     """Harmonizes Landsat 8 OLI to Landsat 7 ETM+ using Roy et al. (2016) coefficients.
 
+    Applies reduced major axis (RMA) regression coefficients from Roy, D.P. et al.
+    (2016) to transform OLI reflectance to ETM+ equivalent. Operates on the
+    blue, green, red, nir, swir1, and swir2 bands.
+
     Args:
-        oli: A Landsat 8 OLI image.
+        oli (ee.Image): A Landsat 8 OLI image with bands named ``"blue"``, ``"green"``,
+            ``"red"``, ``"nir"``, ``"swir1"``, ``"swir2"``.
 
     Returns:
-        A harmonized Landsat 8 OLI image.
+        ee.Image: The image with spectral bands adjusted to ETM+ equivalents.
+
+    Examples:
+        >>> oli_image = ee.Image("LANDSAT/LC08/C02/T1_L2/LC08_044034_20200101")
+        >>> harmonized = harmonizationRoy(oli_image)
     """
     slopes = ee.Image.constant([0.9785, 0.9542, 0.9825, 1.0073, 1.0171, 0.9949])  # create an image of slopes per band for L8 TO L7 regression line - David Roy
     itcp = ee.Image.constant([-0.0095, -0.0016, -0.0022, -0.0021, -0.0030, 0.0029])  # create an image of y-intercepts per band for L8 TO L7 regression line - David Roy
@@ -288,6 +458,25 @@ chastainCoeffDict = {
 
 # Function to apply model in one direction
 def dir0Regression(img, slopes, intercepts):
+    """Applies a forward linear regression model: ``corrected = img * slopes + intercepts``.
+
+    Used internally by :func:`harmonizationChastain` to apply Chastain et al. (2018)
+    cross-sensor harmonization in the forward direction.
+
+    Args:
+        img (ee.Image): The input image with spectral bands to correct.
+        slopes (list[float]): Regression slope coefficients for each band in
+            ``chastainBandNames``.
+        intercepts (list[float]): Regression intercept coefficients for each band in
+            ``chastainBandNames``.
+
+    Returns:
+        ee.Image: The image with corrected spectral bands and all other bands preserved.
+
+    Examples:
+        >>> img = ee.Image("LANDSAT/LC08/C02/T1_L2/LC08_044034_20200101")
+        >>> corrected = dir0Regression(img, msiOLISlopes, msiOLIIntercepts)
+    """
     bns = img.bandNames()
     nonCorrectBands = bns.removeAll(chastainBandNames)
     nonCorrectedBands = img.select(nonCorrectBands)
@@ -298,6 +487,25 @@ def dir0Regression(img, slopes, intercepts):
 
 # Applying the model in the opposite direction
 def dir1Regression(img, slopes, intercepts):
+    """Applies an inverse linear regression model: ``corrected = (img - intercepts) / slopes``.
+
+    Used internally by :func:`harmonizationChastain` to apply Chastain et al. (2018)
+    cross-sensor harmonization in the reverse direction.
+
+    Args:
+        img (ee.Image): The input image with spectral bands to correct.
+        slopes (list[float]): Regression slope coefficients for each band in
+            ``chastainBandNames``.
+        intercepts (list[float]): Regression intercept coefficients for each band in
+            ``chastainBandNames``.
+
+    Returns:
+        ee.Image: The image with corrected spectral bands and all other bands preserved.
+
+    Examples:
+        >>> img = ee.Image("LANDSAT/LE07/C02/T1_L2/LE07_044034_20200101")
+        >>> corrected = dir1Regression(img, oliETMSlopes, oliETMIntercepts)
+    """
     bns = img.bandNames()
     nonCorrectBands = bns.removeAll(chastainBandNames)
     nonCorrectedBands = img.select(nonCorrectBands)
@@ -308,15 +516,24 @@ def dir1Regression(img, slopes, intercepts):
 
 # Function to correct one sensor to another
 def harmonizationChastain(img: ee.Image, fromSensor: str, toSensor: str) -> ee.Image:
-    """Harmonizes Landsat images using Chastain et al. (2018) coefficients.
+    """Harmonizes cross-sensor reflectance using Chastain et al. (2018) coefficients.
+
+    Supports pairwise harmonization between MSI (Sentinel-2), OLI (Landsat 8/9),
+    and ETM (Landsat 7) using Model 2 (Major Axis) linear regression coefficients
+    from Chastain et al. (2018).
 
     Args:
-        img: The input Landsat image.
-        fromSensor: The sensor of the input image (e.g., 'OLI', 'ETM+').
-        toSensor: The target sensor for harmonization (e.g., 'OLI', 'ETM+').
+        img (ee.Image): The input image with bands named ``"blue"``, ``"green"``,
+            ``"red"``, ``"nir"``, ``"swir1"``, ``"swir2"``.
+        fromSensor (str): Source sensor identifier. One of ``"MSI"``, ``"OLI"``, or ``"ETM"``.
+        toSensor (str): Target sensor identifier. One of ``"MSI"``, ``"OLI"``, or ``"ETM"``.
 
     Returns:
-        A harmonized Landsat image.
+        ee.Image: The harmonized image with properties ``"fromSensor"`` and ``"toSensor"`` set.
+
+    Examples:
+        >>> oli_img = ee.Image("LANDSAT/LC08/C02/T1_L2/LC08_044034_20200101")
+        >>> harmonized = harmonizationChastain(oli_img, "OLI", "ETM")
     """
     args = formatArgs(locals())
 
@@ -341,13 +558,22 @@ def harmonizationChastain(img: ee.Image, fromSensor: str, toSensor: str) -> ee.I
 ####################################################################
 # Function to create a multiband image from a collection
 def collectionToImage(collection: ee.ImageCollection) -> ee.Image:
-    """Deprecated - use `.toBands()`. Converts an image collection to a multiband image.
+    """Converts an image collection to a single multiband image.
+
+    .. deprecated::
+        Use ``ee.ImageCollection.toBands()`` instead, which is more efficient.
+
+    Iterates over the collection and stacks all bands into a single image.
 
     Args:
-        collection: The input Earth Engine image collection.
+        collection (ee.ImageCollection): The input Earth Engine image collection.
 
     Returns:
-        A multiband Earth Engine image.
+        ee.Image: A multiband image containing all bands from all images in the collection.
+
+    Examples:
+        >>> col = ee.ImageCollection("LANDSAT/LC08/C02/T1_L2").limit(3)
+        >>> stacked = collectionToImage(col)
     """
 
     def cIterator(img, prev):
@@ -365,15 +591,28 @@ def collectionToImage(collection: ee.ImageCollection) -> ee.Image:
 # such as the median.  For something like a medoid, only a single bands needs passed through
 # A known bug is that if the same value occurs twice, it will choose only a single date
 def compositeDates(images: ee.ImageCollection, composite: ee.Image, bandNames: list = None) -> ee.Image:
-    """Finds the dates corresponding to bands in a composite image.
+    """Finds the acquisition dates corresponding to each band in a composite image.
+
+    Works on composites computed with methods that may include different dates across
+    different bands (e.g., median). For medoid composites, only a single band needs
+    to be passed through. A known limitation is that if the same pixel value occurs
+    on two different dates, only one date will be selected.
 
     Args:
-        images: The original image collection.
-        composite: The composite image.
-        bandNames: Optional list of band names to consider.
+        images (ee.ImageCollection): The original image collection used to create
+            the composite.
+        composite (ee.Image): The composite image whose per-band dates are to be found.
+        bandNames (list[str] or ee.List, optional): Band names to consider. If ``None``,
+            uses all bands from the first image in the collection. Defaults to ``None``.
 
     Returns:
-        An Earth Engine image with date information for each band.
+        ee.Image: A multiband image where each band contains the date (as YYYYDD float)
+        of the source image that contributed to that band of the composite.
+
+    Examples:
+        >>> col = ee.ImageCollection("LANDSAT/LC08/C02/T1_L2").filterDate("2020-06-01", "2020-09-01")
+        >>> composite = col.median()
+        >>> dates = compositeDates(col, composite, ["SR_B4", "SR_B5"])
     """
     if bandNames == None:
         bandNames = ee.Image(images.first()).bandNames()
@@ -415,14 +654,24 @@ def compositeDates(images: ee.ImageCollection, composite: ee.Image, bandNames: l
 # Function to handle empty collections that will cause subsequent processes to fail
 # If the collection is empty, will fill it with an empty image
 def fillEmptyCollections(inCollection: ee.ImageCollection, dummyImage: ee.Image) -> ee.ImageCollection:
-    """Fills empty image collections with a dummy image. This handles empty collections that will cause subsequent processes to fail.
+    """Fills empty image collections with a fully-masked dummy image.
+
+    Prevents downstream errors from empty collections by substituting a single
+    fully-masked dummy image when the input collection contains no images.
 
     Args:
-        inCollection: The input Earth Engine image collection.
-        dummyImage: A dummy Earth Engine image.
+        inCollection (ee.ImageCollection): The input image collection that may be empty.
+        dummyImage (ee.Image): A template image whose band structure matches the expected
+            output. It will be fully masked (all pixels set to 0) if used.
 
     Returns:
-        The input image collection or a collection containing the dummy image if empty.
+        ee.ImageCollection: The original collection if non-empty, otherwise a collection
+        containing the fully-masked ``dummyImage``.
+
+    Examples:
+        >>> col = ee.ImageCollection("LANDSAT/LC08/C02/T1_L2").filterDate("2000-01-01", "2000-01-02")
+        >>> dummy = ee.Image("LANDSAT/LC08/C02/T1_L2/LC08_044034_20200101")
+        >>> safe_col = fillEmptyCollections(col, dummy)
     """
     dummyCollection = ee.ImageCollection([dummyImage.mask(ee.Image(0))])
     imageCount = inCollection.toList(1).length()
@@ -432,15 +681,25 @@ def fillEmptyCollections(inCollection: ee.ImageCollection, dummyImage: ee.Image)
 ############################################################################
 # Add band tracking which satellite the pixel came from
 def addSensorBand(img: ee.Image, whichProgram: str, toaOrSR: str) -> ee.Image:
-    """Adds a sensor band to an image.
+    """Adds a band encoding the satellite sensor as a numeric value.
+
+    Maps satellite names (e.g., ``LANDSAT_8``, ``Sentinel-2A``) to integer codes
+    (e.g., 8, 21) and adds the result as a ``"sensor"`` band. Also sets the
+    ``"sensor"`` property on the image.
 
     Args:
-        img: The input Earth Engine image.
-        whichProgram: The program (e.g., 'C1_landsat', "C2_landsat", 'sentinel2').
-        toaOrSR: Whether the image is TOA or SR.
+        img (ee.Image): The input Earth Engine image with appropriate spacecraft metadata.
+        whichProgram (str): The satellite program. One of ``"C1_landsat"``,
+            ``"C2_landsat"``, or ``"sentinel2"``.
+        toaOrSR (str): The processing level, ``"TOA"`` or ``"SR"``.
 
     Returns:
-        The input image with an added sensor band.
+        ee.Image: The input image with an added ``"sensor"`` band (byte type) and
+        ``"sensor"`` property.
+
+    Examples:
+        >>> img = ee.Image("LANDSAT/LC08/C02/T1_L2/LC08_044034_20200101")
+        >>> with_sensor = addSensorBand(img, "C2_landsat", "SR")
     """
     sensorDict = ee.Dictionary(
         {
@@ -472,14 +731,23 @@ def addSensorBand(img: ee.Image, whichProgram: str, toaOrSR: str) -> ee.Image:
 ############################################################################
 # Adds the float year with julian proportion to image
 def addDateBand(img: ee.Image, maskTime: bool = False) -> ee.Image:
-    """Adds a date band to an image.
+    """Adds a ``"year"`` band containing the fractional year (year + day-of-year fraction).
+
+    The band value is computed as ``year + fraction_of_year`` (e.g., 2020.5 for
+    approximately July 2, 2020).
 
     Args:
-        img: The input Earth Engine image.
-        maskTime: Whether to mask the date band based on the image mask.
+        img (ee.Image): The input Earth Engine image with a ``"system:time_start"`` property.
+        maskTime (bool, optional): If ``True``, masks the date band to match the first
+            band's mask of the input image. Defaults to ``False``.
 
     Returns:
-        The input image with an added date band.
+        ee.Image: The input image with an added ``"year"`` band (float).
+
+    Examples:
+        >>> img = ee.Image("LANDSAT/LC08/C02/T1_L2/LC08_044034_20200701")
+        >>> with_date = addDateBand(img)
+        >>> with_masked_date = addDateBand(img, maskTime=True)
     """
     d = ee.Date(img.get("system:time_start"))
     y = d.get("year")
@@ -492,13 +760,20 @@ def addDateBand(img: ee.Image, maskTime: bool = False) -> ee.Image:
 
 
 def addYearFractionBand(img: ee.Image) -> ee.Image:
-    """Adds a year fraction band to an image.
+    """Adds a ``"year"`` band containing only the fractional part of the year (0 to 1).
+
+    Unlike :func:`addDateBand`, this does not include the integer year component.
+    A value of 0.5 corresponds to approximately July 2.
 
     Args:
-        img: The input Earth Engine image.
+        img (ee.Image): The input Earth Engine image with a ``"system:time_start"`` property.
 
     Returns:
-        The input image with an added year fraction band.
+        ee.Image: The input image with an added ``"year"`` band (float, range 0--1).
+
+    Examples:
+        >>> img = ee.Image("LANDSAT/LC08/C02/T1_L2/LC08_044034_20200701")
+        >>> with_frac = addYearFractionBand(img)
     """
     d = ee.Date(img.get("system:time_start"))
     y = d.get("year")
@@ -510,13 +785,20 @@ def addYearFractionBand(img: ee.Image) -> ee.Image:
 
 
 def addYearYearFractionBand(img: ee.Image) -> ee.Image:
-    """Adds a year and year fraction band to an image.
+    """Adds a ``"year"`` band containing the full fractional year (year + fraction).
+
+    Functionally equivalent to :func:`addDateBand` with ``maskTime=False``, but
+    computed by explicitly adding the integer year and fractional year components.
 
     Args:
-        img: The input Earth Engine image.
+        img (ee.Image): The input Earth Engine image with a ``"system:time_start"`` property.
 
     Returns:
-        The input image with an added year and year fraction band.
+        ee.Image: The input image with an added ``"year"`` band (float, e.g., 2020.5).
+
+    Examples:
+        >>> img = ee.Image("LANDSAT/LC08/C02/T1_L2/LC08_044034_20200701")
+        >>> with_year_frac = addYearYearFractionBand(img)
     """
     d = ee.Date(img.get("system:time_start"))
     y = d.get("year")
@@ -528,13 +810,17 @@ def addYearYearFractionBand(img: ee.Image) -> ee.Image:
 
 
 def addYearBand(img: ee.Image) -> ee.Image:
-    """Adds a year band to an image.
+    """Adds a ``"year"`` band containing the integer year of the image acquisition.
 
     Args:
-        img: The input Earth Engine image.
+        img (ee.Image): The input Earth Engine image with a ``"system:time_start"`` property.
 
     Returns:
-        The input image with an added year band.
+        ee.Image: The input image with an added ``"year"`` band (float, e.g., 2020.0).
+
+    Examples:
+        >>> img = ee.Image("LANDSAT/LC08/C02/T1_L2/LC08_044034_20200701")
+        >>> with_year = addYearBand(img)
     """
     d = ee.Date(img.get("system:time_start"))
     y = d.get("year")
@@ -545,13 +831,17 @@ def addYearBand(img: ee.Image) -> ee.Image:
 
 
 def addJulianDayBand(img: ee.Image) -> ee.Image:
-    """Adds a Julian day band to an image.
+    """Adds a ``"julianDay"`` band containing the day of the year (1--366).
 
     Args:
-        img: The input Earth Engine image.
+        img (ee.Image): The input Earth Engine image with a ``"system:time_start"`` property.
 
     Returns:
-        The input image with an added Julian day band.
+        ee.Image: The input image with an added ``"julianDay"`` band (float).
+
+    Examples:
+        >>> img = ee.Image("LANDSAT/LC08/C02/T1_L2/LC08_044034_20200701")
+        >>> with_julian = addJulianDayBand(img)
     """
     d = ee.Date(img.get("system:time_start"))
     julian = ee.Image(ee.Number.parse(d.format("DD"))).rename(["julianDay"])
@@ -560,13 +850,20 @@ def addJulianDayBand(img: ee.Image) -> ee.Image:
 
 
 def addYearJulianDayBand(img: ee.Image) -> ee.Image:
-    """Adds a year and Julian day band to an image.
+    """Adds a ``"yearJulian"`` band encoding the 2-digit year and Julian day (YYDD).
+
+    The band value is a number in the format YYDD, where YY is the 2-digit year
+    and DD is the day of the year. For example, January 15, 2020 yields 2015.
 
     Args:
-        img: The input Earth Engine image.
+        img (ee.Image): The input Earth Engine image with a ``"system:time_start"`` property.
 
     Returns:
-        The input image with an added year and Julian day band.
+        ee.Image: The input image with an added ``"yearJulian"`` band (float).
+
+    Examples:
+        >>> img = ee.Image("LANDSAT/LC08/C02/T1_L2/LC08_044034_20200115")
+        >>> with_yj = addYearJulianDayBand(img)
     """
     d = ee.Date(img.get("system:time_start"))
     yj = ee.Image(ee.Number.parse(d.format("YYDD"))).rename(["yearJulian"])
@@ -574,13 +871,20 @@ def addYearJulianDayBand(img: ee.Image) -> ee.Image:
 
 
 def addFullYearJulianDayBand(img: ee.Image) -> ee.Image:
-    """Adds a full year Julian day band to an image.
+    """Adds a ``"yearJulian"`` band encoding the full 4-digit year and Julian day (YYYYDD).
+
+    The band value is a number in the format YYYYDD, where YYYY is the 4-digit year
+    and DD is the day of the year. For example, July 1, 2020 yields 2020182.
 
     Args:
-        img: The input Earth Engine image.
+        img (ee.Image): The input Earth Engine image with a ``"system:time_start"`` property.
 
     Returns:
-        The input image with an added full year Julian day band.
+        ee.Image: The input image with an added ``"yearJulian"`` band (int64, cast to float).
+
+    Examples:
+        >>> img = ee.Image("LANDSAT/LC08/C02/T1_L2/LC08_044034_20200701")
+        >>> with_full_yj = addFullYearJulianDayBand(img)
     """
     d = ee.Date(img.get("system:time_start"))
     yj = ee.Image(ee.Number.parse(d.format("YYYYDD"))).rename(["yearJulian"]).int64()
@@ -589,15 +893,23 @@ def addFullYearJulianDayBand(img: ee.Image) -> ee.Image:
 
 
 def offsetImageDate(img: ee.Image, n: int, unit: str) -> ee.Image:
-    """Offsets the date of an image.
+    """Offsets the ``system:time_start`` property of an image by a specified amount.
+
+    Useful for shifting image dates when creating synthetic time series or aligning
+    images from different years.
 
     Args:
-        img: The input Earth Engine image.
-        n: The number of units to offset.
-        unit: The unit of the offset (e.g., 'year', 'month', 'day').
+        img (ee.Image): The input Earth Engine image with a ``"system:time_start"`` property.
+        n (int): The number of units to offset. Can be negative to shift backward.
+        unit (str): The time unit for the offset. One of ``"year"``, ``"month"``,
+            ``"week"``, ``"day"``, ``"hour"``, ``"minute"``, or ``"second"``.
 
     Returns:
-        The image with an offset date.
+        ee.Image: The image with its ``"system:time_start"`` property updated.
+
+    Examples:
+        >>> img = ee.Image("LANDSAT/LC08/C02/T1_L2/LC08_044034_20200701")
+        >>> shifted = offsetImageDate(img, -1, "year")
     """
     date = ee.Date(img.get("system:time_start"))
     date = date.advance(n, unit)
@@ -2384,13 +2696,19 @@ k = ee.Kernel.fixed(
 ################################################################
 # Algorithm to defringe Landsat scenes
 def defringeLandsat(img: ee.Image) -> ee.Image:
-    """Defringes a Landsat 7 image.
+    """Defringes a Landsat 7 image by masking fringe pixels with insufficient valid neighbors.
 
     Args:
-        img: The input Landsat 7 image.
+        img (ee.Image): The input Landsat 7 image to defringe.
 
     Returns:
-        The defringed Landsat 7 image.
+        ee.Image: The defringed Landsat 7 image with fringe pixels masked out.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> l7 = ee.ImageCollection("LANDSAT/LE07/C02/T1").first()
+        >>> defringed = gil.defringeLandsat(l7)
     """
     # Find any pixel without sufficient non null pixels (fringes)
     m = img.mask().reduce(ee.Reducer.min())
@@ -2413,11 +2731,17 @@ def uniqueValues(collection: ee.ImageCollection, field: str) -> ee.List:
     """Finds unique values of a field in an image collection.
 
     Args:
-        collection: The input Earth Engine image collection.
-        field: The field to extract unique values from.
+        collection (ee.ImageCollection): The input Earth Engine image collection.
+        field (str): The metadata field name to extract unique values from.
 
     Returns:
-        A list of unique values.
+        ee.List: A list of unique values for the specified field.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> col = ee.ImageCollection("LANDSAT/LC08/C02/T1").filterDate("2023-06-01", "2023-06-30")
+        >>> paths = gil.uniqueValues(col, "WRS_PATH")
     """
     values = ee.Dictionary(collection.reduceColumns(ee.Reducer.frequencyHistogram(), [field]).get("histogram")).keys()
     return values
@@ -2427,13 +2751,24 @@ def uniqueValues(collection: ee.ImageCollection, field: str) -> ee.List:
 # Function to simplify data into daily mosaics
 # This procedure must be used for proper processing of S2 imagery
 def dailyMosaics(imgs: ee.ImageCollection) -> ee.ImageCollection:
-    """Creates daily mosaics from an image collection.
+    """Creates daily mosaics from an image collection grouped by date and orbit.
+
+    Groups images by acquisition date and Sentinel-2 orbit number, then mosaics
+    them to remove redundant observations in MGRS tile overlap areas.
 
     Args:
-        imgs: The input Earth Engine image collection.
+        imgs (ee.ImageCollection): The input Earth Engine image collection. Must
+            contain the ``SENSING_ORBIT_NUMBER`` property (Sentinel-2).
 
     Returns:
-        An Earth Engine image collection containing daily mosaics.
+        ee.ImageCollection: A collection of daily mosaic images, one per
+        unique date-orbit combination.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> s2 = ee.ImageCollection("COPERNICUS/S2_HARMONIZED").filterDate("2023-06-01", "2023-06-10")
+        >>> daily = gil.dailyMosaics(s2)
     """
 
     # Simplify date to exclude time of day
@@ -2473,25 +2808,41 @@ def dailyMosaics(imgs: ee.ImageCollection) -> ee.ImageCollection:
 
 # Sigma Lee filter
 def toNatural(img: ee.Image) -> ee.Image:
-    """Converts a Sentinel-1 image from dB to natural units.
+    """Converts a Sentinel-1 image from dB to natural (linear power) units.
+
+    Applies the formula: 10^(dB / 10).
 
     Args:
-        img: The input Sentinel-1 image in dB.
+        img (ee.Image): The input Sentinel-1 image in dB units.
 
     Returns:
-        The converted image in natural units.
+        ee.Image: The converted image in natural (linear power) units.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> s1 = ee.ImageCollection("COPERNICUS/S1_GRD").first()
+        >>> natural = gil.toNatural(s1)
     """
     return ee.Image(10.0).pow(img.select(0).divide(10.0))
 
 
 def toDB(img: ee.Image) -> ee.Image:
-    """Converts a Sentinel-1 image from natural units to dB.
+    """Converts a Sentinel-1 image from natural (linear power) units to dB.
+
+    Applies the formula: 10 * log10(value).
 
     Args:
-        img: The input Sentinel-1 image in natural units.
+        img (ee.Image): The input Sentinel-1 image in natural (linear power) units.
 
     Returns:
-        The converted image in dB.
+        ee.Image: The converted image in dB units.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> natural_img = gil.toNatural(ee.ImageCollection("COPERNICUS/S1_GRD").first())
+        >>> db_img = gil.toDB(natural_img)
     """
     return ee.Image(img).log10().multiply(10.0)
 
@@ -2501,11 +2852,22 @@ def toDB(img: ee.Image) -> ee.Image:
 def RefinedLee(img: ee.Image) -> ee.Image:
     """Applies the Refined Lee speckle filter to a Sentinel-1 image.
 
+    Implements the Refined Lee filter as coded in SNAP 3.0 S1TBX. Uses
+    directional statistics in 7x7 neighborhoods to reduce speckle noise while
+    preserving edges. The input image must be in natural (linear) units, not dB.
+
     Args:
-        img: The input Sentinel-1 image in natural units.
+        img (ee.Image): The input Sentinel-1 image in natural (linear power)
+            units. Use ``toNatural()`` to convert from dB first.
 
     Returns:
-        The speckle filtered image.
+        ee.Image: The speckle-filtered image with a single band named ``"sum"``.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> s1 = ee.ImageCollection("COPERNICUS/S1_GRD").first().select("VV")
+        >>> filtered = gil.RefinedLee(gil.toNatural(s1))
     """
     # img must be in natural units, i.e. not in dB!
     # Set up 3x3 kernels
@@ -2635,17 +2997,31 @@ def getS1(
 ) -> ee.ImageCollection:
     """Loads Sentinel-1 GRD data for a given area and time period.
 
+    Filters the ``COPERNICUS/S1_GRD`` collection by date, bounds, IW instrument
+    mode, polarization, pass direction, and 10m resolution.
+
     Args:
-        studyArea: The geographic area of interest.
-        startYear: The start year of the desired data.
-        endYear: The end year of the desired data.
-        startJulian: The start Julian day of the desired data.
-        endJulian: The end Julian day of the desired data.
-        polarization: The desired polarization (default: "VV").
-        pass_direction: The desired pass direction (default: "ASCENDING").
+        studyArea (ee.Geometry | ee.Feature | ee.FeatureCollection): The
+            geographic area of interest.
+        startYear (int): The start year (inclusive).
+        endYear (int): The end year (inclusive).
+        startJulian (int): The start Julian day of year (1-365).
+        endJulian (int): The end Julian day of year (1-365).
+        polarization (str, optional): The desired polarization band. Defaults
+            to ``"VV"``. Other option is ``"VH"``.
+        pass_direction (str, optional): The orbit pass direction. Defaults to
+            ``"ASCENDING"``. Other option is ``"DESCENDING"``.
 
     Returns:
-        An Earth Engine ImageCollection containing the loaded Sentinel-1 data.
+        ee.ImageCollection: A collection of Sentinel-1 GRD images filtered
+        by the specified criteria.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> studyArea = gil.testAreas["CA"]
+        >>> s1 = gil.getS1(studyArea, 2023, 2023, 1, 365)
+        >>> print(s1.size().getInfo())
     """
     collection = (
         ee.ImageCollection("COPERNICUS/S1_GRD")
@@ -2994,6 +3370,29 @@ landsatFmaskBandNameDict = {"C1": "pixel_qa", "C2": "QA_PIXEL"}
 # This was adapted from the method provided by Google for rescaling Collection 2:
 # https://code.earthengine.google.com/?scriptPath=Examples%3ADatasets%2FLANDSAT_LC08_C02_T1_L2
 def applyScaleFactors(image, landsatCollectionVersion):
+    """Rescales Landsat reflectance bands to 0-1 and thermal bands to Kelvin.
+
+    Applies collection-specific scale factors and offsets to optical and thermal
+    bands. Adapted from the method provided by Google for rescaling Collection 2.
+
+    Args:
+        image (ee.Image): The input Landsat image with common band names
+            (blue, green, red, nir, swir1, swir2, temp).
+        landsatCollectionVersion (str): The Landsat collection version, either
+            ``"C1"`` or ``"C2"``.
+
+    Returns:
+        ee.Image: The image with optical bands scaled to 0-1 reflectance and
+        the thermal band scaled to Kelvin.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> img = ee.Image("LANDSAT/LC08/C02/T1_L2/LC08_044034_20210508")
+        >>> img = img.select(["SR_B2","SR_B3","SR_B4","SR_B5","SR_B6","ST_B10","SR_B7"],
+        ...                  ["blue","green","red","nir","swir1","temp","swir2"])
+        >>> scaled = gil.applyScaleFactors(img, "C2")
+    """
     factor_dict = landsat_C2_L2_rescale_dict[landsatCollectionVersion]
     opticalBands = image.select("blue", "green", "red", "nir", "swir1", "swir2").multiply(factor_dict["refl_mult"]).add(factor_dict["refl_add"]).float()
     thermalBands = image.select("temp").multiply(factor_dict["temp_mult"]).add(factor_dict["temp_add"]).float()
@@ -3213,14 +3612,24 @@ getImageCollection = getLandsat
 # Helper function to apply an expression and linearly rescale the output.
 # Used in the landsatCloudScore function below.
 def rescale(img: ee.Image, thresholds: tuple) -> ee.Image:
-    """Rescales pixel values in an image using a min-max normalization.
+    """Rescales pixel values in an image using min-max normalization.
+
+    Computes ``(img - min) / (max - min)`` for linear rescaling. Used internally
+    by cloud scoring functions.
 
     Args:
-        img: The input Earth Engine image.
-        thresholds: A tuple containing the minimum and maximum values for rescaling.
+        img (ee.Image): The input Earth Engine image (typically single-band).
+        thresholds (tuple[float, float]): A tuple of ``(min, max)`` values for
+            the rescaling range.
 
     Returns:
-        A rescaled Earth Engine image.
+        ee.Image: The rescaled image with values nominally between 0 and 1.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> img = ee.Image.constant(0.2)
+        >>> rescaled = gil.rescale(img, (0.1, 0.3))
     """
     return img.subtract(thresholds[0]).divide(thresholds[1] - thresholds[0])
 
@@ -3243,6 +3652,35 @@ def projectShadows(
     cloudHeights,
     yMult=None,
 ):
+    """Projects cloud shadows based on solar geometry and masks them along with clouds.
+
+    Uses solar azimuth and zenith angles to cast shadows from a cloud mask at
+    multiple cloud heights, then combines the shadow mask with a dark-pixel test.
+
+    Args:
+        cloudMask (ee.Image): A binary cloud mask image (1 = cloud).
+        image (ee.Image): The input satellite image with bands ``nir``, ``swir1``,
+            ``swir2`` and metadata properties ``MEAN_SOLAR_AZIMUTH_ANGLE`` and
+            ``MEAN_SOLAR_ZENITH_ANGLE``.
+        irSumThresh (float): Threshold for the sum of infrared bands to identify
+            dark pixels (e.g., 0.35).
+        contractPixels (float): Number of pixels to erode the shadow mask.
+        dilatePixels (float): Number of pixels to dilate the shadow mask.
+        cloudHeights (ee.List): List of cloud heights (in meters) to test for
+            shadow projection (e.g., ``ee.List.sequence(500, 10000, 500)``).
+        yMult (int | None, optional): Multiplier for the Y shadow direction.
+            Automatically determined from projection if ``None``. Defaults to None.
+
+    Returns:
+        ee.Image: The input image with cloud and cloud shadow pixels masked out
+        and a ``cloudShadowMask`` band appended.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> heights = ee.List.sequence(500, 10000, 500)
+        >>> # Typically called via projectShadowsWrapper rather than directly
+    """
     if yMult == None:
         yMult = ee.Algorithms.If(
             ee.Algorithms.IsEqual(image.select([3]).projection(), ee.Projection("EPSG:4326")),
@@ -3300,6 +3738,35 @@ def projectShadowsWrapper(
     dilatePixels=3.5,
     cloudHeights=ee.List.sequence(500, 10000, 500),
 ):
+    """Wrapper that computes a cloud mask and projects cloud shadows for a Sentinel-2 image.
+
+    Combines cloud scoring with shadow projection in a single step. Uses
+    ``sentinel2CloudScore`` to generate a cloud mask, then calls
+    ``projectShadows`` to find and mask cloud shadows.
+
+    Args:
+        img (ee.Image): The input Sentinel-2 image with common band names.
+        cloudThresh (float, optional): Cloud score threshold (0-100). Pixels
+            above this are considered cloud. Defaults to 20.
+        irSumThresh (float, optional): IR sum threshold for dark pixel
+            detection. Defaults to 0.35.
+        contractPixels (float, optional): Erosion kernel size in pixels.
+            Defaults to 1.5.
+        dilatePixels (float, optional): Dilation kernel size in pixels.
+            Defaults to 3.5.
+        cloudHeights (ee.List, optional): Cloud heights to test in meters.
+            Defaults to ``ee.List.sequence(500, 10000, 500)``.
+
+    Returns:
+        ee.Image: The image with clouds and cloud shadows masked out.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> studyArea = gil.testAreas["CA"]
+        >>> s2 = gil.getS2(studyArea, "2023-06-01", "2023-09-01", 152, 244)
+        >>> masked = s2.map(gil.projectShadowsWrapper)
+    """
 
     args = formatArgs(locals())
 
@@ -3314,13 +3781,22 @@ def projectShadowsWrapper(
 #########################################################################
 # Function to mask clouds using the Sentinel-2 QA band.
 def maskS2clouds(image: ee.Image) -> ee.Image:
-    """Masks clouds in a Sentinel-2 image using the QA60 band.
+    """Masks clouds and cirrus in a Sentinel-2 image using the QA60 band.
+
+    Uses bits 10 (opaque clouds) and 11 (cirrus) of the QA60 band to create
+    a binary cloud mask.
 
     Args:
-        image: The input Sentinel-2 image.
+        image (ee.Image): The input Sentinel-2 image containing a ``QA60`` band.
 
     Returns:
-        The cloud-masked image.
+        ee.Image: The cloud-masked Sentinel-2 image.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> s2 = ee.ImageCollection("COPERNICUS/S2_HARMONIZED").first()
+        >>> masked = gil.maskS2clouds(s2)
     """
     qa = image.select("QA60").int16()
 
@@ -3341,13 +3817,27 @@ def maskS2clouds(image: ee.Image) -> ee.Image:
 # This expects the input image to have the common band names:
 # ["red", "blue", etc], so it can work across sensors.
 def landsatCloudScore(img: ee.Image) -> ee.Image:
-    """Computes a cloud score for a Landsat image and adds a band that represents the cloud mask. This expects the input image to have the common band names: ["red", "blue", etc], so it can work across sensors.
+    """Computes a cloud score for a Landsat image based on spectral indicators.
+
+    Evaluates multiple cloud indicators (blue brightness, visible brightness,
+    IR brightness, temperature, and NDSI) and returns the minimum score. Works
+    across sensors as long as the image uses common band names (blue, green, red,
+    nir, swir1, swir2, temp).
 
     Args:
-        img: The input Landsat image.
+        img (ee.Image): The input image with common band names: blue, green,
+            red, nir, swir1, swir2, and temp.
 
     Returns:
-        An image with a cloud score band.
+        ee.Image: A single-band image named ``"cloudScore"`` with values 0-100,
+        where higher values indicate greater cloud likelihood.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> studyArea = gil.testAreas["CA"]
+        >>> ls = gil.getLandsat(studyArea, "2023-06-01", "2023-09-01", 152, 244)
+        >>> scored = ls.map(lambda img: img.addBands(gil.landsatCloudScore(img)))
     """
     # Compute several indicators of cloudiness and take the minimum of them.
     score = ee.Image(1.0)
@@ -3391,20 +3881,38 @@ def applyCloudScoreAlgorithm(
     performCloudScoreOffset: bool = True,
     preComputedCloudScoreOffset: ee.Image = None,
 ) -> ee.ImageCollection:
-    """Applies a cloud score algorithm to an image collection.
+    """Applies a cloud score algorithm to an image collection and masks cloudy pixels.
+
+    Computes per-pixel cloud scores, optionally subtracts a percentile-based
+    offset to reduce commission errors, then masks pixels exceeding the threshold.
 
     Args:
-        collection: The input Earth Engine image collection.
-        cloudScoreFunction: A function to calculate the cloud score for an image.
-        cloudScoreThresh: The cloud score threshold for masking (default: 20).
-        cloudScorePctl: The percentile for computing the cloud score offset (default: 10).
-        contractPixels: The contraction kernel size (default: 1.5).
-        dilatePixels: The dilation kernel size (default: 3.5).
-        performCloudScoreOffset: Whether to perform cloud score offsetting (default: True).
-        preComputedCloudScoreOffset: A pre-computed cloud score offset image (optional).
+        collection (ee.ImageCollection): The input image collection.
+        cloudScoreFunction (Callable[[ee.Image], ee.Image]): A function that
+            takes an image and returns a single-band cloud score image.
+        cloudScoreThresh (float, optional): Cloud score threshold for masking.
+            Defaults to 20.
+        cloudScorePctl (float, optional): Percentile for computing the cloud
+            score offset. Defaults to 10.
+        contractPixels (float, optional): Erosion kernel size in pixels.
+            Defaults to 1.5.
+        dilatePixels (float, optional): Dilation kernel size in pixels.
+            Defaults to 3.5.
+        performCloudScoreOffset (bool, optional): Whether to subtract a
+            per-pixel offset based on the time series. Defaults to True.
+        preComputedCloudScoreOffset (ee.Image | None, optional): A pre-computed
+            cloud score offset image. If ``None``, computed from the collection.
+            Defaults to None.
 
     Returns:
-        The image collection with cloud masks applied.
+        ee.ImageCollection: The image collection with cloudy pixels masked out.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> studyArea = gil.testAreas["CA"]
+        >>> ls = gil.getLandsat(studyArea, "2023-06-01", "2023-09-01", 152, 244)
+        >>> masked = gil.applyCloudScoreAlgorithm(ls, gil.landsatCloudScore)
     """
 
     # Add cloudScore
@@ -3448,15 +3956,27 @@ fmaskBitDict = {
 # LSC updated 4/16/19 to add medium and high confidence cloud masks
 # Supported fmaskClass options: 'cloud', 'shadow', 'snow', 'high_confidence_cloud', 'med_confidence_cloud'
 def cFmask(img: ee.Image, fmaskClass: str, bitMaskBandName: str = "QA_PIXEL") -> ee.Image:
-    """Applies the CFMask algorithm to a Landsat image.
+    """Applies the CFMask algorithm to mask a specific class in a Landsat image.
+
+    Supports masking clouds, cloud shadows, snow, and confidence-level cloud
+    classes using the QA_PIXEL bitmask band.
 
     Args:
-        img: The input Landsat image.
-        fmaskClass: The CFMask class to apply (e.g., 'cloud', 'shadow', 'snow').
-        bitMaskBandName: The name of the QA band (default: "QA_PIXEL").
+        img (ee.Image): The input Landsat image containing a QA bitmask band.
+        fmaskClass (str): The class to mask. Options: ``"cloud"``, ``"shadow"``,
+            ``"snow"``, ``"high_confidence_cloud"``, ``"med_confidence_cloud"``.
+        bitMaskBandName (str, optional): The name of the QA bitmask band.
+            Defaults to ``"QA_PIXEL"``.
 
     Returns:
-        The cloud-masked image.
+        ee.Image: The image with the specified class masked out.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> studyArea = gil.testAreas["CA"]
+        >>> ls = gil.getLandsat(studyArea, "2023-06-01", "2023-09-01", 152, 244)
+        >>> cloud_masked = ls.map(lambda img: gil.cFmask(img, "cloud"))
     """
     qa = img.select(bitMaskBandName).uint16()
     if fmaskClass == "high_confidence_cloud":
@@ -3471,15 +3991,23 @@ def cFmask(img: ee.Image, fmaskClass: str, bitMaskBandName: str = "QA_PIXEL") ->
 
 # Method for applying a single bit bit mask
 def applyBitMask(img: ee.Image, bit: int, bitMaskBandName: str = "QA_PIXEL") -> ee.Image:
-    """Applies a bitmask to an image.
+    """Masks pixels where a specific bit is set in a QA bitmask band.
 
     Args:
-        img: The input image.
-        bit: The bit position to mask.
-        bitMaskBandName: The name of the QA band (default: "QA_PIXEL").
+        img (ee.Image): The input image containing a QA bitmask band.
+        bit (int): The bit position (0-indexed) to test. Pixels with this
+            bit set to 1 will be masked out.
+        bitMaskBandName (str, optional): The name of the QA bitmask band.
+            Defaults to ``"QA_PIXEL"``.
 
     Returns:
-        The masked image.
+        ee.Image: The image with pixels masked where the specified bit is set.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> img = ee.Image("LANDSAT/LC08/C02/T1_L2/LC08_044034_20210508")
+        >>> cloud_masked = gil.applyBitMask(img, 3)  # Bit 3 = cloud in C2
     """
     m = img.select([bitMaskBandName]).uint16()
     m = m.bitwiseAnd(1 << bit).neq(0)
@@ -3489,13 +4017,25 @@ def applyBitMask(img: ee.Image, bit: int, bitMaskBandName: str = "QA_PIXEL") -> 
 def cFmaskCloud(img: ee.Image, landsatCollectionVersion: str, bitMaskBandName: str = "QA_PIXEL") -> ee.Image:
     """Applies the CFMask cloud mask to a Landsat image.
 
+    Convenience wrapper around ``applyBitMask`` that uses the correct cloud
+    bit position for the specified Landsat collection version.
+
     Args:
-        img: The input Landsat image.
-        landsatCollectionVersion: The Landsat collection version (e.g., 'C1', 'C2').
-        bitMaskBandName: The name of the QA band (default: "QA_PIXEL").
+        img (ee.Image): The input Landsat image containing a QA bitmask band.
+        landsatCollectionVersion (str): The Landsat collection version
+            (``"C1"`` or ``"C2"``).
+        bitMaskBandName (str, optional): The name of the QA bitmask band.
+            Defaults to ``"QA_PIXEL"``.
 
     Returns:
-        The cloud-masked image.
+        ee.Image: The image with cloud pixels masked out.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> studyArea = gil.testAreas["CA"]
+        >>> ls = gil.getLandsat(studyArea, "2023-06-01", "2023-09-01", 152, 244)
+        >>> cloud_free = ls.map(lambda img: gil.cFmaskCloud(img, "C2"))
     """
     return applyBitMask(img, fmaskBitDict[landsatCollectionVersion]["cloud"], bitMaskBandName)
 
@@ -3503,13 +4043,25 @@ def cFmaskCloud(img: ee.Image, landsatCollectionVersion: str, bitMaskBandName: s
 def cFmaskCloudShadow(img: ee.Image, landsatCollectionVersion: str, bitMaskBandName: str = "QA_PIXEL") -> ee.Image:
     """Applies the CFMask cloud shadow mask to a Landsat image.
 
+    Convenience wrapper around ``applyBitMask`` that uses the correct shadow
+    bit position for the specified Landsat collection version.
+
     Args:
-        img: The input Landsat image.
-        landsatCollectionVersion: The Landsat collection version (e.g., 'C1', 'C2').
-        bitMaskBandName: The name of the QA band (default: "QA_PIXEL").
+        img (ee.Image): The input Landsat image containing a QA bitmask band.
+        landsatCollectionVersion (str): The Landsat collection version
+            (``"C1"`` or ``"C2"``).
+        bitMaskBandName (str, optional): The name of the QA bitmask band.
+            Defaults to ``"QA_PIXEL"``.
 
     Returns:
-        The cloud shadow masked image.
+        ee.Image: The image with cloud shadow pixels masked out.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> studyArea = gil.testAreas["CA"]
+        >>> ls = gil.getLandsat(studyArea, "2023-06-01", "2023-09-01", 152, 244)
+        >>> shadow_free = ls.map(lambda img: gil.cFmaskCloudShadow(img, "C2"))
     """
     return applyBitMask(img, fmaskBitDict[landsatCollectionVersion]["shadow"], bitMaskBandName)
 
@@ -3529,20 +4081,41 @@ def simpleTDOM2(
     preComputedTDOMIRMean: ee.Image | None = None,
     preComputedTDOMIRStdDev: ee.Image | None = None,
 ) -> ee.ImageCollection:
-    """Applies a simple temporal dark object differencing (TDOM) algorithm to an image collection. Adds a band that is a mask of pixels that are dark, and dark outliers.
+    """Applies Temporal Dark Outlier Mask (TDOM) to detect and mask cloud shadows.
+
+    Identifies dark outlier pixels by comparing each image to the temporal mean
+    and standard deviation. Pixels that are both statistically dark (z-score
+    below threshold) and absolutely dark (IR sum below threshold) are masked.
 
     Args:
-        collection: The input Earth Engine image collection.
-        zScoreThresh: The z-score threshold for dark outliers (default: -1).
-        shadowSumThresh: The shadow sum threshold (default: 0.35).
-        contractPixels: The contraction kernel size (default: 1.5).
-        dilatePixels: The dilation kernel size (default: 3.5).
-        shadowSumBands: The bands used for shadow sum calculation (default: ["nir", "swir1"]).
-        preComputedTDOMIRMean: Precomputed mean of the shadow sum bands (optional).
-        preComputedTDOMIRStdDev: Precomputed standard deviation of the shadow sum bands (optional).
+        collection (ee.ImageCollection): The input image collection.
+        zScoreThresh (float, optional): Z-score threshold for identifying dark
+            outliers. More negative values are more conservative. Defaults to -1.
+        shadowSumThresh (float, optional): Absolute threshold for the sum of
+            shadow bands. Defaults to 0.35.
+        contractPixels (float, optional): Erosion kernel size in pixels.
+            Defaults to 1.5.
+        dilatePixels (float, optional): Dilation kernel size in pixels.
+            Defaults to 3.5.
+        shadowSumBands (list[str], optional): Band names used for shadow
+            detection. Defaults to ``["nir", "swir1"]``.
+        preComputedTDOMIRMean (ee.Image | None, optional): Pre-computed temporal
+            mean of shadow bands. Computed from collection if ``None``.
+            Defaults to None.
+        preComputedTDOMIRStdDev (ee.Image | None, optional): Pre-computed
+            temporal standard deviation. Computed from collection if ``None``.
+            Defaults to None.
 
     Returns:
-        The image collection with dark outliers masked.
+        ee.ImageCollection: The collection with dark outlier (shadow) pixels
+        masked out.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> studyArea = gil.testAreas["CA"]
+        >>> ls = gil.getLandsat(studyArea, "2023-01-01", "2023-12-31", 152, 244)
+        >>> shadow_free = gil.simpleTDOM2(ls)
     """
     args = formatArgs(locals())
 
@@ -3578,13 +4151,25 @@ def simpleTDOM2(
 # Function to add common (and less common) spectral indices to an image.
 # Includes the Normalized Difference Spectral Vector from (Angiuli and Trianni, 2014)
 def addIndices(img: ee.Image) -> ee.Image:
-    """Adds various spectral indices to an image.
+    """Adds a comprehensive set of spectral indices to an image.
+
+    Computes all pairwise normalized differences (NDSV) across blue, green, red,
+    nir, swir1, and swir2 bands. Also adds band ratios, EVI, SAVI, and IBI.
 
     Args:
-        img: The input Earth Engine image.
+        img (ee.Image): Input image with bands named 'blue', 'green', 'red',
+            'nir', 'swir1', and 'swir2'.
 
     Returns:
-        The image with added spectral indices.
+        ee.Image: The input image with additional bands including ND_*
+            (normalized differences), R_* (ratios), EVI, SAVI, and IBI.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> img = ee.Image('LANDSAT/LC08/C02/T1_L2/LC08_044034_20200601')
+        >>> img_with_indices = addIndices(img)
+        >>> print(img_with_indices.bandNames().getInfo())
     """
     # Add Normalized Difference Spectral Vector (NDSV)
     img = img.addBands(img.normalizedDifference(["blue", "green"]).rename(["ND_blue_green"]))
@@ -3657,13 +4242,24 @@ def addIndices(img: ee.Image) -> ee.Image:
 #########################################################################
 # Function to  add SAVI and EVI
 def addSAVIandEVI(img: ee.Image) -> ee.Image:
-    """Adds SAVI and EVI indices to an image.
+    """Adds SAVI, EVI, and NIRv vegetation indices to an image.
+
+    Computes the Enhanced Vegetation Index (EVI), Soil Adjusted Vegetation
+    Index (SAVI with L=0.5), and Near-Infrared Reflectance of Vegetation (NIRv).
 
     Args:
-        img: The input Earth Engine image.
+        img (ee.Image): Input image with bands named 'nir', 'red', 'blue',
+            and 'NDVI'. The NDVI band is required for NIRv computation.
 
     Returns:
-        The image with added SAVI and EVI indices.
+        ee.Image: The input image with added 'EVI', 'SAVI', and 'NIRv' bands.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> img = simpleAddIndices(ee.Image('LANDSAT/LC08/C02/T1_L2/LC08_044034_20200601'))
+        >>> img_with_vi = addSAVIandEVI(img)
+        >>> print(img_with_vi.select(['EVI', 'SAVI', 'NIRv']).bandNames().getInfo())
     """
     # Add Enhanced Vegetation Index (EVI)
     evi = img.expression(
@@ -3698,18 +4294,24 @@ def addSAVIandEVI(img: ee.Image) -> ee.Image:
 ###############################################################
 # Apply bloom detection algorithm
 def HoCalcAlgorithm2(image: ee.Image) -> ee.Image:
-    """
-    Applies an algal detection algorithm based on:
-    Matthews, M. (2011) A current review of empirical procedures
-    of remote sensing in inland and near-coastal transitional
-    waters, International Journal of Remote Sensing, 32:21,
-    6855-6899, DOI: 10.1080/01431161.2010.512947.
+    """Applies an algal bloom detection algorithm to an image.
+
+    Computes a green/blue ratio ('bloom2') and Normalized Difference Green
+    Index ('NDGI') based on Matthews (2011), DOI: 10.1080/01431161.2010.512947.
 
     Args:
-        image: The input Earth Engine image.
+        image (ee.Image): Input image with 'green' and 'blue' bands.
 
     Returns:
-        The image with added bloom2 and NDGI bands.
+        ee.Image: The input image with added 'bloom2' (green/blue ratio)
+            and 'NDGI' (normalized difference of green and blue) bands.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> img = ee.Image('LANDSAT/LC08/C02/T1_L2/LC08_044034_20200601')
+        >>> bloom_img = HoCalcAlgorithm2(img)
+        >>> print(bloom_img.select(['bloom2', 'NDGI']).bandNames().getInfo())
     """
     # Algorithm 2 based on:
     # Matthews, M. (2011) A current review of empirical procedures
@@ -3726,13 +4328,25 @@ def HoCalcAlgorithm2(image: ee.Image) -> ee.Image:
 #########################################################################
 # Function for only adding common indices
 def simpleAddIndices(in_image: ee.Image) -> ee.Image:
-    """Adds common spectral indices to an image.
+    """Adds common spectral indices (NDVI, NBR, NDMI, NDSI) to an image.
+
+    A lightweight alternative to ``addIndices`` that computes only the four
+    most commonly used normalized-difference indices.
 
     Args:
-        in_image: The input Earth Engine image.
+        in_image (ee.Image): Input image with bands named 'nir', 'red',
+            'swir1', 'swir2', and 'green'.
 
     Returns:
-        The image with added NDVI, NBR, NDMI, and NDSI indices.
+        ee.Image: The input image with added 'NDVI', 'NBR', 'NDMI', and
+            'NDSI' bands.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> img = ee.Image('LANDSAT/LC08/C02/T1_L2/LC08_044034_20200601')
+        >>> img = simpleAddIndices(img)
+        >>> print(img.select(['NDVI', 'NBR', 'NDMI', 'NDSI']).bandNames().getInfo())
     """
     in_image = in_image.addBands(in_image.normalizedDifference(["nir", "red"]).select([0], ["NDVI"]))
     in_image = in_image.addBands(in_image.normalizedDifference(["nir", "swir2"]).select([0], ["NBR"]))
@@ -3747,13 +4361,26 @@ def simpleAddIndices(in_image: ee.Image) -> ee.Image:
 # Function for adding common indices
 #########################################################################
 def addSoilIndices(img: ee.Image) -> ee.Image:
-    """Adds soil-related indices to an image.
+    """Adds soil-related spectral indices to an image.
+
+    Computes NDCI (Normalized Difference Chlorophyll Index), NDII (Normalized
+    Difference Infrared Index), NDFI (Normalized Difference Fraction Index),
+    BSI (Bare Soil Index), and HI (SWIR1/SWIR2 ratio).
 
     Args:
-        img: The input Earth Engine image.
+        img (ee.Image): Input image with bands named 'blue', 'red', 'green',
+            'nir', 'swir1', and 'swir2'.
 
     Returns:
-        The image with added soil indices.
+        ee.Image: The input image with added 'NDCI', 'NDII', 'NDFI', 'BSI',
+            and 'HI' bands.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> img = ee.Image('LANDSAT/LC08/C02/T1_L2/LC08_044034_20200601')
+        >>> img = addSoilIndices(img)
+        >>> print(img.select(['BSI', 'HI']).bandNames().getInfo())
     """
     img = img.addBands(img.normalizedDifference(["red", "green"]).rename(["NDCI"]))
     img = img.addBands(img.normalizedDifference(["red", "swir2"]).rename(["NDII"]))
@@ -3782,13 +4409,25 @@ def addSoilIndices(img: ee.Image) -> ee.Image:
 # with the following bands added: ['brightness', 'greenness', 'wetness',
 #'fourth', 'fifth', 'sixth']
 def getTasseledCap(image: ee.Image) -> ee.Image:
-    """Computes the Tasseled Cap transformation for an image using the Crist 1985 coefficients.
+    """Computes the Tasseled Cap transformation using Crist 1985 coefficients.
+
+    Applies the 6-component Tasseled Cap transformation for TOA reflectance
+    data using coefficients from Crist (1985).
 
     Args:
-        image: The input Earth Engine image.
+        image (ee.Image): Input image with bands named 'blue', 'green', 'red',
+            'nir', 'swir1', and 'swir2'.
 
     Returns:
-        The image with added Tasseled Cap components.
+        ee.Image: The input image with added 'brightness', 'greenness',
+            'wetness', 'fourth', 'fifth', and 'sixth' bands.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> img = ee.Image('LANDSAT/LC08/C02/T1_TOA/LC08_044034_20200601')
+        >>> tc = getTasseledCap(img)
+        >>> print(tc.select(['brightness', 'greenness', 'wetness']).bandNames().getInfo())
     """
 
     bands = ee.List(["blue", "green", "red", "nir", "swir1", "swir2"])
@@ -3827,13 +4466,25 @@ def getTasseledCap(image: ee.Image) -> ee.Image:
 #########################################################################
 #########################################################################
 def simpleGetTasseledCap(image: ee.Image) -> ee.Image:
-    """Computes the Tasseled Cap transformation for an image, including only brightness, greenness, and wetness using the Crist 1985 coefficients.
+    """Computes a simplified Tasseled Cap with brightness, greenness, and wetness only.
+
+    Uses Crist 1985 TOA reflectance coefficients but returns only the first
+    three components, omitting the fourth through sixth.
 
     Args:
-        image: The input Earth Engine image.
+        image (ee.Image): Input image with bands named 'blue', 'green', 'red',
+            'nir', 'swir1', and 'swir2'.
 
     Returns:
-        The image with added brightness, greenness, and wetness bands.
+        ee.Image: The input image with added 'brightness', 'greenness', and
+            'wetness' bands.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> img = ee.Image('LANDSAT/LC08/C02/T1_TOA/LC08_044034_20200601')
+        >>> tc = simpleGetTasseledCap(img)
+        >>> print(tc.select(['brightness', 'greenness', 'wetness']).bandNames().getInfo())
     """
     bands = ee.List(["blue", "green", "red", "nir", "swir1", "swir2"])
     #   // // Kauth-Thomas coefficients for Thematic Mapper data
@@ -3870,15 +4521,26 @@ def simpleGetTasseledCap(image: ee.Image) -> ee.Image:
 # Function to add Tasseled Cap angles and distances to an image.
 # Assumes image has bands: 'brightness', 'greenness', and 'wetness'.
 def addTCAngles(image: ee.Image) -> ee.Image:
-    """
-    Adds Tasseled Cap angles and distances to an image.
-    Assumes image has bands: 'brightness', 'greenness', and 'wetness'.
+    """Adds Tasseled Cap angles and distances to an image.
+
+    Computes pairwise angles (atan2) and Euclidean distances (hypot) between
+    the brightness, greenness, and wetness TC components. Angles are divided
+    by pi to normalize to the range [-1, 1].
 
     Args:
-        image: The input Earth Engine image with brightness, greenness, and wetness bands.
+        image (ee.Image): Input image with 'brightness', 'greenness', and
+            'wetness' bands (e.g., output of ``getTasseledCap``).
 
     Returns:
-        The image with added Tasseled Cap angles and distances.
+        ee.Image: The input image with added bands: 'tcAngleBG', 'tcAngleGW',
+            'tcAngleBW', 'tcDistBG', 'tcDistGW', 'tcDistBW'.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> img = getTasseledCap(ee.Image('LANDSAT/LC08/C02/T1_TOA/LC08_044034_20200601'))
+        >>> img = addTCAngles(img)
+        >>> print(img.select(['tcAngleBG', 'tcDistBG']).bandNames().getInfo())
     """
     # Select brightness, greenness, and wetness bands
     brightness = image.select(["brightness"])
@@ -3901,15 +4563,25 @@ def addTCAngles(image: ee.Image) -> ee.Image:
 # Only adds tc bg angle as in Powell et al 2009
 # https://www.sciencedirect.com/science/article/pii/S0034425709003745?via%3Dihub
 def simpleAddTCAngles(image: ee.Image) -> ee.Image:
-    """
-    Adds the Tasseled Cap brightness-greenness angle to an image as in Powell et al 2009.
-    Assumes image has bands: 'brightness', 'greenness', and 'wetness'.
+    """Adds the Tasseled Cap brightness-greenness angle as in Powell et al. (2009).
+
+    A simplified version of ``addTCAngles`` that only computes the tcAngleBG
+    band. See: https://doi.org/10.1016/j.rse.2009.08.016
 
     Args:
-        image: The input Earth Engine image with brightness and greenness bands.
+        image (ee.Image): Input image with 'brightness', 'greenness', and
+            'wetness' bands (e.g., output of ``simpleGetTasseledCap``).
 
     Returns:
-        The image with added brightness-greenness angle.
+        ee.Image: The input image with an added 'tcAngleBG' band (angle
+            normalized by pi).
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> img = simpleGetTasseledCap(ee.Image('LANDSAT/LC08/C02/T1_TOA/LC08_044034_20200601'))
+        >>> img = simpleAddTCAngles(img)
+        >>> print(img.select('tcAngleBG').bandNames().getInfo())
     """
     # Select brightness, greenness, and wetness bands
     brightness = image.select(["brightness"])
@@ -3931,17 +4603,34 @@ def addZenithAzimuth(
     zenithDict: dict = {"TOA": "SUN_ELEVATION", "SR": "SOLAR_ZENITH_ANGLE"},
     azimuthDict: dict = {"TOA": "SUN_AZIMUTH", "SR": "SOLAR_AZIMUTH_ANGLE"},
 ):
-    """
-    Adds solar zenith and azimuth angles in radians to an image.
+    """Adds solar zenith and azimuth angles in radians as bands to an image.
+
+    Reads sun angle metadata properties from the image, converts degrees to
+    radians, and adds them as constant-value 'zenith' and 'azimuth' bands.
+    For TOA images, zenith is derived from SUN_ELEVATION (90 - elevation);
+    for SR images it is read directly from SOLAR_ZENITH_ANGLE.
 
     Args:
-        img: The input Earth Engine image.
-        toaOrSR: Whether the image is TOA or SR.
-        zenithDict: A dictionary mapping toaOrSR to the zenith band name.
-        azimuthDict: A dictionary mapping toaOrSR to the azimuth band name.
+        img (ee.Image): Input Landsat image with sun angle metadata properties.
+        toaOrSR (str): Either ``'TOA'`` or ``'SR'``, indicating the processing
+            level and which metadata properties to use.
+        zenithDict (dict, optional): Mapping from toaOrSR key to the zenith
+            metadata property name. Defaults to
+            ``{'TOA': 'SUN_ELEVATION', 'SR': 'SOLAR_ZENITH_ANGLE'}``.
+        azimuthDict (dict, optional): Mapping from toaOrSR key to the azimuth
+            metadata property name. Defaults to
+            ``{'TOA': 'SUN_AZIMUTH', 'SR': 'SOLAR_AZIMUTH_ANGLE'}``.
 
     Returns:
-        The image with added zenith and azimuth bands.
+        ee.Image: The input image with added 'zenith' and 'azimuth' bands
+            in radians.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> img = ee.Image('LANDSAT/LC08/C02/T1_TOA/LC08_044034_20200601')
+        >>> img = addZenithAzimuth(img, 'TOA')
+        >>> print(img.select(['zenith', 'azimuth']).bandNames().getInfo())
     """
     zenith = ee.Image.constant(img.get(zenithDict[toaOrSR])).multiply(math.pi).divide(180).float().rename(["zenith"])
 
@@ -3958,37 +4647,34 @@ def addZenithAzimuth(
 # thus resulting in a medoid mosaic that will more or less choose values closest to the median temperature only, rather than
 # all the bands
 def medoidMosaicMSD(inCollection: ee.ImageCollection, medoidIncludeBands: ee.List | None = None) -> ee.Image:
-    """Creates a medoid mosaic using the Mean Squared Difference (MSD) (euclidean distance) method.
+    """Creates a medoid mosaic using the Mean Squared Difference (MSD) method.
 
-    This function calculates the medoid image from an image collection based on minimizing the sum of squared differences between pixel values.
+    Calculates the medoid image from an image collection by minimizing the sum
+    of squared differences (Euclidean distance) between each pixel and the
+    collection median.
 
     Args:
-        inCollection: The input Earth Engine ImageCollection to create the mosaic from.
-        medoidIncludeBands: A list of band names to include in the MSD calculation. If None, all bands are used.
+        inCollection (ee.ImageCollection): The input collection to create the
+            mosaic from. Must have consistent band names and data types.
+        medoidIncludeBands (ee.List | None, optional): Band names to include in
+            the MSD calculation. If ``None``, all bands are used. Defaults to
+            ``None``.
 
     Returns:
-        An Earth Engine Image representing the medoid mosaic.
+        ee.Image: The medoid mosaic image, containing all original bands plus
+            'year' and 'julianDay' bands.
 
     Note:
-        * As the data are not normalized in this method, ensuring the medoidIncludeBands have roughly comparable ranges of values helps the function work properly. For example, if temperature is included, it will account for most of the variance thus resulting in a medoid mosaic that will more or less choose values closest to the median temperature only, rather than all the bands
+        Data are not normalized, so bands should have roughly comparable value
+        ranges. If temperature is included alongside reflectance, it may
+        dominate the variance and bias the medoid selection.
 
-        * The function assumes that the image collection has consistent band names and data types.
-
-
-    >>> import geeViz.getImagesLib as gil
-    >>> Map = gil.Map
-    >>> ee = gil.ee
-    >>> studyArea = gil.testAreas["CO"]
-    >>> s2s = gil.superSimpleGetS2(studyArea, "2024-01-01", "2024-12-31", 190, 250)
-    >>> median_composite = s2s.median()
-    >>> medoid_composite = gil.medoidMosaicMSD(s2s, ["green", "red", "nir", "swir1", "swir2"])
-    >>> Map.addLayer(median_composite, gil.vizParamsFalse10k, "Sentinel-2 Median Composite")
-    >>> Map.addLayer(medoid_composite, gil.vizParamsFalse10k, "Sentinel-2 Medoid Composite")
-    >>> Map.addLayer(studyArea, {"canQuery": False}, "Study Area")
-    >>> Map.centerObject(studyArea)
-    >>> Map.turnOnInspector()
-    >>> Map.view()
-
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> studyArea = gil.testAreas["CO"]
+        >>> s2s = gil.superSimpleGetS2(studyArea, "2024-01-01", "2024-12-31", 190, 250)
+        >>> medoid = gil.medoidMosaicMSD(s2s, ["green", "red", "nir", "swir1", "swir2"])
     """
 
     if medoidIncludeBands == None:
@@ -4024,23 +4710,39 @@ def medoidMosaicMSD(inCollection: ee.ImageCollection, medoidIncludeBands: ee.Lis
 def exportToAssetWrapper(
     imageForExport: ee.Image, assetName: str, assetPath: str, pyramidingPolicyObject: dict | None = None, roi: ee.Geometry | None = None, scale: float | None = None, crs: str | None = None, transform: list | None = None, overwrite: bool = False
 ):
-    """Exports an image to an Earth Engine asset.
+    """Exports an image to an Earth Engine asset with overwrite handling.
 
-    This function provides a wrapper for exporting images to Earth Engine assets with additional features like handling existing assets and setting the pyramiding policy.
+    Wraps ``ee.batch.Export.image.toAsset`` with logic to check for existing
+    assets or running exports, and optionally overwrite them.
 
     Args:
-        imageForExport: The Earth Engine Image to export.
-        assetName: The desired name for the asset.
-        assetPath: The full path for the asset in the Earth Engine asset tree.
-        pyramidingPolicyObject: An optional dictionary specifying the pyramiding policy for the exported asset.
-        roi: An optional Earth Engine Geometry defining the region of interest for export.
-        scale: The desired export scale in meters.
-        crs: The desired coordinate reference system for the export.
-        transform: The desired transform for the export.
-        overwrite: A boolean indicating whether to overwrite an existing asset.
+        imageForExport (ee.Image): The image to export.
+        assetName (str): Task description / asset name (spaces replaced with '-').
+        assetPath (str): Full Earth Engine asset path
+            (e.g., ``'projects/my-project/assets/my_image'``).
+        pyramidingPolicyObject (dict | None, optional): Pyramiding policy, e.g.,
+            ``{'.default': 'mean'}``. If a string is provided it is wrapped as
+            ``{'.default': value}``. Defaults to ``None`` (uses ``'mean'``).
+        roi (ee.Geometry | None, optional): Region of interest. The image is
+            clipped to this geometry before export. Defaults to ``None``.
+        scale (float | None, optional): Export resolution in meters. Defaults
+            to ``None`` (uses the image's native scale).
+        crs (str | None, optional): Coordinate reference system, e.g.,
+            ``'EPSG:4326'``. Defaults to ``None``.
+        transform (list | None, optional): Affine transform as a 6-element
+            list. Defaults to ``None``.
+        overwrite (bool, optional): If ``True``, deletes existing asset or
+            cancels a running export before re-exporting. Defaults to ``False``.
 
     Returns:
-        None. The function starts the export task.
+        None: Starts an Earth Engine export task as a side effect.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> img = ee.Image('USGS/SRTMGL1_003')
+        >>> roi = ee.Geometry.Rectangle([-105.5, 39.5, -105.0, 40.0])
+        >>> exportToAssetWrapper(img, 'srtm_export', 'projects/my-project/assets/srtm', roi=roi, scale=30)
     """
     # Get rid of any spaces
     assetName = assetName.replace("/\s+/g", "-")
@@ -4100,22 +4802,36 @@ def exportToAssetWrapper(
 
 #########################################################################
 def exportToDriveWrapper(imageForExport: ee.Image, outputName: str, driveFolderName: str, roi: ee.Geometry, scale: float | None = None, crs: str | None = None, transform: list | None = None, outputNoData: int = -32768):
-    """Exports an image to Google Drive.
+    """Exports an image to Google Drive as a GeoTIFF.
 
-    This function exports an Earth Engine Image to a specified Google Drive folder.
+    Wraps ``ee.batch.Export.image.toDrive``, clipping the image to the
+    provided region of interest and filling masked pixels with ``outputNoData``.
 
     Args:
-        imageForExport: The Earth Engine Image to export.
-        outputName: The desired name for the exported file.
-        driveFolderName: The name of the Google Drive folder to export to.
-        roi: The Earth Engine Geometry defining the region of interest.
-        scale: The desired export scale in meters.
-        crs: The desired coordinate reference system for the export.
-        transform: The desired transform for the export.
-        outputNoData: The no data value to use for the export.
+        imageForExport (ee.Image): The image to export.
+        outputName (str): File name for the exported GeoTIFF (spaces replaced
+            with '-').
+        driveFolderName (str): Google Drive folder name to export into.
+        roi (ee.Geometry): Region of interest; the image is clipped to this
+            geometry.
+        scale (float | None, optional): Export resolution in meters. Defaults
+            to ``None`` (uses the image's native scale).
+        crs (str | None, optional): Coordinate reference system, e.g.,
+            ``'EPSG:4326'``. Defaults to ``None``.
+        transform (list | None, optional): Affine transform as a 6-element
+            list. Defaults to ``None``.
+        outputNoData (int, optional): Value used to fill masked pixels.
+            Defaults to ``-32768``.
 
     Returns:
-        None. The function starts the export task.
+        None: Starts an Earth Engine export task as a side effect.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> img = ee.Image('USGS/SRTMGL1_003')
+        >>> roi = ee.Geometry.Rectangle([-105.5, 39.5, -105.0, 40.0])
+        >>> exportToDriveWrapper(img, 'srtm_export', 'EE_Exports', roi, scale=30)
     """
     outputName = outputName.replace("/\s+/g", "-")  # Get rid of any spaces
 
@@ -4165,25 +4881,42 @@ def exportToCloudStorageWrapper(
     formatOptions: dict = {"cloudOptimized": True},
     overwrite: bool = False,
 ):
-    """Exports an image to Google Cloud Storage.
+    """Exports an image to Google Cloud Storage with overwrite handling.
 
-    This function exports an Earth Engine Image to a specified Google Cloud Storage bucket.
+    Wraps ``ee.batch.Export.image.toCloudStorage``, clipping the image to the
+    region of interest and optionally deleting existing blobs before export.
 
     Args:
-        imageForExport: The Earth Engine Image to export.
-        outputName: The desired name for the exported file.
-        bucketName: The name of the Google Cloud Storage bucket.
-        roi: The Earth Engine Geometry defining the region of interest.
-        scale: The desired export scale in meters.
-        crs: The desired coordinate reference system for the export.
-        transform: The desired transform for the export.
-        outputNoData: The no data value to use for the export.
-        fileFormat: The desired output file format (e.g., "GeoTIFF", "TFRecord").
-        formatOptions: Additional format options for the export.
-        overwrite: A boolean indicating whether to overwrite an existing file.
+        imageForExport (ee.Image): The image to export.
+        outputName (str): Object name / prefix in the bucket (spaces replaced
+            with '-').
+        bucketName (str): Name of the Google Cloud Storage bucket.
+        roi (ee.Geometry): Region of interest; the image is clipped to this
+            geometry.
+        scale (float | None, optional): Export resolution in meters. Defaults
+            to ``None``.
+        crs (str | None, optional): Coordinate reference system, e.g.,
+            ``'EPSG:4326'``. Defaults to ``None``.
+        transform (list | None, optional): Affine transform as a 6-element
+            list. Defaults to ``None``.
+        outputNoData (int, optional): Value used to fill masked pixels.
+            Defaults to ``-32768``.
+        fileFormat (str, optional): Output format, e.g., ``'GeoTIFF'`` or
+            ``'TFRecord'``. Defaults to ``'GeoTIFF'``.
+        formatOptions (dict, optional): Additional format options passed to the
+            export. Defaults to ``{'cloudOptimized': True}``.
+        overwrite (bool, optional): If ``True``, deletes existing blobs or
+            cancels running exports before re-exporting. Defaults to ``False``.
 
     Returns:
-        None. The function starts the export task.
+        None: Starts an Earth Engine export task as a side effect.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> img = ee.Image('USGS/SRTMGL1_003')
+        >>> roi = ee.Geometry.Rectangle([-105.5, 39.5, -105.0, 40.0])
+        >>> exportToCloudStorageWrapper(img, 'srtm_cog', 'my-bucket', roi, scale=30)
     """
     outputName = outputName.replace("/\s+/g", "-")  # Get rid of any spaces
 
@@ -4238,16 +4971,27 @@ def exportToCloudStorageWrapper(
 # Function for wrapping dates when the startJulian < endJulian
 # Checks for year with majority of the days and the wrapOffset
 def wrapDates(startJulian: int, endJulian: int) -> list:
-    """Wraps dates when the startJulian is greater than the endJulian.
+    """Computes date-wrapping parameters when startJulian > endJulian.
 
-    This function handles cases where the start Julian day is later in the year than the end Julian day.
+    When the compositing window crosses a year boundary (e.g., Oct-Mar),
+    this function returns the offset and which year contains the majority
+    of days, so that year labels are assigned correctly.
 
     Args:
-        startJulian: The start Julian day.
-        endJulian: The end Julian day.
+        startJulian (int): Start day of year (1-365).
+        endJulian (int): End day of year (1-365).
 
     Returns:
-        A list containing the wrap offset and the year with the majority of days.
+        list: A two-element list ``[wrapOffset, yearWithMajority]``.
+            ``wrapOffset`` is 365 if wrapping occurs, else 0.
+            ``yearWithMajority`` is 1 if the second calendar year has more
+            days in the window, else 0.
+
+    Examples:
+        >>> wrapDates(250, 100)
+        [365, 1]
+        >>> wrapDates(1, 250)
+        [0, 0]
     """
     # Set up date wrapping
     wrapOffset = 0
@@ -4268,24 +5012,39 @@ def wrapDates(startJulian: int, endJulian: int) -> list:
 def compositeTimeSeries(
     ls: ee.ImageCollection, startYear: int, endYear: int, startJulian: int, endJulian: int, timebuffer: int = 0, weights: list = [1], compositingMethod: str | None = None, compositingReducer: ee.Reducer | None = None
 ) -> ee.ImageCollection:
-    """Creates composites for each year within a specified date range.
+    """Creates annual composites from an image collection over a year range.
 
-    This function generates annual composites from an image collection, allowing for time buffering and weighted averaging.
-
+    Generates one composite per year between ``startYear`` and ``endYear``,
+    filtering by Julian day window. Supports multi-year time buffering with
+    weighted averaging and various compositing methods.
 
     Args:
-        ls: The input Earth Engine image collection.
-        startYear: The start year of the composite period.
-        endYear: The end year of the composite period.
-        startJulian: The start Julian day of the composite period.
-        endJulian: The end Julian day of the composite period.
-        timebuffer: The number of years to include in the composite (default: 0).
-        weights: The weights for the composite (default: [1]).
-        compositingMethod: The compositing method (e.g., 'median', 'medoid') (optional).
-        compositingReducer: A custom compositing reducer (optional).
+        ls (ee.ImageCollection): Input image collection to composite.
+        startYear (int): First year to produce a composite for.
+        endYear (int): Last year to produce a composite for (inclusive).
+        startJulian (int): Start day of year for the compositing window (1-365).
+        endJulian (int): End day of year for the compositing window (1-365).
+            Can be less than ``startJulian`` for cross-year windows.
+        timebuffer (int, optional): Number of years on each side to include
+            in a weighted moving window. Defaults to ``0``.
+        weights (list, optional): Weights for the moving window years. Length
+            should be ``2 * timebuffer + 1``. Defaults to ``[1]``.
+        compositingMethod (str | None, optional): Method name, e.g.,
+            ``'median'`` or ``'medoid'``. Defaults to ``None``.
+        compositingReducer (ee.Reducer | None, optional): Custom reducer to
+            use instead of a named method. Defaults to ``None``.
 
     Returns:
-        An Earth Engine image collection containing the composites.
+        ee.ImageCollection: Collection of annual composite images, each tagged
+            with compositing metadata properties.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> area = ee.Geometry.Point([-105.5, 40.0]).buffer(5000)
+        >>> composites = compositeTimeSeries(
+        ...     gil.getProcessedLandsatScenes(area, 2020, 2022, 152, 273),
+        ...     2020, 2022, 152, 273)
     """
 
     args = formatArgs(locals())
@@ -4371,18 +5130,29 @@ def compositeTimeSeries(
 # (pb463@nau.edu) and Matt Macander
 # (mmacander@abrinc.com)
 def illuminationCorrection(img: ee.Image, scale: float, studyArea: ee.Geometry, bandList: list = ["blue", "green", "red", "nir", "swir1", "swir2", "temp"]) -> ee.Image:
-    """Applies the Sun-Canopy-Sensor + C (SCSc) correction method to an image.
+    """Computes the illumination condition (IC) and terrain bands for an image.
 
-    This function corrects for topographic effects on image reflectance.
+    Calculates the illumination condition from solar geometry (zenith/azimuth
+    bands on the image) and USGS NED terrain data, and appends IC, cosZ, cosS,
+    and slope bands. This is the first step of the SCSc topographic correction.
 
     Args:
-        img: The input Earth Engine Image.
-        scale: The scale for the reduction region.
-        studyArea: The study area.
-        bandList: A list of bands to correct.
+        img (ee.Image): Input image with 'zenith' and 'azimuth' bands in
+            radians (e.g., output of ``addZenithAzimuth``).
+        scale (float): Scale in meters for any internal reductions.
+        studyArea (ee.Geometry): Study area geometry (kept for API consistency).
+        bandList (list, optional): Band names to correct. Defaults to
+            ``['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp']``.
 
     Returns:
-        The corrected Earth Engine Image.
+        ee.Image: The input image with added 'IC', 'cosZ', 'cosS', and
+            'slope' bands.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> img = addZenithAzimuth(ee.Image('LANDSAT/LC08/C02/T1_TOA/LC08_044034_20200601'), 'TOA')
+        >>> img_ic = illuminationCorrection(img, 30, ee.Geometry.Point([-122, 37]).buffer(1000))
     """
     # Extract solar zenith and azimuth bands
     SZ_rad = img.select("zenith")
@@ -4425,7 +5195,33 @@ def illuminationCorrection(
     studyArea,
     bandList=["blue", "green", "red", "nir", "swir1", "swir2", "temp"],
 ):
+    """Applies SCSc topographic correction to specified bands of an image.
 
+    Uses the Sun-Canopy-Sensor + C (SCSc) method to correct for illumination
+    effects caused by terrain slope and aspect. Requires 'IC', 'cosZ', 'cosS',
+    and 'slope' bands (from the first ``illuminationCorrection`` overload).
+    Based on code by Patrick Burns and Matt Macander.
+
+    Args:
+        img (ee.Image): Input image with 'IC', 'cosZ', 'cosS', 'slope', and
+            the bands listed in ``bandList``.
+        scale (float): Scale in meters for the linear regression reduction.
+        studyArea (ee.Geometry): Region used for the linear fit regression.
+        bandList (list, optional): Band names to apply the SCSc correction to.
+            Defaults to ``['blue', 'green', 'red', 'nir', 'swir1', 'swir2', 'temp']``.
+
+    Returns:
+        ee.Image: The topographically corrected image with original metadata
+            properties and system:time_start preserved.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> area = ee.Geometry.Point([-122, 37]).buffer(5000)
+        >>> img = addZenithAzimuth(ee.Image('LANDSAT/LC08/C02/T1_TOA/LC08_044034_20200601'), 'TOA')
+        >>> img_ic = illuminationCorrection(img, 30, area)
+        >>> corrected = illuminationCorrection(img_ic, 30, area)
+    """
     props = img.toDictionary()
     st = img.get("system:time_start")
     img_plus_ic = img
@@ -4475,15 +5271,23 @@ def illuminationCorrection(
 #########################################################################
 # A function to mask out pixels that did not have observations for MODIS.
 def maskEmptyPixels(image: ee.Image) -> ee.Image:
-    """Masks pixels without observations in an image.
+    """Masks pixels that have zero observations in a MODIS-style image.
 
-    This function masks pixels where the number of observations is zero.
+    Checks the 'num_observations_1km' band and masks out any pixel where
+    the observation count is zero.
 
     Args:
-        image: The input Earth Engine Image with a "num_observations_1km" band.
+        image (ee.Image): Input image with a 'num_observations_1km' band
+            (e.g., a MODIS daily product).
 
     Returns:
-        The masked Earth Engine Image.
+        ee.Image: The input image with zero-observation pixels masked out.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> modis = ee.Image('MODIS/006/MOD09GA/2020_06_01')
+        >>> masked = maskEmptyPixels(modis)
     """
     # Find pixels that had observations.
     withObs = image.select("num_observations_1km").gt(0)
@@ -4502,18 +5306,26 @@ def maskEmptyPixels(image: ee.Image) -> ee.Image:
 
 
 def getQABits(image: ee.Image, start: int, end: int, name: str) -> ee.Image:
-    """Extracts specific bits from a QA band.
+    """Extracts a range of bits from a QA band image.
 
-    This function extracts a range of bits from a QA band and creates a new band.
+    Creates a bitmask for bits ``start`` through ``end``, applies it with
+    ``bitwiseAnd``, and right-shifts to get the extracted value.
 
     Args:
-        image: The input Earth Engine Image with a QA band.
-        start: The starting bit position (0-based).
-        end: The ending bit position.
-        name: The name for the output band.
+        image (ee.Image): Single-band QA image (e.g., a MODIS state_1km band).
+        start (int): Starting bit position (0-based, inclusive).
+        end (int): Ending bit position (inclusive).
+        name (str): Name for the output band.
 
     Returns:
-        The Earth Engine Image with the extracted bits.
+        ee.Image: Single-band image with the extracted QA bit values, renamed
+            to ``name``.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> qa = ee.Image('MODIS/006/MOD09GA/2020_06_01').select('state_1km')
+        >>> cloud_bits = getQABits(qa, 0, 1, 'cloud_state')
     """
     # Compute the bits we need to extract.
     pattern = 0
@@ -4528,6 +5340,24 @@ def getQABits(image: ee.Image, start: int, end: int, name: str) -> ee.Image:
 #########################################################################
 # A function to mask out cloudy pixels.
 def maskCloudsWQA(image):
+    """Masks cloudy pixels using the MODIS state_1km QA band.
+
+    Extracts bit 10 (internal cloud algorithm flag) from the 'state_1km'
+    band and masks pixels flagged as cloud.
+
+    Args:
+        image (ee.Image): A MODIS image with a 'state_1km' QA band
+            (e.g., from MOD09GA).
+
+    Returns:
+        ee.Image: The input image with cloudy pixels masked out.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> modis = ee.Image('MODIS/006/MOD09GA/2020_06_01')
+        >>> clear = maskCloudsWQA(modis)
+    """
     # Select the QA band.
     QA = image.select("state_1km")
     # Get the internal_cloud_algorithm_flag bit.
@@ -4542,7 +5372,27 @@ def maskCloudsWQA(image):
 # Compute a cloud score.  This expects the input image to have the common
 # band names: ["red", "blue", etc], so it can work across sensors.
 def modisCloudScore(img):
+    """Computes a cloud score (0-100) for a MODIS image.
 
+    Combines brightness in visible and infrared bands with a snow index (NDSI)
+    and an optional thermal mask to produce a per-pixel cloud likelihood score.
+    Expects common band names ('red', 'green', 'blue', 'nir', 'swir1', 'swir2',
+    'temp').
+
+    Args:
+        img (ee.Image): Input MODIS image with standard band names.
+
+    Returns:
+        ee.Image: Single-band image named 'cloudScore' with values 0-100,
+            where higher values indicate greater cloud likelihood.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> modis = ee.Image('MODIS/006/MOD09GA/2020_06_01')
+        >>> cloud = modisCloudScore(modis)
+        >>> print(cloud.bandNames().getInfo())
+    """
     useTempInCloudMask = True
     # Compute several indicators of cloudyness and take the minimum of them.
     score = ee.Image(1.0)
@@ -4584,6 +5434,27 @@ def modisCloudScore(img):
 # Built on ideas from Landsat cloudScore algorithm
 # Currently in beta and may need tweaking for individual study areas
 def sentinel2CloudScore(img):
+    """Computes a cloud score (0-100) for a Sentinel-2 image.
+
+    Adapts the Landsat cloudScore algorithm for Sentinel-2 by combining
+    brightness in blue/cirrus, visible, and infrared bands with an NDSI
+    snow filter. Currently in beta and may need tuning per study area.
+
+    Args:
+        img (ee.Image): Input Sentinel-2 image with bands named 'blue', 'cb',
+            'green', 'red', 'nir', 'swir1', and 'swir2'.
+
+    Returns:
+        ee.Image: Single-band image named 'cloudScore' with values 0-100,
+            where higher values indicate greater cloud likelihood.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> s2 = ee.Image('COPERNICUS/S2_SR/20200601T184919_20200601T185630_T10SEG')
+        >>> cloud = sentinel2CloudScore(s2)
+        >>> print(cloud.bandNames().getInfo())
+    """
     # Compute several indicators of cloudyness and take the minimum of them.
     score = ee.Image(1)
     blueCirrusScore = ee.Image(0)
@@ -4615,6 +5486,27 @@ def sentinel2CloudScore(img):
 #########################################################################
 # Adapted from: https://earth.esa.int/documents/10174/3166008/ESA_Training_Vilnius_07072017_SAR_Optical_Snow_Ice_Exercises.pdf
 def sentinel2SnowMask(img, dilatePixels=3.5):
+    """Masks snow-covered pixels in a Sentinel-2 image using NDSI thresholds.
+
+    Identifies snow in open land (NDSI > 0.4 and NIR > 0.11) and snow in
+    forest (0.1 < NDSI < 0.4), then masks those pixels. Adapted from ESA
+    training materials (Salomonson and Appel, 2004/2006).
+
+    Args:
+        img (ee.Image): Input Sentinel-2 image with 'green', 'swir1', and
+            'nir' bands.
+        dilatePixels (float, optional): Number of pixels to erode the snow
+            mask with ``focal_min`` to remove edge effects. Defaults to ``3.5``.
+
+    Returns:
+        ee.Image: The input image with snow pixels masked out.
+
+    Examples:
+        >>> import ee
+        >>> ee.Initialize()
+        >>> s2 = ee.Image('COPERNICUS/S2_SR/20200101T184919_20200101T185630_T10SEG')
+        >>> snow_free = sentinel2SnowMask(s2, dilatePixels=3.5)
+    """
     ndsi = img.normalizedDifference(["green", "swir1"])
 
     # IF NDSI > 0.40 AND ρ(NIR) > 0.11 THEN snow in open land
@@ -4770,7 +5662,35 @@ def joinCollections(
     joinProperty="system:time_start",
     joinPropertySecondary=None,
 ):
+    """Joins two image collections by a shared property using an inner join.
 
+    Merges bands from matching images in two collections. Images are matched
+    based on an exact match of the specified join property. Optionally masks
+    pixels where any band has a null (zero) value after joining.
+
+    Args:
+        c1 (ee.ImageCollection): The primary image collection.
+        c2 (ee.ImageCollection): The secondary image collection to join.
+        maskAnyNullValues (bool, optional): If True, masks pixels where any
+            band value is zero after joining. Defaults to True.
+        joinProperty (str, optional): The property name to match on in the
+            primary collection. Defaults to "system:time_start".
+        joinPropertySecondary (str | None, optional): The property name to
+            match on in the secondary collection. If None, uses the same
+            value as joinProperty. Defaults to None.
+
+    Returns:
+        ee.ImageCollection: A new collection with bands from both input
+            collections merged together for each matching image pair.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> c1 = ee.ImageCollection("MODIS/061/MOD09GQ").filterDate("2024-01-01", "2024-01-10")
+        >>> c2 = ee.ImageCollection("MODIS/061/MOD09GA").filterDate("2024-01-01", "2024-01-10")
+        >>> joined = gil.joinCollections(c1, c2)
+        >>> print(joined.first().bandNames().getInfo())
+    """
     if joinPropertySecondary == None:
         joinPropertySecondary = joinProperty
 
@@ -4795,6 +5715,30 @@ def joinCollections(
 
 
 def smartJoin(primary, secondary, hourDiff):
+    """Joins two image collections by closest timestamp within a time window.
+
+    For each image in the primary collection, finds the best-matching image
+    in the secondary collection within the specified time difference and
+    merges their bands together.
+
+    Args:
+        primary (ee.ImageCollection): The primary image collection.
+        secondary (ee.ImageCollection): The secondary image collection to
+            match against.
+        hourDiff (int | float): Maximum time difference in hours to consider
+            a match between images.
+
+    Returns:
+        ee.ImageCollection: The primary collection with bands from the
+            best-matching secondary image appended to each image.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> terra = ee.ImageCollection("MODIS/061/MOD09GQ").filterDate("2024-06-01", "2024-06-30")
+        >>> aqua = ee.ImageCollection("MODIS/061/MYD09GQ").filterDate("2024-06-01", "2024-06-30")
+        >>> joined = gil.smartJoin(terra, aqua, 24)
+    """
     millis = hourDiff * 60 * 60 * 1000
 
     # Create a time filter to define a match as overlapping timestamps.
@@ -4822,6 +5766,33 @@ def smartJoin(primary, secondary, hourDiff):
 #########################################################################
 # Join collections by space (intersection) and time (specified by user)
 def spatioTemporalJoin(primary, secondary, hourDiff=24, outKey="secondary"):
+    """Joins two image collections by spatial intersection and closest timestamp.
+
+    For each image in the primary collection, finds the best-matching image
+    in the secondary collection that both intersects spatially and falls
+    within the specified time window. Bands from the secondary image are
+    renamed with a suffix and appended.
+
+    Args:
+        primary (ee.ImageCollection): The primary image collection.
+        secondary (ee.ImageCollection): The secondary image collection to
+            match against.
+        hourDiff (int | float, optional): Maximum time difference in hours
+            to consider a match. Defaults to 24.
+        outKey (str, optional): Suffix appended to secondary band names in
+            the format "bandName_outKey". Defaults to "secondary".
+
+    Returns:
+        ee.ImageCollection: The primary collection with renamed bands from
+            the best-matching secondary image appended to each image.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> modis_terra = ee.ImageCollection("MODIS/061/MOD09GQ").filterDate("2024-01-01", "2024-01-31")
+        >>> modis_aqua = ee.ImageCollection("MODIS/061/MYD09GQ").filterDate("2024-01-01", "2024-01-31")
+        >>> joined = gil.spatioTemporalJoin(modis_terra, modis_aqua, hourDiff=12, outKey="aqua")
+    """
     time = hourDiff * 60 * 60 * 1000
 
     outBns = ee.Image(secondary.first()).bandNames().map(lambda bn: ee.String(bn).cat("_").cat(outKey))
@@ -4856,6 +5827,34 @@ def spatioTemporalJoin(primary, secondary, hourDiff=24, outKey="secondary"):
 # An optional different field name can be provided for the second featureCollection
 # Retains the geometry of the primary, but copies the properties of the secondary collection
 def joinFeatureCollections(primary, secondary, fieldName, fieldNameSecondary=None):
+    """Joins two feature collections by matching property values using an inner join.
+
+    Matches features from two collections based on an exact match of the
+    specified field. Retains the geometry of the primary feature and copies
+    all properties from the matching secondary feature.
+
+    Args:
+        primary (ee.FeatureCollection): The primary feature collection whose
+            geometry is retained.
+        secondary (ee.FeatureCollection): The secondary feature collection
+            whose properties are copied to matching features.
+        fieldName (str): The property name to match on in the primary
+            collection.
+        fieldNameSecondary (str | None, optional): The property name to match
+            on in the secondary collection. If None, uses the same value as
+            fieldName. Defaults to None.
+
+    Returns:
+        ee.FeatureCollection: A collection of features with the geometry from
+            the primary and properties from both collections.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> states = ee.FeatureCollection("TIGER/2018/States")
+        >>> lookup = ee.FeatureCollection([ee.Feature(None, {"STATEFP": "08", "region": "Mountain"})])
+        >>> joined = gil.joinFeatureCollections(states, lookup, "STATEFP")
+    """
     if fieldNameSecondary == None:
         fieldNameSecondary = fieldName
     # Use an equals filter to specify how the collections match.
@@ -4875,6 +5874,32 @@ def joinFeatureCollections(primary, secondary, fieldName, fieldNameSecondary=Non
 #########################################################################
 # Method for removing spikes in time series
 def despikeCollection(c, absoluteSpike, bandNo):
+    """Removes spike artifacts from a time series image collection.
+
+    Uses a moving window of three images (left, center, right) to detect
+    and replace spikes. A pixel is considered a spike if it deviates from
+    both its neighbors by more than the absolute threshold. Spikes are
+    replaced with the mean of the left and right neighbors.
+
+    Args:
+        c (ee.ImageCollection): The input image collection to despike.
+            Should be temporally ordered.
+        absoluteSpike (float): The absolute threshold for spike detection.
+            A pixel is flagged as a spike if its difference from both
+            neighbors exceeds this value.
+        bandNo (int): The band index used to detect spikes.
+
+    Returns:
+        ee.ImageCollection: The despiked image collection with spike values
+            replaced by the mean of neighboring images.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> ndvi = ee.ImageCollection("MODIS/061/MOD13A1").filterDate("2024-01-01", "2024-12-31").select("NDVI")
+        >>> despiked = gil.despikeCollection(ndvi, 1000, 0)
+        >>> print(despiked.size().getInfo())
+    """
     c = c.toList(10000, 0)
 
     # Get book ends for adding back at the end
@@ -5158,7 +6183,13 @@ def getProcessedModis(
         scale (int | None, optional): Only used if addToMap is True. Scale (resolution) of the output imagery in meters. Defaults to 250.
         transform (list | None, optional): Only used if addToMap is True. Optional transformation matrix to apply to the output imagery. Defaults to None.
 
-    >>> import geeViz.getImagesLib as gil
+    Returns:
+        ee.ImageCollection: Cloud and shadow masked MODIS imagery with
+            spectral indices added. The collection has processing parameters
+            stored as properties.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
     >>> Map = gil.Map
     >>> ee = gil.ee
     >>> crs = gil.common_projections["NLCD_CONUS"]["crs"]
@@ -5261,7 +6292,31 @@ def getProcessedModis(
 #########################################################################
 # Function to take images and create a median composite every n days
 def nDayComposites(images, startYear, endYear, startJulian, endJulian, compositePeriod):
+    """Creates median composites at regular n-day intervals from an image collection.
 
+    Divides the specified date range into equal periods of n days and computes
+    the median composite for each period and year.
+
+    Args:
+        images (ee.ImageCollection): The input image collection to composite.
+        startYear (int): The first year to create composites for.
+        endYear (int): The last year to create composites for.
+        startJulian (int): The starting Julian day of year (1-366).
+        endJulian (int): The ending Julian day of year (1-366).
+        compositePeriod (int): The number of days per composite period.
+
+    Returns:
+        ee.ImageCollection: A collection of median composites, each with
+            "system:time_start" and "system:index" (formatted as
+            "yyyy-MM-dd") properties set.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> modis = ee.ImageCollection("MODIS/061/MOD09GQ").select(["sur_refl_b01", "sur_refl_b02"])
+        >>> composites = gil.nDayComposites(modis, 2024, 2024, 1, 365, 16)
+        >>> print(composites.size().getInfo())
+    """
     # create dummy image for with no values
     dummyImage = ee.Image(images.first())
 
@@ -5308,7 +6363,42 @@ def nDayComposites(images, startYear, endYear, startJulian, endJulian, composite
 def exportCollection(
     exportPathRoot, outputName, studyArea, crs, transform, scale, collection, startYear, endYear, startJulian, endJulian, compositingReducer, timebuffer, exportBands, overwrite=False, exportToAssets=False, exportToCloud=False, bucket=None
 ):
+    """Exports yearly composites from an image collection to EE assets or Cloud Storage.
 
+    Iterates through each year (adjusted by timebuffer), extracts the first
+    image for that year, clips it to the study area, and exports it.
+
+    Args:
+        exportPathRoot (str): Root path for exports.
+        outputName (str): Base name for exported files.
+        studyArea (ee.Geometry | ee.FeatureCollection): Region to clip to.
+        crs (str): Coordinate reference system (e.g., "EPSG:5070").
+        transform (list[float] | None): Affine transform for the output.
+        scale (int | None): Output resolution in meters.
+        collection (ee.ImageCollection): Image collection to export from.
+        startYear (int): First year of the collection.
+        endYear (int): Last year of the collection.
+        startJulian (int): Starting Julian day used in naming.
+        endJulian (int): Ending Julian day used in naming.
+        compositingReducer (str): Compositing method label for metadata.
+        timebuffer (int): Years to buffer. Exports from startYear + timebuffer
+            to endYear - timebuffer.
+        exportBands (list[str]): Band names to select for export.
+        overwrite (bool, optional): Overwrite existing assets. Defaults to False.
+        exportToAssets (bool, optional): Export to EE assets. Defaults to False.
+        exportToCloud (bool, optional): Export to Cloud Storage. Defaults to False.
+        bucket (str | None, optional): Cloud Storage bucket name. Defaults to None.
+
+    Returns:
+        None: Submits export tasks as a side effect.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> studyArea = ee.Geometry.Rectangle([-110, 40, -109, 41])
+        >>> collection = ee.ImageCollection("LANDSAT/LC08/C02/T1_L2").filterDate("2023-06-01", "2023-09-01")
+        >>> gil.exportCollection("projects/my-project/assets/out", "L8", studyArea, "EPSG:5070", None, 30, collection, 2023, 2023, 152, 244, "median", 0, ["SR_B4", "SR_B5"], exportToAssets=True)
+    """
     # Take care of date wrapping
     dateWrapping = wrapDates(startJulian, endJulian)
     wrapOffset = dateWrapping[0]
@@ -5396,7 +6486,50 @@ def exportCompositeCollection(
     additionalPropertyDict=None,
     overwrite=False,
 ):
+    """Exports yearly composites to Earth Engine assets with scaled integer values.
 
+    Iterates through each year (adjusted by timebuffer), scales reflectance
+    bands by 10000, converts to int16, attaches metadata, and exports each
+    yearly composite to an Earth Engine asset. Non-divide bands (e.g., indices
+    or categorical bands) are kept unscaled.
+
+    Args:
+        collection (ee.ImageCollection): The composite image collection.
+        exportPathRoot (str): The root asset path for exports.
+        outputName (str): Base name for the exported assets.
+        origin (str): The data origin label (e.g., "Landsat", "MODIS").
+        studyArea (ee.Geometry | ee.FeatureCollection): The export region.
+        crs (str): The coordinate reference system (e.g., "EPSG:5070").
+        transform (list[float] | None): The affine transform for the output.
+        scale (int | None): The output resolution in meters.
+        startYear (int): The first year of the collection.
+        endYear (int): The last year of the collection.
+        startJulian (int): The starting Julian day used in naming.
+        endJulian (int): The ending Julian day used in naming.
+        compositingMethod (str): The compositing method (e.g., "medoid",
+            "median") used in naming and metadata.
+        timebuffer (int): Number of years before/after to buffer the year
+            range.
+        toaOrSR (str): Reflectance type label ("TOA" or "SR") used in naming.
+        nonDivideBands (list[str] | None): Band names that should not be
+            multiplied by 10000. If None, all bands are scaled.
+        exportBands (list[str]): Band names to select for export.
+        additionalPropertyDict (dict | None, optional): Extra properties to
+            attach to each exported image. Defaults to None.
+        overwrite (bool, optional): If True, overwrites existing assets.
+            Defaults to False.
+
+    Returns:
+        None: Submits export tasks as a side effect.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> studyArea = ee.Geometry.Rectangle([-110, 40, -109, 41])
+        >>> result = gil.getLandsatWrapper(studyArea, 2023, 2023, 152, 273)
+        >>> composites = result["processedComposites"]
+        >>> gil.exportCompositeCollection(composites, "projects/my-project/assets/composites", "L8_Composite", "Landsat", studyArea, "EPSG:5070", None, 30, 2023, 2023, 152, 273, "medoid", 0, "SR", ["NDVI", "NBR"], ["blue", "green", "red", "nir", "swir1", "swir2", "NDVI"])
+    """
     args = formatArgs(locals())
 
     pyramidingPolicy = "mean"
@@ -5506,6 +6639,73 @@ def getLandsatWrapper(
     overwrite=False,
     verbose=False,
 ):
+    """Retrieve cloud-masked Landsat annual composites for a study area and date range.
+
+    This is the main high-level wrapper for Landsat imagery. It retrieves and
+    cloud-masks Landsat scenes via ``getProcessedLandsatScenes``, composites them
+    into annual images, and optionally exports the composites to an Earth Engine
+    asset.
+
+    Args:
+        studyArea (ee.Geometry | ee.Feature | ee.FeatureCollection): The geographic area of interest.
+        startYear (int): The starting year for the data collection.
+        endYear (int): The ending year for the data collection.
+        startJulian (int): The starting Julian day of year (1-365). If ``startJulian > endJulian``, dates wrap across the new year.
+        endJulian (int): The ending Julian day of year (1-365).
+        timebuffer (int, optional): Number of years to buffer composites on each side. Defaults to 0.
+        weights (list[int], optional): Weights for years in the composite (length must equal ``2 * timebuffer + 1``). Defaults to [1].
+        compositingMethod (str, optional): Compositing method, e.g. ``"medoid"`` or ``"median"``. Defaults to ``"medoid"``.
+        toaOrSR (str, optional): ``"TOA"`` for Top of Atmosphere or ``"SR"`` for Surface Reflectance. Defaults to ``"SR"``.
+        includeSLCOffL7 (bool, optional): Whether to include Landsat 7 SLC-off scenes. Defaults to False.
+        defringeL5 (bool, optional): Whether to defringe Landsat 5 scenes. Defaults to False.
+        applyCloudScore (bool, optional): Whether to apply the CloudScore simple cloud mask. Defaults to False.
+        applyFmaskCloudMask (bool, optional): Whether to apply the Fmask cloud mask. Defaults to True.
+        applyTDOM (bool, optional): Whether to apply TDOM cloud shadow masking. Defaults to False.
+        applyFmaskCloudShadowMask (bool, optional): Whether to apply Fmask cloud shadow mask. Defaults to True.
+        applyFmaskSnowMask (bool, optional): Whether to apply Fmask snow mask. Defaults to False.
+        cloudScoreThresh (int, optional): Cloud score threshold; lower masks more. Defaults to 10.
+        performCloudScoreOffset (bool, optional): Whether to offset cloud score over bright surfaces. Defaults to True.
+        cloudScorePctl (int, optional): Percentile for cloud score offset correction. Defaults to 10.
+        zScoreThresh (float, optional): Z-score threshold for TDOM shadow masking. Defaults to -1.
+        shadowSumThresh (float, optional): Sum-of-reflectance threshold for TDOM. Defaults to 0.35.
+        contractPixels (float, optional): Pixels to contract cloud/shadow masks. Defaults to 1.5.
+        dilatePixels (float, optional): Pixels to dilate cloud/shadow masks. Defaults to 3.5.
+        correctIllumination (bool, optional): Whether to apply terrain illumination correction. Defaults to False.
+        correctScale (int, optional): Scale in meters for illumination correction. Defaults to 250.
+        exportComposites (bool, optional): Whether to export composites to an Earth Engine asset. Defaults to False.
+        outputName (str, optional): Base name for exported assets. Defaults to ``"Landsat-Composite"``.
+        exportPathRoot (str, optional): Asset folder path for exports. Defaults to ``"users/username/test"``.
+        crs (str, optional): Coordinate reference system for exports. Defaults to ``"EPSG:5070"``.
+        transform (list[float] | None, optional): Affine transform for exports. Defaults to ``[30, 0, -2361915.0, 0, -30, 3177735.0]``.
+        scale (float | None, optional): Scale in meters for exports. Overrides ``transform`` if provided. Defaults to None.
+        resampleMethod (str, optional): Resampling method (``"near"``, ``"bilinear"``, ``"bicubic"``). Defaults to ``"near"``.
+        preComputedCloudScoreOffset (ee.Image | None, optional): Pre-computed cloud score offset image. Defaults to None.
+        preComputedTDOMIRMean (ee.Image | None, optional): Pre-computed TDOM IR mean image. Defaults to None.
+        preComputedTDOMIRStdDev (ee.Image | None, optional): Pre-computed TDOM IR standard deviation image. Defaults to None.
+        compositingReducer (ee.Reducer | None, optional): Custom reducer for compositing. Overrides ``compositingMethod`` if provided. Defaults to None.
+        harmonizeOLI (bool, optional): Whether to harmonize OLI to TM/ETM+ spectral response. Defaults to False.
+        landsatCollectionVersion (str, optional): Landsat collection version (``"C1"`` or ``"C2"``). Defaults to ``"C2"``.
+        overwrite (bool, optional): Whether to overwrite existing exported assets. Defaults to False.
+        verbose (bool, optional): Whether to print processing details. Defaults to False.
+
+    Returns:
+        dict: A dictionary containing all input arguments plus two additional keys:
+
+            - ``'processedScenes'`` (ee.ImageCollection): The cloud-masked individual Landsat scenes.
+            - ``'processedComposites'`` (ee.ImageCollection): The annual composite time series.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> studyArea = gil.testAreas["CO"]
+        >>> result = gil.getLandsatWrapper(studyArea, 2020, 2023, 190, 250)
+        >>> composites = result['processedComposites']
+        >>> Map = gil.Map
+        >>> Map.addLayer(composites, gil.vizParamsFalse, "Landsat Composites", True)
+        >>> Map.centerObject(studyArea)
+        >>> Map.turnOnInspector()
+        >>> Map.view()
+    """
 
     toaOrSR = toaOrSR.upper()
     origin = "Landsat"
@@ -5895,6 +7095,83 @@ def getProcessedSentinel2Scenes(
     cloudScorePlusThresh=0.6,
     cloudScorePlusScore="cs",
 ):
+    """Get cloud/shadow-masked Sentinel-2 scenes for a date range.
+
+    Retrieves Sentinel-2 imagery, applies selected cloud and shadow masking
+    methods (QA band, cloud score, TDOM, Cloud Score+, cloud probability),
+    and returns the processed scene collection. This is the scene-level
+    counterpart to ``getSentinel2Wrapper``, which also composites.
+
+    Args:
+        studyArea (ee.Geometry | ee.FeatureCollection): Area of interest.
+        startYear (int): First year to include.
+        endYear (int): Last year to include.
+        startJulian (int): Start day of year (1-365).
+        endJulian (int): End day of year (1-365). If < ``startJulian``,
+            the date range wraps across the year boundary.
+        applyQABand (bool): Apply the Sentinel-2 QA60 cloud bitmask.
+            Defaults to ``False``.
+        applyCloudScore (bool): Apply simple cloud scoring. Defaults to
+            ``False``.
+        applyShadowShift (bool): Apply shadow-shift cloud shadow detection.
+            Defaults to ``False``.
+        applyTDOM (bool): Apply Temporal Dark Outlier Mask for shadows.
+            Defaults to ``False``.
+        cloudScoreThresh (int): Cloud score threshold (0-100). Defaults to
+            ``20``.
+        performCloudScoreOffset (bool): Compute per-scene cloud score
+            offset. Defaults to ``True``.
+        cloudScorePctl (int): Percentile for cloud score offset. Defaults
+            to ``10``.
+        cloudHeights (ee.List): Cloud heights in meters for shadow
+            projection. Defaults to ``ee.List.sequence(500, 10000, 500)``.
+        zScoreThresh (float): TDOM z-score threshold. Defaults to ``-1``.
+        shadowSumThresh (float): TDOM shadow sum threshold. Defaults to
+            ``0.35``.
+        contractPixels (float): Pixels to contract cloud/shadow mask.
+            Defaults to ``1.5``.
+        dilatePixels (float): Pixels to dilate cloud/shadow mask. Defaults
+            to ``3.5``.
+        shadowSumBands (list[str]): Bands for shadow detection. Defaults to
+            ``["nir", "swir1"]``.
+        resampleMethod (str): Resampling method — ``"aggregate"``,
+            ``"near"``, ``"bilinear"``, or ``"bicubic"``. Defaults to
+            ``"aggregate"``.
+        toaOrSR (str): ``"TOA"`` or ``"SR"``. Defaults to ``"TOA"``.
+        convertToDailyMosaics (bool): Mosaic same-day images. Defaults to
+            ``True``.
+        applyCloudProbability (bool): Apply the S2 cloud probability band.
+            Defaults to ``False``.
+        preComputedCloudScoreOffset (ee.Image | None): Pre-computed cloud
+            score offset image. Defaults to ``None``.
+        preComputedTDOMIRMean (ee.Image | None): Pre-computed TDOM IR mean.
+            Defaults to ``None``.
+        preComputedTDOMIRStdDev (ee.Image | None): Pre-computed TDOM IR
+            standard deviation. Defaults to ``None``.
+        cloudProbThresh (int): Cloud probability threshold (0-100).
+            Defaults to ``40``.
+        verbose (bool): Print all processing parameters. Defaults to
+            ``False``.
+        applyCloudScorePlus (bool): Apply Cloud Score+ masking. Defaults to
+            ``True``.
+        cloudScorePlusThresh (float): Cloud Score+ threshold (0-1).
+            Defaults to ``0.6``.
+        cloudScorePlusScore (str): Cloud Score+ band — ``"cs"`` or
+            ``"cs_cdf"``. Defaults to ``"cs"``.
+
+    Returns:
+        ee.ImageCollection: Cloud/shadow-masked Sentinel-2 scenes with
+        standardized band names.
+
+    Example:
+        >>> import geeViz.getImagesLib as gil
+        >>> study = ee.Geometry.Point([-122.3, 37.5]).buffer(5000)
+        >>> scenes = gil.getProcessedSentinel2Scenes(
+        ...     study, 2023, 2023, 152, 273
+        ... )
+        >>> print(scenes.first().bandNames().getInfo()[:3])
+        ['cb', 'blue', 'green']
+    """
 
     origin = "Sentinel2"
     toaOrSR = toaOrSR.upper()
@@ -6027,6 +7304,8 @@ def superSimpleGetS2(
     Returns:
         ee.ImageCollection: A collection of cloud and cloud-shadow-free Sentinel-2 satellite images filtered by the specified criteria.
 
+    Note:
+        The spectral values range 0-10000.
 
     >>> import geeViz.getImagesLib as gil
     >>> Map = gil.Map
@@ -6111,6 +7390,105 @@ def getSentinel2Wrapper(
     cloudScorePlusThresh=0.6,
     cloudScorePlusScore="cs",
 ):
+    """Get annual Sentinel-2 composites with cloud/shadow masking.
+
+    Wraps ``getProcessedSentinel2Scenes`` to retrieve cloud-masked scenes,
+    then composites them into annual (or multi-year buffered) images using
+    ``compositeTimeSeries``. Optionally exports composites to an EE asset.
+
+    Args:
+        studyArea (ee.Geometry | ee.FeatureCollection): Area of interest.
+        startYear (int): First year to include.
+        endYear (int): Last year to include.
+        startJulian (int): Start day of year (1-365).
+        endJulian (int): End day of year (1-365). If < ``startJulian``,
+            the date range wraps across the year boundary.
+        timebuffer (int): Years to buffer each composite (e.g. ``1``
+            means +/- 1 year). Defaults to ``0``.
+        weights (list[int]): Temporal weights for buffered compositing.
+            Defaults to ``[1]``.
+        compositingMethod (str): ``"medoid"`` or ``"median"``. Defaults
+            to ``"medoid"``.
+        applyQABand (bool): Apply the QA60 cloud bitmask. Defaults to
+            ``False``.
+        applyCloudScore (bool): Apply simple cloud scoring. Defaults to
+            ``False``.
+        applyShadowShift (bool): Apply shadow-shift detection. Defaults to
+            ``False``.
+        applyTDOM (bool): Apply Temporal Dark Outlier Mask. Defaults to
+            ``False``.
+        cloudScoreThresh (int): Cloud score threshold (0-100). Defaults to
+            ``20``.
+        performCloudScoreOffset (bool): Per-scene cloud score offset.
+            Defaults to ``True``.
+        cloudScorePctl (int): Percentile for cloud score offset. Defaults
+            to ``10``.
+        cloudHeights (ee.List): Cloud heights in meters. Defaults to
+            ``ee.List.sequence(500, 10000, 500)``.
+        zScoreThresh (float): TDOM z-score threshold. Defaults to ``-1``.
+        shadowSumThresh (float): TDOM shadow sum threshold. Defaults to
+            ``0.35``.
+        contractPixels (float): Pixels to contract mask. Defaults to
+            ``1.5``.
+        dilatePixels (float): Pixels to dilate mask. Defaults to ``3.5``.
+        shadowSumBands (list[str]): Bands for shadow detection. Defaults to
+            ``["nir", "swir1"]``.
+        correctIllumination (bool): Reserved for future illumination
+            correction. Defaults to ``False``.
+        correctScale (int): Scale for illumination correction. Defaults to
+            ``250``.
+        exportComposites (bool): Export composites to EE asset. Defaults to
+            ``False``.
+        outputName (str): Asset name prefix. Defaults to
+            ``"Sentinel2-Composite"``.
+        exportPathRoot (str): Asset folder path. Defaults to
+            ``"users/username/test"``.
+        crs (str): Output CRS. Defaults to ``"EPSG:5070"``.
+        transform (list): Affine transform. Defaults to
+            ``[10, 0, -2361915.0, 0, -10, 3177735.0]``.
+        scale (int | None): Output scale in meters (overrides transform if
+            set). Defaults to ``None``.
+        resampleMethod (str): Resampling method. Defaults to
+            ``"aggregate"``.
+        toaOrSR (str): ``"TOA"`` or ``"SR"``. Defaults to ``"TOA"``.
+        convertToDailyMosaics (bool): Mosaic same-day images. Defaults to
+            ``True``.
+        applyCloudProbability (bool): Apply cloud probability band.
+            Defaults to ``False``.
+        preComputedCloudScoreOffset (ee.Image | None): Pre-computed offset.
+            Defaults to ``None``.
+        preComputedTDOMIRMean (ee.Image | None): Pre-computed TDOM mean.
+            Defaults to ``None``.
+        preComputedTDOMIRStdDev (ee.Image | None): Pre-computed TDOM
+            std dev. Defaults to ``None``.
+        cloudProbThresh (int): Cloud probability threshold (0-100).
+            Defaults to ``40``.
+        overwrite (bool): Overwrite existing exports. Defaults to
+            ``False``.
+        verbose (bool): Print all parameters. Defaults to ``False``.
+        applyCloudScorePlus (bool): Apply Cloud Score+ masking. Defaults to
+            ``True``.
+        cloudScorePlusThresh (float): Cloud Score+ threshold (0-1).
+            Defaults to ``0.6``.
+        cloudScorePlusScore (str): ``"cs"`` or ``"cs_cdf"``. Defaults to
+            ``"cs"``.
+
+    Returns:
+        dict: Dictionary with all input args plus:
+            - ``"processedScenes"``: ``ee.ImageCollection`` of masked scenes
+            - ``"processedComposites"``: ``ee.ImageCollection`` of annual
+              composites
+
+    Example:
+        >>> import geeViz.getImagesLib as gil
+        >>> study = ee.Geometry.Point([-122.3, 37.5]).buffer(5000)
+        >>> result = gil.getSentinel2Wrapper(
+        ...     study, 2023, 2023, 152, 273
+        ... )
+        >>> composites = result['processedComposites']
+        >>> print(composites.size().getInfo())
+        1
+    """
 
     origin = "Sentinel2"
     toaOrSR = toaOrSR.upper()
@@ -6340,6 +7718,108 @@ def getProcessedLandsatAndSentinel2Scenes(
     cloudScorePlusThresh=0.6,
     cloudScorePlusScore="cs",
 ):
+    """Get cloud/shadow-masked Landsat + Sentinel-2 scenes merged together.
+
+    Retrieves and masks both Landsat and Sentinel-2 imagery for the same
+    date range, optionally applies Chastain harmonization to align the
+    two sensor families, and returns the merged scene collection. This is
+    the scene-level counterpart to ``getLandsatAndSentinel2HybridWrapper``.
+
+    Args:
+        studyArea (ee.Geometry | ee.FeatureCollection): Area of interest.
+        startYear (int): First year to include.
+        endYear (int): Last year to include.
+        startJulian (int): Start day of year (1-365).
+        endJulian (int): End day of year (1-365).
+        toaOrSR (str): ``"TOA"`` or ``"SR"``. Defaults to ``"TOA"``.
+        includeSLCOffL7 (bool): Include Landsat 7 SLC-off imagery.
+            Defaults to ``False``.
+        defringeL5 (bool): Defringe Landsat 5 scenes. Defaults to
+            ``False``.
+        applyQABand (bool): Apply QA band cloud mask. Defaults to
+            ``False``.
+        applyCloudProbability (bool): Apply S2 cloud probability.
+            Defaults to ``False``.
+        applyShadowShift (bool): Apply shadow-shift detection. Defaults to
+            ``False``.
+        applyCloudScoreLandsat (bool): Apply cloud score to Landsat.
+            Defaults to ``False``.
+        applyCloudScoreSentinel2 (bool): Apply cloud score to Sentinel-2.
+            Defaults to ``False``.
+        applyTDOMLandsat (bool): Apply TDOM to Landsat. Defaults to
+            ``True``.
+        applyTDOMSentinel2 (bool): Apply TDOM to Sentinel-2. Defaults to
+            ``False``.
+        applyFmaskCloudMask (bool): Apply Fmask cloud mask to Landsat.
+            Defaults to ``True``.
+        applyFmaskCloudShadowMask (bool): Apply Fmask shadow mask.
+            Defaults to ``True``.
+        applyFmaskSnowMask (bool): Apply Fmask snow mask. Defaults to
+            ``False``.
+        cloudHeights (ee.List): Cloud heights for shadow projection.
+            Defaults to ``ee.List.sequence(500, 10000, 500)``.
+        cloudScoreThresh (int): Cloud score threshold. Defaults to ``20``.
+        performCloudScoreOffset (bool): Per-scene cloud score offset.
+            Defaults to ``True``.
+        cloudScorePctl (int): Percentile for offset. Defaults to ``10``.
+        zScoreThresh (float): TDOM z-score threshold. Defaults to ``-1``.
+        shadowSumThresh (float): TDOM shadow sum threshold. Defaults to
+            ``0.35``.
+        contractPixels (float): Pixels to contract mask. Defaults to
+            ``1.5``.
+        dilatePixels (float): Pixels to dilate mask. Defaults to ``3.5``.
+        shadowSumBands (list[str]): Bands for shadow detection. Defaults to
+            ``["nir", "swir1"]``.
+        landsatResampleMethod (str): Landsat resampling. Defaults to
+            ``"near"``.
+        sentinel2ResampleMethod (str): S2 resampling. Defaults to
+            ``"aggregate"``.
+        convertToDailyMosaics (bool): Mosaic same-day images. Defaults to
+            ``True``.
+        runChastainHarmonization (bool): Apply Chastain et al.
+            harmonization between Landsat and S2. Forced to ``False`` when
+            ``toaOrSR="SR"``. Defaults to ``True``.
+        correctIllumination (bool): Reserved. Defaults to ``False``.
+        correctScale (int): Scale for illumination correction. Defaults to
+            ``250``.
+        preComputedLandsatCloudScoreOffset (ee.Image | None): Pre-computed
+            Landsat cloud score offset. Defaults to ``None``.
+        preComputedLandsatTDOMIRMean (ee.Image | None): Pre-computed
+            Landsat TDOM mean. Defaults to ``None``.
+        preComputedLandsatTDOMIRStdDev (ee.Image | None): Pre-computed
+            Landsat TDOM std dev. Defaults to ``None``.
+        preComputedSentinel2CloudScoreOffset (ee.Image | None): Pre-computed
+            S2 cloud score offset. Defaults to ``None``.
+        preComputedSentinel2TDOMIRMean (ee.Image | None): Pre-computed S2
+            TDOM mean. Defaults to ``None``.
+        preComputedSentinel2TDOMIRStdDev (ee.Image | None): Pre-computed S2
+            TDOM std dev. Defaults to ``None``.
+        cloudProbThresh (int): Cloud probability threshold. Defaults to
+            ``40``.
+        landsatCollectionVersion (str): ``"C2"`` for Collection 2.
+            Defaults to ``"C2"``.
+        verbose (bool): Print all parameters. Defaults to ``False``.
+        applyCloudScorePlus (bool): Apply Cloud Score+ to S2. Defaults to
+            ``True``.
+        cloudScorePlusThresh (float): Cloud Score+ threshold (0-1).
+            Defaults to ``0.6``.
+        cloudScorePlusScore (str): ``"cs"`` or ``"cs_cdf"``. Defaults to
+            ``"cs"``.
+
+    Returns:
+        ee.ImageCollection: Merged, cloud/shadow-masked Landsat and
+        Sentinel-2 scenes with standardized band names (``blue``,
+        ``green``, ``red``, ``nir``, ``swir1``, ``swir2``).
+
+    Example:
+        >>> import geeViz.getImagesLib as gil
+        >>> study = ee.Geometry.Point([-105.0, 40.0]).buffer(5000)
+        >>> scenes = gil.getProcessedLandsatAndSentinel2Scenes(
+        ...     study, 2023, 2023, 152, 273
+        ... )
+        >>> print(scenes.size().getInfo() > 0)
+        True
+    """
 
     if toaOrSR == "SR":
         runChastainHarmonization = False
@@ -6494,6 +7974,30 @@ def getProcessedLandsatAndSentinel2Scenes(
 # Function to register an imageCollection to images within it
 # Always uses the first image as the reference image
 def coRegisterCollection(images, referenceBands=["nir"]):
+    """Co-register all images in a collection to the first image.
+
+    Uses ``ee.Image.displacement`` and ``ee.Image.displace`` to align
+    every image to the first image in the collection based on the
+    specified reference bands.
+
+    Args:
+        images (ee.ImageCollection): Collection of images to co-register.
+        referenceBands (list[str]): Band names used for displacement
+            matching. Defaults to ``["nir"]``.
+
+    Returns:
+        ee.ImageCollection: Co-registered image collection where the first
+        image is unchanged and all subsequent images are displaced to
+        align with it.
+
+    Example:
+        >>> import geeViz.getImagesLib as gil
+        >>> import ee
+        >>> imgs = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \\
+        ...     .filterBounds(ee.Geometry.Point([-122.0, 37.0])) \\
+        ...     .limit(3)
+        >>> registered = gil.coRegisterCollection(imgs)
+    """
     referenceImageIndex = 0
     referenceImage = ee.Image(images.toList(referenceImageIndex + 1).get(referenceImageIndex)).select(referenceBands)
 
@@ -6520,6 +8024,31 @@ def coRegisterCollection(images, referenceBands=["nir"]):
 # For each group (e.g. tile or orbit or path), all images within that group will be registered
 # As single collection is returned
 def coRegisterGroups(imgs, fieldName="SENSING_ORBIT_NUMBER", fieldIsNumeric=True):
+    """Co-register images within groups defined by a metadata field.
+
+    Splits the collection by unique values of ``fieldName``, co-registers
+    each group independently using ``coRegisterCollection``, and merges
+    the results back into a single collection.
+
+    Args:
+        imgs (ee.ImageCollection): Collection of images to co-register.
+        fieldName (str): Metadata property to group by. Defaults to
+            ``"SENSING_ORBIT_NUMBER"``.
+        fieldIsNumeric (bool): Whether the field values are numeric
+            (parsed with ``ee.Number.parse``). Defaults to ``True``.
+
+    Returns:
+        ee.ImageCollection: Co-registered image collection with images
+        aligned within each group.
+
+    Example:
+        >>> import geeViz.getImagesLib as gil
+        >>> import ee
+        >>> s2 = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED') \\
+        ...     .filterBounds(ee.Geometry.Point([-122.0, 37.0])) \\
+        ...     .filterDate('2023-06-01', '2023-06-30')
+        >>> registered = gil.coRegisterGroups(s2)
+    """
     groups = ee.Dictionary(imgs.aggregate_histogram(fieldName)).keys()
     if fieldIsNumeric:
         groups = groups.map(lambda n: ee.Number.parse(n))
@@ -6587,6 +8116,117 @@ def getLandsatAndSentinel2HybridWrapper(
     cloudScorePlusThresh=0.6,
     cloudScorePlusScore="cs",
 ):
+    """Get annual Landsat + Sentinel-2 hybrid composites.
+
+    Wraps ``getProcessedLandsatAndSentinel2Scenes`` to retrieve merged,
+    cloud-masked Landsat and Sentinel-2 scenes, then composites them into
+    annual images. Optionally exports composites to an EE asset.
+
+    Args:
+        studyArea (ee.Geometry | ee.FeatureCollection): Area of interest.
+        startYear (int): First year to include.
+        endYear (int): Last year to include.
+        startJulian (int): Start day of year (1-365).
+        endJulian (int): End day of year (1-365).
+        timebuffer (int): Years to buffer each composite. Defaults to
+            ``0``.
+        weights (list[int]): Temporal weights. Defaults to ``[1]``.
+        compositingMethod (str): ``"medoid"`` or ``"median"``. Defaults
+            to ``"medoid"``.
+        toaOrSR (str): ``"TOA"`` or ``"SR"``. Defaults to ``"TOA"``.
+        includeSLCOffL7 (bool): Include Landsat 7 SLC-off. Defaults to
+            ``False``.
+        defringeL5 (bool): Defringe Landsat 5. Defaults to ``False``.
+        applyQABand (bool): Apply QA band mask. Defaults to ``False``.
+        applyCloudProbability (bool): Apply S2 cloud probability. Defaults
+            to ``False``.
+        applyShadowShift (bool): Apply shadow-shift. Defaults to ``False``.
+        applyCloudScoreLandsat (bool): Cloud score for Landsat. Defaults to
+            ``False``.
+        applyCloudScoreSentinel2 (bool): Cloud score for S2. Defaults to
+            ``False``.
+        applyTDOMLandsat (bool): TDOM for Landsat. Defaults to ``True``.
+        applyTDOMSentinel2 (bool): TDOM for S2. Defaults to ``False``.
+        applyFmaskCloudMask (bool): Fmask clouds for Landsat. Defaults to
+            ``True``.
+        applyFmaskCloudShadowMask (bool): Fmask shadows. Defaults to
+            ``True``.
+        applyFmaskSnowMask (bool): Fmask snow. Defaults to ``False``.
+        cloudHeights (ee.List): Cloud heights for shadow projection.
+            Defaults to ``ee.List.sequence(500, 10000, 500)``.
+        cloudScoreThresh (int): Cloud score threshold. Defaults to ``20``.
+        performCloudScoreOffset (bool): Per-scene offset. Defaults to
+            ``True``.
+        cloudScorePctl (int): Offset percentile. Defaults to ``10``.
+        zScoreThresh (float): TDOM z-score threshold. Defaults to ``-1``.
+        shadowSumThresh (float): TDOM shadow sum threshold. Defaults to
+            ``0.35``.
+        contractPixels (float): Contract mask pixels. Defaults to ``1.5``.
+        dilatePixels (float): Dilate mask pixels. Defaults to ``3.5``.
+        shadowSumBands (list[str]): Shadow detection bands. Defaults to
+            ``["nir", "swir1"]``.
+        landsatResampleMethod (str): Landsat resampling. Defaults to
+            ``"near"``.
+        sentinel2ResampleMethod (str): S2 resampling. Defaults to
+            ``"aggregate"``.
+        convertToDailyMosaics (bool): Mosaic same-day images. Defaults to
+            ``True``.
+        runChastainHarmonization (bool): Harmonize Landsat/S2. Defaults to
+            ``True``.
+        correctIllumination (bool): Reserved. Defaults to ``False``.
+        correctScale (int): Illumination correction scale. Defaults to
+            ``250``.
+        exportComposites (bool): Export to EE asset. Defaults to ``False``.
+        outputName (str): Asset name prefix. Defaults to
+            ``"Landsat-Sentinel2-Hybrid"``.
+        exportPathRoot (str | None): Asset folder path. Defaults to
+            ``None``.
+        crs (str): Output CRS. Defaults to ``"EPSG:5070"``.
+        transform (list): Affine transform. Defaults to
+            ``[30, 0, -2361915.0, 0, -30, 3177735.0]``.
+        scale (int | None): Output scale (overrides transform). Defaults to
+            ``None``.
+        preComputedLandsatCloudScoreOffset (ee.Image | None): Defaults to
+            ``None``.
+        preComputedLandsatTDOMIRMean (ee.Image | None): Defaults to
+            ``None``.
+        preComputedLandsatTDOMIRStdDev (ee.Image | None): Defaults to
+            ``None``.
+        preComputedSentinel2CloudScoreOffset (ee.Image | None): Defaults to
+            ``None``.
+        preComputedSentinel2TDOMIRMean (ee.Image | None): Defaults to
+            ``None``.
+        preComputedSentinel2TDOMIRStdDev (ee.Image | None): Defaults to
+            ``None``.
+        cloudProbThresh (int): Cloud probability threshold. Defaults to
+            ``40``.
+        landsatCollectionVersion (str): Defaults to ``"C2"``.
+        overwrite (bool): Overwrite existing exports. Defaults to
+            ``False``.
+        verbose (bool): Print all parameters. Defaults to ``False``.
+        applyCloudScorePlusSentinel2 (bool): Cloud Score+ for S2. Defaults
+            to ``True``.
+        cloudScorePlusThresh (float): Cloud Score+ threshold (0-1).
+            Defaults to ``0.6``.
+        cloudScorePlusScore (str): ``"cs"`` or ``"cs_cdf"``. Defaults to
+            ``"cs"``.
+
+    Returns:
+        dict: Dictionary with all input args plus:
+            - ``"processedScenes"``: ``ee.ImageCollection`` of merged scenes
+            - ``"processedComposites"``: ``ee.ImageCollection`` of annual
+              composites
+
+    Example:
+        >>> import geeViz.getImagesLib as gil
+        >>> study = ee.Geometry.Point([-105.0, 40.0]).buffer(5000)
+        >>> result = gil.getLandsatAndSentinel2HybridWrapper(
+        ...     study, 2023, 2023, 152, 273
+        ... )
+        >>> composites = result['processedComposites']
+        >>> print(composites.size().getInfo())
+        1
+    """
 
     origin = "Landsat-Sentinel2-Hybrid"
     toaOrSR = toaOrSR.upper()
@@ -6723,6 +8363,33 @@ def getLandsatAndSentinel2HybridWrapper(
 #########################################################################
 # Function to give year.dd image and harmonics list (e.g. [1,2,3,...])
 def getHarmonicList(yearDateImg, transformBandName, harmonicList):
+    """Compute sin and cos harmonic predictor bands for a year-fraction image.
+
+    Takes a year.dd date image and a list of harmonic frequencies, and appends
+    sin and cos bands for each harmonic to the input image.
+
+    Args:
+        yearDateImg (ee.Image): Image containing a band with year-fraction values
+            (e.g., 2020.5 for mid-year 2020).
+        transformBandName (str): Name of the band in ``yearDateImg`` that holds
+            the year-fraction values (e.g., ``"year"``).
+        harmonicList (list[int]): List of harmonic numbers to generate predictors
+            for (e.g., ``[1, 2, 3]``). Each value *h* produces
+            ``sin(h * pi * t)`` and ``cos(h * pi * t)`` bands.
+
+    Returns:
+        ee.Image: The input image with additional sin and cos bands appended.
+            Band names follow the pattern ``sin_<h*100>_<transformBandName>``
+            and ``cos_<h*100>_<transformBandName>``.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> dateImg = ee.Image(2020.5).rename('year')
+        >>> result = gil.getHarmonicList(dateImg, 'year', [2])
+        >>> print(result.bandNames().getInfo())
+        ['year', 'sin_200_year', 'cos_200_year']
+    """
     t = yearDateImg.select([transformBandName])
     selectBands = ee.List.sequence(0, len(harmonicList) - 1)
 
@@ -6751,7 +8418,35 @@ def getHarmonicList(yearDateImg, transformBandName, harmonicList):
 # sin of ind, and cos of ind
 # Intended for harmonic regression
 def getHarmonics2(collection, transformBandName, harmonicList, detrend=False):
+    """Prepare an ImageCollection with harmonic predictor bands for regression.
 
+    Adds sin and cos harmonic predictor bands to each image in the collection,
+    and stores metadata about dependent and independent band names/numbers on
+    the returned collection for use by ``newRobustMultipleLinear2``.
+
+    Args:
+        collection (ee.ImageCollection): Input collection where each image has a
+            year-fraction band (named ``transformBandName``) and one or more
+            dependent variable bands.
+        transformBandName (str): Name of the band containing year-fraction values
+            (e.g., ``"year"``).
+        harmonicList (list[int]): List of harmonic numbers (e.g., ``[2]`` for
+            annual, ``[2, 4]`` for annual + semi-annual).
+        detrend (bool, optional): If True, retains the ``"year"`` band as an
+            additional linear trend predictor. Defaults to False.
+
+    Returns:
+        ee.ImageCollection: Collection with harmonic bands appended to each image
+            and metadata properties ``indBandNames``, ``depBandNames``,
+            ``indBandNumbers``, and ``depBandNumbers`` set on the collection.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> composites = ee.ImageCollection('projects/my-project/assets/composites')
+        >>> withHarmonics = gil.getHarmonics2(composites, 'year', [2])
+        >>> print(withHarmonics.get('indBandNames').getInfo())
+    """
     depBandNames = ee.Image(collection.first()).bandNames().remove(transformBandName)
     depBandNumbers = depBandNames.map(lambda dbn: depBandNames.indexOf(dbn))
 
@@ -6785,6 +8480,30 @@ def getHarmonics2(collection, transformBandName, harmonicList, detrend=False):
 # Simplifies the use of the robust linear regression reducer
 # Assumes the dependent is the first band and all subsequent bands are independents
 def newRobustMultipleLinear2(dependentsIndependents):
+    """Fit a linear regression model across an ImageCollection with labeled bands.
+
+    Applies ``ee.Reducer.linearRegression`` to a collection that has been
+    prepared by ``getHarmonics2``, returning an image of regression coefficients
+    for each dependent variable.
+
+    Args:
+        dependentsIndependents (ee.ImageCollection): Collection with metadata
+            properties ``depBandNames``, ``depBandNumbers``, ``indBandNames``,
+            and ``indBandNumbers`` set (as produced by ``getHarmonics2``).
+
+    Returns:
+        ee.Image: Image of regression coefficients with bands named
+            ``<dependent>_intercept``, ``<dependent>_<independent>``, etc.
+            Has metadata properties ``noDependents`` and ``modelLength``.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> composites = ee.ImageCollection("projects/my-project/assets/composites")
+        >>> withHarmonics = gil.getHarmonics2(composites, "year", [2])
+        >>> coeffs = gil.newRobustMultipleLinear2(withHarmonics)
+        >>> print(coeffs.bandNames().getInfo())
+    """
     # Set up the band names
 
     dependentBands = ee.List(dependentsIndependents.get("depBandNumbers"))
@@ -7941,6 +9660,31 @@ julianDay = [
 # Function for getting the date of the peak of veg vigor- can handle bands negatively correlated to veg in
 # changeDirDict dictionary above
 def getPeakDate(coeffs, peakDirection=1):
+    """Compute the Julian day, month, and day-of-month of peak vegetation vigor.
+
+    Finds the date within an annual cycle where the first harmonic (sin/cos)
+    reaches its maximum, accounting for the sign of the peak direction. Uses
+    module-level lookup tables to convert Julian day to month and day of month.
+
+    Args:
+        coeffs (ee.Image): Two-band image where band 0 is the sin coefficient
+            and band 1 is the cos coefficient from a harmonic regression.
+        peakDirection (int, optional): Set to 1 for bands positively correlated
+            with vegetation vigor, or -1 for negatively correlated bands.
+            Defaults to 1.
+
+    Returns:
+        ee.Image: Three-band image with bands ``peakJulianDay`` (1--365),
+            ``peakMonth`` (1--12), and ``peakDayOfMonth`` (1--31).
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> coeffs = ee.Image([0.1, -0.2])
+        >>> peakInfo = gil.getPeakDate(coeffs, peakDirection=1)
+        >>> print(peakInfo.bandNames().getInfo())
+        ['peakJulianDay', 'peakMonth', 'peakDayOfMonth']
+    """
 
     sin = coeffs.select([0])
     cos = coeffs.select([1])
@@ -7976,6 +9720,31 @@ def getPeakDate(coeffs, peakDirection=1):
 # Example of what this code is doing can be found here:
 #  http://www.wolframalpha.com/input/?i=integrate+0.15949074923992157+%2B+-0.08287599*sin(2+PI+T)+%2B+-0.11252010613*cos(2+PI+T)++from+0+to+1
 def getAreaUnderCurve(harmCoeffs, t0=0, t1=1):
+    """Compute the definite integral (area under curve) of a single-harmonic model.
+
+    Analytically integrates the harmonic function
+    ``amplitude + sin_coeff * sin(2*pi*t) + cos_coeff * cos(2*pi*t)``
+    between ``t0`` and ``t1``, normalizing so the minimum of the curve is zero.
+
+    Args:
+        harmCoeffs (ee.Image): Two-band image where band 0 is the sin coefficient
+            and band 1 is the cos coefficient from a harmonic regression.
+        t0 (float, optional): Start of the integration interval as a fraction
+            of the year (0 = Jan 1). Defaults to 0.
+        t1 (float, optional): End of the integration interval as a fraction
+            of the year (1 = Dec 31). Defaults to 1.
+
+    Returns:
+        ee.Image: Single-band image named ``AUC`` with the area under the curve.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> harmCoeffs = ee.Image([0.05, -0.1])
+        >>> auc = gil.getAreaUnderCurve(harmCoeffs, t0=0, t1=1)
+        >>> print(auc.bandNames().getInfo())
+        ['AUC']
+    """
 
     # Pull apart the model
     amplitude = harmCoeffs.select([1]).hypot(harmCoeffs.select([0]))
@@ -7995,6 +9764,39 @@ def getAreaUnderCurve(harmCoeffs, t0=0, t1=1):
 #########################################################################
 #########################################################################
 def getPhaseAmplitudePeak(coeffs, t0=0, t1=1):
+    """Extract phase, amplitude, peak date, and AUC from harmonic regression coefficients.
+
+    Parses multi-band harmonic regression coefficients (from
+    ``newRobustMultipleLinear2``) and computes per-dependent-variable amplitude,
+    phase (0--1 scaled), peak date (Julian day, month, day of month), and area
+    under the curve.
+
+    Args:
+        coeffs (ee.Image): Harmonic regression coefficient image as returned by
+            ``newRobustMultipleLinear2``, with metadata ``noDependents`` and
+            ``modelLength``.
+        t0 (float, optional): Start of integration interval for AUC calculation
+            (fraction of year). Defaults to 0.
+        t1 (float, optional): End of integration interval for AUC calculation
+            (fraction of year). Defaults to 1.
+
+    Returns:
+        ee.Image: Multi-band image with bands named
+            ``<dep>_amplitude``, ``<dep>_phase``, ``<dep>_peakJulianDay``,
+            ``<dep>_peakMonth``, ``<dep>_peakDayOfMonth``, and ``<dep>_AUC``
+            for each dependent variable.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> studyArea = gil.testAreas["CO"]
+        >>> result = gil.getLandsatWrapper(studyArea, 2018, 2023, 1, 365)
+        >>> composites = result["processedComposites"]
+        >>> coeffs, predicted = gil.getHarmonicCoefficientsAndFit(
+        ...     composites, ["NDVI"], whichHarmonics=[2])
+        >>> pap = gil.getPhaseAmplitudePeak(coeffs)
+        >>> print(pap.bandNames().getInfo())
+    """
     # Parse the model
     bandNames = coeffs.bandNames()
     bandNumber = bandNames.length()
@@ -8051,6 +9853,34 @@ def getPhaseAmplitudePeak(coeffs, t0=0, t1=1):
 #########################################################################
 # Function for applying harmonic regression model to set of predictor sets
 def newPredict(coeffs, harmonics):
+    """Apply harmonic regression coefficients to predict values for each image.
+
+    Uses the coefficient image from ``newRobustMultipleLinear2`` and the
+    harmonic predictor collection from ``getHarmonics2`` to generate predicted
+    values for each dependent variable at each time step.
+
+    Args:
+        coeffs (ee.Image): Harmonic regression coefficient image as returned by
+            ``newRobustMultipleLinear2``, with metadata ``noDependents`` and
+            ``modelLength``.
+        harmonics (ee.ImageCollection): Collection with harmonic predictor bands
+            as returned by ``getHarmonics2``, with metadata ``indBandNames``,
+            ``depBandNames``, ``indBandNumbers``, and ``depBandNumbers``.
+
+    Returns:
+        ee.ImageCollection: Collection where each image contains the original
+            dependent bands plus ``<dep>_predicted`` bands for each dependent
+            variable.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> composites = ee.ImageCollection("projects/my-project/assets/composites")
+        >>> withHarmonics = gil.getHarmonics2(composites, "year", [2])
+        >>> coeffs = gil.newRobustMultipleLinear2(withHarmonics)
+        >>> predicted = gil.newPredict(coeffs, withHarmonics)
+        >>> print(ee.Image(predicted.first()).bandNames().getInfo())
+    """
     # Parse the model
     bandNames = coeffs.bandNames()
     bandNumber = bandNames.length()
@@ -8115,6 +9945,31 @@ def newPredict(coeffs, harmonics):
 #########################################################################
 # Function to get a dummy image stack for synthetic time series
 def getDateStack(startYear, endYear, startJulian, endJulian, frequency):
+    """Generate a synthetic date image stack for predicting harmonic time series.
+
+    Creates an ImageCollection of dummy images at regular intervals, each
+    tagged with ``system:time_start`` and containing a ``year`` band with
+    year-fraction values, plus constant bands for each index in the module-level
+    ``indexNames`` list.
+
+    Args:
+        startYear (int): First year to include.
+        endYear (int): Last year to include.
+        startJulian (int): Starting Julian day within each year.
+        endJulian (int): Ending Julian day within each year.
+        frequency (int): Step size in days between successive images.
+
+    Returns:
+        ee.ImageCollection: Collection of images with ``year`` (year.dd) and
+            constant index bands, each with ``system:time_start`` and
+            ``system:time_end`` properties set.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> dateStack = gil.getDateStack(2020, 2023, 1, 365, 32)
+        >>> print(dateStack.size().getInfo())
+    """
     years = ee.List.sequence(startYear, endYear)
     dates = ee.List.sequence(startJulian, endJulian, frequency)
 
@@ -8151,6 +10006,38 @@ def getDateStack(startYear, endYear, startJulian, endJulian, frequency):
 #########################################################################
 #########################################################################
 def getHarmonicCoefficientsAndFit(allImages, indexNames, whichHarmonics=[2], detrend=False):
+    """Fit harmonic regression to an ImageCollection and return coefficients and fitted values.
+
+    Convenience wrapper that chains ``getHarmonics2``, ``newRobustMultipleLinear2``,
+    and ``newPredict`` to fit a harmonic model to selected bands and return
+    both the coefficient image and the predicted time series.
+
+    Args:
+        allImages (ee.ImageCollection): Input image collection containing the
+            bands to model.
+        indexNames (list[str]): List of band names to fit harmonics to
+            (e.g., ``["NDVI", "NBR"]``).
+        whichHarmonics (list[int], optional): Harmonic numbers to include
+            (e.g., ``[2]`` for annual, ``[2, 4]`` for annual + semi-annual).
+            Defaults to ``[2]``.
+        detrend (bool, optional): If True, includes a linear year trend term
+            in the regression. Defaults to False.
+
+    Returns:
+        list: Two-element list ``[coeffs, predicted]`` where:
+            - ``coeffs`` (ee.Image): Regression coefficients image.
+            - ``predicted`` (ee.ImageCollection): Collection with actual and
+              predicted bands.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> studyArea = gil.testAreas["CO"]
+        >>> result = gil.getLandsatWrapper(studyArea, 2018, 2023, 1, 365)
+        >>> composites = result["processedComposites"]
+        >>> coeffs, predicted = gil.getHarmonicCoefficientsAndFit(
+        ...     composites, ["NDVI"], whichHarmonics=[2])
+    """
 
     # Select desired bands
     allIndices = allImages.select(indexNames)
@@ -8190,6 +10077,38 @@ def getHarmonicCoefficientsAndFit(allImages, indexNames, whichHarmonics=[2], det
 # Date image is expected to be yyyy.dd where dd is the day of year / 365 (proportion of year)
 # ex. synthImage(coeffs,ee.Image([2019.6]),['blue','green','red','nir','swir1','swir2','NBR','NDVI'],[2,4],true)
 def synthImage(coeffs, dateImage, indexNames, harmonics, detrend):
+    """Predict band values at a single date using harmonic regression coefficients.
+
+    Builds a predictor image from a date value (year.dd format) and the specified
+    harmonics, then multiplies by the regression coefficients to produce a
+    synthetic image for each band.
+
+    Args:
+        coeffs (ee.Image): Harmonic regression coefficient image as returned by
+            ``getHarmonicCoefficientsAndFit`` (first element of the returned list).
+        dateImage (ee.Image): Single-band image with year-fraction values
+            (e.g., ``ee.Image(2021.5)``).
+        indexNames (list[str]): List of band names that were modeled
+            (e.g., ``["NDVI", "NBR"]``).
+        harmonics (list[int]): Harmonic numbers used when fitting the model
+            (e.g., ``[2]`` or ``[2, 4]``).
+        detrend (bool): Whether a linear trend term was included in the model.
+
+    Returns:
+        ee.Image: Predicted image with one band per index name.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> studyArea = gil.testAreas["CO"]
+        >>> result = gil.getLandsatWrapper(studyArea, 2018, 2023, 1, 365)
+        >>> composites = result["processedComposites"]
+        >>> coeffs, _ = gil.getHarmonicCoefficientsAndFit(
+        ...     composites, ["NDVI", "NBR"], whichHarmonics=[2])
+        >>> synth = gil.synthImage(coeffs, ee.Image(2022.5), ["NDVI", "NBR"], [2], False)
+        >>> print(synth.bandNames().getInfo())
+        ['NDVI', 'NBR']
+    """
     # Set up constant image to multiply coeffs by
     constImage = ee.Image(1)
     if detrend:
@@ -8371,6 +10290,30 @@ def getClimateWrapper(
 # Adds absolute difference from a specified band summarized by a provided percentile
 # Intended for custom sorting across collections
 def addAbsDiff(inCollection, qualityBand, percentile, sign):
+    """Add a band with the absolute difference from a percentile-based quality target.
+
+    Computes the specified percentile of a quality band across the collection,
+    then adds a ``delta`` band to each image representing the absolute difference
+    from that percentile value, multiplied by the given sign.
+
+    Args:
+        inCollection (ee.ImageCollection): Input image collection.
+        qualityBand (str): Name of the band to compute the percentile on.
+        percentile (int | float): Percentile value (0--100) to use as the
+            target quality.
+        sign (int): Multiplier for the delta band, typically ``-1`` to invert
+            for use with ``qualityMosaic`` (which selects the max).
+
+    Returns:
+        ee.ImageCollection: Collection with an added ``delta`` band on each image.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> collection = ee.ImageCollection("LANDSAT/LC09/C02/T1_L2").limit(10)
+        >>> withDelta = gil.addAbsDiff(collection, "SR_B4", 50, -1)
+        >>> print(ee.Image(withDelta.first()).bandNames().getInfo())
+    """
     bestQuality = inCollection.select([qualityBand]).reduce(ee.Reducer.percentile([percentile]))
 
     def w(image):
@@ -8385,6 +10328,29 @@ def addAbsDiff(inCollection, qualityBand, percentile, sign):
 # Method for applying the qualityMosaic function using a specified percentile
 # Useful when the max of the quality band is not what is wanted
 def customQualityMosaic(inCollection, qualityBand, percentile):
+    """Create a quality mosaic using a specified percentile rather than the max.
+
+    Wraps ``addAbsDiff`` and ``ee.ImageCollection.qualityMosaic`` to select
+    pixels closest to the given percentile of a quality band, rather than
+    always selecting the maximum.
+
+    Args:
+        inCollection (ee.ImageCollection): Input image collection to mosaic.
+        qualityBand (str): Name of the band to use for quality ranking.
+        percentile (int | float): Target percentile (0--100). The pixel closest
+            to this percentile value of ``qualityBand`` is selected.
+
+    Returns:
+        ee.Image: Mosaic image where each pixel is chosen from the image whose
+            quality band value is closest to the specified percentile.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> collection = ee.ImageCollection("LANDSAT/LC09/C02/T1_L2").limit(20)
+        >>> mosaic = gil.customQualityMosaic(collection, "SR_B4", 50)
+        >>> print(mosaic.bandNames().getInfo())
+    """
     # Add an absolute difference from the specified percentile
     # This is inverted for the qualityMosaic function to properly prioritize
     inCollectionDelta = addAbsDiff(inCollection, qualityBand, percentile, -1)
@@ -8472,6 +10438,26 @@ def simpleWaterMask(
 # Specifies a threshold for hue to estimate "green" pixels
 # this is used as an additional filter to refine the algorithm above
 def HoCalcGreenness(img):
+    """Compute the hue component for algal bloom greenness detection.
+
+    Implements a hue calculation from RGB bands to help distinguish algal bloom
+    pixels from suspended sediment. Pixels with hue below 1.6 are more likely
+    to be algal blooms. Based on the Jeff Ho method for water quality analysis.
+
+    Args:
+        img (ee.Image): Input image with ``red``, ``green``, and ``blue`` bands.
+
+    Returns:
+        ee.Image: Single-band image named ``H`` containing the hue values.
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> img = ee.Image("LANDSAT/LC09/C02/T1_TOA/LC09_017031_20220601")
+        >>> hue = gil.HoCalcGreenness(img.select(["B4", "B3", "B2"], ["red", "green", "blue"]))
+        >>> print(hue.bandNames().getInfo())
+        ['H']
+    """
     # map r, g, and b for more readable algebra below
     r = img.select(["red"])
     g = img.select(["green"])
@@ -8492,6 +10478,34 @@ def HoCalcGreenness(img):
 
 # Apply bloom detection algorithm
 def HoCalcAlgorithm1(image):
+    """Apply the Ho et al. algal bloom detection algorithm to a satellite image.
+
+    Implements Algorithm 1 from Wang & Shi (2007) for detecting algal blooms
+    in water bodies using NIR-SWIR atmospheric correction. Adds a hue-based
+    greenness filter to distinguish blooms from suspended sediment.
+
+    Reference:
+        Wang, M., & Shi, W. (2007). The NIR-SWIR combined atmospheric
+        correction approach for MODIS ocean color data processing.
+        Optics Express, 15(24), 15722-15733.
+
+    Args:
+        image (ee.Image): Input image with ``red``, ``green``, ``blue``,
+            ``nir``, and ``swir1`` bands.
+
+    Returns:
+        ee.Image: The input image with additional bands: ``H`` (hue from
+            ``HoCalcGreenness``), ``bloom1`` (bloom intensity), and
+            ``bloom1_mask`` (binary bloom classification).
+
+    Examples:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> img = ee.Image("LANDSAT/LC09/C02/T1_TOA/LC09_017031_20220601")
+        >>> bands = img.select(["B4", "B3", "B2", "B5", "B6"], ["red", "green", "blue", "nir", "swir1"])
+        >>> result = gil.HoCalcAlgorithm1(bands)
+        >>> print(result.bandNames().getInfo())
+    """
     truecolor = 1  # show true color image as well
     testThresh = False  # add a binary image classifying into "bloom"and "non-bloom
     bloomThreshold = 0.02346  # threshold for classification fit based on other data

@@ -28,7 +28,8 @@ Developed by [RedCastle Resources](https://www.redcastleresources.com/), geeViz 
 - Layer toggling, opacity, visualization tools, querying, & area charting
 - Dynamic time-lapse creation from GEE `ImageCollections`
 - Built-in charting & analysis tools (point/polygon, time series, area stats)
-- **Inline zonal summary & charting** (`geeViz.chartingLib`) — run zonal stats and produce Plotly charts (time series, bar, Sankey) directly in notebooks
+- **Inline zonal summary & charting** (`geeViz.chartingLib`) — run zonal stats and produce Plotly charts (time series, bar, grouped bar, per-feature time series subplots, Sankey) directly in notebooks
+- **Summary area retrieval** (`geeViz.getSummaryAreasLib`) — 15 functions returning filtered `ee.FeatureCollection` objects for political boundaries, USFS units, census geographies, buildings, roads, and protected areas
 - Jupyter/Colab support and standalone scripting
 - Supports Landsat, Sentinel-2, MODIS, LCMS, LCMAP, and more
 - Extensive examples and ready-to-run wrappers
@@ -134,7 +135,7 @@ The 32 tools are organized into nine categories:
 
 | Category | Tools |
 |----------|-------|
-| **Code Execution** | `run_code` — persistent REPL with `ee`, `Map`, `gv`, `gil` pre-loaded; `get_namespace` — inspect live variables; `save_notebook` — export session as `.ipynb` |
+| **Code Execution** | `run_code` — persistent REPL with `ee`, `Map`, `gv`, `gil`, `sal` pre-loaded; `get_namespace` — inspect live variables; `save_notebook` — export session as `.ipynb` |
 | **API Introspection** | `get_api_reference` — function signatures & docstrings; `list_functions` — browse module contents; `get_example` / `list_examples` — read example scripts |
 | **Dataset Discovery** | `search_datasets` — keyword search across official & community catalogs; `get_dataset_info` — full STAC metadata for any dataset |
 | **Asset Inspection** | `inspect_asset` — bands, CRS, scale, date range, properties; `list_assets` — browse GEE folders; `get_collection_info` — image count, date range, bands |

@@ -2,21 +2,37 @@
 geeViz MCP Server -- execution and introspection tools for Earth Engine via geeViz.
 
 Unlike static doc snippets, this server executes code, inspects live GEE assets,
-and dynamically queries API signatures. 30 tools replace the previous 49.
+and dynamically queries API signatures. 33 tools replace the previous 49.
 """
 from __future__ import annotations
 
 import os
 import sys
 
-# Help before any heavy imports so "python -m geeViz.mcp.server --help" works without the mcp package
+# ---------------------------------------------------------------------------
+# CLI argument parsing (before heavy imports so --help is instant)
+# ---------------------------------------------------------------------------
+_SANDBOX_ENABLED: bool | None = None  # will be resolved in main()
+
+# Parse --sandbox / --no-sandbox early so _help can document them
+for _arg in sys.argv[1:]:
+    if _arg == "--sandbox":
+        _SANDBOX_ENABLED = True
+    elif _arg == "--no-sandbox":
+        _SANDBOX_ENABLED = False
+
 if len(sys.argv) > 1 and sys.argv[1] in ("-h", "--help"):
-    _help = """usage: python -m geeViz.mcp.server [--help]
+    _help = """usage: python -m geeViz.mcp.server [--help] [--sandbox | --no-sandbox]
 
 geeViz MCP Server -- execution and introspection for Earth Engine via geeViz.
 
 Options:
-  -h, --help    Show this help and exit.
+  -h, --help      Show this help and exit.
+  --sandbox       Force run_code sandbox ON (block os, open, eval, etc.)
+  --no-sandbox    Force run_code sandbox OFF (full Python access)
+
+  Default: sandbox is OFF for stdio transport (local IDE use) and ON for
+  streamable-http when binding to non-localhost (remote/cloud deployment).
 
 Environment (optional):
   MCP_TRANSPORT   Transport: "stdio" (default) or "streamable-http"
@@ -24,7 +40,7 @@ Environment (optional):
   MCP_PORT        Port for HTTP (default: 8000)
   MCP_PATH        Path for HTTP (default: /mcp)
 
-Tools (30):
+Tools (33):
   run_code                 Execute Python/GEE code in a persistent REPL namespace
   inspect_asset            Get metadata for any GEE asset (with optional collection filters)
   get_api_reference        Look up function signatures and docstrings
@@ -55,9 +71,14 @@ Tools (30):
   update_acl               Update permissions (ACL) on a GEE asset
   extract_and_chart        Extract values and chart ee.Image/ImageCollection (point sample, bar, time series, Sankey)
   get_reference_data       Look up reference dicts (band mappings, viz params, collection IDs, etc.)
+  search_edw               Search USFS Enterprise Data Warehouse services by keyword
+  get_edw_service_info     Get layers, fields, and metadata for an EDW service
+  query_edw_features       Query features from an EDW layer (with spatial/attribute filters)
 
 Examples:
-  python -m geeViz.mcp.server
+  python -m geeViz.mcp.server                   # stdio, no sandbox (default)
+  python -m geeViz.mcp.server --sandbox          # stdio with sandbox
+  MCP_TRANSPORT=streamable-http python -m geeViz.mcp.server  # HTTP, auto-sandbox
   python -m geeViz.mcp --help
 
 See also: geeViz/mcp/README.md
@@ -213,6 +234,96 @@ app = FastMCP(
     json_response=True,
 ) if _FastMCP is not None else _StubFastMCP()
 
+# Wrap app.tool() to auto-log every tool invocation
+_original_app_tool = app.tool
+
+
+def _logging_tool_decorator(*dec_args, **dec_kwargs):
+    """Replacement for app.tool() that wraps each tool function with logging."""
+    original_decorator = _original_app_tool(*dec_args, **dec_kwargs)
+
+    def wrapper(fn):
+        import functools
+        import inspect as _insp
+
+        @functools.wraps(fn)
+        async def logged_fn(*args, **kwargs):
+            _log_tool_call(fn.__name__, kwargs)
+            try:
+                result = fn(*args, **kwargs)
+                # Handle both sync and async tool functions
+                if _insp.isawaitable(result):
+                    result = await result
+                _log_tool_call(fn.__name__, kwargs, result=result)
+                return result
+            except Exception as exc:
+                _log_tool_call(fn.__name__, kwargs, error=exc)
+                raise
+
+        # If original fn is not async, keep it sync for FastMCP
+        if not _insp.iscoroutinefunction(fn):
+            @functools.wraps(fn)
+            def logged_fn_sync(*args, **kwargs):
+                _log_tool_call(fn.__name__, kwargs)
+                try:
+                    result = fn(*args, **kwargs)
+                    _log_tool_call(fn.__name__, kwargs, result=result)
+                    return result
+                except Exception as exc:
+                    _log_tool_call(fn.__name__, kwargs, error=exc)
+                    raise
+            return original_decorator(logged_fn_sync)
+
+        return original_decorator(logged_fn)
+
+    return wrapper
+
+
+app.tool = _logging_tool_decorator
+
+# ---------------------------------------------------------------------------
+# Tool call logging -- every MCP tool invocation is logged with timestamp,
+# tool name, arguments, and status (success/error).
+# Log file: <mcp_dir>/logs/tool_calls.log
+# ---------------------------------------------------------------------------
+import logging as _logging
+import datetime as _datetime
+
+_LOG_DIR = os.path.join(_THIS_DIR, "logs")
+os.makedirs(_LOG_DIR, exist_ok=True)
+_TOOL_LOG_FILE = os.path.join(_LOG_DIR, "tool_calls.log")
+
+_tool_logger = _logging.getLogger("geeViz.mcp.tools")
+_tool_logger.setLevel(_logging.DEBUG)
+_tool_fh = _logging.FileHandler(_TOOL_LOG_FILE, encoding="utf-8")
+_tool_fh.setFormatter(_logging.Formatter("%(message)s"))
+_tool_logger.addHandler(_tool_fh)
+_log_result_limit = 5000
+
+def _log_tool_call(tool_name: str, args: dict, result=None, error=None):
+    """Log a tool invocation to the tool_calls.log file."""
+    ts = _datetime.datetime.now().isoformat(timespec="seconds")
+    # Truncate large arg values for readability
+    clean_args = {}
+    for k, v in (args or {}).items():
+        s = str(v)
+        clean_args[k] = s[:_log_result_limit] + "..." if len(s) > _log_result_limit else s
+    entry = {
+        "timestamp": ts,
+        "tool": tool_name,
+        "args": clean_args,
+    }
+    if error:
+        entry["status"] = "ERROR"
+        entry["error"] = str(error)[:_log_result_limit]
+    else:
+        result_str = str(result)
+        entry["status"] = "OK"
+        entry["result_preview"] = result_str[:_log_result_limit] + "..." if len(result_str) > _log_result_limit else result_str
+    import json as _json_log
+    _tool_logger.info(_json_log.dumps(entry))
+
+
 # ---------------------------------------------------------------------------
 # Lazy initialization -- defer all geeViz imports until first tool call
 # that needs them.  Every geeViz module import triggers robustInitializer()
@@ -235,7 +346,8 @@ _MODULE_MAP = {
     "foliumView": "geeViz.foliumView",
     "phEEnoViz": "geeViz.phEEnoViz",
     "cloudStorageManagerLib": "geeViz.cloudStorageManagerLib",
-    "chartingLib": "geeViz.chartingLib",
+    "chartingLib": "geeViz.outputLib.charts",
+    "getSummaryAreasLib": "geeViz.getSummaryAreasLib",
 }
 
 # Persistent REPL namespace for run_code
@@ -244,6 +356,7 @@ _namespace: dict = {}
 # Code history for save_session
 _code_history: list[str] = []
 _script_dir = os.path.join(_THIS_DIR, "generated_scripts")
+_output_dir = os.path.join(_THIS_DIR, "generated_outputs")
 _current_script_path: str | None = None
 
 
@@ -257,6 +370,9 @@ def _ensure_initialized():
             return
         import geeViz.geeView as gv
         import geeViz.getImagesLib as gil
+        import geeViz.getSummaryAreasLib as sal
+        from geeViz.outputLib import thumbs as tl
+        from geeViz.outputLib import reports as rl
         import ee
 
         _namespace.update({
@@ -264,6 +380,10 @@ def _ensure_initialized():
             "Map": gv.Map,
             "gv": gv,
             "gil": gil,
+            "sal": sal,
+            "tl": tl,
+            "rl": rl,
+            "save_file": _safe_write_file,
             "__builtins__": _make_safe_builtins(),
         })
         _initialized = True
@@ -292,6 +412,9 @@ def _save_history_to_file() -> str:
         "# Each section below is one run_code call, in order.\n\n"
         "import geeViz.geeView as gv\n"
         "import geeViz.getImagesLib as gil\n"
+        "import geeViz.getSummaryAreasLib as sal\n"
+        "from geeViz.outputLib import thumbs as tl\n"
+        "from geeViz.outputLib import reports as rl\n"
         "ee = gv.ee\n"
         "Map = gv.Map\n\n"
     )
@@ -350,9 +473,41 @@ _BLOCKED_BUILTINS = frozenset({
 })
 
 
+def _safe_write_file(filename: str, content: str, mode: str = "w") -> str:
+    """Write content to a file in the safe output directory.
+
+    Only allows writing to geeViz/mcp/generated_outputs/ to prevent
+    arbitrary file system access. Returns the full path of the written file.
+
+    Args:
+        filename: Just the filename (no directory). e.g. "chart.html"
+        content: String content to write.
+        mode: Write mode, "w" (text) or "wb" (binary). Default "w".
+
+    Returns:
+        Full path to the written file.
+    """
+    # Strip any path components — only allow bare filenames
+    safe_name = os.path.basename(filename)
+    if not safe_name:
+        raise ValueError("filename must not be empty")
+    os.makedirs(_output_dir, exist_ok=True)
+    full_path = os.path.join(_output_dir, safe_name)
+    with open(full_path, mode) as f:
+        f.write(content)
+    return full_path
+
+
 def _make_safe_builtins() -> dict:
-    """Return a copy of __builtins__ with dangerous functions removed."""
+    """Return a copy of __builtins__, optionally with dangerous functions removed.
+
+    When sandbox is disabled (local/stdio use), returns the full builtins dict
+    so that run_code has unrestricted Python access.
+    """
     import builtins
+    if not _SANDBOX_ENABLED:  # False or None (unresolved) → no restrictions
+        # No restrictions — full Python access
+        return dict(vars(builtins))
     safe = {k: v for k, v in vars(builtins).items() if k not in _BLOCKED_BUILTINS}
     # Provide a safe __import__ that blocks dangerous modules
     def _safe_import(name, *args, **kwargs):
@@ -373,6 +528,9 @@ def _check_code_patterns(code: str) -> list[str]:
 
     Returns a list of warning/error strings. Strings starting with "BLOCKED:"
     will cause run_code to refuse execution.
+
+    When sandbox is disabled, security checks (import blocking, builtin blocking)
+    are skipped — only EE performance warnings are emitted.
     """
     warnings: list[str] = []
     try:
@@ -381,32 +539,33 @@ def _check_code_patterns(code: str) -> list[str]:
         return warnings  # let the executor report syntax errors
 
     for node in ast.walk(tree):
-        # --- Security: check imports ---
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                top = alias.name.split(".")[0]
-                if top in _BLOCKED_MODULES:
+        if _SANDBOX_ENABLED:
+            # --- Security: check imports (sandbox only) ---
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    top = alias.name.split(".")[0]
+                    if top in _BLOCKED_MODULES:
+                        warnings.append(
+                            f"BLOCKED: import of '{alias.name}' is not allowed. "
+                            f"Only Earth Engine, geeViz, and standard data libraries are permitted."
+                        )
+            elif isinstance(node, ast.ImportFrom):
+                if node.module:
+                    top = node.module.split(".")[0]
+                    if top in _BLOCKED_MODULES:
+                        warnings.append(
+                            f"BLOCKED: import from '{node.module}' is not allowed. "
+                            f"Only Earth Engine, geeViz, and standard data libraries are permitted."
+                        )
+
+            # --- Security: check for dangerous builtin calls (sandbox only) ---
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+                if node.func.id in ("eval", "exec", "compile", "open", "breakpoint", "__import__"):
                     warnings.append(
-                        f"BLOCKED: import of '{alias.name}' is not allowed. "
-                        f"Only Earth Engine, geeViz, and standard data libraries are permitted."
-                    )
-        elif isinstance(node, ast.ImportFrom):
-            if node.module:
-                top = node.module.split(".")[0]
-                if top in _BLOCKED_MODULES:
-                    warnings.append(
-                        f"BLOCKED: import from '{node.module}' is not allowed. "
-                        f"Only Earth Engine, geeViz, and standard data libraries are permitted."
+                        f"BLOCKED: call to '{node.func.id}()' is not allowed for security."
                     )
 
-        # --- Security: check for dangerous builtin calls ---
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
-            if node.func.id in ("eval", "exec", "compile", "open", "breakpoint", "__import__"):
-                warnings.append(
-                    f"BLOCKED: call to '{node.func.id}()' is not allowed for security."
-                )
-
-        # --- EE performance: detect .getInfo() calls ---
+        # --- EE performance: detect .getInfo() calls (always active) ---
         if not (isinstance(node, ast.Call)
                 and isinstance(node.func, ast.Attribute)
                 and node.func.attr == "getInfo"):
@@ -468,7 +627,15 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False, ctx: Cont
 
     The namespace persists across calls -- variables set in one call are
     available in the next.  Pre-populated with: ee, Map (gv.Map), gv
-    (geeViz.geeView), gil (geeViz.getImagesLib).
+    (geeViz.geeView), gil (geeViz.getImagesLib), sal
+    (geeViz.getSummaryAreasLib), tl (geeViz.outputLib.thumbs), rl (geeViz.outputLib.reports),
+    save_file.
+
+    **Sandbox mode:** When the server is run with ``--sandbox`` or over HTTP
+    to a non-localhost address, ``open()``, ``os``, ``sys``, ``eval``, etc.
+    are blocked. For local/stdio use (the default), sandbox is OFF and full
+    Python access is available. Use ``save_file(filename, content)`` to write
+    files to the ``generated_outputs/`` directory regardless of sandbox mode.
 
     While executing, progress heartbeats are sent every ~10 seconds to keep the
     MCP client connection alive and inform the agent that the tool is still running.
@@ -757,7 +924,8 @@ def inspect_asset(
         result["detail_error"] = str(exc)
 
     if asset is not None:
-        result["asset"] = asset.getInfo()
+        raw_info = asset.getInfo()
+        result["asset"] = _strip_coordinates(raw_info)
     return json.dumps(result)
 
 
@@ -776,7 +944,8 @@ def get_api_reference(module: str, function_name: str = "") -> str:
     Args:
         module: Short module name. One of: geeView, getImagesLib,
                 changeDetectionLib, gee2Pandas, assetManagerLib,
-                taskManagerLib, foliumView, phEEnoViz, cloudStorageManagerLib.
+                taskManagerLib, foliumView, phEEnoViz, cloudStorageManagerLib,
+                chartingLib, getSummaryAreasLib.
         function_name: Optional function or class name within the module.
                        If omitted, returns the module-level docstring.
 
@@ -830,7 +999,7 @@ def get_api_reference(module: str, function_name: str = "") -> str:
                 methods = [m for m in dir(mapper_cls) if not m.startswith("_")
                            and function_name.lower() in m.lower()]
                 if methods:
-                    hint = f" Did you mean: {', '.join('mapper.' + m for m in methods[:5])}?"
+                    hint = f" Did you mean: {', '.join('mapper.' + m for m in methods)}?"
         return json.dumps({"error": f"{function_name!r} not found in {module}.{hint}"})
 
     # Handle classes: show class docstring + public method list
@@ -881,7 +1050,8 @@ def search_functions(query: str = "", module: str = "") -> str:
         module: Short module name to restrict search to a single module.
                 Valid names: geeView, getImagesLib, changeDetectionLib,
                 gee2Pandas, assetManagerLib, taskManagerLib, foliumView,
-                phEEnoViz, cloudStorageManagerLib, chartingLib.
+                phEEnoViz, cloudStorageManagerLib, chartingLib,
+                getSummaryAreasLib.
 
     Returns:
         JSON with matching functions. Each entry has module, name, type, description.
@@ -1134,7 +1304,7 @@ def list_assets(folder: str) -> str:
 
     assets = result.get("assets", [])
     entries = []
-    for a in assets[:200]:
+    for a in assets[:2000]:
         entries.append({
             "id": a.get("id") or a.get("name", ""),
             "type": a.get("type", "UNKNOWN"),
@@ -1142,8 +1312,8 @@ def list_assets(folder: str) -> str:
         })
 
     out: dict = {"folder": folder, "count": len(entries), "assets": entries}
-    if len(assets) > 200:
-        out["note"] = f"Showing 200 of {len(assets)} assets. Narrow your query for the rest."
+    if len(assets) > 2000:
+        out["note"] = f"Showing 2000 of {len(assets)} assets. Narrow your query for the rest."
 
     return json.dumps(out)
 
@@ -1172,7 +1342,7 @@ def track_tasks(name_filter: str = "") -> str:
         return json.dumps({"error": str(exc)})
 
     entries = []
-    for t in tasks[:50]:
+    for t in tasks[:500]:
         desc = t.get("description", "")
         if name_filter and name_filter.lower() not in desc.lower():
             continue
@@ -1380,6 +1550,9 @@ def save_session(filename: str = "", format: str = "py") -> str:
         "source": [
             "import geeViz.geeView as gv\n",
             "import geeViz.getImagesLib as gil\n",
+            "import geeViz.getSummaryAreasLib as sal\n",
+            "from geeViz.outputLib import thumbs as tl\n",
+            "from geeViz.outputLib import reports as rl\n",
             "ee = gv.ee\n",
             "Map = gv.Map",
         ],
@@ -1515,8 +1688,8 @@ def get_namespace() -> str:
         # Truncated repr (no getInfo)
         try:
             r = repr(obj)
-            if len(r) > 200:
-                r = r[:200] + "..."
+            if len(r) > 2000:
+                r = r[:2000] + "..."
         except Exception:
             r = "(repr failed)"
 
@@ -1567,7 +1740,7 @@ def get_project_info() -> str:
                     "id": a.get("id") or a.get("name", ""),
                     "type": a.get("type", "UNKNOWN"),
                 }
-                for a in assets[:50]
+                for a in assets[:500]
             ]
             result["root_asset_count"] = len(assets)
         except Exception as exc:
@@ -1888,7 +2061,7 @@ def _get_cached_catalog(name: str) -> list[dict] | None:
 # ---------------------------------------------------------------------------
 
 @app.tool()
-def search_datasets(query: str, source: str = "all", max_results: int = 10) -> str:
+def search_datasets(query: str, source: str = "all", max_results: int = 50) -> str:
     """Search the GEE dataset catalog by keyword.
 
     Searches both the official Earth Engine catalog (~500+ datasets) and
@@ -2749,17 +2922,16 @@ def extract_and_chart(
     geometry_var: str = "",
     lon: float = None,
     lat: float = None,
-    buffer_meters: int = 0,
     band_names: str = "",
     start_date: str = "",
     end_date: str = "",
     scale: int = 30,
     reducer: str = "",
     area_format: str = "Percentage",
-    x_axis_property: str = "year",
+    x_axis_property: str = "system:time_start",
     date_format: str = "YYYY",
-    chart_type: str = "lines+markers",
-    stacked: bool = False,
+    chart_type: str = "",
+    stacked: bool = False,  # deprecated — use chart_type instead
     palette: str = "",
     sankey: bool = False,
     transition_periods: str = "",
@@ -2768,26 +2940,15 @@ def extract_and_chart(
     feature_label: str = "",
     title: str = "",
 ) -> str:
-    """Extract values from an ee.Image or ee.ImageCollection and return a
-    Plotly chart as an interactive HTML snippet.
+    """Extract values from an ee.Image or ee.ImageCollection, run zonal
+    statistics, and return a chart image with a markdown data table.
 
-    This is the single tool for all data extraction and charting workflows.
-    It replaces the old ``sample_values``, ``get_time_series``, and
-    ``zonal_summary`` tools by wrapping ``geeViz.chartingLib.summarize_and_chart``.
+    Wraps ``geeViz.outputLib.charts.summarize_and_chart``. Auto-detects thematic
+    vs continuous data and picks the right reducer and chart type.
 
-    **Point sampling** (like the old ``sample_values``): pass ``lon``/``lat``
-    with ``buffer_meters=0`` and an ``image_var``. Returns raw pixel values
-    via ``reduceRegion`` with no chart.
-
-    **Zonal summary / time series** (like the old ``zonal_summary``): pass
-    ``lon``/``lat`` with ``buffer_meters > 0`` (or a ``geometry_var``) and an
-    ``image_var`` or ``collection_var``. Auto-detects thematic vs continuous
-    data, picks the right reducer, and generates a bar chart (single Image),
-    time series (ImageCollection), or Sankey diagram (``sankey=True``).
-
-    **Grouped bar chart**: pass a ``geometry_var`` pointing at a multi-feature
-    ``ee.FeatureCollection`` and set ``feature_label`` to the property used
-    as row labels. Uses ``reduceRegions`` internally.
+    **Geometry:** pass ``lon``/``lat`` for a point, or ``geometry_var`` for any
+    geometry already in the REPL namespace (polygon, feature collection, etc.).
+    For point geometries the reducer defaults to ``ee.Reducer.first()``.
 
     Args:
         image_var: Name of an ``ee.Image`` variable in the REPL namespace.
@@ -2796,11 +2957,8 @@ def extract_and_chart(
                         namespace. Mutually exclusive with ``image_var``.
         geometry_var: Name of an ``ee.Geometry``, ``ee.Feature``, or
                       ``ee.FeatureCollection`` variable for the analysis region.
-        lon: Longitude for a point sample (used if ``geometry_var`` is empty).
-        lat: Latitude for a point sample (used if ``geometry_var`` is empty).
-        buffer_meters: Buffer radius around the point in meters (default 0).
-                       Use 0 for raw point sampling (no chart). Use > 0 for
-                       area-based zonal summary with chart.
+        lon: Longitude (used with ``lat`` to create a point geometry).
+        lat: Latitude (used with ``lon`` to create a point geometry).
         band_names: Comma-separated band names to include. Auto-detected if empty.
         start_date: Optional start date filter for collections (YYYY-MM-DD).
         end_date: Optional end date filter for collections (YYYY-MM-DD).
@@ -2808,11 +2966,13 @@ def extract_and_chart(
         reducer: Override the auto-selected reducer. Valid values:
                  ``"first"``, ``"mean"``, ``"median"``, ``"min"``, ``"max"``,
                  ``"sum"``, ``"mode"``, ``"stdDev"``, ``"count"``,
-                 ``"frequencyHistogram"``. Leave empty to auto-detect.
+                 ``"frequencyHistogram"``. Leave empty to auto-detect
+                 (``"first"`` for points, ``"frequencyHistogram"`` for
+                 thematic areas, ``"mean"`` for continuous areas).
         area_format: Area unit for thematic data -- ``"Percentage"`` (default),
                      ``"Hectares"``, ``"Acres"``, or ``"Pixels"``.
         x_axis_property: Property for x-axis labels on ImageCollections
-                         (default ``"year"``).
+                         (default ``"system:time_start"``).
         date_format: Earth Engine date format string (default ``"YYYY"``).
         chart_type: ``"lines+markers"`` (default), ``"lines"``, or ``"bar"``.
         stacked: Whether to stack series (default False).
@@ -2831,9 +2991,10 @@ def extract_and_chart(
         title: Chart title. Auto-generated if empty.
 
     Returns:
-        JSON with ``success``, ``summary`` (DataFrame as records), ``chart_html``
-        (Plotly figure as self-contained HTML div), and ``chart_type``.
-        For point sampling (``buffer_meters=0``), returns ``values`` dict instead.
+        A chart image (PNG) and a text summary containing a markdown data
+        table, the chart type, and a path to the saved interactive HTML file.
+        When image rendering is unavailable, returns the markdown table with
+        an inline base64 image or text-only fallback.
     """
     _ensure_initialized()
     ee = _namespace["ee"]
@@ -2854,10 +3015,11 @@ def extract_and_chart(
                      "expected ee.Image or ee.ImageCollection.",
         })
 
-    # Resolve geometry
+    # Resolve geometry -- lon/lat creates a simple point, geometry_var for everything else
+    is_point = False
     if lon is not None and lat is not None:
-        point = ee.Geometry.Point([lon, lat])
-        geometry = point.buffer(buffer_meters) if buffer_meters > 0 else point
+        geometry = ee.Geometry.Point([lon, lat])
+        is_point = True
     elif geometry_var:
         geometry = _namespace.get(geometry_var)
         if geometry is None:
@@ -2867,46 +3029,9 @@ def extract_and_chart(
             "error": "Provide either lon/lat coordinates or a geometry_var name.",
         })
 
-    # ---- Point-sampling fast path (no chart) ----
-    if (
-        lon is not None
-        and lat is not None
-        and buffer_meters == 0
-        and isinstance(ee_obj, ee.Image)
-    ):
-        reducer_map = {
-            "first": ee.Reducer.first(),
-            "mean": ee.Reducer.mean(),
-            "median": ee.Reducer.median(),
-            "min": ee.Reducer.min(),
-            "max": ee.Reducer.max(),
-            "sum": ee.Reducer.sum(),
-            "stdDev": ee.Reducer.stdDev(),
-            "count": ee.Reducer.count(),
-        }
-        ee_reducer = reducer_map.get(reducer or "first")
-        if ee_reducer is None:
-            return json.dumps({
-                "error": f"Unknown reducer: {reducer!r}. "
-                         f"Valid: {', '.join(sorted(reducer_map))}",
-            })
-        try:
-            result = ee_obj.reduceRegion(
-                reducer=ee_reducer,
-                geometry=geometry,
-                scale=scale,
-                maxPixels=1e9,
-            ).getInfo()
-        except Exception as exc:
-            return json.dumps({"error": f"Point sample failed: {exc}"})
-
-        return json.dumps({
-            "success": True,
-            "chart_type": "point_sample",
-            "reducer": reducer or "first",
-            "scale": scale,
-            "values": result,
-        })
+    # Default to ee.Reducer.first() for point geometries
+    if is_point and not reducer:
+        reducer = "first"
 
     # ---- Apply date filters for collections ----
     if isinstance(ee_obj, ee.ImageCollection):
@@ -2950,7 +3075,7 @@ def extract_and_chart(
             return json.dumps({"error": f"Invalid transition_periods JSON: {transition_periods!r}"})
 
     try:
-        import geeViz.chartingLib as cl
+        from geeViz.outputLib import charts as cl
 
         result = cl.summarize_and_chart(
             ee_obj,
@@ -2962,8 +3087,8 @@ def extract_and_chart(
             x_axis_property=x_axis_property,
             date_format=date_format,
             title=title or None,
-            chart_type=chart_type,
-            stacked=stacked,
+            chart_type=chart_type or None,
+            stacked=stacked if stacked else None,
             sankey=sankey,
             transition_periods=t_periods,
             sankey_band_name=sankey_band_name or None,
@@ -2983,37 +3108,93 @@ def extract_and_chart(
         matrix_df = None
         ct = "time_series" if isinstance(ee_obj, ee.ImageCollection) else "bar"
 
-    # Convert DataFrame to records
-    summary = df.reset_index().to_dict(orient="records") if not df.empty else []
+    # ------------------------------------------------------------------
+    # Build markdown table from DataFrame
+    # ------------------------------------------------------------------
+    display_df = df.reset_index()
+    for col in display_df.select_dtypes(include="number").columns:
+        display_df[col] = display_df[col].round(2)
+    if len(display_df) > 50:
+        md_table = display_df.head(50).to_markdown(index=False)
+        md_table += f"\n\n*Showing first 50 of {len(display_df)} rows.*"
+    else:
+        md_table = display_df.to_markdown(index=False) if not df.empty else ""
 
-    # Convert figure to HTML div
-    chart_html = fig.to_html(full_html=False, include_plotlyjs="cdn")
+    # ------------------------------------------------------------------
+    # Save interactive HTML chart to file (with gradient links for sankey)
+    # ------------------------------------------------------------------
+    os.makedirs(_script_dir, exist_ok=True)
+    import time as _time_mod
+    html_filename = f"chart_{ct}_{int(_time_mod.time())}.html"
+    html_path = os.path.join(_script_dir, html_filename)
+    try:
+        if ct == "sankey":
+            full_html = cl.sankey_to_html(fig, full_html=True, include_plotlyjs="cdn")
+        else:
+            chart_div = fig.to_html(full_html=False, include_plotlyjs="cdn")
+            full_html = (
+                "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+                "<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>"
+                "</head><body>" + chart_div + "</body></html>"
+            )
+        with open(html_path, "w", encoding="utf-8") as _hf:
+            _hf.write(full_html)
+    except Exception:
+        html_path = None
 
-    out = {
-        "success": True,
-        "chart_type": ct,
-        "row_count": len(summary),
-        "columns": list(df.columns),
-        "summary": summary,
-        "chart_html": chart_html,
-    }
+    # ------------------------------------------------------------------
+    # Try to render chart as PNG for inline display
+    # ------------------------------------------------------------------
+    chart_image_bytes = None
+    try:
+        chart_image_bytes = fig.to_image(format="png", width=700, height=450, scale=2)
+    except Exception:
+        pass
 
-    # Include transition matrix for sankey charts
-    if matrix_df is not None and not matrix_df.empty:
-        out["transition_matrix"] = matrix_df.reset_index().to_dict(orient="records")
-        out["transition_matrix_columns"] = [""] + list(matrix_df.columns)
+    # ------------------------------------------------------------------
+    # Build text response
+    # ------------------------------------------------------------------
+    text_parts = [f"**Chart type:** {ct} | **Rows:** {len(display_df)}"]
 
-    # Hint for map integration -- tell the agent to enable area charting
-    out["map_hint"] = (
-        "If you are also adding this data to the map with Map.addLayer(), "
-        "include 'canAreaChart': True in the vizParams dict so the user "
-        "can interactively chart areas in the geeView map. Example: "
-        "Map.addLayer(image, {'min': 0, 'max': 1, 'canAreaChart': True}, 'Layer Name'). "
-        "Also call Map.turnOnAutoAreaCharting() before Map.view() to enable "
-        "automatic area charting when the user pans/zooms."
+    if md_table:
+        text_parts.append("\n### Data Table\n")
+        text_parts.append(md_table)
+
+    if matrix_df is not None:
+        if isinstance(matrix_df, dict):
+            for period_label, mdf in matrix_df.items():
+                if not mdf.empty:
+                    text_parts.append(f"\n### Transition Matrix: {period_label}\n")
+                    text_parts.append(mdf.reset_index().to_markdown(index=False))
+        elif hasattr(matrix_df, 'empty') and not matrix_df.empty:
+            text_parts.append("\n### Transition Matrix\n")
+            text_parts.append(matrix_df.reset_index().to_markdown(index=False))
+
+    if html_path:
+        text_parts.append(f"\n**Interactive chart saved to:** `{html_path}`")
+
+    text_parts.append(
+        "\n**Map tip:** include `'canAreaChart': True` in vizParams and call "
+        "`Map.turnOnAutoAreaCharting()` before `Map.view()` for interactive charting."
     )
 
-    return json.dumps(out)
+    text_summary = "\n".join(text_parts)
+
+    # ------------------------------------------------------------------
+    # Return: [Image, text] if we have a PNG, otherwise text-only
+    # ------------------------------------------------------------------
+    if chart_image_bytes and _MCPImage is not None:
+        try:
+            return [_MCPImage(data=chart_image_bytes, format="png"), text_summary]
+        except Exception:
+            pass
+
+    if chart_image_bytes:
+        import base64 as _b64
+        img_b64 = _b64.b64encode(chart_image_bytes).decode("ascii")
+        text_summary += f"\n\n![chart](data:image/png;base64,{img_b64})"
+
+    return text_summary
 
 
 # ---------------------------------------------------------------------------
@@ -3044,19 +3225,43 @@ _REFERENCE_DATA: dict[str, dict[str, str]] = {
 }
 
 
+def _strip_coordinates(obj):
+    """Recursively strip GeoJSON coordinates from nested dicts/lists.
+
+    Replaces ``"coordinates": [...]`` with ``"coordinates": "(stripped)"``
+    to keep large coordinate arrays out of the LLM context window.
+    """
+    if isinstance(obj, dict):
+        out = {}
+        for k, v in obj.items():
+            if k == "coordinates" and isinstance(v, list):
+                out[k] = "(stripped)"
+            else:
+                out[k] = _strip_coordinates(v)
+        return out
+    if isinstance(obj, list):
+        return [_strip_coordinates(v) for v in obj]
+    return obj
+
+
 def _make_serializable(obj):
-    """Recursively convert ee objects to JSON-safe values."""
+    """Recursively convert ee objects to JSON-safe values.
+
+    GeoJSON coordinates are stripped to avoid injecting huge coordinate
+    arrays into the LLM context.
+    """
     if obj is None or isinstance(obj, (str, int, float, bool)):
         return obj
     if isinstance(obj, list):
         return [_make_serializable(v) for v in obj]
     if isinstance(obj, dict):
         return {k: _make_serializable(v) for k, v in obj.items()}
-    # ee.Geometry -> GeoJSON via getInfo (fast, client-side struct)
+    # ee.Geometry -> type only (coordinates are too large for context)
     try:
         import ee as _ee
         if isinstance(obj, _ee.Geometry):
-            return obj.getInfo()
+            geojson = obj.getInfo()
+            return {"type": geojson.get("type", "Geometry"), "coordinates": "(stripped)"}
     except Exception:
         pass
     # Other ee objects -> repr string
@@ -3105,23 +3310,230 @@ def get_reference_data(name: str = "") -> str:
 
 
 # ---------------------------------------------------------------------------
+# USFS Enterprise Data Warehouse (EDW) tools
+# ---------------------------------------------------------------------------
+
+@app.tool()
+def search_edw(query: str = "", theme: str = "") -> str:
+    """Search the USFS Enterprise Data Warehouse (EDW) for datasets/services.
+
+    The EDW provides authoritative geospatial data from the USDA Forest Service,
+    including fire occurrence, burn severity, ownership, vegetation, roads, trails,
+    recreation sites, wilderness areas, watersheds, and more (~215 services).
+
+    Supports keyword aliases — e.g. searching "riparian" finds stream, watershed,
+    and aquatic services even though no service is named "riparian".
+
+    Args:
+        query: Search keyword (case-insensitive). Matches service names, descriptions,
+               and keyword aliases.
+               Examples: "fire", "riparian", "fish", "ownership", "vegetation",
+               "wilderness", "watershed", "trail", "timber", "ecology".
+               Pass "" to list all services (optionally filtered by theme).
+        theme: Filter by theme category. Valid themes:
+               biota, boundaries, environment, geoscientific, inland_waters,
+               planning_cadastre, structure, transportation.
+               Pass "" to search all themes.
+
+    Returns:
+        JSON with matching services (name, type, url, theme, description).
+    """
+    from geeViz.mcp.edw import search_services
+
+    results = search_services(query, theme)
+    return json.dumps({
+        "query": query or "(all)",
+        "theme": theme or "(all)",
+        "count": len(results),
+        "services": results,
+        "tip": "Use get_edw_service_info(service_name) to see layers and fields for a service.",
+    })
+
+
+@app.tool()
+def get_edw_service_info(
+    service_name: str,
+    layer_id: int = -1,
+) -> str:
+    """Get metadata for a USFS EDW service or a specific layer within it.
+
+    Args:
+        service_name: Service name from search_edw results, e.g. "EDW_MTBS_01".
+        layer_id: Optional layer ID to get detailed field/geometry info.
+                  Use -1 (default) to get the service overview with all layer names.
+
+    Returns:
+        JSON with service or layer metadata (layers, fields, geometry type, extent).
+    """
+    from geeViz.mcp.edw import get_service_info, get_layer_info
+
+    if layer_id >= 0:
+        info = get_layer_info(service_name, layer_id)
+        info["service_name"] = service_name
+        info["layer_id"] = layer_id
+        info["tip"] = (
+            "Use query_edw_features(service_name, layer_id, ...) "
+            "to fetch features from this layer."
+        )
+        return json.dumps(info)
+
+    info = get_service_info(service_name)
+    info["tip"] = (
+        "Use get_edw_service_info(service_name, layer_id=<id>) "
+        "to see fields and geometry type for a specific layer."
+    )
+    return json.dumps(info)
+
+
+@app.tool()
+def query_edw_features(
+    service_name: str,
+    layer_id: int,
+    bbox: str = "",
+    geometry_geojson: str = "",
+    where: str = "1=1",
+    out_fields: str = "*",
+    max_features: int = 1000,
+    return_count_only: bool = False,
+) -> str:
+    """Query features from a USFS EDW layer with spatial and/or attribute filters.
+
+    Returns GeoJSON FeatureCollection. Use bbox OR geometry_geojson for spatial
+    filtering (bbox takes precedence if both provided).
+
+    Args:
+        service_name: Service name, e.g. "EDW_MTBS_01".
+        layer_id: Layer ID within the service (from get_edw_service_info).
+        bbox: Bounding box as "xmin,ymin,xmax,ymax" (WGS84 lon/lat).
+              Example: "-111.5,44.0,-109.5,45.5" for a region near Yellowstone.
+        geometry_geojson: GeoJSON geometry string for spatial filter (Point, Polygon).
+                         Example: '{"type":"Point","coordinates":[-111.0,44.5]}'
+                         Ignored if bbox is provided.
+        where: SQL WHERE clause for attribute filtering.
+               Example: "FIRE_NAME='CREEK' AND YEAR>=2020"
+        out_fields: Comma-separated field names or "*" for all fields.
+        max_features: Maximum features to return (default 1000, max 5000).
+                      Automatically paginates if > 2000.
+        return_count_only: If true, return only the count of matching features.
+
+    Returns:
+        GeoJSON FeatureCollection string, or {"count": N} if return_count_only.
+    """
+    from geeViz.mcp.edw import query_features, query_features_with_pagination
+
+    # Determine geometry and type
+    geometry = None
+    geometry_type = "esriGeometryEnvelope"
+
+    if bbox.strip():
+        geometry = bbox.strip()
+        geometry_type = "esriGeometryEnvelope"
+    elif geometry_geojson.strip():
+        geom = json.loads(geometry_geojson)
+        geometry = geom
+        geoj_type = geom.get("type", "")
+        if geoj_type == "Point":
+            geometry_type = "esriGeometryPoint"
+        elif geoj_type in ("Polygon", "MultiPolygon"):
+            geometry_type = "esriGeometryPolygon"
+
+    max_features = min(max_features, 5000)
+
+    if return_count_only:
+        result = query_features(
+            service_name, layer_id,
+            geometry=geometry, geometry_type=geometry_type,
+            where=where, return_count_only=True,
+        )
+        return json.dumps(result)
+
+    if max_features > 2000:
+        result = query_features_with_pagination(
+            service_name, layer_id,
+            geometry=geometry, geometry_type=geometry_type,
+            where=where, out_fields=out_fields,
+            max_features=max_features,
+        )
+    else:
+        result = query_features(
+            service_name, layer_id,
+            geometry=geometry, geometry_type=geometry_type,
+            where=where, out_fields=out_fields,
+            max_features=max_features,
+        )
+
+    feature_count = len(result.get("features", []))
+    # Add metadata to response
+    result["_query"] = {
+        "service": service_name,
+        "layer_id": layer_id,
+        "feature_count": feature_count,
+        "bbox": bbox or None,
+        "where": where,
+    }
+
+    return json.dumps(result)
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
+def _eager_init():
+    """Pre-initialize EE in a background thread so the first tool call is fast."""
+    import threading
+
+    def _init():
+        try:
+            _ensure_initialized()
+            print("EE initialized (background warmup)", file=sys.stderr)
+        except Exception as exc:
+            print(f"Background warmup failed (will retry on first tool call): {exc}", file=sys.stderr)
+
+    t = threading.Thread(target=_init, daemon=True)
+    t.start()
+
+
 def main() -> None:
+    global _SANDBOX_ENABLED
+
+    # Pre-warm EE auth so first tool call doesn't stall
+    _eager_init()
+
     # stdio is standard for Cursor/IDE integration; use streamable-http for HTTP
     transport = os.environ.get("MCP_TRANSPORT", "stdio")
+
     if transport == "streamable-http":
         host = os.environ.get("MCP_HOST", "127.0.0.1")
         port = int(os.environ.get("MCP_PORT", "8000"))
         path = os.environ.get("MCP_PATH", "/mcp")
-        print(f"MCP server starting at http://{host}:{port}{path}", file=sys.stderr)
-        try:
-            app.run(transport=transport, host=host, port=port, path=path)
-        except TypeError:
-            # SDK may not accept host/port/path; use env or defaults
-            app.run(transport=transport)
+        # Normalize: strip Windows-mangled Git Bash paths and ensure leading /
+        if len(path) > 4 and ":" in path[:3]:  # e.g. "C:/Program Files/Git/mcp"
+            path = "/" + path.rsplit("/", 1)[-1]
+        if not path.startswith("/"):
+            path = "/" + path
+
+        # Resolve sandbox default: ON for non-localhost HTTP, OFF for localhost
+        if _SANDBOX_ENABLED is None:
+            _is_localhost = host in ("127.0.0.1", "localhost", "::1")
+            _SANDBOX_ENABLED = not _is_localhost
+
+        # FastMCP.run() doesn't accept host/port kwargs; set them on the
+        # settings object directly so uvicorn picks them up.
+        app.settings.host = host
+        app.settings.port = port
+        app.settings.streamable_http_path = path
+        # When binding to 0.0.0.0 (cloud deployment), disable DNS rebinding
+        # protection so external hostnames (e.g. Cloud Run) are accepted.
+        if host == "0.0.0.0":
+            app.settings.transport_security.enable_dns_rebinding_protection = False
+        print(f"MCP server starting at http://{host}:{port}{path} (sandbox={'ON' if _SANDBOX_ENABLED else 'OFF'})", file=sys.stderr)
+        app.run(transport=transport, mount_path=path)
     else:
+        # stdio transport — default sandbox OFF (local IDE use)
+        if _SANDBOX_ENABLED is None:
+            _SANDBOX_ENABLED = False
+        print(f"MCP server starting (stdio, sandbox={'ON' if _SANDBOX_ENABLED else 'OFF'})", file=sys.stderr)
         app.run(transport=transport)
 
 

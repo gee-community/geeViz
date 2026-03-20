@@ -1,3 +1,38 @@
+# geeViz 2026.3.3 Release Notes
+
+## March 12, 2026
+
+### New Features
+
+### New: Summary Areas Library (`geeViz.getSummaryAreasLib`)
+
+- **New module: `geeViz.getSummaryAreasLib`**
+  15 functions returning filtered `ee.FeatureCollection` objects for common study and summary areas. Every function accepts an `area` parameter (`ee.Geometry`, `ee.Feature`, or `ee.FeatureCollection`) and returns spatially filtered results.
+    - **Admin boundaries:** `getAdminBoundaries(area, level=0|1|2|3|4)` — unified function supporting countries (0), states (1), counties (2), sub-districts (3), localities (4). Sources: geoBoundaries v6 (default, official), FAO GAUL 2015, FAO GAUL 2024, FieldMaps humanitarian. Companion `getAdminNameProperty(level, source)` returns the correct name column for any source.
+    - **US-specific:** `getUSStates()`, `getUSCounties()` (with `state_fips`/`state_abbr` filters), `getUSUrbanAreas()`, `getUSCensusBlocks()`, `getUSBlockGroups()`, `getUSCensusTracts()`
+    - **USFS units:** `getUSFSForests()`, `getUSFSDistricts()` (with `forest_name`/`region` filters), `getUSFSRegions()`
+    - **Infrastructure:** `getRoads()`, `getBuildings()` (VIDA Combined, Microsoft, or Google Open Buildings sources)
+    - **Protected areas:** `getProtectedAreas()` (with `iucn_cat`/`desig_type` filters)
+    - **MCP integration:** Available as `sal` in the MCP REPL namespace; discoverable via `get_api_reference` and `search_functions`
+    - **Example notebook:** `getSummaryAreasExampleNotebook.ipynb` demonstrates all 15 functions with map visualization, area charting, and inline chartingLib charts
+
+### New: Multi-Feature Time Series Charting (`chartingLib`)
+
+- **Per-feature time series subplots:** `summarize_and_chart()` now supports passing `feature_label` with an `ee.ImageCollection` and a multi-feature `ee.FeatureCollection`. Produces one time series subplot per feature using a single `reduceRegions` call on the stacked image (efficient — one EE call regardless of feature count).
+    - Returns `(dict, Figure)` where `dict` is `{feature_name: DataFrame}` with per-feature time series data
+    - Works for both thematic data (frequencyHistogram) and continuous data (mean/median)
+    - New functions: `chart_multi_feature_timeseries()`, `_pivot_multi_feature_timeseries()`
+    - For `ee.Image` + `feature_label`, the existing grouped bar chart behavior is unchanged
+
+### Bug Fixes
+
+#### `chartingLib` Fixes
+
+- **`frequencyHistogram` + `reduceRegions` on multi-band images:** Fixed `Reducer.setOutputs: Need 1 output names` error when using `frequencyHistogram` with stacked (multi-band) images. `setOutputs()` is now only called for single-band images; for multi-band images, EE auto-names outputs by band name.
+- **Feature property leakage in grouped bar charts:** Fixed a bug where numeric feature properties (e.g. `ALAND`, `AWATER` from census tracts) were included as chart columns alongside image band values. The fallback column detection now prefers columns matching image band names before falling back to all numeric columns.
+
+---
+
 # geeViz 2026.3.2 Release Notes
 
 ## March 5, 2026
