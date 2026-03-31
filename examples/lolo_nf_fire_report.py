@@ -39,9 +39,17 @@ endYear = 2024
 lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2024-10")
 
 # MTBS burn severity — select by index and rename for consistent band naming
+# MTBS burn severity — select by index and rename for consistent band naming
 mtbs = ee.ImageCollection("USFS/GTAC/MTBS/annual_burn_severity_mosaics/v1").select(
     [0], ["Severity"]
 )
+
+# Classes to hide in charts
+HIDDEN_CLASSES = {
+    "Background": False,
+    "Non-Processing Area Mask": False,
+    "Stable": False,
+}
 
 # Sentinel-2 summer composite for context thumbnail
 s2 = gil.superSimpleGetS2(study_area, "2023-06-01", "2023-09-30")
@@ -59,13 +67,14 @@ report = rl.Report(
 )
 
 # Section 1: LCMS Change — stacked chart + GIF showing fast/slow loss and gain
-report.addSection(
+report.add_section(
     ee_obj=lcms.select(["Change"]).filter(
         ee.Filter.calendarRange(startYear, endYear, "year")
     ),
     geometry=study_area,
     title="LCMS Change (1985-2024)",
-    stacked=True,
+    chart_types=["stacked_line+markers"],
+    class_visible=HIDDEN_CLASSES,
     scale=60,
     crs=crs,
     thumb_format="gif",
@@ -78,13 +87,14 @@ report.addSection(
 )
 
 # Section 2: LCMS Land Cover — how land cover has shifted over time
-report.addSection(
+report.add_section(
     ee_obj=lcms.select(["Land_Cover"]).filter(
         ee.Filter.calendarRange(startYear, endYear, "year")
     ),
     geometry=study_area,
     title="LCMS Land Cover (1985-2024)",
-    stacked=True,
+    chart_types=["stacked_line+markers"],
+    class_visible=HIDDEN_CLASSES,
     scale=60,
     crs=crs,
     thumb_format="gif",
@@ -97,13 +107,13 @@ report.addSection(
 )
 
 # Section 3: LCMS Land Cover Sankey — transitions at key fire years
-report.addSection(
+report.add_section(
     ee_obj=lcms.select(["Land_Cover"]).filter(
         ee.Filter.calendarRange(startYear, endYear, "year")
     ),
     geometry=study_area,
     title="LCMS Land Cover Transitions",
-    sankey=True,
+    chart_types=["sankey"],
     transition_periods=[1985, 2000, 2010, 2024],
     sankey_band_name="Land_Cover",
     scale=60,
@@ -112,7 +122,7 @@ report.addSection(
 )
 
 # Section 4: MTBS Burn Severity — annual chart + GIF
-report.addSection(
+report.add_section(
     ee_obj=mtbs.filter(ee.Filter.calendarRange(startYear, endYear, "year")),
     geometry=study_area,
     title="MTBS Burn Severity (1985-2024)",
@@ -128,12 +138,12 @@ report.addSection(
 )
 
 # Section 5: Sentinel-2 Composite — recent context thumbnail
-report.addSection(
+report.add_section(
     ee_obj=s2,
     geometry=study_area,
     title=f"{name} — Sentinel-2 Summer 2023",
-    generateChart=False,
-    generateTable=False,
+    generate_chart=False,
+    generate_table=False,
     thumb_viz_params=gil.vizParamsFalse10k,
     thumb_dimensions=400,
 )
@@ -143,7 +153,7 @@ print(f"Sections: {len(report._sections)}")
 for i, sec in enumerate(report._sections):
     print(
         f"  {i + 1}. {sec.title} "
-        f"(table={sec.generateTable}, chart={sec.generateChart}, "
+        f"(table={sec.generate_table}, chart={sec.generate_chart}, "
         f"thumb_format={sec.thumb_format})"
     )
 

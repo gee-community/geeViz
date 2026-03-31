@@ -63,13 +63,13 @@ report = rl.Report(
 )
 
 # Section 1: LCMS Land Cover - annual stacked chart + GIF
-report.addSection(
+report.add_section(
     ee_obj=lcms.select(["Land_Cover"]).filter(
         ee.Filter.calendarRange(startYear, endYear, "year")
     ),
     geometry=study_area,
     title="LCMS Land Cover (1985-2024)",
-    stacked=True,
+    chart_types=["stacked_line+markers"],
     scale=60,
     thumb_format="gif",
     thumb_dimensions=400,
@@ -77,13 +77,13 @@ report.addSection(
 )
 
 # Section 2: LCMS Land Cover Sankey - transitions at 1985, 2000, 2024
-report.addSection(
+report.add_section(
     ee_obj=lcms.select(["Land_Cover"]).filter(
         ee.Filter.calendarRange(startYear, endYear, "year")
     ),
     geometry=study_area,
     title="LCMS Land Cover Transitions",
-    sankey=True,
+    chart_types=["sankey"],
     transition_periods=[1985, 2000, 2024],
     sankey_band_name="Land_Cover",
     scale=60,
@@ -91,13 +91,13 @@ report.addSection(
 )
 
 # Section 3: NLCD Land Cover - annual stacked chart + GIF
-report.addSection(
+report.add_section(
     ee_obj=nlcd_lc.filter(
         ee.Filter.calendarRange(startYear, endYear, "year")
     ),
     geometry=study_area,
     title="NLCD Land Cover (1985-2024)",
-    stacked=True,
+    chart_types=["stacked_line+markers"],
     scale=30,
     thumb_format="gif",
     thumb_dimensions=400,
@@ -105,13 +105,13 @@ report.addSection(
 )
 
 # Section 4: NLCD Land Cover Sankey - transitions at 1985, 2000, 2024
-report.addSection(
+report.add_section(
     ee_obj=nlcd_lc.filter(
         ee.Filter.calendarRange(startYear, endYear, "year")
     ),
     geometry=study_area,
     title="NLCD Land Cover Transitions",
-    sankey=True,
+    chart_types=["sankey"],
     transition_periods=[1985, 2000, 2024],
     sankey_band_name="LC",
     scale=30,
@@ -123,7 +123,7 @@ print(f"Sections: {len(report._sections)}")
 for i, sec in enumerate(report._sections):
     print(
         f"  {i + 1}. {sec.title} "
-        f"(table={sec.generateTable}, chart={sec.generateChart}, "
+        f"(table={sec.generate_table}, chart={sec.generate_chart}, "
         f"thumb_format={sec.thumb_format})"
     )
 

@@ -332,6 +332,19 @@ def _apply_projection_to_collection(ee_col, crs=None, transform=None, scale=None
 
 # ---------------------------------------------------------------------------
 #  Basemap compositing helpers
+def _hex_fill_to_rgba(hex_str):
+    """Convert a hex fill color string (RRGGBB or RRGGBBAA) to an RGBA tuple."""
+    if not hex_str or len(hex_str) < 6:
+        return None
+    hex_str = hex_str.lstrip("#")
+    try:
+        r, g, b = int(hex_str[0:2], 16), int(hex_str[2:4], 16), int(hex_str[4:6], 16)
+        a = int(hex_str[6:8], 16) if len(hex_str) >= 8 else 255
+        return (r, g, b, a)
+    except (ValueError, IndexError):
+        return None
+
+
 # ---------------------------------------------------------------------------
 def _get_bounds_4326(geom):
     """Extract ``(xmin, ymin, xmax, ymax)`` from an ``ee.Geometry``.
@@ -340,7 +353,7 @@ def _get_bounds_4326(geom):
         tuple or None: Bounds in EPSG:4326, or None on failure.
     """
     try:
-        coords = geom.bounds().getInfo()["coordinates"][0]
+        coords = geom.bounds(10,"EPSG:4326").coordinates().get(0).getInfo()
         lons = [c[0] for c in coords]
         lats = [c[1] for c in coords]
         return (min(lons), min(lats), max(lons), max(lats))
@@ -351,34 +364,56 @@ def _get_bounds_4326(geom):
 _THUMB_PADDING = 8  # pixel border around thumbnails showing basemap
 
 
+def _expand_bounds_for_padding(bounds_4326, dimensions, pad=_THUMB_PADDING):
+    """Expand geographic bounds by the padding ratio so EE data fills to the basemap edges.
+
+    The basemap is fetched at ``dimensions + 2*pad`` pixels for the same
+    geographic extent, creating a border.  This function expands the bounds
+    proportionally so the EE thumbnail request covers the same geographic
+    area as the basemap (including the padding margin).
+
+    Returns:
+        ee.Geometry.Rectangle with expanded bounds, or None if bounds is None.
+    """
+    if bounds_4326 is None:
+        return None
+    xmin, ymin, xmax, ymax = bounds_4326
+    dx = xmax - xmin
+    dy = ymax - ymin
+    # Fraction of the image that is padding on each side
+    frac = pad / dimensions if dimensions > 0 else 0
+    buf_x = dx * frac
+    buf_y = dy * frac
+    return (xmin - buf_x, ymin - buf_y, xmax + buf_x, ymax + buf_y)
+
+
 def _composite_with_basemap(frame, basemap_img, overlay_opacity=1.0):
     """Composite an Earth Engine thumbnail frame over a basemap image.
 
-    The basemap is sized to be ``_THUMB_PADDING`` pixels larger on each
-    side than the EE frame, so the basemap shows as a border around the
-    data.  The returned image is larger than the input frame by
-    ``2 * _THUMB_PADDING`` in each dimension.
+    Both images should cover the same geographic extent (the EE frame
+    was requested with an expanded region matching the basemap).  The
+    basemap is resized to match the frame dimensions and composited
+    underneath.
 
     Args:
-        frame (PIL.Image.Image): RGBA Earth Engine thumbnail frame.
+        frame (PIL.Image.Image): RGBA Earth Engine thumbnail frame
+            (requested at padded dimensions with expanded region).
         basemap_img (PIL.Image.Image): RGBA basemap tile image.
         overlay_opacity (float, optional): Opacity multiplier (0.0–1.0).
 
     Returns:
-        PIL.Image.Image: RGBA composite with basemap border.
+        PIL.Image.Image: RGBA composite.
     """
     from PIL import Image
-    pad = _THUMB_PADDING
     fw, fh = frame.size
-    out_w, out_h = fw + 2 * pad, fh + 2 * pad
 
-    bg = basemap_img.resize((out_w, out_h), Image.LANCZOS).convert("RGBA")
+    bg = basemap_img.resize((fw, fh), Image.LANCZOS).convert("RGBA")
     overlay = frame.convert("RGBA")
     if overlay_opacity < 1.0:
         r, g, b, a = overlay.split()
         a = a.point(lambda x: int(x * max(0.0, min(1.0, overlay_opacity))))
         overlay = Image.merge("RGBA", (r, g, b, a))
-    bg.paste(overlay, (pad, pad), overlay)
+    bg.paste(overlay, (0, 0), overlay)
     return bg
 
 
@@ -445,6 +480,8 @@ def _resolve_geometry_color(geometry_outline_color, font_color, basemap, bounds)
     Priority: explicit color > auto from basemap > font_color.
     """
     if geometry_outline_color is not None:
+        if isinstance(geometry_outline_color, str):
+            return _resolve_color(geometry_outline_color)
         return geometry_outline_color
     if basemap is not None and bounds is not None:
         try:
@@ -482,13 +519,16 @@ def _paint_boundary(ee_obj, geometry, color, viz_params=None, fill_color=None, w
     # Build FeatureCollection for styling (accepts geometry, Feature, or FC)
     if isinstance(geometry, ee.FeatureCollection):
         boundary_fc = geometry
-    elif isinstance(geometry, ee.Feature):
-        boundary_fc = ee.FeatureCollection([geometry])
+    elif isinstance(geometry, (ee.Feature, ee.element.Element)):
+        boundary_fc = ee.FeatureCollection([ee.Feature(geometry)])
     else:
         boundary_fc = ee.FeatureCollection([ee.Feature(geom)])
 
-    # Convert colour tuple to hex string for .style()
-    gc = list(color)
+    # Convert colour to hex string for .style()
+    if isinstance(color, str):
+        gc = list(_resolve_color(color))
+    else:
+        gc = list(color)
     hex_color = "{:02x}{:02x}{:02x}".format(int(gc[0]), int(gc[1]), int(gc[2]))
 
     # Render styled boundary and set projection so it aligns with the data CRS
@@ -528,8 +568,9 @@ def _assemble_with_cartography(frame, bounds_4326, bg_color="black",
                                 north_arrow_style="solid",
                                 inset_map=True, inset_basemap=None, inset_scale=0.3,
                                 inset_on_map=True,
+                                inset_rect_color=None, inset_rect_fill_color=None,
                                 legend_panel=None, inset_below_legend=True,
-                                margin=_DEFAULT_MARGIN):
+                                margin=_DEFAULT_MARGIN, crs=None):
     """Assemble a map frame with cartographic elements into a final image.
 
     Combines the raw EE thumbnail frame with optional cartographic
@@ -609,9 +650,16 @@ def _assemble_with_cartography(frame, bounds_4326, bg_color="black",
         # --- Build inset image ---
         inset_img = None
         if inset_map and bounds_4326 is not None:
+            # Compute final display size so we fetch at that resolution
+            _inset_display_h = int(frame.size[1] * inset_scale)
+            _inset_kw = {}
+            if inset_rect_color is not None:
+                _inset_kw["rect_color"] = inset_rect_color
+            if inset_rect_fill_color is not None:
+                _inset_kw["rect_fill_color"] = inset_rect_fill_color
             inset_img = _build_inset_image(
-                bounds_4326, ref_width=frame.size[0],
-                inset_basemap=inset_basemap,
+                bounds_4326, size=_inset_display_h,
+                inset_basemap=inset_basemap, crs=crs, **_inset_kw,
             )
 
         # --- Draw scalebar + north arrow ON the frame (lower-left) ---
@@ -621,7 +669,7 @@ def _assemble_with_cartography(frame, bounds_4326, bg_color="black",
                 scalebar_units=scalebar_units, north_arrow=north_arrow,
                 north_arrow_style=north_arrow_style,
                 font_color=font_color, contrast=contrast,
-                accent=theme.accent,
+                accent=theme.accent, crs=crs,
             )
 
         # --- Place inset ON the map (lower-right) if requested ---
@@ -993,6 +1041,7 @@ def auto_viz_continuous(
     stretch_type="percentile",
     percentiles=None,
     n_stddev=2,
+    gamma=1.6,
     scale=_DEFAULT_CONTINUOUS_SCALE,
     timeout=_DEFAULT_CONTINUOUS_TIMEOUT,
     max_scale=None,
@@ -1014,9 +1063,15 @@ def auto_viz_continuous(
         stretch_type (str): One of ``"percentile"`` (default),
             ``"min-max"``, or ``"stddev"``.
         percentiles (list[int], optional): ``[lower, upper]`` percentiles
-            for the ``"percentile"`` stretch.  Defaults to ``[5, 95]``.
+            for the ``"percentile"`` stretch.  Defaults to ``[0, 95]``.
         n_stddev (float): Number of standard deviations for the
             ``"stddev"`` stretch (symmetric around the mean).  Default 2.
+        gamma (float, optional): Gamma correction applied to the
+            output viz params.  Values > 1 brighten midtones (lifts
+            dark pixels without blowing out highlights); values < 1
+            darken midtones.  ``1.0`` means no correction.  Included
+            in the returned dict as ``"gamma"`` when not ``1.0``.
+            Defaults to ``1.6``.
         scale (int): Starting spatial resolution in meters for
             ``reduceRegion``.  Default 300.
         timeout (int): ``getInfo`` timeout in seconds per attempt.
@@ -1026,8 +1081,8 @@ def auto_viz_continuous(
 
     Returns:
         dict: Visualization parameters with ``bands``, ``min``, ``max``
-        keys.  ``min`` / ``max`` are scalars for single-band images and
-        lists for 3-band images.
+        keys, and ``gamma`` when gamma is not 1.0.  ``min`` / ``max``
+        are scalars for single-band images and lists for 3-band images.
 
     Raises:
         TypeError: If *image* is an ``ee.ImageCollection``.
@@ -1037,11 +1092,13 @@ def auto_viz_continuous(
     Example:
         >>> viz = auto_viz_continuous(
         ...     s2_composite, study_area,
-        ...     band_names=["swir1", "nir", "red"],
-        ...     stretch_type="percentile", percentiles=[2, 98],
+        ...     band_names=["swir2", "nir", "red"],
+        ...     stretch_type="percentile", percentiles=[0, 99],
         ... )
         >>> sorted(viz.keys())
-        ['bands', 'max', 'min']
+        ['bands', 'gamma', 'max', 'min']
+        >>> viz["gamma"]
+        1.6
     """
     if isinstance(image, ee.ImageCollection):
         image = ee.Image(image.mosaic())
@@ -1050,7 +1107,7 @@ def auto_viz_continuous(
         max_scale = scale * 16
 
     if percentiles is None:
-        percentiles = [5, 95]
+        percentiles = [0, 95]
 
     if stretch_type not in ("percentile", "min-max", "stddev"):
         raise ValueError(
@@ -1157,7 +1214,10 @@ def auto_viz_continuous(
             "palette": _get_palette_for_band(used_bands[0]),
         }
 
-    return {"bands": used_bands, "min": min_vals, "max": max_vals}
+    viz = {"bands": used_bands, "min": min_vals, "max": max_vals}
+    if gamma is not None and gamma != 1.0:
+        viz["gamma"] = gamma
+    return viz
 
 
 def auto_viz(
@@ -1167,6 +1227,7 @@ def auto_viz(
     stretch_type="percentile",
     percentiles=None,
     n_stddev=2,
+    gamma=1.6,
     scale=_DEFAULT_CONTINUOUS_SCALE,
     timeout=_DEFAULT_CONTINUOUS_TIMEOUT,
 ):
@@ -1195,12 +1256,19 @@ def auto_viz(
         percentiles (list[int], optional): ``[lower, upper]`` for
             percentile stretch.  Default ``[5, 95]``.
         n_stddev (float): Standard deviations for ``"stddev"`` stretch.
+        gamma (float, optional): Gamma correction for continuous data.
+            Values > 1 brighten midtones; < 1 darken.  Included in the
+            returned dict as ``"gamma"`` when not ``1.0``.  Ignored for
+            thematic data.  Defaults to ``1.6``.
         scale (int): Starting scale (m) for ``reduceRegion``.
         timeout (int): Timeout (s) per ``reduceRegion`` attempt.
 
     Returns:
         dict: Visualization parameters suitable for
-        ``ee.Image.getThumbURL()``.
+        ``ee.Image.getThumbURL()``.  For continuous data includes
+        ``bands``, ``min``, ``max``, and ``gamma`` (when not 1.0).
+        For thematic data includes ``bands``, ``min``, ``max``, and
+        ``palette``.
 
     Example:
         >>> viz = auto_viz(lcms.select(["Land_Cover"]))
@@ -1209,13 +1277,16 @@ def auto_viz(
 
         >>> viz = auto_viz(s2_composite, geometry=study_area,
         ...                stretch_type="percentile", percentiles=[2, 98])
+        >>> viz["gamma"]
+        1.6
     """
     info = cl.get_obj_info(ee_obj, band_names=[band_name] if band_name else None)
     band_names_list = info["band_names"]
 
-    # Detect pre-visualized RGB images (vis-red/vis-green/vis-blue or similar)
-    _VIS_RGB_NAMES = {"vis-red", "vis-green", "vis-blue", "vis_red", "vis_green", "vis_blue",
-                      "red", "green", "blue"}
+    # Detect pre-visualized RGB images (vis-red/vis-green/vis-blue only)
+    # Do NOT match raw sensor band names like "red", "green", "blue" —
+    # those are reflectance values that need a computed stretch.
+    _VIS_RGB_NAMES = {"vis-red", "vis-green", "vis-blue", "vis_red", "vis_green", "vis_blue"}
     if len(band_names_list) == 3 and all(
         b.lower() in _VIS_RGB_NAMES for b in band_names_list
     ):
@@ -1248,6 +1319,7 @@ def auto_viz(
             stretch_type=stretch_type,
             percentiles=percentiles,
             n_stddev=n_stddev,
+            gamma=gamma,
             scale=scale,
             timeout=timeout,
         )
@@ -1263,7 +1335,7 @@ def auto_viz(
 
 def _complete_viz_params(viz_params, ee_obj, band_name=None, geometry=None,
                          stretch_type="percentile", percentiles=None,
-                         n_stddev=2, scale=_DEFAULT_CONTINUOUS_SCALE,
+                         n_stddev=2, gamma=1.6, scale=_DEFAULT_CONTINUOUS_SCALE,
                          timeout=_DEFAULT_CONTINUOUS_TIMEOUT):
     """Fill in missing ``min`` / ``max`` in partial viz_params via auto_viz.
 
@@ -1275,7 +1347,7 @@ def _complete_viz_params(viz_params, ee_obj, band_name=None, geometry=None,
     if viz_params is None:
         return auto_viz(ee_obj, band_name=band_name, geometry=geometry,
                         stretch_type=stretch_type, percentiles=percentiles,
-                        n_stddev=n_stddev, scale=scale, timeout=timeout)
+                        n_stddev=n_stddev, gamma=gamma, scale=scale, timeout=timeout)
 
     has_min = viz_params.get("min") is not None
     has_max = viz_params.get("max") is not None
@@ -1286,7 +1358,7 @@ def _complete_viz_params(viz_params, ee_obj, band_name=None, geometry=None,
     # Partial — compute auto stretch then overlay user's keys
     auto = auto_viz(ee_obj, band_name=band_name, geometry=geometry,
                     stretch_type=stretch_type, percentiles=percentiles,
-                    n_stddev=n_stddev, scale=scale, timeout=timeout)
+                    n_stddev=n_stddev, gamma=gamma, scale=scale, timeout=timeout)
     merged = {**auto, **{k: v for k, v in viz_params.items() if v is not None}}
     return merged
 
@@ -1396,7 +1468,7 @@ def get_animation_url(ee_obj, geometry=None, viz_params=None,
         viz_params (dict, optional): Must include ``bands`` (3 for RGB, or
             1 + ``palette``).  Auto-detected if not provided.
         dimensions (int): Width in pixels.
-        fps (int): Frames per second.  Default 3.
+        fps (int): Frames per second.  Default 2.
         band_name (str, optional): Band to visualize (for auto_viz).
         max_frames (int): Maximum frames to include.  Default 40.
         crs (str, optional): CRS code (e.g. ``"EPSG:4326"``).
@@ -1704,7 +1776,7 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
     )
 
     # Composite basemap (adds padding border) or add blank padding
-    has_carto = (basemap is not None or inset_basemap is not None) and bounds is not None
+    _has_inset_source = (basemap is not None or inset_basemap is not None)
     final_frames = []
     for i, frame in enumerate(pil_frames):
         if basemap_img is not None:
@@ -1714,20 +1786,26 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
         if burn_in_date and i < len(date_labels) and date_labels[i]:
             _burn_in_text(frame, date_labels[i], date_position,
                           font_color, font_outline_color, font)
+        # Resolve geometry colors for inset extent rectangle
+        _gif_gc = gc if burn_in_geometry else (
+            _resolve_geometry_color(geometry_outline_color, font_color, basemap, bounds)
+            if geometry_outline_color else None)
         # Assemble with legend, inset, scalebar, north arrow, title
         frame, has_bottom = _assemble_with_cartography(
-            frame, bounds if has_carto else None,
+            frame, bounds,
             bg_color=bg_color, font_color=font_color,
             font_outline_color=font_outline_color,
             title=title,
-            scalebar=scalebar if has_carto else False,
+            scalebar=scalebar if bounds is not None else False,
             scalebar_units=scalebar_units,
-            north_arrow=north_arrow if has_carto else False,
+            north_arrow=north_arrow if bounds is not None else False,
             north_arrow_style=north_arrow_style,
-            inset_map=inset_map if has_carto else False,
+            inset_map=inset_map if (_has_inset_source and bounds is not None) else False,
             inset_basemap=inset_basemap if inset_basemap else basemap,
             inset_scale=inset_scale, inset_on_map=inset_on_map,
-            legend_panel=legend_panel, margin=margin,
+            inset_rect_color=_gif_gc if _gif_gc is not None else None,
+            inset_rect_fill_color=_hex_fill_to_rgba(geometry_fill_color) if geometry_fill_color else None,
+            legend_panel=legend_panel, margin=margin, crs=crs,
         )
         mt = 0 if title else margin
         mb = margin // 3 if has_bottom else margin
@@ -1950,15 +2028,26 @@ def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
             crs=crs,
         )
 
+    # Resolve geometry colors for inset extent rectangle
+    _fs_inset_gc = gc if burn_in_geometry else (
+        _resolve_geometry_color(geometry_outline_color, font_color, basemap, bounds)
+        if geometry_outline_color else None)
+    _fs_inset_fill = _hex_fill_to_rgba(geometry_fill_color) if geometry_fill_color else None
+
     # Draw inset on the last frame (lower-right) only when inset_on_map
     if inset_map and inset_on_map and bounds is not None and len(pil_frames) > 0:
         _ib = inset_basemap if inset_basemap else basemap
         if _ib is not None:
             last_frame = pil_frames[-1]
             _fw, _fh = last_frame.size
-            inset_img = _build_inset_image(bounds, ref_width=_fw, inset_basemap=_ib)
+            target_h = int(_fh * inset_scale)
+            _fs_inset_kw = {}
+            if _fs_inset_gc is not None:
+                _fs_inset_kw["rect_color"] = _fs_inset_gc
+            if _fs_inset_fill is not None:
+                _fs_inset_kw["rect_fill_color"] = _fs_inset_fill
+            inset_img = _build_inset_image(bounds, size=target_h, inset_basemap=_ib, **_fs_inset_kw)
             if inset_img is not None:
-                target_h = int(_fh * inset_scale)
                 src_w, src_h = inset_img.size
                 aspect = src_w / src_h if src_h > 0 else 1.0
                 iw = int(target_h * aspect)
@@ -2015,9 +2104,14 @@ def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
     if inset_map and not inset_on_map and bounds is not None:
         _ib = inset_basemap if inset_basemap else basemap
         if _ib is not None:
-            inset_img = _build_inset_image(bounds, ref_width=fw, inset_basemap=_ib)
+            target_h = int(fh * 0.8)
+            _fs_inset_kw2 = {}
+            if _fs_inset_gc is not None:
+                _fs_inset_kw2["rect_color"] = _fs_inset_gc
+            if _fs_inset_fill is not None:
+                _fs_inset_kw2["rect_fill_color"] = _fs_inset_fill
+            inset_img = _build_inset_image(bounds, size=target_h, inset_basemap=_ib, **_fs_inset_kw2)
             if inset_img is not None:
-                target_h = int(fh * 0.8)
                 src_w, src_h = inset_img.size
                 aspect = src_w / src_h if src_h > 0 else 1.0
                 iw = int(target_h * aspect)
@@ -2030,9 +2124,15 @@ def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
 
     # Width: grid + legend/inset column (if present)
     legend_col_w = legend_panel_img.size[0] if legend_panel_img is not None else 0
-    if inset_panel is not None:
-        legend_col_w = max(legend_col_w, inset_panel.size[0])
-    total_w = grid_w + legend_col_w
+    inset_col_w = 0
+    if inset_panel is not None and n_rows == 1:
+        # Single row: inset goes beside legend
+        aspect = inset_panel.size[0] / inset_panel.size[1] if inset_panel.size[1] > 0 else 1.0
+        inset_col_w = int(fh * aspect) + 8
+    elif inset_panel is not None and n_rows > 1:
+        # Multi-row: inset goes in same column, take the wider
+        legend_col_w = max(legend_col_w, inset_panel.size[0] + 8)
+    total_w = grid_w + legend_col_w + inset_col_w
 
     # Build per-row images (allows page breaks in PDF between rows)
     row_images = []
@@ -2064,23 +2164,31 @@ def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
             lp_rgba = legend_panel_img.convert("RGBA")
             row_img.paste(lp_rgba, (grid_w, label_h), lp_rgba)
 
-        # Inset in right column: on row 1 if multi-row, else below legend on row 0
-        _inset_row = 1 if n_rows > 1 else 0
-        if row_i == _inset_row and inset_panel is not None:
+        # Inset in right column
+        if row_i == 0 and inset_panel is not None and n_rows == 1:
+            # Single row: place inset right of legend (extend right column)
             inset_pad_left = max(4, margin // 4)
-            if row_i == 0 and legend_panel_img is not None:
-                inset_y = label_h + legend_panel_img.size[1]
-            else:
-                inset_y = label_h
-            # Constrain inset to available space in the row
-            avail_h = cur_h - inset_y - 2
+            lp_w = legend_panel_img.size[0] if legend_panel_img is not None else 0
+            ip_x = grid_w + lp_w + inset_pad_left
+            # Scale inset to fit frame height
+            ip = inset_panel
+            target_h = fh
+            aspect = ip.size[0] / ip.size[1] if ip.size[1] > 0 else 1.0
+            iw = int(target_h * aspect)
+            ip = ip.resize((iw, target_h), Image.LANCZOS)
+            ip_rgba = ip.convert("RGBA")
+            row_img.paste(ip_rgba, (ip_x, label_h), ip_rgba)
+        elif row_i == 1 and inset_panel is not None and n_rows > 1:
+            # Multi-row: place inset at row 1, aligned with frames
+            inset_pad_left = max(4, margin // 4)
+            avail_h = cur_h - label_h - 2
             ip = inset_panel
             if ip.size[1] > avail_h and avail_h > 20:
                 aspect = ip.size[0] / ip.size[1]
                 ip = ip.resize((int(avail_h * aspect), avail_h), Image.LANCZOS)
             if avail_h > 20:
                 ip_rgba = ip.convert("RGBA")
-                row_img.paste(ip_rgba, (grid_w + inset_pad_left, inset_y), ip_rgba)
+                row_img.paste(ip_rgba, (grid_w + inset_pad_left, label_h), ip_rgba)
 
         # Horizontal divider between rows (with padding gap)
         if not is_last:
@@ -2266,11 +2374,18 @@ def _extract_legend_info(ee_obj, band_name=None, viz_params=None):
                     vmin = vmin[0]
                 if isinstance(vmax, (list, tuple)):
                     vmax = vmax[0]
+                # Normalise palette to a list of color strings
+                if isinstance(palette, str):
+                    pal_list = [c.strip() for c in palette.split(",")]
+                elif isinstance(palette, (list, tuple)):
+                    pal_list = list(palette)
+                else:
+                    pal_list = [str(palette)]
                 return {
                     "type": "continuous",
                     "min": vmin,
                     "max": vmax,
-                    "palette": list(palette) if not isinstance(palette, list) else palette,
+                    "palette": pal_list,
                     "band_name": bn,
                 }
 
@@ -2278,11 +2393,20 @@ def _extract_legend_info(ee_obj, band_name=None, viz_params=None):
 
 
 def _hex_to_rgb(hex_color):
-    """Convert a hex color string (with or without #) to an (R, G, B) tuple."""
-    h = hex_color.lstrip("#")
+    """Convert a hex or named color string to an (R, G, B) tuple."""
+    h = hex_color.strip().lstrip("#")
     if len(h) == 3:
         h = h[0] * 2 + h[1] * 2 + h[2] * 2
-    return tuple(int(h[i : i + 2], 16) for i in (0, 2, 4))
+    if len(h) == 6:
+        try:
+            return tuple(int(h[i : i + 2], 16) for i in (0, 2, 4))
+        except ValueError:
+            pass
+    # Fall back to _resolve_color for named colors
+    try:
+        return _resolve_color(hex_color)
+    except Exception:
+        return (128, 128, 128)
 
 
 def _build_legend_panel(class_names, class_palette, target_height,
@@ -2549,12 +2673,18 @@ def _build_legend_panel_from_info(legend_info, target_height,
         geom_row_h = int(_DEFAULT_LABEL_FONT_SIZE * 2)
 
         outline_rgb = _hex_to_rgb(geom_swatch["outline_hex"])
-        # Parse fill: may be None, or hex like "33333366" (with alpha)
+        # Parse fill: may be None, or hex like "FFFFFF33" (RRGGBBAA with alpha)
         fill_hex = geom_swatch.get("fill_hex")
+        bg_rgb = _resolve_color(bg_color)
         if fill_hex and len(fill_hex) >= 6:
             fill_rgb = _hex_to_rgb(fill_hex[:6])
+            # Extract alpha if present (last 2 hex chars), default fully opaque
+            fill_alpha = int(fill_hex[6:8], 16) if len(fill_hex) >= 8 else 255
+            # Alpha-blend fill over background for the swatch preview
+            a = fill_alpha / 255.0
+            fill_blended = tuple(int(f * a + b * (1 - a)) for f, b in zip(fill_rgb, bg_rgb))
         else:
-            fill_rgb = _resolve_color(bg_color)  # match panel bg
+            fill_blended = bg_rgb  # match panel bg
 
         # Measure label width
         tmp_d = _PILDraw.Draw(_PILImage.new("RGB", (1, 1)))
@@ -2562,21 +2692,17 @@ def _build_legend_panel_from_info(legend_info, target_height,
         label_w = lbb[2] - lbb[0]
         row_w = pad_left + swatch_sz + gap + label_w + pad_left
 
-        geom_row = _PILImage.new("RGB", (row_w, geom_row_h), _resolve_color(bg_color))
+        geom_row = _PILImage.new("RGB", (row_w, geom_row_h), bg_rgb)
         rd = _PILDraw.Draw(geom_row)
         cy = geom_row_h // 2
-        # Draw swatch: fill color inside, outline color as thick border
+        # Draw swatch: alpha-blended fill inside, outline border
         sx, sy = pad_left, cy - swatch_sz // 2
         rd.rectangle(
             [(sx, sy), (sx + swatch_sz - 1, sy + swatch_sz - 1)],
-            fill=fill_rgb,
+            fill=fill_blended,
+            outline=outline_rgb,
+            width=2,
         )
-        # Thick outline (2px inset border)
-        for d in range(min(3, swatch_sz // 3)):
-            rd.rectangle(
-                [(sx + d, sy + d), (sx + swatch_sz - 1 - d, sy + swatch_sz - 1 - d)],
-                outline=outline_rgb,
-            )
         tbb = rd.textbbox((0, 0), geom_swatch["label"], font=font)
         ty = cy - (tbb[1] + tbb[3]) // 2
         rd.text((pad_left + swatch_sz + gap, ty), geom_swatch["label"],
@@ -2830,6 +2956,395 @@ def _burn_in_text(frame, text, position, color, outline_color, font):
     draw.text((x, y), text, font=font, fill=color)
 
 
+def generate_map_chart(
+    ee_obj,
+    geometry,
+    viz_params=None,
+    band_name=None,
+    dimensions=_DEFAULT_DIMENSIONS,
+    bg_color=None,
+    font_color=None,
+    font_outline_color=None,
+    output_path=None,
+    crs=_DEFAULT_CRS,
+    transform=None,
+    scale=None,
+    margin=_DEFAULT_MARGIN,
+    basemap=None,
+    overlay_opacity=None,
+    scalebar=True,
+    scalebar_units="metric",
+    north_arrow=True,
+    north_arrow_style="solid",
+    inset_map=True,
+    inset_basemap=None,
+    inset_scale=0.25,
+    title=None,
+    # Chart params
+    chart_type=None,
+    chart_scale=30,
+    area_format="Percentage",
+    chart_height=None,
+    legend_position="right",
+    include_masked_area=True,
+    burn_in_geometry=True,
+    burn_in_legend=True,
+    title_font_size=_DEFAULT_TITLE_FONT_SIZE,
+    label_font_size=_DEFAULT_LABEL_FONT_SIZE,
+    geometry_outline_color=None,
+    geometry_fill_color=None,
+    geometry_outline_weight=2,
+    clip_to_geometry=True,
+    # Multi-feature params
+    feature_label=None,
+    columns=2,
+    thumb_width=None,
+    # Scatter params
+    band_names=None,
+    thematic_band_name=None,
+    opacity=0.7,
+    # Layout
+    layout="side-by-side",
+):
+    """Generate a combined map + chart output.
+
+    For ``ee.Image`` inputs, produces a static PNG with a map thumbnail
+    beside (or above) a chart.  For ``ee.ImageCollection`` inputs,
+    automatically delegates to :func:`generate_map_chart_gif` and
+    returns an animated GIF with cumulative time-series charts.
+
+    The title appears once on the combined output — the chart itself
+    has no title.  For thematic data the legend appears on the map
+    thumbnail only (not duplicated on the chart).
+
+    Supports:
+
+    - **ee.Image + single geometry** (``ee.Geometry`` / ``ee.Feature``)
+      with thematic data -> map + bar or donut chart
+    - **ee.Image + single geometry** with continuous data -> map +
+      horizontal bar chart of band means
+    - **ee.Image + multi-feature** ``ee.FeatureCollection`` with
+      thematic data -> per-feature map grid + grouped/stacked bar or
+      per-feature donut chart
+    - **ee.Image + multi-feature FC** with ``chart_type="scatter"``
+      -> map of bounding region with sample points burned in +
+      scatter plot (optionally coloured by *thematic_band_name*)
+    - **ee.ImageCollection + any geometry** -> delegates to
+      :func:`generate_map_chart_gif`, returning ``gif_bytes``
+
+    Args:
+        ee_obj: ``ee.Image`` or ``ee.ImageCollection``.
+        geometry: ``ee.Geometry``, ``ee.Feature``, or
+            ``ee.FeatureCollection``.
+        viz_params (dict, optional): Visualization parameters for the
+            map thumbnail.  Auto-detected via :func:`auto_viz` when
+            ``None``.
+        band_name (str, optional): Band to visualize on the map.
+        dimensions (int, optional): Map thumbnail width in pixels.
+            Defaults to ``640``.
+        bg_color (str, optional): Background colour.  Dark theme when
+            ``None``.
+        font_color (str or tuple, optional): Font colour override.
+        font_outline_color (str or tuple, optional): Font outline.
+        output_path (str, optional): Save output to this path.
+        crs (str, optional): Output CRS (e.g. ``"EPSG:5070"``).
+            Defaults to ``"EPSG:3857"``.
+        transform (list, optional): CRS transform.
+        scale (int, optional): Pixel scale in metres.
+        margin (int, optional): Margin around the output in pixels.
+        basemap (str or dict, optional): Basemap preset name
+            (e.g. ``"esri-satellite"``) or config dict.
+        overlay_opacity (float, optional): Opacity of EE data over
+            basemap.  Default ``0.8`` when basemap is set.
+        scalebar (bool, optional): Draw scalebar.  Defaults to ``True``.
+        scalebar_units (str, optional): ``"metric"`` or ``"imperial"``.
+        north_arrow (bool, optional): Draw north arrow.  Defaults to
+            ``True``.
+        north_arrow_style (str, optional): Arrow style.
+        inset_map (bool, optional): Show inset overview map.
+        inset_basemap: Basemap for inset.
+        inset_scale (float, optional): Inset size as fraction of frame.
+        title (str, optional): Title displayed once above the combined
+            map + chart output.
+        chart_type (str, optional): ``"bar"`` (default for Image),
+            ``"stacked_bar"``, ``"donut"``, ``"scatter"``, or any
+            time-series type (``"line+markers"``, etc.).  ``None``
+            auto-detects: ``"bar"`` for Image, ``"line+markers"``
+            for ImageCollection.
+        chart_scale (int, optional): Scale in metres for zonal stats
+            ``reduceRegion``.  Defaults to ``30``.
+        area_format (str, optional): ``"Percentage"`` (default),
+            ``"Hectares"``, ``"Acres"``, or ``"Pixels"``.
+        chart_height (int, optional): Chart height in pixels.  Defaults
+            to map height for side-by-side, map width for stacked.
+        legend_position (str or dict, optional): Chart legend position.
+            Suppressed automatically for thematic data when
+            ``burn_in_legend=True`` (legend on thumb only).
+        include_masked_area (bool, optional): Include masked pixels in
+            area totals.  Defaults to ``True``.
+        burn_in_geometry (bool, optional): Paint geometry boundary on
+            map frames.  Defaults to ``True``.
+        burn_in_legend (bool, optional): Add legend panel to the map
+            thumbnail.  Defaults to ``True``.
+        title_font_size (int, optional): Title font size.  Default 18.
+        label_font_size (int, optional): Label font size.  Default 12.
+        geometry_outline_color (str, optional): Boundary colour.
+        geometry_fill_color (str, optional): Boundary fill (hex+alpha).
+        geometry_outline_weight (int, optional): Boundary width.
+        clip_to_geometry (bool, optional): Mask data outside boundary.
+        feature_label (str, optional): FC property name for per-feature
+            labels (multi-feature mode).
+        columns (int, optional): Columns for multi-feature grid or
+            multi-feature donut subplot layout.  Defaults to ``2``.
+        thumb_width (int, optional): Per-feature thumbnail width.
+        band_names (list[str], optional): Bands for scatter x/y axes.
+            Uses first two image bands when ``None``.
+        thematic_band_name (str, optional): Thematic band name for
+            colouring scatter points by class.  The image must carry
+            ``{band}_class_values/names/palette`` properties.
+        opacity (float, optional): Point opacity for scatter charts.
+            Defaults to ``0.7``.
+        layout (str, optional): ``"side-by-side"`` (default) places the
+            chart to the right of the map.  ``"stacked"`` places the
+            chart below the map.
+
+    Returns:
+        dict: For ``ee.Image`` inputs:
+            ``{"html": str, "thumb_bytes": bytes, "df": DataFrame,
+            "fig": Figure}``.
+            For ``ee.ImageCollection`` inputs (delegated to GIF):
+            ``{"html": str, "gif_bytes": bytes}``.
+    """
+    from PIL import Image, ImageDraw
+
+    _validate_projection_params(crs, transform, scale)
+
+    # --- Auto-detect ImageCollection and delegate to GIF version ---
+    _is_ic = False
+    try:
+        _is_ic = isinstance(ee_obj, ee.ImageCollection) or (
+            hasattr(ee_obj, "getInfo") and ee.ImageCollection(ee_obj).size().getInfo() > 0
+            and not isinstance(ee_obj, ee.Image)
+        )
+    except Exception:
+        pass
+    # If user explicitly wraps as IC, detect it
+    if not _is_ic:
+        try:
+            obj_info_check = cl.get_obj_info(ee_obj)
+            _is_ic = obj_info_check["obj_type"] == "ImageCollection"
+        except Exception:
+            pass
+
+    if _is_ic:
+        return generate_map_chart_gif(
+            ee_obj, geometry,
+            viz_params=viz_params, band_name=band_name,
+            dimensions=dimensions, bg_color=bg_color,
+            font_color=font_color, font_outline_color=font_outline_color,
+            output_path=output_path,
+            crs=crs, transform=transform, scale=scale,
+            margin=margin, basemap=basemap, overlay_opacity=overlay_opacity,
+            scalebar=scalebar, scalebar_units=scalebar_units,
+            north_arrow=north_arrow, north_arrow_style=north_arrow_style,
+            inset_map=inset_map, inset_basemap=inset_basemap,
+            inset_scale=inset_scale, title=title,
+            chart_type=chart_type or "line+markers",
+            chart_scale=chart_scale, area_format=area_format,
+            chart_height=chart_height, legend_position=legend_position,
+            include_masked_area=include_masked_area,
+            burn_in_geometry=burn_in_geometry,
+            title_font_size=title_font_size, label_font_size=label_font_size,
+            geometry_outline_color=geometry_outline_color,
+            geometry_fill_color=geometry_fill_color,
+            geometry_outline_weight=geometry_outline_weight,
+            clip_to_geometry=clip_to_geometry,
+        )
+
+    # Detect if multi-feature
+    is_multi = _is_multi_feature(geometry)
+    _is_scatter = str(chart_type).lower().strip() == "scatter" if chart_type else False
+
+    # --- Detect thematic to avoid duplicate legends ---
+    _is_thematic = False
+    try:
+        _obj_info = cl.get_obj_info(ee_obj)
+        _is_thematic = _obj_info.get("is_thematic", False)
+    except Exception:
+        pass
+
+    # --- Generate the map thumbnail ---
+    # For thematic data, legend goes on the thumb only (not duplicated on chart)
+    thumb_kwargs = dict(
+        viz_params=viz_params, band_name=band_name,
+        dimensions=dimensions, bg_color=bg_color,
+        font_color=font_color, font_outline_color=font_outline_color,
+        crs=crs, transform=transform, scale=scale,
+        margin=0, basemap=basemap, overlay_opacity=overlay_opacity,
+        scalebar=scalebar, scalebar_units=scalebar_units,
+        north_arrow=north_arrow, north_arrow_style=north_arrow_style,
+        inset_map=inset_map, inset_basemap=inset_basemap,
+        inset_scale=inset_scale,
+        burn_in_geometry=burn_in_geometry,
+        geometry_outline_color=geometry_outline_color,
+        geometry_fill_color=geometry_fill_color,
+        geometry_outline_weight=geometry_outline_weight,
+        clip_to_geometry=clip_to_geometry,
+        title_font_size=title_font_size,
+        label_font_size=label_font_size,
+        burn_in_legend=burn_in_legend,
+    )
+
+    if is_multi and not _is_scatter:
+        thumb_kwargs["feature_label"] = feature_label
+        thumb_kwargs["columns"] = columns
+        if thumb_width:
+            thumb_kwargs["thumb_width"] = thumb_width
+
+    # For scatter: use FC bounds for the map, burn in points as geometry
+    _map_geometry = geometry
+    if _is_scatter and is_multi:
+        _map_geometry = ee.FeatureCollection(geometry).geometry().bounds()
+        # Burn in the sample points on the map
+        thumb_kwargs["burn_in_geometry"] = True
+        thumb_kwargs["clip_to_geometry"] = False
+        # Use the FC itself as the geometry overlay (shows point dots)
+        _map_ee_obj = ee_obj
+        # Paint points onto the image before thumbnailing
+        _fc_geom = ee.FeatureCollection(geometry)
+        _bounds = _get_bounds_4326(_map_geometry)
+        _gc = _resolve_geometry_color(
+            geometry_outline_color,
+            _resolve_font_colors(bg_color, font_color, font_outline_color)[0],
+            basemap, _bounds,
+        )
+        _img = _to_image(ee_obj)
+        _img = _apply_projection(_img, crs, transform, scale)
+        _vp = _complete_viz_params(viz_params, _img, band_name=band_name, geometry=_map_geometry)
+        _img = _paint_boundary(_img, _fc_geom, _gc, viz_params=_vp,
+                               fill_color=geometry_fill_color,
+                               width=max(1, geometry_outline_weight), crs=crs)
+        # Pass pre-visualized image, skip further viz
+        thumb_kwargs["viz_params"] = {"min": 0, "max": 255}
+        thumb_kwargs["burn_in_geometry"] = False  # already painted
+        thumb_result = generate_thumbs(_img, _map_geometry, **thumb_kwargs)
+    else:
+        thumb_result = generate_thumbs(ee_obj, _map_geometry, **thumb_kwargs)
+
+    map_img = Image.open(io.BytesIO(thumb_result["thumb_bytes"])).convert("RGBA")
+
+    # --- Generate the chart ---
+    chart_kwargs = dict(
+        scale=chart_scale,
+        area_format=area_format,
+        include_masked_area=include_masked_area,
+        opacity=opacity,
+    )
+
+    # For thematic data, suppress chart legend since it's on the thumb
+    if _is_thematic and burn_in_legend:
+        chart_kwargs["legend_position"] = {"visible": False}
+    else:
+        chart_kwargs["legend_position"] = legend_position
+
+    # Auto chart_type
+    if chart_type is None:
+        chart_type = "bar"
+
+    chart_kwargs["chart_type"] = chart_type
+
+    if band_names:
+        chart_kwargs["band_names"] = band_names
+    if thematic_band_name:
+        chart_kwargs["thematic_band_name"] = thematic_band_name
+    if feature_label:
+        chart_kwargs["feature_label"] = feature_label
+    chart_kwargs["columns"] = columns
+
+    result = cl.summarize_and_chart(ee_obj, geometry, **chart_kwargs)
+
+    # Unpack (varies by chart type)
+    if isinstance(result, tuple) and len(result) == 3:
+        df, fig, extra = result  # sankey
+    elif isinstance(result, tuple):
+        df, fig = result
+    else:
+        df, fig = result, None
+
+    if fig is None:
+        thumb_bytes = _pil_to_png_bytes(map_img, bg_color)
+        return {"html": "", "thumb_bytes": thumb_bytes, "df": df, "fig": None}
+
+    # Suppress chart legend for thematic (already on thumb)
+    if _is_thematic and burn_in_legend:
+        fig.update_layout(showlegend=False)
+
+    # Remove chart title — the combined output has its own title strip
+    fig.update_layout(title=None)
+
+    # --- Render chart to PNG ---
+    mw, mh = map_img.size
+    if chart_height is None:
+        chart_height = mh  # match map height for side-by-side
+
+    if layout == "side-by-side":
+        chart_width = max(400, int(mw * 0.8))
+    else:
+        chart_width = mw
+
+    chart_png_bytes = fig.to_image(format="png", width=chart_width, height=chart_height)
+    chart_img = Image.open(io.BytesIO(chart_png_bytes)).convert("RGBA")
+
+    # --- Compose map + chart ---
+    font_color_resolved, _, theme, bg_color = _resolve_font_colors(
+        bg_color, font_color, font_outline_color)
+    bg_rgba = _resolve_color(bg_color) + (255,)
+
+    if layout == "side-by-side":
+        gap = max(4, margin // 2)
+        total_w = mw + gap + chart_img.size[0]
+        total_h = max(mh, chart_img.size[1])
+        combined = Image.new("RGBA", (total_w, total_h), bg_rgba)
+        combined.paste(map_img, (0, (total_h - mh) // 2),
+                       map_img if map_img.mode == "RGBA" else None)
+        combined.paste(chart_img, (mw + gap, (total_h - chart_img.size[1]) // 2),
+                       chart_img if chart_img.mode == "RGBA" else None)
+    else:  # stacked
+        gap = max(4, margin // 2)
+        total_w = max(mw, chart_img.size[0])
+        total_h = mh + gap + chart_img.size[1]
+        combined = Image.new("RGBA", (total_w, total_h), bg_rgba)
+        combined.paste(map_img, ((total_w - mw) // 2, 0),
+                       map_img if map_img.mode == "RGBA" else None)
+        combined.paste(chart_img, ((total_w - chart_img.size[0]) // 2, mh + gap),
+                       chart_img if chart_img.mode == "RGBA" else None)
+
+    # Title
+    if title:
+        tfont = _get_font(title_font_size)
+        tmp_d = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+        tb = tmp_d.textbbox((0, 0), title, font=tfont)
+        tw = tb[2] - tb[0]
+        th = tb[3] - tb[1]
+        tpad = max(4, title_font_size // 3)
+        strip_h = tpad + th + tpad
+        with_title = Image.new("RGBA", (combined.size[0], strip_h + combined.size[1]), bg_rgba)
+        td = ImageDraw.Draw(with_title)
+        td.text(((combined.size[0] - tw) // 2, tpad - tb[1]), title,
+                font=tfont, fill=font_color_resolved)
+        with_title.paste(combined, (0, strip_h), combined if combined.mode == "RGBA" else None)
+        combined = with_title
+
+    combined = _add_margin(combined, margin, bg_color=bg_color)
+
+    thumb_bytes = _pil_to_png_bytes(combined, bg_color)
+    if output_path:
+        _write_bytes(output_path, thumb_bytes)
+
+    html = _bytes_to_html_figure(thumb_bytes, "png", css_class="map-chart")
+    return {"html": html, "thumb_bytes": thumb_bytes, "df": df, "fig": fig}
+
+
 def generate_map_chart_gif(
     ee_obj,
     geometry,
@@ -2858,7 +3373,7 @@ def generate_map_chart_gif(
     inset_scale=0.25,
     title=None,
     # Chart params
-    chart_type="stacked_line+markers",
+    chart_type="line+markers",
     chart_scale=30,
     area_format="Percentage",
     chart_height=None,
@@ -2906,7 +3421,7 @@ def generate_map_chart_gif(
         north_arrow_style (str): Arrow style.
         title (str, optional): Title above the map.
         chart_type (str): Chart type for the time series.
-            Default ``"stacked_line+markers"``.
+            Default ``"line+markers"``.
         chart_scale (int): Scale in metres for ``reduceRegion``.
         area_format (str): ``"Percentage"``, ``"Hectares"``, ``"Acres"``.
         chart_height (int, optional): Chart height in pixels.
@@ -3006,15 +3521,26 @@ def generate_map_chart_gif(
                 crs=crs,
             )
 
+    # Resolve geometry colors for inset extent rectangle
+    _mcg_gc = gc if burn_in_geometry else (
+        _resolve_geometry_color(geometry_outline_color, font_color, basemap, bounds)
+        if geometry_outline_color else None)
+    _mcg_fill = _hex_fill_to_rgba(geometry_fill_color) if geometry_fill_color else None
+
     # Inset map on all frames (lower-right corner)
     if inset_map and bounds is not None and pil_frames:
         _ib = inset_basemap if inset_basemap else basemap
         if _ib is not None:
             from PIL import Image as _PILImage
-            inset_img = _build_inset_image(bounds, ref_width=pil_frames[0].size[0], inset_basemap=_ib)
+            _fw, _fh = pil_frames[0].size
+            target_h = int(_fh * inset_scale)
+            _mcg_kw = {}
+            if _mcg_gc is not None:
+                _mcg_kw["rect_color"] = _mcg_gc
+            if _mcg_fill is not None:
+                _mcg_kw["rect_fill_color"] = _mcg_fill
+            inset_img = _build_inset_image(bounds, size=target_h, inset_basemap=_ib, **_mcg_kw)
             if inset_img is not None:
-                _fw, _fh = pil_frames[0].size
-                target_h = int(_fh * inset_scale)
                 src_w, src_h = inset_img.size
                 aspect = src_w / src_h if src_h > 0 else 1.0
                 iw = int(target_h * aspect)
@@ -3342,7 +3868,9 @@ def get_thumb_urls_by_feature(ee_obj, features, viz_params=None,
 def get_thumb_urls_by_feature_parallel(ee_obj, features, viz_params=None,
                                        dimensions=_DEFAULT_DIMENSIONS,
                                        feature_label=None, band_name=None,
-                                       max_features=10, max_workers=6):
+                                       max_features=10, max_workers=6,
+                                       burn_in_params=None,
+                                       clip_to_geometry=True):
     """Generate per-feature thumbnail URLs in parallel using a thread pool.
 
     Like :func:`get_thumb_urls_by_feature`, but uses
@@ -3401,9 +3929,31 @@ def get_thumb_urls_by_feature_parallel(ee_obj, features, viz_params=None,
         feat = ee.Feature(feat_dict)
         geom = feat.geometry()
         label = feat_dict.get("properties", {}).get(feature_label, "unknown")
-        params = {**viz_params, "dimensions": dimensions, "format": "png",
-                  "region": geom}
-        url = img.clip(geom).getThumbURL(params)
+        _img = img
+        _vp = viz_params
+        # Per-feature geometry burn-in: paint only this feature's boundary
+        if burn_in_params is not None:
+            _img = _paint_boundary(
+                _img, geom, burn_in_params["color"],
+                viz_params=burn_in_params["viz_params"],
+                fill_color=burn_in_params.get("fill_color"),
+                width=burn_in_params.get("weight", 2),
+                crs=burn_in_params.get("crs"),
+            )
+            _vp = {"min": 0, "max": 255}
+        _out_img = _img.clip(geom) if clip_to_geometry else _img
+        # Request at padded dimensions with expanded region so EE data
+        # fills to the basemap edges
+        _padded_dims = dimensions + 2 * _THUMB_PADDING
+        _bounds = _get_bounds_4326(geom)
+        if _bounds is not None:
+            _expanded = _expand_bounds_for_padding(_bounds, dimensions)
+            _ee_region = ee.Geometry.Rectangle(_expanded, proj=ee.Projection("EPSG:4326"), evenOdd=False)
+        else:
+            _ee_region = geom if clip_to_geometry else geom.bounds()
+        params = {**_vp, "dimensions": _padded_dims, "format": "png",
+                  "region": _ee_region}
+        url = _out_img.getThumbURL(params)
         return {"label": label, "url": url, "geometry": geom}
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
@@ -3776,20 +4326,34 @@ def generate_thumbs(ee_obj, geometry, viz_params=None, band_name=None,
             legend_info = {"type": "thematic", "class_names": [], "class_palette": [],
                            "geometry_swatch": _geom_swatch}
 
+    is_multi = _is_multi_feature(geometry)
+
     # Burn in geometry boundary (pre-visualizes the image)
-    if burn_in_geometry and geometry is not None and _resolved_gc is not None:
+    # For multi-feature grids, defer to per-feature painting so each frame
+    # only shows its own boundary (not all features at once).
+    if burn_in_geometry and geometry is not None and _resolved_gc is not None and not is_multi:
         _fill = "33333366" if _is_geom_only else None  # 0.4 opacity
         img = _paint_boundary(img, geometry, _resolved_gc, viz_params=viz_params if not _is_geom_only else None, fill_color=_fill or geometry_fill_color, width=geometry_outline_weight, crs=crs)
         # Geometry-only: styled boundary is already visualized, no viz needed
         viz_params = {} if _is_geom_only else {"min": 0, "max": 255}
 
-    is_multi = _is_multi_feature(geometry)
-
     if is_multi:
         fc = ee.FeatureCollection(geometry)
+        # For multi-feature, pass burn-in params so each feature paints only its own boundary
+        _burn_params = None
+        if burn_in_geometry and _resolved_gc is not None:
+            _burn_params = {
+                "color": _resolved_gc,
+                "fill_color": geometry_fill_color,
+                "weight": geometry_outline_weight,
+                "crs": crs,
+                "viz_params": viz_params,
+            }
         results = get_thumb_urls_by_feature_parallel(
             img, fc, viz_params=viz_params, dimensions=dimensions,
             feature_label=feature_label, max_features=max_features,
+            burn_in_params=_burn_params,
+            clip_to_geometry=clip_to_geometry,
         )
         # Download all frames and build a PIL grid
         pil_thumb = _build_thumb_grid_image(
@@ -3804,6 +4368,8 @@ def generate_thumbs(ee_obj, geometry, viz_params=None, band_name=None,
             inset_scale=inset_scale,
             font_color=font_color, title=title,
             title_font_size=title_font_size, label_font_size=label_font_size,
+            inset_rect_color=_resolved_gc if _resolved_gc is not None else None,
+            inset_rect_fill_color=_hex_fill_to_rgba(geometry_fill_color) if geometry_fill_color else None,
         )
         pil_thumb = _add_margin(pil_thumb, margin, bg_color=bg_color)
         thumb_bytes = _pil_to_png_bytes(pil_thumb, bg_color)
@@ -3813,24 +4379,39 @@ def generate_thumbs(ee_obj, geometry, viz_params=None, band_name=None,
         return {"html": html, "thumb_bytes": thumb_bytes, "is_grid": True}
     else:
         geom = _to_geometry(geometry)
-        url = (img.clip(geom) if clip_to_geometry else img).getThumbURL({
-            **viz_params, "dimensions": dimensions,
-            "format": "png", "region": geom if clip_to_geometry else geom.bounds(),
-        })
+        bounds = _get_bounds_4326(geom)
+        padded_dims = dimensions + 2 * _THUMB_PADDING
+
+        # Expand region so EE data fills to basemap edges (including padding margin)
+        if basemap is not None and bounds is not None:
+            expanded = _expand_bounds_for_padding(bounds, dimensions)
+            ee_region = ee.Geometry.Rectangle(expanded, proj=ee.Projection("EPSG:4326"), evenOdd=False)
+            _out_img = img.clip(geom) if clip_to_geometry else img
+            url = _out_img.getThumbURL({
+                **viz_params, "dimensions": padded_dims,
+                "format": "png", "region": ee_region,
+            })
+        else:
+            region = geom if clip_to_geometry else geom.bounds()
+            _out_img = img.clip(geom) if clip_to_geometry else img
+            url = _out_img.getThumbURL({
+                **viz_params, "dimensions": padded_dims,
+                "format": "png", "region": region,
+            })
+
         data = download_thumb(url)
         frame = Image.open(io.BytesIO(data)).convert("RGBA")
 
-        # Composite basemap (adds padding border) or add blank padding
-        bounds = _get_bounds_4326(geom)
+        # Composite basemap underneath or add blank padding
         if basemap is not None and bounds is not None:
-            fw, fh = frame.size
-            basemap_img = _fetch_basemap(bounds, fw + 2 * _THUMB_PADDING, fh + 2 * _THUMB_PADDING, basemap, crs=crs)
+            # Basemap at same expanded extent and size
+            basemap_img = _fetch_basemap(bounds, padded_dims, padded_dims, basemap, crs=crs)
             if basemap_img is not None:
                 frame = _composite_with_basemap(frame, basemap_img, overlay_opacity)
-            else:
-                frame = _add_thumb_padding(frame, bg_color=bg_color)
-        else:
-            frame = _add_thumb_padding(frame, bg_color=bg_color)
+
+        # Use expanded bounds for inset (reflects actual visible extent)
+        if basemap is not None and bounds is not None:
+            bounds = _expand_bounds_for_padding(bounds, dimensions)
 
         # Build legend panel (used by _assemble_with_cartography)
         legend_panel = _build_legend_panel_from_info(
@@ -3839,20 +4420,24 @@ def generate_thumbs(ee_obj, geometry, viz_params=None, band_name=None,
         )
 
         # Assemble with cartographic elements
-        has_carto = (basemap is not None or inset_basemap is not None) and bounds is not None
+        # Scalebar and north arrow work whenever bounds are available (no basemap needed).
+        # Inset requires a basemap tile source.
+        _has_inset_source = (basemap is not None or inset_basemap is not None)
         frame, has_bottom = _assemble_with_cartography(
-            frame, bounds if has_carto else None,
+            frame, bounds,
             bg_color=bg_color, font_color=font_color,
             font_outline_color=font_outline_color,
             title=title,
-            scalebar=scalebar if has_carto else False,
+            scalebar=scalebar if bounds is not None else False,
             scalebar_units=scalebar_units,
-            north_arrow=north_arrow if has_carto else False,
+            north_arrow=north_arrow if bounds is not None else False,
             north_arrow_style=north_arrow_style,
-            inset_map=inset_map if has_carto else False,
+            inset_map=inset_map if (_has_inset_source and bounds is not None) else False,
             inset_basemap=inset_basemap if inset_basemap else basemap,
             inset_scale=inset_scale, inset_on_map=inset_on_map,
-            legend_panel=legend_panel, margin=margin,
+            inset_rect_color=_resolved_gc if _resolved_gc is not None else None,
+            inset_rect_fill_color=_hex_fill_to_rgba(geometry_fill_color) if geometry_fill_color else None,
+            legend_panel=legend_panel, margin=margin, crs=crs,
         )
 
         # Title strip includes the top margin, so set top to 0
@@ -3958,7 +4543,8 @@ def _build_thumb_grid_image(thumb_results, columns=3, thumb_width=300,
                              font_color=None,
                              title=None,
                              title_font_size=_DEFAULT_TITLE_FONT_SIZE,
-                             label_font_size=_DEFAULT_LABEL_FONT_SIZE):
+                             label_font_size=_DEFAULT_LABEL_FONT_SIZE,
+                             inset_rect_color=None, inset_rect_fill_color=None):
     """Download per-feature thumbnails and assemble into a PIL grid image.
 
     Args:
@@ -3991,25 +4577,24 @@ def _build_thumb_grid_image(thumb_results, columns=3, thumb_width=300,
     font_outline_color = theme.divider
 
     # Download all thumbnails in parallel
+    # EE thumbnails are already requested at padded dimensions with expanded region
+    padded_width = thumb_width + 2 * _THUMB_PADDING
     def _dl(r):
         data = download_thumb(r["url"])
         frame = Image.open(io.BytesIO(data)).convert("RGBA")
-        if frame.size[0] != thumb_width:
-            ratio = thumb_width / frame.size[0]
+        # Resize to padded target width (EE thumb was requested at padded dims)
+        if frame.size[0] != padded_width:
+            ratio = padded_width / frame.size[0]
             new_h = int(frame.size[1] * ratio)
-            frame = frame.resize((thumb_width, new_h), Image.LANCZOS)
+            frame = frame.resize((padded_width, new_h), Image.LANCZOS)
         bounds = None
         if "geometry" in r:
             bounds = _get_bounds_4326(r["geometry"])
         if basemap is not None and bounds is not None:
             fw_p, fh_p = frame.size
-            bm = _fetch_basemap(bounds, fw_p + 2 * _THUMB_PADDING, fh_p + 2 * _THUMB_PADDING, basemap)
+            bm = _fetch_basemap(bounds, fw_p, fh_p, basemap)
             if bm is not None:
                 frame = _composite_with_basemap(frame, bm, overlay_opacity)
-            else:
-                frame = _add_thumb_padding(frame, bg_color=bg_color)
-        else:
-            frame = _add_thumb_padding(frame, bg_color=bg_color)
         return frame, r.get("label", ""), bounds
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
@@ -4018,9 +4603,23 @@ def _build_thumb_grid_image(thumb_results, columns=3, thumb_width=300,
     if not results:
         return Image.new("RGBA", (thumb_width, 100), panel_bg)
 
-    fw = results[0][0].size[0]  # actual width after padding
-    fh = results[0][0].size[1]
+    # Find max width and height across all frames so all cells are uniform
+    fw = max(frame.size[0] for frame, _, _ in results)
+    fh = max(frame.size[1] for frame, _, _ in results)
     n_total = len(results)
+
+    # Pad each frame to the uniform cell size (centered)
+    _uniform = []
+    for frame, label, bounds in results:
+        if frame.size[0] != fw or frame.size[1] != fh:
+            padded = Image.new("RGBA", (fw, fh), panel_bg)
+            ox = (fw - frame.size[0]) // 2
+            oy = (fh - frame.size[1]) // 2
+            padded.paste(frame, (ox, oy), frame if frame.mode == "RGBA" else None)
+            _uniform.append((padded, label, bounds))
+        else:
+            _uniform.append((frame, label, bounds))
+    results = _uniform
 
     n_cols = min(columns, n_total)
     n_rows = -(-n_total // n_cols)
@@ -4049,12 +4648,17 @@ def _build_thumb_grid_image(thumb_results, columns=3, thumb_width=300,
     last_frame, last_label, last_bounds = results[last_idx]
     if inset_map and inset_on_map and last_bounds is not None:
         _ib = inset_basemap if inset_basemap else basemap
-        if _ib is not None:
+        if True:  # build_inset_image uses default hillshade when _ib is None
+            target_h = int(fh * inset_scale)
+            _grid_kw = {}
+            if inset_rect_color is not None:
+                _grid_kw["rect_color"] = inset_rect_color
+            if inset_rect_fill_color is not None:
+                _grid_kw["rect_fill_color"] = inset_rect_fill_color
             inset_img = _build_inset_image(
-                last_bounds, ref_width=fw, inset_basemap=_ib,
+                last_bounds, size=target_h, inset_basemap=_ib, **_grid_kw,
             )
             if inset_img is not None:
-                target_h = int(fh * inset_scale)
                 src_w, src_h = inset_img.size
                 aspect = src_w / src_h if src_h > 0 else 1.0
                 iw = int(target_h * aspect)
@@ -4107,33 +4711,71 @@ def _build_thumb_grid_image(thumb_results, columns=3, thumb_width=300,
         legend_bottom_y = label_h + legend_panel.size[1]
 
     # Inset in right column (when inset_on_map=False)
+    # Use the union of all feature bounds for the inset overview
     if inset_map and not inset_on_map and first_bounds is not None:
         _ib = inset_basemap if inset_basemap else basemap
-        if _ib is not None:
-            inset_img = _build_inset_image(first_bounds, ref_width=fw, inset_basemap=_ib)
-            if inset_img is not None:
-                # Place at row 2 if multi-row, else below legend on row 1
-                if n_rows > 1:
-                    inset_y = cell_h + gap + label_h  # align with row 2 frames
-                    avail_h = cell_h - label_h - 4  # row 2 frame height
-                else:
-                    inset_y = legend_bottom_y
-                    avail_h = grid.size[1] - legend_bottom_y - 4
+        # build_inset_image uses a default hillshade basemap when _ib is None
+        # Compute overall bounds from all features for a better overview
+        all_bounds = [b for _, _, b in results if b is not None]
+        if all_bounds:
+            overview_bounds = (
+                min(b[0] for b in all_bounds),
+                min(b[1] for b in all_bounds),
+                max(b[2] for b in all_bounds),
+                max(b[3] for b in all_bounds),
+            )
+        else:
+            overview_bounds = first_bounds
 
-                max_w = max(legend_col_w - 8, 60)
-                src_w, src_h = inset_img.size
-                aspect = src_w / src_h if src_h > 0 else 1.0
-                iw = min(max_w, int(avail_h * aspect))
-                ih = int(iw / aspect)
-                if ih > avail_h:
-                    ih = max(avail_h, 30)
-                    iw = int(ih * aspect)
-                if iw > 10 and ih > 10:
-                    inset_resized = inset_img.resize((iw, ih), Image.LANCZOS)
-                    inset_pad = max(4, 4)
-                    grid.paste(inset_resized.convert("RGBA"),
-                               (grid_w + inset_pad, inset_y),
-                               inset_resized.convert("RGBA"))
+        max_w = max(legend_col_w - 8, 60)
+
+        # Determine inset placement and available space
+        if n_rows > 1:
+            # Multi-row: place in legend column aligned with row 2
+            inset_y = cell_h + gap + label_h
+            avail_h = cell_h - label_h - 4
+        else:
+            # Single-row: place below legend in the legend column
+            avail_h = grid.size[1] - legend_bottom_y - 4
+
+        # If not enough space in the legend column, expand the grid
+        # to make room for the inset below
+        target_inset_h = min(max_w, fh // 2)  # desired inset size
+        if avail_h < target_inset_h and n_rows <= 1:
+            expand = target_inset_h - avail_h + 8
+            new_grid = Image.new("RGBA", (grid.size[0], grid.size[1] + expand), panel_bg)
+            new_grid.paste(grid, (0, 0), grid if grid.mode == "RGBA" else None)
+            grid = new_grid
+            avail_h = target_inset_h
+            inset_y = legend_bottom_y
+        elif n_rows <= 1:
+            inset_y = legend_bottom_y
+
+        if avail_h < 40:
+            avail_h = fh
+
+        # Fetch inset at final display size
+        _inset_display = min(avail_h, int(max_w))
+        _grid_kw2 = {}
+        if inset_rect_color is not None:
+            _grid_kw2["rect_color"] = inset_rect_color
+        if inset_rect_fill_color is not None:
+            _grid_kw2["rect_fill_color"] = inset_rect_fill_color
+        inset_img = _build_inset_image(overview_bounds, size=max(60, _inset_display), inset_basemap=_ib, **_grid_kw2)
+        if inset_img is not None:
+            src_w, src_h = inset_img.size
+            aspect = src_w / src_h if src_h > 0 else 1.0
+            iw = min(max_w, int(avail_h * aspect))
+            ih = int(iw / aspect)
+            if ih > avail_h:
+                ih = max(avail_h, 30)
+                iw = int(ih * aspect)
+            if iw > 10 and ih > 10:
+                inset_resized = inset_img.resize((iw, ih), Image.LANCZOS)
+                inset_pad = max(4, 4)
+                grid.paste(inset_resized.convert("RGBA"),
+                           (grid_w + inset_pad, inset_y),
+                           inset_resized.convert("RGBA"))
 
     # Title strip — font size = 1.5x the label font
     if title:
@@ -4174,9 +4816,16 @@ def _to_geometry(geometry):
     """Extract ee.Geometry from various geometry-like inputs."""
     if isinstance(geometry, ee.FeatureCollection):
         return geometry.geometry()
-    if isinstance(geometry, ee.Feature):
-        return geometry.geometry()
-    return ee.Geometry(geometry)
+    if isinstance(geometry, (ee.Feature, ee.element.Element)):
+        return ee.Feature(geometry).geometry()
+    if isinstance(geometry, ee.Geometry):
+        return geometry
+    # Fallback: wrap in ee.Feature to handle ComputedObject results
+    # (e.g. fc.first() returns ee.ComputedObject, not ee.Feature)
+    try:
+        return ee.Feature(geometry).geometry()
+    except Exception:
+        return ee.Geometry(geometry)
 
 
 def _is_multi_feature(geometry):

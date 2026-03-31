@@ -146,6 +146,22 @@ BASEMAP_PRESETS = {
     },
 }
 
+# Common aliases for basemap presets
+_BASEMAP_ALIASES = {
+    "esri-world-imagery": "esri-satellite",
+    "esri-imagery": "esri-satellite",
+    "satellite": "esri-satellite",
+    "imagery": "esri-satellite",
+    "topo": "esri-topo",
+    "terrain": "esri-terrain",
+    "hillshade": "esri-hillshade",
+    "dark": "esri-dark-gray",
+    "light": "esri-light-gray",
+    "natgeo": "esri-natgeo",
+    "ocean": "esri-ocean",
+    "street": "esri-street",
+}
+
 
 def _resolve_basemap(basemap):
     """Resolve a basemap identifier to a normalised configuration dict.
@@ -184,7 +200,13 @@ def _resolve_basemap(basemap):
         return None
     if not isinstance(basemap, str):
         return None
-    # Check presets
+    # Check presets (normalize underscores to dashes for convenience)
+    normalized = basemap.replace("_", "-").lower()
+    # Check aliases first
+    if normalized in _BASEMAP_ALIASES:
+        normalized = _BASEMAP_ALIASES[normalized]
+    if normalized in BASEMAP_PRESETS:
+        return BASEMAP_PRESETS[normalized]
     if basemap in BASEMAP_PRESETS:
         return BASEMAP_PRESETS[basemap]
     # Raw URL — detect type from pattern
@@ -932,13 +954,18 @@ def render_north_arrow(size, font_color=(255, 255, 255),
 def build_inset_image(bounds_4326, size=None, ref_width=512,
                       inset_basemap=None, zoom_out_factor=8.0,
                       border_color="white", rect_color="red",
-                      rect_width=2):
+                      rect_fill_color=None, rect_width=2, crs=None):
     """Build a small overview / locator-map inset image.
 
     Fetches a basemap covering a zoomed-out extent centred on *bounds_4326*,
-    draws a coloured rectangle showing the main view's extent, and adds a
+    draws a coloured polygon showing the main view's extent, and adds a
     thin border.  The result is a square RGBA image suitable for pasting
     into a corner of a larger map thumbnail.
+
+    When *crs* is a projected CRS (e.g. ``"EPSG:5070"``), the extent
+    indicator is drawn as a projected polygon (potentially rotated)
+    rather than an axis-aligned rectangle, so the inset accurately
+    reflects the main map's projected footprint.
 
     Args:
         bounds_4326 (tuple): ``(xmin, ymin, xmax, ymax)`` of the main map
@@ -958,10 +985,19 @@ def build_inset_image(bounds_4326, size=None, ref_width=512,
             latitudinal span.
         border_color (str, optional): Colour of the 2 px border around
             the inset. Defaults to ``"white"``.
-        rect_color (str, optional): Colour of the rectangle indicating
-            the main view extent. Defaults to ``"red"``.
+        rect_color (str, optional): Colour of the rectangle outline
+            indicating the main view extent. Defaults to ``"red"``.
+        rect_fill_color (str or tuple, optional): Fill colour for the
+            extent rectangle.  Supports RGBA tuples for transparency,
+            e.g. ``(255, 0, 0, 80)``.  Defaults to ``None`` (no fill).
         rect_width (int, optional): Line width of the extent rectangle
             in pixels. Defaults to ``2``.
+        crs (str or None, optional): CRS of the main map (e.g.
+            ``"EPSG:5070"``).  When provided, the extent indicator is
+            drawn as a projected polygon by reprojecting the corners of
+            the projected bounding box back to EPSG:4326.  When
+            ``None`` or ``"EPSG:4326"``, an axis-aligned rectangle is
+            drawn.  Defaults to ``None``.
 
     Returns:
         PIL.Image.Image | None: A bordered square RGBA image (side =
@@ -997,24 +1033,95 @@ def build_inset_image(bounds_4326, size=None, ref_width=512,
 
     inset_img = inset_img.resize((inset_size, inset_size), Image.LANCZOS).convert("RGBA")
 
-    # Draw main extent rectangle
+    # Helper: convert lon/lat to pixel coords within the inset image
     ib_xmin, ib_ymin, ib_xmax, ib_ymax = inset_bounds
     ib_w = ib_xmax - ib_xmin
     ib_h = ib_ymax - ib_ymin
+
+    def geo_to_px(lon, lat):
+        px = int((lon - ib_xmin) / ib_w * inset_size) if ib_w > 0 else 0
+        py = int((ib_ymax - lat) / ib_h * inset_size) if ib_h > 0 else 0
+        return (px, py)
+
     if ib_w > 0 and ib_h > 0:
-        rx0 = int((xmin - ib_xmin) / ib_w * inset_size)
-        ry0 = int((ib_ymax - ymax) / ib_h * inset_size)
-        rx1 = int((xmax - ib_xmin) / ib_w * inset_size)
-        ry1 = int((ib_ymax - ymin) / ib_h * inset_size)
-        ImageDraw.Draw(inset_img).rectangle(
-            (rx0, ry0, rx1, ry1), outline=rect_color, width=rect_width,
+        # Determine extent polygon corners
+        extent_corners = _get_projected_extent_corners(
+            bounds_4326, crs
         )
+
+        # Draw fill on a transparent overlay to support alpha
+        if rect_fill_color is not None:
+            overlay = Image.new("RGBA", inset_img.size, (0, 0, 0, 0))
+            px_points = [geo_to_px(lon, lat) for lon, lat in extent_corners]
+            ImageDraw.Draw(overlay).polygon(px_points, fill=rect_fill_color)
+            inset_img = Image.alpha_composite(inset_img, overlay)
+
+        # Draw outline
+        px_points = [geo_to_px(lon, lat) for lon, lat in extent_corners]
+        draw = ImageDraw.Draw(inset_img)
+        # Draw polygon outline (closed)
+        for i in range(len(px_points)):
+            p1 = px_points[i]
+            p2 = px_points[(i + 1) % len(px_points)]
+            draw.line([p1, p2], fill=rect_color, width=rect_width)
 
     # Add border
     bordered_size = inset_size + 2 * border
     bordered = Image.new("RGBA", (bordered_size, bordered_size), border_color)
     bordered.paste(inset_img, (border, border))
     return bordered
+
+
+def _get_projected_extent_corners(bounds_4326, crs=None):
+    """Get the 4 corners of the main view extent in EPSG:4326.
+
+    For geographic or web-mercator CRS, returns an axis-aligned
+    rectangle.  For projected CRS (e.g. EPSG:5070), projects the
+    geographic bbox corners into the CRS, takes the resulting projected
+    bounding box, and reprojects its 4 corners back to EPSG:4326 to get
+    a polygon that reflects the projected grid orientation.
+
+    Returns:
+        list: Four ``(lon, lat)`` tuples in order: TL, TR, BR, BL.
+    """
+    xmin, ymin, xmax, ymax = bounds_4326
+
+    if crs is None or crs.upper() in ("EPSG:4326", "EPSG:3857"):
+        # Axis-aligned rectangle
+        return [(xmin, ymax), (xmax, ymax), (xmax, ymin), (xmin, ymin)]
+
+    try:
+        import ee
+        # Project the 4 geographic corners to get projected bbox
+        corners_4326 = [
+            [xmin, ymax], [xmax, ymax], [xmax, ymin], [xmin, ymin],
+        ]
+        proj_coords = (
+            ee.Geometry.MultiPoint(corners_4326)
+            .transform(crs, 1)
+            .coordinates()
+            .getInfo()
+        )
+        # Get projected bounding box
+        proj_xs = [c[0] for c in proj_coords]
+        proj_ys = [c[1] for c in proj_coords]
+        px_min, px_max = min(proj_xs), max(proj_xs)
+        py_min, py_max = min(proj_ys), max(proj_ys)
+        # Reproject projected bbox corners back to 4326
+        proj_corners = [
+            [px_min, py_max], [px_max, py_max],
+            [px_max, py_min], [px_min, py_min],
+        ]
+        geo_coords = (
+            ee.Geometry.MultiPoint(proj_corners, crs)
+            .transform("EPSG:4326", 1)
+            .coordinates()
+            .getInfo()
+        )
+        return [(c[0], c[1]) for c in geo_coords]
+    except Exception:
+        # Fallback to axis-aligned rectangle
+        return [(xmin, ymax), (xmax, ymax), (xmax, ymin), (xmin, ymin)]
 
 
 # ---------------------------------------------------------------------------

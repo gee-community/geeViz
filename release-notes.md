@@ -1,5 +1,136 @@
 # geeViz 2026.3.3 Release Notes
 
+## March 27-31, 2026
+
+### Sankey Charts — Direct D3 Rendering (no Plotly)
+
+- **`chart_type='sankey'`** is now the preferred way to request Sankey diagrams (replaces `sankey=True`)
+- **New function: `chart_sankey_d3()`** — builds D3 Sankey HTML directly from `prepare_sankey_data()` output, skipping Plotly entirely
+- `summarize_and_chart(chart_type='sankey')` now returns `(sankey_df, sankey_html, matrix_dict)` where `sankey_html` is a self-contained D3 HTML string with native SVG `linearGradient` links
+- **New function: `sankey_iframe()`** — wraps sankey HTML in a `data:text/html;base64` iframe for Jupyter notebook display
+- `transition_periods` now uses flat year lists `[1990, 2000, 2024]` instead of nested ranges `[[1990,1995], [2000,2005]]`
+- Removed old `chart_sankey()` (Plotly builder) and `_sankey_to_html_plotly()` — all sankey rendering is now pure D3
+- Download filename for sankey PNG reflects the chart title
+
+### Chart Improvements
+
+- **`max_x_tick_labels`** (default 10) and **`max_y_tick_labels`** params on `chart_time_series`, `chart_multi_feature_timeseries`, and `summarize_and_chart` — auto-thins tick labels using nice strides (1, 2, 5, 10, 20, 50...)
+- **`%` suffix** on y-axis tick labels when `y_label` contains `%` (e.g. "% Area")
+- **X-axis dead space fix** — `range` constrained to `[min - 0.5, max + 0.5]` for integer axes
+- **`class_visible`** now works for multi-feature time series subplots and grouped bar/donut charts (was only applied to single-geometry charts)
+- **Download filename** for Plotly charts reflects the chart title (patched `fig.show()` and `fig.to_html()` with `toImageButtonOptions`)
+
+### Thumbnail Improvements
+
+- **Expanded EE region** for basemap compositing — EE thumbnail request now covers the same geographic extent as the basemap (including padding margin), eliminating the gap where only basemap showed
+- **CRS-aware north arrow** — `crs` parameter now propagated through `_assemble_with_cartography` so grid convergence angle is computed and the arrow rotates for projected CRS
+- **CRS-aware inset map** — extent indicator drawn as a projected polygon (not axis-aligned rectangle) when using projected CRS like EPSG:5070
+- **Multi-feature grid inset fix** — inset now uses union of all feature bounds; grid expands vertically when legend fills the column to make room for inset below
+- **Uniform cell sizing** — grid cells use max width/height across all frames, centered with padding (different-shaped features no longer cut off)
+- **`clip_to_geometry`** now works for multi-feature grids (was always clipping)
+- **`ee.Feature` / `ee.Element` support** — `fc.first()` (returns `ee.Element`) now works in `generate_thumbs()`, `summarize_and_chart()`, and all thumbnail functions
+- **`auto_viz` fix** — `red/green/blue` band names no longer hardcode `min:0, max:255`; properly delegates to `auto_viz_continuous` for data-driven stretch
+
+### Roads Data Expansion (`getSummaryAreasLib`)
+
+- **`getRoads(area, source='tiger', year=2024)`** — expanded from TIGER 2016 only:
+  - `source='tiger'` (default): TIGER roads, years 2012-2025 via community catalog
+  - `source='grip'`: GRIP4 (Global Roads Inventory Project), 7 regional shards with road type classification (`GP_RTP`: 1=Highway through 5=Local)
+
+### MCP Server Optimization (27 → 22 tools)
+
+- **Removed 4 tools** that were thin wrappers around `run_code`: `get_thumbnail`, `extract_and_chart`, `edw_query`, `geocode` — saves ~2,700 tokens of schema overhead per conversation
+- Use `run_code` with `tl.generate_thumbs()`, `cl.summarize_and_chart()`, `edwLib.query_features()`, `gm.geocode()` instead
+- **Agent instructions rewritten** — 414 lines → 59 lines (86% reduction) as compact rules + pitfalls format; no examples (model uses `get_api_reference` and `examples` tools on demand)
+- **`inspect_asset` rewrite** — catalog metadata (`date_range`, `title`, `provider`) extracted from `ee.data.getInfo` instantly (no compute); live queries (count, bands, dates) run in daemon threads with 10-second timeout; never hangs on large collections like S2
+- **`run_code` idle timeout** — timeout now tracks inactivity (no new stdout/stderr output for 120s) instead of total elapsed time; long-running code that keeps printing can run indefinitely
+
+### New Example Files
+
+- **`WeatherNextTimeLapse.py`** — deterministic (Graph) and 64-member ensemble (WeatherNext 2) forecast time lapses with temperature, wind, precipitation, MSLP, 500 hPa height, SST, and ensemble spread
+- **`weather_forecast_examples.ipynb`** — comprehensive notebook covering GFS, ECMWF IFS, WeatherNext Graph, and WeatherNext 2 with model comparison difference maps
+- Consolidated `getSummaryAreasExampleNotebook.ipynb` into `getSummaryAreas_thumb_and_chartingLib_examples.ipynb` — every section now includes thumbnail generation with varied basemaps, CRS projections, inset maps, geometry burn-in, and Sankey charts alongside time series
+
+### Documentation
+
+- **`modules.rst`**: Added `outputLib.themes` module; updated outputLib as parent section
+- **`overview.rst`**: Added `edwLib`, `googleMapsLib`, `outputLib.themes`; updated autosummary list
+- **`examples.rst`**: Added sections for charting/thumbnails, reports, Google Maps, weather forecasts, pandas integration
+- **`installation.rst`**: Expanded API key setup with step-by-step instructions for both Gemini and Google Maps Platform keys
+- **`mcp.rst`**: Updated tool count to 22; added 40+ example questions across 9 categories
+- **`README.md`**: Updated MCP tools table, API key instructions, tool count
+- **`superSimpleGetS2`** docstring: marked as preferred S2 function
+- **`getSentinel2Wrapper`** docstring: marked as deprecated in favor of `superSimpleGetS2`
+- Removed stale `mcp/edw.py` (duplicate of `edwLib.py`)
+
+## March 26, 2026
+
+### New: Google Maps Platform Integration (`geeViz.googleMapsLib`)
+
+- **New module: `geeViz.googleMapsLib`** — 24 functions for ground-truthing remote sensing analysis using Google Maps Platform APIs:
+  - **Geocoding**: `geocode()`, `reverse_geocode()`, `validate_address()`
+  - **Places**: `search_places()`, `search_nearby()`, `get_place_photo()`
+  - **Street View**: `streetview_metadata()`, `streetview_image()`, `streetview_panorama()` (auto-stitches 360° from multiple frames), `streetview_html()`
+  - **AI Analysis**: `interpret_image()` (Gemini vision for object inventory), `label_streetview()` (bounding box detection), `segment_image()` / `segment_streetview()` (SegFormer pixel-level semantic segmentation)
+  - **Elevation**: `get_elevation()`, `get_elevations()`, `get_elevation_along_path()`
+  - **Environment**: `get_air_quality()`, `get_solar_insights()`, `get_timezone()`
+  - **Maps & Roads**: `get_static_map()`, `snap_to_roads()`, `nearest_roads()`
+- Requires `MAPS_PLATFORM_API_KEY` in `.env` with desired APIs enabled
+- Available as `gm` in the MCP REPL namespace
+
+### New: USFS EDW Library (`geeViz.edwLib`)
+
+- **New module: `geeViz.edwLib`** — USFS Enterprise Data Warehouse REST API client, moved from `mcp/edw.py` to root package for direct use in scripts/notebooks
+  - `search_services()`, `get_service_info()`, `get_layer_info()`, `query_features()`
+  - Keyword aliases (e.g. "riparian" finds stream/watershed services)
+  - Available as `edw` in the MCP REPL namespace
+
+### MCP Server Consolidation (38 → 27 tools)
+
+- **Consolidated tool groups** to reduce tool count and simplify the API:
+  - `view_map` + `get_map_layers` + `clear_map` → **`map_control(action=...)`**
+  - `export_to_asset` + `export_to_drive` + `export_to_cloud_storage` → **`export_image(destination=...)`**
+  - `delete_asset` + `copy_asset` + `move_asset` + `create_folder` + `update_acl` → **`manage_asset(action=...)`**
+  - `get_example` + `list_examples` → **`examples(action=...)`**
+  - `get_version_info` + `get_namespace` + `get_project_info` → **`env_info(action=...)`**
+  - `search_edw` + `get_edw_service_info` + `query_edw_features` → **`edw_query(action=...)`**
+- **New MCP tools**: `get_streetview`, `search_places`, `geocode` (now uses Google Geocoding API with Nominatim fallback)
+- **Tool annotations**: All 27 tools have `ToolAnnotations` (readOnlyHint, destructiveHint, openWorldHint) for client auto-approval
+- `geocode` tool now uses Google Geocoding API for accurate street address resolution, with OSM Nominatim as fallback
+
+### Report Improvements
+
+- **`chart_types` parameter** on `add_section()` — accepts a list of chart types per section (e.g. `["sankey", "line+markers"]`). Replaces the old `sankey=True` + `sankey_only` pattern
+- **Snake-case API**: `addSection` → `add_section`, `generateTable` → `generate_table`, `generateChart` → `generate_chart`
+- `line_width` and `marker_size` parameters on `chart_time_series()` and `summarize_and_chart()`
+
+### Thumbnail & Chart Fixes
+
+- **Inset map colors** match geometry outline/fill colors (no longer hardcoded red)
+- **Legend swatch** correctly renders fill color opacity (RRGGBBAA hex alpha)
+- **Scalebar/north arrow** show without basemap in `generate_thumbs()`
+- **Donut chart margins** tightened
+- **Projected geometry basemap fix** — `_get_bounds_4326` transforms to EPSG:4326 before fetching tiles
+- `simple_buffer()` added to `getSummaryAreasLib` — lightweight metric square buffer in EPSG:3857
+
+### Documentation
+
+- **5 new RST docs**: `geeViz.edwLib`, `geeViz.googleMapsLib`, `geeViz.outputLib.charts`, `geeViz.outputLib.thumbs`, `geeViz.outputLib.reports`
+- Updated `modules.rst` with all new modules
+- Updated MCP server RST with current 27 tools
+- **New example notebooks**: `report_generation_examples.ipynb` (6 report scenarios), `mcp_with_gemini_tutorial.ipynb` (MCP + Gemini agent loop)
+
+## March 23, 2026
+
+### New: Output Library Reorganization & New Features (`geeViz.outputLib`)
+
+- **Moved `geeViz.chartingLib` to `geeViz.outputLib.charts`.** The old `geeViz.chartingLib` import path continues to work for backward compatibility, but new code should use `from geeViz.outputLib import charts as cl`.
+- **New module: `geeViz.outputLib.thumbs`** — thumbnail, GIF, filmstrip, and map+chart generation with basemaps, legends, scalebars, and inset maps. Available as `tl` in the MCP REPL namespace.
+- **New module: `geeViz.outputLib.reports`** — automated report generation with parallel EE data fetching, charts, tables, thumbnails, GIFs, and LLM narratives. Available as `rl` in the MCP REPL namespace.
+- **New chart types in `summarize_and_chart`:** `"donut"` (thematic pie/donut chart) and `"scatter"` (scatter plot with optional thematic colouring via `thematic_band_name`).
+- **New function: `generate_map_chart()`** in `geeViz.outputLib.thumbs` — produces a combined map thumbnail + chart (bar/donut/scatter for `ee.Image`, delegates to GIF for `ee.ImageCollection`).
+- **Gamma support in `auto_viz` continuous stretch** — new `gamma` parameter (default 1.6) for gamma correction when auto-detecting continuous visualization parameters.
+
 ## March 12, 2026
 
 ### New Features

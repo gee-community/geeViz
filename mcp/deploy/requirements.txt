@@ -1,0 +1,7 @@
+geeViz>=2026.3.0
+mcp>=1.0.0
+Pillow>=10.0.0
+numpy
+pandas
+earthengine-api>=1.4.0
+google-auth>=2.0.0

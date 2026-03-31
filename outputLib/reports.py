@@ -37,7 +37,7 @@ Example::
     )
     report.header_text = "An analysis of land cover and fire trends."
 
-    report.addSection(
+    report.add_section(
         ee_obj=lcms.select(['Land_Cover']),
         geometry=counties,
         title="LCMS Land Cover",
@@ -180,9 +180,14 @@ _THUMB_KEYS = frozenset({
     "thumb_burn_in_date", "thumb_date_format", "thumb_date_position",
     "thumb_bg_color", "thumb_geometry", "thumb_crs", "thumb_transform",
     "burn_in_legend", "legend_scale", "legend_position", "basemap",
+    "burn_in_geometry", "geometry_outline_color", "geometry_fill_color",
+    "geometry_outline_weight", "clip_to_geometry", "geometry_legend_label",
+    "title_font_size", "label_font_size", "overlay_opacity",
+    "inset_map", "inset_basemap", "inset_scale", "inset_on_map",
+    "scalebar", "scalebar_units", "north_arrow", "north_arrow_style",
 })
 # Keys used by the report layer but not by summarize_and_chart
-_REPORT_KEYS = frozenset({"sankey_only"}) | _THUMB_KEYS
+_REPORT_KEYS = frozenset({"sankey_only", "chart_types"}) | _THUMB_KEYS
 
 
 class _Section:
@@ -190,25 +195,29 @@ class _Section:
 
     __slots__ = (
         "ee_obj", "geometry", "title", "prompt", "kwargs",
-        "generateTable", "generateChart", "thumb_format",
-        "df", "fig", "sankey_fig", "narrative", "thumb_html", "thumb_bytes",
-        "thumb_filmstrip_html", "error",
+        "generate_table", "generate_chart", "thumb_format",
+        "chart_types",
+        "df", "fig", "sankey_fig", "extra_figs", "narrative",
+        "thumb_html", "thumb_bytes", "thumb_filmstrip_html", "error",
     )
 
     def __init__(self, ee_obj, geometry, title, prompt, kwargs,
-                 generateTable, generateChart, thumb_format):
+                 generate_table, generate_chart, thumb_format,
+                 chart_types=None):
         self.ee_obj = ee_obj
         self.geometry = geometry
         self.title = title
         self.prompt = prompt
         self.kwargs = kwargs
-        self.generateTable = generateTable
-        self.generateChart = generateChart
+        self.generate_table = generate_table
+        self.generate_chart = generate_chart
         self.thumb_format = thumb_format
+        self.chart_types = chart_types or []  # list of chart type strings
         # Populated during generate()
         self.df = None
-        self.fig = None
-        self.sankey_fig = None
+        self.fig = None        # primary figure (first chart type)
+        self.sankey_fig = None  # sankey figure if "sankey" in chart_types
+        self.extra_figs = []    # additional figures beyond the first
         self.narrative = None
         self.thumb_html = None
         self.thumb_bytes = None
@@ -226,7 +235,7 @@ class Report:
         title (str): Report title.
         model (str): Gemini model name. Default ``"gemini-3-flash-preview"``.
         api_key (str, optional): Google API key. If not provided, loaded from
-            the ``GOOGLE_API_KEY`` environment variable (via ``.env``).
+            the ``GEMINI_API_KEY`` environment variable (via ``.env``).
         prompt (str, optional): Additional guidance for the executive summary.
         header_text (str, optional): Introductory text shown below the title.
         header_icon (str, optional): Path to a PNG/JPG image for the report
@@ -246,7 +255,7 @@ class Report:
     Example::
 
         report = Report(title="My Analysis", theme="light", layout="report")
-        report.addSection(ee_obj=lcms, geometry=area, title="Land Cover")
+        report.add_section(ee_obj=lcms, geometry=area, title="Land Cover")
         html = report.generate(format="html", output_path="report.html")
     """
 
@@ -270,9 +279,9 @@ class Report:
 
     # -- Public API --------------------------------------------------------
 
-    def addSection(self, ee_obj, geometry, title="Section", prompt=None,
-                   generateTable=True, generateChart=True,
-                   thumb_format="png", **kwargs):
+    def add_section(self, ee_obj, geometry, title="Section", prompt=None,
+                   generate_table=True, generate_chart=True,
+                   thumb_format="png", chart_types=None, **kwargs):
         """Add a data section to the report.
 
         Args:
@@ -280,8 +289,8 @@ class Report:
             geometry: ``ee.Geometry``, ``ee.Feature``, or ``ee.FeatureCollection``.
             title (str): Section heading.
             prompt (str, optional): Per-section LLM guidance for the narrative.
-            generateTable (bool): Include data table. Default True.
-            generateChart (bool): Include chart. Default True.
+            generate_table (bool): Include data table. Default True.
+            generate_chart (bool): Include chart. Default True.
             thumb_format (str or None): Thumbnail image format.  Default
                 ``"png"`` (static thumbnail).  Options:
 
@@ -292,6 +301,27 @@ class Report:
                 * ``"filmstrip"`` — grid of individual time-step frames
                   (``ee.ImageCollection`` only).
                 * ``None`` or ``False`` — no thumbnail.
+
+            chart_types (list of str, optional): Chart types to produce
+                for this section.  Each entry is a single chart type
+                string passed to ``summarize_and_chart(chart_type=...)``.
+                Valid values include ``"bar"``, ``"stacked_bar"``,
+                ``"line+markers"``, ``"stacked_line+markers"``,
+                ``"donut"``, ``"scatter"``, and ``"sankey"``.
+
+                When ``"sankey"`` is in the list, the ``sankey``,
+                ``transition_periods``, ``sankey_band_name``, and
+                ``min_percentage`` kwargs are used for that chart.
+
+                An empty list ``[]`` or ``None`` auto-detects a single
+                chart type (existing behavior).  Maximum recommended
+                length is 3.
+
+                Examples::
+
+                    chart_types=["sankey", "line+markers"]
+                    chart_types=["bar", "donut"]
+                    chart_types=["sankey"]  # sankey only, no line chart
 
             **kwargs: All other keyword arguments.  Thumbnail params
                 (prefixed ``thumb_``) are extracted and forwarded to
@@ -311,14 +341,22 @@ class Report:
 
                 Chart params (examples):
                     ``stacked=True``, ``scale=60``,
-                    ``feature_label="NAME"``, ``sankey=True``, etc.
+                    ``feature_label="NAME"``, etc.
 
         Returns:
             Report: self (for method chaining).
         """
+        # Normalize chart_types
+        ct_list = list(chart_types) if chart_types else []
+
+        # If "sankey" is in chart_types, auto-set sankey=True in kwargs
+        if any(ct.lower().strip() == "sankey" for ct in ct_list):
+            kwargs["sankey"] = True
+
         self._sections.append(_Section(
             ee_obj, geometry, title, prompt, kwargs,
-            generateTable, generateChart, thumb_format,
+            generate_table, generate_chart, thumb_format,
+            chart_types=ct_list,
         ))
         return self
 
@@ -345,7 +383,7 @@ class Report:
                 "Section": i + 1,
                 "Title": sec.title,
                 "Table": table_shape,
-                "Chart": sec.fig is not None,
+                "Chart": sum(1 for f in [sec.fig, sec.sankey_fig] + (sec.extra_figs or []) if f is not None),
                 "Thumb": f"{sec.thumb_format}: {len(sec.thumb_html):,}b" if sec.thumb_html else sec.thumb_format,
                 "Narrative": f"{len(sec.narrative):,}c" if sec.narrative else None,
                 "Error": sec.error,
@@ -473,7 +511,7 @@ class Report:
             # -- submit data tasks ----------------------------------------
             for i, sec in enumerate(self._sections):
                 futs = []
-                if sec.generateChart or sec.generateTable:
+                if sec.generate_chart or sec.generate_table:
                     futs.append(pool.submit(self._compute_chart_table, i, sec))
                 if sec.thumb_format:
                     futs.append(pool.submit(self._compute_thumb, i, sec))
@@ -496,46 +534,99 @@ class Report:
         self._computed_theme = self.theme
 
     def _compute_chart_table(self, idx, sec):
-        """Compute chart and table for a single section (thread-safe)."""
+        """Compute chart(s) and table for a single section (thread-safe).
+
+        When ``sec.chart_types`` is a non-empty list, each chart type is
+        produced via a separate ``summarize_and_chart`` call.  The first
+        figure goes to ``sec.fig``, sankey figures go to ``sec.sankey_fig``,
+        and any extras go to ``sec.extra_figs``.
+
+        When ``sec.chart_types`` is empty, falls back to the auto-detect
+        behavior (single ``summarize_and_chart`` call).
+        """
         print(f"  [{idx+1}/{len(self._sections)}] Computing chart/table: {sec.title}")
         try:
             chart_kwargs = {k: v for k, v in sec.kwargs.items()
                            if k not in _REPORT_KEYS}
             # Use section title as chart title if not explicitly set
             chart_kwargs.setdefault("title", sec.title)
-            result = cl.summarize_and_chart(
-                sec.ee_obj, sec.geometry, **chart_kwargs
-            )
-            if isinstance(result, tuple) and len(result) == 3:
-                # Sankey: (sankey_df, fig, matrix_dict)
-                sec.df = result[2]
-                sec.fig = result[1]
 
-                # Also compute regular chart unless sankey_only
-                if not sec.kwargs.get("sankey_only", False):
+            # Determine which chart types to produce
+            ct_list = sec.chart_types if sec.chart_types else []
+
+            if ct_list:
+                # --- Explicit chart_types list ---
+                all_figs = []  # list of (chart_type, fig)
+                for ct in ct_list:
+                    ct_lower = ct.lower().strip()
+                    print(f"  [{idx+1}/{len(self._sections)}] Computing {ct} chart: {sec.title}")
                     try:
-                        print(f"  [{idx+1}/{len(self._sections)}] Computing regular chart: {sec.title}")
-                        reg_kwargs = {k: v for k, v in chart_kwargs.items()
-                                      if k not in ("sankey", "transition_periods",
-                                                    "sankey_band_name", "min_percentage")}
-                        reg_result = cl.summarize_and_chart(
-                            sec.ee_obj, sec.geometry, **reg_kwargs
-                        )
-                        if isinstance(reg_result, tuple) and len(reg_result) == 2:
-                            sec.sankey_fig = sec.fig  # move sankey to sankey_fig
-                            sec.fig = reg_result[1]   # regular chart as primary
+                        if ct_lower == "sankey":
+                            # Sankey path
+                            sankey_kwargs = dict(chart_kwargs)
+                            sankey_kwargs["sankey"] = True
+                            result = cl.summarize_and_chart(
+                                sec.ee_obj, sec.geometry, **sankey_kwargs
+                            )
+                            if isinstance(result, tuple) and len(result) == 3:
+                                sankey_df, fig, matrix_dict = result
+                                # Store sankey data (matrix_dict) as df if no df yet
+                                if sec.df is None:
+                                    sec.df = matrix_dict
+                                all_figs.append(("sankey", fig))
+                            elif isinstance(result, tuple) and len(result) == 2:
+                                if sec.df is None:
+                                    sec.df = result[0]
+                                all_figs.append(("sankey", result[1]))
+                        else:
+                            # Non-sankey path: strip sankey kwargs
+                            non_sankey_kwargs = {k: v for k, v in chart_kwargs.items()
+                                                 if k not in ("sankey", "transition_periods",
+                                                               "sankey_band_name", "min_percentage")}
+                            non_sankey_kwargs["chart_type"] = ct
+                            result = cl.summarize_and_chart(
+                                sec.ee_obj, sec.geometry, **non_sankey_kwargs
+                            )
+                            if isinstance(result, tuple) and len(result) >= 2:
+                                first, second = result[0], result[1]
+                                if sec.df is None:
+                                    if isinstance(first, dict):
+                                        import pandas
+                                        sec.df = pandas.concat(first, names=["Feature"])
+                                    else:
+                                        sec.df = first
+                                all_figs.append((ct, second))
                     except Exception as e:
-                        print(f"    Regular chart error (sankey still OK): {e}")
-                        # Keep sankey as the only chart
-            elif isinstance(result, tuple) and len(result) == 2:
-                first, second = result
-                if isinstance(first, dict):
-                    import pandas
-                    sec.df = pandas.concat(first, names=["Feature"])
-                    sec.fig = second
-                else:
-                    sec.df = first
-                    sec.fig = second
+                        print(f"    {ct} chart error: {type(e).__name__}: {e}")
+
+                # Distribute figures: first non-sankey → sec.fig,
+                # sankey → sec.sankey_fig, rest → sec.extra_figs
+                for ct, fig in all_figs:
+                    if ct.lower().strip() == "sankey":
+                        sec.sankey_fig = fig
+                    elif sec.fig is None:
+                        sec.fig = fig
+                    else:
+                        sec.extra_figs.append(fig)
+
+            else:
+                # --- Legacy auto-detect path (no chart_types list) ---
+                result = cl.summarize_and_chart(
+                    sec.ee_obj, sec.geometry, **chart_kwargs
+                )
+                if isinstance(result, tuple) and len(result) == 3:
+                    # Sankey: (sankey_df, fig, matrix_dict)
+                    sec.df = result[2]
+                    sec.sankey_fig = result[1]
+                elif isinstance(result, tuple) and len(result) == 2:
+                    first, second = result
+                    if isinstance(first, dict):
+                        import pandas
+                        sec.df = pandas.concat(first, names=["Feature"])
+                        sec.fig = second
+                    else:
+                        sec.df = first
+                        sec.fig = second
         except Exception as e:
             sec.error = f"{type(e).__name__}: {e}"
             print(f"    Chart/table error: {sec.error}")
@@ -813,12 +904,12 @@ class Report:
                 dotenv.load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
             except ImportError:
                 pass
-            key = os.environ.get("GOOGLE_API_KEY")
+            key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 
         if not key:
             raise ValueError(
-                "No Google API key found. Pass api_key= to Report() or set "
-                "GOOGLE_API_KEY in your environment / .env file."
+                "No Gemini API key found. Pass api_key= to Report() or set "
+                "GEMINI_API_KEY in your environment / .env file."
             )
 
         from google import genai
@@ -1245,14 +1336,24 @@ class Report:
             else:
                 parts.append(sec.thumb_html)
 
-        # Charts — render sankey_fig (if present) then fig
+        # Charts — render sankey_fig, fig, and any extra_figs
         figs_to_render = []
         if sec.sankey_fig is not None:
             figs_to_render.append(sec.sankey_fig)
-        if sec.generateChart and sec.fig is not None:
+        if sec.generate_chart and sec.fig is not None:
             figs_to_render.append(sec.fig)
+        for extra in (sec.extra_figs or []):
+            figs_to_render.append(extra)
 
         for fig_obj in figs_to_render:
+            # D3 sankey: already an HTML string (from chart_sankey_d3)
+            if isinstance(fig_obj, str):
+                parts.append(
+                    f'<div class="chart"><iframe srcdoc="{_escape_attr(fig_obj)}" '
+                    f'style="width:100%;height:{sec.kwargs.get("height", 600) + 50}px;border:none;overflow:hidden;"></iframe></div>'
+                )
+                continue
+
             fig_to_render = self._themed_figure(fig_obj)
             is_sankey = hasattr(fig_to_render, "_gradient_color_map")
 
@@ -1284,9 +1385,12 @@ class Report:
                         )
             else:
                 if is_sankey:
-                    sankey_bg = _themeLib.get_theme(self.theme).bg_hex
+                    _th = _themeLib.get_theme(self.theme)
                     chart_html = cl.sankey_to_html(
-                        fig_to_render, bg_color=sankey_bg,
+                        fig_to_render,
+                        bg_color=_th.bg_hex,
+                        font_color=_th.text_hex,
+                        theme=self.theme,
                     )
                     parts.append(
                         f'<div class="chart"><iframe srcdoc="{_escape_attr(chart_html)}" '
@@ -1299,12 +1403,13 @@ class Report:
                     if n_rows > 1 and (fig_to_render.layout.height or 0) < 200 * n_rows:
                         fig_to_render.update_layout(height=200 * n_rows)
                     chart_div = fig_to_render.to_html(
-                        full_html=False, include_plotlyjs=False
+                        full_html=False, include_plotlyjs=False,
+                        config=cl._plotly_download_config(fig_to_render),
                     )
                     parts.append(f'<div class="chart">{chart_div}</div>')
 
         # Table
-        if sec.generateTable and sec.df is not None:
+        if sec.generate_table and sec.df is not None:
             area_fmt = sec.kwargs.get("area_format", "Percentage")
             units_label = cl.AREA_FORMAT_DICT.get(area_fmt, {}).get("label", area_fmt)
             is_sankey = sec.kwargs.get("sankey", False)
@@ -1466,7 +1571,7 @@ class Report:
             lines += [f"## {sec.title}", ""]
             if sec.narrative:
                 lines += [sec.narrative, ""]
-            if sec.generateTable and sec.df is not None:
+            if sec.generate_table and sec.df is not None:
                 if isinstance(sec.df, dict):
                     for label, mdf in sec.df.items():
                         lines += [f"### {label}", mdf.to_markdown(), ""]
@@ -1557,15 +1662,19 @@ class Report:
             .pdf-footer-tpl {{ display: none; }}
             .pdf-page-footer {{
                 display: flex; align-items: center; gap: 8px;
-                position: absolute; left: 0.5in; right: 0.5in;
+                position: fixed; bottom: 0; left: 0.5in; right: 0.5in;
                 padding: 4px 0;
                 border-top: 1px solid {_t.border_hex};
                 color: {_t.muted_text_hex}; font-size: 9px;
+                background: {_t.bg_hex};
+                z-index: 100;
             }}
             .pdf-page-footer a {{ color: {_t.accent_hex}; text-decoration: none; }}
             .pdf-page-footer img {{ height: 16px; width: auto; max-width: 80px;
                 border-radius: 3px; opacity: 0.7; }}
             .pdf-page-footer .page-num {{ margin-left: auto; }}
+            /* Ensure content doesn't get hidden behind fixed footer */
+            body {{ padding-bottom: 40px; }}
         """)
 
         header_block, header_text_html, summary_html, footer_html = (
@@ -1597,30 +1706,9 @@ class Report:
             f'<a href="https://earthengine.google.com/">Earth Engine</a>'
             f'<span class="page-num"></span>'
         )
-        # JS stamps a footer at the bottom of each page with page numbers
-        # Page height = 11in = 1056px at 96dpi. Footer at bottom - 0.7in pad.
+        # Fixed footer: position:fixed repeats on every printed page
         pdf_footer_html = (
-            f'<div class="pdf-footer-tpl" id="ftpl">{footer_content}</div>'
-            f'<script>'
-            f'(function(){{'
-            f'var PH=1056;'  # 11in at 96dpi
-            f'var FBOT=38;'  # footer sits 0.4in from page bottom
-            f'document.body.style.position="relative";'
-            f'var h=document.body.scrollHeight;'
-            f'var n=Math.max(1,Math.ceil(h/PH));'
-            f'var t=document.getElementById("ftpl");'
-            f'if(!t)return;'
-            f'for(var i=0;i<n;i++){{'
-            f'var e=t.cloneNode(true);'
-            f'e.removeAttribute("id");'
-            f'e.className="pdf-page-footer";'
-            f'e.style.top=((i+1)*PH-FBOT)+"px";'
-            f'var p=e.querySelector(".page-num");'
-            f'if(p)p.textContent="Page "+(i+1)+" of "+n;'
-            f'document.body.appendChild(e);'
-            f'}}'
-            f'}})();'
-            f'</script>'
+            f'<div class="pdf-page-footer">{footer_content}</div>'
         )
 
         html = _PDF_HTML_TEMPLATE.format(

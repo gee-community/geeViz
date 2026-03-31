@@ -4,7 +4,24 @@ USFS Enterprise Data Warehouse (EDW) REST API client.
 Provides search, metadata inspection, and spatial feature queries against
 the ArcGIS REST services at https://apps.fs.usda.gov/arcx/rest/services/EDW.
 
-Used by server.py to expose EDW tools via MCP.
+Quick start::
+
+    import geeViz.edwLib as edw
+
+    # Search for fire-related services
+    services = edw.search_services("fire")
+
+    # Get layer info
+    info = edw.get_service_info("EDW_MTBS_01")
+
+    # Query features as GeoJSON
+    geojson = edw.query_features("EDW_MTBS_01", 15,
+        where="FIRE_NAME LIKE '%CAMERON PEAK%'",
+        out_fields="FIRE_NAME,ACRES,YEAR")
+
+    # Load into Earth Engine
+    import ee
+    fc = ee.FeatureCollection(geojson)
 """
 
 from __future__ import annotations

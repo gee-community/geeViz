@@ -28,7 +28,7 @@ Developed by [RedCastle Resources](https://www.redcastleresources.com/), geeViz 
 - Layer toggling, opacity, visualization tools, querying, & area charting
 - Dynamic time-lapse creation from GEE `ImageCollections`
 - Built-in charting & analysis tools (point/polygon, time series, area stats)
-- **Inline zonal summary & charting** (`geeViz.chartingLib`) — run zonal stats and produce Plotly charts (time series, bar, grouped bar, per-feature time series subplots, Sankey) directly in notebooks
+- **Inline zonal summary & charting** (`geeViz.outputLib.charts`, formerly `geeViz.chartingLib`) — run zonal stats and produce Plotly charts (time series, bar, grouped bar, donut, scatter, per-feature time series subplots, Sankey) directly in notebooks
 - **Summary area retrieval** (`geeViz.getSummaryAreasLib`) — 15 functions returning filtered `ee.FeatureCollection` objects for political boundaries, USFS units, census geographies, buildings, roads, and protected areas
 - Jupyter/Colab support and standalone scripting
 - Supports Landsat, Sentinel-2, MODIS, LCMS, LCMAP, and more
@@ -108,9 +108,47 @@ _geeViz is also mirrored at [code.fs.usda.gov/forest-service/geeViz](https://cod
 
 ---
 
+### Optional: API Keys for Google Maps & Gemini
+
+Some geeViz features (`googleMapsLib`, `outputLib.reports` LLM narratives) require API keys from Google Cloud. These are **optional** — core GEE functionality works without them.
+
+**Gemini API Key** (for AI-generated report narratives and image interpretation):
+1. Go to [Google AI Studio](https://aistudio.google.com/apikey)
+2. Click **Create API Key** → select a project → copy the key
+
+**Google Maps Platform API Key** (for geocoding, Street View, places, elevation, air quality, solar):
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) → select/create a project
+2. Navigate to **APIs & Services** → **Credentials** → **Create Credentials** → **API Key**
+3. (Recommended) Restrict the key to: Geocoding, Street View Static, Places (New), Elevation, Air Quality, Solar, Roads, Maps Static
+
+**Store your keys** in a `.env` file in your geeViz package directory (alongside `geeView.py`):
+
+```sh
+# .env file in your geeViz package directory
+GEMINI_API_KEY=your_gemini_api_key_here
+GOOGLE_MAPS_PLATFORM_API_KEY=your_maps_platform_key_here
+```
+
+You can also set these as environment variables. The `.env` file is loaded automatically by `googleMapsLib` and `outputLib.reports` on import.
+
+| Key | Used by | How to get |
+|---|---|---|
+| `GEMINI_API_KEY` | `googleMapsLib.interpret_image()`, `googleMapsLib.label_streetview()`, `outputLib.reports` LLM narratives | [Google AI Studio](https://aistudio.google.com/apikey) |
+| `GOOGLE_MAPS_PLATFORM_API_KEY` | `googleMapsLib.geocode()`, `streetview_*()`, `search_places()`, `get_elevation()`, `get_air_quality()`, `get_solar_insights()`, etc. | [Google Cloud Console](https://console.cloud.google.com/apis/credentials) |
+
+**Optional pip extras:**
+
+```sh
+pip install geeViz[gemini]         # Adds google-genai for AI features
+pip install geeViz[segmentation]   # Adds torch + transformers for SegFormer
+pip install geeViz[all]            # Everything
+```
+
+---
+
 ## AI-Assisted Development (MCP)
 
-geeViz includes a built-in [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server with **32 tools** that give AI coding assistants live access to geeViz and Google Earth Engine. Instead of generating code from training data (which is often wrong or outdated), your AI assistant can look up real function signatures, read actual example scripts, execute and test code, inspect assets, export data, manage tasks, and more.
+geeViz includes a built-in [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server with **22 tools** that give AI coding assistants live access to geeViz and Google Earth Engine. Instead of generating code from training data (which is often wrong or outdated), your AI assistant can look up real function signatures, read actual example scripts, execute and test code, inspect assets, export data, manage tasks, and more.
 
 Works with **Cursor**, **Claude Code**, **VS Code with GitHub Copilot**, **Windsurf**, and any MCP-compatible client. The `mcp` SDK is included as a dependency — no extra install needed.
 
@@ -131,20 +169,22 @@ Works with **Cursor**, **Claude Code**, **VS Code with GitHub Copilot**, **Winds
 
 ### What the MCP server can do
 
-The 32 tools are organized into nine categories:
+The 22 tools are organized into categories:
 
 | Category | Tools |
 |----------|-------|
-| **Code Execution** | `run_code` — persistent REPL with `ee`, `Map`, `gv`, `gil`, `sal` pre-loaded; `get_namespace` — inspect live variables; `save_notebook` — export session as `.ipynb` |
-| **API Introspection** | `get_api_reference` — function signatures & docstrings; `list_functions` — browse module contents; `get_example` / `list_examples` — read example scripts |
-| **Dataset Discovery** | `search_datasets` — keyword search across official & community catalogs; `get_dataset_info` — full STAC metadata for any dataset |
-| **Asset Inspection** | `inspect_asset` — bands, CRS, scale, date range, properties; `list_assets` — browse GEE folders; `get_collection_info` — image count, date range, bands |
-| **Visualization** | `get_thumbnail` — PNG for images, animated GIF for collections; `geocode` — place name to coordinates with optional boundary search |
-| **Exports** | `export_to_asset`, `export_to_drive`, `export_to_cloud_storage` — using geeViz wrappers with sensible defaults |
-| **Task Management** | `track_tasks` — check task status; `cancel_tasks` — cancel by name or all |
-| **Zonal Summary & Charting** | `extract_and_chart` — extract values and chart `ee.Image` or `ee.ImageCollection` over a point/region; supports point sampling, bar charts, time series, Sankey diagrams, and grouped bar charts via `geeViz.chartingLib` |
-| **Asset Management** | `create_folder`, `delete_asset`, `copy_asset`, `move_asset`, `update_acl` — manage GEE assets and permissions |
-| **Environment** | `get_version_info`, `get_project_info` |
+| **Code Execution** | `run_code` — persistent REPL with `ee`, `Map`, `gv`, `gil`, `sal`, `tl`, `rl`, `cl` pre-loaded; `save_session` — export as `.py` or `.ipynb` |
+| **API Introspection** | `get_api_reference` — function signatures & docstrings; `search_functions` — search across all modules; `examples` — list/read example scripts; `get_reference_data` — lookup reference dicts |
+| **Dataset Discovery** | `search_datasets` — keyword search across official & community catalogs; `get_catalog_info` — full STAC metadata |
+| **Asset Inspection** | `inspect_asset` — bands, CRS, scale, date range, properties; `list_assets` — browse GEE folders |
+| **Map Control** | `map_control` — view, list layers, or clear the interactive map |
+| **Exports** | `export_image` — export to asset, Drive, or Cloud Storage |
+| **Task/Asset Management** | `track_tasks`, `cancel_tasks`, `manage_asset` (delete/copy/move/create/update ACL) |
+| **Google Maps** | `get_streetview` — Street View imagery; `search_places` — places/geocoding |
+| **Reports** | `create_report`, `add_report_section`, `generate_report`, `get_report_status`, `clear_report` |
+| **Environment** | `env_info` — versions, namespace, project info |
+
+Charting (`cl.summarize_and_chart()`), thumbnails (`tl.generate_thumbs()`), EDW queries (`edwLib`), and geocoding (`gm.geocode()`) are accessed via `run_code` for maximum flexibility.
 
 For the complete tool reference, architecture details, and usage examples, see the **[MCP Server README](mcp/README.md)** and the [online MCP Server guide](https://geeviz.org/mcp_server.html).
 

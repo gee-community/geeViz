@@ -41,6 +41,21 @@ _TIGER_COUNTIES = "projects/rcr-geeviz/assets/public/summaryAreas/tl_2024_us_cou
 _TIGER_STATES = "TIGER/2018/States"
 _TIGER_ROADS = "TIGER/2016/Roads"
 _TIGER_BLOCKS_2020 = "TIGER/2020/TABBLOCK20"
+
+# TIGER Roads (community catalog, 2012-2025)
+_TIGER_ROADS_COMMUNITY = "projects/sat-io/open-datasets/TIGER/{year}/Roads"
+
+# GRIP4 — Global Roads Inventory Project (community catalog, 7 regions)
+_GRIP4_REGIONS = {
+    "Africa": "projects/sat-io/open-datasets/GRIP4/Africa",
+    "Central-South-America": "projects/sat-io/open-datasets/GRIP4/Central-South-America",
+    "Europe": "projects/sat-io/open-datasets/GRIP4/Europe",
+    "Middle-East-Central-Asia": "projects/sat-io/open-datasets/GRIP4/Middle-East-Central-Asia",
+    "North-America": "projects/sat-io/open-datasets/GRIP4/North-America",
+    "Oceania": "projects/sat-io/open-datasets/GRIP4/Oceania",
+    "South-East-Asia": "projects/sat-io/open-datasets/GRIP4/South-East-Asia",
+}
+
 _TIGER_BLOCK_GROUPS_2020 = "TIGER/2020/BG"
 _TIGER_TRACTS_2020 = "TIGER/2020/TRACT"
 
@@ -130,6 +145,58 @@ def _get_intersecting_country_iso3(area):
     geom = _to_geometry(area)
     countries = ee.FeatureCollection(_GEOB_V6[0]).filterBounds(geom)
     return countries.aggregate_array("shapeGroup")
+
+
+# ---------------------------------------------------------------------------
+#  Geometry helpers
+# ---------------------------------------------------------------------------
+def simple_buffer(geom, size=15000):
+    """Create a square buffer around a point using simple coordinate arithmetic.
+
+    A lightweight alternative to ``ee.Geometry.buffer()`` that avoids
+    the server-side geodesic circle computation.  Transforms the
+    point to EPSG:3857 (Web Mercator), applies a latitude-corrected
+    offset so that ``size`` represents true ground meters, and
+    returns the polygon in EPSG:3857.
+
+    Accepts a point in any projection — it will be transformed to
+    EPSG:3857 internally.
+
+    Args:
+        geom (ee.Geometry): A point geometry in any projection.
+        size (int or float, optional): Half-width of the square in
+            meters on the ground.  The resulting square spans
+            ``2 * size`` on each side.  Defaults to ``15000``
+            (producing a 30 km x 30 km square).
+
+    Returns:
+        ee.Geometry.Polygon: A square polygon centered on the input
+        point, defined in EPSG:3857.
+
+    Example:
+        >>> pt = ee.Geometry.Point([-111.5, 40.5])
+        >>> square = simple_buffer(pt, size=5000)  # 10 km x 10 km
+    """
+    projection = ee.Projection("EPSG:3857")
+    geom_3857 = geom.transform(projection)
+    coordinates = geom_3857.coordinates()
+    x = ee.Number(coordinates.get(0))
+    y = ee.Number(coordinates.get(1))
+
+    # Compensate for Mercator scale distortion: 1/cos(lat)
+    lat_rad = ee.Number(geom.transform("EPSG:4326").coordinates().get(1)) \
+                .multiply(3.141592653589793).divide(180)
+    scale_factor = ee.Number(1).divide(lat_rad.cos())
+    adjusted = ee.Number(size).multiply(scale_factor)
+
+    poly_pts = ee.List([
+        ee.List([x.subtract(adjusted), y.subtract(adjusted)]),
+        ee.List([x.subtract(adjusted), y.add(adjusted)]),
+        ee.List([x.add(adjusted), y.add(adjusted)]),
+        ee.List([x.add(adjusted), y.subtract(adjusted)]),
+        ee.List([x.subtract(adjusted), y.subtract(adjusted)]),
+    ])
+    return ee.Geometry.Polygon(poly_pts, projection)
 
 
 # ---------------------------------------------------------------------------
@@ -384,13 +451,36 @@ def getUSFSRegions(area):
 # ---------------------------------------------------------------------------
 #  Roads
 # ---------------------------------------------------------------------------
-def getRoads(area):
-    """Return TIGER 2016 road features that intersect ``area``.
+def getRoads(area, source="tiger", year=2024):
+    """Return road features that intersect ``area``.
 
-    Properties include ``fullname``, ``mtfcc`` (MAF/TIGER Feature Class
-    Code), ``rttyp`` (route type), ``linearid``.
+    Supports two road data sources covering different geographies and
+    classification schemes.
 
-    Common MTFCC codes:
+    Args:
+        area: ee.FeatureCollection, ee.Feature, or ee.Geometry.
+        source (str): Road data source:
+
+            - ``"tiger"`` (default) — US Census TIGER roads.  Detailed
+              classification via MTFCC codes.  Available 2012-2025 via
+              the community catalog, plus 2016 in the official GEE
+              catalog.  US only.  Properties: ``FULLNAME``, ``MTFCC``,
+              ``RTTYP``, ``LINEARID``.
+            - ``"grip"`` — GRIP4 (Global Roads Inventory Project).
+              Global coverage across 7 regional shards.  Road type
+              classification via ``GP_RTP`` (1=Highway, 2=Primary,
+              3=Secondary, 4=Tertiary, 5=Local).  Based on
+              OpenStreetMap and other sources.  CC-BY 4.0.
+
+        year (int): Year for TIGER roads (2012-2025).  Ignored for
+            other sources.  Years other than 2016 use the community
+            catalog (``projects/sat-io/open-datasets/TIGER/{year}/Roads``).
+            Defaults to ``2024``.
+
+    Returns:
+        ee.FeatureCollection of road line features.
+
+    Common TIGER MTFCC codes:
 
     - ``S1100`` — Primary road (interstate)
     - ``S1200`` — Secondary road (US/state highway)
@@ -402,16 +492,53 @@ def getRoads(area):
     - ``S1780`` — Parking lot road
     - ``S1820`` — Bike path / trail
 
-    Args:
-        area: ee.FeatureCollection, ee.Feature, or ee.Geometry.
+    GRIP4 GP_RTP road types:
 
-    Returns:
-        ee.FeatureCollection.
+    - ``1`` — Highway
+    - ``2`` — Primary road
+    - ``3`` — Secondary road
+    - ``4`` — Tertiary road
+    - ``5`` — Local / residential
 
-    Example:
-        >>> interstates = getRoads(my_area).filter(ee.Filter.eq('mtfcc', 'S1100'))
+    Examples:
+        >>> # US interstates from TIGER 2024
+        >>> interstates = getRoads(my_area).filter(ee.Filter.eq('MTFCC', 'S1100'))
+        >>> # Global highways from GRIP4
+        >>> highways = getRoads(my_area, source='grip').filter(ee.Filter.eq('GP_RTP', 1))
+        >>> # TIGER roads from a specific year
+        >>> roads_2020 = getRoads(my_area, year=2020)
     """
-    return _filter_bounds(_TIGER_ROADS, area)
+    source = str(source).lower().strip()
+
+    if source == "tiger":
+        year = int(year)
+        if year == 2016:
+            asset_id = _TIGER_ROADS
+        elif 2012 <= year <= 2025:
+            asset_id = _TIGER_ROADS_COMMUNITY.format(year=year)
+        else:
+            raise ValueError(f"TIGER roads year must be 2012-2025, got {year}")
+        return _filter_bounds(asset_id, area)
+
+    if source == "grip":
+        return _get_multi_region_roads(area, _GRIP4_REGIONS)
+
+    raise ValueError(f"Unknown roads source: {source!r}. Use 'tiger' or 'grip'.")
+
+
+def _get_multi_region_roads(area, region_dict):
+    """Load and merge regional road FeatureCollections that intersect ``area``.
+
+    Tries all regions and merges those that have features intersecting
+    the given area.  Since road collections are large, filtering by
+    bounds is essential.
+    """
+    geom = _to_geometry(area)
+    collections = [
+        ee.FeatureCollection(asset_id).filterBounds(geom)
+        for asset_id in region_dict.values()
+    ]
+    return ee.FeatureCollection(collections).flatten()
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,25 @@
+# Cloud Build config to deploy geeViz MCP to Cloud Run
+# Usage: gcloud builds submit --config=cloudbuild.yaml ../..
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/geeviz-mcp', '-f', 'mcp/deploy/Dockerfile', '.']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/geeviz-mcp']
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'geeviz-mcp'
+      - '--image=gcr.io/$PROJECT_ID/geeviz-mcp'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--port=8080'
+      - '--memory=2Gi'
+      - '--timeout=300'
+      - '--set-env-vars=MCP_TRANSPORT=streamable-http,MCP_HOST=0.0.0.0,MCP_PORT=8080'
+      # Set GEE_PROJECT and mount the service account key as a secret:
+      # --set-secrets=GEE_SERVICE_ACCOUNT_KEY=/secrets/ee-sa-key:latest
+      # --set-env-vars=GEE_PROJECT=your-project-id
+images:
+  - 'gcr.io/$PROJECT_ID/geeviz-mcp'

@@ -233,7 +233,7 @@ SANKEY_GRADIENT_JS = r"""
                         ctx.drawImage(m.img, m.x, m.y, m.w, m.h);
                     }
                     var a = document.createElement('a');
-                    a.download = 'sankey_chart.png';
+                    a.download = ((cfg && cfg.title) ? cfg.title.replace(/[^a-zA-Z0-9_-]/g, '_') : 'sankey_chart') + '.png';
                     a.href = canvas.toDataURL('image/png');
                     a.click();
                 };
@@ -477,7 +477,7 @@ D3_SANKEY_TEMPLATE = r"""<!DOCTYPE html>
         img.onload = function() {
             ctx.drawImage(img, 0, 0, fullW, fullH);
             var a = document.createElement('a');
-            a.download = 'sankey_chart.png';
+            a.download = ((cfg && cfg.title) ? cfg.title.replace(/[^a-zA-Z0-9_-]/g, '_') : 'sankey_chart') + '.png';
             a.href = canvas.toDataURL('image/png');
             a.click();
         };

@@ -1,6 +1,6 @@
 # geeViz MCP Server
 
-MCP (Model Context Protocol) server for the **geeViz** Python package. Provides 30 execution and introspection tools that give AI agents structured, live access to Google Earth Engine and the geeViz API.
+MCP (Model Context Protocol) server for the **geeViz** Python package. Provides 32 execution and introspection tools that give AI agents structured, live access to Google Earth Engine and the geeViz API.
 
 ## Why MCP?
 
@@ -114,7 +114,7 @@ Ensure `cwd` is the folder that contains the `geeViz` package so `python -m geeV
 | **`export_to_drive`** | Export an `ee.Image` to Google Drive using geeViz's `exportToDriveWrapper`. Region is required. |
 | **`export_to_cloud_storage`** | Export an `ee.Image` to Google Cloud Storage using geeViz's `exportToCloudStorageWrapper`. Defaults to Cloud Optimized GeoTIFF. |
 | **`cancel_tasks`** | Cancel running/ready EE tasks. Cancel all tasks or filter by name substring using geeViz's `taskManagerLib`. |
-| **`extract_and_chart`** | Extract values from an `ee.Image` or `ee.ImageCollection` over a point/region. Handles point sampling (buffer_meters=0), bar charts, time series, Sankey diagrams, grouped bar charts, and per-feature time series subplots. Auto-detects thematic data. Wraps `geeViz.chartingLib.summarize_and_chart`. |
+| **`extract_and_chart`** | Extract values from an `ee.Image` or `ee.ImageCollection` over a point/region. Handles point sampling (buffer_meters=0), bar charts, time series, Sankey diagrams, donut charts, scatter plots, grouped bar charts, and per-feature time series subplots. Auto-detects thematic data. Wraps `geeViz.outputLib.charts.summarize_and_chart`. |
 | **`delete_asset`** | Delete a single GEE asset. Checks existence before deleting. Single-asset only (not recursive). |
 | **`copy_asset`** | Copy a GEE asset to a new location. Supports overwrite. |
 | **`move_asset`** | Move a GEE asset (copy then delete source). Only deletes source after successful copy. |
@@ -173,7 +173,7 @@ claude mcp add geeViz python -- -m geeViz.mcp.server
 
 Connect programmatically using the `mcp` Python client library and pipe tool calls through any LLM API (Gemini, Claude, OpenAI). See the included examples:
 
-- `test_mcp.ipynb` — Jupyter notebook testing all 30 tools via Gemini
+- `test_mcp.ipynb` — Jupyter notebook testing all 27 tools via Gemini
 - `test_mcp_comparison.py` — Three-way comparison: bare Gemini vs Google Search vs MCP server
 
 Both use `python-dotenv` to load a `GOOGLE_API_KEY` from a `.env` file. Core pattern:
@@ -192,7 +192,7 @@ server_params = StdioServerParameters(
 async with stdio_client(server_params, errlog=subprocess.DEVNULL) as (read, write):
     async with ClientSession(read, write) as session:
         await session.initialize()
-        tools = await session.list_tools()       # discover all 30 tools
+        tools = await session.list_tools()       # discover all 27 tools
         result = await session.call_tool(         # call any tool
             name="get_version_info", arguments={}
         )

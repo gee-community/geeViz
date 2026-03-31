@@ -2,7 +2,7 @@
 geeViz MCP Server -- execution and introspection tools for Earth Engine via geeViz.
 
 Unlike static doc snippets, this server executes code, inspects live GEE assets,
-and dynamically queries API signatures. 33 tools replace the previous 49.
+and dynamically queries API signatures. 27 tools.
 """
 from __future__ import annotations
 
@@ -40,40 +40,30 @@ Environment (optional):
   MCP_PORT        Port for HTTP (default: 8000)
   MCP_PATH        Path for HTTP (default: /mcp)
 
-Tools (33):
+Tools (27):
   run_code                 Execute Python/GEE code in a persistent REPL namespace
   inspect_asset            Get metadata for any GEE asset (with optional collection filters)
   get_api_reference        Look up function signatures and docstrings
   search_functions         Search/list functions across geeViz modules
-  get_example              Read source code of a geeViz example script
-  list_examples            List available example scripts
+  examples                 List or read geeViz example scripts (action=list|get)
   list_assets              List assets in a GEE folder
   track_tasks              Get status of recent EE tasks
-  view_map                 Open the geeView map and return the URL
-  get_map_layers           See what layers are currently on the map
-  clear_map                Clear all map layers and commands
+  map_control              View, list layers, or clear the geeView map (action=view|layers|clear)
   save_session             Save run_code history to a .py file or .ipynb notebook
-  get_version_info         Return geeViz, EE, and Python version info
-  get_namespace            Inspect user-defined variables in the REPL
-  get_project_info         Return current EE project ID and root assets
-  export_to_asset          Export an ee.Image to a GEE asset (via geeViz wrapper)
-  geocode                  Geocode a place name to coordinates / GEE boundaries
+  env_info                 Get versions, REPL namespace, or project info (action=version|namespace|project)
+  export_image             Export ee.Image to asset, Drive, or Cloud Storage (destination=asset|drive|cloud)
   search_datasets          Search the GEE dataset catalog by keyword
   get_catalog_info         Get detailed STAC metadata for a GEE dataset
-  get_thumbnail            Get a PNG/GIF thumbnail of an ee.Image or ImageCollection
-  export_to_drive          Export an ee.Image to Google Drive
-  export_to_cloud_storage  Export an ee.Image to Google Cloud Storage
   cancel_tasks             Cancel running/ready EE tasks (all or by name)
-  delete_asset             Delete a single GEE asset
-  copy_asset               Copy a GEE asset to a new location
-  move_asset               Move a GEE asset (copy + delete source)
-  create_folder            Create a GEE folder or ImageCollection
-  update_acl               Update permissions (ACL) on a GEE asset
-  extract_and_chart        Extract values and chart ee.Image/ImageCollection (point sample, bar, time series, Sankey)
+  manage_asset             Delete, copy, move, create folder, or update ACL (action=delete|copy|move|create|update_acl)
   get_reference_data       Look up reference dicts (band mappings, viz params, collection IDs, etc.)
-  search_edw               Search USFS Enterprise Data Warehouse services by keyword
-  get_edw_service_info     Get layers, fields, and metadata for an EDW service
-  query_edw_features       Query features from an EDW layer (with spatial/attribute filters)
+  get_streetview           Get Google Street View imagery at a location for ground-truthing
+  search_places            Search for places, landmarks, or businesses using Google Places API
+  create_report            Create a new report (title, theme, layout, tone)
+  add_report_section       Add a section to the active report (ee.Image/IC + geometry)
+  generate_report          Generate the report (HTML, Markdown, or PDF)
+  get_report_status        Check active report status and section list
+  clear_report             Discard the active report
 
 Examples:
   python -m geeViz.mcp.server                   # stdio, no sandbox (default)
@@ -131,7 +121,7 @@ class _StubFastMCP:
     def __init__(self, *args, **kwargs):
         pass
 
-    def tool(self):
+    def tool(self, **kwargs):
         """Return identity decorator -- the function is unchanged."""
         def _identity(fn):
             return fn
@@ -148,6 +138,21 @@ class _StubFastMCP:
 
 _FastMCP = _load_fastmcp()
 FastMCP = _FastMCP if _FastMCP is not None else _StubFastMCP
+
+# Load ToolAnnotations for hinting read-only / destructive / etc.
+try:
+    from mcp.types import ToolAnnotations
+except ImportError:
+    # Stub if mcp SDK not installed
+    class ToolAnnotations:
+        def __init__(self, **kwargs): pass
+
+# Pre-built annotation sets
+_READ_ONLY = ToolAnnotations(readOnlyHint=True, idempotentHint=True)
+_READ_ONLY_OPEN = ToolAnnotations(readOnlyHint=True, idempotentHint=True, openWorldHint=True)
+_WRITE = ToolAnnotations(readOnlyHint=False, destructiveHint=False)
+_WRITE_OPEN = ToolAnnotations(readOnlyHint=False, destructiveHint=False, openWorldHint=True)
+_DESTRUCTIVE = ToolAnnotations(readOnlyHint=False, destructiveHint=True, openWorldHint=True)
 
 
 def _load_mcp_image():
@@ -225,8 +230,10 @@ _INSTRUCTIONS_FILE = os.path.join(_THIS_DIR, "agent-instructions.md")
 try:
     with open(_INSTRUCTIONS_FILE, "r", encoding="utf-8") as _f:
         _SERVER_INSTRUCTIONS = _f.read()
+    print(f"[geeViz MCP] Loaded instructions: {len(_SERVER_INSTRUCTIONS)} chars, {len(_SERVER_INSTRUCTIONS.split())} words")
 except Exception:
     _SERVER_INSTRUCTIONS = None
+    print("[geeViz MCP] WARNING: No agent instructions loaded")
 
 app = FastMCP(
     "geeViz",
@@ -347,7 +354,11 @@ _MODULE_MAP = {
     "phEEnoViz": "geeViz.phEEnoViz",
     "cloudStorageManagerLib": "geeViz.cloudStorageManagerLib",
     "chartingLib": "geeViz.outputLib.charts",
+    "thumbLib": "geeViz.outputLib.thumbs",
+    "reportLib": "geeViz.outputLib.reports",
     "getSummaryAreasLib": "geeViz.getSummaryAreasLib",
+    "edwLib": "geeViz.edwLib",
+    "googleMapsLib": "geeViz.googleMapsLib",
 }
 
 # Persistent REPL namespace for run_code
@@ -360,6 +371,57 @@ _output_dir = os.path.join(_THIS_DIR, "generated_outputs")
 _current_script_path: str | None = None
 
 
+def _init_ee_credentials():
+    """Initialize Earth Engine with service account or default credentials.
+
+    Checks for service account credentials in this order:
+
+    1. ``GEE_SERVICE_ACCOUNT_KEY`` env var → path to a JSON key file
+    2. ``GEE_SERVICE_ACCOUNT_KEY_JSON`` env var → inline JSON key string
+    3. ``GOOGLE_APPLICATION_CREDENTIALS`` env var → standard ADC key file
+    4. Fall back to Application Default Credentials (user login, attached
+       service account on GCE/Cloud Run, etc.)
+
+    The ``GEE_PROJECT`` env var sets the EE project for billing/quotas.
+    """
+    import ee
+
+    project = os.environ.get("GEE_PROJECT")
+    key_path = os.environ.get("GEE_SERVICE_ACCOUNT_KEY")
+    key_json = os.environ.get("GEE_SERVICE_ACCOUNT_KEY_JSON")
+
+    if key_path and os.path.isfile(key_path):
+        # Service account key file
+        import json
+        with open(key_path) as f:
+            key_data = json.load(f)
+        credentials = ee.ServiceAccountCredentials(
+            key_data["client_email"], key_file=key_path,
+        )
+        ee.Initialize(credentials=credentials, project=project)
+        print(f"EE initialized with service account: {key_data['client_email']}"
+              f" (project={project or 'default'})", file=sys.stderr)
+    elif key_json:
+        # Inline JSON key (for container secrets / env injection)
+        import json, tempfile
+        key_data = json.loads(key_json)
+        # ee.ServiceAccountCredentials needs a file path, so write a temp file
+        tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
+        json.dump(key_data, tmp)
+        tmp.close()
+        credentials = ee.ServiceAccountCredentials(
+            key_data["client_email"], key_file=tmp.name,
+        )
+        ee.Initialize(credentials=credentials, project=project)
+        os.unlink(tmp.name)
+        print(f"EE initialized with service account (inline key): "
+              f"{key_data['client_email']}", file=sys.stderr)
+    else:
+        # Fall back to geeViz default (ADC, user credentials, etc.)
+        # geeViz.geeView handles ee.Initialize() on import
+        pass
+
+
 def _ensure_initialized():
     """Lazy-initialize EE and populate the REPL namespace. Thread-safe."""
     global _initialized
@@ -368,9 +430,16 @@ def _ensure_initialized():
     with _init_lock:
         if _initialized:
             return
+
+        # Initialize EE credentials before importing geeViz
+        # (geeViz.geeView calls ee.Initialize on import)
+        _init_ee_credentials()
+
         import geeViz.geeView as gv
         import geeViz.getImagesLib as gil
         import geeViz.getSummaryAreasLib as sal
+        import geeViz.edwLib as edw
+        import geeViz.googleMapsLib as gm
         from geeViz.outputLib import thumbs as tl
         from geeViz.outputLib import reports as rl
         import ee
@@ -381,6 +450,8 @@ def _ensure_initialized():
             "gv": gv,
             "gil": gil,
             "sal": sal,
+            "edw": edw,
+            "gm": gm,
             "tl": tl,
             "rl": rl,
             "save_file": _safe_write_file,
@@ -413,6 +484,8 @@ def _save_history_to_file() -> str:
         "import geeViz.geeView as gv\n"
         "import geeViz.getImagesLib as gil\n"
         "import geeViz.getSummaryAreasLib as sal\n"
+        "import geeViz.edwLib as edw\n"
+        "import geeViz.googleMapsLib as gm\n"
         "from geeViz.outputLib import thumbs as tl\n"
         "from geeViz.outputLib import reports as rl\n"
         "ee = gv.ee\n"
@@ -621,7 +694,7 @@ def _get_method_chain(node: ast.AST) -> list[str]:
     return names
 
 
-@app.tool()
+@app.tool(annotations=_WRITE)
 async def run_code(code: str, timeout: int = 120, reset: bool = False, ctx: Context = None) -> str:
     """Execute Python/GEE code in a persistent REPL namespace (like Jupyter).
 
@@ -704,19 +777,35 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False, ctx: Cont
     thread = threading.Thread(target=_exec, daemon=True)
     thread.start()
 
-    # Heartbeat loop: poll every 1s, report progress every ~10s
+    # Heartbeat loop: poll every 1s, timeout only after `timeout` seconds
+    # of *inactivity* (no new stdout/stderr output). Active code that keeps
+    # printing can run indefinitely.
     elapsed = 0.0
+    idle_time = 0.0
     report_interval = 10
     poll_interval = 1
     next_report = report_interval
-    while thread.is_alive() and elapsed < timeout:
-        await asyncio.sleep(min(poll_interval, timeout - elapsed))
+    last_stdout_len = 0
+    last_stderr_len = 0
+    while thread.is_alive() and idle_time < timeout:
+        await asyncio.sleep(min(poll_interval, timeout - idle_time))
         elapsed += poll_interval
+
+        # Check for new output activity
+        cur_stdout_len = stdout_buf.tell()
+        cur_stderr_len = stderr_buf.tell()
+        if cur_stdout_len != last_stdout_len or cur_stderr_len != last_stderr_len:
+            idle_time = 0.0  # reset idle timer on any new output
+            last_stdout_len = cur_stdout_len
+            last_stderr_len = cur_stderr_len
+        else:
+            idle_time += poll_interval
+
         if thread.is_alive() and ctx and elapsed >= next_report:
             next_report += report_interval
             try:
                 await ctx.report_progress(elapsed, timeout)
-                await ctx.info(f"run_code still executing... ({int(elapsed)}s / {timeout}s)")
+                await ctx.info(f"run_code executing... ({int(elapsed)}s elapsed, {int(idle_time)}s idle / {timeout}s timeout)")
             except Exception:
                 pass  # don't let reporting errors kill the tool
 
@@ -733,16 +822,16 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False, ctx: Cont
 
     if thread.is_alive():
         timeout_hints = (
-            f"Execution timed out after {timeout}s. Common causes:\n"
+            f"Execution timed out after {int(idle_time)}s of inactivity ({int(elapsed)}s total). Common causes:\n"
             "- .getInfo() on a large ImageCollection -- use .limit(N) or inspect_asset with date/region filters\n"
-            "- .getInfo() on a high-res Image over a large region -- use extract_and_chart tool instead\n"
+            "- .getInfo() on a high-res Image over a large region -- reduce the region or increase scale\n"
             "- Complex server-side computation -- break into smaller steps\n"
             "Note: on Windows, the thread continues in background."
         )
         if elapsed >= 60:
             timeout_hints += (
-                "\nHint: the call ran for over 60s. If this was a .getInfo() call, "
-                "consider using extract_and_chart or inspect_asset tools instead."
+                "\nHint: the call ran for over 60s with no output. If this was a .getInfo() call, "
+                "consider using inspect_asset with filters, or reduce scale/region size."
             )
         return json.dumps({
             "success": False,
@@ -790,7 +879,7 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False, ctx: Cont
 # Tool 2: inspect_asset
 # ---------------------------------------------------------------------------
 
-@app.tool()
+@app.tool(annotations=_READ_ONLY_OPEN)
 def inspect_asset(
     asset_id: str,
     start_date: str = "",
@@ -799,12 +888,10 @@ def inspect_asset(
 ) -> str:
     """Get detailed metadata for any GEE asset (Image, ImageCollection, FeatureCollection, etc.).
 
-    Returns band names/types, CRS, scale, dimensions, date range, size,
-    column names, geometry type, and properties as appropriate.
-
-    For ImageCollections, optional filters can be applied and the response
-    includes image_count, first_date, last_date, and per-band details
-    (name, data_type, crs, scale). This replaces the old get_collection_info tool.
+    Returns band names/types, CRS, scale, date range, size, columns, and
+    properties. Uses ee.data.getInfo for fast catalog metadata, then fetches
+    live details with a 10-second timeout per query to avoid hangs on large
+    collections.
 
     Args:
         asset_id: Full Earth Engine asset ID (e.g. "COPERNICUS/S2_SR_HARMONIZED").
@@ -817,9 +904,15 @@ def inspect_asset(
     Returns:
         JSON with asset metadata.
     """
+    import concurrent.futures
+    import datetime as _dt
+
+    _TIMEOUT = 10  # seconds per EE query
+
     _ensure_initialized()
     ee = _namespace["ee"]
 
+    # --- Step 1: Fast catalog metadata (no compute, never hangs) ---
     try:
         info = ee.data.getInfo(asset_id)
     except Exception as exc:
@@ -831,14 +924,62 @@ def inspect_asset(
     asset_type = info.get("type", "UNKNOWN")
     result: dict = {"asset_id": asset_id, "type": asset_type}
 
+    # Include catalog-level properties (skip long description HTML)
+    cat_props = info.get("properties", {})
+    if cat_props:
+        dr = cat_props.get("date_range")
+        if dr and isinstance(dr, list) and len(dr) == 2:
+            try:
+                result["first_date"] = _dt.datetime.utcfromtimestamp(dr[0] / 1000).strftime("%Y-%m-%d")
+                result["last_date"] = _dt.datetime.utcfromtimestamp(dr[1] / 1000).strftime("%Y-%m-%d")
+            except Exception:
+                pass
+        _CATALOG_KEYS = ("title", "provider", "keywords", "tags", "period",
+                         "visualization_0_bands", "visualization_0_min",
+                         "visualization_0_max", "visualization_0_name",
+                         "provider_url")
+        for key in _CATALOG_KEYS:
+            if key in cat_props:
+                result.setdefault("catalog", {})[key] = cat_props[key]
+        # Include column info for FeatureCollections
+        if "columns" in info:
+            result["columns"] = info["columns"]
+
+    def _getinfo_with_timeout(ee_obj, timeout=_TIMEOUT):
+        """Run ee_obj.getInfo() in a daemon thread with timeout. Returns (result, error)."""
+        import threading
+        _result_box = [None, None]  # [value, error]
+        def _run():
+            try:
+                _result_box[0] = ee_obj.getInfo()
+            except Exception as exc:
+                _result_box[1] = str(exc)
+        t = threading.Thread(target=_run, daemon=True)
+        t.start()
+        t.join(timeout=timeout)
+        if t.is_alive():
+            return None, "timeout"
+        return _result_box[0], _result_box[1]
+
     try:
         if asset_type in ("IMAGE", "Image"):
-            asset = ee.Image(asset_id)
+            img_info, err = _getinfo_with_timeout(ee.Image(asset_id))
+            if img_info and "bands" in img_info:
+                result["bands"] = [
+                    {"name": b.get("id", ""), "data_type": b.get("data_type", {}).get("precision", ""),
+                     "crs": b.get("crs", ""), "scale": b.get("crs_transform", [None])[0]}
+                    for b in img_info["bands"]
+                ]
+                # Include image properties (class metadata, etc.)
+                if "properties" in img_info:
+                    result["properties"] = img_info["properties"]
+            elif err:
+                result["detail_error"] = err
 
         elif asset_type in ("IMAGE_COLLECTION", "ImageCollection"):
-            # Build filtered collection for summary stats
             collection = ee.ImageCollection(asset_id)
 
+            # Apply filters
             filters_applied = {}
             if start_date:
                 collection = collection.filterDate(start_date, end_date or "2099-01-01")
@@ -848,7 +989,6 @@ def inspect_asset(
                 collection = collection.filterDate("1970-01-01", end_date)
                 filters_applied["start_date"] = "1970-01-01"
                 filters_applied["end_date"] = end_date
-
             if region_var:
                 region = _namespace.get(region_var)
                 if region is None:
@@ -862,70 +1002,121 @@ def inspect_asset(
                     })
                 collection = collection.filterBounds(region)
                 filters_applied["region_var"] = region_var
-
             if filters_applied:
                 result["filters_applied"] = filters_applied
 
-            # Image count
-            try:
-                count = collection.size().getInfo()
-                result["image_count"] = count
-            except Exception as exc:
-                result["image_count_error"] = str(exc)
-                count = None
+            # --- Run queries with individual timeouts ---
+            # Each query runs in its own daemon thread so hangs don't block
+            queries = {}
+            queries["count"] = collection.size()
 
-            if count == 0:
-                result["message"] = "Collection is empty (with applied filters)."
-                return json.dumps(result)
-
-            # Date range
-            try:
-                import datetime as _dt
-                date_range = collection.reduceColumns(
-                    ee.Reducer.minMax(), ["system:time_start"]
-                ).getInfo()
-                min_ms = date_range.get("min")
-                max_ms = date_range.get("max")
-                if min_ms is not None:
-                    result["first_date"] = _dt.datetime.utcfromtimestamp(min_ms / 1000).strftime("%Y-%m-%d")
-                if max_ms is not None:
-                    result["last_date"] = _dt.datetime.utcfromtimestamp(max_ms / 1000).strftime("%Y-%m-%d")
-            except Exception:
-                pass
+            # Date range: use catalog date_range if no filters applied,
+            # otherwise compute from the filtered collection
+            if filters_applied or "first_date" not in result:
+                queries["first_date"] = collection.sort("system:time_start", True).first().date().format("YYYY-MM-dd")
+                queries["last_date"] = collection.sort("system:time_start", False).first().date().format("YYYY-MM-dd")
 
             # Band info from first image
-            try:
-                first_info = collection.first().getInfo()
-                if first_info and "bands" in first_info:
-                    bands = []
-                    for b in first_info["bands"]:
-                        bands.append({
-                            "name": b.get("id", ""),
-                            "data_type": b.get("data_type", {}).get("precision", ""),
-                            "crs": b.get("crs", ""),
-                            "scale": b.get("crs_transform", [None])[0],
-                        })
-                    result["bands"] = bands
-            except Exception:
-                pass
+            queries["first_image"] = collection.first()
 
-            # Also include raw metadata from a small sample
-            asset = collection.limit(5)
+            import threading
+            results_map = {}
+            _lock = threading.Lock()
+
+            def _run_query(key, ee_obj):
+                try:
+                    val = ee_obj.getInfo()
+                    with _lock:
+                        results_map[key] = val
+                except Exception as exc:
+                    with _lock:
+                        results_map[key] = f"__ERROR__:{exc}"
+
+            threads = []
+            for key, ee_obj in queries.items():
+                t = threading.Thread(target=_run_query, args=(key, ee_obj), daemon=True)
+                t.start()
+                threads.append(t)
+
+            # Wait up to _TIMEOUT for all threads
+            deadline = __import__("time").time() + _TIMEOUT
+            for t in threads:
+                remaining = max(0.1, deadline - __import__("time").time())
+                t.join(timeout=remaining)
+
+            # Mark any that didn't finish
+            for key in queries:
+                if key not in results_map:
+                    results_map[key] = "__TIMEOUT__"
+
+            # Process results
+            count_val = results_map.get("count")
+            if isinstance(count_val, int):
+                result["image_count"] = count_val
+            elif count_val == "__TIMEOUT__":
+                result["image_count"] = "timeout (large collection)"
+            else:
+                result["image_count_error"] = str(count_val)
+
+            # Dates
+            fd = results_map.get("first_date")
+            ld = results_map.get("last_date")
+            if isinstance(fd, str) and not fd.startswith("__"):
+                result["first_date"] = fd
+            if isinstance(ld, str) and not ld.startswith("__"):
+                result["last_date"] = ld
+
+            # Bands and sample image properties
+            first_img = results_map.get("first_image")
+            if isinstance(first_img, dict):
+                if "bands" in first_img:
+                    result["bands"] = [
+                        {"name": b.get("id", ""), "data_type": b.get("data_type", {}).get("precision", ""),
+                         "crs": b.get("crs", ""), "scale": b.get("crs_transform", [None])[0]}
+                        for b in first_img["bands"]
+                    ]
+                # Include first image's property names (not values — those can be huge)
+                img_props = first_img.get("properties", {})
+                if img_props:
+                    result["image_property_names"] = sorted(img_props.keys())
+                    # Include a few key properties if they exist
+                    for k in ("system:time_start", "system:index"):
+                        if k in img_props:
+                            result.setdefault("sample_image", {})[k] = img_props[k]
+
+            # If count timed out, note it
+            if count_val == "__TIMEOUT__":
+                result["note"] = "Collection too large to count within timeout."
 
         elif asset_type in ("TABLE", "FeatureCollection"):
-            asset = ee.FeatureCollection(asset_id).limit(5)
+            # Try full metadata first, fall back to limited sample
+            fc = ee.FeatureCollection(asset_id)
+            fc_info, err = _getinfo_with_timeout(fc.limit(5), _TIMEOUT)
+            if fc_info:
+                result["asset"] = _strip_coordinates(fc_info)
+                # Get column info
+                if "columns" in info:
+                    result["columns"] = info["columns"]
+            elif err == "timeout":
+                # Try even smaller sample
+                fc_info2, err2 = _getinfo_with_timeout(fc.limit(1), _TIMEOUT)
+                if fc_info2:
+                    result["asset"] = _strip_coordinates(fc_info2)
+                    result["note"] = "Large FeatureCollection; showing 1 sample feature."
+                else:
+                    result["detail_error"] = "timeout fetching features"
+                if "columns" in info:
+                    result["columns"] = info["columns"]
+            else:
+                result["detail_error"] = err or "unknown error"
 
         else:
-            # Folder or other -- just return raw info
-            asset = None
+            # Folder or other type — return raw info
+            result["info"] = info
 
     except Exception as exc:
-        asset = None
         result["detail_error"] = str(exc)
 
-    if asset is not None:
-        raw_info = asset.getInfo()
-        result["asset"] = _strip_coordinates(raw_info)
     return json.dumps(result)
 
 
@@ -935,7 +1126,7 @@ def inspect_asset(
 import inspect as _inspect
 
 
-@app.tool()
+@app.tool(annotations=_READ_ONLY)
 def get_api_reference(module: str, function_name: str = "") -> str:
     """Look up the signature and docstring of a geeViz function or module.
 
@@ -945,7 +1136,7 @@ def get_api_reference(module: str, function_name: str = "") -> str:
         module: Short module name. One of: geeView, getImagesLib,
                 changeDetectionLib, gee2Pandas, assetManagerLib,
                 taskManagerLib, foliumView, phEEnoViz, cloudStorageManagerLib,
-                chartingLib, getSummaryAreasLib.
+                chartingLib, thumbLib, reportLib, getSummaryAreasLib, edwLib.
         function_name: Optional function or class name within the module.
                        If omitted, returns the module-level docstring.
 
@@ -1034,7 +1225,7 @@ def get_api_reference(module: str, function_name: str = "") -> str:
 # Tool 4: search_functions
 # ---------------------------------------------------------------------------
 
-@app.tool()
+@app.tool(annotations=_READ_ONLY)
 def search_functions(query: str = "", module: str = "") -> str:
     """Search for functions across geeViz modules, or list functions in a specific module.
 
@@ -1138,129 +1329,77 @@ def search_functions(query: str = "", module: str = "") -> str:
 
 
 # ---------------------------------------------------------------------------
-# Tool 5: get_example
+# Examples (consolidated)
 # ---------------------------------------------------------------------------
 
-@app.tool()
-def get_example(example_name: str) -> str:
-    """Read the source code of a geeViz example script.
+@app.tool(annotations=_READ_ONLY)
+def examples(action: str = "list", name: str = "", filter: str = "") -> str:
+    """List or read geeViz example scripts.
 
     Args:
-        example_name: Name of the example, with or without extension.
-                      Supports .py (returns source) and .ipynb (extracts
-                      code and markdown cells).
+        action: "list" (default) to list available examples, or
+                "get" to read the source of a specific example.
+        name: For action="get", the example name (with or without extension).
+        filter: For action="list", optional substring filter (case-insensitive).
 
     Returns:
-        The example source code, or an error listing available examples.
+        For "list": JSON list of {name, description} objects.
+        For "get": The example source code.
     """
-    # Normalize: strip extension if given
-    base = example_name
-    for ext in (".py", ".ipynb"):
-        if base.endswith(ext):
-            base = base[:-len(ext)]
-            break
+    act = action.lower().strip()
 
-    # Try .py first, then .ipynb
-    py_path = os.path.join(_EXAMPLES_DIR, base + ".py")
-    nb_path = os.path.join(_EXAMPLES_DIR, base + ".ipynb")
+    if act == "get":
+        if not name:
+            return json.dumps({"error": "Provide 'name' for action='get'."})
+        base = name
+        for ext in (".py", ".ipynb"):
+            if base.endswith(ext):
+                base = base[:-len(ext)]
+                break
+        py_path = os.path.join(_EXAMPLES_DIR, base + ".py")
+        nb_path = os.path.join(_EXAMPLES_DIR, base + ".ipynb")
+        if os.path.isfile(py_path):
+            with open(py_path, "r", encoding="utf-8") as f:
+                return json.dumps({"example": base + ".py", "type": "python", "source": f.read()})
+        if os.path.isfile(nb_path):
+            try:
+                with open(nb_path, "r", encoding="utf-8") as f:
+                    nb = json.load(f)
+                cells = [{"cell_type": c.get("cell_type", ""), "source": "".join(c.get("source", []))}
+                         for c in nb.get("cells", []) if "".join(c.get("source", [])).strip()]
+                return json.dumps({"example": base + ".ipynb", "type": "notebook", "cells": cells})
+            except Exception as exc:
+                return json.dumps({"error": f"Failed to read notebook: {exc}"})
+        available = _list_example_files()
+        return json.dumps({"error": f"Example not found: {name!r}", "available_examples": available})
 
-    if os.path.isfile(py_path):
-        with open(py_path, "r", encoding="utf-8") as f:
-            source = f.read()
-        return json.dumps({
-            "example": base + ".py",
-            "type": "python",
-            "source": source,
-        })
-
-    if os.path.isfile(nb_path):
-        try:
-            with open(nb_path, "r", encoding="utf-8") as f:
-                nb = json.load(f)
-            cells = []
-            for cell in nb.get("cells", []):
-                cell_type = cell.get("cell_type", "")
-                source = "".join(cell.get("source", []))
-                if cell_type in ("code", "markdown") and source.strip():
-                    cells.append({"cell_type": cell_type, "source": source})
-            return json.dumps({
-                "example": base + ".ipynb",
-                "type": "notebook",
-                "cells": cells,
-            })
-        except Exception as exc:
-            return json.dumps({"error": f"Failed to read notebook: {exc}"})
-
-    # Not found -- list available
-    available = _list_example_files()
-    return json.dumps({
-        "error": f"Example not found: {example_name!r}",
-        "available_examples": available,
-    })
-
-
-def _list_example_files() -> list[str]:
-    """Return sorted list of example filenames (.py and .ipynb)."""
-    if not os.path.isdir(_EXAMPLES_DIR):
-        return []
-    return sorted(
-        f for f in os.listdir(_EXAMPLES_DIR)
-        if (f.endswith(".py") or f.endswith(".ipynb")) and f != "__init__.py"
-    )
-
-
-# ---------------------------------------------------------------------------
-# Tool 6: list_examples
-# ---------------------------------------------------------------------------
-
-@app.tool()
-def list_examples(filter: str = "") -> str:
-    """List available geeViz example scripts with descriptions.
-
-    Args:
-        filter: Optional substring filter (case-insensitive).
-
-    Returns:
-        JSON list of {name, description} objects.
-    """
+    # action == "list"
     files = _list_example_files()
     results = []
-
     for fname in files:
         if filter and filter.lower() not in fname.lower():
             continue
-
         fpath = os.path.join(_EXAMPLES_DIR, fname)
         desc = ""
-
         if fname.endswith(".py"):
             try:
                 with open(fpath, "r", encoding="utf-8") as f:
-                    # Read first few lines looking for a docstring or comment
-                    lines = []
-                    for _ in range(20):
-                        line = f.readline()
-                        if not line:
+                    lines = [f.readline() for _ in range(20)]
+                text = "".join(lines)
+                try:
+                    tree = ast.parse(text)
+                    if tree.body and isinstance(tree.body[0], ast.Expr) and isinstance(tree.body[0].value, ast.Constant):
+                        desc = str(tree.body[0].value.value).split("\n")[0].strip()
+                except SyntaxError:
+                    pass
+                if not desc:
+                    for line in lines:
+                        s = line.strip()
+                        if s.startswith("#") and len(s) > 2:
+                            desc = s.lstrip("#").strip()
                             break
-                        lines.append(line)
-                    text = "".join(lines)
-                    # Try to extract docstring
-                    try:
-                        tree = ast.parse(text)
-                        if tree.body and isinstance(tree.body[0], ast.Expr) and isinstance(tree.body[0].value, ast.Constant):
-                            desc = str(tree.body[0].value.value).split("\n")[0].strip()
-                    except SyntaxError:
-                        pass
-                    # Fall back to first comment
-                    if not desc:
-                        for line in lines:
-                            stripped = line.strip()
-                            if stripped.startswith("#") and len(stripped) > 2:
-                                desc = stripped.lstrip("#").strip()
-                                break
             except Exception:
                 pass
-
         elif fname.endswith(".ipynb"):
             try:
                 with open(fpath, "r", encoding="utf-8") as f:
@@ -1269,22 +1408,27 @@ def list_examples(filter: str = "") -> str:
                     if cell.get("cell_type") == "markdown":
                         source = "".join(cell.get("source", [])).strip()
                         if source:
-                            # First non-empty line, strip markdown headers
                             desc = source.split("\n")[0].lstrip("#").strip()
                             break
             except Exception:
                 pass
-
         results.append({"name": fname, "description": desc or "(no description)"})
-
     return json.dumps({"count": len(results), "examples": results})
+
+
+def _list_example_files() -> list[str]:
+    """Return sorted list of example filenames."""
+    if not os.path.isdir(_EXAMPLES_DIR):
+        return []
+    return sorted(f for f in os.listdir(_EXAMPLES_DIR)
+                  if (f.endswith(".py") or f.endswith(".ipynb")) and f != "__init__.py")
 
 
 # ---------------------------------------------------------------------------
 # Tool 7: list_assets
 # ---------------------------------------------------------------------------
 
-@app.tool()
+@app.tool(annotations=_READ_ONLY_OPEN)
 def list_assets(folder: str) -> str:
     """List assets in a GEE folder or collection.
 
@@ -1322,7 +1466,7 @@ def list_assets(folder: str) -> str:
 # Tool 8: track_tasks
 # ---------------------------------------------------------------------------
 
-@app.tool()
+@app.tool(annotations=_READ_ONLY_OPEN)
 def track_tasks(name_filter: str = "") -> str:
     """Get status of recent Earth Engine tasks.
 
@@ -1359,125 +1503,94 @@ def track_tasks(name_filter: str = "") -> str:
 
 
 # ---------------------------------------------------------------------------
-# Tool 9: view_map
+# Map control (consolidated)
 # ---------------------------------------------------------------------------
 
-@app.tool()
-def view_map(open_browser: bool = True) -> str:
-    """Open the geeView interactive map and return the URL.
-
-    Call this after adding layers with run_code. The Map object is the
-    same singleton used by run_code, so all layers added there will appear.
+@app.tool(annotations=_WRITE)
+def map_control(action: str = "view", open_browser: bool = True) -> str:
+    """Control the geeView interactive map.
 
     Args:
-        open_browser: Whether to open the map in the default browser (default True).
+        action: Action to perform:
+            - "view" (default): Open the map and return the URL.
+            - "layers": List current layers, visibility, and viz params.
+            - "clear": Remove all layers and commands.
+        open_browser: For action="view", whether to open in browser (default True).
 
     Returns:
-        JSON with the map URL and layer count.
+        JSON with action-specific results.
     """
     _ensure_initialized()
     Map = _namespace["Map"]
+    act = action.lower().strip()
 
-    # Capture the URL that view() prints to stdout
-    url_buf = io.StringIO()
-    try:
-        with contextlib.redirect_stdout(url_buf):
-            Map.view(open_browser=open_browser, open_iframe=False)
-    except Exception as exc:
-        return json.dumps({"error": str(exc)})
-
-    # Extract URL from printed output
-    printed = url_buf.getvalue()
-    url = None
-    for line in printed.splitlines():
-        line = line.strip()
-        if line.startswith("http"):
-            url = line
-            break
-
-    layer_count = len(Map.idDictList) if hasattr(Map, "idDictList") else 0
-
-    return json.dumps({
-        "url": url,
-        "layer_count": layer_count,
-        "message": f"Map opened with {layer_count} layer(s)." if url else "Map.view() ran but no URL was captured.",
-        "raw_output": printed.strip(),
-    })
-
-
-# ---------------------------------------------------------------------------
-# Tool 10: get_map_layers
-# ---------------------------------------------------------------------------
-
-@app.tool()
-def get_map_layers() -> str:
-    """See what layers are currently on the map.
-
-    Returns layer names, types, visibility, and visualization parameters.
-    Useful for debugging why a map looks wrong or checking state.
-
-    Returns:
-        JSON with layers list and active map commands.
-    """
-    _ensure_initialized()
-    Map = _namespace["Map"]
-
-    layers = []
-    for entry in getattr(Map, "idDictList", []):
-        viz_raw = entry.get("viz", "{}")
+    if act == "view":
+        url_buf = io.StringIO()
         try:
-            viz = json.loads(viz_raw) if isinstance(viz_raw, str) else viz_raw
-        except (json.JSONDecodeError, TypeError):
-            viz = viz_raw
-
-        layers.append({
-            "name": entry.get("name", "(unnamed)"),
-            "visible": entry.get("visible", "true"),
-            "function": entry.get("function", ""),
-            "viz": viz,
+            with contextlib.redirect_stdout(url_buf):
+                if Map.mapCommandList == []:
+                    Map.turnOnInspector()
+                Map.view(open_browser=open_browser, open_iframe=False)
+        except Exception as exc:
+            return json.dumps({"error": str(exc)})
+        printed = url_buf.getvalue()
+        url = None
+        for line in printed.splitlines():
+            line = line.strip()
+            # Prefer the "geeView URL: http..." line (has full token)
+            if "geeView URL:" in line:
+                idx = line.find("http")
+                if idx >= 0:
+                    url = line[idx:]
+                break
+        # Fallback: find any line starting with http
+        if url is None:
+            for line in printed.splitlines():
+                line = line.strip()
+                if line.startswith("http"):
+                    url = line
+                    break
+        layer_count = len(Map.idDictList) if hasattr(Map, "idDictList") else 0
+        return json.dumps({
+            "url": url,
+            "layer_count": layer_count,
+            "message": f"Map opened with {layer_count} layer(s)." if url else "Map.view() ran but no URL was captured.",
+            "raw_output": printed.strip(),
         })
 
-    commands = list(getattr(Map, "mapCommandList", []))
+    elif act == "layers":
+        layers = []
+        for entry in getattr(Map, "idDictList", []):
+            viz_raw = entry.get("viz", "{}")
+            try:
+                viz = json.loads(viz_raw) if isinstance(viz_raw, str) else viz_raw
+            except (json.JSONDecodeError, TypeError):
+                viz = viz_raw
+            layers.append({
+                "name": entry.get("name", "(unnamed)"),
+                "visible": entry.get("visible", "true"),
+                "function": entry.get("function", ""),
+                "viz": viz,
+            })
+        commands = list(getattr(Map, "mapCommandList", []))
+        return json.dumps({"layer_count": len(layers), "layers": layers, "commands": commands})
 
-    return json.dumps({
-        "layer_count": len(layers),
-        "layers": layers,
-        "commands": commands,
-    })
+    elif act == "clear":
+        try:
+            Map.clearMap()
+        except Exception as exc:
+            return json.dumps({"error": str(exc)})
+        return json.dumps({"success": True, "message": "Map cleared. All layers and commands removed."})
 
-
-# ---------------------------------------------------------------------------
-# Tool 11: clear_map
-# ---------------------------------------------------------------------------
-
-@app.tool()
-def clear_map() -> str:
-    """Clear all layers and commands from the map.
-
-    Resets the Map to a blank state so you can start fresh.
-
-    Returns:
-        JSON confirmation.
-    """
-    _ensure_initialized()
-    Map = _namespace["Map"]
-
-    try:
-        Map.clearMap()
-    except Exception as exc:
-        return json.dumps({"error": str(exc)})
-
-    return json.dumps({
-        "success": True,
-        "message": "Map cleared. All layers and commands removed.",
-    })
+    else:
+        return json.dumps({"error": f"Unknown action: {action!r}. Use 'view', 'layers', or 'clear'."})
 
 
 # ---------------------------------------------------------------------------
 # Tool 13: save_session
 # ---------------------------------------------------------------------------
 
-@app.tool()
+@app.tool(annotations=_WRITE)
 def save_session(filename: str = "", format: str = "py") -> str:
     """Save the accumulated run_code history to a .py script or .ipynb notebook.
 
@@ -1603,184 +1716,141 @@ def save_session(filename: str = "", format: str = "py") -> str:
 
 
 # ---------------------------------------------------------------------------
-# Tool 14: get_version_info
+# Environment info (consolidated)
 # ---------------------------------------------------------------------------
 
-@app.tool()
-def get_version_info() -> str:
-    """Return version information for geeViz, Earth Engine, and Python.
-
-    Useful for debugging environment issues or confirming which versions
-    are active in the MCP server session.
-
-    Returns:
-        JSON with geeViz_version, ee_version, python_version, platform.
-    """
-    import geeViz
-    result = {
-        "geeViz_version": geeViz.__version__,
-        "python_version": sys.version,
-        "platform": sys.platform,
-    }
-    try:
-        import ee
-        result["ee_version"] = ee.__version__
-    except Exception:
-        result["ee_version"] = "(not available)"
-    return json.dumps(result)
-
-
-# ---------------------------------------------------------------------------
-# Tool 15: get_namespace
-# ---------------------------------------------------------------------------
-
-# Builtins pre-populated by _ensure_initialized -- excluded from get_namespace
 _NAMESPACE_BUILTINS = {"ee", "Map", "gv", "gil"}
 
 
-@app.tool()
-def get_namespace() -> str:
-    """Inspect user-defined variables in the persistent REPL namespace.
+@app.tool(annotations=_READ_ONLY_OPEN)
+def env_info(action: str = "version") -> str:
+    """Get environment information: versions, REPL namespace, or project details.
 
-    Shows what variables exist after run_code calls. Excludes the
-    built-in entries (ee, Map, gv, gil). For each variable, reports
-    name, type, and a truncated repr. No getInfo() calls are made --
-    this is pure Python-side introspection.
+    Args:
+        action: What to return:
+            - "version" (default): geeViz, EE, and Python versions.
+            - "namespace": User-defined variables in the REPL (no getInfo calls).
+            - "project": Current EE project ID and root assets.
 
     Returns:
-        JSON with a list of {name, type, repr} objects.
+        JSON with action-specific results.
     """
-    _ensure_initialized()
-    ee = _namespace["ee"]
+    act = action.lower().strip()
 
-    entries = []
-    for name, obj in sorted(_namespace.items()):
-        if name.startswith("_") or name in _NAMESPACE_BUILTINS:
-            continue
-
-        # Detect ee-specific types
-        type_name = type(obj).__name__
-        if isinstance(obj, ee.Image):
-            type_name = "ee.Image"
-        elif isinstance(obj, ee.ImageCollection):
-            type_name = "ee.ImageCollection"
-        elif isinstance(obj, ee.FeatureCollection):
-            type_name = "ee.FeatureCollection"
-        elif isinstance(obj, ee.Feature):
-            type_name = "ee.Feature"
-        elif isinstance(obj, ee.Geometry):
-            type_name = "ee.Geometry"
-        elif isinstance(obj, ee.Number):
-            type_name = "ee.Number"
-        elif isinstance(obj, ee.String):
-            type_name = "ee.String"
-        elif isinstance(obj, ee.List):
-            type_name = "ee.List"
-        elif isinstance(obj, ee.Dictionary):
-            type_name = "ee.Dictionary"
-        elif isinstance(obj, ee.Filter):
-            type_name = "ee.Filter"
-        elif isinstance(obj, ee.Reducer):
-            type_name = "ee.Reducer"
-        elif isinstance(obj, ee.ComputedObject):
-            type_name = "ee.ComputedObject"
-
-        # Truncated repr (no getInfo)
+    if act == "version":
+        import geeViz
+        result = {
+            "geeViz_version": geeViz.__version__,
+            "python_version": sys.version,
+            "platform": sys.platform,
+        }
         try:
-            r = repr(obj)
-            if len(r) > 2000:
-                r = r[:2000] + "..."
+            import ee
+            result["ee_version"] = ee.__version__
         except Exception:
-            r = "(repr failed)"
+            result["ee_version"] = "(not available)"
+        return json.dumps(result)
 
-        entries.append({"name": name, "type": type_name, "repr": r})
+    elif act == "namespace":
+        _ensure_initialized()
+        ee = _namespace["ee"]
+        entries = []
+        for name, obj in sorted(_namespace.items()):
+            if name.startswith("_") or name in _NAMESPACE_BUILTINS:
+                continue
+            type_name = type(obj).__name__
+            for ee_type in ("Image", "ImageCollection", "FeatureCollection",
+                            "Feature", "Geometry", "Number", "String",
+                            "List", "Dictionary", "Filter", "Reducer",
+                            "ComputedObject"):
+                if isinstance(obj, getattr(ee, ee_type, type(None))):
+                    type_name = f"ee.{ee_type}"
+                    break
+            try:
+                r = repr(obj)
+                if len(r) > 2000:
+                    r = r[:2000] + "..."
+            except Exception:
+                r = "(repr failed)"
+            entries.append({"name": name, "type": type_name, "repr": r})
+        return json.dumps({
+            "count": len(entries), "variables": entries,
+            "note": "Excludes builtins (ee, Map, gv, gil). No getInfo() calls made.",
+        })
 
-    return json.dumps({
-        "count": len(entries),
-        "variables": entries,
-        "note": "Excludes builtins (ee, Map, gv, gil). No getInfo() calls made.",
-    })
-
-
-# ---------------------------------------------------------------------------
-# Tool 16: get_project_info
-# ---------------------------------------------------------------------------
-
-@app.tool()
-def get_project_info() -> str:
-    """Return the current Earth Engine project ID and a sample of root assets.
-
-    Useful for confirming which GEE project the session is using and
-    seeing what top-level assets are available.
-
-    Returns:
-        JSON with project_id and a list of root assets.
-    """
-    _ensure_initialized()
-    ee = _namespace["ee"]
-
-    result: dict = {}
-
-    # Get project ID
-    try:
-        project = ee.data._get_state().cloud_api_user_project
-        result["project_id"] = project
-    except Exception as exc:
-        result["project_id"] = None
-        result["project_error"] = str(exc)
-
-    # List root assets
-    if result.get("project_id"):
+    elif act == "project":
+        _ensure_initialized()
+        ee = _namespace["ee"]
+        result: dict = {}
         try:
-            root = f"projects/{result['project_id']}/assets"
-            assets_response = ee.data.listAssets({"parent": root})
-            assets = assets_response.get("assets", [])
-            result["root_assets"] = [
-                {
-                    "id": a.get("id") or a.get("name", ""),
-                    "type": a.get("type", "UNKNOWN"),
-                }
-                for a in assets[:500]
-            ]
-            result["root_asset_count"] = len(assets)
+            result["project_id"] = ee.data._get_state().cloud_api_user_project
         except Exception as exc:
-            result["root_assets"] = []
-            result["assets_error"] = str(exc)
+            result["project_id"] = None
+            result["project_error"] = str(exc)
+        if result.get("project_id"):
+            try:
+                root = f"projects/{result['project_id']}/assets"
+                assets_response = ee.data.listAssets({"parent": root})
+                assets = assets_response.get("assets", [])
+                result["root_assets"] = [
+                    {"id": a.get("id") or a.get("name", ""), "type": a.get("type", "UNKNOWN")}
+                    for a in assets[:500]
+                ]
+                result["root_asset_count"] = len(assets)
+            except Exception as exc:
+                result["root_assets"] = []
+                result["assets_error"] = str(exc)
+        return json.dumps(result)
 
-    return json.dumps(result)
+    else:
+        return json.dumps({"error": f"Unknown action: {action!r}. Use 'version', 'namespace', or 'project'."})
 
 
 # ---------------------------------------------------------------------------
-# Tool 18: export_to_asset
+# Export image (consolidated)
 # ---------------------------------------------------------------------------
 
-@app.tool()
-def export_to_asset(
+@app.tool(annotations=_WRITE_OPEN)
+def export_image(
+    destination: str,
     image_var: str,
-    asset_id: str,
     region_var: str = "",
     scale: int = 30,
     crs: str = "EPSG:4326",
     overwrite: bool = False,
+    asset_id: str = "",
     pyramiding_policy: str = "mean",
+    output_name: str = "",
+    drive_folder: str = "",
+    bucket: str = "",
+    output_no_data: int = -32768,
+    file_format: str = "GeoTIFF",
 ) -> str:
-    """Export an ee.Image from the REPL namespace to a GEE asset.
-
-    Uses geeViz's exportToAssetWrapper which handles existing assets,
-    pyramiding policy, and region clipping automatically.
+    """Export an ee.Image to a GEE asset, Google Drive, or Cloud Storage.
 
     Args:
+        destination: Where to export -- "asset", "drive", or "cloud".
         image_var: Name of the ee.Image variable in the REPL namespace.
-        asset_id: Full destination asset ID
-                  (e.g. "projects/my-project/assets/my_export").
-        region_var: Optional name of an ee.Geometry or ee.FeatureCollection
-                    variable to use as the export region. If omitted, the
-                    image's footprint is used.
+        region_var: Name of an ee.Geometry or ee.FeatureCollection variable
+                    for the export region. Required for drive/cloud exports;
+                    optional for asset exports (uses image footprint if omitted).
         scale: Output resolution in meters (default 30).
         crs: Coordinate reference system (default "EPSG:4326").
-        overwrite: If True, overwrite an existing asset (default False).
-        pyramiding_policy: Pyramiding policy for bands -- "mean", "mode",
-                           "min", "max", "median", or "sample" (default "mean").
+        overwrite: If True, overwrite existing asset/file (default False).
+
+        Asset-specific:
+            asset_id: Full destination asset ID (required for destination="asset").
+            pyramiding_policy: "mean" (default), "mode", "min", "max", "median", "sample".
+
+        Drive-specific:
+            output_name: Output filename without extension (required for drive/cloud).
+            drive_folder: Google Drive folder name (required for destination="drive").
+
+        Cloud Storage-specific:
+            output_name: Output filename without extension (required for drive/cloud).
+            bucket: GCS bucket name (required for destination="cloud").
+            output_no_data: NoData value (default -32768).
+            file_format: "GeoTIFF" (default) or "TFRecord".
 
     Returns:
         JSON with export status or an error.
@@ -1788,17 +1858,19 @@ def export_to_asset(
     _ensure_initialized()
     ee = _namespace["ee"]
     gil = _namespace["gil"]
+    dest = destination.lower().strip()
+
+    if dest not in ("asset", "drive", "cloud"):
+        return json.dumps({"error": f"Unknown destination: {destination!r}. Use 'asset', 'drive', or 'cloud'."})
 
     # Look up image
     image = _namespace.get(image_var)
     if image is None:
         return json.dumps({"error": f"Variable {image_var!r} not found in namespace."})
     if not isinstance(image, ee.Image):
-        return json.dumps({
-            "error": f"Variable {image_var!r} is {type(image).__name__}, not ee.Image.",
-        })
+        return json.dumps({"error": f"Variable {image_var!r} is {type(image).__name__}, not ee.Image."})
 
-    # Look up region (optional)
+    # Look up region
     region = None
     if region_var:
         region = _namespace.get(region_var)
@@ -1807,186 +1879,53 @@ def export_to_asset(
         if isinstance(region, ee.FeatureCollection):
             region = region.geometry()
         elif not isinstance(region, ee.Geometry):
-            return json.dumps({
-                "error": f"Variable {region_var!r} is {type(region).__name__}, "
-                         "expected ee.Geometry or ee.FeatureCollection.",
-            })
+            return json.dumps({"error": f"Variable {region_var!r} is {type(region).__name__}, expected ee.Geometry or ee.FeatureCollection."})
+    elif dest in ("drive", "cloud"):
+        return json.dumps({"error": f"region_var is required for destination='{dest}'."})
 
-    # Derive asset name from the asset path
-    asset_name = asset_id.split("/")[-1]
-
-    # Build pyramiding policy object
-    pyramiding_obj = {"default": pyramiding_policy}
-
-    # Call the geeViz wrapper (captures stdout since it prints status)
     stdout_buf = io.StringIO()
     try:
         with contextlib.redirect_stdout(stdout_buf):
-            gil.exportToAssetWrapper(
-                image, asset_name, asset_id,
-                pyramidingPolicyObject=pyramiding_obj,
-                roi=region, scale=scale, crs=crs,
-                overwrite=overwrite,
-            )
+            if dest == "asset":
+                if not asset_id:
+                    return json.dumps({"error": "asset_id is required for destination='asset'."})
+                asset_name = asset_id.split("/")[-1]
+                gil.exportToAssetWrapper(
+                    image, asset_name, asset_id,
+                    pyramidingPolicyObject={"default": pyramiding_policy},
+                    roi=region, scale=scale, crs=crs, overwrite=overwrite,
+                )
+            elif dest == "drive":
+                if not output_name or not drive_folder:
+                    return json.dumps({"error": "output_name and drive_folder are required for destination='drive'."})
+                gil.exportToDriveWrapper(
+                    image, output_name, drive_folder,
+                    region, scale, crs, None, output_no_data,
+                )
+            elif dest == "cloud":
+                if not output_name or not bucket:
+                    return json.dumps({"error": "output_name and bucket are required for destination='cloud'."})
+                gil.exportToCloudStorageWrapper(
+                    image, output_name, bucket,
+                    region, scale, crs, None, output_no_data,
+                    file_format, {"cloudOptimized": True}, overwrite,
+                )
     except Exception as exc:
-        return json.dumps({
-            "error": f"Export failed: {exc}",
-            "stdout": stdout_buf.getvalue(),
-        })
+        return json.dumps({"error": f"Export failed: {exc}", "stdout": stdout_buf.getvalue()})
 
     return json.dumps({
         "success": True,
-        "asset_id": asset_id,
+        "destination": dest,
         "scale": scale,
         "crs": crs,
-        "overwrite": overwrite,
-        "pyramiding_policy": pyramiding_policy,
         "stdout": stdout_buf.getvalue().strip(),
-        "message": "Export task started. Use track_tasks() to monitor progress.",
+        "message": f"Export to {dest} started. Use track_tasks() to monitor progress.",
     })
 
 
-# ---------------------------------------------------------------------------
-# Tool 19: geocode
-# ---------------------------------------------------------------------------
 import urllib.request
 import urllib.parse
 import urllib.error
-
-
-@app.tool()
-def geocode(place_name: str, use_boundaries: bool = False) -> str:
-    """Geocode a place name to coordinates and optionally find GEE boundary polygons.
-
-    Uses OpenStreetMap Nominatim for point/bounding-box geocoding (no API key
-    needed). When use_boundaries=True, also searches GEE boundary collections
-    (WDPA, FAO/GAUL, TIGER States/Counties) for a matching polygon and returns
-    the asset ID and filter expression for use in run_code.
-
-    Args:
-        place_name: Place name to geocode (e.g. "Yellowstone National Park",
-                    "Montana", "Bozeman, MT").
-        use_boundaries: If True, also search GEE boundary FeatureCollections
-                        for a matching polygon. Default False.
-
-    Returns:
-        JSON with coordinates, bounding box, ee code snippets, and optionally
-        matching GEE boundary info.
-    """
-    # --- Nominatim geocoding (stdlib only) ---
-    params = urllib.parse.urlencode({
-        "q": place_name,
-        "format": "json",
-        "limit": "1",
-        "addressdetails": "1",
-    })
-    url = f"https://nominatim.openstreetmap.org/search?{params}"
-    req = urllib.request.Request(url, headers={"User-Agent": "geeViz-MCP/1.0"})
-
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-    except Exception as exc:
-        return json.dumps({"error": f"Nominatim request failed: {exc}"})
-
-    if not data:
-        return json.dumps({"error": f"No results found for {place_name!r}."})
-
-    hit = data[0]
-    lat = float(hit["lat"])
-    lon = float(hit["lon"])
-    display_name = hit.get("display_name", place_name)
-    osm_type = hit.get("type", "")
-    bbox = hit.get("boundingbox", [])  # [south, north, west, east] as strings
-
-    result: dict = {
-        "place_name": place_name,
-        "display_name": display_name,
-        "latitude": lat,
-        "longitude": lon,
-        "osm_type": osm_type,
-        "ee_point_code": f"ee.Geometry.Point([{lon}, {lat}])",
-    }
-
-    if bbox and len(bbox) == 4:
-        south, north, west, east = [float(x) for x in bbox]
-        result["bbox"] = {"south": south, "north": north, "west": west, "east": east}
-        result["ee_bbox_code"] = (
-            f"ee.Geometry.Rectangle([{west}, {south}, {east}, {north}])"
-        )
-
-    # --- Optional GEE boundary search ---
-    if use_boundaries:
-        _ensure_initialized()
-        ee = _namespace["ee"]
-
-        # Boundary collections to search: (asset_id, name_property, description)
-        boundary_sources = [
-            ("WCMC/WDPA/current/polygons", "NAME", "WDPA Protected Areas"),
-            ("FAO/GAUL/2015/level0", "ADM0_NAME", "GAUL Countries"),
-            ("FAO/GAUL/2015/level1", "ADM1_NAME", "GAUL Admin Level 1"),
-            ("FAO/GAUL/2015/level2", "ADM2_NAME", "GAUL Admin Level 2"),
-            ("TIGER/2018/States", "NAME", "US States"),
-            ("TIGER/2018/Counties", "NAME", "US Counties"),
-        ]
-
-        matches = []
-        search_term = place_name.strip()
-
-        for asset_id, name_prop, source_desc in boundary_sources:
-            try:
-                fc = ee.FeatureCollection(asset_id)
-                # Case-insensitive search using ee.Filter
-                filtered = fc.filter(ee.Filter.eq(name_prop, search_term))
-                count = filtered.size().getInfo()
-                if count > 0:
-                    # Get the name of the first match for confirmation
-                    first_name = filtered.first().get(name_prop).getInfo()
-                    matches.append({
-                        "source": source_desc,
-                        "asset_id": asset_id,
-                        "filter_property": name_prop,
-                        "filter_value": first_name,
-                        "feature_count": count,
-                        "ee_code": (
-                            f"ee.FeatureCollection('{asset_id}')"
-                            f".filter(ee.Filter.eq('{name_prop}', '{first_name}'))"
-                        ),
-                    })
-            except Exception:
-                continue  # Skip collections that error (e.g. access issues)
-
-        result["boundary_matches"] = matches
-        if not matches:
-            result["boundary_note"] = (
-                "No exact boundary match found. Try a different spelling, "
-                "or use the ee_point_code / ee_bbox_code above with .buffer()."
-            )
-
-    return json.dumps(result)
-
-
-# ---------------------------------------------------------------------------
-# Dataset catalog cache helpers
-# ---------------------------------------------------------------------------
-import time as _time
-
-_CACHE_DIR = os.path.join(_THIS_DIR, "dataset_cache")
-_CACHE_TTL = 86400  # 24 hours in seconds
-_CACHE_META_FILE = os.path.join(_CACHE_DIR, "cache_meta.json")
-_cache_lock = threading.Lock()
-
-_CATALOG_URLS = {
-    "official": "https://raw.githubusercontent.com/samapriya/Earth-Engine-Datasets-List/master/gee_catalog.json",
-    "community": "https://raw.githubusercontent.com/samapriya/awesome-gee-community-datasets/master/community_datasets.json",
-}
-
-_CATALOG_FILES = {
-    "official": "gee_catalog.json",
-    "community": "community_datasets.json",
-}
-
-
 def _read_cache_meta() -> dict:
     """Read the cache timestamp metadata file."""
     if os.path.isfile(_CACHE_META_FILE):
@@ -2060,7 +1999,7 @@ def _get_cached_catalog(name: str) -> list[dict] | None:
 # Tool 20: search_datasets
 # ---------------------------------------------------------------------------
 
-@app.tool()
+@app.tool(annotations=_READ_ONLY)
 def search_datasets(query: str, source: str = "all", max_results: int = 50) -> str:
     """Search the GEE dataset catalog by keyword.
 
@@ -2183,7 +2122,7 @@ def search_datasets(query: str, source: str = "all", max_results: int = 50) -> s
 # Tool 21: get_catalog_info
 # ---------------------------------------------------------------------------
 
-@app.tool()
+@app.tool(annotations=_READ_ONLY_OPEN)
 def get_catalog_info(dataset_id: str) -> str:
     """Get detailed STAC metadata for a GEE dataset.
 
@@ -2239,375 +2178,7 @@ def get_catalog_info(dataset_id: str) -> str:
     return json.dumps(stac)
 
 
-# ---------------------------------------------------------------------------
-# Tool 22: get_thumbnail
-# ---------------------------------------------------------------------------
 import base64 as _base64
-
-
-@app.tool()
-def get_thumbnail(
-    variable: str,
-    viz_params: str = "{}",
-    dimensions: int = 512,
-    region_var: str = "",
-    frames_per_second: int = 3,
-):
-    """Get a satellite imagery thumbnail from Earth Engine for visual inspection.
-
-    Returns the image directly so you (the AI) can see and describe what is
-    on the ground. These are satellite images captured from space -- here is
-    how to interpret common band combinations:
-
-    - **True color (e.g. B4,B3,B2 or B_R,B_G,B_B):** Shows the Earth as the
-      human eye would see it. Green = vegetation, brown = bare soil, white =
-      clouds/snow, blue/dark = water, grey = urban/rock.
-    - **False color (e.g. B5,B4,B3 or NIR,Red,Green):** Vegetation appears
-      bright red/magenta, bare ground is tan/brown, water is dark blue/black,
-      urban areas are cyan/grey, burned areas are dark brown/black.
-    - **Single band with palette (e.g. NDVI, elevation):** Color ramp maps
-      values to colors -- check the palette and min/max to interpret.
-
-    When describing what you see, mention: dominant land cover types, any
-    visible change patterns (for animations), cloud cover if present, and
-    spatial patterns (e.g. river corridors, urban grids, agricultural fields).
-
-    For ee.Image, returns a PNG thumbnail. For ee.ImageCollection, returns an
-    animated GIF via getVideoThumbURL (useful for showing change over time).
-
-    IMPORTANT for ImageCollection GIFs: You MUST provide viz_params with
-    exactly 3 bands (or 1 band + palette) to produce a valid RGB animation.
-    The EE API requires RGB/RGBA visualization for video thumbnails.
-
-    Args:
-        variable: Name of an ee.Image or ee.ImageCollection variable in the
-                  REPL namespace (set via run_code).
-        viz_params: JSON string of visualization parameters. Common keys:
-                    bands (list of 3 for RGB, or 1 + palette), min, max,
-                    palette, gamma.
-                    Example: '{"bands": ["B4","B3","B2"], "min": 0, "max": 3000}'
-                    ALWAYS provide bands + min/max -- without them, EE uses
-                    unhelpful defaults and GIFs will fail.
-        dimensions: Thumbnail width in pixels (default 512).
-        region_var: Optional name of an ee.Geometry or ee.FeatureCollection
-                    variable to use as the thumbnail region.
-        frames_per_second: Animation speed for ImageCollection GIFs
-                           (default 3). Ignored for single images.
-
-    Returns:
-        A list containing the image (PNG/GIF) and a text message with the
-        thumbnail URL. IMPORTANT: Always share the thumbnail URL with the
-        user so they can open it in a browser -- especially for animated
-        GIFs, which may not play inline in chat UIs.
-    """
-    _ensure_initialized()
-    ee = _namespace["ee"]
-
-    # Look up variable
-    obj = _namespace.get(variable)
-    if obj is None:
-        return json.dumps({
-            "error": f"Variable {variable!r} not found in namespace. "
-                     "Use run_code to create it first.",
-        })
-
-    # Parse viz params
-    try:
-        params = json.loads(viz_params) if isinstance(viz_params, str) else viz_params
-    except (json.JSONDecodeError, TypeError) as exc:
-        return json.dumps({"error": f"Invalid viz_params JSON: {exc}"})
-
-    if not isinstance(params, dict):
-        return json.dumps({"error": "viz_params must be a JSON object (dict)."})
-
-    params["dimensions"] = dimensions
-
-    # Handle region
-    if region_var:
-        region = _namespace.get(region_var)
-        if region is None:
-            return json.dumps({"error": f"Region variable {region_var!r} not found in namespace."})
-        if isinstance(region, ee.FeatureCollection):
-            region = region.geometry()
-        if isinstance(region, ee.Geometry):
-            params["region"] = region
-        else:
-            return json.dumps({
-                "error": f"Variable {region_var!r} is {type(region).__name__}, "
-                         "expected ee.Geometry or ee.FeatureCollection.",
-            })
-
-    # Generate thumbnail URL
-    is_collection = False
-    try:
-        if isinstance(obj, ee.Image):
-            params["format"] = "png"
-            thumb_url = obj.getThumbURL(params)
-        elif isinstance(obj, ee.ImageCollection):
-            is_collection = True
-            # Validate: GIF requires RGB visualization (3 bands or 1 band + palette)
-            bands = params.get("bands", [])
-            palette = params.get("palette")
-            if not bands and not palette:
-                return json.dumps({
-                    "error": "ImageCollection GIFs require viz_params with 'bands' "
-                             "(3 bands for RGB, or 1 band + 'palette'). "
-                             "Example: '{\"bands\": [\"B4\",\"B3\",\"B2\"], \"min\": 0, \"max\": 3000}'",
-                })
-            count = obj.size().getInfo()
-            if count == 0:
-                return json.dumps({"error": "ImageCollection is empty -- no images to animate."})
-            if count > 40:
-                obj = obj.limit(40)
-            # getVideoThumbURL always returns GIF; format param is optional
-            # but framesPerSecond is needed for animation timing
-            params["framesPerSecond"] = frames_per_second
-            thumb_url = obj.getVideoThumbURL(params)
-        else:
-            return json.dumps({
-                "error": f"Variable {variable!r} is {type(obj).__name__}, "
-                         "expected ee.Image or ee.ImageCollection.",
-            })
-    except Exception as exc:
-        return json.dumps({"error": f"Failed to generate thumbnail: {exc}"})
-
-    # Download the image
-    img_format = "gif" if is_collection else "png"
-    try:
-        req = urllib.request.Request(thumb_url, headers={"User-Agent": "geeViz-MCP/1.0"})
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            img_bytes = resp.read()
-    except Exception as exc:
-        return json.dumps({
-            "error": f"Failed to download thumbnail: {exc}",
-            "thumb_url": thumb_url,
-        })
-
-    # Validate the response is the expected format
-    if is_collection:
-        # GIF magic bytes: GIF87a or GIF89a
-        if len(img_bytes) < 6 or img_bytes[:3] != b"GIF":
-            return json.dumps({
-                "error": "Earth Engine did not return a valid GIF. "
-                         "Ensure viz_params has exactly 3 bands (RGB) or "
-                         "1 band + palette, and that the collection is not empty.",
-                "thumb_url": thumb_url,
-                "response_size": len(img_bytes),
-                "response_start": img_bytes[:20].hex() if img_bytes else "",
-            })
-    else:
-        # PNG magic bytes: 89 50 4E 47
-        if len(img_bytes) < 4 or img_bytes[:4] != b"\x89PNG":
-            return json.dumps({
-                "error": "Earth Engine did not return a valid PNG.",
-                "thumb_url": thumb_url,
-                "response_size": len(img_bytes),
-            })
-
-    # Build a text message with the URL -- always included so the LLM can
-    # share it with the user (GIFs won't animate inline in most chat UIs).
-    if is_collection:
-        url_text = (
-            f"Animated GIF thumbnail URL (share with user -- GIFs may not "
-            f"animate inline):\n{thumb_url}"
-        )
-    else:
-        url_text = f"Thumbnail URL:\n{thumb_url}"
-
-    # Return as [Image, text] so the LLM sees the image AND gets the URL.
-    # FastMCP's _convert_to_content flattens lists: Image → ImageContent,
-    # str → TextContent.
-    if _MCPImage is not None:
-        try:
-            return [_MCPImage(data=img_bytes, format=img_format), url_text]
-        except Exception:
-            pass
-
-    # Fallback: base64-encoded image in JSON (when MCP Image type unavailable)
-    return json.dumps({
-        "image_base64": _base64.b64encode(img_bytes).decode("ascii"),
-        "mime_type": f"image/{img_format}",
-        "image_url": thumb_url,
-        "note": f"Satellite image returned as base64 {img_format.upper()}. "
-                "MCP Image type was not available. SHARE THE image_url WITH "
-                "THE USER so they can view it in a browser.",
-    })
-
-
-# ---------------------------------------------------------------------------
-# Tool 23: export_to_drive
-# ---------------------------------------------------------------------------
-
-@app.tool()
-def export_to_drive(
-    image_var: str,
-    output_name: str,
-    drive_folder: str,
-    region_var: str,
-    scale: int = 30,
-    crs: str = "EPSG:4326",
-    output_no_data: int = -32768,
-) -> str:
-    """Export an ee.Image from the REPL namespace to Google Drive.
-
-    Uses geeViz's exportToDriveWrapper. A region variable is required
-    for Drive exports.
-
-    Args:
-        image_var: Name of the ee.Image variable in the REPL namespace.
-        output_name: Output filename (without extension).
-        drive_folder: Google Drive folder name to export into.
-        region_var: Name of an ee.Geometry or ee.FeatureCollection variable
-                    to use as the export region. Required for Drive exports.
-        scale: Output resolution in meters (default 30).
-        crs: Coordinate reference system (default "EPSG:4326").
-        output_no_data: NoData value for the output (default -32768).
-
-    Returns:
-        JSON with export status or an error.
-    """
-    _ensure_initialized()
-    ee = _namespace["ee"]
-    gil = _namespace["gil"]
-
-    # Look up image
-    image = _namespace.get(image_var)
-    if image is None:
-        return json.dumps({"error": f"Variable {image_var!r} not found in namespace."})
-    if not isinstance(image, ee.Image):
-        return json.dumps({
-            "error": f"Variable {image_var!r} is {type(image).__name__}, not ee.Image.",
-        })
-
-    # Look up region (required)
-    region = _namespace.get(region_var)
-    if region is None:
-        return json.dumps({"error": f"Variable {region_var!r} not found in namespace."})
-    if isinstance(region, ee.FeatureCollection):
-        region = region.geometry()
-    elif not isinstance(region, ee.Geometry):
-        return json.dumps({
-            "error": f"Variable {region_var!r} is {type(region).__name__}, "
-                     "expected ee.Geometry or ee.FeatureCollection.",
-        })
-
-    stdout_buf = io.StringIO()
-    try:
-        with contextlib.redirect_stdout(stdout_buf):
-            gil.exportToDriveWrapper(
-                image, output_name, drive_folder,
-                region, scale, crs, None, output_no_data,
-            )
-    except Exception as exc:
-        return json.dumps({
-            "error": f"Export to Drive failed: {exc}",
-            "stdout": stdout_buf.getvalue(),
-        })
-
-    return json.dumps({
-        "success": True,
-        "output_name": output_name,
-        "drive_folder": drive_folder,
-        "scale": scale,
-        "crs": crs,
-        "stdout": stdout_buf.getvalue().strip(),
-        "message": "Export to Drive task started. Use track_tasks() to monitor progress.",
-    })
-
-
-# ---------------------------------------------------------------------------
-# Tool 24: export_to_cloud_storage
-# ---------------------------------------------------------------------------
-
-@app.tool()
-def export_to_cloud_storage(
-    image_var: str,
-    output_name: str,
-    bucket: str,
-    region_var: str,
-    scale: int = 30,
-    crs: str = "EPSG:4326",
-    output_no_data: int = -32768,
-    file_format: str = "GeoTIFF",
-    overwrite: bool = False,
-) -> str:
-    """Export an ee.Image from the REPL namespace to Google Cloud Storage.
-
-    Uses geeViz's exportToCloudStorageWrapper with Cloud Optimized GeoTIFF
-    format options by default.
-
-    Args:
-        image_var: Name of the ee.Image variable in the REPL namespace.
-        output_name: Output filename (without extension).
-        bucket: Google Cloud Storage bucket name.
-        region_var: Name of an ee.Geometry or ee.FeatureCollection variable
-                    to use as the export region. Required for GCS exports.
-        scale: Output resolution in meters (default 30).
-        crs: Coordinate reference system (default "EPSG:4326").
-        output_no_data: NoData value for the output (default -32768).
-        file_format: Output format -- "GeoTIFF" (default) or "TFRecord".
-        overwrite: If True, overwrite existing files (default False).
-
-    Returns:
-        JSON with export status or an error.
-    """
-    _ensure_initialized()
-    ee = _namespace["ee"]
-    gil = _namespace["gil"]
-
-    # Look up image
-    image = _namespace.get(image_var)
-    if image is None:
-        return json.dumps({"error": f"Variable {image_var!r} not found in namespace."})
-    if not isinstance(image, ee.Image):
-        return json.dumps({
-            "error": f"Variable {image_var!r} is {type(image).__name__}, not ee.Image.",
-        })
-
-    # Look up region (required)
-    region = _namespace.get(region_var)
-    if region is None:
-        return json.dumps({"error": f"Variable {region_var!r} not found in namespace."})
-    if isinstance(region, ee.FeatureCollection):
-        region = region.geometry()
-    elif not isinstance(region, ee.Geometry):
-        return json.dumps({
-            "error": f"Variable {region_var!r} is {type(region).__name__}, "
-                     "expected ee.Geometry or ee.FeatureCollection.",
-        })
-
-    stdout_buf = io.StringIO()
-    try:
-        with contextlib.redirect_stdout(stdout_buf):
-            gil.exportToCloudStorageWrapper(
-                image, output_name, bucket,
-                region, scale, crs, None, output_no_data,
-                file_format, {"cloudOptimized": True}, overwrite,
-            )
-    except Exception as exc:
-        return json.dumps({
-            "error": f"Export to Cloud Storage failed: {exc}",
-            "stdout": stdout_buf.getvalue(),
-        })
-
-    return json.dumps({
-        "success": True,
-        "output_name": output_name,
-        "bucket": bucket,
-        "scale": scale,
-        "crs": crs,
-        "file_format": file_format,
-        "overwrite": overwrite,
-        "stdout": stdout_buf.getvalue().strip(),
-        "message": "Export to Cloud Storage task started. Use track_tasks() to monitor progress.",
-    })
-
-
-# ---------------------------------------------------------------------------
-# Tool 25: cancel_tasks
-# ---------------------------------------------------------------------------
-
-@app.tool()
 def cancel_tasks(name_filter: str = "") -> str:
     """Cancel running and ready Earth Engine tasks.
 
@@ -2656,573 +2227,113 @@ def cancel_tasks(name_filter: str = "") -> str:
 
 
 # ---------------------------------------------------------------------------
-# Tool 26: delete_asset
+# Asset management (consolidated)
 # ---------------------------------------------------------------------------
 
-@app.tool()
-def delete_asset(asset_id: str) -> str:
-    """Delete a single GEE asset.
-
-    Checks that the asset exists before attempting deletion.
-    Only deletes a single asset -- will not recursively delete folders.
-
-    Args:
-        asset_id: Full asset path (e.g. "projects/my-project/assets/my_image").
-
-    Returns:
-        JSON confirmation or error.
-    """
-    _ensure_initialized()
-    ee = _namespace["ee"]
-    import geeViz.assetManagerLib as aml
-
-    if not aml.ee_asset_exists(asset_id):
-        return json.dumps({"error": f"Asset not found: {asset_id}"})
-
-    try:
-        ee.data.deleteAsset(asset_id)
-    except Exception as exc:
-        return json.dumps({"error": f"Delete failed: {exc}"})
-
-    return json.dumps({
-        "success": True,
-        "asset_id": asset_id,
-        "message": f"Asset {asset_id} deleted.",
-    })
-
-
-# ---------------------------------------------------------------------------
-# Tool 27: copy_asset
-# ---------------------------------------------------------------------------
-
-@app.tool()
-def copy_asset(source_id: str, dest_id: str, overwrite: bool = False) -> str:
-    """Copy a GEE asset to a new location.
-
-    Args:
-        source_id: Full path of the source asset.
-        dest_id: Full path for the destination asset.
-        overwrite: If True and the destination exists, delete it first
-                   (default False).
-
-    Returns:
-        JSON confirmation or error.
-    """
-    _ensure_initialized()
-    ee = _namespace["ee"]
-    import geeViz.assetManagerLib as aml
-
-    if not aml.ee_asset_exists(source_id):
-        return json.dumps({"error": f"Source asset not found: {source_id}"})
-
-    if aml.ee_asset_exists(dest_id):
-        if overwrite:
-            try:
-                ee.data.deleteAsset(dest_id)
-            except Exception as exc:
-                return json.dumps({"error": f"Failed to delete existing dest: {exc}"})
-        else:
-            return json.dumps({
-                "error": f"Destination already exists: {dest_id}. "
-                         "Set overwrite=True to replace it.",
-            })
-
-    try:
-        ee.data.copyAsset(source_id, dest_id)
-    except Exception as exc:
-        return json.dumps({"error": f"Copy failed: {exc}"})
-
-    return json.dumps({
-        "success": True,
-        "source_id": source_id,
-        "dest_id": dest_id,
-        "message": f"Asset copied from {source_id} to {dest_id}.",
-    })
-
-
-# ---------------------------------------------------------------------------
-# Tool 28: move_asset
-# ---------------------------------------------------------------------------
-
-@app.tool()
-def move_asset(source_id: str, dest_id: str, overwrite: bool = False) -> str:
-    """Move a GEE asset (copy to destination, then delete source).
-
-    The copy is performed first; the source is only deleted after a
-    successful copy.
-
-    Args:
-        source_id: Full path of the source asset.
-        dest_id: Full path for the destination asset.
-        overwrite: If True and the destination exists, delete it first
-                   (default False).
-
-    Returns:
-        JSON confirmation or error.
-    """
-    _ensure_initialized()
-    ee = _namespace["ee"]
-    import geeViz.assetManagerLib as aml
-
-    if not aml.ee_asset_exists(source_id):
-        return json.dumps({"error": f"Source asset not found: {source_id}"})
-
-    if aml.ee_asset_exists(dest_id):
-        if overwrite:
-            try:
-                ee.data.deleteAsset(dest_id)
-            except Exception as exc:
-                return json.dumps({"error": f"Failed to delete existing dest: {exc}"})
-        else:
-            return json.dumps({
-                "error": f"Destination already exists: {dest_id}. "
-                         "Set overwrite=True to replace it.",
-            })
-
-    # Copy first
-    try:
-        ee.data.copyAsset(source_id, dest_id)
-    except Exception as exc:
-        return json.dumps({"error": f"Copy step failed: {exc}"})
-
-    # Delete source only after successful copy
-    try:
-        ee.data.deleteAsset(source_id)
-    except Exception as exc:
-        return json.dumps({
-            "error": f"Asset copied to {dest_id} but failed to delete source: {exc}",
-            "dest_id": dest_id,
-        })
-
-    return json.dumps({
-        "success": True,
-        "source_id": source_id,
-        "dest_id": dest_id,
-        "message": f"Asset moved from {source_id} to {dest_id}.",
-    })
-
-
-# ---------------------------------------------------------------------------
-# Tool 29: create_folder
-# ---------------------------------------------------------------------------
-
-@app.tool()
-def create_folder(
-    folder_path: str,
+@app.tool(annotations=_DESTRUCTIVE)
+def manage_asset(
+    action: str,
+    asset_id: str = "",
+    dest_id: str = "",
+    overwrite: bool = False,
     folder_type: str = "Folder",
-) -> str:
-    """Create a GEE folder or ImageCollection.
-
-    Creates intermediate folders recursively if they don't exist.
-
-    Args:
-        folder_path: Full asset path for the new folder
-                     (e.g. "projects/my-project/assets/my_folder").
-        folder_type: "Folder" (default) or "ImageCollection".
-
-    Returns:
-        JSON confirmation or error.
-    """
-    _ensure_initialized()
-    import geeViz.assetManagerLib as aml
-
-    if folder_type not in ("Folder", "ImageCollection"):
-        return json.dumps({
-            "error": f"Invalid folder_type: {folder_type!r}. "
-                     "Must be 'Folder' or 'ImageCollection'.",
-        })
-
-    stdout_buf = io.StringIO()
-    try:
-        with contextlib.redirect_stdout(stdout_buf):
-            if folder_type == "ImageCollection":
-                aml.create_image_collection(folder_path)
-            else:
-                aml.create_asset(folder_path, recursive=True)
-    except Exception as exc:
-        return json.dumps({
-            "error": f"Create failed: {exc}",
-            "stdout": stdout_buf.getvalue(),
-        })
-
-    return json.dumps({
-        "success": True,
-        "folder_path": folder_path,
-        "folder_type": folder_type,
-        "stdout": stdout_buf.getvalue().strip(),
-        "message": f"{folder_type} created at {folder_path}.",
-    })
-
-
-# ---------------------------------------------------------------------------
-# Tool 30: update_acl
-# ---------------------------------------------------------------------------
-
-@app.tool()
-def update_acl(
-    asset_id: str,
     all_users_can_read: bool = False,
     readers: str = "",
     writers: str = "",
 ) -> str:
-    """Update permissions (ACL) on a GEE asset.
-
-    Uses geeViz's assetManagerLib.updateACL to set the access control list.
+    """Manage GEE assets: delete, copy, move, create folders, update permissions.
 
     Args:
-        asset_id: Full asset path.
-        all_users_can_read: If True, the asset is publicly readable
-                            (default False).
-        readers: Comma-separated email addresses of users with read access.
-        writers: Comma-separated email addresses of users with write access.
+        action: Operation to perform:
+            - "delete": Delete a single asset.
+            - "copy": Copy asset_id to dest_id.
+            - "move": Copy asset_id to dest_id, then delete source.
+            - "create": Create a folder or ImageCollection at asset_id.
+            - "update_acl": Update permissions on asset_id.
+        asset_id: Full asset path. Required for all actions.
+                  For "create", this is the folder path to create.
+        dest_id: Destination path (required for "copy" and "move").
+        overwrite: If True, overwrite existing destination (default False).
+        folder_type: For action="create" -- "Folder" (default) or "ImageCollection".
+        all_users_can_read: For action="update_acl" -- make publicly readable.
+        readers: For action="update_acl" -- comma-separated reader emails.
+        writers: For action="update_acl" -- comma-separated writer emails.
 
     Returns:
         JSON confirmation or error.
     """
     _ensure_initialized()
-    import geeViz.assetManagerLib as aml
-
-    readers_list = [r.strip() for r in readers.split(",") if r.strip()] if readers else []
-    writers_list = [w.strip() for w in writers.split(",") if w.strip()] if writers else []
-
-    stdout_buf = io.StringIO()
-    try:
-        with contextlib.redirect_stdout(stdout_buf):
-            aml.updateACL(
-                asset_id,
-                writers=writers_list,
-                all_users_can_read=all_users_can_read,
-                readers=readers_list,
-            )
-    except Exception as exc:
-        return json.dumps({
-            "error": f"ACL update failed: {exc}",
-            "stdout": stdout_buf.getvalue(),
-        })
-
-    return json.dumps({
-        "success": True,
-        "asset_id": asset_id,
-        "all_users_can_read": all_users_can_read,
-        "readers": readers_list,
-        "writers": writers_list,
-        "stdout": stdout_buf.getvalue().strip(),
-        "message": f"Permissions updated for {asset_id}.",
-    })
-
-
-# ---------------------------------------------------------------------------
-# Tool 32: extract_and_chart
-# ---------------------------------------------------------------------------
-
-@app.tool()
-def extract_and_chart(
-    image_var: str = "",
-    collection_var: str = "",
-    geometry_var: str = "",
-    lon: float = None,
-    lat: float = None,
-    band_names: str = "",
-    start_date: str = "",
-    end_date: str = "",
-    scale: int = 30,
-    reducer: str = "",
-    area_format: str = "Percentage",
-    x_axis_property: str = "system:time_start",
-    date_format: str = "YYYY",
-    chart_type: str = "",
-    stacked: bool = False,  # deprecated — use chart_type instead
-    palette: str = "",
-    sankey: bool = False,
-    transition_periods: str = "",
-    sankey_band_name: str = "",
-    min_percentage: float = 1.0,
-    feature_label: str = "",
-    title: str = "",
-) -> str:
-    """Extract values from an ee.Image or ee.ImageCollection, run zonal
-    statistics, and return a chart image with a markdown data table.
-
-    Wraps ``geeViz.outputLib.charts.summarize_and_chart``. Auto-detects thematic
-    vs continuous data and picks the right reducer and chart type.
-
-    **Geometry:** pass ``lon``/``lat`` for a point, or ``geometry_var`` for any
-    geometry already in the REPL namespace (polygon, feature collection, etc.).
-    For point geometries the reducer defaults to ``ee.Reducer.first()``.
-
-    Args:
-        image_var: Name of an ``ee.Image`` variable in the REPL namespace.
-                   Mutually exclusive with ``collection_var``.
-        collection_var: Name of an ``ee.ImageCollection`` variable in the REPL
-                        namespace. Mutually exclusive with ``image_var``.
-        geometry_var: Name of an ``ee.Geometry``, ``ee.Feature``, or
-                      ``ee.FeatureCollection`` variable for the analysis region.
-        lon: Longitude (used with ``lat`` to create a point geometry).
-        lat: Latitude (used with ``lon`` to create a point geometry).
-        band_names: Comma-separated band names to include. Auto-detected if empty.
-        start_date: Optional start date filter for collections (YYYY-MM-DD).
-        end_date: Optional end date filter for collections (YYYY-MM-DD).
-        scale: Pixel scale in meters (default 30).
-        reducer: Override the auto-selected reducer. Valid values:
-                 ``"first"``, ``"mean"``, ``"median"``, ``"min"``, ``"max"``,
-                 ``"sum"``, ``"mode"``, ``"stdDev"``, ``"count"``,
-                 ``"frequencyHistogram"``. Leave empty to auto-detect
-                 (``"first"`` for points, ``"frequencyHistogram"`` for
-                 thematic areas, ``"mean"`` for continuous areas).
-        area_format: Area unit for thematic data -- ``"Percentage"`` (default),
-                     ``"Hectares"``, ``"Acres"``, or ``"Pixels"``.
-        x_axis_property: Property for x-axis labels on ImageCollections
-                         (default ``"system:time_start"``).
-        date_format: Earth Engine date format string (default ``"YYYY"``).
-        chart_type: ``"lines+markers"`` (default), ``"lines"``, or ``"bar"``.
-        stacked: Whether to stack series (default False).
-        palette: Comma-separated hex colors for chart series (e.g.
-                 ``"#ff0000,#00ff00,#0000ff"``). Leave empty for auto-detect.
-        sankey: Set True for a Sankey transition diagram (ImageCollection only).
-        transition_periods: JSON list of ``[start, end]`` year pairs for Sankey
-                            (e.g. ``"[[1985,1990],[2000,2005],[2018,2023]]"``).
-        sankey_band_name: Band name for the Sankey analysis (auto-detected if
-                          empty).
-        min_percentage: Minimum percentage threshold for Sankey flows
-                        (default 1.0).
-        feature_label: Property name for per-feature labels when using a
-                       multi-feature ``ee.FeatureCollection``. Triggers
-                       ``reduceRegions`` and produces a grouped bar chart.
-        title: Chart title. Auto-generated if empty.
-
-    Returns:
-        A chart image (PNG) and a text summary containing a markdown data
-        table, the chart type, and a path to the saved interactive HTML file.
-        When image rendering is unavailable, returns the markdown table with
-        an inline base64 image or text-only fallback.
-    """
-    _ensure_initialized()
     ee = _namespace["ee"]
+    import geeViz.assetManagerLib as aml
+    act = action.lower().strip()
 
-    # Resolve the EE object
-    if image_var and collection_var:
-        return json.dumps({"error": "Provide image_var OR collection_var, not both."})
-    if not image_var and not collection_var:
-        return json.dumps({"error": "Provide either image_var or collection_var."})
+    if not asset_id and act != "create":
+        return json.dumps({"error": "asset_id is required."})
 
-    var_name = image_var or collection_var
-    ee_obj = _namespace.get(var_name)
-    if ee_obj is None:
-        return json.dumps({"error": f"Variable {var_name!r} not found in namespace."})
-    if not isinstance(ee_obj, (ee.Image, ee.ImageCollection)):
-        return json.dumps({
-            "error": f"Variable {var_name!r} is {type(ee_obj).__name__}, "
-                     "expected ee.Image or ee.ImageCollection.",
-        })
-
-    # Resolve geometry -- lon/lat creates a simple point, geometry_var for everything else
-    is_point = False
-    if lon is not None and lat is not None:
-        geometry = ee.Geometry.Point([lon, lat])
-        is_point = True
-    elif geometry_var:
-        geometry = _namespace.get(geometry_var)
-        if geometry is None:
-            return json.dumps({"error": f"Variable {geometry_var!r} not found in namespace."})
-    else:
-        return json.dumps({
-            "error": "Provide either lon/lat coordinates or a geometry_var name.",
-        })
-
-    # Default to ee.Reducer.first() for point geometries
-    if is_point and not reducer:
-        reducer = "first"
-
-    # ---- Apply date filters for collections ----
-    if isinstance(ee_obj, ee.ImageCollection):
-        if start_date:
-            ee_obj = ee_obj.filterDate(start_date, end_date or "2099-01-01")
-        elif end_date:
-            ee_obj = ee_obj.filterDate("1970-01-01", end_date)
-
-    # Parse optional parameters
-    bands = [b.strip() for b in band_names.split(",") if b.strip()] or None
-    palette_list = [c.strip() for c in palette.split(",") if c.strip()] or None
-
-    # Build reducer
-    ee_reducer = None
-    if reducer:
-        reducer_map = {
-            "frequencyHistogram": ee.Reducer.frequencyHistogram(),
-            "mean": ee.Reducer.mean(),
-            "median": ee.Reducer.median(),
-            "min": ee.Reducer.min(),
-            "max": ee.Reducer.max(),
-            "sum": ee.Reducer.sum(),
-            "mode": ee.Reducer.mode(),
-            "first": ee.Reducer.first(),
-            "stdDev": ee.Reducer.stdDev(),
-            "count": ee.Reducer.count(),
-        }
-        ee_reducer = reducer_map.get(reducer)
-        if ee_reducer is None:
-            return json.dumps({
-                "error": f"Unknown reducer: {reducer!r}. "
-                         f"Valid: {', '.join(sorted(reducer_map))}",
-            })
-
-    # Parse transition periods
-    t_periods = None
-    if transition_periods:
+    if act == "delete":
+        if not aml.ee_asset_exists(asset_id):
+            return json.dumps({"error": f"Asset not found: {asset_id}"})
         try:
-            t_periods = json.loads(transition_periods)
-        except Exception:
-            return json.dumps({"error": f"Invalid transition_periods JSON: {transition_periods!r}"})
+            ee.data.deleteAsset(asset_id)
+        except Exception as exc:
+            return json.dumps({"error": f"Delete failed: {exc}"})
+        return json.dumps({"success": True, "message": f"Asset {asset_id} deleted."})
 
-    try:
-        from geeViz.outputLib import charts as cl
-
-        result = cl.summarize_and_chart(
-            ee_obj,
-            geometry,
-            band_names=bands,
-            reducer=ee_reducer,
-            scale=scale,
-            area_format=area_format,
-            x_axis_property=x_axis_property,
-            date_format=date_format,
-            title=title or None,
-            chart_type=chart_type or None,
-            stacked=stacked if stacked else None,
-            sankey=sankey,
-            transition_periods=t_periods,
-            sankey_band_name=sankey_band_name or None,
-            min_percentage=min_percentage,
-            palette=palette_list,
-            feature_label=feature_label or None,
-        )
-    except Exception as exc:
-        return json.dumps({"error": f"extract_and_chart failed: {exc}"})
-
-    # Sankey returns 3-tuple (sankey_df, fig, matrix_df); non-sankey returns 2-tuple
-    if sankey and len(result) == 3:
-        df, fig, matrix_df = result
-        ct = "sankey"
-    else:
-        df, fig = result
-        matrix_df = None
-        ct = "time_series" if isinstance(ee_obj, ee.ImageCollection) else "bar"
-
-    # ------------------------------------------------------------------
-    # Build markdown table from DataFrame
-    # ------------------------------------------------------------------
-    display_df = df.reset_index()
-    for col in display_df.select_dtypes(include="number").columns:
-        display_df[col] = display_df[col].round(2)
-    if len(display_df) > 50:
-        md_table = display_df.head(50).to_markdown(index=False)
-        md_table += f"\n\n*Showing first 50 of {len(display_df)} rows.*"
-    else:
-        md_table = display_df.to_markdown(index=False) if not df.empty else ""
-
-    # ------------------------------------------------------------------
-    # Save interactive HTML chart to file (with gradient links for sankey)
-    # ------------------------------------------------------------------
-    os.makedirs(_script_dir, exist_ok=True)
-    import time as _time_mod
-    html_filename = f"chart_{ct}_{int(_time_mod.time())}.html"
-    html_path = os.path.join(_script_dir, html_filename)
-    try:
-        if ct == "sankey":
-            full_html = cl.sankey_to_html(fig, full_html=True, include_plotlyjs="cdn")
-        else:
-            chart_div = fig.to_html(full_html=False, include_plotlyjs="cdn")
-            full_html = (
-                "<!DOCTYPE html><html><head><meta charset='utf-8'>"
-                "<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>"
-                "</head><body>" + chart_div + "</body></html>"
-            )
-        with open(html_path, "w", encoding="utf-8") as _hf:
-            _hf.write(full_html)
-    except Exception:
-        html_path = None
-
-    # ------------------------------------------------------------------
-    # Try to render chart as PNG for inline display
-    # ------------------------------------------------------------------
-    chart_image_bytes = None
-    try:
-        chart_image_bytes = fig.to_image(format="png", width=700, height=450, scale=2)
-    except Exception:
-        pass
-
-    # ------------------------------------------------------------------
-    # Build text response
-    # ------------------------------------------------------------------
-    text_parts = [f"**Chart type:** {ct} | **Rows:** {len(display_df)}"]
-
-    if md_table:
-        text_parts.append("\n### Data Table\n")
-        text_parts.append(md_table)
-
-    if matrix_df is not None:
-        if isinstance(matrix_df, dict):
-            for period_label, mdf in matrix_df.items():
-                if not mdf.empty:
-                    text_parts.append(f"\n### Transition Matrix: {period_label}\n")
-                    text_parts.append(mdf.reset_index().to_markdown(index=False))
-        elif hasattr(matrix_df, 'empty') and not matrix_df.empty:
-            text_parts.append("\n### Transition Matrix\n")
-            text_parts.append(matrix_df.reset_index().to_markdown(index=False))
-
-    if html_path:
-        text_parts.append(f"\n**Interactive chart saved to:** `{html_path}`")
-
-    text_parts.append(
-        "\n**Map tip:** include `'canAreaChart': True` in vizParams and call "
-        "`Map.turnOnAutoAreaCharting()` before `Map.view()` for interactive charting."
-    )
-
-    text_summary = "\n".join(text_parts)
-
-    # ------------------------------------------------------------------
-    # Return: [Image, text] if we have a PNG, otherwise text-only
-    # ------------------------------------------------------------------
-    if chart_image_bytes and _MCPImage is not None:
+    elif act in ("copy", "move"):
+        if not dest_id:
+            return json.dumps({"error": f"dest_id is required for action='{act}'."})
+        if not aml.ee_asset_exists(asset_id):
+            return json.dumps({"error": f"Source asset not found: {asset_id}"})
+        if aml.ee_asset_exists(dest_id):
+            if overwrite:
+                try:
+                    ee.data.deleteAsset(dest_id)
+                except Exception as exc:
+                    return json.dumps({"error": f"Failed to delete existing dest: {exc}"})
+            else:
+                return json.dumps({"error": f"Destination exists: {dest_id}. Set overwrite=True to replace."})
         try:
-            return [_MCPImage(data=chart_image_bytes, format="png"), text_summary]
-        except Exception:
-            pass
+            ee.data.copyAsset(asset_id, dest_id)
+        except Exception as exc:
+            return json.dumps({"error": f"Copy failed: {exc}"})
+        if act == "move":
+            try:
+                ee.data.deleteAsset(asset_id)
+            except Exception as exc:
+                return json.dumps({"error": f"Copied to {dest_id} but failed to delete source: {exc}", "dest_id": dest_id})
+        verb = "moved" if act == "move" else "copied"
+        return json.dumps({"success": True, "message": f"Asset {verb} from {asset_id} to {dest_id}."})
 
-    if chart_image_bytes:
-        import base64 as _b64
-        img_b64 = _b64.b64encode(chart_image_bytes).decode("ascii")
-        text_summary += f"\n\n![chart](data:image/png;base64,{img_b64})"
+    elif act == "create":
+        folder_path = asset_id or dest_id
+        if not folder_path:
+            return json.dumps({"error": "asset_id is required for action='create' (the folder path)."})
+        if folder_type not in ("Folder", "ImageCollection"):
+            return json.dumps({"error": f"Invalid folder_type: {folder_type!r}. Use 'Folder' or 'ImageCollection'."})
+        stdout_buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(stdout_buf):
+                if folder_type == "ImageCollection":
+                    aml.create_image_collection(folder_path)
+                else:
+                    aml.create_asset(folder_path, recursive=True)
+        except Exception as exc:
+            return json.dumps({"error": f"Create failed: {exc}", "stdout": stdout_buf.getvalue()})
+        return json.dumps({"success": True, "message": f"{folder_type} created at {folder_path}.", "stdout": stdout_buf.getvalue().strip()})
 
-    return text_summary
+    elif act == "update_acl":
+        readers_list = [r.strip() for r in readers.split(",") if r.strip()] if readers else []
+        writers_list = [w.strip() for w in writers.split(",") if w.strip()] if writers else []
+        stdout_buf = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(stdout_buf):
+                aml.updateACL(asset_id, writers=writers_list, all_users_can_read=all_users_can_read, readers=readers_list)
+        except Exception as exc:
+            return json.dumps({"error": f"ACL update failed: {exc}", "stdout": stdout_buf.getvalue()})
+        return json.dumps({"success": True, "message": f"Permissions updated for {asset_id}.", "stdout": stdout_buf.getvalue().strip()})
 
-
-# ---------------------------------------------------------------------------
-# Reference data lookup  (Tool 33)
-# ---------------------------------------------------------------------------
-
-# Mapping of exposed dict names -> getImagesLib attribute + description
-_REFERENCE_DATA: dict[str, dict[str, str]] = {
-    "vizParamsFalse": {"attr": "vizParamsFalse", "description": "False color (SWIR-NIR-Red) visualization parameters"},
-    "vizParamsFalse10k": {"attr": "vizParamsFalse10k", "description": "False color viz params for 10k-scaled data"},
-    "vizParamsTrue": {"attr": "vizParamsTrue", "description": "True color (RGB) visualization parameters"},
-    "vizParamsTrue10k": {"attr": "vizParamsTrue10k", "description": "True color viz params for 10k-scaled data"},
-    "common_projections": {"attr": "common_projections", "description": "Named CRS + transform definitions (NLCD_CONUS, NLCD_AK, NLCD_HI)"},
-    "changeDirDict": {"attr": "changeDirDict", "description": "Spectral index change direction for vegetation loss (1=increase, -1=decrease)"},
-    "chastainCoeffDict": {"attr": "chastainCoeffDict", "description": "Cross-sensor harmonization coefficients (Chastain et al. 2018)"},
-    "s2CollectionDict": {"attr": "s2CollectionDict", "description": "Sentinel-2 processing level -> EE collection ID"},
-    "sensorBandDict": {"attr": "sensorBandDict", "description": "Sentinel-2 processing level -> raw band IDs"},
-    "sensorBandNameDict": {"attr": "sensorBandNameDict", "description": "Sentinel-2 processing level -> standardized band names"},
-    "landsat_C2_L2_rescale_dict": {"attr": "landsat_C2_L2_rescale_dict", "description": "Landsat C1/C2 reflectance + thermal rescaling factors"},
-    "landsatSensorBandDict": {"attr": "landsatSensorBandDict", "description": "Landsat collection/satellite/product -> raw band IDs"},
-    "landsatSensorBandNameDict": {"attr": "landsatSensorBandNameDict", "description": "Landsat collection/product -> standardized band names"},
-    "landsatCollectionDict": {"attr": "landsatCollectionDict", "description": "Landsat collection/satellite/product -> EE collection ID"},
-    "landsatFmaskBandNameDict": {"attr": "landsatFmaskBandNameDict", "description": "Landsat collection version -> QA band name"},
-    "fmaskBitDict": {"attr": "fmaskBitDict", "description": "Landsat collection version -> cloud/shadow/snow bit positions"},
-    "modisCDict": {"attr": "modisCDict", "description": "MODIS product key -> EE collection ID"},
-    "multModisDict": {"attr": "multModisDict", "description": "MODIS scaling factors + band names per product config"},
-    "testAreas": {"attr": "testAreas", "description": "Pre-defined test geometries (CO, CO_North, CA, CA_Small, HI)"},
-}
+    else:
+        return json.dumps({"error": f"Unknown action: {action!r}. Use 'delete', 'copy', 'move', 'create', or 'update_acl'."})
 
 
 def _strip_coordinates(obj):
@@ -3268,7 +2379,7 @@ def _make_serializable(obj):
     return repr(obj)
 
 
-@app.tool()
+@app.tool(annotations=_READ_ONLY)
 def get_reference_data(name: str = "") -> str:
     """Look up geeViz reference dictionaries (band mappings, collection IDs, viz params, etc.).
 
@@ -3310,169 +2421,477 @@ def get_reference_data(name: str = "") -> str:
 
 
 # ---------------------------------------------------------------------------
-# USFS Enterprise Data Warehouse (EDW) tools
+# USFS Enterprise Data Warehouse (EDW) (consolidated)
 # ---------------------------------------------------------------------------
+def get_streetview(
+    lon: float,
+    lat: float,
+    headings: str = "0,90,180,270",
+    pitch: float = 0,
+    fov: float = 90,
+    radius: int = 50,
+    source: str = "default",
+) -> str:
+    """Get Google Street View imagery at a location for ground-truthing.
 
-@app.tool()
-def search_edw(query: str = "", theme: str = "") -> str:
-    """Search the USFS Enterprise Data Warehouse (EDW) for datasets/services.
+    Checks if Street View coverage exists, then fetches static images
+    at the requested headings (compass directions). Returns images
+    inline for visual inspection.
 
-    The EDW provides authoritative geospatial data from the USDA Forest Service,
-    including fire occurrence, burn severity, ownership, vegetation, roads, trails,
-    recreation sites, wilderness areas, watersheds, and more (~215 services).
-
-    Supports keyword aliases — e.g. searching "riparian" finds stream, watershed,
-    and aquatic services even though no service is named "riparian".
+    Useful for ground-truthing remote sensing analysis — see what a
+    location actually looks like from the ground.
 
     Args:
-        query: Search keyword (case-insensitive). Matches service names, descriptions,
-               and keyword aliases.
-               Examples: "fire", "riparian", "fish", "ownership", "vegetation",
-               "wilderness", "watershed", "trail", "timber", "ecology".
-               Pass "" to list all services (optionally filtered by theme).
-        theme: Filter by theme category. Valid themes:
-               biota, boundaries, environment, geoscientific, inland_waters,
-               planning_cadastre, structure, transportation.
-               Pass "" to search all themes.
+        lon: Longitude in decimal degrees.
+        lat: Latitude in decimal degrees.
+        headings: Comma-separated compass headings in degrees
+                  (0=North, 90=East, 180=South, 270=West).
+                  Default "0,90,180,270" (all 4 cardinal directions).
+        pitch: Camera pitch (-90 to 90). 0=horizontal, positive=up.
+        fov: Field of view in degrees (1-120). Lower = more zoom.
+             Default 90.
+        radius: Search radius in meters for nearest panorama. Default 50.
+        source: "default" (all) or "outdoor" (outdoor only).
 
     Returns:
-        JSON with matching services (name, type, url, theme, description).
+        Metadata (date, location, copyright) and Street View images.
+        Returns error if no imagery exists at the location.
     """
-    from geeViz.mcp.edw import search_services
+    _ensure_initialized()
+    import geeViz.googleMapsLib as _gm
 
-    results = search_services(query, theme)
+    # Check metadata first (free)
+    try:
+        meta = _gm.streetview_metadata(lon, lat, radius=radius, source=source)
+    except Exception as exc:
+        return json.dumps({"error": f"Street View metadata request failed: {exc}"})
+
+    if meta.get("status") != "OK":
+        return json.dumps({
+            "status": meta.get("status", "UNKNOWN"),
+            "message": f"No Street View imagery at ({lat}, {lon}) within {radius}m.",
+            "tip": "Try increasing the radius or checking a nearby road/trail.",
+        })
+
+    # Parse headings
+    heading_list = [float(h.strip()) for h in headings.split(",") if h.strip()]
+
+    # Fetch images
+    images = []
+    _direction_labels = {0: "N", 45: "NE", 90: "E", 135: "SE",
+                         180: "S", 225: "SW", 270: "W", 315: "NW"}
+    for h in heading_list:
+        try:
+            img_bytes = _gm.streetview_image(
+                lon, lat, heading=h, pitch=pitch, fov=fov,
+                radius=radius, source=source,
+            )
+            if img_bytes:
+                label = _direction_labels.get(int(h) % 360, f"{h}°")
+                images.append({"heading": h, "label": label, "size": len(img_bytes)})
+        except Exception:
+            pass
+
+    # Build text response
+    loc = meta.get("location", {})
+    text_parts = [
+        f"**Street View** at ({loc.get('lat', lat):.5f}, {loc.get('lng', lon):.5f})",
+        f"**Date:** {meta.get('date', 'unknown')}",
+        f"**Copyright:** {meta.get('copyright', '')}",
+        f"**Images:** {len(images)} of {len(heading_list)} headings fetched",
+    ]
+
+    # Try to return images inline
+    if _MCPImage is not None and images:
+        result_parts = []
+        for h in heading_list:
+            try:
+                img_bytes = _gm.streetview_image(
+                    lon, lat, heading=h, pitch=pitch, fov=fov,
+                    radius=radius, source=source,
+                )
+                if img_bytes:
+                    label = _direction_labels.get(int(h) % 360, f"{h}°")
+                    result_parts.append(f"**{label} ({h}°)**")
+                    result_parts.append(_MCPImage(data=img_bytes, format="jpeg"))
+            except Exception:
+                pass
+        if result_parts:
+            return ["\n".join(text_parts)] + result_parts
+
     return json.dumps({
-        "query": query or "(all)",
-        "theme": theme or "(all)",
-        "count": len(results),
-        "services": results,
-        "tip": "Use get_edw_service_info(service_name) to see layers and fields for a service.",
+        "status": "OK",
+        "date": meta.get("date"),
+        "location": meta.get("location"),
+        "copyright": meta.get("copyright"),
+        "images_fetched": len(images),
+        "images": images,
+        "tip": "Use gm.streetview_html(lon, lat) in run_code for inline display.",
     })
 
 
-@app.tool()
-def get_edw_service_info(
-    service_name: str,
-    layer_id: int = -1,
+@app.tool(annotations=_READ_ONLY_OPEN)
+def search_places(
+    query: str,
+    lon: float = 0,
+    lat: float = 0,
+    radius: float = 5000,
+    max_results: int = 10,
 ) -> str:
-    """Get metadata for a USFS EDW service or a specific layer within it.
+    """Search for places using the Google Places API.
+
+    Useful for finding landmarks, businesses, or points of interest near
+    a study area. Can also geocode addresses.
 
     Args:
-        service_name: Service name from search_edw results, e.g. "EDW_MTBS_01".
-        layer_id: Optional layer ID to get detailed field/geometry info.
-                  Use -1 (default) to get the service overview with all layer names.
+        query: Search text (e.g. "fire station", "visitor center",
+               "4240 S Olympic Way, SLC, UT").
+        lon: Longitude for location bias (0 = no bias).
+        lat: Latitude for location bias (0 = no bias).
+        radius: Bias radius in meters. Default 5000.
+        max_results: Maximum results (1-20). Default 10.
 
     Returns:
-        JSON with service or layer metadata (layers, fields, geometry type, extent).
+        JSON with matching places (name, address, coordinates, rating, types).
     """
-    from geeViz.mcp.edw import get_service_info, get_layer_info
+    _ensure_initialized()
+    import geeViz.googleMapsLib as _gm
 
-    if layer_id >= 0:
-        info = get_layer_info(service_name, layer_id)
-        info["service_name"] = service_name
-        info["layer_id"] = layer_id
-        info["tip"] = (
-            "Use query_edw_features(service_name, layer_id, ...) "
-            "to fetch features from this layer."
-        )
-        return json.dumps(info)
-
-    info = get_service_info(service_name)
-    info["tip"] = (
-        "Use get_edw_service_info(service_name, layer_id=<id>) "
-        "to see fields and geometry type for a specific layer."
-    )
-    return json.dumps(info)
-
-
-@app.tool()
-def query_edw_features(
-    service_name: str,
-    layer_id: int,
-    bbox: str = "",
-    geometry_geojson: str = "",
-    where: str = "1=1",
-    out_fields: str = "*",
-    max_features: int = 1000,
-    return_count_only: bool = False,
-) -> str:
-    """Query features from a USFS EDW layer with spatial and/or attribute filters.
-
-    Returns GeoJSON FeatureCollection. Use bbox OR geometry_geojson for spatial
-    filtering (bbox takes precedence if both provided).
-
-    Args:
-        service_name: Service name, e.g. "EDW_MTBS_01".
-        layer_id: Layer ID within the service (from get_edw_service_info).
-        bbox: Bounding box as "xmin,ymin,xmax,ymax" (WGS84 lon/lat).
-              Example: "-111.5,44.0,-109.5,45.5" for a region near Yellowstone.
-        geometry_geojson: GeoJSON geometry string for spatial filter (Point, Polygon).
-                         Example: '{"type":"Point","coordinates":[-111.0,44.5]}'
-                         Ignored if bbox is provided.
-        where: SQL WHERE clause for attribute filtering.
-               Example: "FIRE_NAME='CREEK' AND YEAR>=2020"
-        out_fields: Comma-separated field names or "*" for all fields.
-        max_features: Maximum features to return (default 1000, max 5000).
-                      Automatically paginates if > 2000.
-        return_count_only: If true, return only the count of matching features.
-
-    Returns:
-        GeoJSON FeatureCollection string, or {"count": N} if return_count_only.
-    """
-    from geeViz.mcp.edw import query_features, query_features_with_pagination
-
-    # Determine geometry and type
-    geometry = None
-    geometry_type = "esriGeometryEnvelope"
-
-    if bbox.strip():
-        geometry = bbox.strip()
-        geometry_type = "esriGeometryEnvelope"
-    elif geometry_geojson.strip():
-        geom = json.loads(geometry_geojson)
-        geometry = geom
-        geoj_type = geom.get("type", "")
-        if geoj_type == "Point":
-            geometry_type = "esriGeometryPoint"
-        elif geoj_type in ("Polygon", "MultiPolygon"):
-            geometry_type = "esriGeometryPolygon"
-
-    max_features = min(max_features, 5000)
-
-    if return_count_only:
-        result = query_features(
-            service_name, layer_id,
-            geometry=geometry, geometry_type=geometry_type,
-            where=where, return_count_only=True,
-        )
-        return json.dumps(result)
-
-    if max_features > 2000:
-        result = query_features_with_pagination(
-            service_name, layer_id,
-            geometry=geometry, geometry_type=geometry_type,
-            where=where, out_fields=out_fields,
-            max_features=max_features,
-        )
-    else:
-        result = query_features(
-            service_name, layer_id,
-            geometry=geometry, geometry_type=geometry_type,
-            where=where, out_fields=out_fields,
-            max_features=max_features,
-        )
-
-    feature_count = len(result.get("features", []))
-    # Add metadata to response
-    result["_query"] = {
-        "service": service_name,
-        "layer_id": layer_id,
-        "feature_count": feature_count,
-        "bbox": bbox or None,
-        "where": where,
+    kwargs: dict[str, Any] = {
+        "query": query,
+        "max_results": max_results,
+        "radius": radius,
     }
+    if lat != 0 and lon != 0:
+        kwargs["lat"] = lat
+        kwargs["lon"] = lon
 
-    return json.dumps(result)
+    try:
+        places = _gm.search_places(**kwargs)
+    except Exception as exc:
+        return json.dumps({"error": f"Places search failed: {exc}"})
+
+    return json.dumps({
+        "count": len(places),
+        "places": places,
+    })
+
+
+
+
+
+# ---------------------------------------------------------------------------
+# Report tools
+# ---------------------------------------------------------------------------
+
+# Global report instance — persists across tool calls
+_active_report = None
+
+
+@app.tool(annotations=_WRITE)
+def create_report(
+    title: str = "Report",
+    theme: str = "dark",
+    layout: str = "report",
+    tone: str = "neutral",
+    header_text: str = "",
+    prompt: str = "",
+) -> str:
+    """Create (or reset) a report. Must be called before add_report_section.
+
+    Initializes a new Report object that persists across MCP calls.
+    Any previously active report is discarded.
+
+    Args:
+        title: Report title.
+        theme: "dark" (default) or "light".
+        layout: "report" (portrait, vertical) or "poster" (landscape grid).
+        tone: "neutral" (default), "informative", "technical", or custom tone.
+        header_text: Introductory text below the title.
+        prompt: Additional guidance for the executive summary LLM narrative.
+
+    Returns:
+        Confirmation with the report title and settings.
+    """
+    _ensure_initialized()
+    global _active_report
+    from geeViz.outputLib import reports as _rl
+
+    _active_report = _rl.Report(
+        title=title,
+        theme=theme,
+        layout=layout,
+        tone=tone,
+        header_text=header_text or None,
+        prompt=prompt or None,
+    )
+    return json.dumps({
+        "success": True,
+        "message": f"Report '{title}' created ({theme} theme, {layout} layout, {tone} tone).",
+        "tip": "Use add_report_section to add sections, then generate_report to produce output.",
+    })
+
+
+@app.tool(annotations=_WRITE)
+def add_report_section(
+    ee_obj_var: str,
+    geometry_var: str,
+    title: str = "Section",
+    prompt: str = "",
+    thumb_format: str = "png",
+    band_names: str = "",
+    scale: int = 30,
+    chart_types: str = "",
+    basemap: str = "",
+    burn_in_geometry: bool = False,
+    geometry_outline_color: str = "",
+    geometry_fill_color: str = "",
+    transition_periods: str = "",
+    sankey_band_name: str = "",
+    feature_label: str = "",
+    area_format: str = "Percentage",
+    date_format: str = "YYYY",
+    reducer: str = "",
+    generate_table: bool = True,
+    generate_chart: bool = True,
+) -> str:
+    """Add a section to the active report.
+
+    Each section analyses one ee.Image or ee.ImageCollection over a geometry.
+    The report automatically generates a thumbnail, data table, chart, and
+    LLM narrative for each section.
+
+    Args:
+        ee_obj_var: Name of an ee.Image or ee.ImageCollection variable in the
+                    REPL namespace.
+        geometry_var: Name of an ee.Geometry, ee.Feature, or ee.FeatureCollection
+                      variable in the REPL namespace.
+        title: Section heading.
+        prompt: Optional per-section guidance for the LLM narrative.
+        thumb_format: "png" (static), "gif" (animated), "filmstrip" (grid),
+                      or "none" (no thumbnail). Default "png".
+        band_names: Comma-separated band names (auto-detected if empty).
+        scale: Pixel scale in meters (default 30).
+        chart_types: Comma-separated list of chart types to produce (0-3).
+                     Valid types: "bar", "line+markers", "donut", "scatter",
+                     "sankey", "stacked_bar", "stacked_line+markers".
+                     When "sankey" is included, transition_periods and
+                     sankey_band_name are used for that chart.
+                     Leave empty to auto-detect a single chart type.
+                     Examples: "sankey,line+markers", "bar,donut", "sankey".
+        basemap: Basemap preset for thumbnail (e.g. "esri-satellite").
+        burn_in_geometry: Burn study area boundary onto the thumbnail.
+        geometry_outline_color: Boundary outline color (e.g. "white", "red").
+        geometry_fill_color: Boundary fill color with alpha (e.g. "FFFFFF33").
+        transition_periods: JSON list of year pairs for Sankey
+                            (e.g. "[[1985,2000],[2000,2024]]").
+        sankey_band_name: Band name for Sankey (auto-detected if empty).
+        feature_label: Property for per-feature labels (FeatureCollection).
+        area_format: "Percentage" (default), "Hectares", "Acres", "Pixels".
+        date_format: EE date format (default "YYYY").
+        reducer: Override reducer ("mean", "first", "mode", etc.).
+        generate_table: Include a data table (default True).
+        generate_chart: Include a chart (default True).
+
+    Returns:
+        Confirmation with the section index and title.
+    """
+    _ensure_initialized()
+    global _active_report
+    ee = _namespace["ee"]
+
+    if _active_report is None:
+        return json.dumps({"error": "No active report. Call create_report first."})
+
+    # Resolve EE objects from namespace
+    ee_obj = _namespace.get(ee_obj_var)
+    if ee_obj is None:
+        return json.dumps({"error": f"Variable '{ee_obj_var}' not found in REPL namespace."})
+    geom = _namespace.get(geometry_var)
+    if geom is None:
+        return json.dumps({"error": f"Variable '{geometry_var}' not found in REPL namespace."})
+
+    # Build kwargs
+    kwargs = {"scale": scale, "area_format": area_format, "date_format": date_format}
+
+    # Parse chart_types — comma-separated list
+    ct_list = [c.strip() for c in chart_types.split(",") if c.strip()] if chart_types else []
+
+    if band_names:
+        kwargs["band_names"] = [b.strip() for b in band_names.split(",")]
+    if basemap:
+        kwargs["basemap"] = basemap
+    if burn_in_geometry:
+        kwargs["burn_in_geometry"] = True
+    if geometry_outline_color:
+        kwargs["geometry_outline_color"] = geometry_outline_color
+    if geometry_fill_color:
+        kwargs["geometry_fill_color"] = geometry_fill_color
+    if feature_label:
+        kwargs["feature_label"] = feature_label
+    if reducer:
+        _reducer_map = {
+            "first": ee.Reducer.first(),
+            "mean": ee.Reducer.mean(),
+            "median": ee.Reducer.median(),
+            "min": ee.Reducer.min(),
+            "max": ee.Reducer.max(),
+            "sum": ee.Reducer.sum(),
+            "mode": ee.Reducer.mode(),
+            "stdDev": ee.Reducer.stdDev(),
+            "count": ee.Reducer.count(),
+        }
+        kwargs["reducer"] = _reducer_map.get(reducer.strip())
+    if transition_periods:
+        try:
+            kwargs["transition_periods"] = json.loads(transition_periods)
+        except json.JSONDecodeError:
+            return json.dumps({"error": f"Invalid transition_periods JSON: {transition_periods}"})
+    if sankey_band_name:
+        kwargs["sankey_band_name"] = sankey_band_name
+
+    tf = thumb_format.lower().strip() if thumb_format else "png"
+    if tf == "none":
+        tf = None
+
+    try:
+        _active_report.add_section(
+            ee_obj=ee_obj,
+            geometry=geom,
+            title=title,
+            prompt=prompt or None,
+            generate_table=generate_table,
+            generate_chart=generate_chart,
+            thumb_format=tf,
+            chart_types=ct_list if ct_list else None,
+            **kwargs,
+        )
+    except Exception as exc:
+        return json.dumps({"error": f"Failed to add section: {exc}"})
+
+    n = len(_active_report._sections)
+    return json.dumps({
+        "success": True,
+        "message": f"Section {n} '{title}' added to report '{_active_report.title}'.",
+        "total_sections": n,
+        "tip": "Add more sections or call generate_report to produce the output.",
+    })
+
+
+@app.tool(annotations=_WRITE_OPEN)
+def generate_report(
+    format: str = "html",
+    output_filename: str = "",
+) -> str:
+    """Generate the report from all added sections.
+
+    Runs all EE computations (thumbnails, charts, tables) and LLM narratives
+    in parallel, then renders the final output. This may take 30-120 seconds
+    depending on the number of sections.
+
+    Args:
+        format: Output format -- "html" (interactive charts, default),
+                "md" (markdown text only), or "pdf" (static images).
+        output_filename: Filename for the output (saved to generated_outputs/).
+                         Auto-generated if empty.
+
+    Returns:
+        The file path of the generated report, plus a metadata summary.
+    """
+    _ensure_initialized()
+    global _active_report
+
+    if _active_report is None:
+        return json.dumps({"error": "No active report. Call create_report first."})
+    if not _active_report._sections:
+        return json.dumps({"error": "Report has no sections. Call add_report_section first."})
+
+    fmt = format.lower().strip()
+    if fmt not in ("html", "md", "pdf"):
+        return json.dumps({"error": f"Invalid format '{format}'. Use 'html', 'md', or 'pdf'."})
+
+    # Determine output path
+    os.makedirs(_output_dir, exist_ok=True)
+    if output_filename:
+        out_path = os.path.join(_output_dir, output_filename)
+    else:
+        import time as _time_mod
+        ts = int(_time_mod.time())
+        ext = {"html": ".html", "md": ".md", "pdf": ".pdf"}[fmt]
+        safe_title = "".join(c if c.isalnum() or c in " _-" else "_" for c in _active_report.title)[:40].strip()
+        out_path = os.path.join(_output_dir, f"report_{safe_title}_{ts}{ext}")
+
+    try:
+        result = _active_report.generate(format=fmt, output_path=out_path)
+    except Exception as exc:
+        return json.dumps({"error": f"Report generation failed: {exc}"})
+
+    # Build metadata
+    try:
+        meta_df = _active_report.metadata()
+        meta_md = meta_df.to_markdown(index=False)
+    except Exception:
+        meta_md = "(metadata unavailable)"
+
+    return json.dumps({
+        "success": True,
+        "format": fmt,
+        "output_path": out_path,
+        "sections": len(_active_report._sections),
+        "metadata": meta_md,
+        "tip": f"Report saved to {out_path}",
+    })
+
+
+@app.tool(annotations=_READ_ONLY)
+def get_report_status() -> str:
+    """Check the current report status -- title, theme, section count, and
+    section titles.
+
+    Returns:
+        Report status or a message if no report is active.
+    """
+    global _active_report
+    if _active_report is None:
+        return json.dumps({
+            "active": False,
+            "message": "No active report. Call create_report to start one.",
+        })
+
+    sections = []
+    for i, sec in enumerate(_active_report._sections):
+        sections.append({
+            "index": i + 1,
+            "title": sec.title,
+            "thumb_format": sec.thumb_format,
+            "generate_table": sec.generate_table,
+            "generate_chart": sec.generate_chart,
+        })
+
+    return json.dumps({
+        "active": True,
+        "title": _active_report.title,
+        "theme": _active_report.theme,
+        "layout": _active_report.layout,
+        "tone": _active_report.tone,
+        "section_count": len(_active_report._sections),
+        "sections": sections,
+    })
+
+
+@app.tool(annotations=_DESTRUCTIVE)
+def clear_report() -> str:
+    """Discard the active report and all its sections.
+
+    Returns:
+        Confirmation that the report was cleared.
+    """
+    global _active_report
+    old_title = _active_report.title if _active_report else None
+    _active_report = None
+    if old_title:
+        return json.dumps({"success": True, "message": f"Report '{old_title}' cleared."})
+    return json.dumps({"success": True, "message": "No active report to clear."})
 
 
 # ---------------------------------------------------------------------------

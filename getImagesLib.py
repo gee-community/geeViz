@@ -7286,9 +7286,15 @@ def superSimpleGetS2(
     cloudScorePlusThresh: float = 0.6,
     cloudScorePlusScore: str = "cs",
 ) -> ee.ImageCollection:
-    """
-    This function retrieves Sentinel-2 satellite imagery from Earth Engine for a specified study area and date range.
-    It applies the cloudScore+ algorithm unless told otherwise.
+    """Retrieve cloud-masked Sentinel-2 imagery — **preferred S2 function**.
+
+    This is the recommended way to get Sentinel-2 data.  It uses the
+    Cloud Score Plus product for cloud/shadow masking and returns an
+    ``ee.ImageCollection`` of individual scenes (not annual composites).
+    Use ``.median()`` or ``.mosaic()`` to composite as needed.
+
+    For annual composites with medoid compositing, see
+    :func:`getSentinel2Wrapper` (legacy, more complex).
 
     Args:
         studyArea (ee.Geometry, ee.Feature, ee.FeatureCollection, or None, optional): An Earth Engine geometry object representing the area of interest. If set to None, startJulian and endJulian cannot be used. Doing so will cause the image to never render.
@@ -7391,6 +7397,15 @@ def getSentinel2Wrapper(
     cloudScorePlusScore="cs",
 ):
     """Get annual Sentinel-2 composites with cloud/shadow masking.
+
+    .. deprecated::
+        Use :func:`superSimpleGetS2` instead for most use cases.  It is
+        simpler (fewer parameters), uses the newer Cloud Score Plus
+        product, and returns individual scenes that you composite as
+        needed (including medoid via ``compositeTimeSeries``).  This
+        function is retained for workflows that need the all-in-one
+        annual compositing pipeline with temporal buffering, TDOM,
+        or asset export built in.
 
     Wraps ``getProcessedSentinel2Scenes`` to retrieve cloud-masked scenes,
     then composites them into annual (or multi-year buffered) images using

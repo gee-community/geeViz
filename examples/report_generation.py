@@ -45,13 +45,21 @@ name = ' | '.join(study_area.aggregate_histogram('NAMELSAD').keys().getInfo())
 
 
 # %%
-# LCMS
+# LCMS — filter out non-processing and stable classes for cleaner charts
 lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2024-10")
 
 # MTBS burn severity — select by index and rename for consistent band naming
 mtbs = ee.ImageCollection("USFS/GTAC/MTBS/annual_burn_severity_mosaics/v1").select(
     [0], ["Severity"]
 )
+
+# Classes to hide in charts (background, non-processing, stable)
+HIDDEN_CLASSES = {
+    "Background": False,
+    "Non-Processing Area Mask": False,
+    "Stable": False,
+    "Slow Loss": False,
+}
 
 startYear = 1990
 endYear = 2024
@@ -70,14 +78,15 @@ report = rl.Report(
     theme="dark",
 )
 
-# Section 1: LCMS Land Cover — stacked chart + thumb + GIF with date burn-in
-report.addSection(
+# Section 1: LCMS Land Cover — stacked time series + GIF
+report.add_section(
     ee_obj=lcms.select(["Land_Cover"]).filter(
         ee.Filter.calendarRange(startYear, endYear, "year")
     ),
     geometry=study_area,
     title=f"{name} - LCMS Land Cover",
-    stacked=True,
+    chart_types=["stacked_line+markers"],
+    class_visible=HIDDEN_CLASSES,
     scale=60,
     thumb_format="gif",
     thumb_dimensions=400,
@@ -87,14 +96,15 @@ report.addSection(
     thumb_date_position="upper-left",
 )
 
-# Section 2: LCMS Land Cover Sankey — transition diagram
-report.addSection(
+# Section 2: LCMS Land Cover Sankey + time series
+report.add_section(
     ee_obj=lcms.select(["Land_Cover"]).filter(
         ee.Filter.calendarRange(startYear, endYear, "year")
     ),
     geometry=study_area,
     title=f"{name} - LCMS Land Cover Transitions",
-    sankey=True,
+    chart_types=["sankey", "stacked_line+markers"],
+    class_visible=HIDDEN_CLASSES,
     transition_periods=[1990, 2000, 2010, 2024],
     sankey_band_name="Land_Cover",
     scale=60,
@@ -102,38 +112,40 @@ report.addSection(
 )
 
 # Section 3: LCMS Land Use — stacked chart (no thumb)
-report.addSection(
+report.add_section(
     ee_obj=lcms.select(["Land_Use"]).filter(
         ee.Filter.calendarRange(startYear, endYear, "year")
     ),
     geometry=study_area,
     title=f"{name} - LCMS Land Use",
-    stacked=True,
+    chart_types=["stacked_line+markers"],
+    class_visible=HIDDEN_CLASSES,
     scale=60,
     thumb_format=None,
 )
 
-# Section 4: LCMS Land Use Sankey — transition diagram
-report.addSection(
+# Section 4: LCMS Land Use Sankey
+report.add_section(
     ee_obj=lcms.select(["Land_Use"]).filter(
         ee.Filter.calendarRange(startYear, endYear, "year")
     ),
     geometry=study_area,
     title=f"{name} - LCMS Land Use Transitions",
-    sankey=True,
+    chart_types=["sankey"],
     transition_periods=[1990, 2000, 2010, 2024],
     sankey_band_name="Land_Use",
     scale=60,
     thumb_format=None,
 )
 
-# Section 5: MTBS Burn Severity — GIF + chart (no table)
-report.addSection(
+# Section 5: MTBS Burn Severity — GIF + chart
+report.add_section(
     ee_obj=mtbs.filter(ee.Filter.calendarRange(startYear, endYear, "year")),
     geometry=study_area,
     title=f"{name} - MTBS Burn Severity",
+    chart_types=["stacked_bar"],
     scale=30,
-    generateTable=False,
+    generate_table=False,
     thumb_format="gif",
     thumb_dimensions=400,
     thumb_fps=4,
@@ -143,12 +155,12 @@ report.addSection(
 )
 
 # Section 6: Sentinel-2 Composite — thumb only (no chart, no table)
-report.addSection(
+report.add_section(
     ee_obj=s2,
     geometry=study_area,
     title=f"{name} - Sentinel-2 Summer 2023",
-    generateChart=False,
-    generateTable=False,
+    generate_chart=False,
+    generate_table=False,
     thumb_viz_params=gil.vizParamsFalse10k,
     thumb_dimensions=400,
 )
@@ -158,7 +170,7 @@ print(f"Sections: {len(report._sections)}")
 for i, sec in enumerate(report._sections):
     print(
         f"  {i + 1}. {sec.title} "
-        f"(table={sec.generateTable}, chart={sec.generateChart}, "
+        f"(table={sec.generate_table}, chart={sec.generate_chart}, "
         f"thumb_format={sec.thumb_format})"
     )
 

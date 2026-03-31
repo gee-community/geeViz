@@ -65,6 +65,22 @@ DEFAULT_PLOT_FONT = "Roboto"
 DEFAULT_CHART_WIDTH = 800
 DEFAULT_CHART_HEIGHT = 600
 
+#: Valid chart type strings for ``chart_type`` / ``chart_types`` parameters.
+#: Use these in ``summarize_and_chart(chart_type=...)`` or
+#: ``Report.add_section(chart_types=[...])``.
+CHART_TYPES = [
+    "bar",
+    "stacked_bar",
+    "line",
+    "line+markers",
+    "stacked_line",
+    "stacked_line+markers",
+    "donut",
+    "scatter",
+    "sankey",
+]
+
+
 def _legend_kwargs(legend_position):
     """Return Plotly legend layout dict.
 
@@ -143,6 +159,79 @@ def _ensure_hex_color(color):
     return color
 
 
+def _title_to_filename(title):
+    """Convert a chart title to a safe filename (no extension)."""
+    import re
+    if not title:
+        return "chart"
+    return re.sub(r'[^a-zA-Z0-9_-]', '_', title).strip('_')[:80] or "chart"
+
+
+def _plotly_download_config(fig):
+    """Build Plotly config dict with download filename derived from chart title."""
+    title = ""
+    if fig.layout.title and fig.layout.title.text:
+        title = fig.layout.title.text
+    fname = _title_to_filename(title)
+    return {"toImageButtonOptions": {"filename": fname}}
+
+
+def _set_download_filename(fig):
+    """Patch a Plotly figure so ``fig.show()`` and ``fig.to_html()`` use the title as download filename.
+
+    Wraps both methods to inject ``config={'toImageButtonOptions': {'filename': ...}}``
+    automatically, so users don't need to pass config manually.
+    """
+    _orig_show = fig.show
+    _orig_to_html = fig.to_html
+
+    def _patched_show(*args, **kwargs):
+        if "config" not in kwargs:
+            kwargs["config"] = _plotly_download_config(fig)
+        else:
+            cfg = kwargs["config"]
+            if "toImageButtonOptions" not in cfg:
+                cfg["toImageButtonOptions"] = _plotly_download_config(fig)["toImageButtonOptions"]
+        return _orig_show(*args, **kwargs)
+
+    def _patched_to_html(*args, **kwargs):
+        if "config" not in kwargs:
+            kwargs["config"] = _plotly_download_config(fig)
+        else:
+            cfg = kwargs["config"]
+            if "toImageButtonOptions" not in cfg:
+                cfg["toImageButtonOptions"] = _plotly_download_config(fig)["toImageButtonOptions"]
+        return _orig_to_html(*args, **kwargs)
+
+    fig.show = _patched_show
+    fig.to_html = _patched_to_html
+    return fig
+
+
+def _thin_tick_vals(tick_vals, max_ticks=10):
+    """Return a subset of *tick_vals* so that at most *max_ticks* are shown.
+
+    Chooses a stride of 1, 2, 5, 10, 20, 50, … (the smallest that keeps
+    the count at or below *max_ticks*), always including the first and last
+    values.  Returns ``None`` when no thinning is needed.
+    """
+    if max_ticks is None or max_ticks <= 0 or len(tick_vals) <= max_ticks:
+        return None  # no thinning needed
+    n = len(tick_vals)
+    # Generate nice strides: 1, 2, 5, 10, 20, 50, 100, 200, 500, …
+    magnitude = 1
+    while magnitude < n:
+        for base in [1, 2, 5]:
+            stride = base * magnitude
+            # Ticks: always include first & last, plus every stride-th index
+            kept = [tick_vals[0]] + [tick_vals[i] for i in range(stride, n - 1, stride)] + [tick_vals[-1]]
+            if len(kept) <= max_ticks:
+                return kept
+        magnitude *= 10
+    # Fallback: just first and last
+    return [tick_vals[0], tick_vals[-1]]
+
+
 def _interpolate_palette(palette, n):
     """Interpolate a color palette to *n* colors (continuous ramp).
 
@@ -192,7 +281,6 @@ def _format_period(period):
 from geeViz.outputLib import themes as _themes
 from geeViz.outputLib._templates import (
     render_chart_style as _render_chart_style,
-    render_sankey_gradient_js as _render_sankey_gradient_js,
     render_d3_sankey as _render_d3_sankey,
 )
 
@@ -200,24 +288,23 @@ from geeViz.outputLib._templates import (
 _PLOTLY_CDN_URL = "https://cdnjs.cloudflare.com/ajax/libs/plotly.js/1.33.1/plotly.min.js"
 
 
-def save_chart_html(fig, filename, include_plotlyjs=_PLOTLY_CDN_URL, sankey=False, renderer="d3",
-                    theme="dark", bg_color=None, font_color=None):
-    """Save a Plotly chart or Sankey figure to an HTML file.
+def save_chart_html(fig, filename, include_plotlyjs=_PLOTLY_CDN_URL, sankey=False,
+                    theme="dark", bg_color=None, font_color=None, **kwargs):
+    """Save a chart to an HTML file.
 
-    Applies a theme so all chart types have a consistent look. Works both
-    inside and outside the MCP sandbox.
-
-    For Sankey figures, applies gradient-colored links via :func:`sankey_to_html`.
+    Accepts either a Plotly ``Figure`` or an HTML string (from
+    ``summarize_and_chart(chart_type='sankey')``).  Applies a theme so
+    all chart types have a consistent look.  Works both inside and
+    outside the MCP sandbox.
 
     Args:
-        fig (plotly.graph_objects.Figure): Chart figure to save.
-        filename (str): Output filename (e.g. "chart.html"). In the MCP
-            sandbox, files are saved to ``generated_outputs/``.
+        fig: ``plotly.graph_objects.Figure`` or ``str`` (D3 sankey HTML
+            from ``summarize_and_chart(chart_type='sankey')``).
+        filename (str): Output filename (e.g. ``"chart.html"``). In the
+            MCP sandbox, files are saved to ``generated_outputs/``.
         include_plotlyjs: How to include Plotly.js. Default ``"cdn"``.
-        sankey (bool): If True, render as gradient Sankey via
-            :func:`sankey_to_html`. Default False.
-        renderer (str): Sankey renderer (``"d3"`` or ``"plotly"``).
-            Only used when ``sankey=True``.
+        sankey (bool): Deprecated — ignored.  Sankey charts are now
+            returned as HTML strings and detected automatically.
         theme: Theme preset name, :class:`~geeViz.outputLib.themes.Theme`
             instance, or color string. Default ``"dark"``.
         bg_color: Background color override.
@@ -228,19 +315,22 @@ def save_chart_html(fig, filename, include_plotlyjs=_PLOTLY_CDN_URL, sankey=Fals
 
     Examples:
         >>> path = cl.save_chart_html(fig, "ndvi_trend.html")
-        >>> path = cl.save_chart_html(fig, "sankey.html", sankey=True)
+        >>> path = cl.save_chart_html(sankey_html, "sankey.html")
         >>> path = cl.save_chart_html(fig, "chart.html", theme="light")
     """
     _t = _themes.get_theme(theme, bg_color=bg_color, font_color=font_color)
-    if sankey:
-        html = sankey_to_html(fig, full_html=True, include_plotlyjs=include_plotlyjs,
-                              renderer=renderer, theme=_t)
+    # If fig is already an HTML string (from chart_sankey_d3), save directly
+    if isinstance(fig, str):
+        html = fig
     else:
         # Apply theme to a copy so we don't mutate the caller's figure
         import copy
         themed_fig = copy.deepcopy(fig)
         _themes.apply_plotly_theme(themed_fig, _t)
-        html = themed_fig.to_html(full_html=True, include_plotlyjs=include_plotlyjs)
+        html = themed_fig.to_html(
+            full_html=True, include_plotlyjs=include_plotlyjs,
+            config=_plotly_download_config(themed_fig),
+        )
         # Inject body background style
         _chart_style = _render_chart_style(_t)
         if "</head>" in html:
@@ -273,88 +363,33 @@ def save_chart_html(fig, filename, include_plotlyjs=_PLOTLY_CDN_URL, sankey=Fals
 def sankey_to_html(fig, full_html=True, include_plotlyjs=_PLOTLY_CDN_URL, renderer="d3",
                    theme="dark", bg_color=None, font_color=None,
                    hide_toolbar=False):
-    """Render a Sankey figure to HTML with gradient-colored links.
+    """Return sankey HTML, accepting either a raw HTML string or legacy Plotly figure.
 
-    If the figure was created by :func:`chart_sankey`, each link fades from
-    its source node color to its target node color using SVG linearGradients.
-
-    Two renderers are available:
-
-    * ``"plotly"`` (default) — uses Plotly.js with post-render JS injection
-      for gradients. Includes Plotly interactivity (hover tooltips, zoom,
-      modebar). Gradient links are applied via MutationObserver to survive
-      hover resets.
-    * ``"d3"`` — pure D3.js / d3-sankey rendering with native SVG gradient
-      support. Cleaner gradient implementation, includes a download PNG
-      button, hover tooltips, and node labels with halo. No Plotly dependency.
+    Sankey charts from ``summarize_and_chart(chart_type='sankey')`` are
+    now returned as D3 HTML strings directly.  This function is kept for
+    backward compatibility — it passes HTML strings through unchanged.
 
     Args:
-        fig (plotly.graph_objects.Figure): A Sankey figure (from
-            :func:`chart_sankey` or :func:`summarize_and_chart`).
-        full_html (bool): If True, wrap in ``<html>`` tags.
-        include_plotlyjs: How to include Plotly.js (``"cdn"``, True, etc.).
-            Only used when ``renderer="plotly"``.
-        renderer (str): ``"plotly"`` or ``"d3"``.
-        theme: Theme preset name, :class:`~geeViz.outputLib.themes.Theme`
-            instance, or color string. Default ``"dark"``.
+        fig: D3 HTML string (preferred) or legacy Plotly ``Figure``.
+        full_html (bool): Ignored for HTML strings.
+        include_plotlyjs: Ignored for HTML strings.
+        renderer (str): Ignored (always D3).
+        theme: Theme preset for legacy Plotly figures.
         bg_color: Background color override.
         font_color: Font/text color override.
+        hide_toolbar (bool): Hide the download button.
 
     Returns:
         str: HTML string.
-
-    Examples:
-        >>> import geeViz.geeView as gv
-        >>> from geeViz.outputLib import charts as cl
-        >>> ee = gv.ee
-        >>> study_area = ee.Geometry.Polygon(
-        ...     [[[-106, 39.5], [-105, 39.5], [-105, 40.5], [-106, 40.5]]]
-        ... )
-        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2024-10")
-        >>> df, fig, matrix = cl.summarize_and_chart(
-        ...     lcms.select(['Land_Use']),
-        ...     study_area,
-        ...     sankey=True,
-        ...     transition_periods=[1990, 2005, 2023],
-        ...     min_percentage=0.5,
-        ... )
-        >>> html = cl.sankey_to_html(fig, renderer="d3")
-        >>> with open("sankey_gradient.html", "w") as f:
-        ...     f.write(html)
     """
+    if isinstance(fig, str):
+        return fig
+    # Legacy path: Plotly figure with _gradient_color_map
     _t = _themes.get_theme(theme, bg_color=bg_color, font_color=font_color)
-    if renderer == "d3":
-        return _sankey_to_html_d3(fig, theme=_t, hide_toolbar=hide_toolbar)
-    return _sankey_to_html_plotly(fig, full_html, include_plotlyjs, theme=_t)
+    return _sankey_plotly_fig_to_d3(fig, theme=_t, hide_toolbar=hide_toolbar)
 
 
-def _sankey_to_html_plotly(fig, full_html=True, include_plotlyjs=_PLOTLY_CDN_URL, theme=None):
-    """Plotly-based Sankey HTML with injected gradient JS."""
-    import json as _json
-    _t = theme if theme is not None else _themes.get_theme("dark")
-    base_html = fig.to_html(full_html=full_html, include_plotlyjs=include_plotlyjs)
-    gradient_map = getattr(fig, "_gradient_color_map", None)
-    if not gradient_map:
-        return base_html
-    opacity = getattr(fig, "_gradient_link_opacity", 0.5)
-    js = _render_sankey_gradient_js(_json.dumps(gradient_map), opacity, _t)
-    bg_style = (
-        '<style>'
-        f'body{{background:{_t.bg_hex};color:{_t.text_hex};}}'
-        f'.sankey text, .sankey-node text{{'
-        f'  stroke:{_t.bg_hex}; stroke-width:3px; paint-order:stroke;'
-        f'  fill:{_t.text_hex};'
-        f'}}'
-        '</style>'
-    )
-    # Inject style + script just before </body> (or at the end for fragments)
-    inject = bg_style + js
-    if "</body>" in base_html:
-        return base_html.replace("</body>", inject + "</body>")
-    return base_html + inject
-
-
-def _sankey_to_html_d3(fig, theme=None, hide_toolbar=False):
+def _sankey_plotly_fig_to_d3(fig, theme=None, hide_toolbar=False):
     """D3.js / d3-sankey based Sankey HTML with native SVG gradients."""
     import json as _json
     _t = theme if theme is not None else _themes.get_theme("dark")
@@ -598,6 +633,10 @@ def chart_multi_feature_timeseries(
     height=None,
     columns=2,
     legend_position="bottom",
+    line_width=2,
+    marker_size=5,
+    max_x_tick_labels=10,
+    max_y_tick_labels=None,
 ):
     """Create a subplot figure with one time-series chart per feature.
 
@@ -620,6 +659,17 @@ def chart_multi_feature_timeseries(
             subplot gets 400 px.
         legend_position (dict or str, optional): Legend layout.
             Default ``"bottom"``.
+        line_width (int or float, optional): Line width in pixels.
+            Defaults to ``2``.
+        marker_size (int or float, optional): Marker diameter in pixels.
+            Defaults to ``5``.
+        max_x_tick_labels (int, optional): Maximum number of x-axis tick
+            labels per subplot. Labels are thinned to every 2nd, 5th,
+            10th, etc. value when exceeded. Defaults to ``10``.
+            Set to ``None`` or ``0`` to disable.
+        max_y_tick_labels (int, optional): Maximum number of y-axis tick
+            labels per subplot. Uses Plotly's ``nticks``.
+            Defaults to ``None`` (automatic).
 
     Returns:
         plotly.graph_objects.Figure
@@ -690,8 +740,8 @@ def chart_multi_feature_timeseries(
                         y=feat_df[col].values,
                         mode=plotly_mode,
                         name=col,
-                        line=dict(color=color, width=2),
-                        marker=dict(color=color, size=4),
+                        line=dict(color=color, width=line_width),
+                        marker=dict(color=color, size=marker_size),
                         stackgroup="one" if is_stacked else None,
                         showlegend=show_legend,
                         legendgroup=col,
@@ -723,23 +773,39 @@ def chart_multi_feature_timeseries(
     sample_idx = list(per_feature_dfs.values())[0].index if per_feature_dfs else []
     is_int_axis = all(str(v).lstrip("-").isdigit() for v in sample_idx)
     if is_int_axis:
-        tick_vals = sorted(set(int(v) for v in sample_idx))
+        all_tick_vals = sorted(set(int(v) for v in sample_idx))
+        tick_vals = all_tick_vals
     else:
+        all_tick_vals = None
         tick_vals = None
+    # Thin x-axis ticks if too many
+    if tick_vals is not None:
+        thinned = _thin_tick_vals(tick_vals, max_x_tick_labels)
+        if thinned is not None:
+            tick_vals = thinned
     for r in range(1, n_rows + 1):
         for c in range(1, n_cols + 1):
             kw = {}
             if tick_vals is not None:
                 kw["tickvals"] = tick_vals
                 kw["tickformat"] = "d"
+                # Constrain range to full data extent to eliminate dead space
+                kw["range"] = [min(all_tick_vals) - 0.5, max(all_tick_vals) + 0.5]
             if r == n_rows:
                 kw["title_text"] = x_label
             fig.update_xaxes(row=r, col=c, **kw)
 
-    # Label left column y-axes
-    if y_label:
-        for r in range(1, n_rows + 1):
-            fig.update_yaxes(title_text=y_label, row=r, col=1)
+    # Label left column y-axes; add '%' suffix for percentage labels
+    y_kw = {}
+    if y_label and "%" in y_label:
+        y_kw["ticksuffix"] = "%"
+    if max_y_tick_labels is not None and max_y_tick_labels > 0:
+        y_kw["nticks"] = max_y_tick_labels
+    for r in range(1, n_rows + 1):
+        if y_label:
+            fig.update_yaxes(title_text=y_label, row=r, col=1, **y_kw)
+        elif y_kw:
+            fig.update_yaxes(row=r, col=1, **y_kw)
 
     _themes.apply_plotly_theme(fig, "dark")
     return fig
@@ -850,22 +916,24 @@ def detect_geometry_type(geometry):
         tuple: ``(geo_type, geometry)`` where geo_type is ``'single'`` or ``'multi'``,
                and geometry is an ``ee.Geometry`` (single) or ``ee.FeatureCollection`` (multi).
     """
-    type_name = type(geometry).__name__
-
-    if type_name == "Geometry":
+    if isinstance(geometry, ee.Geometry):
         return ("single", geometry)
 
-    if type_name == "Feature":
+    if isinstance(geometry, ee.Feature):
         return ("single", geometry.geometry())
 
-    if type_name == "FeatureCollection":
+    if isinstance(geometry, ee.FeatureCollection):
         size = geometry.size().getInfo()
         if size <= 1:
             return ("single", geometry.geometry())
         return ("multi", geometry)
 
-    # Fallback: try treating as geometry
-    return ("single", ee.Geometry(geometry))
+    # Fallback: ee.Element (from fc.first()) or other ComputedObject
+    # Wrap in ee.Feature to extract geometry safely
+    try:
+        return ("single", ee.Feature(geometry).geometry())
+    except Exception:
+        return ("single", ee.Geometry(geometry))
 
 
 def prepare_for_reduction(ee_obj, obj_info, x_axis_property="system:time_start", date_format="YYYY"):
@@ -1345,7 +1413,7 @@ def prepare_sankey_data(
           counts.
 
     Examples:
-        Typically called via ``summarize_and_chart(sankey=True)``, but can
+        Typically called via ``summarize_and_chart(chart_type='sankey')``, but can
         be used directly for custom sankey workflows:
 
         >>> import geeViz.geeView as gv
@@ -1529,6 +1597,10 @@ def chart_time_series(
     height=DEFAULT_CHART_HEIGHT,
     label_max_length=30,
     legend_position="right",
+    line_width=2,
+    marker_size=5,
+    max_x_tick_labels=10,
+    max_y_tick_labels=None,
 ):
     """
     Create a Plotly time series chart from a zonal stats DataFrame.
@@ -1549,6 +1621,17 @@ def chart_time_series(
         legend_position (dict or str, optional): Plotly legend layout dict
             (e.g. ``{"orientation": "h", "x": 0.5, "y": -0.1}``), or
             ``"right"``/``None`` for the Plotly default.
+        line_width (int or float, optional): Line width in pixels for
+            line/scatter traces. Defaults to ``2``.
+        marker_size (int or float, optional): Marker diameter in pixels
+            for traces that include markers. Defaults to ``5``.
+        max_x_tick_labels (int, optional): Maximum number of x-axis tick
+            labels to display. When the number of x values exceeds this,
+            labels are thinned to every 2nd, 5th, 10th, etc. value.
+            Defaults to ``10``.  Set to ``None`` or ``0`` to disable.
+        max_y_tick_labels (int, optional): Maximum number of y-axis tick
+            labels. Uses Plotly's ``nticks``. Defaults to ``None``
+            (automatic).
 
     Returns:
         plotly.graph_objects.Figure
@@ -1613,27 +1696,39 @@ def chart_time_series(
                     y=df[col].values,
                     mode=plotly_mode,
                     name=label,
-                    line=dict(color=color, width=2),
-                    marker=dict(color=color, size=4),
+                    line=dict(color=color, width=line_width),
+                    marker=dict(color=color, size=marker_size),
                     stackgroup="one" if is_stacked else None,
                 )
             )
 
     bar_mode = "stack" if is_stacked and plotly_mode == "bar" else ("group" if plotly_mode == "bar" else None)
 
+    # Determine x tick values — thin if there are too many
+    is_int_x = all(isinstance(v, int) for v in x_values)
+    x_tick_vals = x_values if is_int_x else None
+    if x_tick_vals is not None:
+        thinned = _thin_tick_vals(x_tick_vals, max_x_tick_labels)
+        if thinned is not None:
+            x_tick_vals = thinned
+
+    # Y-axis: add '%' suffix when label indicates percentage
+    y_kw = dict(title=y_label, automargin=True)
+    if y_label and "%" in y_label:
+        y_kw["ticksuffix"] = "%"
+    if max_y_tick_labels is not None and max_y_tick_labels > 0:
+        y_kw["nticks"] = max_y_tick_labels
+
+    # Build x-axis kwargs — constrain range to eliminate dead space
+    x_kw = dict(title=x_label, tickangle=45, tickvals=x_tick_vals,
+                tickformat="d" if is_int_x else None)
+    if is_int_x and x_values:
+        x_kw["range"] = [min(x_values) - 0.5, max(x_values) + 0.5]
+
     fig.update_layout(
         title=dict(text=title, x=0.5, xanchor="center"),
-        xaxis=dict(
-            title=x_label,
-            tickangle=45,
-            # Only show actual data values as ticks — no interpolated half-years
-            tickvals=x_values if all(isinstance(v, int) for v in x_values) else None,
-            tickformat="d" if all(isinstance(v, int) for v in x_values) else None,
-        ),
-        yaxis=dict(
-            title=y_label,
-            automargin=True,
-        ),
+        xaxis=x_kw,
+        yaxis=y_kw,
         legend=_legend_kwargs(legend_position),
         plot_bgcolor=DEFAULT_PLOT_BGCOLOR,
         paper_bgcolor=DEFAULT_PLOT_BGCOLOR,
@@ -1796,6 +1891,401 @@ def chart_bar(
     return fig
 
 
+# ---------------------------------------------------------------------------
+#  Donut chart
+# ---------------------------------------------------------------------------
+def chart_donut(
+    df,
+    colors=None,
+    title="Class Distribution",
+    max_classes=30,
+    width=DEFAULT_CHART_WIDTH,
+    height=DEFAULT_CHART_HEIGHT,
+    legend_position="right",
+    hole=0.45,
+):
+    """Create a Plotly donut chart from a single-Image zonal stats DataFrame.
+
+    Only valid for **thematic** (categorical) data from a single
+    ``ee.Image``.  Raises ``ValueError`` for continuous data or
+    ``ee.ImageCollection`` inputs.
+
+    Args:
+        df (pandas.DataFrame): Output of :func:`zonal_stats` for a single
+            Image.  Single row, columns = class names, values = area/%.
+        colors (list, optional): Hex colour strings, one per class.
+        title (str, optional): Chart title.
+        max_classes (int, optional): Maximum number of classes to display.
+            Smaller classes are grouped into "Other".  Defaults to ``30``.
+        width (int, optional): Chart width in pixels.
+        height (int, optional): Chart height in pixels.
+        legend_position (dict or str, optional): Plotly legend dict or
+            ``"right"`` / ``"bottom"``.
+        hole (float, optional): Size of the centre hole (0–1).
+            Defaults to ``0.45``.
+
+    Returns:
+        plotly.graph_objects.Figure
+    """
+    import plotly.graph_objects as go
+
+    # Flatten to series
+    if len(df) == 1:
+        values = df.iloc[0]
+    else:
+        values = df.sum()
+
+    labels = list(values.index)
+    vals = list(values.values)
+
+    # Cap at max_classes — group the rest into "Other"
+    if len(labels) > max_classes:
+        sorted_pairs = sorted(zip(vals, labels, range(len(labels))), reverse=True)
+        top = sorted_pairs[:max_classes]
+        other_val = sum(p[0] for p in sorted_pairs[max_classes:])
+        top.sort(key=lambda x: x[2])  # restore original order
+        vals = [p[0] for p in top] + [other_val]
+        labels = [p[1] for p in top] + ["Other"]
+        if colors:
+            idxs = [p[2] for p in top]
+            colors = [_ensure_hex_color(colors[i]) for i in idxs if i < len(colors)] + ["#888888"]
+
+    if colors:
+        if len(colors) < len(labels):
+            colors = _interpolate_palette(colors, len(labels))
+        else:
+            colors = [_ensure_hex_color(c) for c in colors[:len(labels)]]
+
+    # Filter out zero-value slices
+    filtered = [(l, v, c) for l, v, c in zip(labels, vals, colors or [None] * len(labels)) if v > 0]
+    if filtered:
+        labels, vals, _colors = zip(*filtered)
+        labels, vals = list(labels), list(vals)
+        if colors:
+            colors = list(_colors)
+
+    fig = go.Figure(data=[go.Pie(
+        labels=labels,
+        values=vals,
+        hole=hole,
+        marker=dict(colors=colors) if colors else {},
+        textinfo="percent",
+        hoverinfo="label+value+percent",
+        textfont=dict(size=12),
+    )])
+
+    fig.update_layout(
+        title=dict(text=title, x=0.5, xanchor="center"),
+        legend=_legend_kwargs(legend_position),
+        plot_bgcolor=DEFAULT_PLOT_BGCOLOR,
+        paper_bgcolor=DEFAULT_PLOT_BGCOLOR,
+        font=dict(family=DEFAULT_PLOT_FONT),
+        width=width,
+        height=height,
+        margin=dict(l=10, r=10, b=10, t=40, pad=0),
+    )
+
+    _themes.apply_plotly_theme(fig, "dark")
+    return fig
+
+
+def chart_donut_multi_feature(
+    df,
+    colors=None,
+    title="Class Distribution by Feature",
+    max_classes=30,
+    width=DEFAULT_CHART_WIDTH,
+    height=DEFAULT_CHART_HEIGHT,
+    columns=2,
+    legend_position="bottom",
+    hole=0.45,
+):
+    """Create a subplot grid of donut charts, one per feature.
+
+    For multi-feature ``reduceRegions`` output where the DataFrame index
+    is the feature label and columns are class names.
+
+    Args:
+        df (pandas.DataFrame): Output of :func:`zonal_stats` with
+            ``feature_label`` set.  Index = feature names, columns =
+            class names, values = area/%.
+        colors (list, optional): Hex colour strings, one per class.
+        title (str, optional): Overall chart title.
+        max_classes (int, optional): Max classes per donut.
+        width (int, optional): Chart width in pixels.
+        height (int, optional): Chart height in pixels.
+        columns (int, optional): Number of subplot columns.
+        legend_position (dict or str, optional): Legend position.
+        hole (float, optional): Centre hole size.
+
+    Returns:
+        plotly.graph_objects.Figure
+    """
+    from plotly.subplots import make_subplots
+    import plotly.graph_objects as go
+
+    feature_names = list(df.index)
+    n_features = len(feature_names)
+    n_cols = min(columns, n_features)
+    n_rows = -(-n_features // n_cols)  # ceil division
+
+    fig = make_subplots(
+        rows=n_rows, cols=n_cols,
+        specs=[[{"type": "pie"}] * n_cols for _ in range(n_rows)],
+        subplot_titles=feature_names,
+    )
+
+    class_labels = list(df.columns)
+
+    # Prepare colors
+    pal = None
+    if colors:
+        if len(colors) < len(class_labels):
+            pal = _interpolate_palette(colors, len(class_labels))
+        else:
+            pal = [_ensure_hex_color(c) for c in colors[:len(class_labels)]]
+
+    for idx, feat_name in enumerate(feature_names):
+        row_i = idx // n_cols + 1
+        col_i = idx % n_cols + 1
+        vals = list(df.loc[feat_name])
+
+        # Filter zero-value slices
+        filtered = [(l, v, c) for l, v, c in zip(class_labels, vals, pal or [None] * len(class_labels)) if v > 0]
+        if filtered:
+            f_labels, f_vals, f_colors = zip(*filtered)
+            f_labels, f_vals = list(f_labels), list(f_vals)
+            if pal:
+                f_colors = list(f_colors)
+            else:
+                f_colors = None
+        else:
+            f_labels, f_vals, f_colors = class_labels, vals, pal
+
+        fig.add_trace(
+            go.Pie(
+                labels=f_labels,
+                values=f_vals,
+                hole=hole,
+                marker=dict(colors=f_colors) if f_colors else {},
+                textinfo="percent",
+                hoverinfo="label+value+percent",
+                textfont=dict(size=11),
+                showlegend=(idx == 0),  # legend from first trace only
+                name=feat_name,
+            ),
+            row=row_i, col=col_i,
+        )
+
+    # Scale figure size by grid
+    fig_w = width * n_cols
+    fig_h = height * n_rows
+
+    fig.update_layout(
+        title=dict(text=title, x=0.5, xanchor="center"),
+        legend=_legend_kwargs(legend_position),
+        plot_bgcolor=DEFAULT_PLOT_BGCOLOR,
+        paper_bgcolor=DEFAULT_PLOT_BGCOLOR,
+        font=dict(family=DEFAULT_PLOT_FONT),
+        width=fig_w,
+        height=fig_h,
+    )
+
+    _themes.apply_plotly_theme(fig, "dark")
+    return fig
+
+
+# ---------------------------------------------------------------------------
+#  Scatter chart
+# ---------------------------------------------------------------------------
+def chart_scatter(
+    df,
+    x_band,
+    y_band,
+    feature_label=None,
+    title="Scatter Plot",
+    width=DEFAULT_CHART_WIDTH,
+    height=DEFAULT_CHART_HEIGHT,
+    legend_position="right",
+    trendline=True,
+    opacity=0.7,
+    show_labels=None,
+    thematic_col=None,
+    class_names=None,
+    class_palette=None,
+    class_values=None,
+):
+    """Create a scatter plot of two bands across features.
+
+    Each point represents one feature (e.g. a county, fire perimeter, or
+    watershed).  The x- and y-axes show the mean (or other reduced) value
+    of two image bands over that feature.
+
+    When *thematic_col* is provided, points are colored by the thematic
+    class value in that column, using the class palette and names from
+    image properties.
+
+    Args:
+        df (pandas.DataFrame): DataFrame with at least two numeric
+            columns for the x and y bands.  Optionally a *thematic_col*
+            column with integer class values.
+        x_band (str): Column name for the x-axis.
+        y_band (str): Column name for the y-axis.
+        feature_label (str, optional): Name of the index (used in hover).
+        title (str, optional): Chart title.
+        width (int, optional): Chart width in pixels.
+        height (int, optional): Chart height in pixels.
+        legend_position (dict or str, optional): Legend position.
+        trendline (bool, optional): Draw a linear trendline.
+            Defaults to ``True``.
+        opacity (float, optional): Point opacity (0-1).  Lower values
+            help visualize overlapping points.  Defaults to ``0.7``.
+        show_labels (bool, optional): Label each point with the feature
+            name.  When ``None`` (default), labels are shown only when
+            the DataFrame has fewer than 30 rows.
+        thematic_col (str, optional): Column containing thematic class
+            values used to color each point.  Defaults to ``None``.
+        class_names (list, optional): Class name strings matching
+            *class_values*.
+        class_palette (list, optional): Hex colour strings matching
+            *class_values*.
+        class_values (list, optional): Integer class values that map
+            to *class_names* and *class_palette*.
+
+    Returns:
+        plotly.graph_objects.Figure
+    """
+    import plotly.graph_objects as go
+    import numpy as np
+
+    x_vals = df[x_band].values.astype(float)
+    y_vals = df[y_band].values.astype(float)
+    labels = list(df.index)
+
+    # Auto-decide whether to show text labels
+    if show_labels is None:
+        show_labels = len(df) < 30
+
+    mode = "markers+text" if show_labels else "markers"
+    marker_size = 8 if len(df) > 50 else 10
+
+    fig = go.Figure()
+
+    # --- Thematic color: one trace per class for legend ---
+    if thematic_col is not None and thematic_col in df.columns:
+        cat_vals = df[thematic_col].values
+        # Build lookup: class_value -> (name, color)
+        _val_to_name = {}
+        _val_to_color = {}
+        if class_values and class_names:
+            for v, n in zip(class_values, class_names):
+                _val_to_name[v] = n
+        if class_values and class_palette:
+            for v, c in zip(class_values, class_palette):
+                _val_to_color[v] = _ensure_hex_color(c)
+
+        unique_classes = sorted(set(int(v) for v in cat_vals if np.isfinite(v)))
+
+        for cls_val in unique_classes:
+            mask = cat_vals == cls_val
+            cls_name = _val_to_name.get(cls_val, str(cls_val))
+            cls_color = _val_to_color.get(cls_val, None)
+
+            cls_x = x_vals[mask]
+            cls_y = y_vals[mask]
+            cls_labels = [labels[i] for i, m in enumerate(mask) if m]
+
+            hover_parts = []
+            if show_labels:
+                hover_parts.append("<b>%{text}</b><br>")
+            hover_parts.append(
+                f"{x_band}: %{{x:.2f}}<br>"
+                f"{y_band}: %{{y:.2f}}<br>"
+                f"{thematic_col}: {cls_name}"
+                "<extra></extra>"
+            )
+
+            fig.add_trace(go.Scatter(
+                x=cls_x,
+                y=cls_y,
+                mode=mode,
+                name=cls_name,
+                text=cls_labels if show_labels else None,
+                textposition="top center" if show_labels else None,
+                textfont=dict(size=9) if show_labels else None,
+                marker=dict(
+                    size=marker_size,
+                    color=cls_color,
+                    opacity=opacity,
+                    line=dict(width=0.5, color="#333"),
+                ),
+                hovertemplate="".join(hover_parts),
+                legendgroup=cls_name,
+            ))
+
+    else:
+        # --- Single color (no thematic) ---
+        hover_parts = []
+        if show_labels:
+            hover_parts.append("<b>%{text}</b><br>")
+        else:
+            hover_parts.append("<b>Point %{pointNumber}</b><br>")
+        hover_parts.append(
+            f"{x_band}: %{{x:.2f}}<br>"
+            f"{y_band}: %{{y:.2f}}"
+            "<extra></extra>"
+        )
+
+        fig.add_trace(go.Scatter(
+            x=x_vals,
+            y=y_vals,
+            mode=mode,
+            text=labels if show_labels else None,
+            textposition="top center" if show_labels else None,
+            textfont=dict(size=10) if show_labels else None,
+            marker=dict(
+                size=marker_size,
+                color="#66c2a5",
+                opacity=opacity,
+                line=dict(width=0.5, color="#333"),
+            ),
+            hovertemplate="".join(hover_parts),
+            showlegend=False,
+        ))
+
+    # Trendline
+    if trendline and len(x_vals) > 1:
+        mask = np.isfinite(x_vals) & np.isfinite(y_vals)
+        if mask.sum() > 1:
+            coeffs = np.polyfit(x_vals[mask], y_vals[mask], 1)
+            x_line = np.linspace(x_vals[mask].min(), x_vals[mask].max(), 50)
+            y_line = np.polyval(coeffs, x_line)
+            r_sq = np.corrcoef(x_vals[mask], y_vals[mask])[0, 1] ** 2
+            fig.add_trace(go.Scatter(
+                x=x_line, y=y_line,
+                mode="lines",
+                line=dict(color="#fc8d62", width=2, dash="dash"),
+                name=f"R\u00b2 = {r_sq:.3f}",
+                showlegend=True,
+            ))
+
+    fig.update_layout(
+        title=dict(text=title, x=0.5, xanchor="center"),
+        xaxis_title=x_band,
+        yaxis_title=y_band,
+        legend=_legend_kwargs(legend_position),
+        plot_bgcolor=DEFAULT_PLOT_BGCOLOR,
+        paper_bgcolor=DEFAULT_PLOT_BGCOLOR,
+        font=dict(family=DEFAULT_PLOT_FONT),
+        width=width,
+        height=height,
+        hovermode="closest",
+    )
+
+    _themes.apply_plotly_theme(fig, "dark")
+    return fig
+
+
 def chart_grouped_bar(
     df,
     colors=None,
@@ -1887,7 +2377,7 @@ def chart_grouped_bar(
     return fig
 
 
-def chart_sankey(
+def chart_sankey_d3(
     sankey_df,
     class_names,
     class_palette,
@@ -1901,138 +2391,168 @@ def chart_sankey(
     theme="dark",
     bg_color=None,
     font_color=None,
+    hide_toolbar=False,
 ):
-    """
-    Create a Plotly Sankey diagram from transition data.
+    """Create a D3 Sankey diagram directly from transition data — no Plotly.
+
+    Builds a self-contained HTML string with native SVG ``linearGradient``
+    elements so each link fades from its source node color to its target
+    node color.  Uses ``d3-sankey`` for layout.
+
+    This is the preferred rendering path for Sankey charts.  Unlike
+    :func:`chart_sankey` (which builds a Plotly figure that must be
+    post-processed by :func:`sankey_to_html` for gradients), this function
+    goes straight from the raw ``sankey_df`` to D3 HTML.
 
     Args:
         sankey_df (pandas.DataFrame): Output of :func:`prepare_sankey_data`.
+            Columns: ``source``, ``target``, ``value``, ``source_name``,
+            ``target_name``, ``source_color``, ``target_color``.
         class_names (list): List of class names.
         class_palette (list): List of hex color strings.
-        transition_periods (list): The transition period list used to generate the data.
-        title (str, optional): Chart title.
+        transition_periods (list): Period list (for node labeling).
+        title (str, optional): Chart title. Defaults to ``"Class Transitions"``.
         width (int, optional): Chart width in pixels.
         height (int, optional): Chart height in pixels.
         node_thickness (int, optional): Sankey node bar thickness.
         node_pad (int, optional): Padding between Sankey nodes.
-        opacity (float, optional): Opacity of Sankey nodes and links (0-1). Defaults to 0.9.
+        opacity (float, optional): Link opacity (0-1). Defaults to 0.9.
+        theme (str, optional): Theme preset. Defaults to ``"dark"``.
+        bg_color (str, optional): Background color override.
+        font_color (str, optional): Font color override.
+        hide_toolbar (bool, optional): Hide the download button.
 
     Returns:
-        plotly.graph_objects.Figure
+        str: Self-contained HTML string with embedded D3 Sankey chart.
 
     Examples:
-        Build a Sankey diagram from LCMS Land Use transitions (typically
-        called via ``summarize_and_chart`` with ``sankey=True``):
-
-        >>> import geeViz.geeView as gv
-        >>> from geeViz.outputLib import charts as cl
-        >>> ee = gv.ee
-        >>> study_area = ee.Geometry.Polygon(
-        ...     [[[-106, 39.5], [-105, 39.5], [-105, 40.5], [-106, 40.5]]]
+        >>> sankey_df, matrix_dict = cl.prepare_sankey_data(
+        ...     lcms.select(['Land_Use']), 'Land_Use',
+        ...     transition_periods=[1990, 2005, 2023],
+        ...     class_info=info['class_info'], geometry=study_area,
         ... )
-        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2024-10")
-        >>> sankey_df, fig, matrix = cl.summarize_and_chart(
-        ...     lcms.select(['Land_Use']),
-        ...     study_area,
-        ...     sankey=True,
-        ...     transition_periods=[[1985, 1990], [2005, 2010], [2018, 2023]],
-        ...     min_percentage=0.5,
+        >>> html = cl.chart_sankey_d3(
+        ...     sankey_df, info['class_info']['Land_Use']['class_names'],
+        ...     info['class_info']['Land_Use']['class_palette'],
+        ...     transition_periods=[1990, 2005, 2023],
         ... )
-        >>> # fig.show() uses a flat midpoint-blend color for each link.
-        >>> # For gradient links that fade from source to target color,
-        >>> # save as HTML with sankey_to_html():
-        >>> html = cl.sankey_to_html(fig)
-        >>> with open("sankey.html", "w") as f:
-        ...     f.write(html)
     """
-    if sankey_df.empty:
-        fig = go.Figure()
-        fig.update_layout(title=title, annotations=[dict(text="No transitions found", showarrow=False)])
-        return fig
+    import json as _json
 
-    # Build node labels and colors for all period slots
-    num_periods = len(transition_periods)
+    _t = _themes.get_theme(theme, bg_color=bg_color, font_color=font_color)
+
+    if sankey_df.empty:
+        return f"<html><body style='background:{_t.bg_hex};color:{_t.text_hex}'><p>No transitions found</p></body></html>"
+
+    # Build node labels and hex colors for all period slots
     num_classes = len(class_names)
     labels = []
-    node_colors = []
-
+    node_colors_hex = []
     for p in transition_periods:
         p_label = _format_period(p)
         for i, name in enumerate(class_names):
             labels.append(f"{p_label} {name}")
-            hex_color = _ensure_hex_color(class_palette[i]) if i < len(class_palette) else "#888888"
-            h = hex_color.lstrip("#")
-            if len(h) == 6:
-                nr, ng, nb = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-                node_colors.append(f"rgba({nr},{ng},{nb},{opacity})")
-            else:
-                node_colors.append(hex_color)
-
-    # Build link colors -- each link gets a unique rgba() so the gradient
-    # JS in sankey_to_html() can match SVG elements back to data regardless
-    # of DOM ordering.  The blue channel is nudged per-link for uniqueness.
-    # Visible in fig.show() as a midpoint blend; replaced by true SVG
-    # gradients in sankey_to_html().
-    link_colors = []
-    # Maps "r,g,b" key -> [source_hex, target_hex] for the gradient JS
-    gradient_color_map = {}
-    for idx, (_, row) in enumerate(sankey_df.iterrows()):
-        sc = _ensure_hex_color(row.get("source_color", "#888888"))
-        tc = _ensure_hex_color(row.get("target_color", "#888888"))
-        sc_hex = sc.lstrip("#")
-        tc_hex = tc.lstrip("#")
-        if len(sc_hex) == 6 and len(tc_hex) == 6:
-            r = (int(sc_hex[0:2], 16) + int(tc_hex[0:2], 16)) // 2
-            g = (int(sc_hex[2:4], 16) + int(tc_hex[2:4], 16)) // 2
-            b = (int(sc_hex[4:6], 16) + int(tc_hex[4:6], 16)) // 2
-        else:
-            r, g, b = 136, 136, 136
-        # Make each link unique by nudging the blue channel with the index
-        b_unique = (b + idx) % 256
-        flat_color = f"rgba({r},{g},{b_unique},1)"
-        link_colors.append(flat_color)
-        gradient_color_map[f"{r},{g},{b_unique}"] = [sc, tc]
-
-    fig = go.Figure(
-        data=[
-            go.Sankey(
-                textfont=dict(size=10),
-                orientation="h",
-                node=dict(
-                    pad=node_pad,
-                    thickness=node_thickness,
-                    line=dict(color="black", width=0),
-                    label=labels,
-                    color=node_colors,
-                ),
-                link=dict(
-                    source=list(sankey_df["source"]),
-                    target=list(sankey_df["target"]),
-                    value=list(sankey_df["value"]),
-                    color=link_colors,
-                ),
+            node_colors_hex.append(
+                _ensure_hex_color(class_palette[i]) if i < len(class_palette) else "#888888"
             )
-        ]
+
+    # Build used-node set and remap indices (skip orphan nodes)
+    used_indices = set()
+    for _, row in sankey_df.iterrows():
+        if row["value"] > 0:
+            used_indices.add(int(row["source"]))
+            used_indices.add(int(row["target"]))
+
+    old_to_new = {}
+    new_idx = 0
+    for old_idx in range(len(labels)):
+        if old_idx in used_indices:
+            old_to_new[old_idx] = new_idx
+            new_idx += 1
+
+    d3_data = {
+        "nodes": [
+            {"name": labels[i], "color": node_colors_hex[i]}
+            for i in range(len(labels))
+            if i in used_indices
+        ],
+        "links": [
+            {
+                "source": old_to_new[int(row["source"])],
+                "target": old_to_new[int(row["target"])],
+                "value": float(row["value"]),
+                "sourceColor": _ensure_hex_color(row.get("source_color", "#888")),
+                "targetColor": _ensure_hex_color(row.get("target_color", "#888")),
+            }
+            for _, row in sankey_df.iterrows()
+            if row["value"] > 0
+            and int(row["source"]) in old_to_new
+            and int(row["target"]) in old_to_new
+        ],
+    }
+
+    d3_config = {
+        "title": title,
+        "width": width,
+        "height": height,
+        "nodeWidth": node_thickness,
+        "nodePadding": node_pad,
+        "opacity": opacity,
+        "bgColor": _t.bg_hex,
+        "textColor": _t.text_hex,
+    }
+
+    html = _render_d3_sankey(_t)
+    result = html.replace(
+        "__D3_DATA_JSON__", _json.dumps(d3_data)
+    ).replace(
+        "__D3_CONFIG_JSON__", _json.dumps(d3_config)
     )
+    if hide_toolbar:
+        result = result.replace(
+            '<div id="toolbar">',
+            '<div id="toolbar" style="display:none">',
+        )
+    return result
 
-    _t = _themes.get_theme(theme, bg_color=bg_color, font_color=font_color)
 
-    fig.update_layout(
-        title=dict(text=title, x=0.5, xanchor="center", font=dict(color=_t.text_hex)),
-        font=dict(family=DEFAULT_PLOT_FONT, size=12, color=_t.text_hex),
-        plot_bgcolor=DEFAULT_PLOT_BGCOLOR,
-        paper_bgcolor=DEFAULT_PLOT_BGCOLOR,
-        width=width,
-        height=height,
-        margin=dict(l=25, r=25, b=25, t=50, pad=0),
+def sankey_iframe(sankey_html, width=None, height=None):
+    """Wrap sankey D3 HTML in an iframe for Jupyter notebook display.
+
+    Jupyter sanitizes ``<script>`` tags in ``display(HTML(...))``, so
+    D3 sankey charts must be embedded in an iframe.  Uses a
+    ``data:text/html;base64`` src for maximum compatibility across
+    Jupyter environments (classic notebook, JupyterLab, VS Code).
+
+    Args:
+        sankey_html (str): Full HTML string from :func:`chart_sankey_d3`
+            or ``summarize_and_chart(chart_type='sankey')``.
+        width (int, optional): Iframe width in pixels. Auto-detected
+            from the HTML when ``None``.
+        height (int, optional): Iframe height in pixels. Auto-detected
+            from the HTML when ``None``.
+
+    Returns:
+        str: HTML ``<iframe>`` element suitable for
+        ``display(HTML(...))``.
+
+    Example:
+        >>> from IPython.display import HTML, display
+        >>> display(HTML(cl.sankey_iframe(sankey_html)))
+    """
+    import base64, re
+    if width is None:
+        m = re.search(r'"width"\s*:\s*(\d+)', sankey_html)
+        width = int(m.group(1)) + 50 if m else 900
+    if height is None:
+        m = re.search(r'"height"\s*:\s*(\d+)', sankey_html)
+        height = int(m.group(1)) + 80 if m else 650
+    b64 = base64.b64encode(sankey_html.encode("utf-8")).decode("ascii")
+    return (
+        f'<iframe src="data:text/html;base64,{b64}" '
+        f'style="width:{width}px;height:{height}px;border:none;overflow:hidden;">'
+        f'</iframe>'
     )
-
-    # Attach gradient color map so sankey_to_html() can inject SVG gradients
-    fig._gradient_color_map = gradient_color_map
-    fig._gradient_link_opacity = opacity
-
-    _themes.apply_plotly_theme(fig, _t)
-    return fig
 
 
 ###########################################################################
@@ -2067,6 +2587,12 @@ def summarize_and_chart(
     columns=2,
     include_masked_area=True,
     stacked=None,  # deprecated — use chart_type instead
+    thematic_band_name=None,
+    line_width=2,
+    marker_size=5,
+    class_visible=None,
+    max_x_tick_labels=10,
+    max_y_tick_labels=None,
 ):
     """
     Run zonal statistics and produce a chart in one call.
@@ -2074,16 +2600,17 @@ def summarize_and_chart(
     Orchestrates :func:`zonal_stats` (or :func:`prepare_sankey_data`) and the
     appropriate chart function. The chart type is chosen automatically:
 
-    * **ee.ImageCollection** → **line chart** (default ``'lines+markers'``).
-      This is the most common case for time series of land cover, spectral
-      indices, climate data, etc.
-    * **ee.Image** → **bar chart**.
-    * **sankey=True** → **Sankey transition diagram**.
-    * **feature_label** provided with an ``ee.FeatureCollection`` + ``ee.Image`` →
-      **grouped bar chart** (one group per feature, via ``reduceRegions``).
-    * **feature_label** provided with an ``ee.FeatureCollection`` + ``ee.ImageCollection`` →
-      **per-feature time series subplots** (one subplot per feature, via ``reduceRegions``
-      on the stacked image).
+    * **ee.ImageCollection** -> **line chart** (default ``"line+markers"``).
+    * **ee.Image** -> **bar chart** (default ``"bar"``).
+    * **chart_type="donut"** -> **donut chart** (Image + thematic only).
+    * **chart_type="scatter"** -> **scatter plot** (Image +
+      FeatureCollection only; uses 2 continuous bands as x/y axes,
+      optionally coloured by *thematic_band_name*).
+    * **chart_type="sankey"** -> **Sankey transition diagram**.
+    * **feature_label** + ``ee.FeatureCollection`` + ``ee.Image`` ->
+      **grouped bar** or **per-feature donut** chart.
+    * **feature_label** + ``ee.FeatureCollection`` + ``ee.ImageCollection``
+      -> **per-feature time series subplots**.
 
     Args:
         ee_obj: ``ee.Image`` or ``ee.ImageCollection``.
@@ -2099,15 +2626,21 @@ def summarize_and_chart(
         date_format (str, optional): Date format string.
         title (str, optional): Chart title. Auto-generated if None.
         chart_type (str, optional): Chart type.  One of ``"bar"``,
-            ``"stacked_bar"``, ``"line"``, ``"stacked_line"``,
-            ``"line+markers"`` (default for ImageCollection), or
+            ``"stacked_bar"``, ``"donut"`` (Image + thematic only),
+            ``"scatter"`` (Image + FeatureCollection only),
+            ``"sankey"`` (ImageCollection + thematic, requires
+            ``transition_periods``),
+            ``"line"``, ``"stacked_line"``, ``"line+markers"``
+            (default for ImageCollection), or
             ``"stacked_line+markers"``.  Defaults to ``"bar"`` for
             single ``ee.Image``, ``"line+markers"`` for
             ``ee.ImageCollection``.
         stacked (bool, optional): **Deprecated** — use ``chart_type``
             instead.  When ``True``, prepends ``"stacked_"`` to
             ``chart_type``.  Defaults to ``None``.
-        sankey (bool, optional): Whether to produce a Sankey diagram.
+        sankey (bool, optional): Deprecated — use
+            ``chart_type='sankey'`` instead.  Still accepted for
+            backward compatibility.
         transition_periods (list, optional): Period list for Sankey.
         sankey_band_name (str, optional): Band for Sankey analysis.
         min_percentage (float, optional): Minimum percentage for Sankey flows.
@@ -2135,17 +2668,53 @@ def summarize_and_chart(
             included so percentages are relative to the total area, not
             just the unmasked portion.  The sentinel class is removed
             from results.
+        thematic_band_name (str, optional): For ``chart_type="scatter"``
+            only.  Name of a thematic band in the image whose mode value
+            per feature is used to colour each scatter point.  The image
+            must carry ``{band}_class_values``, ``{band}_class_names``,
+            and ``{band}_class_palette`` properties for the colours and
+            legend entries.  Defaults to ``None`` (single-colour points).
+        line_width (int or float, optional): Line width in pixels for
+            time series traces. Defaults to ``2``.
+        marker_size (int or float, optional): Marker diameter in pixels
+            for time series traces. Defaults to ``5``.
+        class_visible (dict, optional): Per-class visibility control.
+            Maps class names to booleans. Classes set to ``False`` are
+            toggled off in the chart legend (set to ``"legendonly"``).
+            The traces remain in the figure — users can click the legend
+            to re-enable them. Useful for hiding background, no-data, or
+            stable classes by default.  Works for all chart paths
+            including single-geometry, multi-feature time series
+            subplots, and multi-feature bar/donut charts.  Example::
+
+                class_visible={
+                    "Non-Processing Area Mask": False,
+                    "Stable": False,
+                    "Background": False,
+                }
+
+            When ``None`` (default), all classes are visible.
+        max_x_tick_labels (int, optional): Maximum number of x-axis tick
+            labels. When the data has more x values than this, tick
+            labels are thinned to every 2nd, 5th, 10th, etc. value.
+            Defaults to ``10``.  Set to ``None`` or ``0`` to show all.
+        max_y_tick_labels (int, optional): Maximum number of y-axis tick
+            labels. Passed as Plotly's ``nticks``. Defaults to ``None``
+            (Plotly automatic).
 
     Returns:
         tuple: Depends on chart type:
 
         * **Standard (single geometry):** ``(DataFrame, Figure)``
-        * **Sankey:** ``(sankey_df, Figure, matrix_dict)`` where
-          ``matrix_dict`` is ``{period_label: DataFrame}``
-        * **Multi-feature + ee.Image:** ``(DataFrame, Figure)`` — grouped bar
+        * **Sankey:** ``(sankey_df, sankey_html, matrix_dict)`` where
+          ``sankey_html`` is a D3 HTML string (display with
+          ``display(HTML(cl.sankey_iframe(sankey_html)))``),
+          and ``matrix_dict`` is ``{period_label: DataFrame}``
+        * **Multi-feature + ee.Image (bar/donut):** ``(DataFrame, Figure)``
         * **Multi-feature + ee.ImageCollection:** ``(dict, Figure)`` where
-          ``dict`` is ``{feature_name: DataFrame}`` mapping each feature to its
-          time-series DataFrame, and ``Figure`` contains subplots.
+          ``dict`` is ``{feature_name: DataFrame}``
+        * **Scatter:** ``(DataFrame, Figure)`` where the DataFrame has
+          columns for the two bands (and optionally the thematic band)
 
     Examples:
         Stacked time series of thematic land cover (auto-detects class
@@ -2167,22 +2736,19 @@ def summarize_and_chart(
         >>> print(df.to_markdown())
         >>> fig.write_html("lcms_land_cover.html", include_plotlyjs="cdn")
 
-        Sankey transition diagram between specific years.  Use
-        ``sankey_to_html()`` instead of ``fig.write_html()`` to get
-        gradient-colored links that fade from source to target color:
+        Sankey transition diagram with D3 gradient-colored links:
 
-        >>> df, fig, matrix = cl.summarize_and_chart(
+        >>> df, sankey_html, matrix = cl.summarize_and_chart(
         ...     lcms.select(['Land_Use']),
         ...     study_area,
-        ...     sankey=True,
+        ...     chart_type='sankey',
         ...     transition_periods=[1990, 2000, 2024],
         ...     sankey_band_name='Land_Use',
         ...     min_percentage=0.5,
         ... )
-        >>> print(matrix.to_markdown())
-        >>> html = cl.sankey_to_html(fig)
-        >>> with open("land_use_transitions.html", "w") as f:
-        ...     f.write(html)
+        >>> # In notebooks: display(HTML(cl.sankey_iframe(sankey_html)))
+        >>> # Save to file:
+        >>> cl.save_chart_html(sankey_html, "land_use_transitions.html")
 
         Bar chart for a single image at a point (use ``ee.Reducer.first()``):
 
@@ -2311,7 +2877,39 @@ def summarize_and_chart(
         else:
             chart_type = "bar"
 
-    # Sankey path
+    # Donut validation — Image-only and thematic-only
+    if str(chart_type).lower().strip() == "donut":
+        if obj_info["obj_type"] == "ImageCollection":
+            raise ValueError(
+                "chart_type='donut' is only supported for ee.Image inputs, "
+                "not ee.ImageCollection. Use chart_type='bar', 'stacked_bar', 'line', 'line+markers', 'stacked_line' or 'stacked_line+markers' for "
+                "ImageCollections."
+            )
+        if not obj_info.get("is_thematic") and not class_info:
+            raise ValueError(
+                "chart_type='donut' is only supported for thematic "
+                "(categorical) data with class names and palette properties. "
+                "Use chart_type='bar', 'stacked_bar', 'line', 'line+markers', 'stacked_line' or 'stacked_line+markers' for continuous data."
+            )
+
+    # Scatter validation — Image + FeatureCollection only
+    if str(chart_type).lower().strip() == "scatter":
+        if obj_info["obj_type"] == "ImageCollection":
+            raise ValueError(
+                "chart_type='scatter' is only supported for ee.Image inputs, "
+                "not ee.ImageCollection."
+            )
+        geo_type_check, _ = detect_geometry_type(geometry)
+        if geo_type_check != "multi":
+            raise ValueError(
+                "chart_type='scatter' requires a multi-feature "
+                "ee.FeatureCollection as the geometry input (one point per "
+                "feature). Pass a FeatureCollection with multiple features."
+            )
+
+    # Sankey path — chart_type='sankey' (preferred) or legacy sankey=True
+    if str(chart_type).lower().strip() == "sankey":
+        sankey = True
     if sankey and obj_info["obj_type"] == "ImageCollection" and class_info:
         bn = sankey_band_name or obj_info["band_names"][0]
         if transition_periods is None:
@@ -2335,7 +2933,7 @@ def summarize_and_chart(
         )
 
         info = class_info.get(bn, {})
-        fig = chart_sankey(
+        sankey_html = chart_sankey_d3(
             sankey_df,
             class_names=info.get("class_names", []),
             class_palette=info.get("class_palette", []),
@@ -2345,16 +2943,137 @@ def summarize_and_chart(
             height=height,
             opacity=opacity,
         )
-        return (sankey_df, fig, matrix_dict)
+        return (sankey_df, sankey_html, matrix_dict)
 
     # Multi-feature path: reduceRegions
     geo_type, _ = detect_geometry_type(geometry)
+
+    # --- Scatter path: Image + FeatureCollection + 2 bands ---
+    # Handled before feature_label gate since scatter works without labels.
+    if geo_type == "multi" and str(chart_type).lower().strip() == "scatter":
+        # Resolve the two bands to plot
+        all_bands = obj_info["band_names"]
+        if band_names and len(band_names) >= 2:
+            x_band, y_band = band_names[0], band_names[1]
+        elif len(all_bands) >= 2:
+            x_band, y_band = all_bands[0], all_bands[1]
+        else:
+            raise ValueError(
+                "chart_type='scatter' requires at least 2 bands. "
+                f"Image only has: {all_bands}"
+            )
+
+        # Use mean reducer for scatter (continuous per-feature values)
+        _scatter_reducer = reducer if reducer is not None else ee.Reducer.first()
+
+        fc = ee.FeatureCollection(geometry)
+
+        # Reduce continuous bands
+        continuous_img = ee.Image(ee_obj).select([x_band, y_band])
+        reduced = continuous_img.reduceRegions(
+            collection=fc,
+            reducer=_scatter_reducer,
+            scale=scale,
+            crs=crs,
+            crsTransform=transform,
+            tileScale=tile_scale,
+        )
+
+        # If thematic band requested, reduce it separately with mode()
+        # and join the result onto the continuous FC
+        if thematic_band_name:
+            thematic_img = ee.Image(ee_obj).select([thematic_band_name])
+            reduced_thematic = thematic_img.reduceRegions(
+                collection=fc,
+                reducer=ee.Reducer.mode(),
+                scale=scale,
+                crs=crs,
+                crsTransform=transform,
+                tileScale=tile_scale,
+            )
+            # Add the mode column to each feature via zip
+            reduced_list = reduced.toList(reduced.size())
+            thematic_list = reduced_thematic.toList(reduced_thematic.size())
+            def _merge(i):
+                i = ee.Number(i).int()
+                f = ee.Feature(reduced_list.get(i))
+                t = ee.Feature(thematic_list.get(i))
+                return f.set(thematic_band_name, t.get("mode"))
+            reduced = ee.FeatureCollection(
+                ee.List.sequence(0, reduced.size().subtract(1)).map(_merge)
+            )
+
+        # Convert to DataFrame
+        import geeViz.gee2Pandas as g2p
+        scatter_df = g2p.robust_featureCollection_to_df(reduced)
+
+        # Set index to feature label if available
+        if feature_label and feature_label in scatter_df.columns:
+            scatter_df = scatter_df.set_index(feature_label)
+
+        # Ensure the two band columns exist
+        if x_band not in scatter_df.columns or y_band not in scatter_df.columns:
+            raise ValueError(
+                f"Reduced DataFrame missing expected band columns. "
+                f"Expected '{x_band}' and '{y_band}', got: {list(scatter_df.columns)}"
+            )
+
+        if title is None:
+            title = f"{y_band} vs {x_band}"
+
+        # Resolve thematic class info for coloring
+        _thematic_col = None
+        _class_names = None
+        _class_palette = None
+        _class_values = None
+        if thematic_band_name:
+            if thematic_band_name in scatter_df.columns:
+                _thematic_col = thematic_band_name
+
+            # Get class metadata from the image
+            if _thematic_col and class_info and thematic_band_name in class_info:
+                ci = class_info[thematic_band_name]
+                _class_names = ci.get("class_names", [])
+                _class_palette = ci.get("class_palette", [])
+                _class_values = ci.get("class_values", [])
+            elif _thematic_col:
+                # Try reading from image properties directly
+                try:
+                    props = ee.Image(ee_obj).getInfo().get("properties", {})
+                    _class_values = props.get(f"{thematic_band_name}_class_values")
+                    _class_names = props.get(f"{thematic_band_name}_class_names")
+                    _class_palette = props.get(f"{thematic_band_name}_class_palette")
+                except Exception:
+                    pass
+
+        # Build output columns
+        out_cols = [x_band, y_band]
+        if _thematic_col and _thematic_col in scatter_df.columns:
+            out_cols.append(_thematic_col)
+
+        fig = chart_scatter(
+            scatter_df,
+            x_band=x_band,
+            y_band=y_band,
+            feature_label=feature_label,
+            title=title,
+            width=width,
+            height=height,
+            legend_position=legend_position,
+            opacity=opacity,
+            thematic_col=_thematic_col,
+            class_names=_class_names,
+            class_palette=_class_palette,
+            class_values=_class_values,
+        )
+        return (scatter_df[[c for c in out_cols if c in scatter_df.columns]], _set_download_filename(fig))
 
     # Auto-detect feature_label for multi-feature FeatureCollections
     if geo_type == "multi" and not feature_label:
         feature_label = _detect_feature_label(geometry)
 
     if geo_type == "multi" and feature_label:
+
         df = zonal_stats(
             ee_obj,
             geometry,
@@ -2434,8 +3153,23 @@ def summarize_and_chart(
                 height=height,
                 columns=columns,
                 legend_position=legend_position,
+                line_width=line_width,
+                marker_size=marker_size,
+                max_x_tick_labels=max_x_tick_labels,
+                max_y_tick_labels=max_y_tick_labels,
             )
-            return (per_feature_dfs, fig)
+            # Apply class_visible to multi-feature time series subplots
+            if class_visible is not None and isinstance(class_visible, dict):
+                hidden = {name for name, vis in class_visible.items() if not vis}
+                if hidden:
+                    for trace in fig.data:
+                        trace_name = trace.name or ""
+                        if (trace_name in hidden
+                                or any(trace_name.endswith(SPLIT_STR + h) for h in hidden)
+                                or any(trace_name.replace(SPLIT_STR, " ").strip() in hidden for _ in [0])):
+                            trace.visible = "legendonly"
+
+            return (per_feature_dfs, _set_download_filename(fig))
 
         # --- ee.Image + multi-feature: grouped bar chart (existing behavior) ---
         # Set index to feature label column
@@ -2486,17 +3220,48 @@ def summarize_and_chart(
         if title is None:
             title = "Zonal Summary by Feature"
 
-        fig = chart_grouped_bar(
-            chart_df,
-            colors=colors,
-            title=title,
-            y_label=y_label,
-            chart_type=chart_type,
-            width=width,
-            height=height,
-            legend_position=legend_position,
-        )
-        return (chart_df, fig)
+        if str(chart_type).lower().strip() == "donut":
+            fig = chart_donut_multi_feature(
+                chart_df,
+                colors=colors,
+                title=title,
+                width=width,
+                height=height,
+                columns=columns,
+                legend_position=legend_position,
+            )
+        else:
+            fig = chart_grouped_bar(
+                chart_df,
+                colors=colors,
+                title=title,
+                y_label=y_label,
+                chart_type=chart_type,
+                width=width,
+                height=height,
+                legend_position=legend_position,
+            )
+        # Apply '%' ticksuffix and max_y_tick_labels for multi-feature bar/donut
+        y_kw = {}
+        if y_label and "%" in y_label:
+            y_kw["ticksuffix"] = "%"
+        if max_y_tick_labels is not None and max_y_tick_labels > 0:
+            y_kw["nticks"] = max_y_tick_labels
+        if y_kw:
+            fig.update_yaxes(**y_kw)
+
+        # Apply class_visible to multi-feature bar/donut charts
+        if class_visible is not None and isinstance(class_visible, dict):
+            hidden = {name for name, vis in class_visible.items() if not vis}
+            if hidden:
+                for trace in fig.data:
+                    trace_name = trace.name or ""
+                    if (trace_name in hidden
+                            or any(trace_name.endswith(SPLIT_STR + h) for h in hidden)
+                            or any(trace_name.replace(SPLIT_STR, " ").strip() in hidden for _ in [0])):
+                        trace.visible = "legendonly"
+
+        return (chart_df, _set_download_filename(fig))
 
     # Standard single-region zonal stats path
     # Safety fallback: dissolve multi-feature FCs without a label (shouldn't
@@ -2518,6 +3283,8 @@ def summarize_and_chart(
         date_format=date_format,
         include_masked_area=include_masked_area,
     )
+
+    df_full = df
 
     # Extract colors from class info (unless caller provided palette).
     # Build the color list to match actual DataFrame column order so that
@@ -2557,20 +3324,34 @@ def summarize_and_chart(
             width=width,
             height=height,
             legend_position=legend_position,
+            line_width=line_width,
+            marker_size=marker_size,
+            max_x_tick_labels=max_x_tick_labels,
+            max_y_tick_labels=max_y_tick_labels,
         )
     else:
         if title is None:
             title = "Class Distribution"
-        fig = chart_bar(
-            df,
-            colors=colors,
-            title=title,
-            y_label=y_label,
-            chart_type=chart_type,
-            width=width,
-            height=height,
-            legend_position=legend_position,
-        )
+        if str(chart_type).lower().strip() == "donut":
+            fig = chart_donut(
+                df,
+                colors=colors,
+                title=title,
+                width=width,
+                height=height,
+                legend_position=legend_position,
+            )
+        else:
+            fig = chart_bar(
+                df,
+                colors=colors,
+                title=title,
+                y_label=y_label,
+                chart_type=chart_type,
+                width=width,
+                height=height,
+                legend_position=legend_position,
+            )
 
     # For thematic data with first() reducer, map numeric class values
     # to class names on the y-axis.  Other reducers (histogram, mean, etc.)
@@ -2592,4 +3373,28 @@ def summarize_and_chart(
                 )
                 break
 
-    return (df, fig)
+    # Apply '%' ticksuffix and max_y_tick_labels for bar/donut charts
+    # (time series charts handle this internally)
+    if obj_info["obj_type"] != "ImageCollection":
+        y_kw = {}
+        if y_label and "%" in y_label:
+            y_kw["ticksuffix"] = "%"
+        if max_y_tick_labels is not None and max_y_tick_labels > 0:
+            y_kw["nticks"] = max_y_tick_labels
+        if y_kw:
+            fig.update_yaxes(**y_kw)
+
+    # Apply class_visible: toggle trace visibility in the figure.
+    # Traces remain in the chart (user can click legend to re-enable).
+    if class_visible is not None and isinstance(class_visible, dict):
+        hidden = {name for name, vis in class_visible.items() if not vis}
+        if hidden:
+            for trace in fig.data:
+                trace_name = trace.name or ""
+                # Check if trace name matches a hidden class (with or without band prefix)
+                if (trace_name in hidden
+                        or any(trace_name.endswith(SPLIT_STR + h) for h in hidden)
+                        or any(trace_name.replace(SPLIT_STR, " ").strip() in hidden for _ in [0])):
+                    trace.visible = "legendonly"
+
+    return (df_full, _set_download_filename(fig))
