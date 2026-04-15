@@ -362,30 +362,116 @@ def serviceAccountToken(service_key_file_path):
 
 
 ######################################################################
-# Function for running local web server
+# In-process threaded HTTP server backing `Map.view()`.
+#
+# Historically `run_local_server` spawned a subprocess (`python -m http.server`)
+# which required PID-file bookkeeping and regularly left orphans. As of
+# geeViz 2026.3.3 the server runs as a daemon thread inside the Python process,
+# rooted at the geeViz package dir via `directory=` (no chdir side effects).
+#
+# The server exists only to provide a real HTTP origin for the rendered
+# viewer — this matters because the Google Maps JS API key baked into
+# `index.html` has HTTP referrer restrictions that reject `file://` and
+# `about:srcdoc` origins. Serving via `http://localhost:<port>/...` gives
+# Maps a referrer it accepts.
+#
+# `Map.view()` writes the per-session runGeeViz.js and opens index.html
+# into `geeView/<ee_run_name>.html` and then navigates the browser / IFrame
+# to `http://localhost:<port>/geeView/<ee_run_name>.html`. Relative asset
+# paths (`./src/...`) resolve through the same server.
+
+_RUNNING_SERVERS = {}  # port -> (server, thread)
+import threading as _threading
+# Reentrant lock so `run_local_server` can call `_kill_server` (which also
+# acquires this lock) while holding it — a non-reentrant `Lock()` would
+# deadlock and hang `Map.view()` any time a stale state file is found.
+_SERVERS_LOCK = _threading.RLock()
+
+
+class _GeeVizRequestHandler(http.server.SimpleHTTPRequestHandler):
+    """SimpleHTTPRequestHandler rooted at the geeViz package dir.
+
+    We pass `directory=` so the handler serves from `py_viz_dir` regardless of
+    the process cwd. Access logs are silenced to avoid notebook stderr spam.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs["directory"] = py_viz_dir
+        super().__init__(*args, **kwargs)
+
+    def log_message(self, format, *args):  # noqa: A002 - stdlib signature
+        return
+
+
 def run_local_server(port: int = 8001):
     """
-    Start a local webserver using the Python http.server
+    Start the in-process threaded geeViz web server, rooted at the geeViz
+    package directory.
+
+    The function is idempotent: if a server is already running on `port`, it
+    returns the existing port number without restarting. If `port` is held by
+    an unrelated process (or a stale subprocess from an older geeViz version
+    that we can't kill), we transparently auto-pick a free port and return
+    the actual port that ended up bound.
 
     Args:
-        port (int): Port number to run local server at
+        port (int): Preferred port number. If unavailable, a free port is
+            auto-selected.
 
+    Returns:
+        int: The port number the server is actually bound to. Callers should
+            use this (not the originally-requested port) when building URLs.
     """
-    if sys.version[0] == "2":
-        server_name = "SimpleHTTPServer"
-    else:
-        server_name = "http.server"
-    cwd = os.getcwd()
-    os.chdir(py_viz_dir)
-    # print('cwd',os.getcwd())
-    python_path = sys.executable
-    if python_path.find("pythonw") > -1:
-        python_path = python_path.replace("pythonw", "python")
-    c = [python_path, "-m", server_name, str(port)]
-    print("HTTP server command:", c)
-    proc = subprocess.Popen(c)
-    _write_server_state(port, proc.pid, py_viz_dir)
-    os.chdir(cwd)
+    with _SERVERS_LOCK:
+        if port in _RUNNING_SERVERS:
+            return port
+        # If the preferred port is already active, it may be a leftover
+        # subprocess from an older geeViz version — try to kill it via the
+        # PID file so we can take over cleanly. Stale state files (PID
+        # already dead) are also handled here: `_kill_server` just removes
+        # the file. After this, re-check the port status.
+        if isPortActive(port):
+            state = _read_server_state(port)
+            if state and "pid" in state and state["pid"] != os.getpid():
+                _kill_server(port)
+                time.sleep(0.5)
+            else:
+                # No state file we can act on — just clean up any stale
+                # file so it doesn't confuse future runs.
+                _kill_server(port)
+
+        # On Windows, binding to an already-listening port can spuriously
+        # succeed (SO_REUSEADDR semantics differ from POSIX), leaving us
+        # with a "server" that can't actually accept connections. So we
+        # always check `isPortActive` first and fall straight to port 0
+        # (OS-assigned) if the preferred port is still held — `bind()` is
+        # not a reliable collision detector on Windows.
+        if isPortActive(port):
+            print("Port {} still held after cleanup — auto-picking a free port".format(port))
+            port = 0
+
+        try:
+            server = socketserver.ThreadingTCPServer(("127.0.0.1", port), _GeeVizRequestHandler)
+        except OSError as e:
+            # Preferred port somehow failed even though isPortActive said it
+            # was free. Fall back once to OS-assigned.
+            if port != 0:
+                print("Bind on port {} failed ({}) — auto-picking a free port".format(port, e))
+                try:
+                    server = socketserver.ThreadingTCPServer(("127.0.0.1", 0), _GeeVizRequestHandler)
+                except OSError as e2:
+                    print("Failed to bind any local port for geeViz server: {}".format(e2))
+                    return None
+            else:
+                print("Failed to bind any local port for geeViz server: {}".format(e))
+                return None
+        port = server.server_address[1]
+        server.daemon_threads = True
+        thread = Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        _RUNNING_SERVERS[port] = (server, thread)
+        _write_server_state(port, os.getpid(), py_viz_dir)
+        return port
 
 
 ######################################################################
@@ -441,37 +527,98 @@ def _write_server_state(port, pid, root_dir):
 
 
 def _kill_server(port):
-    """Kill the server process tracked for a given port."""
-    state = _read_server_state(port)
-    if state and "pid" in state:
+    """Shut down an http server tracked for `port`, whether it's in-process
+    (preferred path) or a legacy subprocess left behind by an older geeViz
+    version."""
+    with _SERVERS_LOCK:
+        entry = _RUNNING_SERVERS.pop(port, None)
+    if entry is not None:
+        server, _thread = entry
         try:
-            os.kill(state["pid"], signal.SIGTERM)
-        except (ProcessLookupError, PermissionError, OSError):
+            server.shutdown()
+            server.server_close()
+        except Exception:
             pass
+    else:
+        # Legacy subprocess case — fall back to the old PID-based kill path.
+        state = _read_server_state(port)
+        if state and "pid" in state and state["pid"] != os.getpid():
+            try:
+                os.kill(state["pid"], signal.SIGTERM)
+            except (ProcessLookupError, PermissionError, OSError):
+                pass
     path = _server_state_path(port)
     if os.path.exists(path):
-        os.remove(path)
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+
+def _detect_proxy_url():
+    """Auto-detect the proxy URL for the current environment.
+
+    Tries, in order:
+
+    1. ``GEEVIZ_PROXY_URL`` environment variable — set this for Cloud Run
+       or any custom deployment (e.g. ``GEEVIZ_PROXY_URL=https://my-service.run.app``).
+    2. GCE metadata server — works on Vertex AI Workbench, where the
+       instance name + region are available at a well-known endpoint and
+       the proxy URL follows a predictable pattern.
+    3. Fall back to ``input()`` prompt — same behavior as original geeViz
+       for environments where auto-detection fails.
+
+    Returns:
+        str: the proxy base URL (e.g. ``https://instance-dot-region.notebooks.googleusercontent.com``).
+    """
+    # 1. Explicit env var — highest priority, works everywhere
+    env_url = os.getenv("GEEVIZ_PROXY_URL")
+    if env_url:
+        print("Using proxy URL from GEEVIZ_PROXY_URL env var:", env_url)
+        return env_url
+
+    # 2. GCE metadata — auto-detect on Vertex AI Workbench
+    try:
+        meta_headers = {"Metadata-Flavor": "Google"}
+        instance = requests.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/name",
+            headers=meta_headers, timeout=2
+        ).text
+        zone = requests.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/zone",
+            headers=meta_headers, timeout=2
+        ).text.split("/")[-1]
+        region = "-".join(zone.split("-")[:-1])
+        proxy_url = "https://{}-dot-{}.notebooks.googleusercontent.com".format(instance, region)
+        print("Auto-detected Workbench proxy URL:", proxy_url)
+        return proxy_url
+    except Exception:
+        pass
+
+    # 3. Fall back to prompt
+    return input(
+        "Please enter the URL your notebook/service is running from "
+        "(e.g. https://code-dot-region.notebooks.googleusercontent.com/): "
+    )
 
 
 def _ensure_server(port):
-    """Ensure an HTTP server on `port` is serving from the current py_viz_dir.
-
-    If a server is running but rooted at a different directory, kill it
-    and start a fresh one.
+    """Ensure an in-process HTTP server is serving from py_viz_dir. Returns
+    the port the server is actually bound to — may differ from the requested
+    port if it was unavailable and we auto-picked a free one. Safe to call
+    from every `Map.view()`.
     """
-    if isPortActive(port):
-        state = _read_server_state(port)
-        if state and os.path.normcase(state.get("root_dir", "")) != os.path.normcase(py_viz_dir):
-            print("Server on port {} is serving from {}, not {}. Restarting...".format(port, state.get("root_dir"), py_viz_dir))
-            _kill_server(port)
-            time.sleep(1)
-            run_local_server(port)
-        else:
-            print("Local web server at: http://localhost:{}/{}/ already serving.".format(port, geeViewFolder))
+    with _SERVERS_LOCK:
+        if port in _RUNNING_SERVERS:
+            return port
+    actual = run_local_server(port)
+    if actual is None:
+        return None
+    if actual != port:
+        print("geeViz server bound to http://localhost:{}/{}/ (requested {})".format(actual, geeViewFolder, port))
     else:
-        print("Starting local web server at: http://localhost:{}/{}/".format(port, geeViewFolder))
-        run_local_server(port)
-        print("Done")
+        print("geeViz server at http://localhost:{}/{}/".format(actual, geeViewFolder))
+    return actual
 
 
 ######################################################################
@@ -479,24 +626,79 @@ def _ensure_server(port):
 ######################################################################
 # Set up mapper object
 class mapper:
-    """Primary geeViz map setup and manipulation object
+    """Primary geeViz map setup and manipulation object.
 
-    Map object that is used to manage layers, activated user input methods, and launching the map viewer user interface
+    The `mapper` builds up a list of GEE layers and map commands (`addLayer`,
+    `addTimeLapse`, `turnOnInspector`, `setCenter`, etc.) and then launches
+    the interactive geeView web viewer via `view()`.
+
+    **Rendering flow (as of geeViz 2026.3.3)**
+
+    `Map.view()` writes the per-session `runGeeViz.js` to its canonical
+    disk location (`geeView/src/gee/gee-run/`) and opens
+    `geeView/index.html` directly:
+
+    - **Plain Python / scripts** — opened via a `file://` URL with the
+      access token passed as a query string. No HTTP server needed.
+    - **Notebooks (VS Code, Jupyter)** — displayed inline via an
+      `IFrame(src="http://localhost:<port>/geeView/...")` backed by an
+      in-process threaded `http.server` (daemon thread, no subprocess).
+      VS Code's webview blocks `file://` in iframes, so a real HTTP
+      origin is required for inline display. The server auto-picks a
+      free port if the preferred one (default 8001) is held.
+    - **Colab / Vertex AI Workbench** — uses platform-specific proxy
+      URLs via `google.colab.kernel.proxyPort()` or `self.proxy_url`.
+
+    The `buildgeeViz.py` build script patches `lcms-viewer.min.js` so
+    the viewer's runtime `loadGEELibraries()` call uses
+    `document.createElement('script')` instead of `$.getScript()` (which
+    is jQuery XHR — blocked by Chrome under `file://`). It also strips
+    the dead `require(...)` fallback from `changeDetectionLib.js`.
+
+    **Key methods**
+
+    - `view(open_browser=None, open_iframe=None, iframe_height=525)` —
+      launch the viewer
+    - `addLayer` / `addTimeLapse` / `addSelectLayer` / `turnOnInspector` /
+      `turnOnAutoAreaCharting` / `setCenter` / `centerObject` / `clearMap`
+    - `refresh()` — re-run the last `view()` with a fresh token
 
     Args:
-        port (int, default 8001): Which port to user for web server. Sometimes a port will become "stuck," so this will need set to some other number than what it was set at in previous runs of a given session.
+        port (int, default 8001): Port for the in-process http.server
+            used for notebook iframe display. Auto-picks a free port
+            if unavailable.
+
     Attributes:
-        port (int, default 8001): Which port to user for web server. Sometimes a port will become "stuck," so this will need set to some other number than what it was set at in previous runs of a given session.
+        port (int, default 8001): Port for the in-process http.server
+            used for notebook iframe display. Auto-picks a free port
+            if unavailable.
 
-        proxy_url (str, default None): The proxy url the web server runs through for either Google Colab or Vertex AI Workbench. This is automatically specified in Google Colab, but in Vertex AI Workbench, the `Map.proxy_url` must be specified as the current URL Workbench Notebook is running from (e.g. https://code-dot-region.notebooks.googleusercontent.com/).
+        proxy_url (str, default None): Vertex AI Workbench proxy URL used
+            when `view()` runs inside a Workbench notebook. Auto-prompted
+            on first call if unset; set manually in advance (e.g.
+            `Map.proxy_url = "https://code-dot-region.notebooks.googleusercontent.com/"`)
+            to skip the prompt. Ignored outside Workbench.
 
-        refreshTokenPath (str, default ee.oauth.get_credentials_path()): Refresh token credentials file path
+        refreshTokenPath (str, default ee.oauth.get_credentials_path()):
+            Path to the Earth Engine refresh token credentials file used to
+            mint fresh access tokens on each `view()` call.
 
-        serviceKeyPath (str, default None): Location of a service account key json. If provided, this will be used for authentication inside geeView instead of the refresh token
+        serviceKeyPath (str, default None): Path to a service account key
+            JSON. If provided, it will be used for authentication inside
+            geeView instead of the refresh token — useful for headless
+            deployments (Cloud Run, scheduled jobs) where no user refresh
+            token is available.
 
-        project (str, default  ee.data._get_state().cloud_api_user_project): Can override which project geeView will use for authentication. While geeViz will try to find a project if ee.data._get_state().cloud_api_user_project isn't already set (usually by `ee.Initialize(project="someProjectID")`) by prompting the user to enter one, in some builds, this does not work. Set this attribute manually if the URL say `project=None` when launching geeView using `Map.view()`.
+        project (str, default ee.data._get_state().cloud_api_user_project):
+            Google Cloud project id used for Earth Engine. `geeViz` tries to
+            resolve this automatically from `ee.Initialize(project=...)`; set
+            it manually if `Map.view()` logs `project=None`.
 
-        turnOffLayersWhenTimeLapseIsOn (bool, default True): Whether all other layers should be turned off when a time lapse is turned on. This is set to True by default to avoid confusing layer order rendering that can occur when time lapses and non-time lapses are visible at the same time. Often this confusion is fine and visualizing time lapses and other layers is desired. Set `Map.turnOffLayersWhenTimeLapseIsOn` to False in this instance.
+        turnOffLayersWhenTimeLapseIsOn (bool, default True): Whether all
+            other layers should be turned off when a time lapse is turned
+            on. Default is True to avoid confusing layer-order rendering
+            when time lapses and non-time lapses are visible at the same
+            time. Set to False if you want them visible simultaneously.
     """
 
     def __init__(self, port: int = 8001):
@@ -982,46 +1184,13 @@ class mapper:
             self.setZoom(zoom)
 
     ######################################################################
-    # Function for launching the web map after all adding to the map has been completed
-    def view(self, open_browser: bool | None = None, open_iframe: bool | None = None, iframe_height: int = 525):
-        """
-        Compiles all map objects and commands and starts the map server
-
-        Args:
-            open_browser (bool): Whether or not to open the browser. If unspecified, will automatically be selected depending on whether geeViz is being used in a notebook (False) or not (True).
-
-            open_iframe (bool): Whether or not to open an iframe. If unspecified, will automatically be selected depending on whether geeViz is being used in a notebook (True) or not (False).
-
-            iframe_height (int, default 525): The height of the iframe shown if running inside a notebook
-
-        >>> from geeViz.geeView import *
-        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
-        >>> Map.addLayer(lcms, {"autoViz": True, "canAreaChart": True, "areaChartParams": {"line": True, "sankey": True}}, "LCMS")
-        >>> Map.turnOnInspector()
-        >>> Map.view()
-        """
-        print("Starting webmap")
-
-        # Get access token
-        if self.serviceKeyPath == None:
-            print("Using default refresh token for geeView")
-            self.accessToken = refreshToken()
-            self.accessTokenCreationTime = int(datetime.datetime.now().timestamp() * 1000)
-        else:
-            print("Using service account key for geeView:", self.serviceKeyPath)
-            self.accessToken = serviceAccountToken(self.serviceKeyPath)
-            if self.accessToken == None:
-                print("Trying to authenticate to GEE using persistent refresh token.")
-                self.accessToken = refreshToken(self.refreshTokenPath)
-                self.accessTokenCreationTime = int(datetime.datetime.now().timestamp() * 1000)
-            else:
-                self.accessTokenCreationTime = None
-        # Set up js code to populate
+    # Build the per-session runGeeViz JavaScript body from the mapper's
+    # state. Written by `view()` to `geeView/src/gee/gee-run/<name>.js`,
+    # which `index.html` already references via a normal `<script src>`.
+    def _build_run_js(self):
         lines = "var layerLoadErrorMessages=[];showMessage('Loading',staticTemplates.loadingModal[mode]);function runGeeViz(){"
-
-        # Iterate across each map layer to add js code to
         for idDict in self.idDictList:
-            t = "{}.{}({},{},'{}',{});".format(
+            lines += "{}.{}({},{},'{}',{});".format(
                 idDict["objectName"],
                 idDict["function"],
                 idDict["item"],
@@ -1029,66 +1198,163 @@ class mapper:
                 idDict["name"],
                 str(idDict["visible"]).lower(),
             )
-            # t = (
-            #     "try{\n\t"
-            #     + t
-            #     + '\n}catch(err){\n\tlayerLoadErrorMessages.push("Error loading: '
-            #     + idDict["name"]
-            #     + '<br>GEE "+err);}\n'
-            # )
-
-            lines += t
         lines += 'if(layerLoadErrorMessages.length>0){showMessage("Map.addLayer Error List",layerLoadErrorMessages.join("<br>"));};'
         lines += "setTimeout(function(){if(layerLoadErrorMessages.length===0){$('#close-modal-button').click();}}, 2500);"
-
-        # Iterate across each map command
         for mapCommand in self.mapCommandList:
             lines += mapCommand + ";"
-
-        # Set location of query outputs
         lines += 'queryWindowMode = "{}";'.format(self.queryWindowMode)
-
-        # Set whether all layers are turned off when a time lapse is turned on
-        lines += "Map.turnOffLayersWhenTimeLapseIsOn = {};".format(str(self.turnOffLayersWhenTimeLapseIsOn).lower())
+        lines += "Map.turnOffLayersWhenTimeLapseIsOn = {};".format(
+            str(self.turnOffLayersWhenTimeLapseIsOn).lower()
+        )
         lines += "};"
+        return lines
 
-        # Write out js file
+    ######################################################################
+    # Access token minting — split out of view() so any code that needs
+    # a fresh token can call this directly.
+    def _mint_access_token(self):
+        """Populate `self.accessToken` and `self.accessTokenCreationTime`
+        from whichever credential source is configured. Split out of
+        view() so any code that needs a fresh token can call this
+        directly."""
+        if self.serviceKeyPath is None:
+            self.accessToken = refreshToken()
+            self.accessTokenCreationTime = int(datetime.datetime.now().timestamp() * 1000)
+        else:
+            self.accessToken = serviceAccountToken(self.serviceKeyPath)
+            if self.accessToken is None:
+                # Service key failed — fall back to the persistent refresh
+                # token path so users with a broken SA key still see a map.
+                self.accessToken = refreshToken(self.refreshTokenPath)
+                self.accessTokenCreationTime = int(datetime.datetime.now().timestamp() * 1000)
+            else:
+                self.accessTokenCreationTime = None
+
+    ######################################################################
+    # Function for launching the web map after all adding to the map has been completed
+    def view(
+        self,
+        open_browser: bool | None = None,
+        open_iframe: bool | None = None,
+        iframe_height: int = 525,
+    ):
+        """
+        Compile all map objects and commands and start the map viewer.
+
+        Starts an in-process threaded HTTP server (daemon thread, no
+        subprocess) serving from the geeViz package directory, then
+        opens the viewer in a browser or inline IFrame depending on the
+        environment:
+
+        - **Scripts / plain Python / agents (MCP, ADK)**: opens
+          ``http://localhost:<port>/geeView/?accessToken=...`` in the
+          default browser via ``webbrowser.open()``.
+        - **Notebooks (VS Code, Jupyter)**: displays an inline
+          ``IFrame(src="http://localhost:<port>/geeView/...")`` and
+          also opens the browser.
+        - **Google Colab**: uses ``google.colab.kernel.proxyPort()``
+          to get a proxy URL (auto-detected, no user action).
+        - **Vertex AI Workbench**: uses ``self.proxy_url`` (set it
+          once via ``Map.proxy_url = "https://..."``; prompts on first
+          use if unset).
+        - **Cloud Run / remote deployments**: set ``Map.proxy_url``
+          to your service's public URL, same pattern as Workbench.
+
+        Args:
+            open_browser (bool): Whether or not to open the browser.
+                If unspecified, auto-selected: True outside notebooks,
+                True in notebooks too (since VS Code IFrame can be
+                unreliable).
+            open_iframe (bool): Whether or not to open an inline
+                IFrame. If unspecified, auto-selected: True in
+                notebooks, False otherwise.
+            iframe_height (int, default 525): Height of the inline
+                IFrame in pixels.
+
+        >>> from geeViz.geeView import *
+        >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2023-9").filter('study_area=="CONUS"')
+        >>> Map.addLayer(lcms, {"autoViz": True, "canAreaChart": True, "areaChartParams": {"line": True, "sankey": True}}, "LCMS")
+        >>> Map.turnOnInspector()
+        >>> Map.view()
+        """
+        self._last_view_kwargs = {
+            "open_browser": open_browser,
+            "open_iframe": open_iframe,
+            "iframe_height": iframe_height,
+        }
+
+        # Auto-enable inspector if no turnOn commands have been set.
+        if not any("turnOn" in c for c in self.mapCommandList):
+            self.turnOnInspector()
+
+        print("Starting webmap")
+
+        # Get access token
+        self._mint_access_token()
+
+        # Build the per-session runGeeViz JS and write to disk
+        run_js = self._build_run_js()
         self.ee_run = os.path.join(ee_run_dir, "{}.js".format(self.ee_run_name))
-        oo = open(self.ee_run, "w")
-        oo.writelines(lines)
-        oo.close()
+        with open(self.ee_run, "w", encoding="utf-8") as f:
+            f.write(run_js)
 
-        # Ensure the local server is running and serving from the correct directory
-        _ensure_server(self.port)
+        # Ensure the in-process threaded server is running
+        actual_port = _ensure_server(self.port)
+        if actual_port is not None:
+            self.port = actual_port
 
-        # Open viewer in browser or iframe in notebook
-        print("cwd", os.getcwd())
+        # Build the viewer URL with token as query string
+        query = "?projectID={}&accessToken={}&accessTokenCreationTime={}".format(
+            self.project, self.accessToken, self.accessTokenCreationTime
+        )
 
+        # Determine display mode
+        in_notebook = self.isNotebook
+        want_browser = open_browser if open_browser is not None else True
+        want_iframe = open_iframe if open_iframe is not None else in_notebook
+
+        # Open viewer — environment-specific URL construction
         if IS_COLAB:
             proxy_js = "google.colab.kernel.proxyPort({})".format(self.port)
             proxy_url = eval_js(proxy_js)
-            geeView_proxy_url = "{}/geeView/?projectID={}&accessToken={}&accessTokenCreationTime={}".format(proxy_url, self.project, self.accessToken, self.accessTokenCreationTime)
-            print("Colab Proxy URL:", geeView_proxy_url)
-            viewerFrame = IFrame(src=geeView_proxy_url, width="100%", height="{}px".format(iframe_height))
-            display(viewerFrame)
-        elif IS_WORKBENCH:
-            if self.proxy_url == None:
-                self.proxy_url = input("Please enter current URL Workbench Notebook is running from (e.g. https://code-dot-region.notebooks.googleusercontent.com/): ")
+            geeView_url = "{}/geeView/{}".format(proxy_url, query)
+            print("Colab Proxy URL:", geeView_url)
+            self.IFrame = IFrame(src=geeView_url, width="100%", height="{}px".format(iframe_height))
+            display(self.IFrame)
+        elif IS_WORKBENCH or (self.proxy_url is not None):
+            # Workbench or Cloud Run — auto-detect or use cached proxy_url
+            if self.proxy_url is None:
+                self.proxy_url = _detect_proxy_url()
             self.proxy_url = baseDomain(self.proxy_url)
-            geeView_proxy_url = "{}/proxy/{}/geeView/?projectID={}&accessToken={}&accessTokenCreationTime={}".format(self.proxy_url, self.port, self.project, self.accessToken, self.accessTokenCreationTime)
-            print("Workbench Proxy URL:", geeView_proxy_url)
-            viewerFrame = IFrame(src=geeView_proxy_url, width="100%", height="{}px".format(iframe_height))
-            display(viewerFrame)
+            geeView_url = "{}/proxy/{}/geeView/{}".format(
+                self.proxy_url, self.port, query
+            )
+            print("Proxy URL:", geeView_url)
+            self.IFrame = IFrame(src=geeView_url, width="100%", height="{}px".format(iframe_height))
+            display(self.IFrame)
         else:
-            url = "http://localhost:{}/{}/?projectID={}&accessToken={}&accessTokenCreationTime={}".format(self.port, geeViewFolder, self.project, self.accessToken, self.accessTokenCreationTime)
+            # Local — use localhost directly
+            url = "http://localhost:{}/geeView/{}".format(self.port, query)
             print("geeView URL:", url)
-            if not self.isNotebook or open_browser:
-                webbrowser.open(url, new=1)
-            elif open_browser == False and open_iframe:
-                self.IFrame = IFrame(src=url, width="100%", height="{}px".format(iframe_height))
-            else:
+            if want_iframe:
                 self.IFrame = IFrame(src=url, width="100%", height="{}px".format(iframe_height))
                 display(self.IFrame)
+            if want_browser:
+                webbrowser.open(url, new=1)
+
+    ######################################################################
+    def refresh(self):
+        """
+        Re-render the viewer with a freshly minted access token.
+
+        The embedded access token expires ~1 hour after `view()` is called;
+        call `Map.refresh()` to mint a new one and re-display the iframe (or
+        re-open the browser window, depending on the last `view()` mode).
+        """
+        if not hasattr(self, "_last_view_kwargs"):
+            print("No previous view() call to refresh — call Map.view() first.")
+            return
+        self.view(**self._last_view_kwargs)
 
     ######################################################################
     def clearMap(self):

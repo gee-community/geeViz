@@ -5,7 +5,7 @@ if(value===undefined||value===null){value=defaultArgs[key];}
 outArgs[key]=value;});return outArgs;}
 function copyObj(obj){var out={};Object.keys(obj).map(function(k){out[k]=obj[k];});return out;}
 function reverseObj(obj){var out={};Object.keys(obj).map(function(k){let v=obj[k];out[v]=k;});return out;}
-function range(start,stop,step){start=parseInt(start);stop=parseInt(stop);if(typeof stop=="undefined"){stop=start;start=0;}
+function range(start,stop,step){start=Number.parseInt(start);stop=Number.parseInt(stop);if(typeof stop=="undefined"){stop=start;start=0;}
 if(typeof step=="undefined"){step=1;}
 if((step>0&&start>=stop)||(step<0&&start<=stop)){return[];}
 var result=[];for(var i=start;step>0?i<stop:i>stop;i+=step){result.push(i);}

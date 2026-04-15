@@ -1,6 +1,22 @@
-# geeViz 2026.3.3 Release Notes
+# geeViz Release Notes
 
-## March 27-31, 2026
+## 2026.4.1 — April 14, 2026
+
+### MCP Server — Map Test Action and Tool Fixes
+
+- **`map_control(action="test")`** — new action that captures a PNG of the geeView map via headless Chrome DevTools Protocol (CDP). Returns `tile_errors` (HTTP 4xx/5xx on EE tile URLs) and `console_messages` (JS errors/warnings) for programmatic error detection. Used as an internal quality gate: agents call `test` before `view`, fix any tile errors silently, then show the clean map to the user. Requires `websocket-client` (`pip install websocket-client`); falls back to simple `--screenshot` if not installed. Screenshot PNGs are saved to `generated_outputs/` with timestamps.
+- **Restored `@app.tool` decorators** for `cancel_tasks` and `get_streetview` — both were defined but not exposed as MCP tools since the 27→21 consolidation
+- **Updated all MCP documentation** — tool counts, stale tool name references (`get_api_reference`, `view_map`, `get_thumbnail`, `extract_and_chart`, `geocode`, etc.) updated to current names across `mcp/README.md`, `mcp/agent-instructions.md`, `mcp.rst`, `geeViz.mcp.server.rst`, and `server.py` help text
+
+
+### Map Viewer — file:// Support (No HTTP Server Required for Scripts)
+
+- **`Map.view()` now opens `geeView/index.html` directly via `file://` URL** in plain Python scripts — no HTTP server, no subprocess, no port management. The access token and project id are passed via the same `?accessToken=…&projectID=…` URL query string the viewer has always used.
+- **In notebooks (VS Code, Jupyter)**, `Map.view()` spins up a lightweight in-process threaded `http.server` (daemon thread) for iframe display, since VS Code's webview blocks `file://` in iframes. The server auto-picks a free port if the preferred one is held by another process.
+- **`run_local_server()` rewritten** — replaced `subprocess.Popen(['python', '-m', 'http.server'])` with an in-process `ThreadingTCPServer`. No more subprocess management, orphan PIDs, or chdir side effects.
+- **`buildgeeViz.py` patches for `file://` compatibility** — the build script now applies three targeted edits to the viewer assets: (1) replaces the XHR-based `$.getScript()` runtime loader in `lcms-viewer.min.js` with a `document.createElement('script')` DOM loader that works under `file://`; (2) strips the dead `require(...)` Node fallback from `changeDetectionLib.js`; (3) fixes the protocol-relative jQuery-UI CSS URL (`//code.jquery.com/...` → `https://code.jquery.com/...`).
+- **New method: `Map.refresh()`** — re-runs the last `view()` call with a freshly minted access token.
+- **Backward compatible.** Existing example scripts and notebooks that call `Map.view()` work unchanged. `Map.port`, `Map.proxy_url`, `IS_COLAB`, `IS_WORKBENCH`, `run_local_server()`, `isPortActive()` all still exist.
 
 ### Sankey Charts — Direct D3 Rendering (no Plotly)
 
@@ -37,9 +53,9 @@
   - `source='tiger'` (default): TIGER roads, years 2012-2025 via community catalog
   - `source='grip'`: GRIP4 (Global Roads Inventory Project), 7 regional shards with road type classification (`GP_RTP`: 1=Highway through 5=Local)
 
-### MCP Server Optimization (27 → 22 tools)
+### MCP Server Optimization (27 → 21 tools)
 
-- **Removed 4 tools** that were thin wrappers around `run_code`: `get_thumbnail`, `extract_and_chart`, `edw_query`, `geocode` — saves ~2,700 tokens of schema overhead per conversation
+- **Removed 5 tools** that were thin wrappers around `run_code`: `get_thumbnail`, `extract_and_chart`, `edw_query`, `geocode`, `get_catalog_info` — saves ~3,200 tokens of schema overhead per conversation. `inspect_asset` now includes catalog metadata (title, provider, keywords, viz params)
 - Use `run_code` with `tl.generate_thumbs()`, `cl.summarize_and_chart()`, `edwLib.query_features()`, `gm.geocode()` instead
 - **Agent instructions rewritten** — 414 lines → 59 lines (86% reduction) as compact rules + pitfalls format; no examples (model uses `get_api_reference` and `examples` tools on demand)
 - **`inspect_asset` rewrite** — catalog metadata (`date_range`, `title`, `provider`) extracted from `ee.data.getInfo` instantly (no compute); live queries (count, bands, dates) run in daemon threads with 10-second timeout; never hangs on large collections like S2
@@ -63,7 +79,7 @@
 - **`getSentinel2Wrapper`** docstring: marked as deprecated in favor of `superSimpleGetS2`
 - Removed stale `mcp/edw.py` (duplicate of `edwLib.py`)
 
-## March 26, 2026
+## 2026.3.3 —  March 26, 2026
 
 ### New: Google Maps Platform Integration (`geeViz.googleMapsLib`)
 

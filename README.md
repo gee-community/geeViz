@@ -148,7 +148,7 @@ pip install geeViz[all]            # Everything
 
 ## AI-Assisted Development (MCP)
 
-geeViz includes a built-in [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server with **22 tools** that give AI coding assistants live access to geeViz and Google Earth Engine. Instead of generating code from training data (which is often wrong or outdated), your AI assistant can look up real function signatures, read actual example scripts, execute and test code, inspect assets, export data, manage tasks, and more.
+geeViz includes a built-in [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server with **21 tools** that give AI coding assistants live access to geeViz and Google Earth Engine. Instead of generating code from training data (which is often wrong or outdated), your AI assistant can look up real function signatures, read actual example scripts, execute and test code, inspect assets, export data, manage tasks, and more.
 
 Works with **Cursor**, **Claude Code**, **VS Code with GitHub Copilot**, **Windsurf**, and any MCP-compatible client. The `mcp` SDK is included as a dependency — no extra install needed.
 
@@ -169,13 +169,13 @@ Works with **Cursor**, **Claude Code**, **VS Code with GitHub Copilot**, **Winds
 
 ### What the MCP server can do
 
-The 22 tools are organized into categories:
+The 21 tools are organized into categories:
 
 | Category | Tools |
 |----------|-------|
 | **Code Execution** | `run_code` — persistent REPL with `ee`, `Map`, `gv`, `gil`, `sal`, `tl`, `rl`, `cl` pre-loaded; `save_session` — export as `.py` or `.ipynb` |
 | **API Introspection** | `get_api_reference` — function signatures & docstrings; `search_functions` — search across all modules; `examples` — list/read example scripts; `get_reference_data` — lookup reference dicts |
-| **Dataset Discovery** | `search_datasets` — keyword search across official & community catalogs; `get_catalog_info` — full STAC metadata |
+| **Dataset Discovery** | `search_datasets` — keyword search across official & community catalogs |
 | **Asset Inspection** | `inspect_asset` — bands, CRS, scale, date range, properties; `list_assets` — browse GEE folders |
 | **Map Control** | `map_control` — view, list layers, or clear the interactive map |
 | **Exports** | `export_image` — export to asset, Drive, or Cloud Storage |

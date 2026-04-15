@@ -187,7 +187,7 @@ _THUMB_KEYS = frozenset({
     "scalebar", "scalebar_units", "north_arrow", "north_arrow_style",
 })
 # Keys used by the report layer but not by summarize_and_chart
-_REPORT_KEYS = frozenset({"sankey_only", "chart_types"}) | _THUMB_KEYS
+_REPORT_KEYS = frozenset({"chart_types"}) | _THUMB_KEYS
 
 
 class _Section:
@@ -348,10 +348,6 @@ class Report:
         """
         # Normalize chart_types
         ct_list = list(chart_types) if chart_types else []
-
-        # If "sankey" is in chart_types, auto-set sankey=True in kwargs
-        if any(ct.lower().strip() == "sankey" for ct in ct_list):
-            kwargs["sankey"] = True
 
         self._sections.append(_Section(
             ee_obj, geometry, title, prompt, kwargs,
@@ -562,9 +558,10 @@ class Report:
                     print(f"  [{idx+1}/{len(self._sections)}] Computing {ct} chart: {sec.title}")
                     try:
                         if ct_lower == "sankey":
-                            # Sankey path
+                            # Sankey path — use chart_type='sankey'
                             sankey_kwargs = dict(chart_kwargs)
-                            sankey_kwargs["sankey"] = True
+                            sankey_kwargs.pop("sankey", None)
+                            sankey_kwargs["chart_type"] = "sankey"
                             result = cl.summarize_and_chart(
                                 sec.ee_obj, sec.geometry, **sankey_kwargs
                             )
@@ -611,6 +608,10 @@ class Report:
 
             else:
                 # --- Legacy auto-detect path (no chart_types list) ---
+                # Convert legacy sankey=True to chart_type='sankey'
+                if chart_kwargs.get("sankey"):
+                    chart_kwargs.pop("sankey", None)
+                    chart_kwargs["chart_type"] = "sankey"
                 result = cl.summarize_and_chart(
                     sec.ee_obj, sec.geometry, **chart_kwargs
                 )
@@ -1205,64 +1206,26 @@ class Report:
             return None
 
     def _sankey_to_static_img(self, fig, width=900, height=600):
-        """Render a Sankey figure to a base64 PNG via Chrome headless screenshot.
+        """Render a Sankey figure to a base64 PNG via headless browser screenshot.
 
-        This preserves the D3 SVG gradient link colors that kaleido cannot
-        render.  Falls back to kaleido if no browser is available.
+        Delegates to :func:`~geeViz.outputLib.charts.html_to_png`.
+        Falls back to kaleido if no browser is available.
 
         Returns a ``data:image/png;base64,...`` URI or None.
         """
-        import subprocess
-        import tempfile
-
-        browser = _find_browser()
-        if not browser:
-            return self._fig_to_static_img(fig, width=width, height=height)
-
         try:
             _t = _themeLib.get_theme(self.theme)
             sankey_html = cl.sankey_to_html(
                 fig, bg_color=_t.bg_hex, font_color=_t.text_hex,
                 renderer="d3", hide_toolbar=True,
             )
-
-            tmp_dir = tempfile.mkdtemp(prefix="geeviz_sankey_")
-            tmp_html = os.path.join(tmp_dir, "sankey.html")
-            tmp_png = os.path.join(tmp_dir, "sankey.png")
-
-            with open(tmp_html, "w", encoding="utf-8") as f:
-                f.write(sankey_html)
-
-            # Use file:// URI and --virtual-time-budget so D3 JS fully executes
-            file_uri = "file:///" + tmp_html.replace(os.sep, "/")
-            cmd = [
-                browser, "--headless", "--disable-gpu",
-                f"--screenshot={tmp_png}",
-                f"--window-size={width},{height}",
-                "--hide-scrollbars",
-                "--virtual-time-budget=5000",
-                file_uri,
-            ]
-            result = subprocess.run(cmd, capture_output=True, timeout=30)
-
-            if result.returncode == 0 and os.path.exists(tmp_png) and os.path.getsize(tmp_png) > 1000:
-                with open(tmp_png, "rb") as f:
-                    img_bytes = f.read()
+            img_bytes = cl.html_to_png(sankey_html, width=width, height=height)
+            if img_bytes is not None:
                 b64 = base64.b64encode(img_bytes).decode()
-                # Cleanup
-                os.remove(tmp_png)
-                os.remove(tmp_html)
-                os.rmdir(tmp_dir)
                 return f"data:image/png;base64,{b64}"
             else:
-                print(f"    Sankey screenshot failed, falling back to kaleido")
-                # Cleanup
-                for p in (tmp_png, tmp_html):
-                    if os.path.exists(p):
-                        os.remove(p)
-                os.rmdir(tmp_dir)
+                print(f"    Sankey screenshot failed (no browser), falling back to kaleido")
                 return self._fig_to_static_img(fig, width=width, height=height)
-
         except Exception as e:
             print(f"    Sankey screenshot error: {e}, falling back to kaleido")
             return self._fig_to_static_img(fig, width=width, height=height)
@@ -1796,43 +1759,9 @@ class Report:
 def _find_browser():
     """Locate Edge or Chrome executable for headless PDF rendering.
 
-    Returns the path string if found, otherwise None.
+    Delegates to :func:`~geeViz.outputLib.charts._find_browser`.
     """
-    import shutil
-
-    # Check PATH first (works cross-platform)
-    for name in ("msedge", "microsoft-edge", "google-chrome", "chrome", "chromium"):
-        path = shutil.which(name)
-        if path:
-            return path
-
-    # Common install locations by platform
-    import sys
-    if sys.platform == "win32":
-        candidates = [
-            os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
-            os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"),
-            os.path.expandvars(r"%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
-            os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
-            os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
-        ]
-    elif sys.platform == "darwin":
-        candidates = [
-            "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-        ]
-    else:  # Linux
-        candidates = [
-            "/usr/bin/microsoft-edge",
-            "/usr/bin/google-chrome",
-            "/usr/bin/chromium-browser",
-            "/usr/bin/chromium",
-        ]
-
-    for c in candidates:
-        if os.path.isfile(c):
-            return c
-    return None
+    return cl._find_browser()
 
 
 def _extract_image_bytes(html_str):

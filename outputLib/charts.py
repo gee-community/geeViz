@@ -47,6 +47,7 @@ See :func:`summarize_and_chart` for the full API and more examples.
 # --------------------------------------------------------------------------
 
 import math
+import os
 import ee
 import pandas
 import plotly.graph_objects as go
@@ -360,6 +361,491 @@ def save_chart_html(fig, filename, include_plotlyjs=_PLOTLY_CDN_URL, sankey=Fals
         return filename
 
 
+def _find_browser():
+    """Locate Edge or Chrome executable for headless screenshot rendering.
+
+    Returns the path string if found, otherwise None.
+    """
+    import shutil
+    import sys
+
+    # Check PATH first (works cross-platform)
+    for name in ("msedge", "microsoft-edge", "google-chrome", "chrome", "chromium"):
+        path = shutil.which(name)
+        if path:
+            return path
+
+    # Common install locations by platform
+    if sys.platform == "win32":
+        candidates = [
+            os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
+            os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"),
+            os.path.expandvars(r"%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
+            os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
+            os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe"),
+        ]
+    elif sys.platform == "darwin":
+        candidates = [
+            "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        ]
+    else:  # Linux
+        candidates = [
+            "/usr/bin/microsoft-edge",
+            "/usr/bin/google-chrome",
+            "/usr/bin/chromium-browser",
+            "/usr/bin/chromium",
+        ]
+
+    for c in candidates:
+        if os.path.isfile(c):
+            return c
+    return None
+
+
+def _autocrop_png(png_bytes, padding=10):
+    """Crop empty space from the bottom of a PNG image.
+
+    Detects the background color from the bottom-left pixel and trims
+    rows that are entirely that color. Adds ``padding`` pixels below
+    the last content row.
+
+    Args:
+        png_bytes (bytes): Raw PNG data.
+        padding (int): Pixels of padding to keep below content.
+
+    Returns:
+        bytes: Cropped PNG data.
+    """
+    try:
+        from PIL import Image
+        import io
+
+        img = Image.open(io.BytesIO(png_bytes))
+        pixels = img.load()
+        w, h = img.size
+
+        # Sample background color from the bottom-left corner
+        bg_color = pixels[0, h - 1]
+
+        # Find the last row that has non-background content
+        last_content_row = h - 1
+        for y in range(h - 1, -1, -1):
+            row_is_bg = all(pixels[x, y] == bg_color for x in range(0, w, 4))
+            if not row_is_bg:
+                last_content_row = y
+                break
+
+        crop_h = min(last_content_row + padding, h)
+        if crop_h < h - 10:  # only crop if saving at least 10px
+            img = img.crop((0, 0, w, crop_h))
+
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        return buf.getvalue()
+    except Exception:
+        return png_bytes  # fail-safe: return uncropped
+
+
+def screenshot_url(url, width=1280, height=900, wait_seconds=12):
+    """Capture a screenshot of a URL via headless Chrome using the DevTools Protocol (CDP).
+
+    Unlike the simple ``--screenshot`` flag, this function connects to Chrome's
+    DevTools WebSocket and collects:
+
+    * JS console errors and warnings (``console.error`` / ``console.warn``)
+    * Network failures (``net::ERR_*`` for any request)
+    * HTTP 4xx / 5xx responses on EE tile URLs (the most common map-layer bug)
+
+    Then takes a screenshot via ``Page.captureScreenshot`` after ``wait_seconds``
+    so that async tile requests have time to complete.
+
+    Args:
+        url (str): URL to load (``http://`` or ``file:///``).
+        width (int): Viewport width in pixels.
+        height (int): Viewport height in pixels.
+        wait_seconds (int): Seconds to wait after page load before screenshotting.
+            Longer values allow more EE tiles to load.
+
+    Returns:
+        tuple[bytes | None, list[str]]:
+            * PNG bytes (or ``None`` if screenshot failed / no browser found)
+            * List of console/network error strings for debugging
+
+    Requires ``websocket-client`` (``pip install websocket-client``).
+    Falls back to the simple ``--screenshot`` approach (no console capture)
+    if ``websocket-client`` is not installed.
+    """
+    import base64
+    import json as _json
+    import subprocess
+    import time
+    import urllib.request
+
+    browser = _find_browser()
+    if not browser:
+        return None, ["No Chrome/Edge browser found."]
+
+    # Try CDP approach first
+    try:
+        import websocket as _ws  # websocket-client
+    except ImportError:
+        # Fallback: simple headless screenshot, no console capture
+        import tempfile
+        tmp_dir = tempfile.mkdtemp(prefix="geeviz_map_")
+        tmp_png = os.path.join(tmp_dir, "map_screenshot.png")
+        cmd = [
+            browser, "--headless", "--disable-gpu",
+            f"--screenshot={tmp_png}",
+            f"--window-size={width},{height}",
+            "--hide-scrollbars", "--no-sandbox",
+            "--disable-web-security", "--allow-file-access-from-files",
+            f"--timeout={wait_seconds * 1000}",
+            url,
+        ]
+        try:
+            subprocess.run(cmd, capture_output=True, timeout=wait_seconds + 20)
+            if os.path.exists(tmp_png) and os.path.getsize(tmp_png) > 1000:
+                with open(tmp_png, "rb") as f:
+                    return f.read(), ["Note: install websocket-client for JS console capture."]
+        except Exception as exc:
+            pass
+        return None, [f"Screenshot failed. Install websocket-client for full CDP support: {exc}"]
+
+    # -----------------------------------------------------------------------
+    # CDP approach
+    # -----------------------------------------------------------------------
+    dbg_port = None
+    proc = None
+
+    try:
+        cmd = [
+            browser, "--headless", "--disable-gpu",
+            "--remote-debugging-port=0",   # OS picks a free port
+            "--remote-allow-origins=*",    # allow CDP WebSocket from any origin
+            f"--window-size={width},{height}",
+            "--no-sandbox", "--disable-web-security",
+            "--allow-file-access-from-files",
+            "--disable-extensions",
+            "about:blank",
+        ]
+        proc = subprocess.Popen(
+            cmd,
+            stderr=subprocess.PIPE, stdout=subprocess.DEVNULL,
+        )
+
+        # Chrome prints: DevTools listening on ws://127.0.0.1:PORT/devtools/browser/UUID
+        deadline = time.time() + 10
+        ws_browser_url = None
+        while time.time() < deadline:
+            line = proc.stderr.readline().decode(errors="replace").strip()
+            if "DevTools listening on" in line:
+                ws_browser_url = line.split("DevTools listening on", 1)[1].strip()
+                break
+
+        if not ws_browser_url:
+            return None, ["Chrome did not output a DevTools URL within 10 s."]
+
+        # Extract host:port from the browser-level WS URL
+        # ws://127.0.0.1:PORT/devtools/browser/UUID  →  http://127.0.0.1:PORT/json/list
+        host_port = ws_browser_url.split("//", 1)[1].split("/")[0]
+        json_url = f"http://{host_port}/json/list"
+
+        # Fetch the list of open pages/targets
+        page_ws_url = None
+        for _ in range(10):
+            try:
+                with urllib.request.urlopen(json_url, timeout=2) as resp:
+                    targets = _json.loads(resp.read())
+                for t in targets:
+                    if t.get("type") == "page":
+                        page_ws_url = t["webSocketDebuggerUrl"]
+                        break
+                if page_ws_url:
+                    break
+            except Exception:
+                pass
+            time.sleep(0.3)
+
+        if not page_ws_url:
+            return None, ["Could not find a page target in Chrome DevTools."]
+
+        # Connect to the page target
+        ws = _ws.create_connection(page_ws_url, timeout=15)
+        _id = [0]
+        console_msgs = []
+        network_errors = []
+
+        def _send(method, params=None):
+            _id[0] += 1
+            ws.send(_json.dumps({"id": _id[0], "method": method, "params": params or {}}))
+            return _id[0]
+
+        def _recv_until(target_id, timeout=5):
+            ws.settimeout(timeout)
+            deadline2 = time.time() + timeout
+            while time.time() < deadline2:
+                try:
+                    msg = _json.loads(ws.recv())
+                    _process(msg)
+                    if msg.get("id") == target_id:
+                        return msg
+                except _ws.WebSocketTimeoutException:
+                    break
+                except Exception:
+                    break
+            return {}
+
+        page_loaded = [False]
+        # Track requestId -> URL; Network.loadingFailed doesn't include the URL
+        _req_urls = {}
+
+        def _process(msg):
+            method = msg.get("method", "")
+            params = msg.get("params", {})
+            if method in ("Page.loadEventFired", "Page.domContentEventFired"):
+                page_loaded[0] = True
+            elif method == "Network.requestWillBeSent":
+                rid = params.get("requestId", "")
+                req_url = params.get("request", {}).get("url", "")
+                if rid and req_url:
+                    _req_urls[rid] = req_url
+            elif method == "Console.messageAdded":
+                m = params.get("message", {})
+                lvl = m.get("level", "")
+                text = m.get("text", "")
+                # Filter known-benign Google Maps API warnings that appear every session
+                _gmaps_noise = ("loading=async", "SearchBox is not available")
+                if lvl in ("error", "warning") and not any(n in text for n in _gmaps_noise):
+                    console_msgs.append(f"[{lvl.upper()}] {text}")
+            elif method == "Runtime.consoleAPICalled":
+                t = params.get("type", "")
+                if t in ("error", "warning"):
+                    args = params.get("args", [])
+                    text = " ".join(
+                        str(a.get("value", a.get("description", "")))
+                        for a in args
+                    )
+                    _gmaps_noise = ("loading=async", "SearchBox is not available")
+                    if not any(n in text for n in _gmaps_noise):
+                        console_msgs.append(f"[{t.upper()}] {text}")
+            elif method == "Network.loadingFailed":
+                rid = params.get("requestId", "")
+                req_url = _req_urls.get(rid, "")
+                err = params.get("errorText", "")
+                canceled = params.get("canceled", False)
+                # Skip canceled/aborted requests — these are normal during page nav
+                # Only report real failures, especially on EE tile URLs
+                if canceled or "ERR_ABORTED" in err:
+                    return
+                if req_url and ("earthengine" in req_url or "googleapis" in req_url):
+                    network_errors.append(f"LOAD FAIL: {req_url[:120]} — {err}")
+                elif req_url:
+                    network_errors.append(f"LOAD FAIL: {req_url[:120]} — {err}")
+            elif method == "Network.responseReceived":
+                resp = params.get("response", {})
+                status = resp.get("status", 0)
+                resp_url = resp.get("url", "")
+                if status >= 400 and ("earthengine" in resp_url or "googleapis" in resp_url):
+                    network_errors.append(f"HTTP {status}: {resp_url[:120]}")
+
+        # Enable CDP domains
+        _send("Console.enable")
+        _send("Runtime.enable")
+        _send("Network.enable")
+        _send("Page.enable")
+
+        # Set viewport explicitly
+        _send("Emulation.setDeviceMetricsOverride", {
+            "width": width, "height": height,
+            "deviceScaleFactor": 1, "mobile": False,
+        })
+
+        # Navigate
+        nav_id = _send("Page.navigate", {"url": url})
+
+        # Phase 1: wait for page load event (up to 15 s)
+        ws.settimeout(1.0)
+        load_deadline = time.time() + 15
+        while time.time() < load_deadline and not page_loaded[0]:
+            try:
+                msg = _json.loads(ws.recv())
+                _process(msg)
+            except _ws.WebSocketTimeoutException:
+                pass
+            except Exception:
+                break
+
+        # Phase 2: additional wait for EE tile requests to complete
+        ws.settimeout(1.0)
+        tile_deadline = time.time() + wait_seconds
+        while time.time() < tile_deadline:
+            try:
+                msg = _json.loads(ws.recv())
+                _process(msg)
+            except _ws.WebSocketTimeoutException:
+                pass
+            except Exception:
+                break
+
+        # Capture screenshot
+        scr_id = _send("Page.captureScreenshot", {"format": "png", "captureBeyondViewport": False})
+        png_b64 = None
+        ws.settimeout(10)
+        deadline4 = time.time() + 10
+        while time.time() < deadline4:
+            try:
+                msg = _json.loads(ws.recv())
+                _process(msg)
+                if msg.get("id") == scr_id:
+                    png_b64 = msg.get("result", {}).get("data")
+                    break
+            except _ws.WebSocketTimeoutException:
+                break
+            except Exception:
+                break
+
+        ws.close()
+        png_bytes = base64.b64decode(png_b64) if png_b64 else None
+        all_msgs = console_msgs + network_errors
+        return png_bytes, all_msgs
+
+    except Exception as exc:
+        return None, [f"CDP screenshot failed: {exc}"]
+    finally:
+        if proc is not None:
+            try:
+                proc.kill()
+            except Exception:
+                pass
+
+
+def html_to_png(html, width=900, height=1200, autocrop=True):
+    """Render an HTML string to PNG bytes via headless Chrome/Edge screenshot.
+
+    Uses a tall viewport and auto-crops empty space at the bottom so
+    the output fits the actual content height.
+
+    Args:
+        html (str): Full HTML document string.
+        width (int): Viewport width in pixels.
+        height (int): Viewport height in pixels (tall default to avoid cutoff).
+        autocrop (bool): Trim empty space from the bottom of the image.
+
+    Returns:
+        bytes: PNG image bytes, or None if no browser is available.
+    """
+    import subprocess
+    import tempfile
+
+    browser = _find_browser()
+    if not browser:
+        return None
+
+    tmp_dir = tempfile.mkdtemp(prefix="geeviz_chart_")
+    tmp_html = os.path.join(tmp_dir, "chart.html")
+    tmp_png = os.path.join(tmp_dir, "chart.png")
+
+    try:
+        with open(tmp_html, "w", encoding="utf-8") as f:
+            f.write(html)
+
+        file_uri = "file:///" + tmp_html.replace(os.sep, "/")
+        cmd = [
+            browser, "--headless", "--disable-gpu",
+            f"--screenshot={tmp_png}",
+            f"--window-size={width},{height}",
+            "--hide-scrollbars",
+            "--virtual-time-budget=5000",
+            file_uri,
+        ]
+        result = subprocess.run(cmd, capture_output=True, timeout=30)
+
+        if result.returncode == 0 and os.path.exists(tmp_png) and os.path.getsize(tmp_png) > 1000:
+            with open(tmp_png, "rb") as f:
+                png_bytes = f.read()
+            if autocrop:
+                png_bytes = _autocrop_png(png_bytes)
+            return png_bytes
+        return None
+    except Exception:
+        return None
+    finally:
+        for p in (tmp_png, tmp_html):
+            if os.path.exists(p):
+                os.remove(p)
+        if os.path.isdir(tmp_dir):
+            os.rmdir(tmp_dir)
+
+
+def save_chart_png(fig, filename, width=900, height=600,
+                   theme="dark", bg_color=None, font_color=None):
+    """Save a Plotly chart or D3 sankey HTML string as a PNG image.
+
+    Accepts either a Plotly ``Figure`` (exported via kaleido) or an HTML
+    string (from ``summarize_and_chart(chart_type='sankey')``), which is
+    rendered via headless Chrome/Edge screenshot.
+
+    Args:
+        fig: ``plotly.graph_objects.Figure`` or ``str`` (D3 sankey HTML).
+        filename (str): Output filename (e.g. ``"chart.png"``).
+        width (int): Image width in pixels.
+        height (int): Image height in pixels.
+        theme: Theme preset name or :class:`~geeViz.outputLib.themes.Theme`.
+        bg_color: Background color override.
+        font_color: Font/text color override.
+
+    Returns:
+        str: Path to the saved file.
+
+    Examples:
+        >>> path = cl.save_chart_png(fig, "ndvi_trend.png")
+        >>> path = cl.save_chart_png(sankey_html, "transitions.png")
+    """
+    _t = _themes.get_theme(theme, bg_color=bg_color, font_color=font_color)
+
+    if isinstance(fig, str):
+        # D3 sankey or other HTML string — use headless browser screenshot
+        # Apply theme and hide toolbar
+        themed_html = sankey_to_html(
+            fig, bg_color=_t.bg_hex, font_color=_t.text_hex,
+            renderer="d3", hide_toolbar=True,
+        )
+        img_bytes = html_to_png(themed_html, width=width, height=height)
+        if img_bytes is None:
+            raise RuntimeError(
+                "Cannot render HTML chart to PNG: no browser (Chrome/Edge) found. "
+                "Install Chrome or Edge for headless screenshot support."
+            )
+    else:
+        # Plotly figure — use kaleido
+        import plotly.io as pio
+        import copy
+
+        themed_fig = copy.deepcopy(fig)
+        _themes.apply_plotly_theme(themed_fig, _t)
+        img_bytes = pio.to_image(themed_fig, format="png", width=width, height=height)
+
+    # Try MCP sandbox save_file first, fall back to direct write
+    import builtins as _builtins
+    _save_fn = _builtins.__dict__.get("save_file") if hasattr(_builtins, "__dict__") else None
+    if _save_fn is None:
+        import inspect
+        frame = inspect.currentframe()
+        try:
+            caller_globals = frame.f_back.f_globals if frame.f_back else {}
+            _save_fn = caller_globals.get("save_file")
+        finally:
+            del frame
+
+    if _save_fn is not None:
+        return _save_fn(filename, img_bytes, mode="wb")
+    else:
+        with open(filename, "wb") as f:
+            f.write(img_bytes)
+        return filename
+
+
 def sankey_to_html(fig, full_html=True, include_plotlyjs=_PLOTLY_CDN_URL, renderer="d3",
                    theme="dark", bg_color=None, font_color=None,
                    hide_toolbar=False):
@@ -383,7 +869,13 @@ def sankey_to_html(fig, full_html=True, include_plotlyjs=_PLOTLY_CDN_URL, render
         str: HTML string.
     """
     if isinstance(fig, str):
-        return fig
+        html = fig
+        if hide_toolbar:
+            html = html.replace(
+                '<div id="toolbar">',
+                '<div id="toolbar" style="display:none">',
+            )
+        return html
     # Legacy path: Plotly figure with _gradient_color_map
     _t = _themes.get_theme(theme, bg_color=bg_color, font_color=font_color)
     return _sankey_plotly_fig_to_d3(fig, theme=_t, hide_toolbar=hide_toolbar)

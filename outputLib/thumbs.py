@@ -71,7 +71,7 @@ from geeViz.outputLib import charts as cl
 # ---------------------------------------------------------------------------
 _DEFAULT_DIMENSIONS = 640
 _MAX_GIF_FRAMES = 50
-_DEFAULT_FPS = 2
+_DEFAULT_FPS = 1.5
 _DEFAULT_MARGIN = 16
 
 # Common continuous viz defaults when no viz_params provided and data is not thematic
@@ -3394,6 +3394,11 @@ def generate_map_chart_gif(
     chart's x-axis spans the full time range so the frame-to-frame
     progression is visually stable.  A legend is placed below the chart.
 
+    Delegates map frame generation to :func:`generate_gif` (which handles
+    basemap compositing, scalebar, north arrow, inset map, geometry burn-in,
+    etc.) and runs :func:`cl.zonal_stats` in parallel. The GIF frames are
+    then decomposed and composited with per-frame cumulative charts.
+
     This mirrors the layout of
     ``https://storage.googleapis.com/lcms-gifs/San_Juan_NF_Land_Cover.gif``.
 
@@ -3434,50 +3439,34 @@ def generate_map_chart_gif(
     from PIL import Image, ImageDraw
     import plotly.graph_objects as go
 
-    _validate_projection_params(crs, transform, scale)
-
-    col = ee.ImageCollection(ee_obj)
-    geom = _to_geometry(geometry)
-
-    # Resolve viz
-    viz_params = _complete_viz_params(viz_params, col, band_name=band_name, geometry=geometry)
-
-    # Resolve colours
-    font_color, font_outline_color, theme, bg_color = _resolve_font_colors(
-        bg_color, font_color, font_outline_color)
-
-    if overlay_opacity is None:
-        overlay_opacity = 0.8 if basemap is not None else 1.0
-
     if chart_height is None:
         chart_height = max(200, int(dimensions * 0.6))
 
-    # --- Prepare collection ---
-    col = col.filterBounds(geom)
-    col = _mosaic_by_date(col)
-    col = _apply_projection_to_collection(col, crs, transform, scale)
-    if clip_to_geometry:
-        col = col.map(lambda img: img.clip(geom).copyProperties(img, ["system:time_start"]))
-
-    # Burn in geometry boundary (pre-visualizes the collection)
-    if burn_in_geometry:
-        bounds = _get_bounds_4326(geom)
-        gc = _resolve_geometry_color(geometry_outline_color, font_color, basemap, bounds)
-        col = _paint_boundary(col, geom, gc, viz_params=viz_params, fill_color=geometry_fill_color, width=geometry_outline_weight, crs=crs)
-        viz_params = {"min": 0, "max": 255}
-
-    count = col.size().getInfo()
-    if count > max_frames:
-        col = col.limit(max_frames)
-        count = max_frames
-    if count == 0:
-        return {"html": "<p>No images.</p>", "gif_bytes": b""}
-
-    # --- Download map frames + run zonal stats in parallel ---
-    bounds = _get_bounds_4326(geom)
-
-    def _do_frames():
-        return _download_frames(col, geom if clip_to_geometry else geom.bounds(), viz_params, dimensions, count, date_format)
+    # --- Step 1: generate_gif + zonal_stats in parallel ---
+    def _do_gif():
+        return generate_gif(
+            ee_obj, geometry, viz_params=viz_params, band_name=band_name,
+            dimensions=dimensions, fps=fps, max_frames=max_frames,
+            burn_in_date=True, date_format=date_format,
+            burn_in_legend=False,  # we build our own legend below the chart
+            bg_color=bg_color, font_color=font_color,
+            font_outline_color=font_outline_color,
+            crs=crs, transform=transform, scale=scale,
+            margin=0,  # no margin on individual frames — we add it at the end
+            basemap=basemap, overlay_opacity=overlay_opacity,
+            scalebar=scalebar, scalebar_units=scalebar_units,
+            north_arrow=north_arrow, north_arrow_style=north_arrow_style,
+            inset_map=inset_map, inset_basemap=inset_basemap,
+            inset_scale=inset_scale, inset_on_map=True,
+            title=None,  # we build our own title strip per frame
+            burn_in_geometry=burn_in_geometry,
+            geometry_outline_color=geometry_outline_color,
+            geometry_fill_color=geometry_fill_color,
+            geometry_outline_weight=geometry_outline_weight,
+            clip_to_geometry=clip_to_geometry,
+            title_font_size=title_font_size,
+            label_font_size=label_font_size,
+        )
 
     def _do_stats():
         return cl.zonal_stats(
@@ -3490,77 +3479,48 @@ def generate_map_chart_gif(
         )
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-        frames_future = pool.submit(_do_frames)
+        gif_future = pool.submit(_do_gif)
         stats_future = pool.submit(_do_stats)
-        pil_frames, date_labels = frames_future.result()
+        gif_result = gif_future.result()
         df = stats_future.result()
 
+    map_gif_bytes = gif_result.get("gif_bytes", b"")
+    if not map_gif_bytes:
+        return {"html": "<p>No images.</p>", "gif_bytes": b""}
+
+    # --- Step 2: Decompose the GIF into individual PIL frames ---
+    gif_img = Image.open(io.BytesIO(map_gif_bytes))
+    pil_frames = []
+    for i in range(gif_img.n_frames):
+        gif_img.seek(i)
+        pil_frames.append(gif_img.copy().convert("RGBA"))
+
     if not pil_frames:
-        return {"html": "<p>Failed to download frames.</p>", "gif_bytes": b""}
+        return {"html": "<p>Failed to extract frames.</p>", "gif_bytes": b""}
 
-    # Composite basemap (adds padding border) or add blank padding
-    if basemap is not None and bounds is not None:
-        fw0, fh0 = pil_frames[0].size
-        bm = _fetch_basemap(bounds, fw0 + 2 * _THUMB_PADDING, fh0 + 2 * _THUMB_PADDING, basemap, crs=crs)
-        if bm is not None:
-            pil_frames = [_composite_with_basemap(f, bm, overlay_opacity) for f in pil_frames]
-        else:
-            pil_frames = [_add_thumb_padding(f, bg_color=bg_color) for f in pil_frames]
-    else:
-        pil_frames = [_add_thumb_padding(f, bg_color=bg_color) for f in pil_frames]
+    # Date labels come from the DataFrame index (already formatted by zonal_stats)
+    date_labels = [str(v) for v in df.index]
 
-    # Scalebar + north arrow on all map frames
-    if bounds is not None:
-        for f in pil_frames:
-            _draw_scalebar_and_arrow_on_frame(
-                f, bounds, scalebar=scalebar, north_arrow=north_arrow,
-                north_arrow_style=north_arrow_style,
-                font_color=font_color, contrast=font_outline_color,
-                accent=theme.accent,
-                label_font_size=label_font_size,
-                crs=crs,
-            )
+    # Align frame count with data rows (truncate whichever is longer)
+    n = min(len(pil_frames), len(df))
+    pil_frames = pil_frames[:n]
+    df = df.iloc[:n]
+    date_labels = date_labels[:n]
 
-    # Resolve geometry colors for inset extent rectangle
-    _mcg_gc = gc if burn_in_geometry else (
-        _resolve_geometry_color(geometry_outline_color, font_color, basemap, bounds)
-        if geometry_outline_color else None)
-    _mcg_fill = _hex_fill_to_rgba(geometry_fill_color) if geometry_fill_color else None
+    # --- Step 3: Resolve colors and build chart components ---
+    font_color, font_outline_color, theme, bg_color = _resolve_font_colors(
+        bg_color, font_color, font_outline_color)
 
-    # Inset map on all frames (lower-right corner)
-    if inset_map and bounds is not None and pil_frames:
-        _ib = inset_basemap if inset_basemap else basemap
-        if _ib is not None:
-            from PIL import Image as _PILImage
-            _fw, _fh = pil_frames[0].size
-            target_h = int(_fh * inset_scale)
-            _mcg_kw = {}
-            if _mcg_gc is not None:
-                _mcg_kw["rect_color"] = _mcg_gc
-            if _mcg_fill is not None:
-                _mcg_kw["rect_fill_color"] = _mcg_fill
-            inset_img = _build_inset_image(bounds, size=target_h, inset_basemap=_ib, **_mcg_kw)
-            if inset_img is not None:
-                src_w, src_h = inset_img.size
-                aspect = src_w / src_h if src_h > 0 else 1.0
-                iw = int(target_h * aspect)
-                ih = target_h
-                if iw > _fw // 3:
-                    iw = _fw // 3
-                    ih = int(iw / aspect)
-                inset_resized = inset_img.resize((iw, ih), _PILImage.LANCZOS)
-                pad = max(4, _fw // 60)
-                for f in pil_frames:
-                    px = f.size[0] - iw - pad
-                    py = f.size[1] - ih - pad
-                    f.paste(inset_resized, (px, py),
-                            inset_resized if inset_resized.mode == "RGBA" else None)
+    # Scale font sizes proportionally to dimensions (defaults tuned for 640px)
+    _scale = dimensions / _DEFAULT_DIMENSIONS
+    title_font_size = max(8, int(title_font_size * _scale))
+    label_font_size = max(6, int(label_font_size * _scale))
 
     obj_info = cl.get_obj_info(ee_obj, [band_name] if band_name else None)
     class_info = obj_info.get("class_info", {})
     y_label = cl.AREA_FORMAT_DICT.get(area_format, {}).get("label", area_format) if obj_info["is_thematic"] else "Mean"
 
-    # Build a name→color lookup so colors match even when classes are masked
+    # Build a name->color lookup so colors match even when classes are masked
     _color_lookup = {}
     if class_info:
         for bn in obj_info["band_names"]:
@@ -3571,7 +3531,6 @@ def generate_map_chart_gif(
                 if i < len(cp):
                     _color_lookup[name] = cl._ensure_hex_color(cp[i])
 
-    # Map colors to actual DataFrame columns (which may be a subset)
     columns = list(df.columns)
     colors = [_color_lookup.get(c) for c in columns] if _color_lookup else None
 
@@ -3584,16 +3543,12 @@ def generate_map_chart_gif(
 
     plotly_mode, is_stacked = cl._parse_chart_type(chart_type)
 
-    # --- Build legend panel from class info ---
-    legend_info = _extract_legend_info(ee_obj, band_name=band_name, viz_params=viz_params)
-
     fw = pil_frames[0].size[0]
-    fh = pil_frames[0].size[1]
 
     # Build full-width horizontal legend — only for classes in the data
+    legend_info = _extract_legend_info(ee_obj, band_name=band_name, viz_params=viz_params)
     horiz_legend = None
     if legend_info is not None and legend_info.get("type") == "thematic":
-        # Filter to classes that actually appear in the DataFrame
         data_cols = set(df.columns)
         leg_names = []
         leg_palette = []
@@ -3607,7 +3562,6 @@ def generate_map_chart_gif(
                 width=fw, bg_color=bg_color, font_color=font_color,
             )
     elif legend_info is not None:
-        # Continuous — use vertical colorbar centered
         vp = _build_legend_panel_from_info(
             legend_info, target_height=max(60, chart_height // 3),
             bg_color=bg_color, scale=1.0, font_color=font_color,
@@ -3617,10 +3571,8 @@ def generate_map_chart_gif(
             horiz_legend = Image.new("RGBA", (fw, lh), _resolve_color(bg_color) + (255,))
             horiz_legend.paste(vp.convert("RGBA"), ((fw - lw) // 2, 0), vp.convert("RGBA"))
 
-    # --- Compute fixed y-axis range across all frames ---
-    columns = list(df.columns)
+    # Compute fixed y-axis range across all frames
     if is_stacked:
-        # For stacked: sum across columns per row
         row_sums = df[columns].sum(axis=1)
         y_min_data = 0
         y_max_data = float(row_sums.max())
@@ -3633,15 +3585,13 @@ def generate_map_chart_gif(
     y_range_min = 0 if y_min_data == 0 else y_min_data - y_buf
     y_range_max = 100 if 99.5 <= y_max_data <= 101 else y_max_data + y_buf
 
-    # For single-frame data, use stacked bar instead of line
     if len(df) == 1 and plotly_mode != "bar":
         plotly_mode = "bar"
         is_stacked = True
 
-    # --- Render per-frame chart as PNG ---
+    # --- Step 4: Render per-frame cumulative chart as PNG ---
     chart_pngs = []
-    for i in range(len(pil_frames)):
-        # Cumulative data: rows 0..i
+    for i in range(n):
         sub_df = df.iloc[:i + 1]
         sub_x = list(sub_df.index)
         try:
@@ -3667,24 +3617,26 @@ def generate_map_chart_gif(
                     showlegend=False,
                 ))
 
-        # Fix x-axis to full range, y-axis to fixed range
         x_kw = {"tickformat": "d"} if all_x_int else {}
         if all_x_int:
-            x_kw["tickvals"] = all_x_int
+            thinned = cl._thin_tick_vals(all_x_int, max_ticks=10)
+            x_kw["tickvals"] = thinned if thinned else all_x_int
             x_kw["range"] = [min(all_x_int) - 0.5, max(all_x_int) + 0.5]
         bar_mode = "stack" if is_stacked and plotly_mode == "bar" else (
             "group" if plotly_mode == "bar" else None)
 
+        _chart_font_size = max(6, int(12 * _scale))
         fig.update_layout(
             xaxis=dict(title="Year", **x_kw),
             yaxis=dict(title=y_label, automargin=True,
                        range=[y_range_min, y_range_max]),
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(family="Roboto", color=cl._ensure_hex_color(
+            font=dict(family="Roboto", size=_chart_font_size, color=cl._ensure_hex_color(
                 "{:02x}{:02x}{:02x}".format(*font_color))),
             width=fw, height=chart_height,
-            margin=dict(l=50, r=10, b=35, t=5, pad=2),
+            margin=dict(l=max(20, int(50 * _scale)), r=max(5, int(10 * _scale)),
+                        b=max(15, int(35 * _scale)), t=5, pad=2),
             barmode=bar_mode,
         )
         from geeViz.outputLib import themes as _themes
@@ -3693,7 +3645,7 @@ def generate_map_chart_gif(
         chart_png = fig.to_image(format="png", width=fw, height=chart_height)
         chart_pngs.append(Image.open(io.BytesIO(chart_png)).convert("RGBA"))
 
-    # --- Assemble frames: title + map + chart + legend ---
+    # --- Step 5: Assemble frames: title + map + chart + legend ---
     bg_rgba = _resolve_color(bg_color) + (255,)
     assembled = []
     for i, (map_frame, chart_img) in enumerate(zip(pil_frames, chart_pngs)):
@@ -3720,7 +3672,6 @@ def generate_map_chart_gif(
         parts.append(map_frame)
         parts.append(chart_img)
 
-        # Legend (full-width horizontal, below chart)
         if horiz_legend is not None:
             parts.append(horiz_legend)
 
@@ -3732,7 +3683,6 @@ def generate_map_chart_gif(
             combined.paste(p, (0, y), p if p.mode == "RGBA" else None)
             y += p.size[1]
 
-        # Add margin
         combined = _add_margin(combined, max(4, margin // 2), bg_color=bg_color)
         assembled.append(combined)
 

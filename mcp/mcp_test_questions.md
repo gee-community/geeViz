@@ -4,6 +4,8 @@
 
 **Last run:** 2026-03-10 | **Result:** 19/20 PASS, 1 PARTIAL (Q20 code error) | **Total time:** ~85s (Q1-20 only)
 
+> **Note (v2026.4.1):** Several tool names referenced in results below have been consolidated: `get_api_reference` → `search_functions(function_name="...")`, `extract_and_chart` → `cl.summarize_and_chart()` in `run_code`, `get_thumbnail` → `tl.generate_thumbs()` in `run_code`, `list_examples`/`get_example` → `examples(action="list"|"get")`. Historical results are kept as-is.
+
 ## Summary Table
 
 | Q# | Topic | Status | Time | Tools Called | Risk Level |

@@ -2,13 +2,13 @@
 geeViz MCP Server -- execution and introspection tools for Earth Engine via geeViz.
 
 Unlike static doc snippets, this server executes code, inspects live GEE assets,
-and dynamically queries API signatures. 27 tools.
+and dynamically queries API signatures. 21 tools.
 """
 from __future__ import annotations
 
 import os
 import sys
-
+print('Importing geeViz MCP Server from', __file__)
 # ---------------------------------------------------------------------------
 # CLI argument parsing (before heavy imports so --help is instant)
 # ---------------------------------------------------------------------------
@@ -40,21 +40,19 @@ Environment (optional):
   MCP_PORT        Port for HTTP (default: 8000)
   MCP_PATH        Path for HTTP (default: /mcp)
 
-Tools (27):
+Tools (21):
   run_code                 Execute Python/GEE code in a persistent REPL namespace
   inspect_asset            Get metadata for any GEE asset (with optional collection filters)
-  get_api_reference        Look up function signatures and docstrings
-  search_functions         Search/list functions across geeViz modules
+  search_functions         Search, list, or get full docs for geeViz functions
   examples                 List or read geeViz example scripts (action=list|get)
   list_assets              List assets in a GEE folder
   track_tasks              Get status of recent EE tasks
-  map_control              View, list layers, or clear the geeView map (action=view|layers|clear)
+  cancel_tasks             Cancel running/ready EE tasks (all or by name)
+  map_control              View, list layers, clear, or test the geeView map (action=view|layers|clear|test)
   save_session             Save run_code history to a .py file or .ipynb notebook
   env_info                 Get versions, REPL namespace, or project info (action=version|namespace|project)
   export_image             Export ee.Image to asset, Drive, or Cloud Storage (destination=asset|drive|cloud)
   search_datasets          Search the GEE dataset catalog by keyword
-  get_catalog_info         Get detailed STAC metadata for a GEE dataset
-  cancel_tasks             Cancel running/ready EE tasks (all or by name)
   manage_asset             Delete, copy, move, create folder, or update ACL (action=delete|copy|move|create|update_acl)
   get_reference_data       Look up reference dicts (band mappings, viz params, collection IDs, etc.)
   get_streetview           Get Google Street View imagery at a location for ground-truthing
@@ -359,6 +357,7 @@ _MODULE_MAP = {
     "getSummaryAreasLib": "geeViz.getSummaryAreasLib",
     "edwLib": "geeViz.edwLib",
     "googleMapsLib": "geeViz.googleMapsLib",
+    "geePalettes": "geeViz.geePalettes",
 }
 
 # Persistent REPL namespace for run_code
@@ -371,10 +370,37 @@ _output_dir = os.path.join(_THIS_DIR, "generated_outputs")
 _current_script_path: str | None = None
 
 
+def _load_env():
+    """Load .env file from the geeViz package directory into os.environ.
+
+    Parses KEY=VALUE lines (ignoring comments and blank lines).
+    Does NOT override existing environment variables.
+    Looks for .env in the geeViz root (parent of mcp/).
+    """
+    env_path = os.path.join(os.path.dirname(_THIS_DIR), ".env")
+    if not os.path.isfile(env_path):
+        return
+    try:
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                key = key.strip()
+                value = value.strip().strip("'\"")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except Exception:
+        pass
+
+_load_env()
+
+
 def _init_ee_credentials():
     """Initialize Earth Engine with service account or default credentials.
 
-    Checks for service account credentials in this order:
+    Checks for credentials in this order (env vars can come from .env file):
 
     1. ``GEE_SERVICE_ACCOUNT_KEY`` env var → path to a JSON key file
     2. ``GEE_SERVICE_ACCOUNT_KEY_JSON`` env var → inline JSON key string
@@ -383,6 +409,7 @@ def _init_ee_credentials():
        service account on GCE/Cloud Run, etc.)
 
     The ``GEE_PROJECT`` env var sets the EE project for billing/quotas.
+    If not set, falls back to ``project_id`` from the service account key JSON.
     """
     import ee
 
@@ -398,9 +425,11 @@ def _init_ee_credentials():
         credentials = ee.ServiceAccountCredentials(
             key_data["client_email"], key_file=key_path,
         )
-        ee.Initialize(credentials=credentials, project=project)
+        # Use project from env var, or fall back to project_id in the key file
+        _project = project or key_data.get("project_id")
+        ee.Initialize(credentials=credentials, project=_project)
         print(f"EE initialized with service account: {key_data['client_email']}"
-              f" (project={project or 'default'})", file=sys.stderr)
+              f" (project={_project or 'default'})", file=sys.stderr)
     elif key_json:
         # Inline JSON key (for container secrets / env injection)
         import json, tempfile
@@ -412,10 +441,12 @@ def _init_ee_credentials():
         credentials = ee.ServiceAccountCredentials(
             key_data["client_email"], key_file=tmp.name,
         )
-        ee.Initialize(credentials=credentials, project=project)
+        # Use project from env var, or fall back to project_id in the key file
+        _project = project or key_data.get("project_id")
+        ee.Initialize(credentials=credentials, project=_project)
         os.unlink(tmp.name)
         print(f"EE initialized with service account (inline key): "
-              f"{key_data['client_email']}", file=sys.stderr)
+              f"{key_data['client_email']} (project={_project or 'default'})", file=sys.stderr)
     else:
         # Fall back to geeViz default (ADC, user credentials, etc.)
         # geeViz.geeView handles ee.Initialize() on import
@@ -440,6 +471,8 @@ def _ensure_initialized():
         import geeViz.getSummaryAreasLib as sal
         import geeViz.edwLib as edw
         import geeViz.googleMapsLib as gm
+        import geeViz.geePalettes as palettes
+        from geeViz.outputLib import charts as cl
         from geeViz.outputLib import thumbs as tl
         from geeViz.outputLib import reports as rl
         import ee
@@ -452,6 +485,8 @@ def _ensure_initialized():
             "sal": sal,
             "edw": edw,
             "gm": gm,
+            "palettes": palettes,
+            "cl": cl,
             "tl": tl,
             "rl": rl,
             "save_file": _safe_write_file,
@@ -486,6 +521,7 @@ def _save_history_to_file() -> str:
         "import geeViz.getSummaryAreasLib as sal\n"
         "import geeViz.edwLib as edw\n"
         "import geeViz.googleMapsLib as gm\n"
+        "from geeViz.outputLib import charts as cl\n"
         "from geeViz.outputLib import thumbs as tl\n"
         "from geeViz.outputLib import reports as rl\n"
         "ee = gv.ee\n"
@@ -694,6 +730,83 @@ def _get_method_chain(node: ast.AST) -> list[str]:
     return names
 
 
+def _save_and_clean_result(result_val):
+    """Save any binary/HTML outputs to files and return a small, JSON-safe result.
+
+    Walks the result value, saves bytes to .png/.gif files and large HTML
+    to .html files in generated_outputs/, then returns a clean dict/string
+    with file paths instead of raw data. Guaranteed to be small and
+    JSON-serializable.
+    """
+    if result_val is None:
+        return None
+
+    import time as _t
+    os.makedirs(_output_dir, exist_ok=True)
+    ts = int(_t.time())
+
+    _EXT_MAP = {"thumb_bytes": ".png", "gif_bytes": ".gif", "image": ".png"}
+
+    def _clean(obj, depth=0):
+        if depth > 5:
+            return "<nested too deep>"
+        if isinstance(obj, (bytes, bytearray)):
+            # Save bytes to file, return path
+            fname = f"output_{ts}_{id(obj) % 10000}.bin"
+            fpath = os.path.join(_output_dir, fname).replace("\\", "/")
+            with open(fpath, "wb") as f:
+                f.write(obj)
+            return f"saved to {fpath}"
+        if isinstance(obj, str):
+            if len(obj) > 10000 and ("data:image" in obj or "<html" in obj.lower()
+                                      or "data:text/html" in obj):
+                # Large HTML or data URI — save to file
+                fname = f"output_{ts}_{id(obj) % 10000}.html"
+                fpath = os.path.join(_output_dir, fname).replace("\\", "/")
+                with open(fpath, "w", encoding="utf-8") as f:
+                    f.write(obj)
+                return f"saved to {fpath}"
+            if len(obj) > 5000:
+                return obj[:200] + f"... <truncated, {len(obj)} chars>"
+            return obj
+        if isinstance(obj, dict):
+            clean = {}
+            for k, v in obj.items():
+                # Use known extension for common keys
+                if isinstance(v, (bytes, bytearray)) and len(v) > 0:
+                    ext = _EXT_MAP.get(k, ".bin")
+                    fname = f"output_{ts}{ext}"
+                    fpath = os.path.join(_output_dir, fname).replace("\\", "/")
+                    with open(fpath, "wb") as f:
+                        f.write(v)
+                    clean[k] = f"saved to {fpath}"
+                else:
+                    clean[k] = _clean(v, depth + 1)
+            return clean
+        if isinstance(obj, (list, tuple)):
+            items = [_clean(x, depth + 1) for x in obj[:20]]
+            if len(obj) > 20:
+                items.append(f"... ({len(obj) - 20} more)")
+            return items
+        # Primitives (int, float, bool, None)
+        try:
+            json.dumps(obj)
+            return obj
+        except (TypeError, ValueError):
+            return repr(obj)[:500]
+
+    cleaned = _clean(result_val)
+
+    # Final safety check — ensure it's JSON-serializable and not too big
+    try:
+        s = json.dumps(cleaned)
+        if len(s) > 50000:
+            return "<result too large after cleaning>"
+        return cleaned
+    except (TypeError, ValueError):
+        return repr(cleaned)[:2000]
+
+
 @app.tool(annotations=_WRITE)
 async def run_code(code: str, timeout: int = 120, reset: bool = False, ctx: Context = None) -> str:
     """Execute Python/GEE code in a persistent REPL namespace (like Jupyter).
@@ -749,6 +862,10 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False, ctx: Cont
     stderr_buf = io.StringIO()
     result_holder: list = [None]
     error_holder: list = [None]
+
+    # Snapshot output files before execution to detect new ones
+    os.makedirs(_output_dir, exist_ok=True)
+    _files_before = set(os.listdir(_output_dir))
 
     # Save original streams so we can restore them after timeout (redirect_stdout
     # modifies sys.stdout globally, which would capture the main thread's output
@@ -835,6 +952,7 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False, ctx: Cont
             )
         return json.dumps({
             "success": False,
+            "code": code,
             "stdout": stdout_buf.getvalue(),
             "stderr": stderr_val,
             "result": None,
@@ -844,6 +962,7 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False, ctx: Cont
     if error_holder[0]:
         return json.dumps({
             "success": False,
+            "code": code,
             "stdout": stdout_buf.getvalue(),
             "stderr": stderr_val,
             "result": None,
@@ -856,22 +975,66 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False, ctx: Cont
     script_path = _save_history_to_file()
 
     result_val = result_holder[0]
-    # Make result JSON-serializable
-    result_str = None
-    if result_val is not None:
-        try:
-            json.dumps(result_val)
-            result_str = result_val
-        except (TypeError, ValueError):
-            result_str = repr(result_val)
+
+    # --- Auto-save any binary/HTML outputs and build a clean result ---
+    # This is the ONLY place that handles bytes/large data.
+    # Everything that comes out of here is guaranteed small and JSON-safe.
+    result_str = _save_and_clean_result(result_val)
+
+    # Detect new output files (from save_file, auto-save, or direct writes)
+    _files_after = set(os.listdir(_output_dir))
+    _new_files = sorted(_files_after - _files_before)
+    _IMG_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg"}
+    output_markdown = None
+    if _new_files:
+        md_lines = []
+        for fname in _new_files:
+            fpath = os.path.join(_output_dir, fname).replace("\\", "/")
+            ext = os.path.splitext(fname)[1].lower()
+            label = os.path.splitext(fname)[0].replace("_", " ").replace("-", " ").title()
+            if ext in _IMG_EXTS:
+                md_lines.append(f"![{label}]({fpath})")
+            else:
+                md_lines.append(f"[{label}]({fpath})")
+        output_markdown = "\n".join(md_lines)
+
+    # Clean stderr — strip noisy library logs (Kaleido, Chromium, http retries)
+    # that bloat the response without useful info for the model
+    _noise_patterns = {"kaleido", "chromium", "browser_async", "_tmpfile",
+                       "shutil.rmtree", "TemporaryDirectory", "Conforming",
+                       "navigates", "Getting tab", "Got ", "Processing fig",
+                       "Sending big command", "Sent big command", "Reloading tab",
+                       "Putting tab", "Waiting for all", "Exiting Kaleido",
+                       "Cancelling tasks", "Opening browser", "Closing browser",
+                       "Temp directory", "Found chromium"}
+    _filtered_stderr = []
+    for _line in stderr_val.splitlines():
+        _lower = _line.lower()
+        if any(p in _lower for p in _noise_patterns):
+            continue
+        _filtered_stderr.append(_line)
+    stderr_val = "\n".join(_filtered_stderr).strip()
+
+    # Clean stdout — strip base64 data URIs and cap size
+    import re as _re
+    stdout_val = stdout_buf.getvalue()
+    stdout_val = _re.sub(
+        r'data:(image|text)/[^;]+;base64,[A-Za-z0-9+/=]{100,}',
+        '<base64 data stripped>',
+        stdout_val,
+    )
+    if len(stdout_val) > 50000:
+        stdout_val = stdout_val[:50000] + "\n... (truncated)"
 
     return json.dumps({
         "success": True,
-        "stdout": stdout_buf.getvalue(),
+        "code": code,
+        "stdout": stdout_val,
         "stderr": stderr_val,
         "result": result_str,
         "error": None,
         "script_path": script_path,
+        "output_markdown": output_markdown,
     })
 
 
@@ -1117,20 +1280,63 @@ def inspect_asset(
     except Exception as exc:
         result["detail_error"] = str(exc)
 
-    return json.dumps(result)
+    # --- Detect thematic/categorical bands ---
+    # If any band has matching {band}_class_values, {band}_class_names, and
+    # {band}_class_palette properties, flag the dataset as thematic and tell
+    # the agent exactly what viz params to use. This eliminates the most
+    # common agent mistake (hardcoding min/max for thematic data).
+    bands = result.get("bands", [])
+    props = result.get("properties", {})
+    if not props:
+        # For ImageCollections, properties come from the first image info
+        # which was fetched in the queries above. Use locals() safely.
+        try:
+            _first_img = locals().get("results_map", {}).get("first_image")
+            if isinstance(_first_img, dict):
+                props = _first_img.get("properties", {})
+        except Exception:
+            pass
+
+    thematic_bands = []
+    for band in bands:
+        bname = band.get("name", "")
+        if bname and all(
+            "{}_class_{}".format(bname, suffix) in props
+            for suffix in ("values", "names", "palette")
+        ):
+            thematic_bands.append(bname)
+
+    if thematic_bands:
+        result["thematic_bands"] = thematic_bands
+        result["viz_recommendation"] = (
+            "THEMATIC DATA DETECTED — bands {} have class properties. "
+            "You MUST use {{'autoViz': True}} as the viz params when adding "
+            "this layer to the map. Do NOT use min/max. Example: "
+            "Map.addLayer(data, {{'autoViz': True}}, 'Layer Name')"
+        ).format(thematic_bands)
+
+    # Cap response size to prevent token overflow
+    response = json.dumps(result)
+    if len(response) > 100000:
+        # Strip large fields to fit
+        for key in ("asset", "info", "bands"):
+            if key in result and len(json.dumps(result.get(key, ""))) > 20000:
+                result[key] = f"<truncated: {len(json.dumps(result[key]))} chars>"
+        response = json.dumps(result)
+    return response
 
 
 # ---------------------------------------------------------------------------
-# Tool 3: get_api_reference
+# ---------------------------------------------------------------------------
+# Internal API reference lookup (used by search_functions)
 # ---------------------------------------------------------------------------
 import inspect as _inspect
 
 
-@app.tool(annotations=_READ_ONLY)
-def get_api_reference(module: str, function_name: str = "") -> str:
+def _get_api_reference(module: str, function_name: str = "") -> str:
     """Look up the signature and docstring of a geeViz function or module.
 
-    Uses Python's inspect module -- always reflects the installed code.
+    Internal helper called by ``search_functions(function_name=...)``.
 
     Args:
         module: Short module name. One of: geeView, getImagesLib,
@@ -1226,13 +1432,15 @@ def get_api_reference(module: str, function_name: str = "") -> str:
 # ---------------------------------------------------------------------------
 
 @app.tool(annotations=_READ_ONLY)
-def search_functions(query: str = "", module: str = "") -> str:
-    """Search for functions across geeViz modules, or list functions in a specific module.
+def search_functions(query: str = "", module: str = "", function_name: str = "") -> str:
+    """Search for functions, list module contents, or get full API docs for a specific function.
 
-    Combines search and listing into one tool:
+    Combines search, listing, and detailed lookup into one tool:
     - query only → search all modules for matching functions (by name or docstring)
     - module only → list all public functions in that module
-    - both → search within a specific module
+    - both query + module → search within a specific module
+    - function_name + module → return full signature and docstring for a specific function
+    - function_name only → search all modules for that exact function name
     - neither → return list of available modules with usage hint
 
     Args:
@@ -1242,12 +1450,41 @@ def search_functions(query: str = "", module: str = "") -> str:
                 Valid names: geeView, getImagesLib, changeDetectionLib,
                 gee2Pandas, assetManagerLib, taskManagerLib, foliumView,
                 phEEnoViz, cloudStorageManagerLib, chartingLib,
-                getSummaryAreasLib.
+                getSummaryAreasLib, thumbLib, reportLib, edwLib.
+        function_name: Exact function name to get full documentation for.
+                       Returns the complete signature and docstring.
+                       If module is omitted, searches all modules for the name.
 
     Returns:
-        JSON with matching functions. Each entry has module, name, type, description.
+        JSON with matching functions. Each entry has module, name, type,
+        signature, and description. When function_name is provided, also
+        includes the full docstring.
     """
     _ensure_initialized()
+
+    # --- Detailed lookup mode: function_name provided ---
+    if function_name:
+        # If module specified, look up directly
+        if module:
+            return _get_api_reference(module, function_name)
+        # No module specified — search all modules for the exact name
+        for short_name, fq_name in _MODULE_MAP.items():
+            try:
+                mod = importlib.import_module(fq_name)
+            except Exception:
+                continue
+            # Try direct attribute
+            obj = getattr(mod, function_name, None)
+            if obj is not None and (callable(obj) or _inspect.isclass(obj)):
+                return _get_api_reference(short_name, function_name)
+            # Try mapper class for geeView
+            if short_name == "geeView":
+                mapper_cls = getattr(mod, "mapper", None)
+                if mapper_cls:
+                    obj = getattr(mapper_cls, function_name, None)
+                    if obj is not None and callable(obj):
+                        return _get_api_reference(short_name, f"mapper.{function_name}")
+        return json.dumps({"error": f"Function {function_name!r} not found in any module."})
 
     # Neither query nor module -- list available modules
     if not query and not module:
@@ -1294,10 +1531,19 @@ def search_functions(query: str = "", module: str = "") -> str:
                 continue
 
             kind = "class" if _inspect.isclass(obj) else "function"
+            # Include signature so agents can use functions without a
+            # separate get_api_reference call
+            sig = ""
+            if not _inspect.isclass(obj):
+                try:
+                    sig = f"{name}{_inspect.signature(obj)}"
+                except (ValueError, TypeError):
+                    sig = ""
             results.append({
                 "module": short_name,
                 "name": name,
                 "type": kind,
+                "signature": sig,
                 "description": first_line,
             })
 
@@ -1318,10 +1564,16 @@ def search_functions(query: str = "", module: str = "") -> str:
                     if q and q not in mname.lower() and q not in first_line.lower():
                         continue
 
+                    sig = ""
+                    try:
+                        sig = f"mapper.{mname}{_inspect.signature(mobj)}"
+                    except (ValueError, TypeError):
+                        sig = ""
                     results.append({
                         "module": short_name,
                         "name": f"mapper.{mname}",
                         "type": "method",
+                        "signature": sig,
                         "description": first_line,
                     })
 
@@ -1507,14 +1759,27 @@ def track_tasks(name_filter: str = "") -> str:
 # ---------------------------------------------------------------------------
 
 @app.tool(annotations=_WRITE)
-def map_control(action: str = "view", open_browser: bool = True) -> str:
+def map_control(action: str = "view", open_browser: bool = True):
     """Control the geeView interactive map.
+
+    `action="view"` writes the per-session runGeeViz.js to disk and opens
+    `geeView/index.html`. In plain Python this is a `file:///` URL; in
+    notebooks it uses an in-process threaded HTTP server
+    (`http://localhost:<port>/...`) for iframe display. The access token
+    is passed via URL query string.
 
     Args:
         action: Action to perform:
             - "view" (default): Open the map and return the URL.
-            - "layers": List current layers, visibility, and viz params.
+            - "layers": List current layers with visibility and viz params.
+            - "layer_names": Quick list of just layer names (lightweight).
             - "clear": Remove all layers and commands.
+            - "test": Capture a PNG of the viewer via headless Chrome
+              using the DevTools Protocol (CDP). Returns output_markdown with
+              an image reference, plus tile_errors (HTTP 4xx/5xx on EE tile
+              URLs) and console_messages (JS errors/warnings). Requires
+              websocket-client (pip install websocket-client). Falls back to
+              simple screenshot if not installed (no console capture).
         open_browser: For action="view", whether to open in browser (default True).
 
     Returns:
@@ -1528,26 +1793,25 @@ def map_control(action: str = "view", open_browser: bool = True) -> str:
         url_buf = io.StringIO()
         try:
             with contextlib.redirect_stdout(url_buf):
-                if Map.mapCommandList == []:
-                    Map.turnOnInspector()
                 Map.view(open_browser=open_browser, open_iframe=False)
         except Exception as exc:
             return json.dumps({"error": str(exc)})
         printed = url_buf.getvalue()
         url = None
+        # Look for a URL on the "geeView URL:" line. Accept both http(s)://
+        # (legacy server mode) and file:/// (srcdoc mode, the new default).
         for line in printed.splitlines():
             line = line.strip()
-            # Prefer the "geeView URL: http..." line (has full token)
             if "geeView URL:" in line:
-                idx = line.find("http")
-                if idx >= 0:
-                    url = line[idx:]
+                tail = line.split("geeView URL:", 1)[1].strip()
+                if tail:
+                    url = tail
                 break
-        # Fallback: find any line starting with http
+        # Fallback: find any line starting with http or file
         if url is None:
             for line in printed.splitlines():
                 line = line.strip()
-                if line.startswith("http"):
+                if line.startswith(("http://", "https://", "file:///")):
                     url = line
                     break
         layer_count = len(Map.idDictList) if hasattr(Map, "idDictList") else 0
@@ -1575,6 +1839,10 @@ def map_control(action: str = "view", open_browser: bool = True) -> str:
         commands = list(getattr(Map, "mapCommandList", []))
         return json.dumps({"layer_count": len(layers), "layers": layers, "commands": commands})
 
+    elif act == "layer_names":
+        names = [entry.get("name", "(unnamed)") for entry in getattr(Map, "idDictList", [])]
+        return json.dumps({"layer_count": len(names), "layer_names": names})
+
     elif act == "clear":
         try:
             Map.clearMap()
@@ -1582,8 +1850,52 @@ def map_control(action: str = "view", open_browser: bool = True) -> str:
             return json.dumps({"error": str(exc)})
         return json.dumps({"success": True, "message": "Map cleared. All layers and commands removed."})
 
+    elif act == "test":
+        # Re-trigger view (open_browser=False) to get/refresh the URL
+        view_result = json.loads(map_control(action="view", open_browser=False))
+        url = view_result.get("url")
+        if not url:
+            return json.dumps({"error": "No viewer URL available — add layers first."})
+
+        from geeViz.outputLib import charts as _cl
+
+        # CDP-based screenshot — also captures JS console errors + network failures
+        png_bytes, console_msgs = _cl.screenshot_url(url, width=1280, height=900, wait_seconds=12)
+
+        if not png_bytes:
+            return json.dumps({
+                "error": "Test failed.",
+                "console": console_msgs,
+            })
+
+        # Separate tile errors from other console output for easy scanning
+        tile_errors = [m for m in console_msgs if "earthengine" in m or "googleapis" in m
+                       or "HTTP 4" in m or "HTTP 5" in m or "LOAD FAIL" in m]
+        other_msgs = [m for m in console_msgs if m not in tile_errors]
+
+        # Always save the PNG to disk for human inspection
+        import datetime as _dt
+        os.makedirs(_output_dir, exist_ok=True)
+        ts = _dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+        screenshot_path = os.path.join(_output_dir, f"map_screenshot_{ts}.png")
+        with open(screenshot_path, "wb") as f:
+            f.write(png_bytes)
+
+        status = f"{len(tile_errors)} tile error(s) detected — see tile_errors." if tile_errors \
+            else "No tile/JS errors detected."
+        result = {
+            "message": f"Map view test complete. {status}",
+            "tile_errors": tile_errors,
+            "console_messages": other_msgs,
+            "screenshot_path": screenshot_path,
+        }
+
+        # Return text-only. Model uses tile_errors + console_messages to detect/fix bugs.
+        # No output_markdown → after_tool_callback never promotes this to a user artifact.
+        return json.dumps(result)
+
     else:
-        return json.dumps({"error": f"Unknown action: {action!r}. Use 'view', 'layers', or 'clear'."})
+        return json.dumps({"error": f"Unknown action: {action!r}. Use 'view', 'layers', 'layer_names', 'clear', or 'test'."})
 
 
 # ---------------------------------------------------------------------------
@@ -1664,6 +1976,7 @@ def save_session(filename: str = "", format: str = "py") -> str:
             "import geeViz.geeView as gv\n",
             "import geeViz.getImagesLib as gil\n",
             "import geeViz.getSummaryAreasLib as sal\n",
+            "from geeViz.outputLib import charts as cl\n",
             "from geeViz.outputLib import thumbs as tl\n",
             "from geeViz.outputLib import reports as rl\n",
             "ee = gv.ee\n",
@@ -1802,8 +2115,30 @@ def env_info(action: str = "version") -> str:
                 result["assets_error"] = str(exc)
         return json.dumps(result)
 
+    elif act == "reload":
+        # Force-reload all geeViz modules in the running process.
+        # Use this after editing geeViz source files to pick up changes
+        # without restarting the MCP server or ADK session.
+        import importlib
+        reloaded = []
+        for mod_name in sorted(sys.modules.keys()):
+            if mod_name.startswith("geeViz"):
+                try:
+                    importlib.reload(sys.modules[mod_name])
+                    reloaded.append(mod_name)
+                except Exception:
+                    pass
+        # Re-initialize the REPL namespace with fresh modules
+        _reset_namespace()
+        return json.dumps({
+            "action": "reload",
+            "reloaded_modules": reloaded,
+            "count": len(reloaded),
+            "message": "All geeViz modules reloaded. REPL namespace reset.",
+        })
+
     else:
-        return json.dumps({"error": f"Unknown action: {action!r}. Use 'version', 'namespace', or 'project'."})
+        return json.dumps({"error": f"Unknown action: {action!r}. Use 'version', 'namespace', 'project', or 'reload'."})
 
 
 # ---------------------------------------------------------------------------
@@ -1926,6 +2261,97 @@ def export_image(
 import urllib.request
 import urllib.parse
 import urllib.error
+
+# Dataset catalog cache (for search_datasets)
+_CACHE_DIR = os.path.join(_THIS_DIR, ".cache")
+_CACHE_META_FILE = os.path.join(_CACHE_DIR, "meta.json")
+_CACHE_TTL = 7 * 24 * 3600  # 1 week
+_CATALOG_FILES = {
+    "official": "official_catalog.json",
+    "community": "community_catalog.json",
+}
+_CATALOG_URLS = {
+    "official": "https://earthengine-stac.storage.googleapis.com/catalog/catalog.json",
+    "community": "https://raw.githubusercontent.com/samapriya/awesome-gee-community-datasets/master/community_datasets.json",
+}
+_cache_lock = threading.Lock()
+import time as _time
+
+def _fetch_catalog(url: str, name: str) -> list[dict] | None:
+    """Fetch a dataset catalog from a URL and return a flat list of dataset dicts.
+
+    For the official EE STAC catalog (nested 2-level structure), crawls all
+    child catalogs to build a flat index. For the community catalog (already
+    flat), returns as-is.
+    """
+    import concurrent.futures
+
+    def _fetch_json(u, timeout=10):
+        req = urllib.request.Request(u, headers={"User-Agent": "geeViz-MCP/1.0"})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+
+    try:
+        data = _fetch_json(url, timeout=15)
+    except Exception:
+        return None
+
+    # Already a flat list (community catalog)
+    if isinstance(data, list):
+        return data
+
+    # Nested STAC catalog — crawl child links
+    if isinstance(data, dict) and "links" in data:
+        children = [l["href"] for l in data["links"] if l.get("rel") == "child"]
+        datasets = []
+
+        def _crawl_child(child_url):
+            """Fetch a child catalog and extract dataset entries."""
+            results = []
+            try:
+                child = _fetch_json(child_url, timeout=8)
+                leaves = [l["href"] for l in child.get("links", []) if l.get("rel") == "child"]
+                # Fetch all leaf datasets in this child catalog
+                for leaf_url in leaves:
+                    try:
+                        leaf = _fetch_json(leaf_url, timeout=5)
+                        entry = {
+                            "id": leaf.get("id", ""),
+                            "title": leaf.get("title", ""),
+                            "type": leaf.get("gee:type", ""),
+                            "provider": ", ".join(
+                                p.get("name", "") for p in leaf.get("providers", [])
+                            ),
+                            "tags": ", ".join(leaf.get("keywords", [])),
+                            "source": "official",
+                            "date_range": "",
+                        }
+                        # Extract date range from extent
+                        ext = leaf.get("extent", {}).get("temporal", {}).get("interval", [[]])
+                        if ext and ext[0]:
+                            entry["date_range"] = f"{ext[0][0] or ''} to {ext[0][1] or 'present'}"
+                        # STAC URL for get_catalog_info
+                        for link in leaf.get("links", []):
+                            if link.get("rel") == "self":
+                                entry["stac_url"] = link["href"]
+                                break
+                        results.append(entry)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            return results
+
+        # Crawl all children in parallel (max 20 threads)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as pool:
+            for child_results in pool.map(_crawl_child, children):
+                datasets.extend(child_results)
+
+        return datasets if datasets else None
+
+    return None
+
+
 def _read_cache_meta() -> dict:
     """Read the cache timestamp metadata file."""
     if os.path.isfile(_CACHE_META_FILE):
@@ -1973,17 +2399,15 @@ def _get_cached_catalog(name: str) -> list[dict] | None:
         # Fetch from remote
         url = _CATALOG_URLS[name]
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "geeViz-MCP/1.0"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                raw = resp.read().decode("utf-8")
-            data = json.loads(raw)
-            # Cache the result
-            os.makedirs(_CACHE_DIR, exist_ok=True)
-            with open(cache_file, "w", encoding="utf-8") as f:
-                f.write(raw)
-            meta[ts_key] = now
-            _write_cache_meta(meta)
-            return data
+            data = _fetch_catalog(url, name)
+            if data:
+                # Cache the normalized result
+                os.makedirs(_CACHE_DIR, exist_ok=True)
+                with open(cache_file, "w", encoding="utf-8") as f:
+                    json.dump(data, f)
+                meta[ts_key] = now
+                _write_cache_meta(meta)
+                return data
         except Exception:
             # Fetch failed -- use stale cache if available
             if cached_exists:
@@ -2053,6 +2477,8 @@ def search_datasets(query: str, source: str = "all", max_results: int = 50) -> s
 
     for src_name, entries in catalogs.items():
         for entry in entries:
+            if not isinstance(entry, dict):
+                continue  # skip malformed entries
             # Extract searchable fields
             title = (entry.get("title") or "").lower()
             tags = (entry.get("tags") or "").lower()
@@ -2118,67 +2544,8 @@ def search_datasets(query: str, source: str = "all", max_results: int = 50) -> s
     return json.dumps(out)
 
 
-# ---------------------------------------------------------------------------
-# Tool 21: get_catalog_info
-# ---------------------------------------------------------------------------
-
-@app.tool(annotations=_READ_ONLY_OPEN)
-def get_catalog_info(dataset_id: str) -> str:
-    """Get detailed STAC metadata for a GEE dataset.
-
-    Fetches the full STAC JSON record from earthengine-stac.storage.googleapis.com
-    and returns it as-is. The record includes bands (with classes, wavelengths,
-    scale/offset), description, temporal/spatial extent, keywords, license,
-    visualization parameters, provider info, and links.
-
-    This is the "drill down" companion to search_datasets -- use
-    search_datasets to find datasets, then get_catalog_info for full details.
-
-    Only works for official GEE datasets (STAC records don't exist for
-    community datasets). For community datasets, use inspect_asset instead.
-
-    Args:
-        dataset_id: Full GEE dataset ID (e.g. "LANDSAT/LC09/C02/T1_L2").
-
-    Returns:
-        The full STAC JSON record for the dataset, or an error message.
-    """
-    # Build STAC URL: first segment is directory, full ID with / -> _ is filename
-    parts = dataset_id.split("/")
-    if not parts:
-        return json.dumps({"error": "Empty dataset_id."})
-
-    stac_dir = parts[0]
-    stac_file = dataset_id.replace("/", "_")
-    stac_url = (
-        f"https://earthengine-stac.storage.googleapis.com/"
-        f"catalog/{stac_dir}/{stac_file}.json"
-    )
-
-    try:
-        req = urllib.request.Request(stac_url, headers={"User-Agent": "geeViz-MCP/1.0"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            stac = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        if exc.code == 404:
-            return json.dumps({
-                "error": f"No STAC record found for {dataset_id!r}. "
-                         "This may be a community dataset -- try inspect_asset instead.",
-                "dataset_id": dataset_id,
-                "stac_url": stac_url,
-            })
-        return json.dumps({
-            "error": f"HTTP {exc.code} fetching STAC record: {exc.reason}",
-            "stac_url": stac_url,
-        })
-    except Exception as exc:
-        return json.dumps({"error": f"Failed to fetch STAC record: {exc}", "stac_url": stac_url})
-
-    # Return the full STAC record as-is
-    return json.dumps(stac)
-
-
 import base64 as _base64
+@app.tool(annotations=_DESTRUCTIVE)
 def cancel_tasks(name_filter: str = "") -> str:
     """Cancel running and ready Earth Engine tasks.
 
@@ -2379,6 +2746,25 @@ def _make_serializable(obj):
     return repr(obj)
 
 
+_REFERENCE_DATA = {
+    "sensorBandNameDict": {"attr": "sensorBandNameDict", "description": "Standard band names by sensor/TOA-SR"},
+    "sensorBandDict": {"attr": "sensorBandDict", "description": "Raw band IDs by sensor/TOA-SR"},
+    "vizParamsFalse": {"attr": "vizParamsFalse", "description": "False color viz params (swir2/nir/red, 0-0.4)"},
+    "vizParamsFalse10k": {"attr": "vizParamsFalse10k", "description": "False color viz params (swir1/nir/red, 0-10000)"},
+    "vizParamsTrue": {"attr": "vizParamsTrue", "description": "True color viz params (red/green/blue, 0-0.4)"},
+    "vizParamsTrue10k": {"attr": "vizParamsTrue10k", "description": "True color viz params (red/green/blue, 0-10000)"},
+    "landsatCollectionDict": {"attr": "landsatCollectionDict", "description": "Landsat collection IDs by sensor/TOA-SR"},
+    "s2CollectionDict": {"attr": "s2CollectionDict", "description": "Sentinel-2 collection IDs by TOA/SR"},
+    "changeDirDict": {"attr": "changeDirDict", "description": "Expected change direction per index (+1 or -1)"},
+    "testAreas": {"attr": "testAreas", "description": "Pre-defined test area geometries (CA, CO, HI, etc.)"},
+    "palettes_cmocean": {"attr": "cmocean", "module": "geeViz.geePalettes", "description": "cmocean palettes (Thermal, Haline, Solar, Ice, Deep, Dense, Algae, etc.)"},
+    "palettes_matplotlib": {"attr": "matplotlib", "module": "geeViz.geePalettes", "description": "matplotlib palettes (magma, inferno, plasma, viridis)"},
+    "palettes_colorbrewer": {"attr": "colorbrewer", "module": "geeViz.geePalettes", "description": "ColorBrewer palettes (sequential, diverging, qualitative)"},
+    "palettes_crameri": {"attr": "crameri", "module": "geeViz.geePalettes", "description": "Crameri scientific colour maps"},
+    "palettes_misc": {"attr": "misc", "module": "geeViz.geePalettes", "description": "Miscellaneous palettes"},
+}
+
+
 @app.tool(annotations=_READ_ONLY)
 def get_reference_data(name: str = "") -> str:
     """Look up geeViz reference dictionaries (band mappings, collection IDs, viz params, etc.).
@@ -2412,10 +2798,20 @@ def get_reference_data(name: str = "") -> str:
         return json.dumps({"error": f"Unknown reference dict: {name!r}", "available": available})
 
     try:
-        import geeViz.getImagesLib as gil
-        raw = getattr(gil, entry["attr"])
+        mod_path = entry.get("module", "geeViz.getImagesLib")
+        import importlib
+        mod = importlib.import_module(mod_path)
+        raw = getattr(mod, entry["attr"])
         data = _make_serializable(raw)
-        return json.dumps({"name": name, "description": entry["description"], "data": data})
+        result = json.dumps({"name": name, "description": entry["description"], "data": data})
+        # Cap size for large palette dicts
+        if len(result) > 50000:
+            # Return just the top-level keys
+            if isinstance(raw, dict):
+                summary = {k: list(v.keys()) if isinstance(v, dict) else type(v).__name__ for k, v in raw.items()}
+                return json.dumps({"name": name, "description": entry["description"], "keys": summary,
+                                   "note": "Large dict — showing keys only. Access individual palettes via run_code: palettes.cmocean['Thermal'][7]"})
+        return result
     except Exception as exc:
         return json.dumps({"error": f"Failed to read {name}: {exc}"})
 
@@ -2423,6 +2819,7 @@ def get_reference_data(name: str = "") -> str:
 # ---------------------------------------------------------------------------
 # USFS Enterprise Data Warehouse (EDW) (consolidated)
 # ---------------------------------------------------------------------------
+@app.tool(annotations=_READ_ONLY_OPEN)
 def get_streetview(
     lon: float,
     lat: float,
@@ -2476,10 +2873,13 @@ def get_streetview(
     # Parse headings
     heading_list = [float(h.strip()) for h in headings.split(",") if h.strip()]
 
-    # Fetch images
-    images = []
     _direction_labels = {0: "N", 45: "NE", 90: "E", 135: "SE",
                          180: "S", 225: "SW", 270: "W", 315: "NW"}
+
+    # Fetch images and save to files
+    os.makedirs(_output_dir, exist_ok=True)
+    saved_images = []
+    md_lines = []
     for h in heading_list:
         try:
             img_bytes = _gm.streetview_image(
@@ -2487,46 +2887,25 @@ def get_streetview(
                 radius=radius, source=source,
             )
             if img_bytes:
-                label = _direction_labels.get(int(h) % 360, f"{h}°")
-                images.append({"heading": h, "label": label, "size": len(img_bytes)})
+                label = _direction_labels.get(int(h) % 360, f"{h}deg")
+                fname = f"streetview_{label}.jpg"
+                fpath = os.path.join(_output_dir, fname).replace("\\", "/")
+                with open(fpath, "wb") as f:
+                    f.write(img_bytes)
+                saved_images.append({"heading": h, "label": label, "path": fpath, "size": len(img_bytes)})
+                md_lines.append(f"![Street View {label}]({fpath})")
         except Exception:
             pass
 
-    # Build text response
     loc = meta.get("location", {})
-    text_parts = [
-        f"**Street View** at ({loc.get('lat', lat):.5f}, {loc.get('lng', lon):.5f})",
-        f"**Date:** {meta.get('date', 'unknown')}",
-        f"**Copyright:** {meta.get('copyright', '')}",
-        f"**Images:** {len(images)} of {len(heading_list)} headings fetched",
-    ]
-
-    # Try to return images inline
-    if _MCPImage is not None and images:
-        result_parts = []
-        for h in heading_list:
-            try:
-                img_bytes = _gm.streetview_image(
-                    lon, lat, heading=h, pitch=pitch, fov=fov,
-                    radius=radius, source=source,
-                )
-                if img_bytes:
-                    label = _direction_labels.get(int(h) % 360, f"{h}°")
-                    result_parts.append(f"**{label} ({h}°)**")
-                    result_parts.append(_MCPImage(data=img_bytes, format="jpeg"))
-            except Exception:
-                pass
-        if result_parts:
-            return ["\n".join(text_parts)] + result_parts
-
     return json.dumps({
         "status": "OK",
         "date": meta.get("date"),
         "location": meta.get("location"),
         "copyright": meta.get("copyright"),
-        "images_fetched": len(images),
-        "images": images,
-        "tip": "Use gm.streetview_html(lon, lat) in run_code for inline display.",
+        "images_fetched": len(saved_images),
+        "images": saved_images,
+        "output_markdown": "\n".join(md_lines) if md_lines else None,
     })
 
 
