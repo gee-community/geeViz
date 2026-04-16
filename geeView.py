@@ -881,6 +881,21 @@ class mapper:
                     except Exception as e:  # Most likely it's already serialized
                         e = e
 
+        # Coerce sankeyTransitionPeriods from flat list to nested pairs
+        if "areaChartParams" in viz:
+            stp = viz["areaChartParams"].get("sankeyTransitionPeriods")
+            if stp and len(stp) > 0:
+                first = stp[0]
+                if isinstance(first, (list, tuple)):
+                    pass  # already nested pairs
+                elif isinstance(first, (int, float)):
+                    viz["areaChartParams"]["sankeyTransitionPeriods"] = [[y, y] for y in stp]
+                else:
+                    raise TypeError(
+                        f"sankeyTransitionPeriods entries must be lists (e.g. [[1985,1985],[2024,2024]]) "
+                        f"or ints (e.g. [1985, 2024]), got {type(first).__name__}"
+                    )
+
         # Get the id and populate dictionarye
         idDict = {}
 
@@ -895,6 +910,8 @@ class mapper:
             viz["layerType"] = layerType
 
         if not isinstance(image, dict):
+            idDict["_ee_obj"] = image  # keep original for testLayers()
+            idDict["_viz"] = dict(viz)  # keep original viz for testLayers()
             image = image.serialize()
             idDict["item"] = image
             idDict["function"] = "addSerializedLayer"
@@ -1057,9 +1074,26 @@ class mapper:
                         viz["areaChartParams"]["reducer"] = eval(viz["areaChartParams"]["reducer"]).serialize()
                     except Exception as e:  # Most likely it's already serialized
                         e = e
+        # Coerce sankeyTransitionPeriods from flat list to nested pairs
+        if "areaChartParams" in viz:
+            stp = viz["areaChartParams"].get("sankeyTransitionPeriods")
+            if stp and len(stp) > 0:
+                first = stp[0]
+                if isinstance(first, (list, tuple)):
+                    pass  # already nested pairs
+                elif isinstance(first, (int, float)):
+                    viz["areaChartParams"]["sankeyTransitionPeriods"] = [[y, y] for y in stp]
+                else:
+                    raise TypeError(
+                        f"sankeyTransitionPeriods entries must be lists (e.g. [[1985,1985],[2024,2024]]) "
+                        f"or ints (e.g. [1985, 2024]), got {type(first).__name__}"
+                    )
+
         viz["layerType"] = "ImageCollection"
         # Get the id and populate dictionary
         idDict = {}  # image.getMapId()
+        idDict["_ee_obj"] = image  # keep original for testLayers()
+        idDict["_viz"] = dict(viz)  # keep original viz for testLayers()
         idDict["objectName"] = "Map"
         idDict["item"] = image.serialize()
         idDict["name"] = name
@@ -1231,6 +1265,87 @@ class mapper:
                 self.accessTokenCreationTime = None
 
     ######################################################################
+    # Standalone HTML export for embedding in chat UIs / cloud-hosted viewers
+    def export_html(
+        self,
+        output_path: str,
+        asset_base: str = "/geeView/static",
+        token_placeholder: str = "__GEEVIZ_TOKEN__",
+        token_time_placeholder: str = "__GEEVIZ_TOKEN_TIME__",
+        project_placeholder: str = "__GEEVIZ_PROJECT__",
+    ) -> str:
+        """Write a self-contained geeView HTML to `output_path`.
+
+        Differs from :meth:`view` in three ways:
+
+        - **No HTTP server.** This method only writes a file; it does not
+          mint tokens or open a browser. Suitable for chat UIs that
+          serve the HTML themselves (e.g. via blob URL).
+        - **Asset paths are absolute** under ``asset_base`` (default
+          ``/geeView/static``). The hosting server must mount the
+          ``geeView/`` package directory at that prefix.
+        - **The access token is a placeholder** (default
+          ``__GEEVIZ_TOKEN__``). The host UI is responsible for
+          string-replacing the placeholder with a fresh access token
+          before serving the HTML to the browser. This decouples token
+          lifetime from artifact storage.
+
+        Args:
+            output_path (str): Where to write the HTML file.
+            asset_base (str): URL prefix where the geeView assets are
+                mounted. Defaults to ``/geeView/static``.
+            token_placeholder (str): String to use in place of the
+                access token. The host replaces this at serve time.
+            token_time_placeholder (str): String to use in place of the
+                access-token creation time (millis epoch).
+            project_placeholder (str): String to use in place of the
+                EE project ID.
+
+        Returns:
+            str: Absolute path to the written HTML file.
+        """
+        # Auto-enable inspector if no turnOn commands have been set.
+        if not any("turnOn" in c for c in self.mapCommandList):
+            self.turnOnInspector()
+
+        run_js = self._build_run_js()
+
+        with open(template, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        # Inject <base href> so any RELATIVE URLs the geeView JS injects at
+        # runtime (icons, palette images, etc.) resolve to the asset base
+        # rather than to the current page's path. Absolute URLs are unaffected.
+        base_tag = '<base href="' + asset_base.rstrip("/") + '/">\n    '
+        html = html.replace("<head>", "<head>\n    " + base_tag, 1)
+
+        # Rewrite ./src/... references to absolute under asset_base.
+        # Order matters: the inline runGeeViz must replace the script src first.
+        html = html.replace(
+            '<script type="text/javascript" src="./src/gee/gee-run/runGeeViz.js"></script>',
+            (
+                # Auth bootstrap — runs after lcms-viewer.min.js initializes urlParams,
+                # before runGeeViz triggers Map.addLayer (which needs the token).
+                "<script>(function(){"
+                "  if(typeof urlParams==='undefined'){window.urlParams={};}"
+                "  urlParams.accessToken='" + token_placeholder + "';"
+                "  urlParams.accessTokenCreationTime=" + token_time_placeholder + ";"
+                "  urlParams.projectID='" + project_placeholder + "';"
+                "})();</script>\n"
+                # Inlined per-export runGeeViz JS
+                "<script>" + run_js + "</script>"
+            ),
+        )
+        # Now rewrite the rest of the ./src/ asset paths
+        html = html.replace('href="./src/', 'href="' + asset_base + '/src/')
+        html = html.replace('src="./src/', 'src="' + asset_base + '/src/')
+
+        os.makedirs(os.path.dirname(os.path.abspath(output_path)) or ".", exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(html)
+        return os.path.abspath(output_path)
+
+    ######################################################################
     # Function for launching the web map after all adding to the map has been completed
     def view(
         self,
@@ -1398,6 +1513,114 @@ class mapper:
         >>> Map.view()
         """
         self.mapCommandList = []
+
+    ######################################################################
+    def testLayers(self):
+        """Validate all map layers by requesting a map tile ID from Earth Engine in parallel.
+
+        Calls ``getMapId(viz)`` on every ee object added via ``addLayer`` or
+        ``addTimeLapse``.  This catches bad band names, invalid viz params,
+        missing properties, and computation errors — without launching a
+        browser.  Runs all requests in parallel via ``ThreadPoolExecutor``.
+
+        Returns:
+            dict: ``{"pass": bool, "layers": [{"name": str, "status": "ok"|"error", "error": str|None}, ...]}``
+
+        Example:
+            >>> Map.clearMap()
+            >>> Map.addLayer(ee.Image(1), {}, "Valid")
+            >>> Map.addLayer(ee.Image(1).select("nonexistent"), {}, "Bad Band")
+            >>> result = Map.testLayers()
+            >>> result["pass"]
+            False
+        """
+        import concurrent.futures
+
+        layers = []
+        futures = {}
+
+        def _test_layer(idx, idDict):
+            ee_obj = idDict.get("_ee_obj")
+            viz = idDict.get("_viz", {})
+            name = idDict.get("name", f"Layer {idx}")
+            if ee_obj is None:
+                # GeoJSON layers — no ee object to test
+                return {"name": name, "status": "ok", "error": None}
+            # Build viz params for getMapId — only pass recognized keys
+            map_viz = {}
+            for k in ("bands", "min", "max", "gain", "bias", "gamma", "palette", "opacity", "format"):
+                if k in viz:
+                    map_viz[k] = viz[k]
+            try:
+                ee_obj.getMapId(map_viz)
+                return {"name": name, "status": "ok", "error": None}
+            except Exception as e:
+                return {"name": name, "status": "error", "error": str(e)}
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+            for idx, idDict in enumerate(self.idDictList):
+                futures[pool.submit(_test_layer, idx, idDict)] = idx
+
+            for future in concurrent.futures.as_completed(futures):
+                layers.append(future.result())
+
+        # Sort by original layer order
+        layers.sort(key=lambda x: next(
+            (i for i, d in enumerate(self.idDictList) if d.get("name") == x["name"]), 0
+        ))
+
+        all_passed = all(l["status"] == "ok" for l in layers)
+        return {"pass": all_passed, "layers": layers}
+
+    ######################################################################
+    def testView(self, width=1280, height=900, wait_seconds=12):
+        """Capture a screenshot of the map via headless Chrome CDP and check for tile errors.
+
+        This is a slower but more thorough test than ``testLayers`` — it
+        renders the full map viewer in a headless browser and captures JS
+        console errors and HTTP tile failures.  Use ``testLayers`` for fast
+        validation; use ``testView`` when you need a visual screenshot or
+        want to catch client-side rendering issues.
+
+        Args:
+            width (int): Viewport width in pixels.
+            height (int): Viewport height in pixels.
+            wait_seconds (int): Max seconds to wait for tiles to load.
+
+        Returns:
+            dict: ``{"screenshot_path": str, "tile_errors": list, "console_messages": list}``
+        """
+        from geeViz.outputLib import charts as _cl
+        import datetime as _dt
+
+        # Get the viewer URL without opening a browser
+        url = self.view(open_browser=False)
+        if not url:
+            return {"error": "No viewer URL available — add layers first."}
+
+        png_bytes, console_msgs = _cl.screenshot_url(url, width=width, height=height, wait_seconds=wait_seconds)
+
+        if not png_bytes:
+            return {"error": "Screenshot failed.", "console_messages": console_msgs}
+
+        tile_errors = [m for m in console_msgs if "earthengine" in m or "googleapis" in m
+                       or "HTTP 4" in m or "HTTP 5" in m or "LOAD FAIL" in m]
+        other_msgs = [m for m in console_msgs if m not in tile_errors]
+
+        # Save screenshot
+        import os
+        output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mcp", "generated_outputs")
+        os.makedirs(output_dir, exist_ok=True)
+        ts = _dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+        screenshot_path = os.path.join(output_dir, f"map_screenshot_{ts}.png")
+        with open(screenshot_path, "wb") as fp:
+            fp.write(png_bytes)
+
+        return {
+            "screenshot_path": screenshot_path,
+            "tile_errors": tile_errors,
+            "console_messages": other_msgs,
+        }
 
     ######################################################################
     def setMapTitle(self, title):

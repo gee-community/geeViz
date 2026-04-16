@@ -48,7 +48,7 @@ Tools (21):
   list_assets              List assets in a GEE folder
   track_tasks              Get status of recent EE tasks
   cancel_tasks             Cancel running/ready EE tasks (all or by name)
-  map_control              View, list layers, clear, or test the geeView map (action=view|layers|clear|test)
+  map_control              View, export, list layers, clear, or test the geeView map (action=view|export|layers|clear|test_layers|test_view)
   save_session             Save run_code history to a .py file or .ipynb notebook
   env_info                 Get versions, REPL namespace, or project info (action=version|namespace|project)
   export_image             Export ee.Image to asset, Drive, or Cloud Storage (destination=asset|drive|cloud)
@@ -745,7 +745,7 @@ def _save_and_clean_result(result_val):
     os.makedirs(_output_dir, exist_ok=True)
     ts = int(_t.time())
 
-    _EXT_MAP = {"thumb_bytes": ".png", "gif_bytes": ".gif", "image": ".png"}
+    _EXT_MAP = {"image": ".png"}
 
     def _clean(obj, depth=0):
         if depth > 5:
@@ -774,7 +774,12 @@ def _save_and_clean_result(result_val):
             for k, v in obj.items():
                 # Use known extension for common keys
                 if isinstance(v, (bytes, bytearray)) and len(v) > 0:
-                    ext = _EXT_MAP.get(k, ".bin")
+                    if k == "bytes":
+                        # Use sibling "format" key to determine extension
+                        fmt = obj.get("format", "png")
+                        ext = f".{fmt}"
+                    else:
+                        ext = _EXT_MAP.get(k, ".bin")
                     fname = f"output_{ts}{ext}"
                     fpath = os.path.join(_output_dir, fname).replace("\\", "/")
                     with open(fpath, "wb") as f:
@@ -863,9 +868,17 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False, ctx: Cont
     result_holder: list = [None]
     error_holder: list = [None]
 
-    # Snapshot output files before execution to detect new ones
+    # Snapshot output files before execution to detect new/modified ones.
+    # We track both existence and mtime so files overwritten in place
+    # (common with save_file when the agent re-generates an image) are
+    # still reported as outputs.
     os.makedirs(_output_dir, exist_ok=True)
-    _files_before = set(os.listdir(_output_dir))
+    _mtimes_before = {
+        f: os.path.getmtime(os.path.join(_output_dir, f))
+        for f in os.listdir(_output_dir)
+        if os.path.isfile(os.path.join(_output_dir, f))
+    }
+    _files_before = set(_mtimes_before.keys())
 
     # Save original streams so we can restore them after timeout (redirect_stdout
     # modifies sys.stdout globally, which would capture the main thread's output
@@ -981,9 +994,18 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False, ctx: Cont
     # Everything that comes out of here is guaranteed small and JSON-safe.
     result_str = _save_and_clean_result(result_val)
 
-    # Detect new output files (from save_file, auto-save, or direct writes)
-    _files_after = set(os.listdir(_output_dir))
-    _new_files = sorted(_files_after - _files_before)
+    # Detect new or modified output files (from save_file, auto-save, or direct writes)
+    _files_after = [
+        f for f in os.listdir(_output_dir)
+        if os.path.isfile(os.path.join(_output_dir, f))
+    ]
+    _new_files = []
+    for f in _files_after:
+        fpath = os.path.join(_output_dir, f)
+        mt = os.path.getmtime(fpath)
+        if f not in _files_before or mt > _mtimes_before.get(f, 0):
+            _new_files.append(f)
+    _new_files = sorted(_new_files)
     _IMG_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg"}
     output_markdown = None
     if _new_files:
@@ -1759,7 +1781,7 @@ def track_tasks(name_filter: str = "") -> str:
 # ---------------------------------------------------------------------------
 
 @app.tool(annotations=_WRITE)
-def map_control(action: str = "view", open_browser: bool = True):
+def map_control(action: str = "view", open_browser: bool = True, filename: str = "map.html"):
     """Control the geeView interactive map.
 
     `action="view"` writes the per-session runGeeViz.js to disk and opens
@@ -1774,13 +1796,22 @@ def map_control(action: str = "view", open_browser: bool = True):
             - "layers": List current layers with visibility and viz params.
             - "layer_names": Quick list of just layer names (lightweight).
             - "clear": Remove all layers and commands.
-            - "test": Capture a PNG of the viewer via headless Chrome
-              using the DevTools Protocol (CDP). Returns output_markdown with
-              an image reference, plus tile_errors (HTTP 4xx/5xx on EE tile
-              URLs) and console_messages (JS errors/warnings). Requires
-              websocket-client (pip install websocket-client). Falls back to
-              simple screenshot if not installed (no console capture).
+            - "test_layers": Fast validation — calls getMapId() on all layers
+              in parallel. Catches bad bands, invalid viz, computation errors.
+              No browser required. Returns pass/fail per layer.
+            - "test_view": Slow but thorough — captures a PNG via headless
+              Chrome CDP. Returns tile_errors and console_messages. Requires
+              websocket-client.
+            - "export": Write a self-contained geeView HTML to
+              ``generated_outputs/{filename}``. The HTML uses absolute asset
+              paths under ``/geeView/static`` and a ``__GEEVIZ_TOKEN__``
+              placeholder for the access token. Suitable for chat UIs that
+              serve the HTML themselves and inject a fresh token on load.
+              Use this for chat-embedded maps that should survive session
+              reloads.
         open_browser: For action="view", whether to open in browser (default True).
+        filename: For action="export", the output filename (saved under
+            ``generated_outputs/``). Defaults to ``map.html``.
 
     Returns:
         JSON with action-specific results.
@@ -1790,6 +1821,27 @@ def map_control(action: str = "view", open_browser: bool = True):
     act = action.lower().strip()
 
     if act == "view":
+        # If any layer has canAreaChart=True and no turnOn command is already set,
+        # auto-enable area charting instead of the default inspector.
+        try:
+            existing_cmds = list(getattr(Map, "mapCommandList", []))
+            has_turn_on = any("turnOn" in c for c in existing_cmds)
+            if not has_turn_on:
+                has_area_chart = False
+                for entry in getattr(Map, "idDictList", []):
+                    viz_raw = entry.get("viz", "{}")
+                    try:
+                        viz = json.loads(viz_raw) if isinstance(viz_raw, str) else viz_raw
+                    except (json.JSONDecodeError, TypeError):
+                        viz = {}
+                    if isinstance(viz, dict) and viz.get("canAreaChart"):
+                        has_area_chart = True
+                        break
+                if has_area_chart:
+                    Map.turnOnAutoAreaCharting()
+        except Exception:
+            pass  # fall back to default inspector behavior in Map.view()
+
         url_buf = io.StringIO()
         try:
             with contextlib.redirect_stdout(url_buf):
@@ -1850,52 +1902,74 @@ def map_control(action: str = "view", open_browser: bool = True):
             return json.dumps({"error": str(exc)})
         return json.dumps({"success": True, "message": "Map cleared. All layers and commands removed."})
 
-    elif act == "test":
-        # Re-trigger view (open_browser=False) to get/refresh the URL
-        view_result = json.loads(map_control(action="view", open_browser=False))
-        url = view_result.get("url")
-        if not url:
-            return json.dumps({"error": "No viewer URL available — add layers first."})
+    elif act == "test_layers":
+        try:
+            result = Map.testLayers()
+        except Exception as exc:
+            return json.dumps({"error": str(exc)})
 
-        from geeViz.outputLib import charts as _cl
+        errors = [l for l in result["layers"] if l["status"] == "error"]
+        status = f"{len(errors)} layer error(s) detected." if errors else "All layers passed."
+        return json.dumps({
+            "pass": result["pass"],
+            "message": status,
+            "layers": result["layers"],
+        })
 
-        # CDP-based screenshot — also captures JS console errors + network failures
-        png_bytes, console_msgs = _cl.screenshot_url(url, width=1280, height=900, wait_seconds=12)
+    elif act == "test_view":
+        try:
+            result = Map.testView()
+        except Exception as exc:
+            return json.dumps({"error": str(exc)})
+        if "error" in result:
+            return json.dumps(result)
 
-        if not png_bytes:
-            return json.dumps({
-                "error": "Test failed.",
-                "console": console_msgs,
-            })
-
-        # Separate tile errors from other console output for easy scanning
-        tile_errors = [m for m in console_msgs if "earthengine" in m or "googleapis" in m
-                       or "HTTP 4" in m or "HTTP 5" in m or "LOAD FAIL" in m]
-        other_msgs = [m for m in console_msgs if m not in tile_errors]
-
-        # Always save the PNG to disk for human inspection
-        import datetime as _dt
-        os.makedirs(_output_dir, exist_ok=True)
-        ts = _dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-        screenshot_path = os.path.join(_output_dir, f"map_screenshot_{ts}.png")
-        with open(screenshot_path, "wb") as f:
-            f.write(png_bytes)
-
-        status = f"{len(tile_errors)} tile error(s) detected — see tile_errors." if tile_errors \
-            else "No tile/JS errors detected."
-        result = {
+        tile_errors = result.get("tile_errors", [])
+        status = f"{len(tile_errors)} tile error(s) detected." if tile_errors else "No tile/JS errors detected."
+        return json.dumps({
             "message": f"Map view test complete. {status}",
             "tile_errors": tile_errors,
-            "console_messages": other_msgs,
-            "screenshot_path": screenshot_path,
-        }
+            "console_messages": result.get("console_messages", []),
+            "screenshot_path": result.get("screenshot_path", ""),
+        })
 
-        # Return text-only. Model uses tile_errors + console_messages to detect/fix bugs.
-        # No output_markdown → after_tool_callback never promotes this to a user artifact.
-        return json.dumps(result)
+    elif act == "export":
+        # Same auto-area-charting fallback as `view`
+        try:
+            existing_cmds = list(getattr(Map, "mapCommandList", []))
+            has_turn_on = any("turnOn" in c for c in existing_cmds)
+            if not has_turn_on:
+                has_area_chart = False
+                for entry in getattr(Map, "idDictList", []):
+                    viz_raw = entry.get("viz", "{}")
+                    try:
+                        viz = json.loads(viz_raw) if isinstance(viz_raw, str) else viz_raw
+                    except (json.JSONDecodeError, TypeError):
+                        viz = {}
+                    if isinstance(viz, dict) and viz.get("canAreaChart"):
+                        has_area_chart = True
+                        break
+                if has_area_chart:
+                    Map.turnOnAutoAreaCharting()
+        except Exception:
+            pass
+
+        # Resolve output path under the shared generated_outputs directory.
+        # _output_dir is the module-level path used by run_code's save_file().
+        out_path = filename if os.path.isabs(filename) else os.path.join(_output_dir, filename)
+        try:
+            written_path = Map.export_html(out_path)
+        except Exception as exc:
+            return json.dumps({"error": str(exc)})
+        layer_count = len(Map.idDictList) if hasattr(Map, "idDictList") else 0
+        return json.dumps({
+            "path": written_path,
+            "layer_count": layer_count,
+            "message": f"Map exported with {layer_count} layer(s) to {os.path.basename(written_path)}.",
+        })
 
     else:
-        return json.dumps({"error": f"Unknown action: {action!r}. Use 'view', 'layers', 'layer_names', 'clear', or 'test'."})
+        return json.dumps({"error": f"Unknown action: {action!r}. Use 'view', 'layers', 'layer_names', 'clear', 'test_layers', 'test_view', or 'export'."})
 
 
 # ---------------------------------------------------------------------------

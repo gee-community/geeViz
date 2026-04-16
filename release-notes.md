@@ -1,6 +1,6 @@
 # geeViz Release Notes
 
-## 2026.4.1 — April 14, 2026
+## 2026.4.1 — April 15, 2026
 
 ### MCP Server — Map Test Action and Tool Fixes
 
@@ -22,7 +22,8 @@
 
 - **`chart_type='sankey'`** is now the preferred way to request Sankey diagrams (replaces `sankey=True`)
 - **New function: `chart_sankey_d3()`** — builds D3 Sankey HTML directly from `prepare_sankey_data()` output, skipping Plotly entirely
-- `summarize_and_chart(chart_type='sankey')` now returns `(sankey_df, sankey_html, matrix_dict)` where `sankey_html` is a self-contained D3 HTML string with native SVG `linearGradient` links
+- `summarize_and_chart()` now returns a **dict** (`{"df": ..., "chart": ...}`) instead of a tuple. Sankey returns `{"df": ..., "chart": sankey_html, "matrix": ...}`. All thumbnail/GIF/filmstrip functions now return `{"bytes": ..., "format": "png"|"gif", "html": ...}` instead of `{"thumb_bytes": ...}` or `{"gif_bytes": ...}`
+- `summarize_and_chart(chart_type='sankey')` returns `sankey_html` as a self-contained D3 HTML string with native SVG `linearGradient` links
 - **New function: `sankey_iframe()`** — wraps sankey HTML in a `data:text/html;base64` iframe for Jupyter notebook display
 - `transition_periods` now uses flat year lists `[1990, 2000, 2024]` instead of nested ranges `[[1990,1995], [2000,2005]]`
 - Removed old `chart_sankey()` (Plotly builder) and `_sankey_to_html_plotly()` — all sankey rendering is now pure D3
@@ -30,6 +31,7 @@
 
 ### Chart Improvements
 
+- **`band_names` accepts strings** — `summarize_and_chart`, `zonal_stats`, `get_obj_info`, and `auto_viz` now accept `band_names='Land_Use'` or `'NDVI,NBR'` (comma-separated) in addition to lists. Strings are automatically split into lists.
 - **`max_x_tick_labels`** (default 10) and **`max_y_tick_labels`** params on `chart_time_series`, `chart_multi_feature_timeseries`, and `summarize_and_chart` — auto-thins tick labels using nice strides (1, 2, 5, 10, 20, 50...)
 - **`%` suffix** on y-axis tick labels when `y_label` contains `%` (e.g. "% Area")
 - **X-axis dead space fix** — `range` constrained to `[min - 0.5, max + 0.5]` for integer axes

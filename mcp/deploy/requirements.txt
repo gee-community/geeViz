@@ -1,7 +1,8 @@
-geeViz>=2026.3.0
+geeViz>=2026.4.1
 mcp>=1.0.0
 Pillow>=10.0.0
 numpy
 pandas
+tabulate>=0.9.0
 earthengine-api>=1.4.0
 google-auth>=2.0.0

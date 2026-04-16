@@ -565,16 +565,16 @@ class Report:
                             result = cl.summarize_and_chart(
                                 sec.ee_obj, sec.geometry, **sankey_kwargs
                             )
-                            if isinstance(result, tuple) and len(result) == 3:
-                                sankey_df, fig, matrix_dict = result
+                            if isinstance(result, dict) and "matrix" in result:
+                                sankey_df, fig, matrix_dict = result["df"], result["chart"], result["matrix"]
                                 # Store sankey data (matrix_dict) as df if no df yet
                                 if sec.df is None:
                                     sec.df = matrix_dict
                                 all_figs.append(("sankey", fig))
-                            elif isinstance(result, tuple) and len(result) == 2:
+                            elif isinstance(result, dict):
                                 if sec.df is None:
-                                    sec.df = result[0]
-                                all_figs.append(("sankey", result[1]))
+                                    sec.df = result.get("df")
+                                all_figs.append(("sankey", result.get("chart")))
                         else:
                             # Non-sankey path: strip sankey kwargs
                             non_sankey_kwargs = {k: v for k, v in chart_kwargs.items()
@@ -584,8 +584,8 @@ class Report:
                             result = cl.summarize_and_chart(
                                 sec.ee_obj, sec.geometry, **non_sankey_kwargs
                             )
-                            if isinstance(result, tuple) and len(result) >= 2:
-                                first, second = result[0], result[1]
+                            if isinstance(result, dict):
+                                first, second = result.get("df"), result.get("chart")
                                 if sec.df is None:
                                     if isinstance(first, dict):
                                         import pandas
@@ -615,12 +615,12 @@ class Report:
                 result = cl.summarize_and_chart(
                     sec.ee_obj, sec.geometry, **chart_kwargs
                 )
-                if isinstance(result, tuple) and len(result) == 3:
-                    # Sankey: (sankey_df, fig, matrix_dict)
-                    sec.df = result[2]
-                    sec.sankey_fig = result[1]
-                elif isinstance(result, tuple) and len(result) == 2:
-                    first, second = result
+                if isinstance(result, dict) and "matrix" in result:
+                    # Sankey: dict with df, chart, matrix
+                    sec.df = result["matrix"]
+                    sec.sankey_fig = result["chart"]
+                elif isinstance(result, dict):
+                    first, second = result.get("df"), result.get("chart")
                     if isinstance(first, dict):
                         import pandas
                         sec.df = pandas.concat(first, names=["Feature"])
@@ -685,7 +685,7 @@ class Report:
                     max_frames=kw.get("thumb_max_frames", 50),
                     **shared,
                 )
-                sec.thumb_bytes = result.get("gif_bytes") or _extract_image_bytes(result["html"])
+                sec.thumb_bytes = result.get("bytes") or _extract_image_bytes(result["html"])
 
                 # Also generate a filmstrip for PDF (GIFs don't work in static PDF)
                 try:
@@ -718,14 +718,14 @@ class Report:
                     legend_position=kw.get("legend_position", "bottom"),
                     **shared,
                 )
-                sec.thumb_bytes = result.get("thumb_bytes") or _extract_image_bytes(result["html"])
+                sec.thumb_bytes = result.get("bytes") or _extract_image_bytes(result["html"])
 
             else:  # "png" (default)
                 result = tl.generate_thumbs(
                     sec.ee_obj, geom,
                     **shared,
                 )
-                sec.thumb_bytes = result.get("thumb_bytes") or _extract_image_bytes(result["html"])
+                sec.thumb_bytes = result.get("bytes") or _extract_image_bytes(result["html"])
 
             sec.thumb_html = result["html"]
 

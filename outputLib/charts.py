@@ -328,9 +328,16 @@ def save_chart_html(fig, filename, include_plotlyjs=_PLOTLY_CDN_URL, sankey=Fals
         import copy
         themed_fig = copy.deepcopy(fig)
         _themes.apply_plotly_theme(themed_fig, _t)
+        # Build download filename from the output filename (e.g. "lcms_donut.html"
+        # -> download as "lcms_donut.png"). Falls back to the figure title.
+        import os as _os
+        _stem = _os.path.splitext(_os.path.basename(filename))[0]
+        _cfg = _plotly_download_config(themed_fig)
+        if _stem:
+            _cfg["toImageButtonOptions"]["filename"] = _stem
         html = themed_fig.to_html(
             full_html=True, include_plotlyjs=include_plotlyjs,
-            config=_plotly_download_config(themed_fig),
+            config=_cfg,
         )
         # Inject body background style
         _chart_style = _render_chart_style(_t)
@@ -676,15 +683,45 @@ def screenshot_url(url, width=1280, height=900, wait_seconds=12):
             except Exception:
                 break
 
-        # Phase 2: additional wait for EE tile requests to complete
+        # Phase 2: adaptive wait for EE tile requests to complete.
+        # Track in-flight requests — stop early once all are done + a short settle period.
+        _pending = set()   # requestIds still in flight
+        _settled_at = None  # time when pending first hit zero
+
+        def _track_network(msg):
+            """Track request lifecycle to know when all tiles have loaded."""
+            method = msg.get("method", "")
+            params = msg.get("params", {})
+            rid = params.get("requestId", "")
+            if method == "Network.requestWillBeSent" and rid:
+                _pending.add(rid)
+                nonlocal _settled_at
+                _settled_at = None  # new request — reset settle timer
+            elif method in ("Network.loadingFinished", "Network.loadingFailed",
+                            "Network.responseReceived") and rid:
+                _pending.discard(rid)
+
         ws.settimeout(1.0)
         tile_deadline = time.time() + wait_seconds
+        _SETTLE_SECS = 2  # wait this long after last request completes
         while time.time() < tile_deadline:
             try:
                 msg = _json.loads(ws.recv())
                 _process(msg)
+                _track_network(msg)
+                # Check if all pending requests are done
+                if not _pending:
+                    if _settled_at is None:
+                        _settled_at = time.time()
+                    elif time.time() - _settled_at >= _SETTLE_SECS:
+                        break  # all tiles loaded and settled — no need to wait longer
             except _ws.WebSocketTimeoutException:
-                pass
+                # No messages for 1s — check if we're settled
+                if not _pending:
+                    if _settled_at is None:
+                        _settled_at = time.time()
+                    elif time.time() - _settled_at >= _SETTLE_SECS:
+                        break
             except Exception:
                 break
 
@@ -826,17 +863,25 @@ def save_chart_png(fig, filename, width=900, height=600,
         _themes.apply_plotly_theme(themed_fig, _t)
         img_bytes = pio.to_image(themed_fig, format="png", width=width, height=height)
 
-    # Try MCP sandbox save_file first, fall back to direct write
-    import builtins as _builtins
-    _save_fn = _builtins.__dict__.get("save_file") if hasattr(_builtins, "__dict__") else None
-    if _save_fn is None:
-        import inspect
-        frame = inspect.currentframe()
-        try:
-            caller_globals = frame.f_back.f_globals if frame.f_back else {}
-            _save_fn = caller_globals.get("save_file")
-        finally:
-            del frame
+    # Try MCP sandbox save_file first, fall back to direct write.
+    # Walk up the call stack to find save_file in any caller's namespace
+    # (it's injected into the run_code exec namespace, which may be 1-3
+    # frames up depending on how save_chart_png was called).
+    import inspect
+    _save_fn = None
+    frame = inspect.currentframe()
+    try:
+        f = frame
+        for _ in range(10):  # walk up to 10 frames
+            f = f.f_back
+            if f is None:
+                break
+            fn = f.f_globals.get("save_file") or f.f_locals.get("save_file")
+            if fn is not None:
+                _save_fn = fn
+                break
+    finally:
+        del frame
 
     if _save_fn is not None:
         return _save_fn(filename, img_bytes, mode="wb")
@@ -1314,7 +1359,9 @@ def get_obj_info(ee_obj, band_names=None):
 
     Args:
         ee_obj (ee.Image or ee.ImageCollection): The GEE object to inspect.
-        band_names (list, optional): Override the band names to use.
+        band_names (list or str, optional): Override the band names to use.
+            Accepts a list ``['NDVI', 'NBR']`` or a comma-separated string
+            ``'NDVI,NBR'``.  A single string is coerced to a one-element list.
 
     Returns:
         dict: Keys ``obj_type``, ``band_names``, ``is_thematic``, ``class_info``, ``size``.
@@ -1333,6 +1380,10 @@ def get_obj_info(ee_obj, band_names=None):
         >>> print(info['class_info']['Land_Cover']['class_names'])
         ['Trees', 'Tall Shrubs & Trees Mix (AK Only)', ...]
     """
+    # Coerce band_names from string to list for robustness
+    if isinstance(band_names, str):
+        band_names = [b.strip() for b in band_names.split(",")]
+
     obj_type = type(ee_obj).__name__
 
     if obj_type == "ImageCollection":
@@ -1711,7 +1762,9 @@ def zonal_stats(
     Args:
         ee_obj: ``ee.Image`` or ``ee.ImageCollection``.
         geometry: ``ee.Geometry``, ``ee.Feature``, or ``ee.FeatureCollection``.
-        band_names (list, optional): Bands to include. Auto-detected if None.
+        band_names (list or str, optional): Bands to include. Auto-detected
+            if None.  Accepts a list ``['NDVI', 'NBR']`` or a comma-separated
+            string ``'NDVI,NBR'``.
         reducer (ee.Reducer, optional): Override the auto-selected reducer.
         scale (int, optional): Pixel scale in meters. Defaults to 30.
         crs (str, optional): CRS string.
@@ -1750,6 +1803,10 @@ def zonal_stats(
         ...     reducer=ee.Reducer.mean(),
         ... )
     """
+    # Coerce band_names from string to list for robustness
+    if isinstance(band_names, str):
+        band_names = [b.strip() for b in band_names.split(",")]
+
     # filterBounds only applies to ImageCollections, not single Images
     if isinstance(ee_obj, ee.ImageCollection):
         ee_obj = ee_obj.filterBounds(geometry)
@@ -1929,6 +1986,9 @@ def prepare_sankey_data(
         ...     print(f"\\n{label}")
         ...     print(mdf.to_markdown())
     """
+    # filterBounds for tiled collections
+    ee_collection = ee_collection.filterBounds(geometry)
+
     _, geo = detect_geometry_type(geometry)
 
     info = class_info.get(band_name, class_info.get(list(class_info.keys())[0], {}))
@@ -3107,7 +3167,9 @@ def summarize_and_chart(
     Args:
         ee_obj: ``ee.Image`` or ``ee.ImageCollection``.
         geometry: ``ee.Geometry``, ``ee.Feature``, or ``ee.FeatureCollection``.
-        band_names (list, optional): Bands to include.
+        band_names (list or str, optional): Bands to include. Accepts a list
+            ``['Land_Use']`` or a comma-separated string ``'Land_Use'``.
+            Auto-detected if None.
         reducer (ee.Reducer, optional): Override the auto-selected reducer.
         scale (int, optional): Pixel scale in meters.
         crs (str, optional): CRS string.
@@ -3195,18 +3257,18 @@ def summarize_and_chart(
             (Plotly automatic).
 
     Returns:
-        tuple: Depends on chart type:
+        dict: Depends on chart type:
 
-        * **Standard (single geometry):** ``(DataFrame, Figure)``
-        * **Sankey:** ``(sankey_df, sankey_html, matrix_dict)`` where
-          ``sankey_html`` is a D3 HTML string (display with
+        * **Standard (single geometry):** ``{"df": DataFrame, "chart": Figure}``
+        * **Sankey:** ``{"df": sankey_df, "chart": sankey_html, "matrix": matrix_dict}``
+          where ``sankey_html`` is a D3 HTML string (display with
           ``display(HTML(cl.sankey_iframe(sankey_html)))``),
           and ``matrix_dict`` is ``{period_label: DataFrame}``
-        * **Multi-feature + ee.Image (bar/donut):** ``(DataFrame, Figure)``
-        * **Multi-feature + ee.ImageCollection:** ``(dict, Figure)`` where
-          ``dict`` is ``{feature_name: DataFrame}``
-        * **Scatter:** ``(DataFrame, Figure)`` where the DataFrame has
-          columns for the two bands (and optionally the thematic band)
+        * **Multi-feature + ee.Image (bar/donut):** ``{"df": DataFrame, "chart": Figure}``
+        * **Multi-feature + ee.ImageCollection:** ``{"df": dict, "chart": Figure}``
+          where ``dict`` is ``{feature_name: DataFrame}``
+        * **Scatter:** ``{"df": DataFrame, "chart": Figure}`` where the DataFrame
+          has columns for the two bands (and optionally the thematic band)
 
     Examples:
         Stacked time series of thematic land cover (auto-detects class
@@ -3219,18 +3281,18 @@ def summarize_and_chart(
         ...     [[[-106, 39.5], [-105, 39.5], [-105, 40.5], [-106, 40.5]]]
         ... )
         >>> lcms = ee.ImageCollection("USFS/GTAC/LCMS/v2024-10")
-        >>> df, fig = cl.summarize_and_chart(
+        >>> result = cl.summarize_and_chart(
         ...     lcms.select(['Land_Cover']),
         ...     study_area,
         ...     title='LCMS Land Cover',
         ...     stacked=True,
         ... )
-        >>> print(df.to_markdown())
-        >>> fig.write_html("lcms_land_cover.html", include_plotlyjs="cdn")
+        >>> print(result["df"].to_markdown())
+        >>> result["chart"].write_html("lcms_land_cover.html", include_plotlyjs="cdn")
 
         Sankey transition diagram with D3 gradient-colored links:
 
-        >>> df, sankey_html, matrix = cl.summarize_and_chart(
+        >>> result = cl.summarize_and_chart(
         ...     lcms.select(['Land_Use']),
         ...     study_area,
         ...     chart_type='sankey',
@@ -3238,15 +3300,15 @@ def summarize_and_chart(
         ...     sankey_band_name='Land_Use',
         ...     min_percentage=0.5,
         ... )
-        >>> # In notebooks: display(HTML(cl.sankey_iframe(sankey_html)))
+        >>> # In notebooks: display(HTML(cl.sankey_iframe(result["chart"])))
         >>> # Save to file:
-        >>> cl.save_chart_html(sankey_html, "land_use_transitions.html")
+        >>> cl.save_chart_html(result["chart"], "land_use_transitions.html")
 
         Bar chart for a single image at a point (use ``ee.Reducer.first()``):
 
         >>> nlcd = ee.Image("USGS/NLCD_RELEASES/2021_REL/NLCD/2021")
         >>> point = ee.Geometry.Point([-104.99, 39.74])
-        >>> df, fig = cl.summarize_and_chart(
+        >>> result = cl.summarize_and_chart(
         ...     nlcd,
         ...     point,
         ...     reducer=ee.Reducer.first(),
@@ -3261,7 +3323,7 @@ def summarize_and_chart(
         >>> composites = gil.getLandsatWrapper(
         ...     study_area, 2000, 2024
         ... )['composites']
-        >>> df, fig = cl.summarize_and_chart(
+        >>> result = cl.summarize_and_chart(
         ...     composites,
         ...     study_area,
         ...     band_names=['nir', 'swir1', 'swir2'],
@@ -3279,7 +3341,7 @@ def summarize_and_chart(
         >>> lc_mode = lcms.select(["Land_Cover"]).mode().set(
         ...     lcms.first().toDictionary()
         ... )
-        >>> df, fig = cl.summarize_and_chart(
+        >>> result = cl.summarize_and_chart(
         ...     lc_mode,
         ...     top5,
         ...     feature_label="Incid_Name",
@@ -3295,7 +3357,7 @@ def summarize_and_chart(
         ...     "projects/sat-io/open-datasets/LCMAP/LCPRI"
         ... ).select(['b1'], ['LC'])
         >>> # Force thematic (class values used as labels):
-        >>> df, fig = cl.summarize_and_chart(
+        >>> result = cl.summarize_and_chart(
         ...     lcpri,
         ...     study_area,
         ...     reducer=ee.Reducer.frequencyHistogram(),
@@ -3310,19 +3372,23 @@ def summarize_and_chart(
         ...     'LC_class_palette': ['E60000', 'A87000', 'E3E3C2', '1D6330',
         ...         '476BA1', 'BAD9EB', 'FFFFFF', 'B3B0A3', 'A201FF'],
         ... }))
-        >>> df, fig = cl.summarize_and_chart(
+        >>> result = cl.summarize_and_chart(
         ...     lcpri_named, study_area, stacked=True,
         ... )
 
         Switch area format to hectares or acres:
 
-        >>> df_ha, fig_ha = cl.summarize_and_chart(
+        >>> result_ha = cl.summarize_and_chart(
         ...     lcms.select(['Land_Cover']),
         ...     study_area,
         ...     area_format='Hectares',
         ...     title='LCMS Land Cover (Hectares)',
         ... )
     """
+    # Coerce band_names from string to list for robustness
+    if isinstance(band_names, str):
+        band_names = [b.strip() for b in band_names.split(",")]
+
     # filterBounds only applies to ImageCollections, not single Images
     if isinstance(ee_obj, ee.ImageCollection):
         ee_obj = ee_obj.filterBounds(geometry)
@@ -3435,7 +3501,7 @@ def summarize_and_chart(
             height=height,
             opacity=opacity,
         )
-        return (sankey_df, sankey_html, matrix_dict)
+        return {"df": sankey_df, "chart": sankey_html, "matrix": matrix_dict}
 
     # Multi-feature path: reduceRegions
     geo_type, _ = detect_geometry_type(geometry)
@@ -3558,7 +3624,7 @@ def summarize_and_chart(
             class_palette=_class_palette,
             class_values=_class_values,
         )
-        return (scatter_df[[c for c in out_cols if c in scatter_df.columns]], _set_download_filename(fig))
+        return {"df": scatter_df[[c for c in out_cols if c in scatter_df.columns]], "chart": _set_download_filename(fig)}
 
     # Auto-detect feature_label for multi-feature FeatureCollections
     if geo_type == "multi" and not feature_label:
@@ -3661,7 +3727,7 @@ def summarize_and_chart(
                                 or any(trace_name.replace(SPLIT_STR, " ").strip() in hidden for _ in [0])):
                             trace.visible = "legendonly"
 
-            return (per_feature_dfs, _set_download_filename(fig))
+            return {"df": per_feature_dfs, "chart": _set_download_filename(fig)}
 
         # --- ee.Image + multi-feature: grouped bar chart (existing behavior) ---
         # Set index to feature label column
@@ -3753,7 +3819,7 @@ def summarize_and_chart(
                             or any(trace_name.replace(SPLIT_STR, " ").strip() in hidden for _ in [0])):
                         trace.visible = "legendonly"
 
-        return (chart_df, _set_download_filename(fig))
+        return {"df": chart_df, "chart": _set_download_filename(fig)}
 
     # Standard single-region zonal stats path
     # Safety fallback: dissolve multi-feature FCs without a label (shouldn't
@@ -3889,4 +3955,4 @@ def summarize_and_chart(
                         or any(trace_name.replace(SPLIT_STR, " ").strip() in hidden for _ in [0])):
                     trace.visible = "legendonly"
 
-    return (df_full, _set_download_filename(fig))
+    return {"df": df_full, "chart": _set_download_filename(fig)}

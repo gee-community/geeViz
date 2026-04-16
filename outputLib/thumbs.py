@@ -567,7 +567,7 @@ def _assemble_with_cartography(frame, bounds_4326, bg_color="black",
                                 scalebar_units="metric", north_arrow=True,
                                 north_arrow_style="solid",
                                 inset_map=True, inset_basemap=None, inset_scale=0.3,
-                                inset_on_map=True,
+                                inset_on_map=False,
                                 inset_rect_color=None, inset_rect_fill_color=None,
                                 legend_panel=None, inset_below_legend=True,
                                 margin=_DEFAULT_MARGIN, crs=None):
@@ -617,7 +617,10 @@ def _assemble_with_cartography(frame, bounds_4326, bg_color="black",
         inset_scale (float, optional): Relative height of the inset
             compared to the frame height.  Defaults to ``0.3``.
         inset_on_map (bool, optional): Place the inset directly on the
-            map rather than below it.  Defaults to ``True``.
+            main map frame (overlaid in the lower-right). Defaults to
+            ``False`` — the inset is placed below the legend (or below
+            the main frame if no legend exists) so it doesn't occlude
+            map features. Set to ``True`` for a compact layout.
         legend_panel (PIL.Image.Image, optional): Pre-built legend panel
             image to attach as a right-side column.
             Defaults to ``None``.
@@ -696,7 +699,10 @@ def _assemble_with_cartography(frame, bounds_4326, bg_color="black",
             col_h = frame.size[1]
 
             if inset_img is not None and inset_below_legend:
-                # Inset below legend in right column
+                # Inset below legend in right column — keep legend at its
+                # natural height (top-justified) and place the inset below
+                # at its natural size. Any extra vertical space is left
+                # empty rather than stretching either panel.
                 inset_pad_left = max(4, margin // 3)
                 inset_target_h = int(col_h * inset_scale)
                 src_w, src_h = inset_img.size
@@ -710,13 +716,26 @@ def _assemble_with_cartography(frame, bounds_4326, bg_color="black",
                 inset_resized = inset_img.resize((iw, ih), Image.LANCZOS)
                 inset_img = None
 
-                legend_h = col_h - ih
-                legend_resized = legend_panel.resize((col_w, legend_h), Image.LANCZOS)
+                # Keep legend at its natural size (don't stretch to fill column)
+                legend_natural_h = legend_panel.size[1]
+                gap = max(4, margin // 3)
+                # Ensure legend + gap + inset fits in the column
+                max_legend_h = col_h - ih - gap
+                if legend_natural_h > max_legend_h and max_legend_h > 0:
+                    # Only shrink if it genuinely doesn't fit — preserve aspect
+                    scale = max_legend_h / legend_natural_h
+                    new_w = int(legend_panel.size[0] * scale)
+                    legend_resized = legend_panel.resize((new_w, max_legend_h), Image.LANCZOS)
+                else:
+                    legend_resized = legend_panel
 
                 right_col = Image.new("RGBA", (col_w, col_h), bg_rgba)
                 right_col.paste(legend_resized, (0, 0),
                                legend_resized if legend_resized.mode == "RGBA" else None)
-                right_col.paste(inset_resized, (inset_pad_left, col_h - ih),
+                # Inset placed immediately below the legend (not bottom-anchored),
+                # leaving any extra space at the bottom.
+                inset_y = legend_resized.size[1] + gap
+                right_col.paste(inset_resized, (inset_pad_left, inset_y),
                                inset_resized if inset_resized.mode == "RGBA" else None)
             else:
                 right_col = Image.new("RGBA", (col_w, col_h), bg_rgba)
@@ -1057,7 +1076,7 @@ def auto_viz_continuous(
             ``ee.ImageCollection`` — reduce the collection first.
         geometry: ``ee.Geometry``, ``ee.Feature``, or
             ``ee.FeatureCollection`` defining the region to sample.
-        band_names (list[str], optional): Bands to visualize — length
+        band_names (list or str, optional): Bands to visualize — length
             must be 1 or 3.  When ``None`` the first 3 bands are used
             (or first 1 if fewer than 3 exist).  Defaults to ``None``.
         stretch_type (str): One of ``"percentile"`` (default),
@@ -1119,6 +1138,8 @@ def auto_viz_continuous(
     geom = _to_geometry(geometry)
 
     # --- resolve bands ------------------------------------------------------
+    if isinstance(band_names, str):
+        band_names = [b.strip() for b in band_names.split(",")]
     img = ee.Image(image)
     if band_names is not None:
         if len(band_names) not in (1, 3):
@@ -1280,6 +1301,9 @@ def auto_viz(
         >>> viz["gamma"]
         1.6
     """
+    if isinstance(ee_obj, ee.ImageCollection) and geometry is not None:
+        ee_obj = ee_obj.filterBounds(_to_geometry(geometry))
+
     info = cl.get_obj_info(ee_obj, band_names=[band_name] if band_name else None)
     band_names_list = info["band_names"]
 
@@ -1417,6 +1441,9 @@ def get_thumb_url(ee_obj, geometry=None, viz_params=None, dimensions=_DEFAULT_DI
         >>> url[:5]
         'https'
     """
+    if isinstance(ee_obj, ee.ImageCollection) and geometry is not None:
+        ee_obj = ee_obj.filterBounds(_to_geometry(geometry))
+
     _validate_projection_params(crs, transform, scale)
 
     # Allow ee_obj=None for geometry-only thumbnails (just burn in boundary)
@@ -1586,7 +1613,7 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
                  scalebar_units="metric", north_arrow=True,
                  north_arrow_style="solid",
                  inset_map=True, inset_basemap=None, inset_scale=0.3,
-                 inset_on_map=True, title=None,
+                 inset_on_map=False, title=None,
                  title_font_size=_DEFAULT_TITLE_FONT_SIZE,
                  label_font_size=_DEFAULT_LABEL_FONT_SIZE,
                  burn_in_geometry=False, geometry_outline_color=None, geometry_fill_color=None, geometry_outline_weight=2,
@@ -1680,8 +1707,10 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
         inset_scale (float, optional): Relative height of the inset
             compared to the frame height.  Defaults to ``0.3``.
         inset_on_map (bool, optional): Place the inset directly on the
-            map (lower-right) rather than below it.
-            Defaults to ``True``.
+            main map frame (overlaid in the lower-right). Defaults to
+            ``False`` — the inset is placed below the legend (or below
+            the main frame if no legend exists). Set to ``True`` for a
+            compact layout.
         title (str, optional): Title text rendered as a strip above the
             GIF frames.  Defaults to ``None`` (no title).
 
@@ -1690,7 +1719,8 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
 
         - ``"html"`` (str): HTML ``<figure>`` element containing the
           GIF as a base64-embedded ``<img>`` tag.
-        - ``"gif_bytes"`` (bytes): Raw animated GIF byte data.
+        - ``"bytes"`` (bytes): Raw animated GIF byte data.
+        - ``"format"`` (str): ``"gif"``.
 
     Raises:
         ValueError: If ``transform`` or ``scale`` is provided without
@@ -1705,11 +1735,12 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
         ...     basemap="esri-satellite",
         ...     title="LCMS Land Cover",
         ... )
-        >>> gif_bytes = result["gif_bytes"]
+        >>> gif_bytes = result["bytes"]
         >>> html_snippet = result["html"]
     """
     _validate_projection_params(crs, transform, scale)
     col = ee.ImageCollection(ee_obj)
+    col = col.filterBounds(_to_geometry(geometry))
     geom = _to_geometry(geometry)
 
     viz_params = _complete_viz_params(viz_params, col, band_name=band_name, geometry=geometry)
@@ -1743,14 +1774,14 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
         count = max_frames
 
     if count == 0:
-        return {"html": "<p>No images available for GIF.</p>", "gif_bytes": b""}
+        return {"html": "<p>No images available for GIF.</p>", "bytes": b"", "format": "gif"}
 
     # Always use the PIL path so we can return bytes
     pil_frames, date_labels = _download_frames(col, geom if clip_to_geometry else geom.bounds(), viz_params,
                                                 dimensions, count, date_format)
 
     if not pil_frames:
-        return {"html": "<p>Failed to generate GIF frames.</p>", "gif_bytes": b""}
+        return {"html": "<p>Failed to generate GIF frames.</p>", "bytes": b"", "format": "gif"}
 
     # Resolve overlay opacity: default 0.8 when basemap is set
     if overlay_opacity is None:
@@ -1823,7 +1854,7 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
         f'<img src="data:image/gif;base64,{b64}">'
         f'</figure>'
     )
-    return {"html": html, "gif_bytes": gif_bytes}
+    return {"html": html, "bytes": gif_bytes, "format": "gif"}
 
 
 # ---------------------------------------------------------------------------
@@ -1939,7 +1970,8 @@ def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
 
         - ``"html"`` (str): HTML ``<figure>`` element containing the
           filmstrip as a base64-embedded PNG ``<img>`` tag.
-        - ``"thumb_bytes"`` (bytes): Raw PNG byte data.
+        - ``"bytes"`` (bytes): Raw PNG byte data.
+        - ``"format"`` (str): ``"png"``.
 
     Raises:
         ValueError: If ``transform`` or ``scale`` is provided without
@@ -1954,7 +1986,7 @@ def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
         ...     basemap="esri-satellite",
         ...     title="LCMS Land Cover Time Series",
         ... )
-        >>> png_bytes = result["thumb_bytes"]
+        >>> png_bytes = result["bytes"]
     """
     _validate_projection_params(crs, transform, scale)
     from PIL import Image, ImageDraw
@@ -1991,7 +2023,7 @@ def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
         count = max_frames
 
     if count == 0:
-        return {"html": "<p>No images available.</p>", "thumb_bytes": b""}
+        return {"html": "<p>No images available.</p>", "bytes": b"", "format": "png"}
 
     pil_frames, date_labels = _download_frames(col, geom if clip_to_geometry else geom.bounds(), viz_params,
                                                 dimensions, count, date_format)
@@ -2014,7 +2046,7 @@ def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
         pil_frames = [_add_thumb_padding(f, bg_color=bg_color) for f in pil_frames]
 
     if not pil_frames:
-        return {"html": "<p>Failed to download frames.</p>", "thumb_bytes": b""}
+        return {"html": "<p>Failed to download frames.</p>", "bytes": b"", "format": "png"}
 
     # Draw scalebar + north arrow on the first frame
     if bounds is not None and (scalebar or north_arrow):
@@ -2071,16 +2103,21 @@ def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
     n_cols = min(columns, len(pil_frames))
     n_rows = -(-len(pil_frames) // n_cols)  # ceil division
 
+    # Scale fonts proportional to frame dimensions
+    _dim_scale = dimensions / _DEFAULT_DIMENSIONS
+    title_font_size = max(8, int(title_font_size * _dim_scale))
+    label_font_size = max(6, int(label_font_size * _dim_scale))
+
     # Match label font size to legend font size for visual consistency
     if legend_info is not None and legend_info.get("type") == "thematic":
         n_classes = len(legend_info.get("class_names", []))
         est_grid_h = n_rows * fh
-        lg_padding = max(6, int(8 * legend_scale))
+        lg_padding = max(6, int(8 * legend_scale * _dim_scale))
         lg_usable = est_grid_h - 2 * lg_padding
         label_font_size = max(8, int(lg_usable / max(n_classes, 1) * 0.6 * legend_scale))
-        label_font_size = min(label_font_size, int(16 * legend_scale))
+        label_font_size = min(label_font_size, int(16 * legend_scale * _dim_scale))
     else:
-        pass  # use provided label_font_size
+        pass  # use scaled label_font_size from above
     label_font = _get_font(label_font_size)
     label_h = label_font_size + 8
 
@@ -2246,7 +2283,7 @@ def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
         f'</figure>'
     )
 
-    return {"html": html, "thumb_bytes": thumb_bytes}
+    return {"html": html, "bytes": thumb_bytes, "format": "png"}
 
 
 # ---------------------------------------------------------------------------
@@ -3030,7 +3067,7 @@ def generate_map_chart(
       -> map of bounding region with sample points burned in +
       scatter plot (optionally coloured by *thematic_band_name*)
     - **ee.ImageCollection + any geometry** -> delegates to
-      :func:`generate_map_chart_gif`, returning ``gif_bytes``
+      :func:`generate_map_chart_gif`, returning ``bytes`` (GIF format)
 
     Args:
         ee_obj: ``ee.Image`` or ``ee.ImageCollection``.
@@ -3110,10 +3147,10 @@ def generate_map_chart(
 
     Returns:
         dict: For ``ee.Image`` inputs:
-            ``{"html": str, "thumb_bytes": bytes, "df": DataFrame,
+            ``{"html": str, "bytes": bytes, "format": "png", "df": DataFrame,
             "fig": Figure}``.
             For ``ee.ImageCollection`` inputs (delegated to GIF):
-            ``{"html": str, "gif_bytes": bytes}``.
+            ``{"html": str, "bytes": bytes, "format": "gif"}``.
     """
     from PIL import Image, ImageDraw
 
@@ -3231,7 +3268,7 @@ def generate_map_chart(
     else:
         thumb_result = generate_thumbs(ee_obj, _map_geometry, **thumb_kwargs)
 
-    map_img = Image.open(io.BytesIO(thumb_result["thumb_bytes"])).convert("RGBA")
+    map_img = Image.open(io.BytesIO(thumb_result["bytes"])).convert("RGBA")
 
     # --- Generate the chart ---
     chart_kwargs = dict(
@@ -3273,7 +3310,7 @@ def generate_map_chart(
 
     if fig is None:
         thumb_bytes = _pil_to_png_bytes(map_img, bg_color)
-        return {"html": "", "thumb_bytes": thumb_bytes, "df": df, "fig": None}
+        return {"html": "", "bytes": thumb_bytes, "format": "png", "df": df, "fig": None}
 
     # Suppress chart legend for thematic (already on thumb)
     if _is_thematic and burn_in_legend:
@@ -3342,7 +3379,7 @@ def generate_map_chart(
         _write_bytes(output_path, thumb_bytes)
 
     html = _bytes_to_html_figure(thumb_bytes, "png", css_class="map-chart")
-    return {"html": html, "thumb_bytes": thumb_bytes, "df": df, "fig": fig}
+    return {"html": html, "bytes": thumb_bytes, "format": "png", "df": df, "fig": fig}
 
 
 def generate_map_chart_gif(
@@ -3434,8 +3471,10 @@ def generate_map_chart_gif(
         legend_position (str or dict): Legend placement on chart.
 
     Returns:
-        dict: ``{"html": str, "gif_bytes": bytes}``
+        dict: ``{"html": str, "bytes": bytes, "format": "gif"}``
     """
+    ee_obj = ee.ImageCollection(ee_obj).filterBounds(_to_geometry(geometry))
+
     from PIL import Image, ImageDraw
     import plotly.graph_objects as go
 
@@ -3484,9 +3523,9 @@ def generate_map_chart_gif(
         gif_result = gif_future.result()
         df = stats_future.result()
 
-    map_gif_bytes = gif_result.get("gif_bytes", b"")
+    map_gif_bytes = gif_result.get("bytes", b"")
     if not map_gif_bytes:
-        return {"html": "<p>No images.</p>", "gif_bytes": b""}
+        return {"html": "<p>No images.</p>", "bytes": b"", "format": "gif"}
 
     # --- Step 2: Decompose the GIF into individual PIL frames ---
     gif_img = Image.open(io.BytesIO(map_gif_bytes))
@@ -3496,7 +3535,7 @@ def generate_map_chart_gif(
         pil_frames.append(gif_img.copy().convert("RGBA"))
 
     if not pil_frames:
-        return {"html": "<p>Failed to extract frames.</p>", "gif_bytes": b""}
+        return {"html": "<p>Failed to extract frames.</p>", "bytes": b"", "format": "gif"}
 
     # Date labels come from the DataFrame index (already formatted by zonal_stats)
     date_labels = [str(v) for v in df.index]
@@ -3693,7 +3732,7 @@ def generate_map_chart_gif(
 
     b64 = base64.b64encode(gif_bytes).decode("ascii")
     html = f'<figure class="map-chart-gif"><img src="data:image/gif;base64,{b64}"></figure>'
-    return {"html": html, "gif_bytes": gif_bytes}
+    return {"html": html, "bytes": gif_bytes, "format": "gif"}
 
 
 def _frames_to_gif(pil_frames, fps, bg_color="black"):
@@ -4201,7 +4240,8 @@ def generate_thumbs(ee_obj, geometry, viz_params=None, band_name=None,
 
         - ``"html"`` (str): HTML ``<figure>`` element containing the
           thumbnail as a base64-embedded ``<img>`` tag.
-        - ``"thumb_bytes"`` (bytes): Raw PNG byte data.
+        - ``"bytes"`` (bytes): Raw PNG byte data.
+        - ``"format"`` (str): ``"png"``.
         - ``"is_grid"`` (bool): ``True`` if a multi-feature grid was
           produced, ``False`` for a single thumbnail.
 
@@ -4218,9 +4258,12 @@ def generate_thumbs(ee_obj, geometry, viz_params=None, band_name=None,
         ... )
         >>> result["is_grid"]
         False
-        >>> len(result["thumb_bytes"]) > 0
+        >>> len(result["bytes"]) > 0
         True
     """
+    if isinstance(ee_obj, ee.ImageCollection) and geometry is not None:
+        ee_obj = ee_obj.filterBounds(_to_geometry(geometry))
+
     _validate_projection_params(crs, transform, scale)
     from PIL import Image
 
@@ -4326,7 +4369,7 @@ def generate_thumbs(ee_obj, geometry, viz_params=None, band_name=None,
         if output_path:
             _write_bytes(output_path, thumb_bytes)
         html = _bytes_to_html_figure(thumb_bytes, "png", css_class="thumb-grid")
-        return {"html": html, "thumb_bytes": thumb_bytes, "is_grid": True}
+        return {"html": html, "bytes": thumb_bytes, "format": "png", "is_grid": True}
     else:
         geom = _to_geometry(geometry)
         bounds = _get_bounds_4326(geom)
@@ -4398,7 +4441,7 @@ def generate_thumbs(ee_obj, geometry, viz_params=None, band_name=None,
         if output_path:
             _write_bytes(output_path, thumb_bytes)
         html = _bytes_to_html_figure(thumb_bytes, "png", css_class="thumb")
-        return {"html": html, "thumb_bytes": thumb_bytes, "is_grid": False}
+        return {"html": html, "bytes": thumb_bytes, "format": "png", "is_grid": False}
 
 
 # ---------------------------------------------------------------------------

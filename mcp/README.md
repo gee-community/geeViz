@@ -106,7 +106,7 @@ Ensure `cwd` is the folder that contains the `geeViz` package so `python -m geeV
 | **`cancel_tasks`** | Cancel running/ready EE tasks (all or by name filter). |
 | **`export_image`** | Export an `ee.Image` to asset, Drive, or Cloud Storage (destination="asset"\|"drive"\|"cloud"). |
 | **`manage_asset`** | Delete, copy, move, create folder, or update ACL (action="delete"\|"copy"\|"move"\|"create"\|"update_acl"). |
-| **`map_control`** | View, list layers, clear, or test the interactive map (action="view"\|"layers"\|"layer_names"\|"clear"\|"test"). `view` renders a self-contained HTML file and opens it in the browser. `test` captures a PNG via headless Chrome CDP and returns `tile_errors` + `console_messages` for debugging — use as a quality gate before `view`. |
+| **`map_control`** | View, list layers, clear, or test the interactive map (action="view"\|"layers"\|"layer_names"\|"clear"\|"test_layers"\|"test_view"). `view` renders a self-contained HTML file and opens it in the browser. `test_layers` validates all layers fast (~1-2s) by calling `getMapId()` in parallel — use as a quality gate before `view`. `test_view` captures a PNG via headless Chrome CDP for visual/JS console checks. |
 | **`save_session`** | Save run_code history as `.py` or `.ipynb`. |
 | **`get_streetview`** | Get Google Street View imagery at a location for ground-truthing. |
 | **`search_places`** | Search Google Places API for nearby landmarks, businesses, POIs. Also useful for geocoding. |
@@ -299,7 +299,11 @@ manage_asset(action="update_acl", asset_id="projects/my-project/assets/img", all
 map_control(action="view")
 
 # Test map rendering (before showing to user)
-map_control(action="test")
+# Fast layer validation (before showing to user)
+map_control(action="test_layers")
+
+# Full browser screenshot (slow, for visual checks)
+map_control(action="test_view")
 
 # Search for places / geocode
 search_places("Yellowstone National Park")
@@ -308,7 +312,7 @@ search_places("Yellowstone National Park")
 get_streetview(lon=-111.88, lat=40.76)
 
 # Charting, thumbnails, and analysis via run_code
-run_code("df, fig = cl.summarize_and_chart(my_ic, geometry=area)")
+run_code("result = cl.summarize_and_chart(my_ic, geometry=area)")
 run_code("result = tl.generate_thumbs(my_image, area)")
 ```
 
