@@ -82,7 +82,7 @@ _CONTINUOUS_DEFAULTS = {
 }
 
 # Default font sizes (pixels) for consistent typography across all outputs
-_DEFAULT_TITLE_FONT_SIZE = 18
+_DEFAULT_TITLE_FONT_SIZE = 16
 _DEFAULT_LABEL_FONT_SIZE = 12
 
 # Default CRS for thumbnail/GIF generation
@@ -152,6 +152,28 @@ def _build_band_palette_lookup():
 
 
 _BAND_PALETTE_LOOKUP = _build_band_palette_lookup()
+
+
+def _smart_round(value, sig_figs=3):
+    """Round a number to *sig_figs* significant figures.
+
+    Handles the full range gracefully:
+    - ``0.000000111`` → ``0.000000111`` (all decimals kept)
+    - ``0.1111111`` → ``0.111``
+    - ``1.11111`` → ``1.11``
+    - ``-31.759663`` → ``-31.8``
+    - ``1234.5678`` → ``1230``
+    - ``0`` → ``0``
+
+    Returns int when the result has no fractional part.
+    """
+    if value is None or value == 0:
+        return 0
+    import math
+    magnitude = math.floor(math.log10(abs(value)))
+    decimals = max(0, sig_figs - 1 - magnitude)
+    rounded = round(value, decimals)
+    return int(rounded) if decimals == 0 and rounded == int(rounded) else rounded
 
 
 def _get_palette_for_band(band_name):
@@ -1049,8 +1071,8 @@ def _draw_scalebar_and_arrow_on_frame(frame, bounds_4326, scalebar=True,
 # ---------------------------------------------------------------------------
 #  Auto-viz from image properties
 # ---------------------------------------------------------------------------
-_DEFAULT_CONTINUOUS_SCALE = 300
-_DEFAULT_CONTINUOUS_TIMEOUT = 5
+_DEFAULT_CONTINUOUS_SCALE = 600
+_DEFAULT_CONTINUOUS_TIMEOUT = 10
 
 
 def auto_viz_continuous(
@@ -1177,6 +1199,7 @@ def auto_viz_continuous(
                 scale=current_scale,
                 bestEffort=True,
                 maxPixels=1e7,
+                tileScale=4,
             )
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
                 future = pool.submit(reduction.getInfo)
@@ -1206,6 +1229,9 @@ def auto_viz_continuous(
 
     # --- parse stats into min / max lists -----------------------------------
     if stats is None:
+        print(f"WARNING: auto_viz failed to compute stats (timed out at scale={current_scale}m). "
+              f"Returning default min=0, max=1. Try increasing scale= (e.g. scale=10000 for global/continental data) "
+              f"or reducing the geometry size.")
         min_vals = [0] * len(used_bands)
         max_vals = [1] * len(used_bands)
     elif stretch_type == "min-max":
@@ -1223,6 +1249,10 @@ def auto_viz_continuous(
         p_hi = f"p{percentiles[1]}"
         min_vals = [stats.get(f"{b}_{p_lo}", 0) or 0 for b in used_bands]
         max_vals = [stats.get(f"{b}_{p_hi}", 1) or 1 for b in used_bands]
+
+    # Round values to 3 significant figures for clean display
+    min_vals = [_smart_round(v) for v in min_vals]
+    max_vals = [_smart_round(v) for v in max_vals]
 
     # Simplify single-band to scalar and add band-aware palette
     if len(used_bands) == 1:
@@ -1602,7 +1632,7 @@ def get_filmstrip_url(ee_obj, geometry=None, viz_params=None,
 def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
                  dimensions=_DEFAULT_DIMENSIONS, fps=_DEFAULT_FPS,
                  max_frames=_MAX_GIF_FRAMES,
-                 burn_in_date=True, date_format="YYYY",
+                 burn_in_date=True, date_format=None,
                  date_position="upper-left", date_font_size=None,
                  burn_in_legend=True, legend_scale=1.0,
                  bg_color=None, font_color=None,
@@ -1617,7 +1647,7 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
                  title_font_size=_DEFAULT_TITLE_FONT_SIZE,
                  label_font_size=_DEFAULT_LABEL_FONT_SIZE,
                  burn_in_geometry=False, geometry_outline_color=None, geometry_fill_color=None, geometry_outline_weight=2,
-                 clip_to_geometry=True):
+                 clip_to_geometry=True, max_class_label_length=30):
     """Generate an animated GIF from an Earth Engine ImageCollection.
 
     Downloads individual frame thumbnails, properly mosaics **tiled
@@ -1646,7 +1676,10 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
         date_format (str, optional): Date format string.  Supported
             values include ``"YYYY"``, ``"YYYY-MM"``,
             ``"YYYY-MM-dd"``, ``"MMM YYYY"``, ``"MMMM YYYY"``,
-            ``"MM/YYYY"``, ``"MM/dd/YYYY"``.  Defaults to ``"YYYY"``.
+            ``"MM/YYYY"``, ``"MM/dd/YYYY"``.  Defaults to ``None`` —
+            auto-detect from the collection's temporal span (yearly for
+            spans > 5y, monthly for shorter spans, daily for spans
+            under 60 days, hourly for closely-spaced frames).
         date_position (str, optional): Position of the date label on
             each frame -- ``"upper-left"``, ``"upper-right"``,
             ``"lower-left"``, or ``"lower-right"``.
@@ -1713,7 +1746,7 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
         title (str, optional): Title text rendered as a strip above the
             GIF frames.  Defaults to ``None`` (no title).
         title_font_size (int, optional): Font size in pixels for the
-            title strip.  Defaults to ``18``.
+            title strip.  Defaults to ``16``.
         label_font_size (int, optional): Font size in pixels for legend
             labels and scalebar ticks.  Defaults to ``12``.
         burn_in_geometry (bool, optional): Draw the study area geometry
@@ -1762,7 +1795,7 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
     # Extract legend info (thematic or continuous)
     legend_info = None
     if burn_in_legend:
-        legend_info = _extract_legend_info(col, band_name=band_name, viz_params=viz_params)
+        legend_info = _extract_legend_info(col, band_name=band_name, viz_params=viz_params, max_class_label_length=max_class_label_length)
 
     # Resolve font colors early (needed for burn_in_geometry fallback)
     font_color, font_outline_color, theme, bg_color = _resolve_font_colors(
@@ -1877,7 +1910,7 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
 def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
                        dimensions=_DEFAULT_DIMENSIONS,
                        max_frames=_MAX_GIF_FRAMES,
-                       columns=3, date_format="YYYY",
+                       columns=3, date_format=None,
                        burn_in_legend=True, legend_scale=1.0,
                        legend_position="bottom",
                        bg_color=None, font_color=None,
@@ -1893,7 +1926,8 @@ def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
                        clip_to_geometry=True,
                        geometry_legend_label="Study Area",
                        title_font_size=_DEFAULT_TITLE_FONT_SIZE,
-                       label_font_size=_DEFAULT_LABEL_FONT_SIZE):
+                       label_font_size=_DEFAULT_LABEL_FONT_SIZE,
+                       max_class_label_length=30):
     """Generate a filmstrip grid image from an Earth Engine ImageCollection.
 
     Downloads individual frame thumbnails, mosaics tiled collections by
@@ -1919,7 +1953,8 @@ def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
             Defaults to ``3``.
         date_format (str, optional): Date label format above each frame.
             Supports ``"YYYY"``, ``"YYYY-MM"``, ``"YYYY-MM-dd"``,
-            ``"MMM YYYY"``, etc.  Defaults to ``"YYYY"``.
+            ``"MMM YYYY"``, etc.  Defaults to ``None`` — auto-detect
+            from the collection's temporal span.
         burn_in_legend (bool, optional): Append a legend panel for
             thematic data.  Only rendered when class names and palette
             are available.  Defaults to ``True``.
@@ -1979,7 +2014,7 @@ def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
         title (str, optional): Title text rendered as a strip above the
             grid.  Defaults to ``None`` (no title).
         title_font_size (int, optional): Font size in pixels for the
-            title strip.  Defaults to ``18``.
+            title strip.  Defaults to ``16``.
         label_font_size (int, optional): Font size in pixels for legend
             labels and scalebar ticks.  Defaults to ``12``.
         burn_in_geometry (bool, optional): Draw the study area geometry
@@ -2029,7 +2064,7 @@ def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
 
     legend_info = None
     if burn_in_legend:
-        legend_info = _extract_legend_info(col, band_name=band_name, viz_params=viz_params)
+        legend_info = _extract_legend_info(col, band_name=band_name, viz_params=viz_params, max_class_label_length=max_class_label_length)
 
     col = col.filterBounds(geom)
     col = _mosaic_by_date(col)
@@ -2320,17 +2355,62 @@ def generate_filmstrip(ee_obj, geometry, viz_params=None, band_name=None,
 # ---------------------------------------------------------------------------
 #  Shared frame download helper
 # ---------------------------------------------------------------------------
-def _download_frames(col, geom, viz_params, dimensions, count, date_format="YYYY"):
+def _auto_date_format(timestamps_ms):
+    """Pick a sensible date_format token based on the temporal span and
+    spacing of the frame timestamps.
+
+    - Frames < 2 hours apart → "YYYY-MM-dd HH:mm"
+    - Frames < 2 days apart  → "YYYY-MM-dd HH"
+    - Span < 60 days         → "YYYY-MM-dd"
+    - Span < 5 years         → "YYYY-MM"
+    - Otherwise              → "YYYY"
+
+    Falls back to ``"YYYY"`` on any issue.
+    """
+    try:
+        ts = [t for t in timestamps_ms if t is not None]
+        if len(ts) < 2:
+            return "YYYY-MM-dd" if ts else "YYYY"
+        ts_sorted = sorted(ts)
+        span_ms = ts_sorted[-1] - ts_sorted[0]
+        deltas = [ts_sorted[i + 1] - ts_sorted[i] for i in range(len(ts_sorted) - 1)]
+        min_delta_ms = min(deltas) if deltas else span_ms
+        _hour = 60 * 60 * 1000
+        _day = 24 * _hour
+        _year = 365 * _day
+        # Sub-daily spacing needs hour-level precision
+        if min_delta_ms < 2 * _hour:
+            return "YYYY-MM-dd HH:mm"
+        if min_delta_ms < _day:
+            return "YYYY-MM-dd HH"
+        # Daily or coarser — pick by total span
+        if span_ms < 60 * _day:
+            return "YYYY-MM-dd"
+        if span_ms < 5 * _year:
+            return "YYYY-MM"
+        return "YYYY"
+    except Exception:
+        return "YYYY"
+
+
+def _download_frames(col, geom, viz_params, dimensions, count, date_format=None):
     """Download individual frames and extract date labels from a collection.
 
     Returns:
         tuple: ``(pil_frames, date_labels)`` — list of RGBA PIL Images and
         list of formatted date strings.
+
+    Args:
+        date_format: Format token (e.g. ``"YYYY-MM"``). When ``None`` or
+            ``"auto"``, the format is chosen from the collection's temporal
+            span — yearly for >5y, monthly for <5y, daily for <60d, etc.
     """
     from datetime import datetime as dt
     from PIL import Image
 
     dates = col.aggregate_array("system:time_start").getInfo()
+    if date_format is None or (isinstance(date_format, str) and date_format.lower() == "auto"):
+        date_format = _auto_date_format(dates)
     py_fmt = _DATE_FORMAT_MAP.get(date_format, date_format)
     if "%" not in py_fmt:
         py_fmt = "%Y"
@@ -2370,7 +2450,7 @@ def _download_frames(col, geom, viz_params, dimensions, count, date_format="YYYY
     return pil_frames, date_labels
 
 
-def _extract_legend_info(ee_obj, band_name=None, viz_params=None):
+def _extract_legend_info(ee_obj, band_name=None, viz_params=None, max_class_label_length=30):
     """Extract legend info from an ee object — thematic or continuous.
 
     For **thematic** data (images with ``{band}_class_values`` and
@@ -2381,10 +2461,15 @@ def _extract_legend_info(ee_obj, band_name=None, viz_params=None):
     ``palette``, returns a dict with ``min``, ``max``, ``palette``,
     ``band_name``, and ``"type": "continuous"``.
 
+    Args:
+        max_class_label_length (int, optional): Maximum length for class
+            name strings. Longer names are truncated with ``...`` in the
+            middle, preserving the end. Default 30.
+
     Returns ``None`` when no legend can be generated.
     """
     try:
-        info = cl.get_obj_info(ee_obj, band_names=[band_name] if band_name else None)
+        info = cl.get_obj_info(ee_obj, band_names=[band_name] if band_name else None, max_class_label_length=max_class_label_length)
     except Exception:
         info = None
 
@@ -2415,13 +2500,14 @@ def _extract_legend_info(ee_obj, band_name=None, viz_params=None):
             for key in props:
                 if key.endswith("_class_names"):
                     prefix = key.replace("_class_names", "")
-                    cn = props.get(f"{prefix}_class_names", [])
-                    cp = props.get(f"{prefix}_class_palette", [])
+                    # Normalize: some assets store these as comma-separated strings
+                    cn = cl._normalize_class_prop(props.get(f"{prefix}_class_names", []))
+                    cp = cl._normalize_class_prop(props.get(f"{prefix}_class_palette", []))
                     if cn and cp:
                         n = min(len(cn), len(cp))
                         return {
                             "type": "thematic",
-                            "class_names": cn[:n],
+                            "class_names": cl.truncate_class_names(cn[:n], max_class_label_length),
                             "class_palette": cp[:n],
                         }
         except Exception:
@@ -2548,14 +2634,22 @@ def _build_legend_panel(class_names, class_palette, target_height,
     gap = max(4, int(4 * scale))
     panel_w = pad_left + swatch_size + gap + max_text_w + pad_left
 
-    # Row height: distribute evenly across usable height
-    row_height = usable_h / n_classes if n_classes > 0 else usable_h
+    # Row height: use natural spacing based on font size, not stretched to fill
+    natural_row_height = int(swatch_size * 2.2)
+    natural_total = natural_row_height * n_classes if n_classes > 0 else 0
+    # If natural height fits, use it (compact legend). Otherwise stretch to fit.
+    if natural_total <= usable_h:
+        row_height = natural_row_height
+        actual_height = natural_total
+    else:
+        row_height = usable_h / n_classes if n_classes > 0 else usable_h
+        actual_height = target_height
 
-    # Build panel
+    # Build panel — use actual content height, not full target_height
     panel = Image.new("RGB", (panel_w, target_height), panel_bg)
     draw = ImageDraw.Draw(panel)
 
-    # Draw entries starting at top (no vertical padding)
+    # Top-justify the legend content
     y_start = 0
     for i, (name, hex_col) in enumerate(zip(class_names, class_palette)):
         rgb = _hex_to_rgb(hex_col)
@@ -3154,7 +3248,7 @@ def generate_map_chart(
             map frames.  Defaults to ``True``.
         burn_in_legend (bool, optional): Add legend panel to the map
             thumbnail.  Defaults to ``True``.
-        title_font_size (int, optional): Title font size.  Default 18.
+        title_font_size (int, optional): Title font size.  Default 16.
         label_font_size (int, optional): Label font size.  Default 12.
         geometry_outline_color (str, optional): Boundary colour.
         geometry_fill_color (str, optional): Boundary fill (hex+alpha).
@@ -3421,7 +3515,7 @@ def generate_map_chart_gif(
     dimensions=_DEFAULT_DIMENSIONS,
     fps=_DEFAULT_FPS,
     max_frames=_MAX_GIF_FRAMES,
-    date_format="YYYY",
+    date_format=None,
     bg_color=None,
     font_color=None,
     font_outline_color=None,
@@ -3454,6 +3548,7 @@ def generate_map_chart_gif(
     geometry_fill_color=None,
     geometry_outline_weight=2,
     clip_to_geometry=True,
+    max_class_label_length=30,
 ):
     """Generate an animated GIF with map thumbnails and cumulative line charts.
 
@@ -3479,7 +3574,9 @@ def generate_map_chart_gif(
         dimensions (int): Map thumbnail width in pixels.
         fps (int): Frames per second.
         max_frames (int): Max number of frames.
-        date_format (str): Date format for labels (e.g. ``"YYYY"``).
+        date_format (str, optional): Date format for labels (e.g.
+            ``"YYYY-MM"``).  Defaults to ``None`` — auto-detect from
+            the collection's temporal span.
         bg_color: Background colour.
         font_color: Font colour.
         font_outline_color: Font outline colour.
@@ -3616,7 +3713,7 @@ def generate_map_chart_gif(
     fw = pil_frames[0].size[0]
 
     # Build full-width horizontal legend — only for classes in the data
-    legend_info = _extract_legend_info(ee_obj, band_name=band_name, viz_params=viz_params)
+    legend_info = _extract_legend_info(ee_obj, band_name=band_name, viz_params=viz_params, max_class_label_length=max_class_label_length)
     horiz_legend = None
     if legend_info is not None and legend_info.get("type") == "thematic":
         data_cols = set(df.columns)
@@ -4148,7 +4245,8 @@ def generate_thumbs(ee_obj, geometry, viz_params=None, band_name=None,
                     clip_to_geometry=True,
                     geometry_legend_label="Study Area",
                     title_font_size=_DEFAULT_TITLE_FONT_SIZE,
-                    label_font_size=_DEFAULT_LABEL_FONT_SIZE):
+                    label_font_size=_DEFAULT_LABEL_FONT_SIZE,
+                    max_class_label_length=30):
     """Generate a publication-ready thumbnail PNG for a report section.
 
     Provides an all-in-one workflow: auto-viz detection, thumbnail URL
@@ -4261,7 +4359,7 @@ def generate_thumbs(ee_obj, geometry, viz_params=None, band_name=None,
             box as the region (data extends beyond boundary).
             Defaults to ``True``.
         title_font_size (int, optional): Font size in pixels for the
-            title strip.  Defaults to ``18``.
+            title strip.  Defaults to ``16``.
         label_font_size (int, optional): Font size in pixels for date
             labels, feature labels, scalebar ticks, and legend text.
             Defaults to ``12``.
@@ -4323,7 +4421,8 @@ def generate_thumbs(ee_obj, geometry, viz_params=None, band_name=None,
     legend_info = None
     if burn_in_legend:
         legend_info = _extract_legend_info(ee_obj if not _is_geom_only else None,
-                                           band_name=band_name, viz_params=viz_params)
+                                           band_name=band_name, viz_params=viz_params,
+                                           max_class_label_length=max_class_label_length)
 
     # Resolve geometry color (needed for both boundary and legend)
     _resolved_gc = None

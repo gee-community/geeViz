@@ -949,3 +949,245 @@ def apply_plotly_theme(fig, theme=None, bg_color=None, font_color=None):
         ann.font.color = t.text_hex
 
     return fig
+
+
+# ---------------------------------------------------------------------------
+#  Default theme — module-level state, settable per request
+# ---------------------------------------------------------------------------
+_DEFAULT_THEME = "dark"
+
+
+def set_default_theme(name):
+    """Set the theme name used when ``apply_theme`` / ``theme()`` are called
+    with no explicit theme argument.
+
+    Typical use: the agent calls this once per request based on the user's
+    chat-UI theme (dark/light), and any subsequent chart code in that
+    request picks up the right theme automatically.
+    """
+    global _DEFAULT_THEME
+    _DEFAULT_THEME = name
+
+
+def get_default_theme():
+    return _DEFAULT_THEME
+
+
+# ---------------------------------------------------------------------------
+#  Matplotlib / seaborn integration (best-effort)
+# ---------------------------------------------------------------------------
+def _rgba_str_to_tuple(s):
+    """Parse a Plotly-style ``rgba(R,G,B,A)`` string into a matplotlib
+    ``(r, g, b, a)`` tuple with channels in 0--1.
+
+    Falls back to the input unchanged if parsing fails.
+    """
+    import re
+    m = re.match(r"rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)", s or "")
+    if not m:
+        return s
+    r, g, b, a = m.group(1), m.group(2), m.group(3), m.group(4)
+    return (float(r) / 255.0, float(g) / 255.0, float(b) / 255.0,
+            float(a) if a is not None else 1.0)
+
+
+def _mpl_rcparams_from_theme(t):
+    """Build a matplotlib rcParams dict that matches the geeViz theme.
+
+    Note that matplotlib rejects Plotly's ``rgba(R,G,B,A)`` string format;
+    we convert any rgba strings to ``(r, g, b, a)`` tuples here.
+    """
+    return {
+        "figure.facecolor": t.bg_hex,
+        "axes.facecolor": t.bg_hex,
+        "axes.edgecolor": _rgba_str_to_tuple(t.line_rgba),
+        "axes.labelcolor": t.text_hex,
+        "axes.titlecolor": t.text_hex,
+        "xtick.color": t.text_hex,
+        "ytick.color": t.text_hex,
+        "text.color": t.text_hex,
+        "grid.color": _rgba_str_to_tuple(t.grid_rgba),
+        "legend.facecolor": t.bg_hex,
+        "legend.edgecolor": _rgba_str_to_tuple(t.line_rgba),
+        "legend.labelcolor": t.text_hex,
+        "savefig.facecolor": t.bg_hex,
+        "savefig.edgecolor": t.bg_hex,
+        # Sensible defaults so the agent's plots look like geeViz's plots
+        "axes.grid": True,
+        "grid.linestyle": "-",
+        "grid.linewidth": 0.5,
+    }
+
+
+def apply_matplotlib_theme(obj, theme=None, bg_color=None, font_color=None):
+    """Best-effort theming for a matplotlib Figure, Axes, or seaborn Grid.
+
+    Walks the object's artists and updates facecolors, text colors,
+    spine/tick/grid colors, and legend colors to match the theme. Returns
+    the object unchanged in shape so calls can be chained.
+
+    For best results, set the theme BEFORE plotting via the ``theme()``
+    context manager — matplotlib's styling is global rcParams state and
+    post-hoc theming has to walk every artist (which works for most
+    common plot types but can miss exotic ones).
+    """
+    t = get_theme(theme, bg_color=bg_color, font_color=font_color)
+
+    # Resolve seaborn FacetGrid / PairGrid / JointGrid to a Figure
+    fig = getattr(obj, "fig", None) or getattr(obj, "figure", None) or obj
+
+    # Object might be an Axes instance — get its parent Figure
+    if hasattr(fig, "axes") and not hasattr(fig, "savefig"):
+        # likely an Axes — promote to its figure
+        fig = fig.figure
+
+    # Matplotlib rejects Plotly's "rgba(R,G,B,A)" strings; convert to tuples.
+    line_color = _rgba_str_to_tuple(t.line_rgba)
+    grid_color = _rgba_str_to_tuple(t.grid_rgba)
+
+    try:
+        fig.set_facecolor(t.bg_hex)
+    except Exception:
+        pass
+
+    # Walk every Axes on the figure
+    axes_list = getattr(fig, "axes", None) or []
+    for ax in axes_list:
+        try:
+            ax.set_facecolor(t.bg_hex)
+            for spine in ax.spines.values():
+                spine.set_edgecolor(line_color)
+            ax.tick_params(colors=t.text_hex, which="both")
+            ax.xaxis.label.set_color(t.text_hex)
+            ax.yaxis.label.set_color(t.text_hex)
+            if ax.title:
+                ax.title.set_color(t.text_hex)
+            ax.grid(True, color=grid_color, linewidth=0.5)
+            leg = ax.get_legend()
+            if leg is not None:
+                frame = leg.get_frame()
+                frame.set_facecolor(t.bg_hex)
+                frame.set_edgecolor(line_color)
+                for txt in leg.get_texts():
+                    txt.set_color(t.text_hex)
+        except Exception:
+            # Skip artist types we don't know how to color; best-effort.
+            continue
+
+    # Suptitle if present
+    if getattr(fig, "_suptitle", None) is not None:
+        try:
+            fig._suptitle.set_color(t.text_hex)
+        except Exception:
+            pass
+
+    return obj
+
+
+# ---------------------------------------------------------------------------
+#  Unified entry point: apply_theme dispatches by chart type
+# ---------------------------------------------------------------------------
+def apply_theme(chart, theme=None, bg_color=None, font_color=None):
+    """Apply the geeViz theme to a chart from any supported library.
+
+    Detects the chart type and routes to the appropriate themer:
+    - Plotly ``Figure`` → :func:`apply_plotly_theme`
+    - Matplotlib ``Figure``/``Axes`` → :func:`apply_matplotlib_theme`
+    - Seaborn ``FacetGrid``/``PairGrid``/``JointGrid`` → unwrap, then matplotlib
+    - Anything else → return unchanged with a one-line warning
+
+    Args:
+        chart: The chart object (any of the above).
+        theme: Theme name, ``Theme`` instance, or color string. Defaults
+            to whatever :func:`get_default_theme` returns.
+        bg_color / font_color: Optional overrides passed to ``get_theme``.
+
+    Returns:
+        The same chart object, themed in-place where applicable.
+
+    Example:
+        >>> import seaborn as sns
+        >>> fig = sns.heatmap(corr).get_figure()
+        >>> fig = apply_theme(fig)           # matches the chat UI
+        >>> # ... or with explicit override:
+        >>> fig = apply_theme(fig, theme="light")
+    """
+    if theme is None:
+        theme = _DEFAULT_THEME
+
+    cls = type(chart)
+    module = getattr(cls, "__module__", "") or ""
+    name = getattr(cls, "__name__", "") or ""
+
+    if module.startswith("plotly"):
+        return apply_plotly_theme(chart, theme, bg_color=bg_color, font_color=font_color)
+
+    if module.startswith("matplotlib") or module.startswith("seaborn") or module.startswith("pandas"):
+        return apply_matplotlib_theme(chart, theme, bg_color=bg_color, font_color=font_color)
+
+    # Some libraries (seaborn FacetGrid, PairGrid) live in seaborn.axisgrid;
+    # unwrap to .fig if present.
+    if hasattr(chart, "fig") or hasattr(chart, "figure"):
+        return apply_matplotlib_theme(chart, theme, bg_color=bg_color, font_color=font_color)
+
+    print(
+        f"WARNING: apply_theme does not know how to style {module}.{name}; "
+        f"returning chart unchanged. Use a Plotly Figure, matplotlib Figure/Axes, "
+        f"or seaborn Grid for automatic theming."
+    )
+    return chart
+
+
+# ---------------------------------------------------------------------------
+#  Context manager: set matplotlib rcParams for a block, restore on exit
+# ---------------------------------------------------------------------------
+class _ThemeContext:
+    """Context manager that applies a theme to matplotlib globally for the
+    duration of a ``with`` block, then restores prior rcParams on exit.
+
+    Use this when you want plots created INSIDE the block to come out
+    pre-styled (the reliable path for matplotlib/seaborn).
+
+    Example:
+        >>> with theme("dark"):
+        ...     import seaborn as sns
+        ...     sns.heatmap(corr)
+        ...     plt.savefig(buf)
+    """
+
+    def __init__(self, name=None, bg_color=None, font_color=None):
+        self._theme_arg = name
+        self._bg_color = bg_color
+        self._font_color = font_color
+        self._saved_rc = None
+
+    def __enter__(self):
+        try:
+            import matplotlib as _mpl
+        except ImportError:
+            # No matplotlib installed in this environment — silently no-op
+            return self
+        t = get_theme(self._theme_arg or _DEFAULT_THEME,
+                      bg_color=self._bg_color, font_color=self._font_color)
+        new_rc = _mpl_rcparams_from_theme(t)
+        self._saved_rc = {k: _mpl.rcParams[k] for k in new_rc if k in _mpl.rcParams}
+        _mpl.rcParams.update(new_rc)
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        if self._saved_rc is None:
+            return False
+        try:
+            import matplotlib as _mpl
+            _mpl.rcParams.update(self._saved_rc)
+        except Exception:
+            pass
+        return False
+
+
+def theme(name=None, bg_color=None, font_color=None):
+    """Return a context manager that themes matplotlib for the ``with`` block.
+
+    See :class:`_ThemeContext`.
+    """
+    return _ThemeContext(name=name, bg_color=bg_color, font_color=font_color)

@@ -57,6 +57,28 @@ Example:
 
 #
 
+
+class _PaletteGroup(dict):
+    """Dict that also supports attribute-style access.
+
+    Both ``palettes.cmocean['Algae']`` and ``palettes.cmocean.Algae`` work,
+    so callers can pick whichever feels natural without tripping on
+    ``AttributeError: 'dict' object has no attribute 'Algae'``.
+    """
+
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError as e:
+            raise AttributeError(
+                f"{type(self).__name__!s} has no palette named {key!r}. "
+                f"Available: {sorted(self.keys())[:8]}{'...' if len(self) > 8 else ''}"
+            ) from e
+
+    def __dir__(self):
+        return sorted(set(list(super().__dir__()) + [k for k in self.keys() if isinstance(k, str)]))
+
+
 cmocean = {
     "Thermal": {7: ["042333", "2c3395", "744992", "b15f82", "eb7958", "fbb43d", "e8fa5b"]},
     "Haline": {7: ["2a186c", "14439c", "206e8b", "3c9387", "5ab978", "aad85c", "fdef9a"]},
@@ -2465,3 +2487,18 @@ crameri = {
         ],
     },
 }
+
+
+# ---------------------------------------------------------------------------
+# Wrap each palette group in _PaletteGroup so both styles work:
+#     palettes.cmocean['Algae']  →  same dict
+#     palettes.cmocean.Algae     →  same dict
+# Existing dict-style code is unchanged; this only adds attribute access.
+# ---------------------------------------------------------------------------
+cmocean = _PaletteGroup(cmocean)
+colorbrewer = _PaletteGroup(colorbrewer)
+misc = _PaletteGroup(misc)
+niccoli = _PaletteGroup(niccoli)
+matplotlib = _PaletteGroup(matplotlib)
+kovesi = _PaletteGroup(kovesi)
+crameri = _PaletteGroup(crameri)

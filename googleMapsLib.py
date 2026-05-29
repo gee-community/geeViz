@@ -33,7 +33,7 @@ Quick start::
     import geeViz.googleMapsLib as gm
 
     # Geocode an address
-    result = gm.geocode("4240 S Olympic Way, Salt Lake City, UT")
+    result = gm.geocode("100 S 200 E, Salt Lake City, UT")
 
     # Street View panorama + AI interpretation
     pano = gm.streetview_panorama(-111.80, 40.68, fov=360)
@@ -172,7 +172,7 @@ def geocode(address: str) -> dict[str, Any] | None:
         Returns ``None`` if no results found.
 
     Example:
-        >>> result = geocode("4240 S Olympic Way, Salt Lake City, UT")
+        >>> result = geocode("100 S 200 E, Salt Lake City, UT")
         >>> if result:
         ...     print(f"{result['lat']}, {result['lon']}")
     """
@@ -1389,7 +1389,7 @@ def validate_address(address: str, region_code: str = "US") -> dict[str, Any] | 
         ``usps_data`` (USPS-standardized for US addresses).
 
     Example:
-        >>> result = validate_address("4240 olympic way, slc ut")
+        >>> result = validate_address("100 S 200 E, SLC, UT")
         >>> print(result['formatted_address'])
     """
     try:

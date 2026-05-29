@@ -95,41 +95,18 @@ def simpleSetProject(overwrite=False,verbose=False):
     
 
 def robustInitializer(verbose: bool = False):
-    """
-    A method that tries to authenticate and/or initialize GEE if it isn't already successfully initialized. This method tries to handle many different scenarios, but often fails. It is best to authenticate and initialize to a project prior to importing geeViz
-    """
+    """Thin pointer to ``geeViz.eeAuth.robust_init`` — kept here for
+    backwards compatibility with scripts that imported it from
+    ``geeViz.geeView`` directly.
 
-    try:
-        z = ee.Number(1).getInfo()
-        project_id = ee.data._get_state().cloud_api_user_project
-        if verbose:
-            print('Found project id set to:',project_id)
-    except Exception as e:
-        print('Earth Engine not initialized. Current Earth Engine best practices recommend running: `ee.Authenticate()`,`ee.Initialize(project="someProjectID")`, before importing geeViz.\ngeeViz will try to authenticate (if needed) and initialize automatically now. If this fails, please run these commands manually.')
-        if verbose:
-            print('EE error:',e)
-            print("Will try authenticating and initializing GEE")
-        try:
-            ee.Authenticate()
-            ee.Initialize(project=ee.data._get_state().cloud_api_user_project)
-            print('Successfully initialized GEE')
-        except Exception as e:
-            if verbose:
-                print('EE error:',e)
-            simpleSetProject(False)
+    The full decision tree (eeAuth proxy → EE refresh token → ADC fallback
+    with explicit warning → interactive ``ee.Authenticate(force=True)``)
+    lives in ``geeViz.eeAuth.eeCreds.EECreds.robust_init`` so it's
+    usable from any geeViz entry point, not just module import.
+    """
+    from geeViz.eeAuth import robust_init as _robust_init
+    return _robust_init(verbose=verbose)
 
-            try:
-                ee.Initialize(project=ee.data._get_state().cloud_api_user_project)
-                z = ee.Number(1).getInfo()
-                print('Successfully initialized GEE')
-            except Exception as e:
-                if verbose:
-                    print('EE error:',e)
-                    print('Will ask for a different project id')
-                simpleSetProject(True)
-                ee.Initialize(project=ee.data._get_state().cloud_api_user_project)
-                z = ee.Number(1).getInfo()
-                print('Successfully initialized GEE')
 
 robustInitializer()
 ######################################################################
@@ -387,12 +364,101 @@ import threading as _threading
 # deadlock and hang `Map.view()` any time a stale state file is found.
 _SERVERS_LOCK = _threading.RLock()
 
+# Upstream URL of the live eeAuth proxy. ``Map.view`` sets this when it
+# finds an active ``eeCreds`` proxy; the request handler reads it to
+# reverse-proxy ``/ee-api/*`` requests so the viewer JS can use the
+# same-origin default of ``window.location.origin + "/ee-api"`` without
+# the browser ever talking to the proxy's port directly.
+_EE_API_UPSTREAM: "str | None" = None
+_EE_API_UPSTREAM_LOCK = _threading.Lock()
+
+# Lazily-built connection pool for the reverse-proxy leg
+# (viewer-server → uvicorn proxy). Created on first ``_proxy_ee_api``
+# call. Without pooling, every value:compute/getMapId fired by the
+# viewer opens a fresh TCP connection to the uvicorn proxy, which adds
+# kernel-level overhead on every layer query — small per request but
+# very visible when the viewer fires N parallel queries per click.
+_EE_API_POOL = None
+_EE_API_POOL_LOCK = _threading.Lock()
+
+
+def _get_ee_api_pool():
+    """Return a process-wide ``urllib3.PoolManager`` for the
+    viewer→uvicorn forwarding leg. Built on first use because
+    ``urllib3`` is a transitive dep and we don't want to import it at
+    geeView load time for users who never call ``Map.view``."""
+    global _EE_API_POOL
+    if _EE_API_POOL is None:
+        with _EE_API_POOL_LOCK:
+            if _EE_API_POOL is None:
+                import urllib3
+                _EE_API_POOL = urllib3.PoolManager(
+                    num_pools=8,
+                    maxsize=32,
+                    block=False,
+                    timeout=urllib3.Timeout(connect=10, read=300),
+                )
+    return _EE_API_POOL
+
+
+def _set_ee_api_upstream(url: "str | None") -> None:
+    """Register the upstream eeAuth proxy URL with the local HTTP server.
+
+    Idempotent. Pass ``None`` to disable reverse-proxying (the /ee-api
+    handler will then 503).
+    """
+    global _EE_API_UPSTREAM
+    with _EE_API_UPSTREAM_LOCK:
+        _EE_API_UPSTREAM = (url or "").rstrip("/") or None
+
+
+def _resolve_ee_tenant(request_path: str, referer: str) -> str:
+    """Pick the tenant to stamp on a forwarded /ee-api request.
+
+    Precedence: ``?tenant=…`` on the incoming request → ``?tenant=…`` on
+    the Referer URL (so EE calls triggered by a page that pinned itself
+    to a tenant route through correctly) → ``eeCreds.current()`` as the
+    process-wide default.
+    """
+    from urllib.parse import urlparse, parse_qs
+    for src in (request_path, referer):
+        if not src:
+            continue
+        q = parse_qs(urlparse(src).query)
+        tenants = q.get("tenant") or []
+        if tenants and tenants[0]:
+            return tenants[0]
+    try:
+        from geeViz.eeAuth.eeCreds import eeCreds as _eeCreds
+        return _eeCreds.current() or ""
+    except Exception:
+        return ""
+
+
+# Headers that must NOT be copied between client / upstream connections.
+# Some are hop-by-hop per RFC 7230 §6.1; ``host`` and ``content-length``
+# are rebuilt by the outbound urllib request itself.
+_PROXY_HOP_BY_HOP_HEADERS = frozenset({
+    "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
+    "te", "trailers", "transfer-encoding", "upgrade",
+    "host", "content-length",
+})
+
 
 class _GeeVizRequestHandler(http.server.SimpleHTTPRequestHandler):
-    """SimpleHTTPRequestHandler rooted at the geeViz package dir.
+    """SimpleHTTPRequestHandler rooted at the geeViz package dir, with a
+    /ee-api/* reverse-proxy hook.
 
-    We pass `directory=` so the handler serves from `py_viz_dir` regardless of
+    File serving uses ``directory=py_viz_dir`` so it works regardless of
     the process cwd. Access logs are silenced to avoid notebook stderr spam.
+
+    Any request whose path starts with ``/ee-api/`` is forwarded to the
+    upstream eeAuth proxy registered via ``_set_ee_api_upstream``. The
+    handler stamps an ``X-geeViz-Creds`` tenant header based on
+    ``_resolve_ee_tenant``, strips hop-by-hop headers, and streams the
+    response back. Lets the viewer JS use the same-origin
+    ``/ee-api`` default without the URL having to carry the actual
+    proxy address.
     """
 
     def __init__(self, *args, **kwargs):
@@ -401,6 +467,161 @@ class _GeeVizRequestHandler(http.server.SimpleHTTPRequestHandler):
 
     def log_message(self, format, *args):  # noqa: A002 - stdlib signature
         return
+
+    def end_headers(self):  # noqa: D401 - stdlib API
+        """Force no-cache on every static response.
+
+        Without this, browsers cache the geeView JS bundle indefinitely
+        (the stdlib server emits no ``Cache-Control``, only ``Last-Modified``,
+        which browsers freely cache). When we ship a JS update — e.g.
+        the same-origin ``/ee-api`` default replacing the heroku URL —
+        users keep hitting the old bundle until they hard-refresh, and
+        the symptoms (cross-origin requests to a long-dead proxy) are
+        impossible to diagnose without DevTools. Forcing no-store
+        eliminates the failure mode entirely; cost is one network
+        round-trip per asset per page load, which is irrelevant for a
+        local dev server.
+        """
+        self.send_header("Cache-Control", "no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        super().end_headers()
+
+    # ---- /ee-api reverse-proxy ----
+    def _is_ee_api(self) -> bool:
+        # ``self.path`` may include the query string; check just the path.
+        from urllib.parse import urlparse
+        return urlparse(self.path).path.startswith("/ee-api/") or \
+            urlparse(self.path).path == "/ee-api"
+
+    def _proxy_ee_api(self) -> None:
+        upstream = _EE_API_UPSTREAM
+        if not upstream:
+            self.send_error(503, "eeAuth proxy not registered")
+            return
+        # Both ``self.path`` and ``upstream`` carry the ``/ee-api`` prefix.
+        # Strip it from the incoming path so we don't double it.
+        suffix = self.path
+        if suffix.startswith("/ee-api"):
+            suffix = suffix[len("/ee-api"):]
+
+        # Map.view() bakes the tenant into the JS-side proxy URL as a
+        # ``/t/<tenant>/`` path prefix (rather than a ``?tenant=`` query
+        # on the page URL). Strip it here and surface the tenant for
+        # routing. This keeps the page URL bar clean AND pins every tab
+        # to its tenant for the lifetime of the page — process-wide
+        # eeCreds.use() switches can't drift open tabs to other creds.
+        path_tenant = ""
+        if suffix.startswith("/t/"):
+            rest = suffix[len("/t/"):]
+            slash = rest.find("/")
+            if slash > 0:
+                path_tenant = rest[:slash]
+                suffix = rest[slash:]
+            else:
+                # ``/ee-api/t/<tenant>`` with no trailing segment — keep
+                # the suffix as-is and treat as the tenant ack endpoint.
+                path_tenant = rest
+                suffix = "/"
+
+        target_url = upstream + suffix  # upstream already ends without trailing slash
+
+        # Read body (if any). EE often POSTs JSON; for streaming uploads we'd
+        # need chunked forwarding, but EE doesn't use that path.
+        try:
+            content_length = int(self.headers.get("Content-Length", "0") or 0)
+        except ValueError:
+            content_length = 0
+        body = self.rfile.read(content_length) if content_length > 0 else None
+
+        # Forward most headers; strip hop-by-hop and overwrite tenant.
+        out_headers = {}
+        for h, v in self.headers.items():
+            if h.lower() in _PROXY_HOP_BY_HOP_HEADERS:
+                continue
+            out_headers[h] = v
+        # Tenant precedence: ``/t/<tenant>/`` path segment (per-tab pin)
+        # → ``?tenant=`` on request or Referer (legacy) → eeCreds.current()
+        # process-wide default (only safe in single-tenant setups).
+        tenant = path_tenant or _resolve_ee_tenant(
+            self.path, self.headers.get("Referer", ""),
+        )
+        if tenant:
+            out_headers["X-geeViz-Creds"] = tenant
+
+        # Use the shared pool so connections to the uvicorn proxy
+        # stay alive across requests. urllib3 ``preload_content=False``
+        # streams the body chunk-by-chunk on the way back, matching the
+        # original ``urlopen``+read-loop behavior without buffering the
+        # whole response (important for getMapId tile responses).
+        try:
+            pool = _get_ee_api_pool()
+            resp = pool.request(
+                self.command, target_url,
+                body=body, headers=out_headers,
+                preload_content=False,
+                retries=False,
+                redirect=False,
+            )
+        except Exception as e:
+            self.send_error(502, f"eeAuth proxy unreachable: {e}")
+            return
+        try:
+            self._relay_response(resp.status, resp.headers, resp)
+        finally:
+            resp.release_conn()
+
+    def _relay_response(self, status: int, headers, body_stream) -> None:
+        self.send_response(status)
+        for h, v in headers.items():
+            if h.lower() in _PROXY_HOP_BY_HOP_HEADERS:
+                continue
+            self.send_header(h, v)
+        self.end_headers()
+        # Stream in chunks to avoid loading huge tile/compute responses into
+        # memory in one go.
+        while True:
+            chunk = body_stream.read(64 * 1024)
+            if not chunk:
+                break
+            try:
+                self.wfile.write(chunk)
+            except (BrokenPipeError, ConnectionResetError):
+                # Browser hung up — common when panning the map fast.
+                return
+
+    # Override each HTTP verb so reverse-proxy fires for /ee-api/*; everything
+    # else falls through to ``SimpleHTTPRequestHandler``'s static-file behavior.
+    def do_GET(self):  # noqa: N802 - stdlib API
+        if self._is_ee_api():
+            return self._proxy_ee_api()
+        return super().do_GET()
+
+    def do_POST(self):  # noqa: N802 - stdlib API
+        if self._is_ee_api():
+            return self._proxy_ee_api()
+        self.send_error(405, "Method Not Allowed")
+
+    def do_PUT(self):  # noqa: N802 - stdlib API
+        if self._is_ee_api():
+            return self._proxy_ee_api()
+        self.send_error(405, "Method Not Allowed")
+
+    def do_DELETE(self):  # noqa: N802 - stdlib API
+        if self._is_ee_api():
+            return self._proxy_ee_api()
+        self.send_error(405, "Method Not Allowed")
+
+    def do_PATCH(self):  # noqa: N802 - stdlib API
+        if self._is_ee_api():
+            return self._proxy_ee_api()
+        self.send_error(405, "Method Not Allowed")
+
+    def do_OPTIONS(self):  # noqa: N802 - stdlib API
+        if self._is_ee_api():
+            return self._proxy_ee_api()
+        # No CORS preflight needed for static files served same-origin.
+        self.send_error(405, "Method Not Allowed")
 
 
 def run_local_server(port: int = 8001):
@@ -701,6 +922,10 @@ class mapper:
             time. Set to False if you want them visible simultaneously.
     """
 
+    def __call__(self):
+        """Allow ``gv.Map()`` to return the singleton instead of raising TypeError."""
+        return self
+
     def __init__(self, port: int = 8001):
         self.port = port
         self.layerNumber = 1
@@ -941,15 +1166,34 @@ class mapper:
         # Get the id and populate dictionarye
         idDict = {}
 
+        # Always wrap Geometry/Feature as FeatureCollection for rendering
+        imageType = type(image).__name__
+        if imageType == "Geometry":
+            image = ee.FeatureCollection([ee.Feature(image)])
+            imageType = "FeatureCollection"
+        elif imageType == "Feature":
+            image = ee.FeatureCollection([image])
+            imageType = "FeatureCollection"
+        elif imageType not in self.typeLookup:
+            # Common cause: ee.Element returned from .copyProperties() /
+            # .get(...) / .first(). Try to coerce to ee.Image — that's the
+            # right interpretation for most analysis pipelines that end with
+            # a property-attached image. If that fails, raise a clear error.
+            try:
+                image = ee.Image(image)
+                imageType = "Image"
+            except Exception as e:
+                raise TypeError(
+                    f"addLayer received an object of type {type(image).__name__!r}, "
+                    f"which is not a recognized Earth Engine layer type. If this came "
+                    f"from .copyProperties() / .get(...) / .first(), wrap the result in "
+                    f"ee.Image(...) explicitly, e.g. "
+                    f"ee.Image(img.copyProperties(other_img)). "
+                    f"Underlying cast error: {e}"
+                ) from e
+
         if "layerType" not in viz.keys():
-            imageType = type(image).__name__
-            layerType = self.typeLookup[imageType]
-            if imageType == "Geometry":
-                image = ee.FeatureCollection([ee.Feature(image)])
-            elif imageType == "Feature":
-                image = ee.FeatureCollection([image])
-                print(layerType)
-            viz["layerType"] = layerType
+            viz["layerType"] = self.typeLookup[imageType]
 
         if not isinstance(image, dict):
             idDict["_ee_obj"] = image  # keep original for testLayers()
@@ -967,6 +1211,81 @@ class mapper:
         idDict["visible"] = str(visible).lower()
         idDict["viz"] = json.dumps(viz, sort_keys=False)
 
+        self.idDictList.append(idDict)
+
+    ######################################################################
+    # Function for adding an external XYZ tile service to the map
+    def addTileLayer(
+        self,
+        url_template: str,
+        name: str = "Tile Layer",
+        visible: bool = True,
+        opacity: float = 1.0,
+        max_zoom: int = 20,
+    ):
+        """Add an external XYZ tile service (or any URL-templated raster
+        service) to the map without leaving geeViz for Leaflet/Mapbox.
+
+        The viewer (lcms-viewer.min.js) already supports tile-URL layers
+        via its ``addREST`` / ``tileMapService`` paths; this Python entry
+        point wraps that for the standard ``Map.*`` API.
+
+        Args:
+            url_template (str): XYZ tile URL with ``{x}``, ``{y}``, ``{z}``
+                placeholders. e.g.
+                ``"https://example.com/tiles/{z}/{x}/{y}.png"``.
+                ArcGIS MapServer/ImageServer tile endpoints fit this
+                template too (substitute appropriately).
+            name (str, optional): Layer name shown in the layer list.
+            visible (bool, optional): Whether the layer is on initially.
+            opacity (float, optional): Initial opacity 0-1. Defaults to 1.0.
+            max_zoom (int, optional): Maximum zoom level the source serves.
+                Defaults to 20.
+
+        Examples:
+            CTrees AGB tiles, displayed alongside an EE layer::
+
+                Map.addLayer(my_ee_image, viz, "EE Layer")
+                Map.addTileLayer(
+                    "https://viz-assets.ctrees.org/sfi/basemaps/agb_100m/{z}/{x}/{y}.png",
+                    name="CTrees AGB (100m)",
+                    opacity=0.7,
+                )
+                Map.centerObject(area, 9)
+                Map.view()
+
+            ESRI World Imagery basemap::
+
+                Map.addTileLayer(
+                    "https://server.arcgisonline.com/ArcGIS/rest/services/"
+                    "World_Imagery/MapServer/tile/{z}/{y}/{x}",
+                    name="ESRI World Imagery",
+                )
+        """
+        if not isinstance(url_template, str) or not url_template:
+            raise ValueError("url_template must be a non-empty string")
+        if not all(tok in url_template for tok in ("{x}", "{y}", "{z}")):
+            raise ValueError(
+                f"url_template must contain {{x}}, {{y}}, and {{z}} placeholders. "
+                f"Got: {url_template!r}"
+            )
+
+        idDict = {
+            "objectName": "Map",
+            "function": "addREST",
+            "name": name,
+            "visible": str(visible).lower(),
+            # Marker consumed by _build_run_js to emit a JS function literal.
+            "_is_tile_url": True,
+            "_tile_url_template": url_template,
+            "_tile_max_zoom": int(max_zoom),
+            "_tile_opacity": float(opacity),
+            # Keep parallel item/viz so list-comprehension paths don't trip.
+            "item": "",
+            "viz": json.dumps({"layerType": "tileMapService",
+                               "opacity": float(opacity),
+                               "maxZoom": int(max_zoom)}),
+        }
         self.idDictList.append(idDict)
 
     ######################################################################
@@ -1305,9 +1624,53 @@ class mapper:
     # Build the per-session runGeeViz JavaScript body from the mapper's
     # state. Written by `view()` to `geeView/src/gee/gee-run/<name>.js`,
     # which `index.html` already references via a normal `<script src>`.
-    def _build_run_js(self):
-        lines = "var layerLoadErrorMessages=[];showMessage('Loading',staticTemplates.loadingModal[mode]);function runGeeViz(){"
+    def _build_run_js(self, tenant: str = ""):
+        # Optional tenant header — runs IMMEDIATELY at script load, before
+        # ``eeInit()`` (which is deferred behind a Google Maps load).
+        # ``authProxyAPIURL`` is a top-level ``let`` in lcms-viewer.min.js
+        # that's accessible cross-script in classic-script lexical scope;
+        # reassigning it here makes the deferred ``ee.initialize`` call use
+        # a tenant-prefixed proxy URL. Each per-session run_js bakes its
+        # own tenant, so every open browser tab is permanently pinned to
+        # the tenant Map.view() ran with — immune to subsequent
+        # eeCreds.use() switches that change process-wide state.
+        prefix = ""
+        if tenant:
+            from urllib.parse import quote as _q
+            t_enc = _q(tenant, safe="")
+            prefix = (
+                "try{authProxyAPIURL=window.location.origin+"
+                f"'/ee-api/t/{t_enc}';}}catch(e){{}}"
+            )
+        lines = prefix + "var layerLoadErrorMessages=[];showMessage('Loading',staticTemplates.loadingModal[mode]);function runGeeViz(){"
         for idDict in self.idDictList:
+            if idDict.get("_is_tile_url"):
+                # External XYZ tile service — emit a Map.addREST(...) call
+                # with a JS function literal that substitutes {x}/{y}/{z}.
+                # Backslash-escape any literal backslashes / double quotes in
+                # the URL so it lives safely inside a JS double-quoted string.
+                tpl = (idDict["_tile_url_template"]
+                       .replace("\\", "\\\\")
+                       .replace('"', '\\"'))
+                tile_url_fn = (
+                    'function(coord,zoom){return "' + tpl + '"'
+                    '.replace("{x}",coord.x)'
+                    '.replace("{y}",coord.y)'
+                    '.replace("{z}",zoom);}'
+                )
+                # addREST signature: (tileURLFunction, name, visible, maxZoom, helpBox, whichLayerList)
+                # Wrap in a try/catch so a single bad URL can't break the whole map load.
+                lines += (
+                    'try{{Map.addREST({fn},"{name}",{visible},{maxZoom},"","layer-list");}}'
+                    'catch(e){{layerLoadErrorMessages.push("Tile layer \\"{name}\\" failed: "+e.message);}}'
+                ).format(
+                    fn=tile_url_fn,
+                    name=idDict["name"].replace('"', '\\"'),
+                    visible=str(idDict["visible"]).lower(),
+                    maxZoom=idDict.get("_tile_max_zoom", 20),
+                )
+                continue
+
             lines += "{}.{}({},{},'{}',{});".format(
                 idDict["objectName"],
                 idDict["function"],
@@ -1357,6 +1720,7 @@ class mapper:
         token_placeholder: str = "__GEEVIZ_TOKEN__",
         token_time_placeholder: str = "__GEEVIZ_TOKEN_TIME__",
         project_placeholder: str = "__GEEVIZ_PROJECT__",
+        auth_proxy_placeholder: str = "__GEEVIZ_AUTH_PROXY__",
     ) -> str:
         """Write a self-contained geeView HTML to `output_path`.
 
@@ -1408,13 +1772,21 @@ class mapper:
         html = html.replace(
             '<script type="text/javascript" src="./src/gee/gee-run/runGeeViz.js"></script>',
             (
-                # Auth bootstrap — runs after lcms-viewer.min.js initializes urlParams,
-                # before runGeeViz triggers Map.addLayer (which needs the token).
+                # Auth bootstrap — runs after lcms-viewer.min.js initializes
+                # urlParams, before runGeeViz triggers Map.addLayer.
+                # Either path works at runtime:
+                #   * accessToken set + non-"None" → viewer uses token directly
+                #     (legacy ``__GEEVIZ_TOKEN__`` substitution path).
+                #   * accessToken == "None" / null → viewer falls through to
+                #     ``urlParams.geeAuthProxyURL``, which routes EE API calls
+                #     through the agent's ``/ee-api`` proxy. Agent injects the
+                #     SA bearer token server-side; no EE token in the browser.
                 "<script>(function(){"
                 "  if(typeof urlParams==='undefined'){window.urlParams={};}"
                 "  urlParams.accessToken='" + token_placeholder + "';"
                 "  urlParams.accessTokenCreationTime=" + token_time_placeholder + ";"
                 "  urlParams.projectID='" + project_placeholder + "';"
+                "  urlParams.geeAuthProxyURL='" + auth_proxy_placeholder + "';"
                 "})();</script>\n"
                 # Inlined per-export runGeeViz JS
                 "<script>" + run_js + "</script>"
@@ -1493,11 +1865,54 @@ class mapper:
 
         print("Starting webmap")
 
-        # Get access token
-        self._mint_access_token()
+        # Auth path selection: proxy (modern) vs direct-token (legacy).
+        #
+        # 1) PROXY MODE — preferred. Routes every EE REST call from the
+        #    viewer through the ``geeViz.eeAuth`` proxy, which signs
+        #    requests with the active credential. No token in the URL,
+        #    no ~1h expiry, multi-tenant safe.
+        #
+        #    Trigger: ``eeCreds.proxy_url`` is set OR auto-discovery
+        #    finds credentials (ADC, persistent EE refresh token, env
+        #    SA, ...) and the proxy spins up successfully.
+        #
+        # 2) LEGACY MODE — fallback. Mints an EE access token now and
+        #    bakes it into the URL. Single-tenant, token expires after
+        #    ~1h. Used when the proxy can't start (uvicorn missing,
+        #    port unavailable, no credentials discoverable) OR when the
+        #    user opts out via ``GEEVIZ_EEAUTH_MODE=legacy``.
+        #
+        # Mode override:
+        #   - ``GEEVIZ_EEAUTH_MODE=auto`` (default): try proxy, fall back
+        #   - ``GEEVIZ_EEAUTH_MODE=proxy``: require proxy; raise if can't
+        #   - ``GEEVIZ_EEAUTH_MODE=legacy``: skip proxy entirely
+        ee_proxy_url = ""
+        ee_proxy_tenant = ""
+        ee_proxy_tenants: list[str] = []
+        _auth_mode = os.environ.get("GEEVIZ_EEAUTH_MODE", "auto").lower()
+        if _auth_mode != "legacy":
+            try:
+                from geeViz.eeAuth.eeCreds import eeCreds as _eeCreds
+                status = _eeCreds.ensure_started(mode=_auth_mode)
+                if status["proxy_url"]:
+                    ee_proxy_url = status["proxy_url"]
+                    ee_proxy_tenant = status["current"]
+                    ee_proxy_tenants = status.get("tenants", []) or []
+            except RuntimeError:
+                # mode='proxy' explicitly demanded the proxy and it
+                # couldn't start. Propagate so the user notices.
+                raise
+            except Exception:
+                # auto mode: silent fallback. eeCreds import could fail
+                # in environments without uvicorn / fastapi.
+                pass
 
-        # Build the per-session runGeeViz JS and write to disk
-        run_js = self._build_run_js()
+        # Build the per-session runGeeViz JS and write to disk. When the
+        # proxy is active we bake the tenant into the JS itself (not the
+        # page URL), so every tab is pinned to whatever tenant was
+        # current at the moment Map.view() was called — immune to later
+        # eeCreds.use() calls changing process-wide state.
+        run_js = self._build_run_js(tenant=ee_proxy_tenant or "")
         self.ee_run = os.path.join(ee_run_dir, "{}.js".format(self.ee_run_name))
         with open(self.ee_run, "w", encoding="utf-8") as f:
             f.write(run_js)
@@ -1507,10 +1922,43 @@ class mapper:
         if actual_port is not None:
             self.port = actual_port
 
-        # Build the viewer URL with token as query string
-        query = "?projectID={}&accessToken={}&accessTokenCreationTime={}".format(
-            self.project, self.accessToken, self.accessTokenCreationTime
-        )
+        # Build the viewer URL — proxy mode or legacy token mode.
+        if ee_proxy_url:
+            # Register the upstream proxy URL with the local HTTP server
+            # so its handler reverse-proxies /ee-api/* requests to it.
+            # With that hook in place, the JS-side default of
+            # ``window.location.origin + "/ee-api"`` resolves to the live
+            # proxy without the URL having to carry the address.
+            _set_ee_api_upstream(ee_proxy_url)
+
+            # No URL query needed — tenant is baked into the per-session
+            # run_js (see ``_build_run_js(tenant=…)``). URL bar stays at
+            # ``http://localhost:<port>/geeView/`` regardless of how many
+            # credentials are registered.
+            query = ""
+            print(
+                f"Using eeCreds proxy at {ee_proxy_url}"
+                f" (creds={ee_proxy_tenant or '<first registered>'})"
+            )
+        else:
+            # Legacy: direct token mint, baked into the URL.
+            # Emit a one-time warning so users see the deprecation;
+            # set GEEVIZ_EEAUTH_MODE=legacy to silence (until removal).
+            import warnings as _warnings
+            _warnings.warn(
+                "geeViz Map.view(): falling back to legacy direct-token "
+                "auth (no eeCreds proxy running). Tokens are visible in "
+                "the URL and expire after ~1 hour. Set up eeCreds.addCreds() "
+                "+ eeCreds.start() to use the proxy, or set "
+                "GEEVIZ_EEAUTH_MODE=legacy to silence this warning. "
+                "Legacy auth will be removed in a future major version.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self._mint_access_token()
+            query = "?projectID={}&accessToken={}&accessTokenCreationTime={}".format(
+                self.project, self.accessToken, self.accessTokenCreationTime
+            )
 
         # Determine display mode — if user explicitly sets one, only that one fires.
         # If user explicitly disables one (e.g. open_browser=False), the other opens.
@@ -1551,6 +1999,23 @@ class mapper:
                 display(self.IFrame)
             if want_browser:
                 webbrowser.open(url, new=1)
+                # When invoked from a script (not a notebook), block
+                # until the user presses Enter. The viewer server lives
+                # on daemon threads in this process — without this
+                # block, the script returns from ``Map.view()``, the
+                # interpreter exits, daemon threads die, and the browser
+                # the script just opened can't load the page. Notebooks
+                # don't need this because the kernel keeps the process
+                # alive across cells.
+                if not in_notebook:
+                    print(
+                        f"\ngeeViz viewer running at {url}\n"
+                        "Press Enter (or Ctrl+C) to stop the server and exit."
+                    )
+                    try:
+                        input()
+                    except (KeyboardInterrupt, EOFError):
+                        pass
 
     ######################################################################
     def refresh(self):
@@ -1582,6 +2047,8 @@ class mapper:
         self.idDictList = []
         self.mapCommandList = []
 
+    clear = clearMap  # Alias — LLMs frequently try Map.clear()
+
     def clearMapLayers(self):
         """
         Removes all map layers - useful if running geeViz in a notebook and don't want layers from a prior code block to still be included, but want commands to remain.
@@ -1608,6 +2075,268 @@ class mapper:
         >>> Map.view()
         """
         self.mapCommandList = []
+
+    ######################################################################
+    @staticmethod
+    def _style_vector(ee_obj, viz):
+        """Apply .style() to vector layers to match the geeView JS viewer rendering.
+
+        The JS viewer (lcms-viewer.min.js) checks for styleParams and applies:
+        - color, fillColor, width, pointSize, pointShape via ee.FeatureCollection.style()
+        - fallback: ee.Image().paint(fc, null, strokeWeight) with palette=strokeColor
+
+        Returns:
+            tuple: (styled_ee_obj, style_mode) — the styled EE object and the mode:
+            ``"styled"`` (.style() RGBA, no viz needed), ``"painted"`` (paint, needs palette),
+            or ``False`` (not a vector, no styling applied).
+        """
+        obj_cls = ee_obj.__class__.__name__
+        if obj_cls == "Geometry":
+            ee_obj = ee.FeatureCollection([ee.Feature(ee_obj)])
+            obj_cls = "FeatureCollection"
+        elif obj_cls == "Feature":
+            ee_obj = ee.FeatureCollection([ee_obj])
+            obj_cls = "FeatureCollection"
+
+        lt = viz.get("layerType", "")
+        is_vector = obj_cls == "FeatureCollection" or "Vector" in lt or "vector" in lt
+
+        if not is_vector:
+            return ee_obj, False
+
+        # Build styleParams matching JS viewer defaults
+        has_style_keys = any(k in viz for k in ("color", "strokeColor", "fillColor", "pointSize", "pointRadius", "width"))
+        if has_style_keys:
+            style = {
+                "color": viz.get("color") or viz.get("strokeColor") or "000",
+                "fillColor": viz.get("fillColor", "00000011"),
+                "width": viz.get("width") or viz.get("strokeWeight", 2),
+                "pointSize": viz.get("pointSize") or viz.get("pointRadius", 3),
+            }
+            # .style() returns a styled RGBA image — colors are baked in
+            return ee_obj.style(**style), "styled"
+        else:
+            # Default: paint with thin black outline (single-band, needs palette)
+            sw = viz.get("strokeWeight", 2)
+            styled = ee.Image().paint(ee_obj, 0, sw)
+            return styled, "painted"
+
+    ######################################################################
+    def exportLayerJson(self, filename: str | None = None, output_dir: str | None = None):
+        """Bundle all currently-added layers into a JSON file suitable for
+        a custom HTML dashboard.
+
+        Mirrors the input-type handling of :meth:`testLayers` and
+        :meth:`previewMap`: vectors (Geometry, Feature, FeatureCollection)
+        are wrapped/styled via :meth:`_style_vector`, ImageCollections are
+        collapsed with ``.mosaic()``, and ``ee.Element`` results from
+        ``copyProperties`` are coerced to ``ee.Image`` upstream by
+        :meth:`addLayer`. The result of these conversions is then
+        serialized — a downstream ``/api/dashboard/urls`` endpoint
+        deserializes and calls ``getMapId`` on each entry to mint fresh
+        tile URLs on every page load.
+
+        Args:
+            filename (str, optional): Output filename (saved under
+                ``output_dir``). Must end with ``.json``. Defaults to
+                ``"dashboard_layers.json"``.
+            output_dir (str, optional): Override the directory to write
+                into. Defaults to the per-session ``generated_outputs``
+                directory used by the rest of the artifact pipeline.
+
+        Returns:
+            dict: ``{"path": <abs_path>, "layer_names": [...],
+            "layer_count": N, "skipped": [...], "warnings": [...]}``.
+
+        Notes on skipped layer types:
+            - ``dict`` / GeoJSON layers — no EE object to re-mint;
+              skipped with a warning.
+            - Tile-URL layers (added via :meth:`addTileLayer`) — already
+              have a static URL; included with ``"static_url"`` key
+              instead of ``"serialized"``.
+        """
+        import os as _os
+        import json as _json
+
+        if filename is None:
+            filename = "dashboard_layers.json"
+        if not filename.lower().endswith(".json"):
+            filename = filename + ".json"
+
+        if output_dir is None:
+            output_dir = _os.path.join(
+                _os.path.dirname(_os.path.abspath(__file__)), "mcp", "generated_outputs"
+            )
+        _os.makedirs(output_dir, exist_ok=True)
+        full_path = _os.path.join(output_dir, _os.path.basename(filename))
+
+        # Display-relevant viz keys (matches _test_layer)
+        _VIZ_KEYS = ("bands", "min", "max", "gain", "bias", "gamma", "palette", "opacity", "format")
+
+        layers = {}
+        seen_names = {}      # base_name -> count assigned so far
+        skipped = []
+        warnings = []
+
+        def _unique_name(name):
+            count = seen_names.get(name, 0)
+            seen_names[name] = count + 1
+            if count == 0:
+                return name
+            new_name = f"{name}_{count + 1}"
+            warnings.append(
+                f"Layer name {name!r} collided; renamed to {new_name!r}"
+            )
+            return new_name
+
+        def _try_resolve_auto_viz(ee_obj, viz, map_viz):
+            """If autoViz=True, attempt to read class_values/class_palette
+            and convert to a concrete viz so the refresh endpoint doesn't
+            need to know about autoViz. Best-effort — falls back silently."""
+            if not viz.get("autoViz"):
+                return map_viz
+            try:
+                check = ee_obj
+                if ee_obj.__class__.__name__ == "ImageCollection":
+                    check = ee.Image(ee_obj.first())
+                if not hasattr(check, "bandNames"):
+                    return map_viz
+                band_names = check.bandNames().getInfo() or []
+                if not band_names:
+                    return map_viz
+                first_band = band_names[0]
+                cv_key = f"{first_band}_class_values"
+                cp_key = f"{first_band}_class_palette"
+                d = check.toDictionary([cv_key, cp_key]).getInfo() or {}
+                values = d.get(cv_key)
+                palette = d.get(cp_key)
+                # Normalize string-encoded values (some assets use "1,2,3")
+                if isinstance(values, str):
+                    values = [int(p.strip()) if p.strip().lstrip("-").isdigit()
+                              else p.strip() for p in values.split(",") if p.strip()]
+                if isinstance(palette, str):
+                    palette = [p.strip() for p in palette.split(",") if p.strip()]
+                if values and palette:
+                    numeric_vals = [v for v in values if isinstance(v, (int, float))]
+                    if numeric_vals:
+                        return {
+                            "bands": [first_band],
+                            "min": min(numeric_vals),
+                            "max": max(numeric_vals),
+                            "palette": [str(p).replace("#", "") for p in palette],
+                        }
+            except Exception as e:
+                warnings.append(f"autoViz resolve failed for {ee_obj.__class__.__name__}: {e}")
+            return map_viz
+
+        for idx, idDict in enumerate(self.idDictList):
+            name = idDict.get("name", f"Layer {idx}")
+
+            # Tile-URL layers (Map.addTileLayer): already have a static URL.
+            if idDict.get("_is_tile_url"):
+                out_name = _unique_name(name)
+                layers[out_name] = {
+                    "static_url": idDict["_tile_url_template"],
+                    "visible": idDict.get("visible", "true") == "true",
+                    "opacity": float(idDict.get("_tile_opacity", 1.0)),
+                    "max_zoom": int(idDict.get("_tile_max_zoom", 20)),
+                }
+                continue
+
+            ee_obj = idDict.get("_ee_obj")
+            viz = idDict.get("_viz", {}) or {}
+            visible = idDict.get("visible", "true") == "true"
+
+            # GeoJSON dict layers: no EE object, can't mint a tile URL
+            if ee_obj is None:
+                skipped.append({"name": name, "reason": "GeoJSON layer (no EE object to re-mint)"})
+                continue
+
+            # Build the display viz (same keys as _test_layer)
+            map_viz = {k: viz[k] for k in _VIZ_KEYS if k in viz}
+
+            try:
+                styled_obj, style_mode = mapper._style_vector(ee_obj, viz)
+                if style_mode == "painted":
+                    # paint() returns single-band — use strokeColor as palette
+                    sc = viz.get("color") or viz.get("strokeColor")
+                    if sc:
+                        map_viz["palette"] = [sc.replace("#", "")]
+                    map_viz.pop("bands", None)
+                elif style_mode == "styled":
+                    # .style() bakes colors into RGBA — no viz needed
+                    map_viz = {}
+                else:
+                    # Image / ImageCollection path. Mosaic ImageCollections
+                    # so getMapId returns one set of consistent tiles
+                    # instead of an arbitrary first-image tile.
+                    if styled_obj.__class__.__name__ == "ImageCollection":
+                        styled_obj = styled_obj.mosaic()
+                    # autoViz pre-resolution (best-effort) — gives the
+                    # refresh endpoint a concrete viz with min/max/palette.
+                    map_viz = _try_resolve_auto_viz(ee_obj, viz, map_viz)
+            except Exception as e:
+                skipped.append({"name": name, "reason": f"styling failed: {e}"})
+                continue
+
+            try:
+                serialized = styled_obj.serialize()
+            except Exception as e:
+                skipped.append({"name": name, "reason": f"serialize failed: {e}"})
+                continue
+
+            # Validate the layer can actually be rendered by calling
+            # getMapId(viz). This catches EE-side errors that only surface
+            # at tile-mint time (e.g. "Description length exceeds maximum"
+            # from CONUS-wide filterBounds, computation errors, asset access
+            # failures). Without this check, the dashboard JSON looks fine
+            # but the refresh endpoint silently drops the layer at view
+            # time and the agent never knows.
+            # Coerce ee.Element-returning chains to ee.Image (same trick
+            # as the addLayer autocast) so getMapId is callable for
+            # expressions like image.copyProperties(other_image) whose
+            # top-level operation returns Element by EE's typing.
+            mapid_target = styled_obj
+            if not hasattr(mapid_target, "getMapId"):
+                try:
+                    mapid_target = ee.Image(mapid_target)
+                except Exception:
+                    pass
+            try:
+                mapid_target.getMapId(map_viz)
+            except Exception as e:
+                err = str(e)
+                # Truncate verbose tracebacks so the agent sees something
+                # actionable rather than a wall of text.
+                if "\n" in err:
+                    err = err.split("\n")[0]
+                if len(err) > 300:
+                    err = err[:300] + "…"
+                skipped.append({"name": name, "reason": f"getMapId failed: {err}"})
+                continue
+
+            out_name = _unique_name(name)
+            layers[out_name] = {
+                "serialized": serialized,
+                "viz": map_viz,
+                "visible": visible,
+            }
+
+        payload = {
+            "version": 1,
+            "layer_count": len(layers),
+            "layers": layers,
+        }
+        with open(full_path, "w", encoding="utf-8") as f:
+            _json.dump(payload, f, indent=2)
+
+        return {
+            "path": full_path,
+            "layer_names": list(layers.keys()),
+            "layer_count": len(layers),
+            "skipped": skipped,
+            "warnings": warnings,
+        }
 
     ######################################################################
     def testLayers(self):
@@ -1676,7 +2405,32 @@ class mapper:
                     map_viz[k] = viz[k]
             warnings = []
             try:
-                ee_obj.getMapId(map_viz)
+                # Style vectors to match geeView viewer rendering
+                test_obj, style_mode = mapper._style_vector(ee_obj, viz)
+                if style_mode == "painted":
+                    # paint() returns single-band — use strokeColor as palette
+                    sc = viz.get("color") or viz.get("strokeColor")
+                    if sc:
+                        map_viz["palette"] = [sc.replace("#", "")]
+                    map_viz.pop("bands", None)
+                elif style_mode == "styled":
+                    # .style() returns RGBA — colors baked in, no viz needed
+                    map_viz = {}
+                else:
+                    # For ImageCollections (incl. time lapses), .mosaic() to get a single
+                    # representative tile preview. Otherwise getMapId picks an arbitrary
+                    # image which may be blank/wrong-area for tiled collections.
+                    obj_cls = test_obj.__class__.__name__
+                    if obj_cls == "ImageCollection":
+                        try:
+                            test_obj = test_obj.mosaic()
+                            idDict["_is_mosaic_preview"] = True
+                        except Exception:
+                            pass
+
+                map_id = test_obj.getMapId(map_viz)
+                # Cache the tile fetcher so previewMap can reuse it
+                idDict["_tile_fetcher"] = map_id.get("tile_fetcher")
             except Exception as e:
                 return {"name": name, "status": "error", "error": str(e)}
 
@@ -1695,7 +2449,63 @@ class mapper:
 
                     if hasattr(check_obj, "bandNames") and hasattr(check_obj, "toDictionary"):
                         band_names = check_obj.bandNames().getInfo()
-                        prop_keys = set(check_obj.toDictionary().keys().getInfo())
+                        # Fetch full property dict so we can inspect VALUES (not just keys)
+                        # and detect string-encoded class properties that need normalizing.
+                        full_props = check_obj.toDictionary().getInfo()
+                        prop_keys = set(full_props.keys())
+
+                        # ── Normalize string-encoded class properties ──
+                        # Some assets store class_values/names/palette as comma-separated
+                        # strings ("1,2,3") instead of lists. The JS viewer's autoViz can't
+                        # handle strings — it expects arrays. Detect strings and re-set
+                        # corrected list values on the image, then re-serialize.
+                        def _normalize_str_prop(v, as_int=False):
+                            if not isinstance(v, str):
+                                return None  # already a list, no normalization needed
+                            parts = [p.strip() for p in v.split(",") if p.strip()]
+                            if as_int:
+                                out = []
+                                for p in parts:
+                                    try:
+                                        out.append(int(p))
+                                    except (ValueError, TypeError):
+                                        try:
+                                            out.append(int(float(p)))
+                                        except (ValueError, TypeError):
+                                            out.append(p)
+                                return out
+                            return parts
+
+                        corrected = {}
+                        for bn in band_names:
+                            for suffix, as_int in (("values", True), ("names", False), ("palette", False)):
+                                key = f"{bn}_class_{suffix}"
+                                if key in full_props:
+                                    fixed = _normalize_str_prop(full_props[key], as_int=as_int)
+                                    if fixed is not None:
+                                        corrected[key] = fixed
+
+                        if corrected:
+                            # Apply corrected props to the EE object and re-serialize
+                            # so the viewer (which uses idDict["item"]) gets lists.
+                            try:
+                                if obj_type == "ImageCollection":
+                                    fixed_ee = ee_obj.map(lambda img: img.set(corrected))
+                                else:
+                                    fixed_ee = ee_obj.set(corrected)
+                                idDict["_ee_obj"] = fixed_ee
+                                idDict["item"] = fixed_ee.serialize()
+                                # Drop cached tile fetcher — it's tied to the old object
+                                idDict.pop("_tile_fetcher", None)
+                                warnings.append(
+                                    f"Normalized {len(corrected)} string-encoded class "
+                                    f"properties to lists (asset stored them comma-separated)."
+                                )
+                            except Exception as norm_err:
+                                warnings.append(
+                                    f"Detected string-encoded class properties but failed "
+                                    f"to normalize: {norm_err}"
+                                )
 
                         for bn in band_names:
                             cv_key = f"{bn}_class_values"
@@ -1778,6 +2588,188 @@ class mapper:
 
         all_passed = all(l["status"] == "ok" for l in layers)
         return {"pass": all_passed, "layers": layers}
+
+    ######################################################################
+    def previewMap(self, grid_size=3, zoom=None):
+        """Fetch a small grid of map tiles for each layer and return as a dict.
+
+        This gives the LLM a quick visual preview of each map layer without
+        launching a browser.  Uses ``getMapId`` + ``tile_fetcher.fetch_tile``
+        to grab tiles around the current map center, then stitches them with
+        Pillow into a single PNG per layer.
+
+        Args:
+            grid_size (int): Number of tiles per side (e.g. 3 = 3x3 = 9 tiles).
+                Default 3, producing a 768x768 px image per layer.
+            zoom (int, optional): Zoom level for tiles.  If None, uses the zoom
+                from the last ``setCenter``/``setZoom`` call, or auto-calculates
+                from ``centerObject`` bounds.  Falls back to 8.
+
+        Returns:
+            dict: ``{"layers": {layer_name: png_bytes, ...}, "center": [lng, lat], "zoom": int}``
+                Each value in ``layers`` is raw PNG bytes of the stitched tile grid.
+                Layers that fail to render are included with a ``None`` value.
+        """
+        import concurrent.futures
+        import math
+        import re
+        import io
+
+        from PIL import Image as PILImage
+
+        # ── Parse center / zoom from mapCommandList ──
+        center_lng, center_lat = 0.0, 0.0
+        parsed_zoom = None
+        bounds_coords = None
+
+        for cmd in self.mapCommandList:
+            m = re.match(r'Map\.setCenter\(\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^)]*)\s*\)', cmd)
+            if m:
+                center_lng = float(m.group(1))
+                center_lat = float(m.group(2))
+                z_str = m.group(3).strip()
+                if z_str and z_str != "null":
+                    parsed_zoom = int(float(z_str))
+                continue
+            m = re.match(r'map\.setZoom\((\d+)\)', cmd)
+            if m:
+                parsed_zoom = int(m.group(1))
+                continue
+            m = re.match(r'synchronousCenterObject\((.+)\)', cmd)
+            if m:
+                try:
+                    geojson = json.loads(m.group(1))
+                    coords = geojson.get("coordinates", [[]])[0]
+                    if coords:
+                        lngs = [c[0] for c in coords]
+                        lats = [c[1] for c in coords]
+                        center_lng = (min(lngs) + max(lngs)) / 2
+                        center_lat = (min(lats) + max(lats)) / 2
+                        bounds_coords = (min(lngs), min(lats), max(lngs), max(lats))
+                except Exception:
+                    pass
+
+        # Determine zoom
+        if zoom is not None:
+            z = zoom
+        elif parsed_zoom is not None:
+            z = parsed_zoom
+        elif bounds_coords is not None:
+            # Auto-calculate zoom to fit bounds in grid_size tiles
+            lng_span = bounds_coords[2] - bounds_coords[0]
+            lat_span = bounds_coords[3] - bounds_coords[1]
+            span = max(lng_span, lat_span)
+            if span > 0:
+                z = max(1, min(15, int(math.log2(360 / span * grid_size)) - 1))
+            else:
+                z = 10
+        else:
+            z = 8
+
+        # ── Tile coordinate math ──
+        def _lat_lon_to_tile(lat, lon, zoom_level):
+            n = 2 ** zoom_level
+            x = int((lon + 180) / 360 * n)
+            lat_rad = math.radians(max(-85, min(85, lat)))
+            y = int((1 - math.log(math.tan(lat_rad) + 1 / math.cos(lat_rad)) / math.pi) / 2 * n)
+            return x, y
+
+        cx, cy = _lat_lon_to_tile(center_lat, center_lng, z)
+        half = grid_size // 2
+        tiles_xy = [(cx + dx, cy + dy)
+                     for dy in range(-half, half + 1)
+                     for dx in range(-half, half + 1)]
+
+        # ── Get tile fetchers for each layer (reuse cached from testLayers) ──
+        layer_fetchers = {}
+        for idx, idDict in enumerate(self.idDictList):
+            ee_obj = idDict.get("_ee_obj")
+            viz = idDict.get("_viz", {})
+            name = idDict.get("name", f"Layer {idx}")
+            if ee_obj is None:
+                continue
+            # Reuse tile fetcher cached by testLayers if available
+            cached_fetcher = idDict.get("_tile_fetcher")
+            if cached_fetcher is not None:
+                layer_fetchers[name] = cached_fetcher
+                continue
+            # Otherwise create a new one (with vector styling)
+            map_viz = {}
+            for k in ("bands", "min", "max", "gain", "bias", "gamma", "palette", "opacity", "format"):
+                if k in viz:
+                    map_viz[k] = viz[k]
+            try:
+                test_obj, style_mode = mapper._style_vector(ee_obj, viz)
+                if style_mode == "painted":
+                    sc = viz.get("color") or viz.get("strokeColor")
+                    if sc:
+                        map_viz["palette"] = [sc.replace("#", "")]
+                    map_viz.pop("bands", None)
+                elif style_mode == "styled":
+                    map_viz = {}
+                else:
+                    # For ImageCollections (incl. time lapses), mosaic to a single tile
+                    if test_obj.__class__.__name__ == "ImageCollection":
+                        try:
+                            test_obj = test_obj.mosaic()
+                            idDict["_is_mosaic_preview"] = True
+                        except Exception:
+                            pass
+                map_id = test_obj.getMapId(map_viz)
+                idDict["_tile_fetcher"] = map_id["tile_fetcher"]
+                layer_fetchers[name] = map_id["tile_fetcher"]
+            except Exception:
+                layer_fetchers[name] = None
+
+        # ── Fetch tiles in parallel and stitch per layer ──
+        result_layers = {}
+        tile_size = 256
+
+        def _fetch_tile(fetcher, tx, ty, tz):
+            try:
+                return fetcher.fetch_tile(tx, ty, tz)
+            except Exception:
+                return None
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=16) as pool:
+            for layer_name, fetcher in layer_fetchers.items():
+                if fetcher is None:
+                    result_layers[layer_name] = None
+                    continue
+
+                # Submit all tile fetches for this layer
+                futures = {}
+                for tx, ty in tiles_xy:
+                    futures[(tx, ty)] = pool.submit(_fetch_tile, fetcher, tx, ty, z)
+
+                # Stitch tiles
+                img = PILImage.new("RGBA", (grid_size * tile_size, grid_size * tile_size), (0, 0, 0, 0))
+                for i, (tx, ty) in enumerate(tiles_xy):
+                    tile_bytes = futures[(tx, ty)].result()
+                    if tile_bytes:
+                        try:
+                            tile_img = PILImage.open(io.BytesIO(tile_bytes)).convert("RGBA")
+                            col = i % grid_size
+                            row = i // grid_size
+                            img.paste(tile_img, (col * tile_size, row * tile_size))
+                        except Exception:
+                            pass
+
+                # Downscale to ~300px to keep LLM context small
+                max_dim = 300
+                if max(img.size) > max_dim:
+                    ratio = max_dim / max(img.size)
+                    new_size = (int(img.width * ratio), int(img.height * ratio))
+                    img = img.resize(new_size, PILImage.LANCZOS)
+                buf = io.BytesIO()
+                img.save(buf, format="PNG", optimize=True)
+                result_layers[layer_name] = buf.getvalue()
+
+        return {
+            "layers": result_layers,
+            "center": [center_lng, center_lat],
+            "zoom": z,
+        }
 
     ######################################################################
     def testView(self, width=1280, height=900, wait_seconds=12):

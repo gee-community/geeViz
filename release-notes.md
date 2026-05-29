@@ -1,5 +1,98 @@
 # geeViz Release Notes
 
+## 2026.5.1 — May 29, 2026
+
+### geeViz.eeAuth (new package)
+
+- **Multi-tenant EE auth proxy** — a single Python process can now serve
+  Earth Engine on behalf of many service accounts concurrently, bypassing
+  the `ee.Initialize()` global-credential limitation. `Map.view()`
+  auto-starts the proxy on first use; multi-credential workflows use
+  `eeCreds.addCreds(...).use("<name>")` to switch tenants in-process.
+- **`EECreds` class** — discover, register, switch, and introspect
+  credential entries. Singleton `eeCreds` is the main entry point.
+- **`eeCreds.discover()` env-var autodetection** — finds whatever
+  credentials are present: `$GOOGLE_APPLICATION_CREDENTIALS`,
+  `~/.config/earthengine/credentials`, gcloud ADC, `$GEE_SERVICE_ACCOUNT_B64`,
+  per-tenant `$GEE_<NAME>_SERVICE_ACCOUNT`, and the new keyless paths
+  below. Idempotent — safe to call repeatedly.
+- **`eeCreds.robust_init()`** — the canonical EE bootstrap. Decision
+  tree: try eeAuth proxy → EE refresh token → ADC fallback → interactive
+  `ee.Authenticate`. Replaces the bespoke env-var dance previously
+  scattered across consumers.
+
+### Keyless authentication paths (security: no SA keys on disk)
+
+- **`eeCreds.addADC()`** — register the runtime's Application Default
+  Credentials as a tenant entry. On Cloud Run with an attached service
+  account, on GKE with workload identity, or on AWS via Workload Identity
+  Federation, this is the path that boots the proxy without any JSON key.
+- **`eeCreds.addImpersonation(target_email, name)`** — mint tokens by
+  impersonating a target service account at request time via
+  `google.auth.impersonated_credentials`. No key material held; the
+  runtime's ADC source must hold `roles/iam.serviceAccountTokenCreator`
+  on the target.
+- **WIF (Workload Identity Federation) support** — `external_account`
+  credential JSON (from `gcloud iam workload-identity-pools create-cred-config`)
+  is recognized by `_classify` and routes through the ADC path. Use for
+  AWS-hosted agents that federate into GCP.
+- **`GEE_<NAME>_SA_EMAIL=<email>` env-var pattern** — discover keyless
+  per-tenant impersonation from env. Coexists with the legacy
+  `GEE_<NAME>_SERVICE_ACCOUNT=<b64>` keyed pattern. Optional companion
+  `GEE_<NAME>_PROJECT=<id>` overrides the quota project per tenant.
+- **Bare SA-email auto-routing** — `eeCreds.addCreds("svc@p.iam.gserviceaccount.com", "name")`
+  detects the email shape and routes to `addImpersonation` so the same
+  one-liner registers both keyed and keyless tenants.
+
+### MCP Server
+
+- **`_init_ee_credentials` replaced** with `geeViz.eeAuth.robust_init()`.
+  ~60 lines of bespoke SA-key/inline-JSON/ADC dispatching collapse to one
+  call that handles every discovery source uniformly (B64, per-tenant SA
+  env vars, WIF, impersonation, ADC). Standalone MCP usage (e.g. Claude
+  Code via stdio) and chat-UI proxy mode both work without changes.
+- **Project derivation from `GEE_SERVICE_ACCOUNT_B64`** in proxy mode —
+  decodes the SA JSON's `project_id` directly when `$GEE_PROJECT` isn't
+  set, eliminating a translation env var.
+
+### geeViz.esriLib (new module)
+
+- **Esri Feature Service integration** — query, download, and convert
+  ArcGIS Online / Portal feature services into `ee.FeatureCollection`
+  objects. Bridges the ArcGIS data layer with geeViz / Earth Engine
+  analysis workflows.
+- **`docs/esri-integration-design.md`** — architecture and conversion
+  patterns between Esri JSON, GeoJSON, and EE.
+- **`examples/esri_integration.ipynb`** — worked examples.
+
+### outputLib.themes (new module)
+
+- Centralized chart theming primitives shared across
+  `outputLib.charts` and `outputLib.reports`.
+
+### Testing
+
+- **`geeViz/eeAuth/tests/`** — new package: `test_eeCreds.py`,
+  `test_discovery_and_modes.py`, `test_library.py`. Covers WIF,
+  impersonation, ADC fallback, env-var discovery, and the new keyless
+  shapes end-to-end.
+- New `geeViz/tests/`: `test_add_tile_layer.py`,
+  `test_apply_theme.py`, `test_esriLib.py`, `test_export_layer_json.py`,
+  `test_no_adk_template_collisions.py`, `test_search_geeviz_repl.py`,
+  `test_auto_date_format.py`, `test_continuous_histogram.py`,
+  `test_empty_chart_detector.py`, `test_multi_output_reducer.py`.
+
+### Examples
+
+- **`examples/eeAuthExamples.ipynb`** — walks through single-credential
+  usage, multi-credential workflows, the proxy lifecycle, and the
+  keyless paths above.
+
+### geeView, getImagesLib, getSummaryAreasLib, outputLib
+
+- Misc improvements, bug fixes, and chart/report polish across modules
+  (see commit log for details).
+
 ## 2026.4.2 — April 21, 2026
 
 ### geeView

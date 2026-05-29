@@ -39,21 +39,60 @@ if _SANDBOX_ENABLED:
     # Track whether we're inside the server's own init (allow) or user code (block)
     _audit_user_code_active = False
 
+    def _called_from_trusted_lib():
+        """True ONLY if the call is from inside trusted library code with NO user
+        code frame between the call site and the trusted frame.
+
+        Walks the stack from the syscall site upward:
+        - If we hit user code (filename '<mcp>') before any trusted frame → DENY
+        - If we hit a trusted frame first → ALLOW
+        - stdlib/site-packages frames are skipped (transparent)
+
+        This prevents the exploit where user code passes a callback to a trusted
+        function that calls back into user code which tries the syscall — that
+        callback's user frame would be above the trusted frame, so it's denied.
+        """
+        import inspect as _ins
+        _trusted_substrings = ("geeViz\\outputLib", "geeViz/outputLib", "kaleido", "plotly")
+        try:
+            f = _ins.currentframe()
+            while f is not None:
+                fname = (f.f_code.co_filename or "")
+                fname_lower = fname.lower()
+                # User code lives in '<mcp>' frames (from exec(compile(..., '<mcp>')))
+                if "<mcp>" in fname or "<string>" in fname:
+                    return False  # User code is closer than any trusted lib → deny
+                if any(s.lower() in fname_lower for s in _trusted_substrings):
+                    return True
+                f = f.f_back
+        except Exception:
+            pass
+        return False
+
     def _sandbox_audit_hook(event, args):
         if not _audit_user_code_active:
             return  # Allow server's own operations
         if event == "import":
             mod_name = args[0].split(".")[0] if args[0] else ""
             if mod_name in _AUDIT_BLOCKED_IMPORTS:
+                # Allow trusted library code (e.g. kaleido inside cl.save_chart_png)
+                if _called_from_trusted_lib():
+                    return
                 raise ImportError(
                     f"Sandbox: import of '{args[0]}' is blocked. "
                     f"Only Earth Engine, geeViz, and standard data libraries are allowed."
                 )
         elif event == "os.system":
+            if _called_from_trusted_lib():
+                return
             raise PermissionError("Sandbox: os.system() is blocked.")
         elif event == "subprocess.Popen":
+            if _called_from_trusted_lib():
+                return
             raise PermissionError("Sandbox: subprocess is blocked.")
         elif event in ("os.exec", "os.posix_spawn", "os.spawn"):
+            if _called_from_trusted_lib():
+                return
             raise PermissionError(f"Sandbox: {event} is blocked.")
 
     sys.addaudithook(_sandbox_audit_hook)
@@ -78,28 +117,18 @@ Environment (optional):
   MCP_PORT        Port for HTTP (default: 8000)
   MCP_PATH        Path for HTTP (default: /mcp)
 
-Tools (21):
+Tools (12):
   run_code                 Execute Python/GEE code in a persistent REPL namespace
   inspect_asset            Get metadata for any GEE asset (with optional collection filters)
-  search_functions         Search, list, or get full docs for geeViz functions
-  examples                 List or read geeViz example scripts (action=list|get)
-  list_assets              List assets in a GEE folder
-  track_tasks              Get status of recent EE tasks
-  cancel_tasks             Cancel running/ready EE tasks (all or by name)
-  map_control              View, export, list layers, clear, or test the geeView map (action=view|export|layers|clear|test_layers|test_view)
+  search_geeviz            Search geeViz modules, functions, classes, dicts, variables, examples, and REPL modules
+  map_control              View, export, preview, list layers, clear, or test the geeView map (action=view|export|preview|layers|clear|test_layers)
   save_session             Save run_code history to a .py file or .ipynb notebook
   env_info                 Get versions, REPL namespace, or project info (action=version|namespace|project)
   export_image             Export ee.Image to asset, Drive, or Cloud Storage (destination=asset|drive|cloud)
   search_datasets          Search the GEE dataset catalog by keyword
   manage_asset             Delete, copy, move, create folder, or update ACL (action=delete|copy|move|create|update_acl)
-  get_reference_data       Look up reference dicts (band mappings, viz params, collection IDs, etc.)
   get_streetview           Get Google Street View imagery at a location for ground-truthing
-  search_places            Search for places, landmarks, or businesses using Google Places API
-  create_report            Create a new report (title, theme, layout, tone)
-  add_report_section       Add a section to the active report (ee.Image/IC + geometry)
-  generate_report          Generate the report (HTML, Markdown, or PDF)
-  get_report_status        Check active report status and section list
-  clear_report             Discard the active report
+  geeviz_search_places     Search for places, landmarks, or businesses using Google Places API
 
 Examples:
   python -m geeViz.mcp.server                   # stdio, no sandbox (default)
@@ -277,6 +306,120 @@ app = FastMCP(
     json_response=True,
 ) if _FastMCP is not None else _StubFastMCP()
 
+# ---------------------------------------------------------------------------
+# Workload-tag plumbing (EE billing attribution)
+#
+# When the geeViz ADK agent calls a tool, its before_tool_callback stamps
+# ``_workload_tag`` into the arguments dict. We pop that off here, call
+# ``ee.data.setWorkloadTag(tag)`` for the duration of the tool call, and
+# ``ee.data.resetWorkloadTag()`` after — EE's own ContextVar then carries
+# the tag into every outbound compute body via the library's existing
+# ``_maybe_populate_workload_tag`` path.
+#
+# Why this hook (ToolManager.call_tool) and not ``app.call_tool``: FastMCP
+# captures ``app.call_tool`` as a bound method at ``__init__`` and registers
+# that reference with the lowlevel MCP server, so a later monkey-patch on
+# ``app.call_tool`` is never reached. ``app._tool_manager.call_tool`` is
+# the next layer down and is dereferenced fresh on every dispatch.
+#
+# Non-agent callers (Claude Code, etc.) just don't send ``_workload_tag``
+# and EE's default workload-tag behavior applies — the MCP stays
+# client-agnostic.
+# ---------------------------------------------------------------------------
+import re as _wl_re
+
+_WL_TAG_DISALLOWED = _wl_re.compile(r"[^a-z0-9_\-]")
+
+# ---------------------------------------------------------------------------
+# Multi-tenant routing for Earth Engine traffic
+#
+# When the agent's before_tool_callback stamps ``_tenant`` into a tool's
+# arguments, we pop it here and set ``geeViz.eeAuth.client.CURRENT_TENANT``
+# for the call duration. The library's ``TenantAwareHttp`` transport
+# reads that ContextVar on every outbound EE request and stamps the
+# routing header. The proxy in ``run_ui.py`` reads the header, picks the
+# right service account from the registry, and signs the request.
+#
+# This lets ONE Python process serve many tenants concurrently — no
+# ``ee.Initialize`` race, no global credential state, no per-tenant
+# subprocess. EE's normal SDK behavior is preserved for callers that
+# don't send a tenant (Claude Code etc.) — they hit the default SA.
+# ---------------------------------------------------------------------------
+from geeViz.eeAuth.client import CURRENT_TENANT as _CURRENT_TENANT_CV
+
+
+def _sanitize_workload_tag(tag: str) -> str:
+    """Coerce a tag to EE's accepted character set and 63-char limit.
+
+    EE rule (from ee/_state.py): 1-63 chars, ``[a-z0-9]`` at the ends,
+    ``[a-z0-9_-]`` in the middle. No uppercase, no dots, no other punct.
+    """
+    if not tag:
+        return ""
+    tag = tag.lower()
+    tag = _WL_TAG_DISALLOWED.sub("-", tag)
+    tag = _wl_re.sub(r"-{2,}", "-", tag)
+    tag = tag.strip("-_")[:63].rstrip("-_")
+    return tag
+
+
+_orig_tool_manager_call_tool = app._tool_manager.call_tool
+
+
+async def _tool_manager_call_tool_with_workload_tag(
+    name, arguments, context=None, convert_result=False
+):
+    tag = None
+    tenant = ""
+    if isinstance(arguments, dict):
+        raw = arguments.pop("_workload_tag", None)
+        if raw:
+            tag = _sanitize_workload_tag(str(raw))
+        # Tenant is propagated separately from workload tag — proxy reads
+        # it from the X-AskTerra-Tenant header set by TenantAwareHttp.
+        raw_tenant = arguments.pop("_tenant", None)
+        if raw_tenant:
+            tenant = str(raw_tenant).strip().lower()
+
+    # ContextVar for tenant: TenantAwareHttp reads it on every outbound
+    # EE request and stamps the routing header.
+    tenant_token = _CURRENT_TENANT_CV.set(tenant) if tenant else None
+
+    try:
+        if not tag:
+            return await _orig_tool_manager_call_tool(
+                name, arguments, context=context, convert_result=convert_result
+            )
+        # EE's own setWorkloadTag uses a ContextVar internally, so the tag
+        # carries through ``await`` boundaries to whatever EE call user code
+        # eventually makes. resetWorkloadTag in ``finally`` keeps the state
+        # clean across overlapping tool calls in the same process.
+        try:
+            import ee.data as _ee_data
+            _ee_data.setWorkloadTag(tag)
+        except Exception:
+            # If EE isn't initialized yet, swallow — the agent's first tool
+            # call is usually run_code, which initializes EE before doing
+            # any actual compute. Subsequent calls will tag correctly.
+            return await _orig_tool_manager_call_tool(
+                name, arguments, context=context, convert_result=convert_result
+            )
+        try:
+            return await _orig_tool_manager_call_tool(
+                name, arguments, context=context, convert_result=convert_result
+            )
+        finally:
+            try:
+                _ee_data.resetWorkloadTag()
+            except Exception:
+                pass
+    finally:
+        if tenant_token is not None:
+            _CURRENT_TENANT_CV.reset(tenant_token)
+
+
+app._tool_manager.call_tool = _tool_manager_call_tool_with_workload_tag
+
 # Wrap app.tool() to auto-log every tool invocation
 _original_app_tool = app.tool
 
@@ -378,25 +521,312 @@ import json
 _init_lock = threading.Lock()
 _initialized = False
 
-# Module short-name -> fully qualified import path
-_MODULE_MAP = {
-    "geeView": "geeViz.geeView",
-    "getImagesLib": "geeViz.getImagesLib",
-    "changeDetectionLib": "geeViz.changeDetectionLib",
-    "gee2Pandas": "geeViz.gee2Pandas",
-    "assetManagerLib": "geeViz.assetManagerLib",
-    "taskManagerLib": "geeViz.taskManagerLib",
-    "foliumView": "geeViz.foliumView",
-    "phEEnoViz": "geeViz.phEEnoViz",
-    "cloudStorageManagerLib": "geeViz.cloudStorageManagerLib",
-    "chartingLib": "geeViz.outputLib.charts",
-    "thumbLib": "geeViz.outputLib.thumbs",
-    "reportLib": "geeViz.outputLib.reports",
-    "getSummaryAreasLib": "geeViz.getSummaryAreasLib",
-    "edwLib": "geeViz.edwLib",
-    "googleMapsLib": "geeViz.googleMapsLib",
-    "geePalettes": "geeViz.geePalettes",
-}
+# Dynamic module tree — populated at init time by _build_module_tree()
+_MODULE_TREE = {}  # short_name -> {"fq": fully_qualified_path, "mod": module_object}
+_MODULE_MAP = {}   # short_name -> fully_qualified_path (backward compat)
+
+# Packages to skip during module discovery
+# - mcp: this server itself (circular)
+# - examples: importing them triggers EE calls and side effects (use `examples` tool instead)
+_SKIP_PACKAGES = {"geeViz.mcp", "geeViz.examples", "geeViz.migrateGEEAssets"}
+
+
+def _ast_extract_members(filepath):
+    """Parse a .py file with AST and extract public members without importing.
+
+    Returns a list of dicts: {name, type, signature, docstring}.
+    """
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            source = f.read()
+        tree = ast.parse(source)
+    except Exception:
+        return [], ""
+
+    module_doc = ast.get_docstring(tree) or ""
+    members = []
+
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if node.name.startswith("_"):
+                continue
+            # Build signature from args
+            args = node.args
+            params = []
+            # Positional args (skip 'self' if present)
+            all_args = [a.arg for a in args.args]
+            defaults = [None] * (len(all_args) - len(args.defaults)) + [ast.dump(d) for d in args.defaults]
+            for arg_name, default in zip(all_args, defaults):
+                if arg_name == "self":
+                    continue
+                params.append(f"{arg_name}=..." if default else arg_name)
+            if args.vararg:
+                params.append(f"*{args.vararg.arg}")
+            for kw, default in zip(args.kwonlyargs, args.kw_defaults):
+                params.append(f"{kw.arg}=..." if default else kw.arg)
+            if args.kwarg:
+                params.append(f"**{args.kwarg.arg}")
+            sig = f"{node.name}({', '.join(params)})"
+            doc = ast.get_docstring(node) or ""
+            first_line = doc.split("\n")[0].strip() if doc else ""
+            members.append({"name": node.name, "type": "function", "signature": sig, "description": first_line, "docstring": doc})
+
+        elif isinstance(node, ast.ClassDef):
+            if node.name.startswith("_"):
+                continue
+            doc = ast.get_docstring(node) or ""
+            first_line = doc.split("\n")[0].strip() if doc else ""
+            # Extract public methods
+            methods = []
+            for item in node.body:
+                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and not item.name.startswith("_"):
+                    methods.append(item.name)
+            members.append({"name": node.name, "type": "class", "description": first_line, "docstring": doc, "methods": methods})
+
+        elif isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and not target.id.startswith("_"):
+                    entry = {"name": target.id, "type": "variable", "description": ""}
+                    try:
+                        entry["value"] = ast.literal_eval(node.value)
+                    except (ValueError, TypeError):
+                        # Store source text so the agent can read the expression
+                        try:
+                            entry["value"] = ast.unparse(node.value)
+                        except Exception:
+                            pass
+                    members.append(entry)
+
+        elif isinstance(node, ast.AnnAssign):
+            if isinstance(node.target, ast.Name) and not node.target.id.startswith("_"):
+                entry = {"name": node.target.id, "type": "variable", "description": ""}
+                if node.value is not None:
+                    try:
+                        entry["value"] = ast.literal_eval(node.value)
+                    except (ValueError, TypeError):
+                        try:
+                            entry["value"] = ast.unparse(node.value)
+                        except Exception:
+                            pass
+                members.append(entry)
+
+    return members, module_doc
+
+
+def _list_example_files():
+    """Return sorted list of example filenames."""
+    if not os.path.isdir(_EXAMPLES_DIR):
+        return []
+    return sorted(f for f in os.listdir(_EXAMPLES_DIR)
+                  if (f.endswith(".py") or f.endswith(".ipynb")) and f != "__init__.py")
+
+
+def _read_example_source(filename, name, description=""):
+    """Read an example file and return JSON with its source."""
+    fpath = os.path.join(_EXAMPLES_DIR, filename)
+    if filename.endswith(".py"):
+        try:
+            with open(fpath, "r", encoding="utf-8") as f:
+                return json.dumps({"name": name, "file": filename, "type": "python",
+                                   "description": description, "source": f.read()})
+        except Exception as exc:
+            return json.dumps({"error": f"Failed to read {filename}: {exc}"})
+    elif filename.endswith(".ipynb"):
+        try:
+            with open(fpath, "r", encoding="utf-8") as f:
+                nb = json.load(f)
+            cells = [{"cell_type": c.get("cell_type", ""), "source": "".join(c.get("source", []))}
+                     for c in nb.get("cells", []) if "".join(c.get("source", [])).strip()]
+            return json.dumps({"name": name, "file": filename, "type": "notebook",
+                               "description": description, "cells": cells})
+        except Exception as exc:
+            return json.dumps({"error": f"Failed to read notebook: {exc}"})
+    return json.dumps({"error": f"Unknown file type: {filename}"})
+
+
+def _build_module_tree():
+    """Walk the geeViz package and build a searchable index using AST.
+
+    No modules are imported. Populates ``_MODULE_TREE`` with module paths
+    and pre-parsed member indices (names, types, signatures, docstrings).
+    Modules are only imported on-demand when live values are needed
+    (e.g. dict contents via ``search_geeviz(name=...)``).
+    """
+    global _MODULE_TREE, _MODULE_MAP
+    import pkgutil
+    import geeViz
+
+    tree = {}
+    fq_map = {}
+
+    for importer, modname, ispkg in pkgutil.walk_packages(
+        geeViz.__path__, prefix="geeViz."
+    ):
+        # Skip excluded packages
+        if any(modname == skip or modname.startswith(skip + ".") for skip in _SKIP_PACKAGES):
+            continue
+        # Skip private modules
+        leaf = modname.rsplit(".", 1)[-1]
+        if leaf.startswith("_"):
+            continue
+
+        # Find the source file without importing
+        try:
+            spec = importlib.util.find_spec(modname)
+            if spec is None or spec.origin is None:
+                continue
+        except (ModuleNotFoundError, ValueError):
+            continue
+
+        # Parse with AST
+        members, module_doc = _ast_extract_members(spec.origin)
+        first_line = module_doc.split("\n")[0].strip()[:100] if module_doc else ""
+
+        short = leaf
+        entry = {"fq": modname, "mod": None, "file": spec.origin,
+                 "members": members, "doc": first_line}
+        tree[modname] = entry
+        if short not in tree:
+            tree[short] = entry
+        fq_map[short] = modname
+        fq_map[modname] = modname
+
+    # --- Index examples (AST parse .py, JSON parse .ipynb) ---
+    example_members = []
+    for fname in _list_example_files():
+        fpath = os.path.join(_EXAMPLES_DIR, fname)
+        base = fname.rsplit(".", 1)[0]
+        desc = ""
+        if fname.endswith(".py"):
+            try:
+                with open(fpath, "r", encoding="utf-8") as f:
+                    source = f.read()
+                try:
+                    ex_tree = ast.parse(source)
+                    doc = ast.get_docstring(ex_tree) or ""
+                    desc = doc.split("\n")[0].strip()[:100] if doc else ""
+                except SyntaxError:
+                    pass
+                if not desc:
+                    for line in source.split("\n")[:20]:
+                        s = line.strip()
+                        if s.startswith("#") and len(s) > 2:
+                            desc = s.lstrip("#").strip()
+                            break
+            except Exception:
+                pass
+        elif fname.endswith(".ipynb"):
+            try:
+                with open(fpath, "r", encoding="utf-8") as f:
+                    nb = json.load(f)
+                for cell in nb.get("cells", []):
+                    if cell.get("cell_type") == "markdown":
+                        src = "".join(cell.get("source", [])).strip()
+                        if src:
+                            desc = src.split("\n")[0].lstrip("#").strip()[:100]
+                            break
+            except Exception:
+                pass
+        example_members.append({"name": base, "type": "example", "description": desc or fname, "file": fname})
+
+    tree["examples"] = {
+        "fq": "geeViz.examples", "mod": None, "file": _EXAMPLES_DIR,
+        "members": example_members, "doc": "geeViz example scripts and notebooks",
+    }
+    fq_map["examples"] = "geeViz.examples"
+
+    _MODULE_TREE = tree
+    _MODULE_MAP = fq_map
+    n_mods = len(set(e["fq"] for e in tree.values()))
+    n_examples = len(example_members)
+    print(f"[geeViz MCP] Module tree: {n_mods} modules, {n_examples} examples indexed (zero imports)")
+
+
+def _get_module(entry):
+    """Lazy-import a module from a tree entry. Caches the result."""
+    if entry["mod"] is None:
+        try:
+            entry["mod"] = importlib.import_module(entry["fq"])
+        except Exception as exc:
+            print(f"[geeViz MCP] Failed to import {entry['fq']}: {exc}")
+            return None
+    return entry["mod"]
+
+
+def _describe_object(obj, name="", module_name="", max_size=20000):
+    """Return a JSON-safe description of any Python object."""
+    result = {"name": name}
+    if module_name:
+        result["module"] = module_name
+
+    if _inspect.ismodule(obj):
+        members = [m for m in sorted(dir(obj)) if not m.startswith("_")]
+        result["type"] = "module"
+        result["docstring"] = (_inspect.getdoc(obj) or "")[:500]
+        result["public_members"] = members[:200]
+        if len(members) > 200:
+            result["note"] = f"Showing 200 of {len(members)} members. Use query= to filter."
+        return result
+
+    if _inspect.isclass(obj):
+        methods = [m for m in sorted(dir(obj)) if not m.startswith("_") and callable(getattr(obj, m, None))]
+        result["type"] = "class"
+        result["docstring"] = _inspect.getdoc(obj) or ""
+        result["public_methods"] = methods
+        try:
+            result["constructor"] = f"{name}{_inspect.signature(obj.__init__)}"
+        except (ValueError, TypeError):
+            pass
+        return result
+
+    if callable(obj):
+        result["type"] = "function"
+        try:
+            result["signature"] = f"{name}{_inspect.signature(obj)}"
+        except (ValueError, TypeError):
+            result["signature"] = f"{name}(...)"
+        result["docstring"] = _inspect.getdoc(obj) or ""
+        return result
+
+    # Non-callable: dict, list, constant, etc.
+    result["type"] = type(obj).__name__
+
+    # Check for ee objects — never call getInfo
+    try:
+        import ee as _ee
+        if isinstance(obj, _ee.ComputedObject):
+            result["repr"] = repr(obj)[:500]
+            return result
+    except Exception:
+        pass
+
+    if isinstance(obj, dict):
+        serialized = json.dumps(_make_serializable(obj), default=str)
+        if len(serialized) > max_size:
+            result["keys"] = list(obj.keys())[:100]
+            # Show sample of first 3 entries
+            sample = {k: _make_serializable(v) for k, v in list(obj.items())[:3]}
+            result["sample"] = sample
+            result["note"] = f"Large dict ({len(obj)} keys). Showing keys + 3 samples."
+        else:
+            result["value"] = _make_serializable(obj)
+        return result
+
+    if isinstance(obj, (list, tuple)):
+        if len(obj) > 50:
+            result["length"] = len(obj)
+            result["sample"] = _make_serializable(list(obj[:5]))
+            result["note"] = f"Large {type(obj).__name__} ({len(obj)} items). Showing first 5."
+        else:
+            result["value"] = _make_serializable(list(obj))
+        return result
+
+    # Scalar or other
+    try:
+        result["value"] = _make_serializable(obj)
+    except Exception:
+        result["repr"] = repr(obj)[:500]
+    return result
 
 # ---------------------------------------------------------------------------
 # Per-session state — isolates REPL namespace, Map, code history, outputs,
@@ -428,6 +858,8 @@ class _SessionState:
         # Stdout streaming file
         self.stdout_stream_file = os.path.join(self.output_dir, ".stdout_stream")
         self.stdout_active = False
+        # Original Map reference (set during init, used to restore if clobbered)
+        self._map_ref = None
 
 
 _sessions: dict[str, _SessionState] = {}
@@ -477,60 +909,78 @@ def _load_env():
 _load_env()
 
 
-def _init_ee_credentials():
-    """Initialize Earth Engine with service account or default credentials.
+def _init_ee_via_proxy():
+    """Initialize Earth Engine to route ALL outbound traffic through the
+    agent's ``/ee-api`` proxy, with tenant-aware routing.
 
-    Checks for credentials in this order (env vars can come from .env file):
+    Requires ``EE_PROXY_URL`` env var (e.g. ``http://localhost:8888/ee-api``).
+    Delegates to ``geeViz.eeAuth.initialize_via_proxy`` which is the
+    canonical client-side init helper for the library.
 
-    1. ``GEE_SERVICE_ACCOUNT_KEY`` env var → path to a JSON key file
-    2. ``GEE_SERVICE_ACCOUNT_KEY_JSON`` env var → inline JSON key string
-    3. ``GOOGLE_APPLICATION_CREDENTIALS`` env var → standard ADC key file
-    4. Fall back to Application Default Credentials (user login, attached
-       service account on GCE/Cloud Run, etc.)
+    The tool wrapper below maintains its OWN ContextVar
+    (``_CURRENT_TENANT_CV``) and copies the tenant into
+    ``geeViz.eeAuth.client.CURRENT_TENANT`` for each call — that ensures
+    the library's ``TenantAwareHttp`` transport sees the right value
+    even though the MCP wrapper is what knows about ``_tenant`` args.
 
-    The ``GEE_PROJECT`` env var sets the EE project for billing/quotas.
-    If not set, falls back to ``project_id`` from the service account key JSON.
+    Passes the SA's project explicitly so EE builds API URLs with the
+    real consumer project. Without this, ``initialize_via_proxy``
+    defaults to ``"ee-proxy-placeholder"`` and EE emits
+    ``projects/ee-proxy-placeholder/value:compute`` to upstream which
+    404s. Project is sourced from ``GEE_PROJECT`` env var first, then
+    by decoding any ``GEE_SERVICE_ACCOUNT_B64`` blob present in env —
+    no separate translation step needed.
     """
-    import ee
+    proxy_url = os.environ.get("EE_PROXY_URL", "").strip().rstrip("/")
+    if not proxy_url:
+        return False
 
-    project = os.environ.get("GEE_PROJECT")
-    key_path = os.environ.get("GEE_SERVICE_ACCOUNT_KEY")
-    key_json = os.environ.get("GEE_SERVICE_ACCOUNT_KEY_JSON")
+    project = os.environ.get("GEE_PROJECT", "").strip()
+    if not project:
+        b64 = os.environ.get("GEE_SERVICE_ACCOUNT_B64", "")
+        if b64:
+            import base64 as _b64
+            import json as _json
+            try:
+                project = _json.loads(
+                    _b64.b64decode(b64.encode()).decode()
+                ).get("project_id") or ""
+            except Exception:
+                project = ""
 
-    if key_path and os.path.isfile(key_path):
-        # Service account key file
-        import json
-        with open(key_path) as f:
-            key_data = json.load(f)
-        credentials = ee.ServiceAccountCredentials(
-            key_data["client_email"], key_file=key_path,
-        )
-        # Use project from env var, or fall back to project_id in the key file
-        _project = project or key_data.get("project_id")
-        ee.Initialize(credentials=credentials, project=_project)
-        print(f"EE initialized with service account: {key_data['client_email']}"
-              f" (project={_project or 'default'})", file=sys.stderr)
-    elif key_json:
-        # Inline JSON key (for container secrets / env injection)
-        import json, tempfile
-        key_data = json.loads(key_json)
-        # ee.ServiceAccountCredentials needs a file path, so write a temp file
-        tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
-        json.dump(key_data, tmp)
-        tmp.close()
-        credentials = ee.ServiceAccountCredentials(
-            key_data["client_email"], key_file=tmp.name,
-        )
-        # Use project from env var, or fall back to project_id in the key file
-        _project = project or key_data.get("project_id")
-        ee.Initialize(credentials=credentials, project=_project)
-        os.unlink(tmp.name)
-        print(f"EE initialized with service account (inline key): "
-              f"{key_data['client_email']} (project={_project or 'default'})", file=sys.stderr)
-    else:
-        # Fall back to geeViz default (ADC, user credentials, etc.)
-        # geeViz.geeView handles ee.Initialize() on import
-        pass
+    from geeViz.eeAuth import initialize_via_proxy
+    return initialize_via_proxy(proxy_url, project=project or None)
+
+
+def _init_ee_credentials():
+    """Initialize Earth Engine credentials for this MCP process.
+
+    Two paths:
+
+    - **Proxy mode** (``EE_PROXY_URL`` set): EE routes all REST calls
+      through the agent's ``/ee-api`` proxy with TenantAwareHttp adding
+      the tenant header. Used in production (Cloud Run) where the agent
+      and MCP share a process. The agent's proxy holds the credentials;
+      this subprocess just points ``ee.Initialize`` at the proxy URL.
+
+    - **Direct mode** (no proxy): hand off to
+      :func:`geeViz.eeAuth.robust_init`, the same bootstrap geeView /
+      external callers use. It runs the full credential discovery —
+      ``$GOOGLE_APPLICATION_CREDENTIALS``, the EE persistent file,
+      gcloud ADC, ``$GEE_SERVICE_ACCOUNT_B64``, per-tenant SA env vars
+      (keyed + keyless), and an ADC fallback for Cloud Run / GKE / AWS
+      WIF deployments. Multi-tenant deployments get the in-process
+      proxy spun up automatically; single-tenant deployments get a
+      direct ``ee.Initialize`` call.
+
+    The direct-mode discovery is owned by ``geeViz.eeAuth.eeCreds`` —
+    this function is a thin dispatch, not a credential-handling layer
+    of its own.
+    """
+    if _init_ee_via_proxy():
+        return
+    from geeViz.eeAuth import robust_init
+    robust_init(verbose=False, interactive=False)
 
 
 def _ensure_ee_initialized():
@@ -550,6 +1000,8 @@ def _ensure_ee_initialized():
 def _ensure_initialized(session_id: str | None = None):
     """Lazy-initialize EE (global) and populate session namespace. Thread-safe."""
     _ensure_ee_initialized()
+    if not _MODULE_TREE:
+        _build_module_tree()
     sess = _get_session(session_id)
     if sess.initialized:
         return sess
@@ -564,6 +1016,13 @@ def _ensure_initialized(session_id: str | None = None):
     from geeViz.outputLib import thumbs as tl
     from geeViz.outputLib import reports as rl
     import ee
+    # pandas and numpy are de-facto standard helpers the agent reaches for
+    # constantly; pre-load them so `search_geeviz(name="pd.DataFrame.to_markdown")`
+    # and `search_geeviz(module="pd", query="...")` resolve without requiring
+    # the agent to `import pandas` inside run_code first. Both are already
+    # geeViz dependencies (setup.py) and on the sandbox allowlist.
+    import pandas as _pd_mod
+    import numpy as _np_mod
 
     # Each session gets its own Map instance for layer isolation
     session_map = gv.mapper() if session_id and session_id != _DEFAULT_SESSION_ID else gv.Map
@@ -572,6 +1031,7 @@ def _ensure_initialized(session_id: str | None = None):
     def _session_save_file(filename, content, mode="w"):
         return _safe_write_file(filename, content, mode, output_dir=sess.output_dir)
 
+    sess._map_ref = session_map
     sess.namespace.update({
         "ee": ee,
         "Map": session_map,
@@ -584,6 +1044,11 @@ def _ensure_initialized(session_id: str | None = None):
         "cl": cl,
         "tl": tl,
         "rl": rl,
+        # Both aliases for each lib so search_geeviz finds them either way.
+        "pandas": _pd_mod,
+        "pd": _pd_mod,
+        "numpy": _np_mod,
+        "np": _np_mod,
         "save_file": _session_save_file,
         "__builtins__": _make_safe_builtins(),
     })
@@ -654,9 +1119,14 @@ _COLLECTION_NAMES = {"ImageCollection", "FeatureCollection"}
 _BLOCKED_MODULES = frozenset({
     "os", "sys", "subprocess", "socket", "shutil", "ctypes", "signal",
     "multiprocessing", "threading", "http", "urllib", "requests",
-    "pathlib", "tempfile", "glob", "io", "importlib", "code", "codeop",
+    "pathlib", "tempfile", "glob", "importlib", "code", "codeop",
     "pickle", "shelve", "marshal", "builtins",
 })
+# Note: ``io`` is NOT blocked. ``io.BytesIO`` / ``io.StringIO`` are
+# essential for the matplotlib → PIL → ``save_file`` flow and are pure
+# in-memory objects with no filesystem access. The dangerous parts of
+# io (``io.open``, ``io.FileIO``) require a file path that the sandbox
+# doesn't grant anyway — and ``open`` is already blocked as a builtin.
 
 # Top-level module prefixes that are allowed in import statements.
 # Anything not matching these prefixes AND not in _BLOCKED_MODULES gets a warning
@@ -666,7 +1136,22 @@ _ALLOWED_MODULE_PREFIXES = (
     "numpy", "np", "pandas", "pd", "plotly", "copy", "re",
     "functools", "itertools", "operator", "statistics",
     "pprint", "textwrap", "string", "decimal", "fractions",
+    # Plotting libraries the agent reaches for in exploration.
+    # Available iff the agent runtime installs them (see Dockerfile).
+    # ``cl.apply_theme(...)`` themes their output to match geeViz charts.
+    "matplotlib", "seaborn", "mpl_toolkits", "io",
 )
+
+# Per-deployment additions — comma-separated env var. Lets a tenant
+# config enable extra libraries (e.g. ``altair``, ``bokeh``, ``sklearn``)
+# without forking the code. Each addition is still a security review;
+# don't set this casually.
+_EXTRA_ALLOWED = tuple(
+    p.strip() for p in os.environ.get("MCP_EXTRA_ALLOWED_MODULES", "").split(",")
+    if p.strip()
+)
+if _EXTRA_ALLOWED:
+    _ALLOWED_MODULE_PREFIXES = _ALLOWED_MODULE_PREFIXES + _EXTRA_ALLOWED
 
 # Builtins that are blocked from the execution namespace.
 _BLOCKED_BUILTINS = frozenset({
@@ -985,6 +1470,29 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
         _reset_namespace(session_id)
     sess = _ensure_initialized(session_id)
 
+    # Strip redundant imports that would clobber pre-populated namespace variables.
+    # The REPL already has ee, Map, gv, gil, sal, cl, tl, rl, gm, palettes, save_file.
+    # Agents frequently write `from geeViz import geeView as Map` which replaces the
+    # mapper instance with the module, breaking Map.addLayer/clearMap/etc.
+    try:
+        _tree = ast.parse(code)
+        _stripped = []
+        for node in _tree.body:
+            skip = False
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                for alias in node.names:
+                    bound_name = alias.asname or alias.name.split(".")[-1]
+                    if bound_name in ("ee", "Map", "gv", "gil", "sal", "cl", "tl", "rl", "gm", "palettes", "save_file"):
+                        skip = True
+                        break
+            if not skip:
+                _stripped.append(node)
+        if len(_stripped) < len(_tree.body):
+            _tree.body = _stripped
+            code = ast.unparse(_tree)
+    except SyntaxError:
+        pass  # let the actual exec catch it
+
     # Static analysis: detect risky and blocked patterns before execution
     code_warnings = _check_code_patterns(code)
 
@@ -1095,6 +1603,12 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
     # (happens on timeout when the thread's `with` block hasn't exited yet).
     sys.stdout = _orig_stdout
     sys.stderr = _orig_stderr
+
+    # Guard: restore Map if user code clobbered it
+    # (e.g. `from geeViz import geeView as Map` replaces the mapper instance with the module)
+    import geeViz.geeView as _gv_mod
+    if not isinstance(_ns.get("Map"), _gv_mod.mapper):
+        _ns["Map"] = sess._map_ref
 
     # Clear streaming flag
     if stream_stdout:
@@ -1487,12 +2001,56 @@ def inspect_asset(
 
     if thematic_bands:
         result["thematic_bands"] = thematic_bands
+        # Normalize class properties: some assets store them as comma-separated
+        # strings instead of lists. Convert to lists so downstream code (and the
+        # agent) gets consistent types.
+        def _normalize_prop(v, as_int=False):
+            if v is None or v == "":
+                return []
+            if isinstance(v, str):
+                parts = [p.strip() for p in v.split(",") if p.strip()]
+            elif isinstance(v, (list, tuple)):
+                parts = list(v)
+            else:
+                return [v]
+            if as_int:
+                out = []
+                for p in parts:
+                    try:
+                        out.append(int(p))
+                    except (ValueError, TypeError):
+                        try:
+                            out.append(int(float(p)))
+                        except (ValueError, TypeError):
+                            out.append(p)
+                return out
+            return parts
+
+        normalized_any = False
+        for bname in thematic_bands:
+            for suffix, as_int in (("values", True), ("names", False), ("palette", False)):
+                key = f"{bname}_class_{suffix}"
+                raw = props.get(key)
+                if isinstance(raw, str):
+                    normalized_any = True
+                normalized = _normalize_prop(raw, as_int=as_int)
+                props[key] = normalized
+                # Also update the band-level properties (if present)
+                for band in bands:
+                    if band.get("name") == bname and "properties" in band:
+                        band["properties"][key] = normalized
+
         result["viz_recommendation"] = (
             "THEMATIC DATA DETECTED — bands {} have class properties. "
             "You MUST use {{'autoViz': True}} as the viz params when adding "
             "this layer to the map. Do NOT use min/max. Example: "
             "Map.addLayer(data, {{'autoViz': True}}, 'Layer Name')"
         ).format(thematic_bands)
+        if normalized_any:
+            result["viz_recommendation"] += (
+                " NOTE: This asset stored class properties as comma-separated strings. "
+                "They have been normalized to lists in this response. Use the values shown."
+            )
 
     # Cap response size to prevent token overflow
     response = json.dumps(result)
@@ -1506,433 +2064,351 @@ def inspect_asset(
 
 
 # ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-# Internal API reference lookup (used by search_functions)
+# Unified search/introspection tool
 # ---------------------------------------------------------------------------
 import inspect as _inspect
 
 
-def _get_api_reference(module: str, function_name: str = "") -> str:
-    """Look up the signature and docstring of a geeViz function or module.
+def _resolve_module(name, session_ns=None):
+    """Resolve a name to a container we can list members of.
 
-    Internal helper called by ``search_functions(function_name=...)``.
+    Accepts:
+    - A geeViz module short name in ``_MODULE_TREE`` (``"getImagesLib"``).
+    - A top-level REPL name that points to a module (``"ee"``, ``"pd"``).
+    - A dotted path that traverses attributes from a top-level REPL name
+      (``"ee.ImageCollection"``, ``"ee.Reducer"``, ``"pd.DataFrame"``).
+      Each step uses ``getattr`` so classes count as valid containers —
+      ``dir()`` returns their methods, which is what callers want.
+
+    Returns ``(short_name, container)`` or ``(None, None)``.
+    """
+    # Exact match in the geeViz module tree
+    entry = _MODULE_TREE.get(name)
+    if entry:
+        mod = _get_module(entry)
+        if mod is not None:
+            return name, mod
+
+    if session_ns:
+        # Top-level REPL hit (no dots)
+        if "." not in name:
+            obj = session_ns.get(name)
+            if _inspect.ismodule(obj) or _inspect.isclass(obj):
+                return name, obj
+            return None, None
+
+        # Dotted path: walk attributes from the head identifier.
+        parts = name.split(".")
+        head = session_ns.get(parts[0])
+        if head is None:
+            return None, None
+        obj = head
+        for attr in parts[1:]:
+            obj = getattr(obj, attr, None)
+            if obj is None:
+                return None, None
+        # Only accept containers (module/class). Functions/instances have
+        # members too but listing them is usually noise.
+        if _inspect.ismodule(obj) or _inspect.isclass(obj):
+            return name, obj
+    return None, None
+
+
+def _iter_module_members(mod, query="", include_non_callable=True):
+    """Yield (name, obj, kind, first_line, sig) for public members of a module."""
+    q = query.lower() if query else ""
+    for attr_name in sorted(dir(mod)):
+        if attr_name.startswith("_"):
+            continue
+        obj = getattr(mod, attr_name, None)
+        if obj is None:
+            continue
+        # Skip sub-modules from listing (too noisy)
+        if _inspect.ismodule(obj):
+            continue
+
+        is_callable = callable(obj) or _inspect.isclass(obj)
+        if not include_non_callable and not is_callable:
+            continue
+
+        doc = _inspect.getdoc(obj) or ""
+        first_line = doc.split("\n")[0].strip() if doc else ""
+
+        if q and q not in attr_name.lower() and q not in first_line.lower():
+            continue
+
+        if _inspect.isclass(obj):
+            kind = "class"
+        elif callable(obj):
+            kind = "function"
+        else:
+            kind = type(obj).__name__
+
+        sig = ""
+        if callable(obj) and not _inspect.isclass(obj):
+            try:
+                sig = f"{attr_name}{_inspect.signature(obj)}"
+            except (ValueError, TypeError):
+                pass
+
+        yield attr_name, obj, kind, first_line, sig
+
+
+@app.tool(annotations=_READ_ONLY)
+def search_geeviz(query: str = "", name: str = "", module: str = "", session_id: str = None) -> str:
+    """Search geeViz modules, functions, classes, variables, and any REPL module.
+
+    A unified introspection tool — replaces search_functions and
+    get_reference_data. Can look up functions, classes, dicts, constants,
+    viz params, band mappings, palettes, and more.
 
     Args:
-        module: Short module name. One of: geeView, getImagesLib,
-                changeDetectionLib, gee2Pandas, assetManagerLib,
-                taskManagerLib, foliumView, phEEnoViz, cloudStorageManagerLib,
-                chartingLib, thumbLib, reportLib, getSummaryAreasLib, edwLib.
-        function_name: Optional function or class name within the module.
-                       If omitted, returns the module-level docstring.
+        query: Search term (case-insensitive). Matches against names and
+               first-line docstrings across all geeViz modules.
+        name: Exact name to look up. Accepts bare names (``"vizParamsFalse"``,
+              ``"simpleMask"``) or dotted paths (``"getImagesLib.vizParamsFalse"``,
+              ``"mapper.addLayer"``). Returns full details: signature, docstring
+              for functions; keys/values for dicts; value for constants.
+        module: Module to search or list. Accepts short names (``"getImagesLib"``,
+                ``"charts"``, ``"thumbs"``), full paths (``"geeViz.outputLib.charts"``),
+                or legacy aliases (``"chartingLib"``). Also accepts any module in
+                the REPL namespace (``"ee"``) for on-the-fly lookups.
 
     Returns:
-        Signature and docstring text, or error message.
+        JSON with results. Shape depends on the query:
+        - No args: list of all discovered modules
+        - module only: all public members (functions, classes, variables)
+        - query only: search results across all modules
+        - name only: detailed description of the named object
+        - name + module: direct lookup within a specific module
     """
-    _ensure_initialized()
+    sess = _ensure_initialized(session_id)
+    ns = sess.namespace
 
-    fq = _MODULE_MAP.get(module)
-    if not fq:
-        return json.dumps({
-            "error": f"Unknown module: {module!r}. Valid modules: {', '.join(sorted(_MODULE_MAP))}",
-        })
+    # --- Direct name lookup ---
+    if name:
+        # Example source lookup: name="examples.CCDCViz" or bare example name
+        _ex_name = name
+        if name.startswith("examples."):
+            _ex_name = name.split(".", 1)[1]
+        ex_entry = _MODULE_TREE.get("examples")
+        if ex_entry:
+            for m in ex_entry.get("members", []):
+                if m["name"] == _ex_name:
+                    return _read_example_source(m["file"], m["name"], m.get("description", ""))
 
-    try:
-        mod = importlib.import_module(fq)
-    except Exception as exc:
-        return json.dumps({"error": f"Failed to import {fq}: {exc}"})
+        # Dotted path: split into module/object + attribute
+        if "." in name and not module:
+            parts = name.split(".", 1)
+            mod_name, attr_path = parts[0], parts[1]
+            # Try module tree first
+            _, mod_obj = _resolve_module(mod_name, ns)
+            # Then try REPL namespace (covers Map, gv, gil, etc.)
+            if mod_obj is None and mod_name in ns:
+                mod_obj = ns[mod_name]
+            if mod_obj is not None:
+                try:
+                    obj = mod_obj
+                    for p in attr_path.split("."):
+                        obj = getattr(obj, p)
+                    return json.dumps(_describe_object(obj, name=name, module_name=mod_name))
+                except AttributeError:
+                    pass
+            # Fallback: mod_name might be a class inside a module (e.g. "mapper.addLayer")
+            if mod_obj is None:
+                for short, entry in _MODULE_TREE.items():
+                    if short != entry["fq"]:
+                        continue
+                    for m in entry.get("members", []):
+                        if m["type"] == "class" and m["name"] == mod_name:
+                            _mod = _get_module(entry)
+                            if _mod:
+                                cls = getattr(_mod, mod_name, None)
+                                if cls:
+                                    try:
+                                        obj = cls
+                                        for p in attr_path.split("."):
+                                            obj = getattr(obj, p)
+                                        return json.dumps(_describe_object(obj, name=name, module_name=entry["fq"].rsplit(".", 1)[-1]))
+                                    except AttributeError:
+                                        pass
 
-    if not function_name:
-        return json.dumps({
-            "module": module,
-            "docstring": _inspect.getdoc(mod) or "(no module docstring)",
-        })
-
-    # Resolve dotted names (e.g. "mapper.addLayer") by walking the attribute chain
-    obj = None
-    parts = function_name.split(".")
-    try:
-        obj = mod
-        for part in parts:
-            obj = getattr(obj, part)
-    except AttributeError:
-        obj = None
-
-    # Fallback: for geeView, try the mapper class if a bare name isn't found at module level
-    if obj is None and module == "geeView" and len(parts) == 1:
-        mapper_cls = getattr(mod, "mapper", None)
-        if mapper_cls:
-            obj = getattr(mapper_cls, function_name, None)
+        # If module specified, look there
+        if module:
+            _, mod_obj = _resolve_module(module, ns)
+            if mod_obj is None:
+                return json.dumps({"error": f"Module {module!r} not found."})
+            # Try direct attribute
+            obj = getattr(mod_obj, name, None)
+            # geeView mapper fallback
+            if obj is None and module in ("geeView", "geeViz.geeView"):
+                mapper_cls = getattr(mod_obj, "mapper", None)
+                if mapper_cls:
+                    obj = getattr(mapper_cls, name, None)
+                    if obj is not None:
+                        name = f"mapper.{name}"
             if obj is not None:
-                # Rewrite for clearer output
-                function_name = f"mapper.{function_name}"
+                return json.dumps(_describe_object(obj, name=name, module_name=module))
+            return json.dumps({"error": f"{name!r} not found in {module}."})
 
-    if obj is None:
-        # Provide a hint if it might be a mapper method
-        hint = ""
-        if module == "geeView":
-            mapper_cls = getattr(mod, "mapper", None)
-            if mapper_cls:
-                methods = [m for m in dir(mapper_cls) if not m.startswith("_")
-                           and function_name.lower() in m.lower()]
-                if methods:
-                    hint = f" Did you mean: {', '.join('mapper.' + m for m in methods)}?"
-        return json.dumps({"error": f"{function_name!r} not found in {module}.{hint}"})
+        # Bare name — check AST index first (no import needed if value was extracted)
+        for short, entry in _MODULE_TREE.items():
+            if short != entry["fq"]:
+                continue
+            for m in entry.get("members", []):
+                if m["name"] == name:
+                    # If AST captured the value, return it without importing
+                    if "value" in m:
+                        result = {"name": name, "module": entry["fq"].rsplit(".", 1)[-1],
+                                  "type": type(m["value"]).__name__, "value": _make_serializable(m["value"])}
+                        return json.dumps(result)
+                    # For functions/classes, return AST info without importing
+                    if m["type"] in ("function", "class"):
+                        result = {"name": name, "module": entry["fq"].rsplit(".", 1)[-1], "type": m["type"]}
+                        if m.get("signature"):
+                            result["signature"] = m["signature"]
+                        if m.get("docstring"):
+                            result["docstring"] = m["docstring"]
+                        elif m.get("description"):
+                            result["docstring"] = m["description"]
+                        if m.get("methods"):
+                            result["methods"] = m["methods"]
+                        return json.dumps(result)
+                    # Variable without literal value — return source expression if available
+                    result = {"name": name, "module": entry["fq"].rsplit(".", 1)[-1], "type": "variable"}
+                    if "value" in m:
+                        result["value"] = m["value"]
+                    return json.dumps(result)
 
-    # Handle classes: show class docstring + public method list
-    if _inspect.isclass(obj):
-        methods = [
-            m for m in dir(obj)
-            if not m.startswith("_") and callable(getattr(obj, m, None))
-        ]
-        return json.dumps({
-            "module": module,
-            "name": function_name,
-            "type": "class",
-            "docstring": _inspect.getdoc(obj) or "(no docstring)",
-            "public_methods": methods,
-        })
+        # Fallback: geeView mapper methods (not in top-level AST)
+        gv_entry = _MODULE_TREE.get("geeViz.geeView")
+        if gv_entry:
+            # Check mapper class members from AST
+            for m in gv_entry.get("members", []):
+                if m["type"] == "class" and m["name"] == "mapper":
+                    if name in m.get("methods", []):
+                        mod_obj = _get_module(gv_entry)
+                        if mod_obj:
+                            mapper_cls = getattr(mod_obj, "mapper", None)
+                            if mapper_cls:
+                                obj = getattr(mapper_cls, name, None)
+                                if obj:
+                                    return json.dumps(_describe_object(obj, name=f"mapper.{name}", module_name="geeView"))
+                    break
 
-    # Function or callable
-    try:
-        sig = str(_inspect.signature(obj))
-    except (ValueError, TypeError):
-        sig = "(signature unavailable)"
+        # Search class methods across all modules (e.g. bare "addTimeLapse" finds mapper.addTimeLapse)
+        for short, entry in _MODULE_TREE.items():
+            if short != entry["fq"]:
+                continue
+            for m in entry.get("members", []):
+                if m["type"] == "class" and m.get("methods") and name in m["methods"]:
+                    # Found as a method — import to get full docstring
+                    mod_obj = _get_module(entry)
+                    if mod_obj:
+                        cls = getattr(mod_obj, m["name"], None)
+                        if cls:
+                            obj = getattr(cls, name, None)
+                            if obj:
+                                return json.dumps(_describe_object(obj, name=f"{m['name']}.{name}", module_name=entry["fq"].rsplit(".", 1)[-1]))
 
+        # Check REPL namespace as last resort
+        if name in ns:
+            return json.dumps(_describe_object(ns[name], name=name, module_name="(REPL namespace)"))
+
+        return json.dumps({"error": f"{name!r} not found in any geeViz module or REPL namespace."})
+
+    # --- Module listing (AST-based, no import) ---
+    if module:
+        tree_entry = _MODULE_TREE.get(module)
+        if tree_entry and "members" in tree_entry:
+            # Use AST index — zero imports
+            q = query.lower() if query else ""
+            results = []
+            for m in tree_entry["members"]:
+                name_match = not q or q in m["name"].lower() or q in m.get("description", "").lower()
+                if name_match:
+                    r = {"name": m["name"], "type": m["type"]}
+                    if m.get("description"):
+                        r["description"] = m["description"]
+                    if m.get("signature"):
+                        r["signature"] = m["signature"]
+                    if m.get("methods"):
+                        r["methods"] = m["methods"]
+                    results.append(r)
+                # Also list class methods as individual entries
+                if m["type"] == "class" and m.get("methods"):
+                    for meth in m["methods"]:
+                        if not q or q in meth.lower():
+                            results.append({"name": f"{m['name']}.{meth}", "type": "method",
+                                            "description": f"Method of {m['name']}"})
+            return json.dumps({"module": module, "count": len(results), "results": results})
+
+        # Fallback for REPL modules (ee, etc.) — must import/inspect
+        _, mod_obj = _resolve_module(module, ns)
+        if mod_obj is None:
+            return json.dumps({"error": f"Module {module!r} not found."})
+        results = []
+        for attr_name, obj, kind, first_line, sig in _iter_module_members(mod_obj, query):
+            r = {"name": attr_name, "type": kind, "description": first_line}
+            if sig:
+                r["signature"] = sig
+            results.append(r)
+        return json.dumps({"module": module, "count": len(results), "results": results})
+
+    # --- Search across all modules (AST-based, no import) ---
+    if query:
+        q = query.lower()
+        results = []
+        seen_fqs = set()
+        for short, entry in _MODULE_TREE.items():
+            fq = entry["fq"]
+            if fq in seen_fqs:
+                continue
+            seen_fqs.add(fq)
+            mod_short = fq.rsplit(".", 1)[-1]
+
+            for m in entry.get("members", []):
+                if q not in m["name"].lower() and q not in m.get("description", "").lower():
+                    # Also check class method names
+                    if m["type"] == "class" and m.get("methods"):
+                        matching_methods = [meth for meth in m["methods"] if q in meth.lower()]
+                        for meth in matching_methods:
+                            results.append({"module": mod_short, "name": f"{m['name']}.{meth}", "type": "method",
+                                            "description": f"Method of {m['name']}"})
+                    continue
+                r = {"module": mod_short, "name": m["name"], "type": m["type"]}
+                if m.get("description"):
+                    r["description"] = m["description"]
+                if m.get("signature"):
+                    r["signature"] = m["signature"]
+                results.append(r)
+                # If it's a class, also include matching methods
+                if m["type"] == "class" and m.get("methods"):
+                    for meth in m["methods"]:
+                        if q in meth.lower():
+                            results.append({"module": mod_short, "name": f"{m['name']}.{meth}", "type": "method",
+                                            "description": f"Method of {m['name']}"})
+
+        return json.dumps({"query": query, "count": len(results), "results": results})
+
+    # --- No args: list all modules (AST-based, no import) ---
+    seen = set()
+    modules = []
+    for short, entry in sorted(_MODULE_TREE.items()):
+        fq = entry["fq"]
+        if fq in seen or short != fq.rsplit(".", 1)[-1]:
+            continue
+        seen.add(fq)
+        modules.append({"name": short, "full_path": fq, "description": entry.get("doc", "")})
     return json.dumps({
-        "module": module,
-        "name": function_name,
-        "signature": f"{function_name}{sig}",
-        "docstring": _inspect.getdoc(obj) or "(no docstring)",
+        "modules": modules,
+        "count": len(modules),
+        "usage": 'Use module="<name>" to list members, query="<term>" to search, name="<object>" for details.',
     })
 
 
-# ---------------------------------------------------------------------------
-# Tool 4: search_functions
-# ---------------------------------------------------------------------------
-
-@app.tool(annotations=_READ_ONLY)
-def search_functions(query: str = "", module: str = "", function_name: str = "", session_id: str = None) -> str:
-    """Search for functions, list module contents, or get full API docs for a specific function.
-
-    Combines search, listing, and detailed lookup into one tool:
-    - query only → search all modules for matching functions (by name or docstring)
-    - module only → list all public functions in that module
-    - both query + module → search within a specific module
-    - function_name + module → return full signature and docstring for a specific function
-    - function_name only → search all modules for that exact function name
-    - neither → return list of available modules with usage hint
-
-    Args:
-        query: Search term (case-insensitive). Matched against function names
-               and the first line of their docstrings.
-        module: Short module name to restrict search to a single module.
-                Valid names: geeView, getImagesLib, changeDetectionLib,
-                gee2Pandas, assetManagerLib, taskManagerLib, foliumView,
-                phEEnoViz, cloudStorageManagerLib, chartingLib,
-                getSummaryAreasLib, thumbLib, reportLib, edwLib.
-        function_name: Exact function name to get full documentation for.
-                       Returns the complete signature and docstring.
-                       If module is omitted, searches all modules for the name.
-
-    Returns:
-        JSON with matching functions. Each entry has module, name, type,
-        signature, and description. When function_name is provided, also
-        includes the full docstring.
-    """
-    _ensure_initialized(session_id)
-
-    # --- Detailed lookup mode: function_name provided ---
-    if function_name:
-        # If module specified, look up directly
-        if module:
-            return _get_api_reference(module, function_name)
-        # No module specified — search all modules for the exact name
-        for short_name, fq_name in _MODULE_MAP.items():
-            try:
-                mod = importlib.import_module(fq_name)
-            except Exception:
-                continue
-            # Try direct attribute
-            obj = getattr(mod, function_name, None)
-            if obj is not None and (callable(obj) or _inspect.isclass(obj)):
-                return _get_api_reference(short_name, function_name)
-            # Try mapper class for geeView
-            if short_name == "geeView":
-                mapper_cls = getattr(mod, "mapper", None)
-                if mapper_cls:
-                    obj = getattr(mapper_cls, function_name, None)
-                    if obj is not None and callable(obj):
-                        return _get_api_reference(short_name, f"mapper.{function_name}")
-        return json.dumps({"error": f"Function {function_name!r} not found in any module."})
-
-    # Neither query nor module -- list available modules
-    if not query and not module:
-        return json.dumps({
-            "modules": sorted(_MODULE_MAP.keys()),
-            "usage": (
-                'Pass module="<name>" to list all functions in a module, '
-                'query="<term>" to search across all modules, '
-                "or both to search within a specific module."
-            ),
-        })
-
-    # Determine which modules to search
-    if module:
-        fq = _MODULE_MAP.get(module)
-        if not fq:
-            return json.dumps({
-                "error": f"Unknown module: {module!r}. Valid modules: {', '.join(sorted(_MODULE_MAP))}",
-            })
-        modules_to_search = {module: fq}
-    else:
-        modules_to_search = _MODULE_MAP
-
-    q = query.lower() if query else ""
-    results = []
-
-    for short_name, fq_name in modules_to_search.items():
-        try:
-            mod = importlib.import_module(fq_name)
-        except Exception:
-            continue
-
-        for name in sorted(dir(mod)):
-            if name.startswith("_"):
-                continue
-            obj = getattr(mod, name, None)
-            if obj is None or not (callable(obj) or _inspect.isclass(obj)):
-                continue
-
-            doc = _inspect.getdoc(obj) or ""
-            first_line = doc.split("\n")[0].strip() if doc else "(no description)"
-
-            if q and q not in name.lower() and q not in first_line.lower():
-                continue
-
-            kind = "class" if _inspect.isclass(obj) else "function"
-            # Include signature so agents can use functions without a
-            # separate get_api_reference call
-            sig = ""
-            if not _inspect.isclass(obj):
-                try:
-                    sig = f"{name}{_inspect.signature(obj)}"
-                except (ValueError, TypeError):
-                    sig = ""
-            results.append({
-                "module": short_name,
-                "name": name,
-                "type": kind,
-                "signature": sig,
-                "description": first_line,
-            })
-
-        # For geeView, also include mapper class methods
-        if short_name == "geeView":
-            mapper_cls = getattr(mod, "mapper", None)
-            if mapper_cls and _inspect.isclass(mapper_cls):
-                for mname in sorted(dir(mapper_cls)):
-                    if mname.startswith("_"):
-                        continue
-                    mobj = getattr(mapper_cls, mname, None)
-                    if not callable(mobj):
-                        continue
-
-                    doc = _inspect.getdoc(mobj) or ""
-                    first_line = doc.split("\n")[0].strip() if doc else "(no description)"
-
-                    if q and q not in mname.lower() and q not in first_line.lower():
-                        continue
-
-                    sig = ""
-                    try:
-                        sig = f"mapper.{mname}{_inspect.signature(mobj)}"
-                    except (ValueError, TypeError):
-                        sig = ""
-                    results.append({
-                        "module": short_name,
-                        "name": f"mapper.{mname}",
-                        "type": "method",
-                        "signature": sig,
-                        "description": first_line,
-                    })
-
-    return json.dumps({"query": query, "module": module, "count": len(results), "results": results})
-
-
-# ---------------------------------------------------------------------------
-# Examples (consolidated)
-# ---------------------------------------------------------------------------
-
-@app.tool(annotations=_READ_ONLY)
-def examples(action: str = "list", name: str = "", filter: str = "") -> str:
-    """List or read geeViz example scripts.
-
-    Args:
-        action: "list" (default) to list available examples, or
-                "get" to read the source of a specific example.
-        name: For action="get", the example name (with or without extension).
-        filter: For action="list", optional substring filter (case-insensitive).
-
-    Returns:
-        For "list": JSON list of {name, description} objects.
-        For "get": The example source code.
-    """
-    act = action.lower().strip()
-
-    if act == "get":
-        if not name:
-            return json.dumps({"error": "Provide 'name' for action='get'."})
-        base = name
-        for ext in (".py", ".ipynb"):
-            if base.endswith(ext):
-                base = base[:-len(ext)]
-                break
-        py_path = os.path.join(_EXAMPLES_DIR, base + ".py")
-        nb_path = os.path.join(_EXAMPLES_DIR, base + ".ipynb")
-        if os.path.isfile(py_path):
-            with open(py_path, "r", encoding="utf-8") as f:
-                return json.dumps({"example": base + ".py", "type": "python", "source": f.read()})
-        if os.path.isfile(nb_path):
-            try:
-                with open(nb_path, "r", encoding="utf-8") as f:
-                    nb = json.load(f)
-                cells = [{"cell_type": c.get("cell_type", ""), "source": "".join(c.get("source", []))}
-                         for c in nb.get("cells", []) if "".join(c.get("source", [])).strip()]
-                return json.dumps({"example": base + ".ipynb", "type": "notebook", "cells": cells})
-            except Exception as exc:
-                return json.dumps({"error": f"Failed to read notebook: {exc}"})
-        available = _list_example_files()
-        return json.dumps({"error": f"Example not found: {name!r}", "available_examples": available})
-
-    # action == "list"
-    files = _list_example_files()
-    results = []
-    for fname in files:
-        if filter and filter.lower() not in fname.lower():
-            continue
-        fpath = os.path.join(_EXAMPLES_DIR, fname)
-        desc = ""
-        if fname.endswith(".py"):
-            try:
-                with open(fpath, "r", encoding="utf-8") as f:
-                    lines = [f.readline() for _ in range(20)]
-                text = "".join(lines)
-                try:
-                    tree = ast.parse(text)
-                    if tree.body and isinstance(tree.body[0], ast.Expr) and isinstance(tree.body[0].value, ast.Constant):
-                        desc = str(tree.body[0].value.value).split("\n")[0].strip()
-                except SyntaxError:
-                    pass
-                if not desc:
-                    for line in lines:
-                        s = line.strip()
-                        if s.startswith("#") and len(s) > 2:
-                            desc = s.lstrip("#").strip()
-                            break
-            except Exception:
-                pass
-        elif fname.endswith(".ipynb"):
-            try:
-                with open(fpath, "r", encoding="utf-8") as f:
-                    nb = json.load(f)
-                for cell in nb.get("cells", []):
-                    if cell.get("cell_type") == "markdown":
-                        source = "".join(cell.get("source", [])).strip()
-                        if source:
-                            desc = source.split("\n")[0].lstrip("#").strip()
-                            break
-            except Exception:
-                pass
-        results.append({"name": fname, "description": desc or "(no description)"})
-    return json.dumps({"count": len(results), "examples": results})
-
-
-def _list_example_files() -> list[str]:
-    """Return sorted list of example filenames."""
-    if not os.path.isdir(_EXAMPLES_DIR):
-        return []
-    return sorted(f for f in os.listdir(_EXAMPLES_DIR)
-                  if (f.endswith(".py") or f.endswith(".ipynb")) and f != "__init__.py")
-
-
-# ---------------------------------------------------------------------------
-# Tool 7: list_assets
-# ---------------------------------------------------------------------------
-
-@app.tool(annotations=_READ_ONLY_OPEN)
-def list_assets(folder: str, session_id: str = None) -> str:
-    """List assets in a GEE folder or collection.
-
-    Args:
-        folder: Full asset path (e.g. "projects/my-project/assets/my-folder").
-
-    Returns:
-        JSON list of {id, type, sizeBytes} for each asset (max 200).
-    """
-    sess = _ensure_initialized(session_id)
-    ee = sess.namespace["ee"]
-
-    try:
-        result = ee.data.listAssets({"parent": folder})
-    except Exception as exc:
-        return json.dumps({"error": str(exc), "folder": folder})
-
-    assets = result.get("assets", [])
-    entries = []
-    for a in assets[:2000]:
-        entries.append({
-            "id": a.get("id") or a.get("name", ""),
-            "type": a.get("type", "UNKNOWN"),
-            "sizeBytes": a.get("sizeBytes"),
-        })
-
-    out: dict = {"folder": folder, "count": len(entries), "assets": entries}
-    if len(assets) > 2000:
-        out["note"] = f"Showing 2000 of {len(assets)} assets. Narrow your query for the rest."
-
-    return json.dumps(out)
-
-
-# ---------------------------------------------------------------------------
-# Tool 8: track_tasks
-# ---------------------------------------------------------------------------
-
-@app.tool(annotations=_READ_ONLY_OPEN)
-def track_tasks(name_filter: str = "", session_id: str = None) -> str:
-    """Get status of recent Earth Engine tasks.
-
-    Args:
-        name_filter: Optional case-insensitive filter on task description.
-
-    Returns:
-        JSON list of recent tasks with description, state, type, start time,
-        runtime, and error message (max 50).
-    """
-    sess = _ensure_initialized(session_id)
-    ee = sess.namespace["ee"]
-
-    try:
-        tasks = ee.data.getTaskList()
-    except Exception as exc:
-        return json.dumps({"error": str(exc)})
-
-    entries = []
-    for t in tasks[:500]:
-        desc = t.get("description", "")
-        if name_filter and name_filter.lower() not in desc.lower():
-            continue
-        entries.append({
-            "description": desc,
-            "state": t.get("state", "UNKNOWN"),
-            "task_type": t.get("task_type", ""),
-            "start_timestamp_ms": t.get("start_timestamp_ms"),
-            "update_timestamp_ms": t.get("update_timestamp_ms"),
-            "error_message": t.get("error_message", ""),
-        })
-
-    return json.dumps({"count": len(entries), "tasks": entries})
-
-
+# Examples tool removed -- use search_geeviz(module="examples") to list,
+# search_geeviz(name="CCDCViz") to read source.
 # ---------------------------------------------------------------------------
 # Map control (consolidated)
 # ---------------------------------------------------------------------------
@@ -1959,9 +2435,12 @@ def map_control(action: str = "view", open_browser: bool = True, filename: str =
             - "test_layers": Fast validation — calls getMapId() on all layers
               in parallel. Catches bad bands, invalid viz, computation errors.
               No browser required. Returns pass/fail per layer.
-            - "test_view": Slow but thorough — captures a PNG via headless
-              Chrome CDP. Returns tile_errors and console_messages. Requires
-              websocket-client.
+            - "preview": Quick visual check — fetches a small grid of EE map
+              tiles for each layer around the current center/zoom and returns
+              them as inline images (one per layer). No browser required.
+              Use this to visually verify layers have data in the right area.
+              Returns a dict of {layer_name: PNG image} plus center and zoom.
+              Optional: "preview,zoom=10,grid=2" to override zoom or grid size.
             - "export": Validates all layers first (like "view"), then
               writes a self-contained geeView HTML to
               ``generated_outputs/{filename}``. If any layer fails, returns
@@ -1971,6 +2450,16 @@ def map_control(action: str = "view", open_browser: bool = True, filename: str =
               serve the HTML themselves and inject a fresh token on load.
               Use this for chat-embedded maps that should survive session
               reloads.
+            - "export_layers_json": Bundle every currently-added layer
+              into a JSON file under ``generated_outputs/{filename}``.
+              Use this when the agent is building a CUSTOM HTML dashboard
+              (Leaflet, MapLibre, etc.) and needs the EE layers to be
+              re-mintable. The returned ``refresh_url`` is an endpoint
+              the agent embeds in its HTML; fetching it returns fresh
+              tile URLs for every layer so dashboards survive after EE
+              mapids expire. Handles all the same input types as ``addLayer``
+              (Image, ImageCollection, Geometry, Feature, FeatureCollection)
+              plus tile-URL layers added via ``Map.addTileLayer``.
         open_browser: For action="view", whether to open in browser (default True).
         filename: For action="export", the output filename (saved under
             ``generated_outputs/``). Defaults to ``map.html``.
@@ -1983,21 +2472,63 @@ def map_control(action: str = "view", open_browser: bool = True, filename: str =
     Map = sess.namespace["Map"]
     act = action.lower().strip()
 
+    # Use the same streaming stdout as run_code so the frontend polls it
+    try:
+        os.makedirs(os.path.dirname(sess.stdout_stream_file), exist_ok=True)
+        with open(sess.stdout_stream_file, "w", encoding="utf-8") as f:
+            f.write("")
+    except Exception:
+        pass
+    # Redirect stdout to the streaming file for live polling by the frontend.
+    # Use _StreamingStdout (same as run_code) so print() calls appear in the UI.
+    _mc_stdout = _StreamingStdout(sess.stdout_stream_file)
+    _mc_orig = sys.stdout
+    sys.stdout = _mc_stdout
+
+    try:
+        result_json = _map_control_inner(Map, act, sess, open_browser, filename, _mc_stdout)
+        # Inject captured stdout into the response so the frontend shows it
+        stdout_text = _mc_stdout.getvalue().strip()
+        if stdout_text:
+            try:
+                result = json.loads(result_json)
+                result["stdout"] = stdout_text
+                result_json = json.dumps(result)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return result_json
+    finally:
+        sys.stdout = _mc_orig
+
+
+def _map_control_inner(Map, act, sess, open_browser, filename, _mc_stdout):
+    """Inner logic for map_control, wrapped so stdout is always restored."""
+
     if act == "view":
         # --- Pre-flight: validate all layers before opening the map ---
+        n_layers = len(getattr(Map, "idDictList", []))
+        print(f"Validating {n_layers} layer(s)...")
         try:
             test_result = Map.testLayers()
             failed = [l for l in test_result["layers"] if l["status"] == "error"]
+            passed = [l for l in test_result["layers"] if l["status"] == "ok"]
+            for l in passed:
+                print(f"  PASS: {l['name']}")
+            for l in failed:
+                print(f"  FAIL: {l['name']} — {l.get('error', 'unknown error')[:100]}")
             if failed:
+                print(f"Validation failed — {len(failed)} layer(s) have errors.")
                 return json.dumps({
                     "pass": False,
-                    "message": f"Map not opened — {len(failed)} layer(s) failed validation. Fix errors and retry.",
+                                        "message": f"Map not opened — {len(failed)} layer(s) failed validation. Fix errors and retry.",
                     "layers": test_result["layers"],
                 })
+            print(f"All {n_layers} layer(s) passed validation.")
         except Exception as exc:
+            print(f"Validation error: {exc}")
             return json.dumps({
                 "pass": False,
-                "message": f"Layer validation raised an exception: {exc}. Map not opened.",
+                                "message": f"Layer validation raised an exception: {exc}. Map not opened.",
             })
 
         # If any layer has canAreaChart=True and no turnOn command is already set,
@@ -2046,10 +2577,11 @@ def map_control(action: str = "view", open_browser: bool = True, filename: str =
                     url = line
                     break
         layer_count = len(Map.idDictList) if hasattr(Map, "idDictList") else 0
+        print(f"Map opened with {layer_count} layer(s).")
         return json.dumps({
             "url": url,
             "layer_count": layer_count,
-            "message": f"Map opened with {layer_count} layer(s)." if url else "Map.view() ran but no URL was captured.",
+                        "message": f"Map opened with {layer_count} layer(s)." if url else "Map.view() ran but no URL was captured.",
             "raw_output": printed.strip(),
         })
 
@@ -2102,35 +2634,125 @@ def map_control(action: str = "view", open_browser: bool = True, filename: str =
             "layers": result["layers"],
         })
 
-    elif act == "test_view":
-        try:
-            result = Map.testView()
-        except Exception as exc:
-            return json.dumps({"error": str(exc)})
-        if "error" in result:
-            return json.dumps(result)
+    elif act == "preview" or act.startswith("preview,"):
+        # Quick tile-based preview — returns per-layer images the LLM can see
+        grid_size = 3
+        zoom_override = None
+        if "," in act:
+            # e.g. action="preview,zoom=10,grid=2"
+            for part in act.split(",")[1:]:
+                part = part.strip()
+                if part.startswith("zoom="):
+                    try: zoom_override = int(part.split("=")[1])
+                    except ValueError: pass
+                elif part.startswith("grid="):
+                    try: grid_size = int(part.split("=")[1])
+                    except ValueError: pass
 
-        tile_errors = result.get("tile_errors", [])
-        status = f"{len(tile_errors)} tile error(s) detected." if tile_errors else "No tile/JS errors detected."
-        return json.dumps({
-            "message": f"Map view test complete. {status}",
-            "tile_errors": tile_errors,
-            "console_messages": result.get("console_messages", []),
-            "screenshot_path": result.get("screenshot_path", ""),
-        })
+        try:
+            result = Map.previewMap(grid_size=grid_size, zoom=zoom_override)
+        except Exception as exc:
+            return json.dumps({"error": f"Preview failed: {exc}"})
+
+        layer_images = result.get("layers", {})
+        n_ok = sum(1 for v in layer_images.values() if v is not None)
+        n_fail = sum(1 for v in layer_images.values() if v is None)
+        center = result.get("center", [0, 0])
+        z = result.get("zoom", 8)
+
+        # Save preview images to session output dir
+        import os as _os
+        out = sess.output_dir
+        _os.makedirs(out, exist_ok=True)
+        saved = {}
+        for name, img_bytes in layer_images.items():
+            if img_bytes is not None:
+                safe = name.replace(" ", "_").replace("/", "_")[:40]
+                fname = f"preview_{safe}.png"
+                with open(_os.path.join(out, fname), "wb") as f:
+                    f.write(img_bytes)
+                saved[name] = fname
+
+        # Build response — JSON summary (visible in UI) + inline images (visible to LLM)
+        summary = {
+            "message": f"Preview generated for {n_ok} layer(s) at zoom {z}.",
+            "center": center,
+            "zoom": z,
+        }
+        if n_fail:
+            summary["failed"] = n_fail
+
+        if _MCPImage and saved:
+            # Build viz context for each layer so LLM can interpret colors
+            layer_viz = {}
+            for idDict in Map.idDictList:
+                lname = idDict.get("name", "")
+                viz = idDict.get("_viz", {})
+                if lname in saved:
+                    desc_parts = []
+                    if viz.get("bands"):
+                        desc_parts.append(f"bands={viz['bands']}")
+                    if viz.get("palette"):
+                        p = viz["palette"]
+                        if isinstance(p, list) and len(p) > 5:
+                            desc_parts.append(f"palette=[{p[0]}...{p[-1]}] ({len(p)} colors)")
+                        else:
+                            desc_parts.append(f"palette={p}")
+                    if viz.get("min") is not None:
+                        desc_parts.append(f"min={viz['min']}")
+                    if viz.get("max") is not None:
+                        desc_parts.append(f"max={viz['max']}")
+                    lt = viz.get("layerType", "")
+                    if "Vector" in lt or "vector" in lt:
+                        desc_parts.append("vector")
+                    for vk in ("strokeColor", "color", "fillColor", "pointRadius", "width"):
+                        if viz.get(vk) is not None:
+                            desc_parts.append(f"{vk}={viz[vk]}")
+                    if viz.get("autoViz"):
+                        desc_parts.append("autoViz=True (thematic/class data)")
+                    if idDict.get("_is_mosaic_preview"):
+                        desc_parts.append("MOSAIC of time-lapse — single representative tile, not animated")
+                    layer_viz[lname] = ", ".join(desc_parts) if desc_parts else ""
+
+            content_parts = [json.dumps(summary)]
+            for name, fname in saved.items():
+                # Add layer label + viz context before each image
+                ctx = layer_viz.get(name, "")
+                label = f"Layer: {name}"
+                if ctx:
+                    label += f" ({ctx})"
+                content_parts.append(label)
+                fpath = _os.path.join(out, fname)
+                with open(fpath, "rb") as f:
+                    content_parts.append(_MCPImage(data=f.read(), format="png"))
+            return content_parts
+
+        # Fallback: return JSON with file paths
+        summary["files"] = saved
+        return json.dumps(summary)
 
     elif act == "export":
         # --- Pre-flight: validate all layers before exporting ---
+        n_layers = len(getattr(Map, "idDictList", []))
+        print(f"Validating {n_layers} layer(s)...")
         try:
             test_result = Map.testLayers()
             failed = [l for l in test_result["layers"] if l["status"] == "error"]
+            passed = [l for l in test_result["layers"] if l["status"] == "ok"]
+            for l in passed:
+                print(f"  PASS: {l['name']}")
+            for l in failed:
+                print(f"  FAIL: {l['name']} — {l.get('error', 'unknown error')[:100]}")
             if failed:
+                print(f"Validation failed — {len(failed)} layer(s) have errors.")
                 return json.dumps({
                     "pass": False,
                     "message": f"Map not exported — {len(failed)} layer(s) failed validation. Fix errors and retry.",
                     "layers": test_result["layers"],
                 })
+            print(f"All {n_layers} layer(s) passed. Exporting map...")
         except Exception as exc:
+            print(f"Validation error: {exc}")
             return json.dumps({
                 "pass": False,
                 "message": f"Layer validation raised an exception: {exc}. Map not exported.",
@@ -2163,14 +2785,44 @@ def map_control(action: str = "view", open_browser: bool = True, filename: str =
         except Exception as exc:
             return json.dumps({"error": str(exc)})
         layer_count = len(Map.idDictList) if hasattr(Map, "idDictList") else 0
+        print(f"Map exported with {layer_count} layer(s) to {os.path.basename(written_path)}.")
         return json.dumps({
             "path": written_path,
             "layer_count": layer_count,
-            "message": f"Map exported with {layer_count} layer(s) to {os.path.basename(written_path)}.",
+                        "message": f"Map exported with {layer_count} layer(s) to {os.path.basename(written_path)}.",
         })
 
+    elif act == "export_layers_json":
+        # Serialize all currently-added layers to a JSON file. A separate
+        # /api/dashboard/urls endpoint reads this file at viewing time,
+        # calls getMapId on each layer, and returns fresh tile URLs — so
+        # custom HTML dashboards survive expiration.
+        try:
+            result = Map.exportLayerJson(filename=filename or "dashboard_layers.json",
+                                         output_dir=sess.output_dir)
+        except Exception as exc:
+            return json.dumps({"error": str(exc)})
+        # Add the refresh URL the agent should embed in its custom HTML.
+        # sess.session_id is the canonical per-session identifier — `session_id`
+        # is the outer map_control() parameter and isn't in scope inside
+        # _map_control_inner().
+        sid = sess.session_id or ""
+        # Relative URL — works when the dashboard HTML is served from the
+        # same origin as the agent (i.e., embedded in the agent UI). For
+        # standalone hosting on a different origin, the dashboard would
+        # need an absolute URL and CORS — out of scope for now.
+        result["refresh_url"] = (
+            f"/api/dashboard/urls?session_id={sid}"
+            f"&file={os.path.basename(result['path'])}"
+        )
+        result["message"] = (
+            f"{result['layer_count']} layer(s) saved to {os.path.basename(result['path'])}. "
+            f"Embed refresh_url in your custom HTML to fetch fresh tile URLs."
+        )
+        return json.dumps(result)
+
     else:
-        return json.dumps({"error": f"Unknown action: {action!r}. Use 'view', 'layers', 'layer_names', 'clear', 'test_layers', 'test_view', or 'export'."})
+        return json.dumps({"error": f"Unknown action: {action!r}. Use 'view', 'layers', 'layer_names', 'clear', 'test_layers', 'preview', 'export', or 'export_layers_json'."})
 
 
 # ---------------------------------------------------------------------------
@@ -2418,6 +3070,106 @@ def env_info(action: str = "version", session_id: str = None) -> str:
 
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# View generated output (returns image inline for LLM visual inspection)
+# ---------------------------------------------------------------------------
+# NOTE: view_output is registered below ONLY if _MCPImage loaded successfully.
+# It returns an Image object that MCP clients render inline.
+
+@app.tool(annotations=_READ_ONLY)
+def view_output(filename: str, session_id: str = None):
+    """View a generated output file (PNG, GIF, JPEG) as an inline image.
+
+    Use this to visually inspect charts, thumbnails, previews, or any
+    image file in the generated_outputs directory. The image is returned
+    directly so the LLM can see it.
+
+    For map previews, first call map_control(action="preview") to generate
+    preview PNGs, then call view_output("preview_Layer_Name.png") to see them.
+
+    Args:
+        filename: Name of the file in generated_outputs/ (e.g. "chart.png",
+                  "preview_Elevation.png"). Just the filename, no directory.
+        session_id: Session identifier for namespace isolation.
+
+    Returns:
+        The image content (displayed inline by the MCP client), or an error string.
+    """
+    import os as _os
+    sess = _ensure_initialized(session_id)
+    out_dir = sess.output_dir
+    safe = _os.path.basename(filename)
+    path = _os.path.join(out_dir, safe)
+    # Also check base output dir as fallback
+    if not _os.path.isfile(path):
+        path = _os.path.join(_BASE_OUTPUT_DIR, safe)
+    if not _os.path.isfile(path):
+        return f"File not found: {safe}"
+    ext = _os.path.splitext(safe)[1].lower()
+    fmt_map = {".png": "png", ".gif": "gif", ".jpg": "jpeg", ".jpeg": "jpeg", ".webp": "webp"}
+    fmt = fmt_map.get(ext)
+    if not fmt:
+        return f"Unsupported image format: {ext}. Supported: {', '.join(fmt_map.keys())}"
+    with open(path, "rb") as f:
+        data = f.read()
+
+    import io
+    from PIL import Image as _PILImage
+    max_dim = 256  # Aggressive — LLM doesn't need pixel-perfect, just a recognizable preview
+
+    def _shrink_to_jpeg(pil_img):
+        """Downscale and convert to JPEG bytes for minimal context cost."""
+        if max(pil_img.size) > max_dim:
+            ratio = max_dim / max(pil_img.size)
+            pil_img = pil_img.resize((int(pil_img.width * ratio), int(pil_img.height * ratio)), _PILImage.LANCZOS)
+        if pil_img.mode in ("RGBA", "P", "LA"):
+            bg = _PILImage.new("RGB", pil_img.size, (255, 255, 255))
+            if pil_img.mode == "P":
+                pil_img = pil_img.convert("RGBA")
+            bg.paste(pil_img, mask=pil_img.split()[-1] if pil_img.mode in ("RGBA", "LA") else None)
+            pil_img = bg
+        elif pil_img.mode != "RGB":
+            pil_img = pil_img.convert("RGB")
+        buf = io.BytesIO()
+        pil_img.save(buf, format="JPEG", quality=70, optimize=True)
+        return buf.getvalue()
+
+    # GIFs: extract a few key frames as JPEGs
+    if fmt == "gif" and _MCPImage is not None:
+        try:
+            img = _PILImage.open(io.BytesIO(data))
+            n_frames = getattr(img, "n_frames", 1)
+            if n_frames > 1:
+                max_frames = 6  # Reduced from 8 to keep context smaller
+                step = max(1, n_frames // max_frames)
+                parts = [f"GIF with {n_frames} frames — showing {min(n_frames, max_frames)} sampled frames:"]
+                for i in range(0, n_frames, step):
+                    if len([p for p in parts if not isinstance(p, str)]) >= max_frames:
+                        break
+                    img.seek(i)
+                    frame = img.convert("RGBA")
+                    jpeg_bytes = _shrink_to_jpeg(frame)
+                    parts.append(f"Frame {i + 1}/{n_frames}:")
+                    parts.append(_MCPImage(data=jpeg_bytes, format="jpeg"))
+                return parts
+        except Exception:
+            pass  # Fall through to static handling
+
+    # Static images: aggressive downscale to JPEG
+    try:
+        img = _PILImage.open(io.BytesIO(data))
+        data = _shrink_to_jpeg(img)
+        fmt = "jpeg"
+    except Exception:
+        pass
+    if _MCPImage is not None:
+        return _MCPImage(data=data, format=fmt)
+    # Fallback: return full base64 data URI
+    import base64 as _b64
+    encoded = _b64.b64encode(data).decode("ascii")
+    return f"data:image/{fmt};base64,{encoded}"
+
+
 # Export image (consolidated)
 # ---------------------------------------------------------------------------
 
@@ -2556,7 +3308,7 @@ import urllib.error
 # Dataset catalog cache (for search_datasets)
 _CACHE_DIR = os.path.join(_THIS_DIR, ".cache")
 _CACHE_META_FILE = os.path.join(_CACHE_DIR, "meta.json")
-_CACHE_TTL = 7 * 24 * 3600  # 1 week
+_CACHE_TTL = 1 * 24 * 3600  # 1 day
 _CATALOG_FILES = {
     "official": "official_catalog.json",
     "community": "community_catalog.json",
@@ -2836,54 +3588,6 @@ def search_datasets(query: str, source: str = "all", max_results: int = 50) -> s
 
 
 import base64 as _base64
-@app.tool(annotations=_DESTRUCTIVE)
-def cancel_tasks(name_filter: str = "", session_id: str = None) -> str:
-    """Cancel running and ready Earth Engine tasks.
-
-    If name_filter is provided, cancels only tasks whose description
-    contains the filter string. Otherwise cancels ALL ready/running tasks.
-
-    Uses geeViz's taskManagerLib for the actual cancellation.
-
-    Args:
-        name_filter: Optional substring filter. Only tasks whose description
-                     contains this string will be cancelled. If empty, all
-                     ready/running tasks are cancelled.
-
-    Returns:
-        JSON with task counts and cancellation status.
-    """
-    _ensure_initialized(session_id)
-    import geeViz.taskManagerLib as tml
-
-    # Get current task state before cancellation
-    task_state = tml.getTasks()
-    ready_count = len(task_state.get("ready", []))
-    running_count = len(task_state.get("running", []))
-
-    stdout_buf = io.StringIO()
-    try:
-        with contextlib.redirect_stdout(stdout_buf):
-            if name_filter:
-                tml.cancelByName(name_filter)
-            else:
-                tml.batchCancel()
-    except Exception as exc:
-        return json.dumps({
-            "error": f"Cancel failed: {exc}",
-            "stdout": stdout_buf.getvalue(),
-        })
-
-    return json.dumps({
-        "success": True,
-        "name_filter": name_filter or "(all)",
-        "ready_before": ready_count,
-        "running_before": running_count,
-        "stdout": stdout_buf.getvalue().strip(),
-        "message": "Task cancellation completed.",
-    })
-
-
 # ---------------------------------------------------------------------------
 # Asset management (consolidated)
 # ---------------------------------------------------------------------------
@@ -3038,74 +3742,7 @@ def _make_serializable(obj):
     return repr(obj)
 
 
-_REFERENCE_DATA = {
-    "sensorBandNameDict": {"attr": "sensorBandNameDict", "description": "Standard band names by sensor/TOA-SR"},
-    "sensorBandDict": {"attr": "sensorBandDict", "description": "Raw band IDs by sensor/TOA-SR"},
-    "vizParamsFalse": {"attr": "vizParamsFalse", "description": "False color viz params (swir2/nir/red, 0-0.4)"},
-    "vizParamsFalse10k": {"attr": "vizParamsFalse10k", "description": "False color viz params (swir1/nir/red, 0-10000)"},
-    "vizParamsTrue": {"attr": "vizParamsTrue", "description": "True color viz params (red/green/blue, 0-0.4)"},
-    "vizParamsTrue10k": {"attr": "vizParamsTrue10k", "description": "True color viz params (red/green/blue, 0-10000)"},
-    "landsatCollectionDict": {"attr": "landsatCollectionDict", "description": "Landsat collection IDs by sensor/TOA-SR"},
-    "s2CollectionDict": {"attr": "s2CollectionDict", "description": "Sentinel-2 collection IDs by TOA/SR"},
-    "changeDirDict": {"attr": "changeDirDict", "description": "Expected change direction per index (+1 or -1)"},
-    "testAreas": {"attr": "testAreas", "description": "Pre-defined test area geometries (CA, CO, HI, etc.)"},
-    "palettes_cmocean": {"attr": "cmocean", "module": "geeViz.geePalettes", "description": "cmocean palettes (Thermal, Haline, Solar, Ice, Deep, Dense, Algae, etc.)"},
-    "palettes_matplotlib": {"attr": "matplotlib", "module": "geeViz.geePalettes", "description": "matplotlib palettes (magma, inferno, plasma, viridis)"},
-    "palettes_colorbrewer": {"attr": "colorbrewer", "module": "geeViz.geePalettes", "description": "ColorBrewer palettes (sequential, diverging, qualitative)"},
-    "palettes_crameri": {"attr": "crameri", "module": "geeViz.geePalettes", "description": "Crameri scientific colour maps"},
-    "palettes_misc": {"attr": "misc", "module": "geeViz.geePalettes", "description": "Miscellaneous palettes"},
-}
-
-
-@app.tool(annotations=_READ_ONLY)
-def get_reference_data(name: str = "", session_id: str = None) -> str:
-    """Look up geeViz reference dictionaries (band mappings, collection IDs, viz params, etc.).
-
-    Args:
-        name: Name of the reference dict to retrieve.
-              Pass "" (empty) to list all available dicts with descriptions.
-
-    Returns:
-        JSON string with the dict contents or listing of available dicts.
-    """
-    _ensure_initialized(session_id)
-
-    # Listing mode
-    if not name:
-        listing = [
-            {"name": k, "description": v["description"]}
-            for k, v in _REFERENCE_DATA.items()
-        ]
-        return json.dumps({
-            "available": listing,
-            "count": len(listing),
-            "usage": 'Call get_reference_data(name="<dict_name>") to retrieve contents.',
-            "note": "getImagesLib has additional module-level objects not listed here; use run_code to access them.",
-        })
-
-    # Lookup mode
-    entry = _REFERENCE_DATA.get(name)
-    if entry is None:
-        available = sorted(_REFERENCE_DATA.keys())
-        return json.dumps({"error": f"Unknown reference dict: {name!r}", "available": available})
-
-    try:
-        mod_path = entry.get("module", "geeViz.getImagesLib")
-        import importlib
-        mod = importlib.import_module(mod_path)
-        raw = getattr(mod, entry["attr"])
-        data = _make_serializable(raw)
-        result = json.dumps({"name": name, "description": entry["description"], "data": data})
-        # Cap size for large palette dicts
-        if len(result) > 50000:
-            # Return just the top-level keys
-            if isinstance(raw, dict):
-                summary = {k: list(v.keys()) if isinstance(v, dict) else type(v).__name__ for k, v in raw.items()}
-                return json.dumps({"name": name, "description": entry["description"], "keys": summary,
-                                   "note": "Large dict — showing keys only. Access individual palettes via run_code: palettes.cmocean['Thermal'][7]"})
-        return result
-    except Exception as exc:
-        return json.dumps({"error": f"Failed to read {name}: {exc}"})
+    # get_reference_data removed — use search_geeviz(name="vizParamsFalse") instead
 
 
 # ---------------------------------------------------------------------------
@@ -3203,7 +3840,7 @@ def get_streetview(
 
 
 @app.tool(annotations=_READ_ONLY_OPEN)
-def search_places(
+def geeviz_search_places(
     query: str,
     lon: float = 0,
     lat: float = 0,
@@ -3218,7 +3855,7 @@ def search_places(
 
     Args:
         query: Search text (e.g. "fire station", "visitor center",
-               "4240 S Olympic Way, SLC, UT").
+               "100S 200 E, SLC, UT").
         lon: Longitude for location bias (0 = no bias).
         lat: Latitude for location bias (0 = no bias).
         radius: Bias radius in meters. Default 5000.
@@ -3254,342 +3891,12 @@ def search_places(
 
 
 # ---------------------------------------------------------------------------
-# Report tools
-# ---------------------------------------------------------------------------
+# Report tools removed — use rl.Report() in run_code instead.
+# See agent-instructions.md Key patterns > Reports.
 
-# Global report instance — persists across tool calls
-_active_report = None
-
-
-@app.tool(annotations=_WRITE)
-def create_report(
-    title: str = "Report",
-    theme: str = "dark",
-    layout: str = "report",
-    tone: str = "neutral",
-    header_text: str = "",
-    prompt: str = "",
-    session_id: str = None,
-) -> str:
-    """Create (or reset) a report. Must be called before add_report_section.
-
-    Initializes a new Report object that persists across MCP calls.
-    Any previously active report is discarded.
-
-    Args:
-        title: Report title.
-        theme: "dark" (default) or "light".
-        layout: "report" (portrait, vertical) or "poster" (landscape grid).
-        tone: "neutral" (default), "informative", "technical", or custom tone.
-        header_text: Introductory text below the title.
-        prompt: Additional guidance for the executive summary LLM narrative.
-
-    Returns:
-        Confirmation with the report title and settings.
-    """
-    sess = _ensure_initialized(session_id)
-    from geeViz.outputLib import reports as _rl
-
-    sess.active_report = _rl.Report(
-        title=title,
-        theme=theme,
-        layout=layout,
-        tone=tone,
-        header_text=header_text or None,
-        prompt=prompt or None,
-    )
-    return json.dumps({
-        "success": True,
-        "message": f"Report '{title}' created ({theme} theme, {layout} layout, {tone} tone).",
-        "tip": "Use add_report_section to add sections, then generate_report to produce output.",
-    })
+# Report tools removed -- use rl.Report() in run_code instead.
 
 
-@app.tool(annotations=_WRITE)
-def add_report_section(
-    ee_obj_var: str,
-    geometry_var: str,
-    title: str = "Section",
-    prompt: str = "",
-    thumb_format: str = "png",
-    band_names: str = "",
-    scale: int = 30,
-    chart_types: str = "",
-    basemap: str = "",
-    burn_in_geometry: bool = False,
-    geometry_outline_color: str = "",
-    geometry_fill_color: str = "",
-    transition_periods: str = "",
-    sankey_band_name: str = "",
-    feature_label: str = "",
-    area_format: str = "Percentage",
-    date_format: str = "YYYY",
-    reducer: str = "",
-    generate_table: bool = True,
-    generate_chart: bool = True,
-    session_id: str = None,
-) -> str:
-    """Add a section to the active report.
-
-    Each section analyses one ee.Image or ee.ImageCollection over a geometry.
-    The report automatically generates a thumbnail, data table, chart, and
-    LLM narrative for each section.
-
-    Args:
-        ee_obj_var: Name of an ee.Image or ee.ImageCollection variable in the
-                    REPL namespace.
-        geometry_var: Name of an ee.Geometry, ee.Feature, or ee.FeatureCollection
-                      variable in the REPL namespace.
-        title: Section heading.
-        prompt: Optional per-section guidance for the LLM narrative.
-        thumb_format: "png" (static), "gif" (animated), "filmstrip" (grid),
-                      or "none" (no thumbnail). Default "png".
-        band_names: Comma-separated band names (auto-detected if empty).
-        scale: Pixel scale in meters (default 30).
-        chart_types: Comma-separated list of chart types to produce (0-3).
-                     Valid types: "bar", "line+markers", "donut", "scatter",
-                     "sankey", "stacked_bar", "stacked_line+markers".
-                     When "sankey" is included, transition_periods and
-                     sankey_band_name are used for that chart.
-                     Leave empty to auto-detect a single chart type.
-                     Examples: "sankey,line+markers", "bar,donut", "sankey".
-        basemap: Basemap preset for thumbnail (e.g. "esri-satellite").
-        burn_in_geometry: Burn study area boundary onto the thumbnail.
-        geometry_outline_color: Boundary outline color (e.g. "white", "red").
-        geometry_fill_color: Boundary fill color with alpha (e.g. "FFFFFF33").
-        transition_periods: JSON list of year pairs for Sankey
-                            (e.g. "[[1985,2000],[2000,2024]]").
-        sankey_band_name: Band name for Sankey (auto-detected if empty).
-        feature_label: Property for per-feature labels (FeatureCollection).
-        area_format: "Percentage" (default), "Hectares", "Acres", "Pixels".
-        date_format: EE date format (default "YYYY").
-        reducer: Override reducer ("mean", "first", "mode", etc.).
-        generate_table: Include a data table (default True).
-        generate_chart: Include a chart (default True).
-
-    Returns:
-        Confirmation with the section index and title.
-    """
-    sess = _ensure_initialized(session_id)
-    ee = sess.namespace["ee"]
-
-    if sess.active_report is None:
-        return json.dumps({"error": "No active report. Call create_report first."})
-
-    # Resolve EE objects from namespace
-    ee_obj = sess.namespace.get(ee_obj_var)
-    if ee_obj is None:
-        return json.dumps({"error": f"Variable '{ee_obj_var}' not found in REPL namespace."})
-    geom = sess.namespace.get(geometry_var)
-    if geom is None:
-        return json.dumps({"error": f"Variable '{geometry_var}' not found in REPL namespace."})
-
-    # Build kwargs
-    kwargs = {"scale": scale, "area_format": area_format, "date_format": date_format}
-
-    # Parse chart_types — comma-separated list
-    ct_list = [c.strip() for c in chart_types.split(",") if c.strip()] if chart_types else []
-
-    if band_names:
-        kwargs["band_names"] = [b.strip() for b in band_names.split(",")]
-    if basemap:
-        kwargs["basemap"] = basemap
-    if burn_in_geometry:
-        kwargs["burn_in_geometry"] = True
-    if geometry_outline_color:
-        kwargs["geometry_outline_color"] = geometry_outline_color
-    if geometry_fill_color:
-        kwargs["geometry_fill_color"] = geometry_fill_color
-    if feature_label:
-        kwargs["feature_label"] = feature_label
-    if reducer:
-        _reducer_map = {
-            "first": ee.Reducer.first(),
-            "mean": ee.Reducer.mean(),
-            "median": ee.Reducer.median(),
-            "min": ee.Reducer.min(),
-            "max": ee.Reducer.max(),
-            "sum": ee.Reducer.sum(),
-            "mode": ee.Reducer.mode(),
-            "stdDev": ee.Reducer.stdDev(),
-            "count": ee.Reducer.count(),
-        }
-        kwargs["reducer"] = _reducer_map.get(reducer.strip())
-    if transition_periods:
-        try:
-            kwargs["transition_periods"] = json.loads(transition_periods)
-        except json.JSONDecodeError:
-            return json.dumps({"error": f"Invalid transition_periods JSON: {transition_periods}"})
-    if sankey_band_name:
-        kwargs["sankey_band_name"] = sankey_band_name
-
-    tf = thumb_format.lower().strip() if thumb_format else "png"
-    if tf == "none":
-        tf = None
-
-    try:
-        sess.active_report.add_section(
-            ee_obj=ee_obj,
-            geometry=geom,
-            title=title,
-            prompt=prompt or None,
-            generate_table=generate_table,
-            generate_chart=generate_chart,
-            thumb_format=tf,
-            chart_types=ct_list if ct_list else None,
-            **kwargs,
-        )
-    except Exception as exc:
-        return json.dumps({"error": f"Failed to add section: {exc}"})
-
-    n = len(sess.active_report._sections)
-    return json.dumps({
-        "success": True,
-        "message": f"Section {n} '{title}' added to report '{sess.active_report.title}'.",
-        "total_sections": n,
-        "tip": "Add more sections or call generate_report to produce the output.",
-    })
-
-
-@app.tool(annotations=_WRITE_OPEN)
-def generate_report(
-    format: str = "html",
-    output_filename: str = "",
-    session_id: str = None,
-) -> str:
-    """Generate the report from all added sections.
-
-    Runs all EE computations (thumbnails, charts, tables) and LLM narratives
-    in parallel, then renders the final output. This may take 30-120 seconds
-    depending on the number of sections.
-
-    Args:
-        format: Output format -- "html" (interactive charts, default),
-                "md" (markdown text only), or "pdf" (static images).
-        output_filename: Filename for the output (saved to generated_outputs/).
-                         Auto-generated if empty.
-
-    Returns:
-        The file path of the generated report, plus a metadata summary.
-    """
-    sess = _ensure_initialized(session_id)
-
-    if sess.active_report is None:
-        return json.dumps({"error": "No active report. Call create_report first."})
-    if not sess.active_report._sections:
-        return json.dumps({"error": "Report has no sections. Call add_report_section first."})
-
-    fmt = format.lower().strip()
-    if fmt not in ("html", "md", "pdf"):
-        return json.dumps({"error": f"Invalid format '{format}'. Use 'html', 'md', or 'pdf'."})
-
-    # Determine output path
-    os.makedirs(sess.output_dir, exist_ok=True)
-    if output_filename:
-        out_path = os.path.join(sess.output_dir, output_filename)
-    else:
-        import time as _time_mod
-        ts = int(_time_mod.time())
-        ext = {"html": ".html", "md": ".md", "pdf": ".pdf"}[fmt]
-        safe_title = "".join(c if c.isalnum() or c in " _-" else "_" for c in sess.active_report.title)[:40].strip()
-        out_path = os.path.join(sess.output_dir, f"report_{safe_title}_{ts}{ext}")
-
-    try:
-        if fmt == "pdf":
-            # PDF: _render_pdf needs output_path internally. It will either:
-            # - return a file path (if Chrome/pdfkit succeeded)
-            # - return HTML string (fallback — no PDF converter available)
-            # In sandbox, subprocess is blocked so it always falls back to HTML.
-            content = sess.active_report.generate(format="pdf", output_path=out_path)
-            if isinstance(content, str) and not os.path.isfile(content):
-                # Got HTML string back (fallback) — use light theme for print
-                orig_theme = sess.active_report.theme
-                sess.active_report.theme = "light"
-                content = sess.active_report.generate(format="pdf", output_path=out_path)
-                sess.active_report.theme = orig_theme
-                # Save as .html instead of .pdf
-                html_path = out_path.rsplit(".", 1)[0] + ".html"
-                _safe_write_file(os.path.basename(html_path), content, output_dir=sess.output_dir)
-                out_path = html_path
-            elif isinstance(content, str):
-                out_path = content  # successful PDF path
-        else:
-            # HTML or MD: generate content, write via save_file
-            content = sess.active_report.generate(format=fmt)
-            _safe_write_file(os.path.basename(out_path), content, "w", output_dir=sess.output_dir)
-        result = out_path
-    except Exception as exc:
-        return json.dumps({"error": f"Report generation failed: {exc}"})
-
-    # Build metadata
-    try:
-        meta_df = sess.active_report.metadata()
-        meta_md = meta_df.to_markdown(index=False)
-    except Exception:
-        meta_md = "(metadata unavailable)"
-
-    return json.dumps({
-        "success": True,
-        "format": fmt,
-        "output_path": out_path,
-        "sections": len(sess.active_report._sections),
-        "metadata": meta_md,
-        "tip": f"Report saved to {out_path}",
-    })
-
-
-@app.tool(annotations=_READ_ONLY)
-def get_report_status(session_id: str = None) -> str:
-    """Check the current report status -- title, theme, section count, and
-    section titles.
-
-    Returns:
-        Report status or a message if no report is active.
-    """
-    sess = _get_session(session_id)
-    if sess.active_report is None:
-        return json.dumps({
-            "active": False,
-            "message": "No active report. Call create_report to start one.",
-        })
-
-    sections = []
-    for i, sec in enumerate(sess.active_report._sections):
-        sections.append({
-            "index": i + 1,
-            "title": sec.title,
-            "thumb_format": sec.thumb_format,
-            "generate_table": sec.generate_table,
-            "generate_chart": sec.generate_chart,
-        })
-
-    return json.dumps({
-        "active": True,
-        "title": sess.active_report.title,
-        "theme": sess.active_report.theme,
-        "layout": sess.active_report.layout,
-        "tone": sess.active_report.tone,
-        "section_count": len(sess.active_report._sections),
-        "sections": sections,
-    })
-
-
-@app.tool(annotations=_DESTRUCTIVE)
-def clear_report(session_id: str = None) -> str:
-    """Discard the active report and all its sections.
-
-    Returns:
-        Confirmation that the report was cleared.
-    """
-    sess = _get_session(session_id)
-    old_title = sess.active_report.title if sess.active_report else None
-    sess.active_report = None
-    if old_title:
-        return json.dumps({"success": True, "message": f"Report '{old_title}' cleared."})
-    return json.dumps({"success": True, "message": "No active report to clear."})
-
-
-# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 

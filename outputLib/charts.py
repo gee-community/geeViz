@@ -76,10 +76,125 @@ CHART_TYPES = [
     "line+markers",
     "stacked_line",
     "stacked_line+markers",
+    "pie",
     "donut",
     "scatter",
     "sankey",
 ]
+
+
+def truncate_class_name(name, max_length=30):
+    """Truncate a class name preserving the end.
+
+    If *name* is longer than *max_length*, keeps the beginning and end
+    with ``...`` in the middle (e.g. ``"Grass-Forb-...Shrubs-Mix"``).
+    Roughly 2/3 of the budget goes to the start, 1/3 to the end.
+
+    Args:
+        name: The class name string.
+        max_length: Maximum allowed length. ``None`` or ``0`` disables
+            truncation. Default 30.
+
+    Returns:
+        The (possibly truncated) name string.
+    """
+    if not max_length or not isinstance(name, str) or len(name) <= max_length:
+        return name
+    ellipsis = "..."
+    budget = max_length - len(ellipsis)
+    if budget <= 0:
+        return name[:max_length]
+    end_len = max(budget // 3, 1)
+    start_len = budget - end_len
+    return name[:start_len] + ellipsis + name[-end_len:]
+
+
+def truncate_class_names(names, max_length=30):
+    """Apply :func:`truncate_class_name` to a list of names.
+
+    Args:
+        names: List of class name strings.
+        max_length: Maximum allowed length per name. ``None`` or ``0``
+            disables truncation. Default 30.
+
+    Returns:
+        New list with truncated names.
+    """
+    if not max_length or not names:
+        return names
+    return [truncate_class_name(n, max_length) for n in names]
+
+
+def _normalize_class_prop(value, as_int=False):
+    """Normalize a class property to a list.
+
+    Some thematic datasets store ``<band>_class_values`` /
+    ``<band>_class_names`` / ``<band>_class_palette`` as comma-separated
+    strings instead of lists (e.g. ``"1,2,3"`` instead of ``[1, 2, 3]``).
+    This helper coerces them to lists so downstream code works either way.
+
+    Args:
+        value: The raw property value (list, str, or None).
+        as_int: If True, convert each element to int (for class_values).
+
+    Returns:
+        list: Normalized list. Empty list if value is None or empty.
+    """
+    if value is None or value == "":
+        return []
+    if isinstance(value, str):
+        parts = [p.strip() for p in value.split(",") if p.strip()]
+    elif isinstance(value, (list, tuple)):
+        parts = list(value)
+    else:
+        return [value]
+    if as_int:
+        out = []
+        for p in parts:
+            try:
+                out.append(int(p))
+            except (ValueError, TypeError):
+                try:
+                    out.append(int(float(p)))
+                except (ValueError, TypeError):
+                    out.append(p)
+        return out
+    return parts
+
+
+def _detect_empty_chart_data(df, context=""):
+    """Return a human-readable warning if ``df`` has no plottable data.
+
+    Empty means: ``None``, zero rows, or all numeric cells NaN/0 (which would
+    render a blank chart). Returns ``None`` when data is plottable.
+
+    Args:
+        df: pandas DataFrame returned by ``zonal_stats`` / equivalent.
+        context: optional short string included in the warning (e.g. band list).
+    """
+    try:
+        if df is None:
+            return f"summarize_and_chart returned no data{(' — ' + context) if context else ''}"
+        if df.empty:
+            return f"summarize_and_chart returned an empty DataFrame (0 rows){(' — ' + context) if context else ''}"
+        numeric = df.select_dtypes(include="number")
+        if not numeric.empty:
+            try:
+                total = numeric.fillna(0).abs().sum().sum()
+            except Exception:
+                total = None
+            if total == 0:
+                return (
+                    "summarize_and_chart produced an empty chart — all numeric "
+                    "values are 0 or NaN. Likely causes: missing class properties "
+                    "on a thematic band, wrong band name, geometry outside data "
+                    "extent, or fully-masked image"
+                    + ((" — " + context) if context else "")
+                )
+    except Exception:
+        # Don't let detector errors break the main chart pipeline
+        return None
+    return None
 
 
 def _legend_kwargs(legend_position):
@@ -169,12 +284,15 @@ def _title_to_filename(title):
 
 
 def _plotly_download_config(fig):
-    """Build Plotly config dict with download filename derived from chart title."""
+    """Build Plotly config dict with download filename and hidden mode bar."""
     title = ""
     if fig.layout.title and fig.layout.title.text:
         title = fig.layout.title.text
     fname = _title_to_filename(title)
-    return {"toImageButtonOptions": {"filename": fname}}
+    return {
+        "toImageButtonOptions": {"filename": fname},
+        "displayModeBar": False,
+    }
 
 
 def _set_download_filename(fig):
@@ -191,8 +309,9 @@ def _set_download_filename(fig):
             kwargs["config"] = _plotly_download_config(fig)
         else:
             cfg = kwargs["config"]
-            if "toImageButtonOptions" not in cfg:
-                cfg["toImageButtonOptions"] = _plotly_download_config(fig)["toImageButtonOptions"]
+            defaults = _plotly_download_config(fig)
+            for k, v in defaults.items():
+                cfg.setdefault(k, v)
         return _orig_show(*args, **kwargs)
 
     def _patched_to_html(*args, **kwargs):
@@ -200,8 +319,9 @@ def _set_download_filename(fig):
             kwargs["config"] = _plotly_download_config(fig)
         else:
             cfg = kwargs["config"]
-            if "toImageButtonOptions" not in cfg:
-                cfg["toImageButtonOptions"] = _plotly_download_config(fig)["toImageButtonOptions"]
+            defaults = _plotly_download_config(fig)
+            for k, v in defaults.items():
+                cfg.setdefault(k, v)
         return _orig_to_html(*args, **kwargs)
 
     fig.show = _patched_show
@@ -280,6 +400,17 @@ def _format_period(period):
 
 
 from geeViz.outputLib import themes as _themes
+
+# Re-export the unified theme entry points so agents can call
+# ``cl.apply_theme(fig)``, ``cl.theme(...)``, and ``cl.set_default_theme(...)``
+# without importing themes directly.
+from geeViz.outputLib.themes import (  # noqa: E402,F401
+    apply_theme,
+    theme,
+    set_default_theme,
+    get_default_theme,
+    apply_matplotlib_theme,
+)
 from geeViz.outputLib._templates import (
     render_chart_style as _render_chart_style,
     render_d3_sankey as _render_d3_sankey,
@@ -1327,7 +1458,7 @@ def chart_multi_feature_timeseries(
 ###########################################################################
 
 
-def get_obj_info(ee_obj, band_names=None):
+def get_obj_info(ee_obj, band_names=None, max_class_label_length=30):
     """
     Detect the type of a GEE object and read its thematic class metadata.
 
@@ -1336,6 +1467,10 @@ def get_obj_info(ee_obj, band_names=None):
         band_names (list or str, optional): Override the band names to use.
             Accepts a list ``['NDVI', 'NBR']`` or a comma-separated string
             ``'NDVI,NBR'``.  A single string is coerced to a one-element list.
+        max_class_label_length (int, optional): Maximum length for class name
+            strings. Names longer than this are truncated with ``...`` in the
+            middle, preserving the end (e.g. ``"Grass-Forb-...Shrubs-Mix"``).
+            Set to ``None`` or ``0`` to disable. Default 30.
 
     Returns:
         dict: Keys ``obj_type``, ``band_names``, ``is_thematic``, ``class_info``, ``size``.
@@ -1382,10 +1517,13 @@ def get_obj_info(ee_obj, band_names=None):
 
         if values_key in props and names_key in props:
             is_thematic = True
+            # Normalize: some datasets store these as comma-separated strings instead of lists
             class_info[bn] = {
-                "class_values": props[values_key],
-                "class_names": props[names_key],
-                "class_palette": props.get(palette_key, []),
+                "class_values": _normalize_class_prop(props[values_key], as_int=True),
+                "class_names": truncate_class_names(
+                    _normalize_class_prop(props[names_key]), max_class_label_length
+                ),
+                "class_palette": _normalize_class_prop(props.get(palette_key, [])),
             }
 
     return {
@@ -1679,9 +1817,329 @@ def parse_thematic_results(raw_dict, obj_info, x_axis_labels, area_format="Perce
         return df
 
 
+def _collect_band_outputs(raw_dict, base_key):
+    """Return ``{output_suffix: value}`` for all keys in ``raw_dict`` that
+    match ``base_key`` or ``base_key`` + ``"_"`` + something.
+
+    Multi-output reducers (e.g. ``ee.Reducer.percentile([5, 50, 95])``,
+    ``Reducer.minMax``, ``Reducer.mean().combine(Reducer.stdDev(), sharedInputs=True)``)
+    produce multiple values per input band, with EE suffixing each output
+    band name (e.g. ``p5``, ``p50``, ``max``, ``stdDev``).
+
+    Returns:
+        dict[str, value] where the key is the trailing suffix (``""`` for
+        single-output reducers, ``"p5"``, ``"max"``, etc. for multi-output).
+        Empty dict if no matching key found.
+    """
+    outputs = {}
+    if base_key in raw_dict:
+        outputs[""] = raw_dict[base_key]
+    prefix = base_key + "_"
+    plen = len(prefix)
+    for k, v in raw_dict.items():
+        if isinstance(k, str) and k.startswith(prefix):
+            outputs[k[plen:]] = v
+    return outputs
+
+
+def _is_continuous_histogram_reducer(reducer):
+    """True if ``reducer`` is ``ee.Reducer.histogram(...)`` (continuous bins),
+    distinct from ``ee.Reducer.frequencyHistogram()`` (categorical counts).
+
+    The two reducers have similar names but very different outputs.
+    """
+    try:
+        rt = reducer.getInfo().get("type", "")
+    except Exception:
+        return False
+    # EE reducer types observed:
+    #   "Reducer.histogram"          ← continuous binning, what we want
+    #   "Reducer.frequencyHistogram" ← categorical, handled separately
+    return rt.endswith("histogram") and "frequencyHistogram" not in rt
+
+
+def _extract_histogram(value):
+    """Extract bucket centers and counts from a histogram-reducer output.
+
+    EE histogram values come in two forms depending on how many buckets
+    were produced:
+    - Dict: ``{"bucketMeans": [...], "bucketWidth": w, "histogram": [...]}``
+    - List of [center, count] pairs (when ``minBucketWidth`` not specified)
+
+    Returns:
+        tuple (centers, counts) — two lists of equal length. ``(None, None)``
+        if the value isn't a recognized histogram shape.
+    """
+    if value is None:
+        return (None, None)
+    if isinstance(value, dict):
+        means = value.get("bucketMeans")
+        counts = value.get("histogram")
+        if means is not None and counts is not None:
+            return (list(means), list(counts))
+    if isinstance(value, list) and value:
+        # [[center, count], ...] form
+        try:
+            centers = [row[0] for row in value]
+            counts = [row[1] for row in value]
+            return (centers, counts)
+        except Exception:
+            pass
+    return (None, None)
+
+
+def _histogram_ic_heatmap(
+    ic, geometry, band_names,
+    scale=30, crs=None, transform=None, tile_scale=4,
+    n_bins=50, x_axis_property="system:time_start", date_format="YYYY",
+    title=None, width=None, height=None, legend_position="right",
+    palette=None,
+):
+    """Heatmap of how a band's distribution evolves across an ImageCollection.
+
+    One row per time step (year by default), one column per bucket center.
+    Bins are aligned across time via ``ee.Reducer.fixedHistogram`` over the
+    collection's global min/max.
+    """
+    ic = ic.filterBounds(geometry)
+    obj_info = get_obj_info(ic, band_names)
+
+    if not band_names:
+        band_names = obj_info["band_names"]
+    if len(band_names) > 1:
+        print(
+            f"WARNING: histogram heatmap over ImageCollection — using only the "
+            f"first band ({band_names[0]}) of {band_names}. For multi-band "
+            f"distribution comparison, run one chart per band."
+        )
+        band_names = band_names[:1]
+    band = band_names[0]
+
+    # Geometry
+    geo_type, geo = detect_geometry_type(geometry)
+    if geo_type == "multi":
+        geo = geo.geometry()
+
+    # Compute global min/max once so all years share the same bin grid.
+    # Two reductions: (1) per-pixel min/max across the IC, (2) spatial
+    # min/max of the resulting per-pixel min/max image.
+    try:
+        mm_img = ic.select(band).reduce(ee.Reducer.minMax())
+        # mm_img has bands "<band>_min" and "<band>_max" — per-pixel values.
+        # Apply Reducer.minMax() spatially to collapse to scalars.
+        mm_info = mm_img.reduceRegion(
+            reducer=ee.Reducer.minMax(),
+            geometry=geo, scale=scale, crs=crs, crsTransform=transform,
+            tileScale=tile_scale, bestEffort=True, maxPixels=1e13,
+        ).getInfo() or {}
+        # Spatial reducer produces 4 keys:
+        #   "<band>_min_min" / "<band>_min_max" / "<band>_max_min" / "<band>_max_max"
+        # Global minimum is min-of-mins; global maximum is max-of-maxes.
+        g_min = mm_info.get(f"{band}_min_min")
+        g_max = mm_info.get(f"{band}_max_max")
+        if g_min is None or g_max is None or g_min == g_max:
+            raise ValueError(f"could not resolve global min/max (got {g_min}, {g_max})")
+        print(f"Histogram heatmap range: {band} in [{g_min}, {g_max}], {n_bins} bins")
+    except Exception as e:
+        print(f"WARNING: could not compute global range for heatmap ({e}); "
+              f"falling back to per-image binning, which may produce a ragged grid.")
+        g_min, g_max = None, None
+
+    # Stack the IC into a single multi-band image where each band is named
+    # "<x_label>----<band>"; one reduceRegion call gets all histograms.
+    stacked, stack_bands, x_axis_labels = prepare_for_reduction(
+        ic.select(band), obj_info | {"band_names": [band]},
+        x_axis_property=x_axis_property, date_format=date_format,
+    )
+
+    if g_min is not None:
+        fh = ee.Reducer.fixedHistogram(g_min, g_max, n_bins)
+        raw = reduce_region(stacked, geo, fh, scale, crs, transform, tile_scale)
+    else:
+        raw = reduce_region(stacked, geo, ee.Reducer.histogram(maxBuckets=n_bins),
+                            scale, crs, transform, tile_scale)
+
+    # Parse: each stacked band key holds either fixedHistogram pairs
+    # ``[[bucket_min, count], ...]`` or the histogram dict shape.
+    per_time = {}
+    for x_label in x_axis_labels:
+        key = f"{x_label}{SPLIT_STR}{band}"
+        val = raw.get(key)
+        centers, counts = _extract_histogram(val)
+        if centers is None:
+            continue
+        per_time[x_label] = pandas.Series(counts, index=centers).sort_index()
+
+    if not per_time:
+        print(f"WARNING: histogram reducer returned no usable data for band {band}.")
+        fig_empty = go.Figure()
+        fig_empty.update_layout(
+            title=title or "Distribution",
+            annotations=[dict(text="No histogram data", xref="paper", yref="paper",
+                              x=0.5, y=0.5, showarrow=False, font=dict(size=18, color="#888"))],
+            width=width, height=height,
+            plot_bgcolor=DEFAULT_PLOT_BGCOLOR, paper_bgcolor=DEFAULT_PLOT_BGCOLOR,
+        )
+        _themes.apply_plotly_theme(fig_empty, "dark")
+        return {"df": pandas.DataFrame(), "chart": _set_download_filename(fig_empty),
+                "warning": "no histogram data"}
+
+    # Build the 2D grid — rows are bucket centers (TCC values),
+    # columns are time labels (years), values are % of pixels per column.
+    df = pandas.DataFrame(per_time).fillna(0).sort_index()  # rows = bucket centers
+    df = df.reindex(sorted(df.columns), axis=1)             # cols = time, sorted
+
+    # Per-column (per-year) normalization to percentage of pixels.
+    col_sums = df.sum(axis=0).replace(0, 1)
+    df_pct = df.divide(col_sums, axis=1) * 100.0
+    df_pct.index.name = band
+    df_pct.columns.name = "time"
+
+    fig = go.Figure(data=go.Heatmap(
+        z=df_pct.values,
+        x=list(df_pct.columns),
+        y=list(df_pct.index),
+        colorscale="Viridis",
+        colorbar=dict(title="% of pixels"),
+        hovertemplate="time=%{x}<br>" + band + "=%{y}<br>%{z:.2f}%<extra></extra>",
+    ))
+    fig.update_layout(
+        title=dict(text=title or f"{band} distribution over time",
+                   x=0.5, xanchor="center"),
+        xaxis=dict(title="Time", type="category"),
+        yaxis=dict(title=band),
+        plot_bgcolor=DEFAULT_PLOT_BGCOLOR,
+        paper_bgcolor=DEFAULT_PLOT_BGCOLOR,
+        font=dict(family=DEFAULT_PLOT_FONT),
+        width=width, height=height,
+        margin=dict(l=60, r=25, b=50, t=50, pad=5),
+    )
+    _themes.apply_plotly_theme(fig, "dark")
+    return {"df": df_pct, "chart": _set_download_filename(fig)}
+
+
+def _summarize_and_chart_continuous_histogram(
+    ee_obj, geometry, band_names, reducer,
+    scale=30, crs=None, transform=None, tile_scale=4,
+    title=None, width=None, height=None, legend_position="right",
+    palette=None, opacity=0.9,
+):
+    """Specialized path for ``ee.Reducer.histogram(...)``.
+
+    Returns ``{"df": DataFrame, "chart": Figure}``.
+
+    - Single ``ee.Image``: bar chart with bucket centers on x and pixel
+      counts on y.
+    - ``ee.ImageCollection``: heatmap with bucket centers on x, time
+      labels on y, and pixel counts as color. Bins are aligned across
+      time using ``fixedHistogram(global_min, global_max, 50)`` so the
+      grid is consistent.
+    """
+    if width is None:
+        width = DEFAULT_CHART_WIDTH
+    if height is None:
+        height = DEFAULT_CHART_HEIGHT
+
+    if isinstance(ee_obj, ee.ImageCollection):
+        return _histogram_ic_heatmap(
+            ee_obj, geometry, band_names,
+            scale=scale, crs=crs, transform=transform, tile_scale=tile_scale,
+            title=title, width=width, height=height, legend_position=legend_position,
+            palette=palette,
+        )
+
+    img = ee.Image(ee_obj)
+
+    # Auto-detect bands if not given
+    if not band_names:
+        band_names = img.bandNames().getInfo()
+
+    img = img.select(band_names)
+
+    # Resolve geometry
+    geo_type, geo = detect_geometry_type(geometry)
+    if geo_type == "multi":
+        # Histogram of a multi-feature FC: dissolve to one geometry for now
+        geo = geo.geometry()
+
+    raw = reduce_region(img, geo, reducer, scale, crs, transform, tile_scale)
+
+    # Build a long-format DataFrame: index = bucket center, columns = bands.
+    # If multiple bands have different bucket layouts, take the union of centers
+    # and align with NaN where bands don't cover a bucket.
+    per_band = {}
+    for bn in band_names:
+        centers, counts = _extract_histogram(raw.get(bn))
+        if centers is None:
+            continue
+        per_band[bn] = pandas.Series(counts, index=centers).sort_index()
+
+    if not per_band:
+        # Reducer returned nothing recognisable — surface a clear message
+        print(
+            f"WARNING: histogram reducer returned no usable data for bands "
+            f"{band_names}. Check geometry, scale, and band selection."
+        )
+        df_empty = pandas.DataFrame()
+        fig_empty = go.Figure()
+        fig_empty.update_layout(
+            title=title or "Distribution",
+            annotations=[dict(text="No histogram data", xref="paper", yref="paper",
+                              x=0.5, y=0.5, showarrow=False, font=dict(size=18, color="#888"))],
+            width=width, height=height,
+        )
+        return {"df": df_empty, "chart": _set_download_filename(fig_empty), "warning": "no histogram data"}
+
+    df = pandas.concat(per_band, axis=1).fillna(0)
+    df.index.name = "bucket_center"
+
+    # Build the figure: one bar trace per band
+    fig = go.Figure()
+    colors = palette
+    for i, bn in enumerate(band_names):
+        if bn not in df.columns:
+            continue
+        color = colors[i] if colors and i < len(colors) else None
+        # Use average bucket spacing as bar width so adjacent bars touch
+        idx = list(df.index)
+        if len(idx) > 1:
+            spacing = (idx[-1] - idx[0]) / (len(idx) - 1)
+        else:
+            spacing = 1.0
+        fig.add_trace(go.Bar(
+            x=idx,
+            y=df[bn].tolist(),
+            name=bn,
+            marker_color=color,
+            opacity=opacity,
+            width=spacing,
+        ))
+    fig.update_layout(
+        title=dict(text=title or f"Distribution — {', '.join(band_names)}",
+                   x=0.5, xanchor="center"),
+        xaxis=dict(title=band_names[0] if len(band_names) == 1 else "Value"),
+        yaxis=dict(title="Pixel count"),
+        legend=_legend_kwargs(legend_position),
+        plot_bgcolor=DEFAULT_PLOT_BGCOLOR,
+        paper_bgcolor=DEFAULT_PLOT_BGCOLOR,
+        font=dict(family=DEFAULT_PLOT_FONT),
+        width=width, height=height,
+        margin=dict(l=35, r=25, b=50, t=50, pad=5),
+        bargap=0,
+        hovermode="x unified",
+    )
+
+    _themes.apply_plotly_theme(fig, "dark")
+    return {"df": df, "chart": _set_download_filename(fig)}
+
+
 def parse_continuous_results(raw_dict, obj_info, x_axis_labels, split_str=SPLIT_STR):
     """
-    Parse continuous (mean/median/etc.) reduction results into a DataFrame.
+    Parse continuous (mean/median/percentile/etc.) reduction results into a DataFrame.
+
+    Handles single-output reducers (mean, median, sum) — one column per band —
+    and multi-output reducers (percentile, minMax, mean+stdDev combine) —
+    one column per band-output pair.
 
     Args:
         raw_dict (dict): Output of :func:`reduce_region`.
@@ -1690,7 +2148,10 @@ def parse_continuous_results(raw_dict, obj_info, x_axis_labels, split_str=SPLIT_
         split_str (str, optional): Band name separator.
 
     Returns:
-        pandas.DataFrame: Rows are x-axis labels (or single row), columns are band names.
+        pandas.DataFrame: Rows are x-axis labels (or single row).
+        For single-output reducers, columns are band names (``"NDVI"``).
+        For multi-output reducers, columns are ``"<band>_<output>"``
+        (``"TCC_p5"``, ``"TCC_p50"``, ``"TCC_p95"``).
     """
     band_names = obj_info["band_names"]
 
@@ -1699,8 +2160,14 @@ def parse_continuous_results(raw_dict, obj_info, x_axis_labels, split_str=SPLIT_
         for x_label in x_axis_labels:
             row = {"x": x_label}
             for bn in band_names:
-                key = f"{x_label}{split_str}{bn}"
-                row[bn] = raw_dict.get(key)
+                base = f"{x_label}{split_str}{bn}"
+                outputs = _collect_band_outputs(raw_dict, base)
+                if len(outputs) == 1 and "" in outputs:
+                    row[bn] = outputs[""]
+                else:
+                    for suffix, val in outputs.items():
+                        col = f"{bn}_{suffix}" if suffix else bn
+                        row[col] = val
             rows.append(row)
 
         df = pandas.DataFrame(rows).set_index("x")
@@ -1708,7 +2175,15 @@ def parse_continuous_results(raw_dict, obj_info, x_axis_labels, split_str=SPLIT_
         return df
 
     else:
-        row = {bn: raw_dict.get(bn) for bn in band_names}
+        row = {}
+        for bn in band_names:
+            outputs = _collect_band_outputs(raw_dict, bn)
+            if len(outputs) == 1 and "" in outputs:
+                row[bn] = outputs[""]
+            else:
+                for suffix, val in outputs.items():
+                    col = f"{bn}_{suffix}" if suffix else bn
+                    row[col] = val
         return pandas.DataFrame([row])
 
 
@@ -1898,6 +2373,13 @@ def prepare_sankey_data(
 ):
     """
     Build a Sankey diagram dataset from class transitions across time periods.
+
+    **For agent / LLM use:** DO NOT call this function directly or copy its
+    internal patterns (e.g. ``.rename(["from"])``, manual band extraction by year).
+    Always call ``cl.summarize_and_chart(ic, geometry, band_names='<band>',
+    chart_type='sankey', transition_periods=[year1, year2, year3], scale=100)``
+    which delegates here with the correct setup. This function is an internal
+    helper exposed for advanced custom workflows only.
 
     For each consecutive pair of periods, this function:
     1. Filters the collection to each period
@@ -2430,7 +2912,9 @@ def chart_donut(
     legend_position="right",
     hole=0.45,
 ):
-    """Create a Plotly donut chart from a single-Image zonal stats DataFrame.
+    """Create a Plotly pie/donut chart from a single-Image zonal stats DataFrame.
+
+    Use ``hole=0`` for a pie chart or ``hole=0.45`` (default) for a donut.
 
     Only valid for **thematic** (categorical) data from a single
     ``ee.Image``.  Raises ``ValueError`` for continuous data or
@@ -2526,7 +3010,9 @@ def chart_donut_multi_feature(
     legend_position="bottom",
     hole=0.45,
 ):
-    """Create a subplot grid of donut charts, one per feature.
+    """Create a subplot grid of pie/donut charts, one per feature.
+
+    Use ``hole=0`` for pie charts or ``hole=0.45`` (default) for donuts.
 
     For multi-feature ``reduceRegions`` output where the DataFrame index
     is the feature label and columns are class names.
@@ -3119,6 +3605,7 @@ def summarize_and_chart(
     class_visible=None,
     max_x_tick_labels=10,
     max_y_tick_labels=None,
+    max_class_label_length=30,
 ):
     """
     Run zonal statistics and produce a chart in one call.
@@ -3128,13 +3615,14 @@ def summarize_and_chart(
 
     * **ee.ImageCollection** -> **line chart** (default ``"line+markers"``).
     * **ee.Image** -> **bar chart** (default ``"bar"``).
-    * **chart_type="donut"** -> **donut chart** (Image + thematic only).
+    * **chart_type="pie"** -> **pie chart** (Image + thematic only).
+    * **chart_type="donut"** -> **donut chart** (pie with center hole; Image + thematic only).
     * **chart_type="scatter"** -> **scatter plot** (Image +
       FeatureCollection only; uses 2 continuous bands as x/y axes,
       optionally coloured by *thematic_band_name*).
     * **chart_type="sankey"** -> **Sankey transition diagram**.
     * **feature_label** + ``ee.FeatureCollection`` + ``ee.Image`` ->
-      **grouped bar** or **per-feature donut** chart.
+      **grouped bar** or **per-feature pie/donut** chart.
     * **feature_label** + ``ee.FeatureCollection`` + ``ee.ImageCollection``
       -> **per-feature time series subplots**.
 
@@ -3154,10 +3642,18 @@ def summarize_and_chart(
         date_format (str, optional): Date format string.
         title (str, optional): Chart title. Auto-generated if None.
         chart_type (str, optional): Chart type.  One of ``"bar"``,
-            ``"stacked_bar"``, ``"donut"`` (Image + thematic only),
+            ``"stacked_bar"``, ``"pie"`` / ``"donut"`` (Image + thematic only),
             ``"scatter"`` (Image + FeatureCollection only),
             ``"sankey"`` (ImageCollection + thematic, requires
             ``transition_periods``),
+            ``"histogram"`` (distribution of a continuous band; for
+            ``ee.Image`` produces a themed bar chart with bucket centers
+            on x and counts on y, for ``ee.ImageCollection`` produces a
+            heatmap with time on x, bucket centers on y, and per-year
+            percent as color — auto-routes a default
+            ``ee.Reducer.histogram(maxBuckets=50)`` when no reducer is given;
+            pass ``reducer=ee.Reducer.histogram(maxBuckets=N)`` for finer
+            binning),
             ``"line"``, ``"stacked_line"``, ``"line+markers"``
             (default for ImageCollection), or
             ``"stacked_line+markers"``.  Defaults to ``"bar"`` for
@@ -3213,7 +3709,7 @@ def summarize_and_chart(
             to re-enable them. Useful for hiding background, no-data, or
             stable classes by default.  Works for all chart paths
             including single-geometry, multi-feature time series
-            subplots, and multi-feature bar/donut charts.  Example::
+            subplots, and multi-feature bar/pie/donut charts.  Example::
 
                 class_visible={
                     "Non-Processing Area Mask": False,
@@ -3229,6 +3725,10 @@ def summarize_and_chart(
         max_y_tick_labels (int, optional): Maximum number of y-axis tick
             labels. Passed as Plotly's ``nticks``. Defaults to ``None``
             (Plotly automatic).
+        max_class_label_length (int, optional): Maximum length for class
+            name strings in legends and labels. Longer names are truncated
+            with ``...`` in the middle, preserving the end. Set to ``None``
+            or ``0`` to disable. Default 30.
 
     Returns:
         dict: Depends on chart type:
@@ -3238,7 +3738,7 @@ def summarize_and_chart(
           where ``sankey_html`` is a D3 HTML string (display with
           ``display(HTML(cl.sankey_iframe(sankey_html)))``),
           and ``matrix_dict`` is ``{period_label: DataFrame}``
-        * **Multi-feature + ee.Image (bar/donut):** ``{"df": DataFrame, "chart": Figure}``
+        * **Multi-feature + ee.Image (bar/pie/donut):** ``{"df": DataFrame, "chart": Figure}``
         * **Multi-feature + ee.ImageCollection:** ``{"df": dict, "chart": Figure}``
           where ``dict`` is ``{feature_name: DataFrame}``
         * **Scatter:** ``{"df": DataFrame, "chart": Figure}`` where the DataFrame
@@ -3366,7 +3866,27 @@ def summarize_and_chart(
     # filterBounds only applies to ImageCollections, not single Images
     if isinstance(ee_obj, ee.ImageCollection):
         ee_obj = ee_obj.filterBounds(geometry)
-    obj_info = get_obj_info(ee_obj, band_names)
+
+    # Shortcut: ``chart_type="histogram"`` is the explicit user signal that
+    # they want a distribution chart. Synthesize a histogram reducer when one
+    # wasn't already provided, then fall through to the continuous-histogram
+    # path below. Users wanting non-default binning still pass
+    # ``reducer=ee.Reducer.histogram(maxBuckets=N)`` explicitly.
+    if str(chart_type).lower().strip() == "histogram" and (
+            reducer is None or not _is_continuous_histogram_reducer(reducer)):
+        reducer = ee.Reducer.histogram(maxBuckets=50)
+
+    # Intercept continuous-histogram reducer (ee.Reducer.histogram(...)) — it
+    # produces a nested dict per band that the standard pipeline can't plot.
+    if reducer is not None and _is_continuous_histogram_reducer(reducer):
+        return _summarize_and_chart_continuous_histogram(
+            ee_obj, geometry, band_names, reducer,
+            scale=scale, crs=crs, transform=transform, tile_scale=tile_scale,
+            title=title, width=width, height=height, legend_position=legend_position,
+            palette=palette, opacity=opacity,
+        )
+
+    obj_info = get_obj_info(ee_obj, band_names, max_class_label_length)
     class_info = obj_info["class_info"]
     if obj_info["is_thematic"]:
         y_label = AREA_FORMAT_DICT.get(area_format, {}).get("label", area_format)
@@ -3409,17 +3929,17 @@ def summarize_and_chart(
         else:
             chart_type = "bar"
 
-    # Donut validation — Image-only and thematic-only
-    if str(chart_type).lower().strip() == "donut":
+    # Pie/Donut validation — Image-only and thematic-only
+    if str(chart_type).lower().strip() in ("donut", "pie"):
         if obj_info["obj_type"] == "ImageCollection":
             raise ValueError(
-                "chart_type='donut' is only supported for ee.Image inputs, "
+                "chart_type='pie'/'donut' is only supported for ee.Image inputs, "
                 "not ee.ImageCollection. Use chart_type='bar', 'stacked_bar', 'line', 'line+markers', 'stacked_line' or 'stacked_line+markers' for "
                 "ImageCollections."
             )
         if not obj_info.get("is_thematic") and not class_info:
             raise ValueError(
-                "chart_type='donut' is only supported for thematic "
+                "chart_type='pie'/'donut' is only supported for thematic "
                 "(categorical) data with class names and palette properties. "
                 "Use chart_type='bar', 'stacked_bar', 'line', 'line+markers', 'stacked_line' or 'stacked_line+markers' for continuous data."
             )
@@ -3474,6 +3994,7 @@ def summarize_and_chart(
             width=width,
             height=height,
             opacity=opacity,
+            hide_toolbar=True,
         )
         return {"df": sankey_df, "chart": sankey_html, "matrix": matrix_dict}
 
@@ -3752,7 +4273,8 @@ def summarize_and_chart(
         if title is None:
             title = "Zonal Summary by Feature"
 
-        if str(chart_type).lower().strip() == "donut":
+        if str(chart_type).lower().strip() in ("donut", "pie"):
+            _hole = 0.45 if str(chart_type).lower().strip() == "donut" else 0
             fig = chart_donut_multi_feature(
                 chart_df,
                 colors=colors,
@@ -3761,6 +4283,7 @@ def summarize_and_chart(
                 height=height,
                 columns=columns,
                 legend_position=legend_position,
+                hole=_hole,
             )
         else:
             fig = chart_grouped_bar(
@@ -3773,7 +4296,7 @@ def summarize_and_chart(
                 height=height,
                 legend_position=legend_position,
             )
-        # Apply '%' ticksuffix and max_y_tick_labels for multi-feature bar/donut
+        # Apply '%' ticksuffix and max_y_tick_labels for multi-feature bar/pie/donut
         y_kw = {}
         if y_label and "%" in y_label:
             y_kw["ticksuffix"] = "%"
@@ -3782,7 +4305,7 @@ def summarize_and_chart(
         if y_kw:
             fig.update_yaxes(**y_kw)
 
-        # Apply class_visible to multi-feature bar/donut charts
+        # Apply class_visible to multi-feature bar/pie/donut charts
         if class_visible is not None and isinstance(class_visible, dict):
             hidden = {name for name, vis in class_visible.items() if not vis}
             if hidden:
@@ -3817,6 +4340,12 @@ def summarize_and_chart(
     )
 
     df_full = df
+
+    _empty_warning = _detect_empty_chart_data(
+        df, context=f"bands={obj_info.get('band_names')} scale={scale}"
+    )
+    if _empty_warning:
+        print(f"WARNING: {_empty_warning}")
 
     # Extract colors from class info (unless caller provided palette).
     # Build the color list to match actual DataFrame column order so that
@@ -3864,7 +4393,8 @@ def summarize_and_chart(
     else:
         if title is None:
             title = "Class Distribution"
-        if str(chart_type).lower().strip() == "donut":
+        if str(chart_type).lower().strip() in ("donut", "pie"):
+            _hole = 0.45 if str(chart_type).lower().strip() == "donut" else 0
             fig = chart_donut(
                 df,
                 colors=colors,
@@ -3872,6 +4402,7 @@ def summarize_and_chart(
                 width=width,
                 height=height,
                 legend_position=legend_position,
+                hole=_hole,
             )
         else:
             fig = chart_bar(
@@ -3905,7 +4436,7 @@ def summarize_and_chart(
                 )
                 break
 
-    # Apply '%' ticksuffix and max_y_tick_labels for bar/donut charts
+    # Apply '%' ticksuffix and max_y_tick_labels for bar/pie/donut charts
     # (time series charts handle this internally)
     if obj_info["obj_type"] != "ImageCollection":
         y_kw = {}
@@ -3929,4 +4460,20 @@ def summarize_and_chart(
                         or any(trace_name.replace(SPLIT_STR, " ").strip() in hidden for _ in [0])):
                     trace.visible = "legendonly"
 
-    return {"df": df_full, "chart": _set_download_filename(fig)}
+    if _empty_warning:
+        try:
+            fig.add_annotation(
+                text="No data for this query",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5,
+                showarrow=False,
+                font=dict(size=18, color="#888"),
+                bgcolor="rgba(0,0,0,0)",
+            )
+        except Exception:
+            pass
+
+    _result = {"df": df_full, "chart": _set_download_filename(fig)}
+    if _empty_warning:
+        _result["warning"] = _empty_warning
+    return _result

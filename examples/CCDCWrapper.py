@@ -22,7 +22,6 @@
 # or to use the breaks for change detection. All of this is demonstrated in the CCDCViz.py example
 ####################################################################################################
 import os, sys
-
 sys.path.append(os.getcwd())
 
 # Module imports

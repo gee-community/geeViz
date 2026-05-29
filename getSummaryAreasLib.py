@@ -127,9 +127,12 @@ def _to_geometry(area):
     raise TypeError(f"Expected ee.FeatureCollection, ee.Feature, or ee.Geometry, got {type(area)}")
 
 
-def _filter_bounds(asset_id, area):
-    """Load a FeatureCollection and filter by area bounds."""
-    return ee.FeatureCollection(asset_id).filterBounds(_to_geometry(area))
+def _filter_bounds(asset_id, area=None):
+    """Load a FeatureCollection and optionally filter by area bounds."""
+    fc = ee.FeatureCollection(asset_id)
+    if area is not None:
+        fc = fc.filterBounds(_to_geometry(area))
+    return fc
 
 
 def _get_intersecting_country_names(area, source="geob"):
@@ -202,8 +205,11 @@ def simple_buffer(geom, size=15000):
 # ---------------------------------------------------------------------------
 #  Political / administrative boundaries
 # ---------------------------------------------------------------------------
-def getAdminBoundaries(area, level=0, source="geob"):
-    """Return administrative boundaries at a given level that intersect ``area``.
+def getAdminBoundaries(area=None, level=0, source="geob"):
+    """Return administrative boundaries at a given level.
+
+    When ``area`` is provided, results are filtered to boundaries that
+    intersect it.  When ``None``, all boundaries at the level are returned.
 
     Levels follow the standard admin hierarchy:
 
@@ -294,52 +300,135 @@ def getAdminNameProperty(level=0, source="geob"):
 # ---------------------------------------------------------------------------
 #  US-specific political/census boundaries
 # ---------------------------------------------------------------------------
-def getUSStates(area):
-    """Return US state boundaries (TIGER 2018) that intersect ``area``.
+def getUSStates(area=None, state_abbr=None, state_fips=None):
+    """Return US state boundaries (TIGER 2018).
+
+    All parameters are optional.  When none are provided, all US states
+    are returned.
 
     Properties include ``NAME``, ``STUSPS`` (abbreviation), ``STATEFP``
     (FIPS code), ``REGION``, ``DIVISION``.
 
     Args:
-        area: ee.FeatureCollection, ee.Feature, or ee.Geometry.
+        area (optional): ee.FeatureCollection, ee.Feature, ee.Geometry,
+            or ``None``.  Spatial filter.
+        state_abbr (str or list, optional): Postal abbreviation(s)
+            (e.g. ``"MT"`` or ``"MT,ID"``).
+        state_fips (str or list, optional): FIPS code(s).
 
     Returns:
         ee.FeatureCollection.
     """
-    return _filter_bounds(_TIGER_STATES, area)
+    fc = _filter_bounds(_TIGER_STATES, area)
+    if state_abbr is not None:
+        if isinstance(state_abbr, str):
+            state_abbr = [s.strip().upper() for s in state_abbr.split(",") if s.strip()]
+        else:
+            state_abbr = [s.upper() for s in state_abbr]
+        if len(state_abbr) == 1:
+            fc = fc.filter(ee.Filter.eq("STUSPS", state_abbr[0]))
+        else:
+            fc = fc.filter(ee.Filter.inList("STUSPS", state_abbr))
+    if state_fips is not None:
+        if isinstance(state_fips, str):
+            state_fips = [s.strip() for s in state_fips.split(",") if s.strip()]
+        if len(state_fips) == 1:
+            fc = fc.filter(ee.Filter.eq("STATEFP", state_fips[0]))
+        else:
+            fc = fc.filter(ee.Filter.inList("STATEFP", state_fips))
+    return fc
 
 
-def getUSCounties(area, state_fips=None, state_abbr=None):
-    """Return US county boundaries that intersect ``area``.
+def getUSCounties(area=None, state_fips=None, state_abbr=None, county_names=None):
+    """Return US county boundaries, with flexible filtering.
 
-    Optionally filter to a single state by FIPS code or postal abbreviation.
+    All parameters are optional.  When none are provided, all US counties
+    are returned.  Filters are combined (AND logic).
 
     Properties include ``NAME``, ``FULL_NAME``, ``STATEFP``, ``STUSPS``,
     ``COUNTYFP``, ``GEOID``.
 
     Args:
-        area: ee.FeatureCollection, ee.Feature, or ee.Geometry.
-        state_fips (str, optional): Two-digit state FIPS (e.g. ``"49"`` for Utah).
-        state_abbr (str, optional): Two-letter postal abbreviation (e.g. ``"UT"``).
+        area (optional): ee.FeatureCollection, ee.Feature, ee.Geometry,
+            or ``None``.  When provided, results are filtered to counties
+            that intersect this geometry.
+        state_fips (str or list, optional): Two-digit state FIPS code(s)
+            (e.g. ``"49"`` or ``["49", "30"]``).  A comma-separated string
+            is split automatically.
+        state_abbr (str or list, optional): Two-letter postal abbreviation(s)
+            (e.g. ``"UT"``, ``["UT", "MT"]``, or ``"UT,MT"``).
+        county_names (str or list, optional): County name(s) to match
+            against the ``NAME`` property (e.g. ``"Missoula"``,
+            ``["Missoula", "Ravalli"]``, or ``"Missoula,Ravalli"``).
+            Note: county names may exist in multiple states — combine
+            with ``state_abbr`` to disambiguate.
 
     Returns:
         ee.FeatureCollection.
+
+    Examples::
+
+        # All counties in Montana
+        getUSCounties(state_abbr='MT')
+
+        # Specific counties by name in a specific state
+        getUSCounties(state_abbr='MT', county_names='Missoula,Ravalli')
+
+        # Counties by name across all states (may return duplicates)
+        getUSCounties(county_names='Washington')
+
+        # Counties intersecting a geometry, filtered to one state
+        getUSCounties(area=my_point, state_abbr='CO')
+
+        # All US counties (no filters)
+        getUSCounties()
     """
-    fc = _filter_bounds(_TIGER_COUNTIES, area)
+    fc = ee.FeatureCollection(_TIGER_COUNTIES)
+
+    # Spatial filter
+    if area is not None:
+        fc = fc.filterBounds(_to_geometry(area))
+
+    # State FIPS filter
     if state_fips is not None:
-        fc = fc.filter(ee.Filter.eq("STATEFP", state_fips))
+        if isinstance(state_fips, str):
+            state_fips = [s.strip() for s in state_fips.split(",") if s.strip()]
+        if len(state_fips) == 1:
+            fc = fc.filter(ee.Filter.eq("STATEFP", state_fips[0]))
+        else:
+            fc = fc.filter(ee.Filter.inList("STATEFP", state_fips))
+
+    # State abbreviation filter
     if state_abbr is not None:
-        fc = fc.filter(ee.Filter.eq("STUSPS", state_abbr.upper()))
+        if isinstance(state_abbr, str):
+            state_abbr = [s.strip().upper() for s in state_abbr.split(",") if s.strip()]
+        else:
+            state_abbr = [s.upper() for s in state_abbr]
+        if len(state_abbr) == 1:
+            fc = fc.filter(ee.Filter.eq("STUSPS", state_abbr[0]))
+        else:
+            fc = fc.filter(ee.Filter.inList("STUSPS", state_abbr))
+
+    # County name filter
+    if county_names is not None:
+        if isinstance(county_names, str):
+            county_names = [n.strip() for n in county_names.split(",") if n.strip()]
+        if len(county_names) == 1:
+            fc = fc.filter(ee.Filter.eq("NAME", county_names[0]))
+        else:
+            fc = fc.filter(ee.Filter.inList("NAME", county_names))
+
     return fc
 
 
-def getUSUrbanAreas(area):
-    """Return TIGER 2024 urban area boundaries that intersect ``area``.
+def getUSUrbanAreas(area=None):
+    """Return TIGER 2024 urban area boundaries.
 
     Properties include ``NAME20``, ``NAMELSAD20``, ``ALAND20``, ``AWATER20``.
 
     Args:
-        area: ee.FeatureCollection, ee.Feature, or ee.Geometry.
+        area (optional): ee.FeatureCollection, ee.Feature, ee.Geometry,
+            or ``None``.  Spatial filter.
 
     Returns:
         ee.FeatureCollection.
@@ -347,15 +436,17 @@ def getUSUrbanAreas(area):
     return _filter_bounds(_TIGER_URBAN_AREAS, area)
 
 
-def getUSCensusBlocks(area):
-    """Return TIGER 2020 census blocks that intersect ``area``.
+def getUSCensusBlocks(area=None):
+    """Return TIGER 2020 census blocks.
 
     .. warning::
-        Census blocks are extremely numerous.  Use a small study area
+        Census blocks are extremely numerous.  Provide a small ``area``
         or the query may be slow / exceed memory limits.
 
     Args:
-        area: ee.FeatureCollection, ee.Feature, or ee.Geometry.
+        area (optional): ee.FeatureCollection, ee.Feature, ee.Geometry,
+            or ``None``.  Spatial filter.  **Strongly recommended** for
+            this dataset.
 
     Returns:
         ee.FeatureCollection.
@@ -363,11 +454,12 @@ def getUSCensusBlocks(area):
     return _filter_bounds(_TIGER_BLOCKS_2020, area)
 
 
-def getUSBlockGroups(area):
-    """Return TIGER 2020 census block groups that intersect ``area``.
+def getUSBlockGroups(area=None):
+    """Return TIGER 2020 census block groups.
 
     Args:
-        area: ee.FeatureCollection, ee.Feature, or ee.Geometry.
+        area (optional): ee.FeatureCollection, ee.Feature, ee.Geometry,
+            or ``None``.  Spatial filter.
 
     Returns:
         ee.FeatureCollection.
@@ -375,11 +467,12 @@ def getUSBlockGroups(area):
     return _filter_bounds(_TIGER_BLOCK_GROUPS_2020, area)
 
 
-def getUSCensusTracts(area):
-    """Return TIGER 2020 census tracts that intersect ``area``.
+def getUSCensusTracts(area=None):
+    """Return TIGER 2020 census tracts.
 
     Args:
-        area: ee.FeatureCollection, ee.Feature, or ee.Geometry.
+        area (optional): ee.FeatureCollection, ee.Feature, ee.Geometry,
+            or ``None``.  Spatial filter.
 
     Returns:
         ee.FeatureCollection.
@@ -390,62 +483,113 @@ def getUSCensusTracts(area):
 # ---------------------------------------------------------------------------
 #  USFS Administrative boundaries
 # ---------------------------------------------------------------------------
-def getUSFSForests(area, region=None):
-    """Return USFS National Forest boundaries that intersect ``area``.
+def getUSFSForests(area=None, region=None, forest_name=None):
+    """Return USFS National Forest boundaries.
+
+    All parameters are optional.
 
     Properties include ``FORESTNAME``, ``FORESTNUMB``, ``REGION``,
     ``FORESTORGC``, ``GIS_ACRES``.
 
     Args:
-        area: ee.FeatureCollection, ee.Feature, or ee.Geometry.
-        region (str, optional): Two-digit USFS region number to filter by
-            (e.g. ``"01"`` for Northern Region).
+        area (optional): Spatial filter.
+        region (str or list, optional): USFS region number(s)
+            (e.g. ``"01"`` or ``"01,04"``).
+        forest_name (str or list, optional): Forest name(s)
+            (e.g. ``"Lolo"`` or ``"Lolo,Bitterroot"``).
 
     Returns:
         ee.FeatureCollection.
     """
     fc = _filter_bounds(_USFS_FORESTS, area)
     if region is not None:
-        fc = fc.filter(ee.Filter.eq("REGION", str(region).zfill(2)))
+        if isinstance(region, str):
+            region = [r.strip().zfill(2) for r in region.split(",") if r.strip()]
+        else:
+            region = [str(r).zfill(2) for r in region]
+        if len(region) == 1:
+            fc = fc.filter(ee.Filter.eq("REGION", region[0]))
+        else:
+            fc = fc.filter(ee.Filter.inList("REGION", region))
+    if forest_name is not None:
+        if isinstance(forest_name, str):
+            forest_name = [n.strip() for n in forest_name.split(",") if n.strip()]
+        if len(forest_name) == 1:
+            fc = fc.filter(ee.Filter.eq("FORESTNAME", forest_name[0]))
+        else:
+            fc = fc.filter(ee.Filter.inList("FORESTNAME", forest_name))
     return fc
 
 
-def getUSFSDistricts(area, forest_name=None, region=None):
-    """Return USFS Ranger District boundaries that intersect ``area``.
+def getUSFSDistricts(area=None, forest_name=None, region=None, district_name=None):
+    """Return USFS Ranger District boundaries.
+
+    All parameters are optional.
 
     Properties include ``DISTRICTNA``, ``FORESTNAME``, ``FORESTNUMB``,
     ``REGION``, ``GIS_ACRES``.
 
     Args:
-        area: ee.FeatureCollection, ee.Feature, or ee.Geometry.
-        forest_name (str, optional): Filter to districts within a specific
-            National Forest (exact match on ``FORESTNAME``).
-        region (str, optional): Two-digit USFS region number.
+        area (optional): Spatial filter.
+        forest_name (str or list, optional): National Forest name(s).
+        region (str or list, optional): USFS region number(s).
+        district_name (str or list, optional): District name(s)
+            (matches ``DISTRICTNA``).
 
     Returns:
         ee.FeatureCollection.
     """
     fc = _filter_bounds(_USFS_DISTRICTS, area)
     if forest_name is not None:
-        fc = fc.filter(ee.Filter.eq("FORESTNAME", forest_name))
+        if isinstance(forest_name, str):
+            forest_name = [n.strip() for n in forest_name.split(",") if n.strip()]
+        if len(forest_name) == 1:
+            fc = fc.filter(ee.Filter.eq("FORESTNAME", forest_name[0]))
+        else:
+            fc = fc.filter(ee.Filter.inList("FORESTNAME", forest_name))
     if region is not None:
-        fc = fc.filter(ee.Filter.eq("REGION", str(region).zfill(2)))
+        if isinstance(region, str):
+            region = [r.strip().zfill(2) for r in region.split(",") if r.strip()]
+        else:
+            region = [str(r).zfill(2) for r in region]
+        if len(region) == 1:
+            fc = fc.filter(ee.Filter.eq("REGION", region[0]))
+        else:
+            fc = fc.filter(ee.Filter.inList("REGION", region))
+    if district_name is not None:
+        if isinstance(district_name, str):
+            district_name = [n.strip() for n in district_name.split(",") if n.strip()]
+        if len(district_name) == 1:
+            fc = fc.filter(ee.Filter.eq("DISTRICTNA", district_name[0]))
+        else:
+            fc = fc.filter(ee.Filter.inList("DISTRICTNA", district_name))
     return fc
 
 
-def getUSFSRegions(area):
-    """Return USFS region boundaries that intersect ``area``.
+def getUSFSRegions(area=None, region=None):
+    """Return USFS region boundaries.
 
     Properties include ``REGION``, ``REGIONNAME``, ``REGIONHEAD``
     (headquarters city), ``FS_ADMINAC`` (admin acres).
 
     Args:
-        area: ee.FeatureCollection, ee.Feature, or ee.Geometry.
+        area (optional): Spatial filter.
+        region (str or list, optional): USFS region number(s).
 
     Returns:
         ee.FeatureCollection with one feature per USFS region.
     """
-    return _filter_bounds(_USFS_REGIONS, area)
+    fc = _filter_bounds(_USFS_REGIONS, area)
+    if region is not None:
+        if isinstance(region, str):
+            region = [r.strip().zfill(2) for r in region.split(",") if r.strip()]
+        else:
+            region = [str(r).zfill(2) for r in region]
+        if len(region) == 1:
+            fc = fc.filter(ee.Filter.eq("REGION", region[0]))
+        else:
+            fc = fc.filter(ee.Filter.inList("REGION", region))
+    return fc
 
 
 # ---------------------------------------------------------------------------

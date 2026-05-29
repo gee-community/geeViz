@@ -4356,6 +4356,51 @@ def simpleAddIndices(in_image: ee.Image) -> ee.Image:
     return in_image
 
 
+def addWaterIndices(in_image: ee.Image) -> ee.Image:
+    """Add water detection indices (MNDWI, AWEI_nsh) to an image.
+
+    - **MNDWI** (Modified Normalized Difference Water Index; Xu 2006):
+      ``(green − swir1) / (green + swir1)``. Better than NDWI for
+      separating water from built-up areas.
+    - **AWEI_nsh** (Automated Water Extraction Index, no-shadow;
+      Feyisa et al. 2014):
+      ``4 × (green − swir1) − (0.25 × nir + 2.75 × swir2)``.
+      Robust to shadows, dark urban surfaces, and saline water.
+
+    Args:
+        in_image (ee.Image): Input image with bands named ``green``,
+            ``nir``, ``swir1``, ``swir2``. Values should be 0–1
+            reflectance.
+
+    Returns:
+        ee.Image: The input image with added ``MNDWI`` and ``AWEI_nsh``
+        bands.
+
+    Example:
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> img = ee.Image(1).rename(['blue','green','red','nir','swir1','swir2'])
+        >>> img = gil.addWaterIndices(img)
+        >>> print(img.select(['MNDWI', 'AWEI_nsh']).bandNames().getInfo())
+        ['MNDWI', 'AWEI_nsh']
+    """
+    # MNDWI = (green - swir1) / (green + swir1) — same formula as NDSI but named for water context
+    mndwi = in_image.normalizedDifference(["green", "swir1"]).select([0], ["MNDWI"])
+
+    # AWEI_nsh = 4*(green - swir1) - (0.25*nir + 2.75*swir2)
+    awei = in_image.expression(
+        "4.0 * (green - swir1) - (0.25 * nir + 2.75 * swir2)",
+        {
+            "green": in_image.select("green"),
+            "swir1": in_image.select("swir1"),
+            "nir": in_image.select("nir"),
+            "swir2": in_image.select("swir2"),
+        },
+    ).rename("AWEI_nsh")
+
+    return in_image.addBands(mndwi).addBands(awei)
+
+
 #########################################################################
 #########################################################################
 # Function for adding common indices
@@ -10498,6 +10543,235 @@ def simpleWaterMask(
 
     # Rename the water mask band
     return waterMask.rename(["waterMask"])
+
+
+###########################################################################
+# Simple spectral masks
+###########################################################################
+
+# Default thresholds for each mask type (0-1 reflectance scale)
+_SIMPLE_MASK_DEFAULTS = {
+    "vegetation": {"ndvi": 0.4},
+    "snow": {"ndsi": 0.4, "nir": 0.11},
+    "bare": {"ndvi_max": 0.2, "ndsi_max": 0.4},
+    "urban": {"ndbi": 0.0, "ndvi_max": 0.2},
+    "cloud": {"blue": 0.3, "brightness": 0.35},
+    "shadow": {"nir": 0.1, "brightness": 0.1},
+}
+
+# Class properties for autoViz rendering
+_SIMPLE_MASK_VIZ = {
+    "water": {"names": ["Not Water", "Water"], "palette": ["888888", "0000DD"]},
+    "vegetation": {"names": ["Not Vegetation", "Vegetation"], "palette": ["888888", "00aa00"]},
+    "snow": {"names": ["Not Snow/Ice", "Snow/Ice"], "palette": ["888888", "aaeeff"]},
+    "bare": {"names": ["Not Bare", "Bare Ground"], "palette": ["888888", "cc9944"]},
+    "urban": {"names": ["Not Urban", "Urban/Impervious"], "palette": ["888888", "cc0000"]},
+    "cloud": {"names": ["Clear", "Cloud"], "palette": ["888888", "ffffff"]},
+    "shadow": {"names": ["Not Shadow", "Shadow"], "palette": ["888888", "333333"]},
+}
+
+
+def simpleMask(
+    image: ee.Image,
+    mask_type: str = "vegetation",
+    threshold: float = None,
+    invert: bool = False,
+    **kwargs,
+) -> ee.Image:
+    """Create a simple spectral mask from standard optical bands.
+
+    Applies well-established spectral index thresholds to produce binary
+    masks for common land cover types. Input must have bands named
+    ``blue``, ``green``, ``red``, ``nir``, ``swir1``, ``swir2`` with
+    **reflectance values scaled 0–1**. Landsat processed through geeViz
+    wrappers (``getProcessedLandsatScenes``) is already 0–1. Sentinel-2
+    from ``superSimpleGetS2`` is 0–10000 — **divide by 10000 first**.
+
+    The returned image has class properties set so it works directly with
+    ``autoViz``, area charting, and thumbnails.
+
+    Mask types and their default rules (all on 0–1 reflectance):
+
+    - ``"water"`` — detects water using one of three methods (pass
+      ``method="tc"|"mndwi"|"awei"`` via ``**kwargs``):
+
+      - ``"tc"`` (default) — TC angles + brightness + slope via
+        :func:`simpleWaterMask`. Good for general use.
+      - ``"mndwi"`` — MNDWI > 0 + slope < threshold (Xu 2006).
+        Better for saline/shallow water bodies.
+      - ``"awei"`` — MNDWI > 0 AND AWEI_nsh > 0 + slope < threshold
+        (Feyisa et al. 2014). Most robust — handles shadows, dark
+        surfaces, and saline water (Aral Sea, Great Salt Lake).
+
+      Also accepts ``slope_thresh`` (default 5), ``contractPixels``,
+      ``elevationImagePath``, etc. via ``**kwargs``.
+    - ``"vegetation"`` — NDVI > 0.4 (Tucker 1979). Override with
+      ``threshold=0.2`` for sparse vegetation.
+    - ``"snow"`` — NDSI > 0.4 AND NIR > 0.11 (Hall et al. 1995, MODIS
+      snow product basis). ``threshold`` overrides the NDSI value.
+    - ``"bare"`` — NDVI < 0.2 AND NDSI < 0.4 AND not water. Identifies
+      exposed soil/rock. ``threshold`` overrides NDVI ceiling.
+    - ``"urban"`` — NDBI > 0 AND NDVI < 0.2 (Zha et al. 2003). NDBI is
+      (SWIR1 − NIR) / (SWIR1 + NIR). ``threshold`` overrides NDBI.
+    - ``"cloud"`` — blue > 0.3 AND TC brightness > 0.35 (simple
+      heuristic; for production use CFmask/s2cloudless instead).
+      ``threshold`` overrides blue reflectance.
+    - ``"shadow"`` — NIR < 0.1 AND TC brightness < 0.1 (simple
+      heuristic; for production use CFmask geometry-based shadows).
+      ``threshold`` overrides NIR value.
+
+    Args:
+        image (ee.Image): Input image with bands ``blue``, ``green``,
+            ``red``, ``nir``, ``swir1``, ``swir2`` scaled 0–1.
+        mask_type (str): One of ``"water"``, ``"vegetation"``, ``"snow"``,
+            ``"bare"``, ``"urban"``, ``"cloud"``, ``"shadow"``.
+        threshold (float, optional): Override the primary threshold for
+            the chosen mask type. When ``None``, uses literature defaults.
+        invert (bool): If ``True``, returns pixels that do NOT match
+            (e.g. non-vegetation). Default ``False``.
+        **kwargs: Extra arguments forwarded to the water mask method
+            when ``mask_type="water"``:
+
+            - ``method`` (str): ``"tc"`` (default), ``"mndwi"``, or
+              ``"awei"``. See mask type docs above.
+            - ``slope_thresh`` (float): Max slope in degrees for flat
+              areas (default 5 for mndwi/awei, 10 for tc).
+            - ``contractPixels`` (int): Morphological closing pixels
+              (default 0). Only for ``method="tc"``.
+            - ``elevationImagePath``: DEM source (default
+              ``"USGS/3DEP/10m"``). Only for ``method="tc"``.
+
+    Returns:
+        ee.Image: Single-band binary mask (1 = matches, 0 = doesn't)
+        named by *mask_type* (e.g. ``"vegetation"``). Class properties
+        are set for ``autoViz`` rendering.
+
+    Examples:
+        Vegetation mask from Landsat (already 0–1):
+
+        >>> import geeViz.getImagesLib as gil
+        >>> ee = gil.ee
+        >>> area = ee.Geometry.Point([-111.9, 40.7]).buffer(10000)
+        >>> scenes = gil.getProcessedLandsatScenes(area, 2023, 2023, 152, 273)
+        >>> composite = scenes['processedScenes'].median()
+        >>> veg = gil.simpleMask(composite, "vegetation")
+
+        Snow mask from S2 (divide by 10000 first):
+
+        >>> s2 = gil.superSimpleGetS2(area, "2023-01-01", "2023-03-31").median()
+        >>> snow = gil.simpleMask(s2.divide(10000), "snow")
+
+        Water mask (default TC method):
+
+        >>> water = gil.simpleMask(composite, "water")
+
+        Water mask for saline/shallow water (AWEI method):
+
+        >>> water = gil.simpleMask(composite, "water", method="awei")
+    """
+    mt = mask_type.lower().strip()
+    valid = list(_SIMPLE_MASK_VIZ.keys())
+    if mt not in valid:
+        raise ValueError(f"mask_type must be one of {valid}, got '{mask_type}'")
+
+    # --- Water: multiple methods available ---
+    if mt == "water":
+        water_method = kwargs.pop("method", "tc").lower().strip()
+        band_name = "water"
+
+        if water_method == "tc":
+            # Original TC angles + brightness + slope method
+            img_tc = simpleGetTasseledCap(image)
+            mask = simpleWaterMask(img_tc, **kwargs).rename([band_name])
+
+        elif water_method in ("mndwi", "awei"):
+            # MNDWI / AWEI method — better for saline/shallow water
+            slope_thresh = kwargs.pop("slope_thresh", 5)
+            elev_path = kwargs.pop("elevationImagePath", "USGS/SRTMGL1_003")
+
+            # Compute slope
+            ed = ee.Image(elev_path) if isinstance(elev_path, str) else elev_path
+            slope = ee.Terrain.slope(ed.resample("bicubic"))
+            flat = slope.lte(slope_thresh)
+
+            # Add water indices
+            img_wi = addWaterIndices(image)
+            mndwi_mask = img_wi.select("MNDWI").gt(threshold if threshold is not None else 0)
+
+            if water_method == "awei":
+                # MNDWI > 0 AND AWEI_nsh > 0 AND slope < threshold
+                awei_mask = img_wi.select("AWEI_nsh").gt(0)
+                mask = mndwi_mask.And(awei_mask).And(flat).rename([band_name])
+            else:
+                # MNDWI > 0 AND slope < threshold
+                mask = mndwi_mask.And(flat).rename([band_name])
+
+            # Apply morphological closing if requested
+            contract = kwargs.pop("contractPixels", 0)
+            if contract > 0:
+                mask = mask.focal_min(contract)
+        else:
+            raise ValueError(
+                f"Unknown water method: {water_method!r}. Use 'tc', 'mndwi', or 'awei'."
+            )
+    else:
+        # Add indices and TC components
+        img = simpleAddIndices(image)
+        img = simpleGetTasseledCap(img)
+
+        defaults = _SIMPLE_MASK_DEFAULTS[mt]
+        band_name = mt
+
+        if mt == "vegetation":
+            t = threshold if threshold is not None else defaults["ndvi"]
+            mask = img.select("NDVI").gt(t)
+
+        elif mt == "snow":
+            t = threshold if threshold is not None else defaults["ndsi"]
+            nir_t = defaults["nir"]
+            mask = img.select("NDSI").gt(t).And(img.select("nir").gt(nir_t))
+
+        elif mt == "bare":
+            ndvi_t = threshold if threshold is not None else defaults["ndvi_max"]
+            ndsi_t = defaults["ndsi_max"]
+            # Low NDVI, not snow, not water (approximated by NDSI < threshold)
+            mask = img.select("NDVI").lt(ndvi_t).And(img.select("NDSI").lt(ndsi_t))
+            # Exclude water using TC wetness > brightness heuristic
+            mask = mask.And(img.select("wetness").lt(img.select("brightness")))
+
+        elif mt == "urban":
+            ndbi_t = threshold if threshold is not None else defaults["ndbi"]
+            ndvi_t = defaults["ndvi_max"]
+            # NDBI = (SWIR1 - NIR) / (SWIR1 + NIR)
+            ndbi = img.normalizedDifference(["swir1", "nir"]).rename("NDBI")
+            mask = ndbi.gt(ndbi_t).And(img.select("NDVI").lt(ndvi_t))
+
+        elif mt == "cloud":
+            blue_t = threshold if threshold is not None else defaults["blue"]
+            bright_t = defaults["brightness"]
+            mask = img.select("blue").gt(blue_t).And(img.select("brightness").gt(bright_t))
+
+        elif mt == "shadow":
+            nir_t = threshold if threshold is not None else defaults["nir"]
+            bright_t = defaults["brightness"]
+            mask = img.select("nir").lt(nir_t).And(img.select("brightness").lt(bright_t))
+
+        mask = mask.rename([band_name])
+
+    # Invert if requested
+    if invert:
+        mask = mask.Not()
+
+    # Set class properties for autoViz
+    viz = _SIMPLE_MASK_VIZ[mt]
+    names = viz["names"] if not invert else viz["names"][::-1]
+    mask = mask.set({
+        f"{band_name}_class_values": [0, 1],
+        f"{band_name}_class_names": names,
+        f"{band_name}_class_palette": viz["palette"],
+    })
+
+    return mask
 
 
 ####################

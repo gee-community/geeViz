@@ -575,6 +575,9 @@ class Report:
                             )
                             if isinstance(result, dict) and "matrix" in result:
                                 sankey_df, fig, matrix_dict = result["df"], result["chart"], result["matrix"]
+                                # Re-enable toolbar for reports (summarize_and_chart hides it by default)
+                                if isinstance(fig, str):
+                                    fig = fig.replace('<div id="toolbar" style="display:none">', '<div id="toolbar">')
                                 # Store sankey data (matrix_dict) as df if no df yet
                                 if sec.df is None:
                                     sec.df = matrix_dict
@@ -582,7 +585,10 @@ class Report:
                             elif isinstance(result, dict):
                                 if sec.df is None:
                                     sec.df = result.get("df")
-                                all_figs.append(("sankey", result.get("chart")))
+                                _chart = result.get("chart")
+                                if isinstance(_chart, str):
+                                    _chart = _chart.replace('<div id="toolbar" style="display:none">', '<div id="toolbar">')
+                                all_figs.append(("sankey", _chart))
                         else:
                             # Non-sankey path: strip sankey kwargs
                             non_sankey_kwargs = {k: v for k, v in chart_kwargs.items()
@@ -626,7 +632,11 @@ class Report:
                 if isinstance(result, dict) and "matrix" in result:
                     # Sankey: dict with df, chart, matrix
                     sec.df = result["matrix"]
-                    sec.sankey_fig = result["chart"]
+                    _sfig = result["chart"]
+                    # Re-enable toolbar for reports
+                    if isinstance(_sfig, str):
+                        _sfig = _sfig.replace('<div id="toolbar" style="display:none">', '<div id="toolbar">')
+                    sec.sankey_fig = _sfig
                 elif isinstance(result, dict):
                     first, second = result.get("df"), result.get("chart")
                     if isinstance(first, dict):
@@ -675,6 +685,7 @@ class Report:
             clip_to_geometry=kw.get("clip_to_geometry", True),
             title_font_size=kw.get("title_font_size", 18),
             label_font_size=kw.get("label_font_size", 12),
+            max_class_label_length=kw.get("max_class_label_length", 30),
         )
 
         try:
@@ -1373,11 +1384,26 @@ class Report:
                                  if k.startswith("yaxis"))
                     if n_rows > 1 and (fig_to_render.layout.height or 0) < 200 * n_rows:
                         fig_to_render.update_layout(height=200 * n_rows)
-                    chart_div = fig_to_render.to_html(
+                    # Multi-feature charts (e.g., per-feature time-series
+                    # subplots) bake in a fixed ``layout.width`` like 1800px
+                    # which overflows the report container and forces a
+                    # horizontal scrollbar. Render a copy with the width
+                    # cleared and Plotly's responsive flag set so the chart
+                    # scales to its containing div. Original figure object
+                    # is untouched in case the caller reuses it.
+                    import copy as _copy
+                    fig_responsive = _copy.copy(fig_to_render)
+                    fig_responsive.layout = _copy.deepcopy(fig_to_render.layout)
+                    fig_responsive.update_layout(width=None, autosize=True)
+                    config = dict(cl._plotly_download_config(fig_responsive))
+                    config["responsive"] = True
+                    chart_div = fig_responsive.to_html(
                         full_html=False, include_plotlyjs=False,
-                        config=cl._plotly_download_config(fig_to_render),
+                        config=config,
                     )
-                    parts.append(f'<div class="chart">{chart_div}</div>')
+                    parts.append(
+                        f'<div class="chart" style="width:100%;">{chart_div}</div>'
+                    )
 
         # Table
         if sec.generate_table and sec.df is not None:
