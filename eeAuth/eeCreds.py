@@ -77,6 +77,7 @@ import contextlib
 import json
 import logging
 import os
+import sys
 import threading
 import time
 from dataclasses import dataclass, field
@@ -1348,16 +1349,89 @@ class EECreds:
                 "ok": True, "source": "interactive-auth", "project": proj,
             }
         except Exception as e:
-            raise RuntimeError(
-                f"geeViz: ee.Initialize() failed even after fresh "
-                f"authentication: {e}\nNo quota project could be "
-                "auto-resolved. Set one explicitly with one of:\n"
-                "  earthengine set_project YOUR_PROJECT\n"
-                "  gcloud auth application-default set-quota-project "
-                "YOUR_PROJECT\n"
-                "  ee.Initialize(project='YOUR_PROJECT')  "
-                "# before importing geeViz"
-            ) from e
+            # Auth succeeded but no quota project came with the creds.
+            # Restore the legacy ``simpleSetProject`` UX — prompt once,
+            # cache the answer next to the EE credentials file so the
+            # prompt only ever happens once per machine, and reuse on
+            # subsequent runs.
+            proj = self._prompt_for_project(verbose=verbose)
+            if not proj:
+                raise RuntimeError(
+                    f"geeViz: ee.Initialize() failed even after fresh "
+                    f"authentication: {e}\nNo quota project could be "
+                    "auto-resolved. Set one explicitly with one of:\n"
+                    "  earthengine set_project YOUR_PROJECT\n"
+                    "  gcloud auth application-default set-quota-project "
+                    "YOUR_PROJECT\n"
+                    "  ee.Initialize(project='YOUR_PROJECT')  "
+                    "# before importing geeViz"
+                ) from e
+            try:
+                ee.Initialize(project=proj)
+            except Exception as e2:
+                raise RuntimeError(
+                    f"geeViz: ee.Initialize(project={proj!r}) failed: {e2}"
+                ) from e2
+            if verbose:
+                print(
+                    f"geeViz: EE initialized after auth + project "
+                    f"prompt (project={proj!r})"
+                )
+            if self._entries:
+                self.sync_oauth_project(proj)
+            return {
+                "ok": True, "source": "interactive-auth-prompted-project",
+                "project": proj,
+            }
+
+    @staticmethod
+    def _prompt_for_project(*, verbose: bool = False) -> str:
+        """Ask the user once for a GEE project ID and cache it next to
+        the EE credentials file. Mirrors the legacy
+        ``geeViz.geeView.simpleSetProject`` UX so workflows that used
+        to depend on that one-time prompt (Sphinx docs build, etc.)
+        keep working under the new ``robust_init`` orchestration.
+
+        Returns the project id (or ``""`` if no stdin and no cache).
+        """
+        try:
+            import ee.oauth as _ee_oauth
+            creds_path = _ee_oauth.get_credentials_path()
+        except Exception:
+            return ""
+        cache = os.path.normpath(f"{creds_path}.proj_id")
+        cache_dir = os.path.dirname(cache)
+        if cache_dir and not os.path.exists(cache_dir):
+            try:
+                os.makedirs(cache_dir, exist_ok=True)
+            except Exception:
+                pass
+        # Reuse cached value when present.
+        if os.path.isfile(cache):
+            try:
+                cached = open(cache, "r", encoding="utf-8").read().strip()
+            except Exception:
+                cached = ""
+            if cached:
+                if verbose:
+                    print(f"geeViz: using cached project from {cache}")
+                return cached
+        # Prompt only when stdin is a tty (no blocking on CI / daemons).
+        if not sys.stdin.isatty():
+            return ""
+        try:
+            entered = input("Please enter GEE project ID: ").strip()
+        except EOFError:
+            return ""
+        if not entered:
+            return ""
+        print(f"You entered: {entered}")
+        try:
+            with open(cache, "w", encoding="utf-8") as f:
+                f.write(entered)
+        except Exception:
+            pass
+        return entered
 
     # ─────────────── ensure_started: discover + start in one call ───────────────
     def ensure_started(
