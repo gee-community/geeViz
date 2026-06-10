@@ -40,10 +40,15 @@ to construct your own tag (e.g. include user / session).
 """
 from __future__ import annotations
 
+import datetime
 import logging
 import os
 from typing import Callable, Optional
 from urllib.parse import parse_qsl, urlencode
+
+# Module-load timestamp — used by the /health probe so detached-mode
+# clients can tell how stale a discovered proxy process is.
+_PROCESS_STARTED_AT = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 
 from fastapi import APIRouter, FastAPI, Request, Response
 
@@ -198,6 +203,52 @@ def build_proxy_router(
 
     router = APIRouter()
 
+    @router.get("/health")
+    async def health() -> dict:
+        """Liveness + identity probe for detached-mode discovery.
+
+        Returned fields:
+          - ``ok``                     — always true (request reached us)
+          - ``version``                — geeViz package version (for
+                                         version-skew detection in
+                                         ``eeCreds._ensure_detached_proxy``)
+          - ``tenant_fingerprint``     — sha256 of sorted tenant names, so
+                                         clients can detect when the
+                                         detached process is using a
+                                         stale tenant set vs. the
+                                         current environment
+          - ``tenants``                — list of tenant names currently
+                                         registered (mainly for human
+                                         debugging via curl)
+          - ``pid``                    — process id of the proxy
+          - ``started_at``             — ISO timestamp of process start
+        """
+        import hashlib
+        import os
+        try:
+            from geeViz import __version__ as _ver
+        except Exception:
+            _ver = ""
+        src = _resolve_creds()
+        names = []
+        try:
+            if hasattr(src, "list"):
+                names = list(src.list())
+            elif hasattr(src, "list_tenants"):
+                names = list(src.list_tenants())
+        except Exception:
+            names = []
+        names.sort()
+        fp = hashlib.sha256(",".join(names).encode("utf-8")).hexdigest()[:16]
+        return {
+            "ok": True,
+            "version": _ver,
+            "tenant_fingerprint": fp,
+            "tenants": names,
+            "pid": os.getpid(),
+            "started_at": _PROCESS_STARTED_AT,
+        }
+
     @router.api_route(
         "/{path:path}",
         methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
@@ -206,7 +257,25 @@ def build_proxy_router(
         import httpx
 
         # 1. Resolve tenant + mint a token from the credential source.
-        tenant = resolver(request)
+        #
+        # Path-prefix syntax ``/ee-api/t/<tenant>/<rest>`` wins over
+        # header and query. ``Map.view()`` bakes the tenant into the
+        # JS-side ``authProxyAPIURL`` exactly this way to pin each
+        # browser tab to its load-time tenant, immune to process-wide
+        # eeCreds switches in the host script. Strip the prefix so
+        # only the genuine EE path is forwarded upstream.
+        path_tenant = ""
+        if path.startswith("t/"):
+            rest = path[len("t/"):]
+            slash = rest.find("/")
+            if slash > 0:
+                path_tenant = rest[:slash]
+                path = rest[slash + 1:]
+            else:
+                # ``/ee-api/t/<tenant>`` with no trailing segment —
+                # tenant-ack ping, no upstream call needed.
+                return Response(content=b"", status_code=204)
+        tenant = path_tenant or resolver(request)
         registry = _resolve_creds()
         try:
             tok = registry.get_token(tenant or None)
@@ -327,6 +396,7 @@ def create_proxy_app(
     tenant_resolver: Optional[Callable[[Request, str], str]] = None,
     workload_tag_builder: Optional[Callable[[Request, str], str]] = None,
     prefix: str = "/ee-api",
+    serve_geeview: bool = True,
 ) -> FastAPI:
     """Build a standalone FastAPI app with the proxy mounted at ``prefix``.
     Suitable for direct serving via ``uvicorn`` or for testing.
@@ -337,6 +407,15 @@ def create_proxy_app(
 
     Use ``build_proxy_router`` directly if you want to mount in an
     existing FastAPI app and share its middleware / lifecycle.
+
+    Args:
+        serve_geeview: When True (default for standalone runs), also
+            mount the geeView frontend bundle at ``/geeView/*``. This
+            makes the detached proxy the single long-lived server for
+            both EE auth (``/ee-api/*``) and ``Map.view()`` HTML
+            (``/geeView/...``). Same origin, same port — browser tabs
+            survive script exits without a daemon-thread server inside
+            each script. Set False to keep the proxy auth-only.
     """
     app = FastAPI(title="geeViz EE proxy")
     app.include_router(
@@ -350,6 +429,25 @@ def create_proxy_app(
         ),
         prefix=prefix,
     )
+
+    if serve_geeview:
+        # Mount the geeViz package directory at /geeView. Map.view()
+        # writes exports into ``<package>/geeView/src/gee/gee-run/`` —
+        # the browser fetches them at ``/geeView/src/gee/gee-run/<file>``
+        # and all relative asset references (``src/lib/...``,
+        # ``src/css/...``, ``src/gee/...``) resolve under the same
+        # ``/geeView/`` root, matching what the legacy in-script
+        # ``_GeeVizRequestHandler`` served.
+        from fastapi.staticfiles import StaticFiles
+        import os as _os
+        _PKG_DIR = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+        _GEEVIEW_DIR = _os.path.join(_PKG_DIR, "geeView")
+        if _os.path.isdir(_GEEVIEW_DIR):
+            app.mount(
+                "/geeView",
+                StaticFiles(directory=_GEEVIEW_DIR, html=True),
+                name="geeview-static",
+            )
 
     def _list_tenants() -> list:
         if creds is None:

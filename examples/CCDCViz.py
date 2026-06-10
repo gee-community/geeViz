@@ -29,7 +29,8 @@ import geeViz.changeDetectionLib as changeDetectionLib
 
 ee = getImagesLib.ee
 Map = getImagesLib.Map
-Map.clearMap()
+
+####################################################################################################
 ####################################################################################################
 # Bring in ccdc image asset
 # This is assumed to be an image of arrays that is returned from the ee.Algorithms.TemporalSegmentation.Ccdc method

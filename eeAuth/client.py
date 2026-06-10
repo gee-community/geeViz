@@ -94,15 +94,43 @@ class TenantAwareHttp:
     from needing the dependency. The header name is set per-instance so
     you can run multiple proxies with different conventions in the same
     process if you really need to.
+
+    Thread safety
+    -------------
+    ``httplib2.Http`` is NOT thread-safe — its per-host connection cache
+    (``self.connections``) is a plain ``dict`` mutated from inside
+    ``request()`` and ``socket.HTTPConnection`` objects hold per-instance
+    socket state. When the EE SDK shares one transport across a
+    ``ThreadPoolExecutor`` (as ``Map.testLayers()`` does with 8 workers),
+    concurrent threads tear down each other's sockets mid-request,
+    surfacing as ``'NoneType' object has no attribute 'close'`` and
+    Windows ``WinError 10038/10057`` socket errors.
+
+    Workaround: route each thread's ``request()`` call to its OWN
+    ``httplib2.Http`` instance stored in ``threading.local()``. EE's SDK
+    only consults the transport for ``request()`` — it doesn't reach into
+    ``self.connections`` directly — so per-thread instances are a safe
+    drop-in.
     """
     _impl_cls = None  # lazily-defined subclass keyed by header name
 
     def __new__(cls, tenant_header: str = DEFAULT_TENANT_HEADER):
         if cls._impl_cls is None:
             import httplib2
+            import threading as _threading
 
             class _Impl(httplib2.Http):
                 _tenant_header = tenant_header
+                _thread_local = _threading.local()
+
+                def _thread_http(self):
+                    """Lazy per-thread ``httplib2.Http`` so concurrent
+                    SDK calls don't share socket/connection state."""
+                    h = getattr(self.__class__._thread_local, "http", None)
+                    if h is None:
+                        h = httplib2.Http()
+                        self.__class__._thread_local.http = h
+                    return h
 
                 def request(self, uri, method="GET", body=None, headers=None, **kw):
                     headers = dict(headers or {})
@@ -113,7 +141,9 @@ class TenantAwareHttp:
                     tenant = CURRENT_TENANT.get()
                     if tenant:
                         headers[self._tenant_header] = tenant
-                    return super().request(uri, method, body, headers, **kw)
+                    return self._thread_http().request(
+                        uri, method, body, headers, **kw
+                    )
             cls._impl_cls = _Impl
         return cls._impl_cls()
 

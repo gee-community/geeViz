@@ -81,20 +81,47 @@ def main(argv=None) -> int:
         )
         return 1
 
-    app = create_proxy_app(
-        upstream=args.upstream,
-        tenant_header=args.tenant_header,
-        tenant_query_param=args.tenant_query,
+    # Use eeCreds (not the legacy env-var SARegistry) so the standalone
+    # runner finds the full set of credential sources discover() knows
+    # about — EE persistent file, gcloud ADC, $GEE_SERVICE_ACCOUNT_B64,
+    # per-tenant SA env vars, keyless impersonation, and the WIF/ADC
+    # fallback. Without this, scripts using ``ensure_started(mode=
+    # 'detached')`` would see a fingerprint mismatch (client discovers
+    # more tenants than the env-var-only proxy) and keep respawning.
+    from . import eeCreds as _ee_creds_singleton
+    _ee_creds_singleton.discover()
+    tenants = _ee_creds_singleton.list()
+    from fastapi import FastAPI
+    from fastapi.staticfiles import StaticFiles
+    import os as _os
+    app = FastAPI()
+    app.include_router(
+        _ee_creds_singleton.router(
+            upstream=args.upstream,
+            tenant_header=args.tenant_header,
+            tenant_query_param=args.tenant_query,
+        ),
         prefix=args.prefix,
     )
-    # Trigger registry load so any startup errors show before serving
-    from .registry import get_registry
-    registry = get_registry()
-    tenants = registry.list_tenants()
+    # Also serve /geeView/* from the geeViz package — same long-lived
+    # process now handles both EE auth (``/ee-api/*``) and Map.view()
+    # HTML (``/geeView/...``). Map.view() writes exports into
+    # ``<package>/geeView/src/gee/gee-run/`` and opens the browser to
+    # this server's ``/geeView/src/gee/gee-run/<file>`` URL; everything
+    # else (frontend JS, CSS, EE tile fetches) is same-origin.
+    _PKG_DIR = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    _GEEVIEW_DIR = _os.path.join(_PKG_DIR, "geeView")
+    if _os.path.isdir(_GEEVIEW_DIR):
+        app.mount(
+            "/geeView",
+            StaticFiles(directory=_GEEVIEW_DIR, html=True),
+            name="geeview-static",
+        )
     if not tenants:
         print(
-            "WARNING: no SA tenants loaded — set GEE_SERVICE_ACCOUNT_B64 "
-            "and/or GEE_<NAME>_SERVICE_ACCOUNT env vars. Proxy will 400 "
+            "WARNING: no tenants discovered — set GEE_SERVICE_ACCOUNT_B64, "
+            "GEE_<NAME>_SERVICE_ACCOUNT, run `earthengine authenticate`, "
+            "or `gcloud auth application-default login`. Proxy will 400 "
             "on every request until at least one tenant is configured.",
             file=sys.stderr,
         )

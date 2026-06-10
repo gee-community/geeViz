@@ -426,6 +426,32 @@ save_file("report.html", html)
 
 **Reports are for geospatial analysis only.** Each section requires a real `ee_obj` over a real study area. Do NOT use `rl.Report` for "explain yourself" / "make a presentation about how you work" / non-geospatial questions — answer those in chat. Don't invent `ee.Image(1)` placeholders to feed Report; the result will have errored sections.
 
+**Decide explicitly per section what content makes sense — the defaults bundle table + chart + thumb together, which is wrong for many outputs.** Before adding a section, ask: *would a chart of this image actually tell the user anything?* If not, set `generate_chart=False`. Same for `generate_table=False` and `thumb_format=None`. The wrong choice clutters the report with two-bar histograms and identical "1.0" tables.
+
+| Output type | thumb | chart | table | Why |
+|---|---|---|---|---|
+| Thresholded / binary mask (e.g. `ndvi.gt(0.5)`) | `"png"` | `False` | `True` | A chart of a binary image is two bars — meaningless. Table gives the area % cleanly. |
+| Classified categorical image (LCMS, NLCD, land cover) | `"png"` | `True` | `True` | Bar/donut of class areas is the headline number. |
+| Continuous index (NDVI, NBR, elevation) | `"png"` | `True` (histogram) or `False` | `True` | A distribution chart helps; for a single composite it's often noise. Default `chart_types=["histogram"]` when wanted. |
+| Time series (`ImageCollection` over time) | `"gif"` or `"filmstrip"` | `True` (line+markers) | `True` | The animated thumb shows change; the line chart quantifies it. |
+| Vector / FeatureCollection summary | `None` | `True` (bar) | `True` | Static thumb of polygons is rarely useful; the chart compares feature attributes. |
+| Single scalar value (one number) | `None` | `False` | `True` | One number — table is enough. |
+
+**Thresholded outputs need `.unmask(0)` before going into a report section.** Unlike `Map.addLayer` (where `.selfMask()` is preferred for the live viewer), a Report's PNG thumbnail is static — a self-masked binary makes the thumb mostly transparent and shows only the matching pixels with no surrounding context. Unmask to 0 so the thumb shows the entire study area with above-threshold pixels highlighted against a visible background:
+
+```python
+above = ndvi.gt(0.5).unmask(0).rename('ndvi_above')
+above = above.set({
+    'ndvi_above_class_values':  [0, 1],
+    'ndvi_above_class_names':   ['NDVI <= 0.5', 'NDVI > 0.5'],
+    'ndvi_above_class_palette': ['888888', '00aa00'],
+})
+report.add_section(above, study_area, title="Vegetation above 0.5 NDVI",
+                   generate_chart=False)  # binary -> chart is noise
+```
+
+The same pattern applies to MMU-filtered outputs, change-detection masks, and any `.gt/.lt/.eq` result: `.unmask(0)` for reports, `.selfMask()` for the live map.
+
 **`output_path=` is forbidden on `report.generate()`** — it writes to CWD where the artifact pipeline can't see. Always get the HTML string back and route through `save_file()`.
 
 **Thumbnail errors with `Description length exceeds maximum`** are the same issue as the dashboard `getMapId` failure — a too-complex EE expression chain, typically from `.filterBounds(...)` over a many-polygon FeatureCollection like `sal.getUSStates()`. For CONUS-scale reports, use `ee.Geometry.BBox(-125, 24, -66, 50)` as the geometry (or skip `filterBounds` entirely on already-CONUS-clipped assets like NLCD TCC, LCMS CONUS). Section-level errors render in the output but the thumbnail itself goes blank.

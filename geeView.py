@@ -1889,7 +1889,14 @@ class mapper:
         ee_proxy_url = ""
         ee_proxy_tenant = ""
         ee_proxy_tenants: list[str] = []
-        _auth_mode = os.environ.get("GEEVIZ_EEAUTH_MODE", "auto").lower()
+        ee_proxy_mode = ""
+        # Default ``detached`` so multi-``Map.view()`` scripts use one
+        # long-lived background process for both EE auth and /geeView
+        # HTML — the script can exit cleanly and the browser tab keeps
+        # working. Override via ``GEEVIZ_EEAUTH_MODE=auto`` (inline
+        # daemon-thread proxy, dies with the script) or ``legacy``
+        # (skip proxy entirely, mint tokens into the URL).
+        _auth_mode = os.environ.get("GEEVIZ_EEAUTH_MODE", "detached").lower()
         if _auth_mode != "legacy":
             try:
                 from geeViz.eeAuth.eeCreds import eeCreds as _eeCreds
@@ -1898,6 +1905,7 @@ class mapper:
                     ee_proxy_url = status["proxy_url"]
                     ee_proxy_tenant = status["current"]
                     ee_proxy_tenants = status.get("tenants", []) or []
+                    ee_proxy_mode = status.get("mode", "") or ""
             except RuntimeError:
                 # mode='proxy' explicitly demanded the proxy and it
                 # couldn't start. Propagate so the user notices.
@@ -1917,10 +1925,14 @@ class mapper:
         with open(self.ee_run, "w", encoding="utf-8") as f:
             f.write(run_js)
 
-        # Ensure the in-process threaded server is running
-        actual_port = _ensure_server(self.port)
-        if actual_port is not None:
-            self.port = actual_port
+        # Detached mode does NOT need the in-process daemon HTTP
+        # server — the detached eeAuth proxy serves both ``/geeView/*``
+        # and ``/ee-api/*`` on the same port. All other branches still
+        # need the daemon for HTML hosting and/or /ee-api reverse-proxy.
+        if ee_proxy_mode != "detached":
+            actual_port = _ensure_server(self.port)
+            if actual_port is not None:
+                self.port = actual_port
 
         # Build the viewer URL — proxy mode or legacy token mode.
         if ee_proxy_url:
@@ -1928,8 +1940,11 @@ class mapper:
             # so its handler reverse-proxies /ee-api/* requests to it.
             # With that hook in place, the JS-side default of
             # ``window.location.origin + "/ee-api"`` resolves to the live
-            # proxy without the URL having to carry the address.
-            _set_ee_api_upstream(ee_proxy_url)
+            # proxy without the URL having to carry the address. Skip in
+            # detached mode — the browser already loads from the proxy,
+            # so ``/ee-api`` is same-origin and direct.
+            if ee_proxy_mode != "detached":
+                _set_ee_api_upstream(ee_proxy_url)
 
             # No URL query needed — tenant is baked into the per-session
             # run_js (see ``_build_run_js(tenant=…)``). URL bar stays at
@@ -1990,8 +2005,29 @@ class mapper:
             print("Proxy URL:", geeView_url)
             self.IFrame = IFrame(src=geeView_url, width="100%", height="{}px".format(iframe_height))
             display(self.IFrame)
+        elif ee_proxy_mode == "detached" and ee_proxy_url:
+            # Local detached path. The detached eeAuth proxy mounts
+            # ``/geeView/*`` over this same geeViz package — so map
+            # HTML, JS, CSS, and ``/ee-api/*`` tile fetches all live
+            # behind one long-lived process on one port. The script
+            # can return immediately; the browser tab stays usable
+            # across script exits and successive script runs.
+            base = ee_proxy_url.rstrip("/")
+            if base.endswith("/ee-api"):
+                base = base[: -len("/ee-api")]
+            url = f"{base}/geeView/{query}"
+            print("geeView URL:", url)
+            if want_iframe:
+                self.IFrame = IFrame(src=url, width="100%", height="{}px".format(iframe_height))
+                display(self.IFrame)
+            if want_browser:
+                webbrowser.open(url, new=1)
         else:
-            # Local — use localhost directly
+            # Local fallback (legacy ``auto`` mode, or detached unavailable).
+            # In-process daemon-thread HTTP server (started above). Short
+            # sleep so the browser can fetch the initial HTML + static
+            # assets before the script returns; daemon dies when the
+            # script exits, so a refresh after exit will 404.
             url = "http://localhost:{}/geeView/{}".format(self.port, query)
             print("geeView URL:", url)
             if want_iframe:
@@ -1999,22 +2035,11 @@ class mapper:
                 display(self.IFrame)
             if want_browser:
                 webbrowser.open(url, new=1)
-                # When invoked from a script (not a notebook), block
-                # until the user presses Enter. The viewer server lives
-                # on daemon threads in this process — without this
-                # block, the script returns from ``Map.view()``, the
-                # interpreter exits, daemon threads die, and the browser
-                # the script just opened can't load the page. Notebooks
-                # don't need this because the kernel keeps the process
-                # alive across cells.
                 if not in_notebook:
-                    print(
-                        f"\ngeeViz viewer running at {url}\n"
-                        "Press Enter (or Ctrl+C) to stop the server and exit."
-                    )
+                    print(f"\ngeeViz viewer running at {url}")
                     try:
-                        input()
-                    except (KeyboardInterrupt, EOFError):
+                        time.sleep(3)
+                    except KeyboardInterrupt:
                         pass
 
     ######################################################################

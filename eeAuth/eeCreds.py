@@ -1156,6 +1156,380 @@ class EECreds:
         from .server import build_proxy_router
         return build_proxy_router(creds=self, **kwargs)
 
+    # ─────────────── detached-subprocess proxy ───────────────
+    # Lets a script start a proxy once, exit cleanly, and have any
+    # subsequent script attach to the same process — survives the
+    # caller's lifecycle so multi-``Map.view()`` workflows don't need
+    # the blocking ``input()`` at the end of each script. See
+    # ``ensure_started(mode="detached")``.
+
+    @staticmethod
+    def _detached_state_path() -> str:
+        """Path to the JSON state file describing the running detached
+        proxy. Single shared file per machine (one detached proxy at a
+        time)."""
+        import tempfile
+        return os.path.join(tempfile.gettempdir(), ".geeViz_eeauth_proxy.json")
+
+    @classmethod
+    def _read_detached_state(cls) -> Optional[dict]:
+        """Return the parsed state file contents, or ``None`` when the
+        file is missing or unreadable."""
+        path = cls._detached_state_path()
+        if not os.path.isfile(path):
+            return None
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return None
+
+    @classmethod
+    def _write_detached_state(cls, state: dict) -> None:
+        path = cls._detached_state_path()
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(state, f, indent=2)
+        except Exception:
+            logger.exception("eeCreds: failed writing detached state %s", path)
+
+    @classmethod
+    def _clear_detached_state(cls) -> None:
+        path = cls._detached_state_path()
+        try:
+            if os.path.isfile(path):
+                os.remove(path)
+        except OSError:
+            pass
+
+    @staticmethod
+    def _pid_alive(pid: int) -> bool:
+        """Cross-platform: is process ``pid`` currently alive?
+
+        Critical Windows note: ``os.kill(pid, 0)`` on Windows does NOT
+        check liveness — it calls ``TerminateProcess(pid, 0)``, which
+        actually KILLS the process. A previous version of this code
+        used ``os.kill(pid, 0)`` and was silently murdering the detached
+        proxy on every liveness check. Always use the Win32 API
+        ``OpenProcess`` + ``GetExitCodeProcess`` on Windows.
+        """
+        if pid <= 0:
+            return False
+        if os.name == "nt":
+            import ctypes
+            kernel32 = ctypes.windll.kernel32
+            PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+            STILL_ACTIVE = 259
+            handle = kernel32.OpenProcess(
+                PROCESS_QUERY_LIMITED_INFORMATION, False, pid,
+            )
+            if not handle:
+                return False
+            try:
+                exit_code = ctypes.c_ulong()
+                ok = kernel32.GetExitCodeProcess(
+                    handle, ctypes.byref(exit_code),
+                )
+                if not ok:
+                    return False
+                return exit_code.value == STILL_ACTIVE
+            finally:
+                kernel32.CloseHandle(handle)
+        try:
+            os.kill(pid, 0)
+            return True
+        except (ProcessLookupError, PermissionError):
+            return False
+        except OSError:
+            return False
+
+    def _tenant_fingerprint(self) -> str:
+        """sha256(16) over the sorted tenant names — same hash the
+        proxy's ``/health`` endpoint computes. When this drifts from
+        what the running proxy reports, we know the env has new SA
+        env vars that aren't in the proxy yet, and we restart it."""
+        import hashlib
+        names = sorted(self._entries.keys())
+        return hashlib.sha256(",".join(names).encode("utf-8")).hexdigest()[:16]
+
+    @classmethod
+    def _probe_detached_health(cls, url: str, timeout: float = 2.0) -> Optional[dict]:
+        """GET ``<url>/health`` and return the parsed JSON, or ``None``
+        on any failure (down, timeout, non-200, JSON parse error)."""
+        try:
+            import urllib.request as _urlreq
+        except Exception:
+            return None
+        try:
+            with _urlreq.urlopen(url.rstrip("/") + "/health", timeout=timeout) as resp:
+                if getattr(resp, "status", 200) != 200:
+                    return None
+                return json.loads(resp.read().decode("utf-8"))
+        except Exception:
+            return None
+
+    @classmethod
+    def _kill_detached(cls, state: dict, *, timeout: float = 5.0) -> None:
+        """Terminate the detached proxy referenced by ``state``. SIGTERM
+        first, wait up to ``timeout`` seconds for graceful exit, then
+        SIGKILL (or TerminateProcess on Windows)."""
+        pid = int(state.get("pid", 0) or 0)
+        if pid <= 0 or pid == os.getpid():
+            return
+        if not cls._pid_alive(pid):
+            return
+        try:
+            if os.name == "nt":
+                # Windows: send Ctrl+Break to the process group, then
+                # TerminateProcess as the kill fallback.
+                import signal as _sig
+                try:
+                    os.kill(pid, _sig.CTRL_BREAK_EVENT)
+                except (AttributeError, OSError):
+                    pass
+            else:
+                import signal as _sig
+                os.kill(pid, _sig.SIGTERM)
+        except Exception:
+            pass
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if not cls._pid_alive(pid):
+                return
+            time.sleep(0.2)
+        # Still alive — hard kill.
+        try:
+            if os.name == "nt":
+                import ctypes
+                kernel32 = ctypes.windll.kernel32
+                PROCESS_TERMINATE = 1
+                handle = kernel32.OpenProcess(PROCESS_TERMINATE, False, pid)
+                if handle:
+                    kernel32.TerminateProcess(handle, 1)
+                    kernel32.CloseHandle(handle)
+            else:
+                import signal as _sig
+                os.kill(pid, _sig.SIGKILL)
+        except Exception:
+            pass
+
+    def _spawn_detached(self, port: int) -> dict:
+        """Spawn ``python -m geeViz.eeAuth`` as a detached background
+        subprocess listening on ``port``. Inherits this process's env
+        (so the same ``GEE_*`` discovery rules apply) but detaches
+        stdin/stdout/stderr and runs in its own process group so the
+        spawning script can exit without taking the proxy down.
+
+        Waits up to ~15s for ``/health`` to respond before returning.
+        Writes the state file on success. Raises on failure."""
+        import subprocess as _sp
+        url = f"http://127.0.0.1:{port}/ee-api"
+        # The standalone runner uses --prefix /ee-api by default
+        # (same as ``router(...)`` consumers) so the /health probe is
+        # at ``<url>/health``. The runner reads SA tenants from env vars
+        # via ``discover()`` — which is exactly what this parent
+        # process did, so the child sees the same tenants.
+        # Core command — same on all platforms.
+        target_args = [
+            sys.executable, "-m", "geeViz.eeAuth",
+            "--host", "127.0.0.1",
+            "--port", str(port),
+            "--prefix", "/ee-api",
+            "--log-level", "WARNING",
+        ]
+        kwargs: dict = {
+            "stdin": _sp.DEVNULL,
+            "stdout": _sp.DEVNULL,
+            "stderr": _sp.DEVNULL,
+            "close_fds": True,
+        }
+        if os.name == "nt":
+            # Windows Job Object problem: when the parent process is in
+            # a Job with KILL_ON_JOB_CLOSE (VS Code's terminal, many
+            # CI runners, GitHub Actions, etc.), the child inherits the
+            # Job and gets killed ~seconds after the parent exits. The
+            # ``CREATE_BREAKAWAY_FROM_JOB`` Popen flag only works when
+            # the Job permits breakaway — VS Code's doesn't.
+            #
+            # Workaround: launch through ``cmd /c start /B`` so the
+            # process is created by ``cmd``, then ``cmd`` exits, leaving
+            # the launched process as an orphan owned by the system.
+            # ``/B`` = no new window. The empty ``""`` first arg to
+            # ``start`` is the (ignored) window title — required when
+            # the executable path contains spaces.
+            quoted = " ".join(f'"{a}"' if " " in a else a for a in target_args)
+            args = ["cmd", "/c", "start", "", "/B", *target_args]
+            # ``CREATE_NO_WINDOW`` (0x08000000) suppresses the brief cmd
+            # window flash. Mutually exclusive with ``DETACHED_PROCESS``
+            # (which can ALLOCATE a fresh console for the child if the
+            # parent has none) — pick CREATE_NO_WINDOW since we just
+            # don't want any window, ever.
+            kwargs["creationflags"] = (
+                0x08000000  # CREATE_NO_WINDOW
+                | getattr(_sp, "CREATE_NEW_PROCESS_GROUP", 0x00000200)
+                | getattr(_sp, "CREATE_BREAKAWAY_FROM_JOB", 0x01000000)
+            )
+        else:
+            args = target_args
+            # New session = own process group + detached from parent's
+            # controlling terminal. Survives parent exit on POSIX.
+            kwargs["start_new_session"] = True
+        try:
+            proc = _sp.Popen(args, **kwargs)
+        except Exception as e:
+            raise RuntimeError(
+                f"eeCreds: failed to spawn detached proxy on port {port}: {e}"
+            ) from e
+        # On Windows the cmd-wrapped Popen returns the PID of cmd.exe,
+        # which exits immediately after dispatching. We need to track
+        # the actual proxy python.exe PID. Discover it by health-probing
+        # /health (which returns ``pid``) once it's up.
+        # Wait for /health to come up. The child takes ~1-3s to import
+        # everything and bind the socket; if it's not responsive after
+        # ~15s something is wrong (port conflict, env error, etc.).
+        deadline = time.time() + 15.0
+        health = None
+        # On Windows the launcher (cmd.exe) exits within ~50ms — that's
+        # not a failure, it's the intended detach. Only treat
+        # ``proc.poll() not None`` as fatal on POSIX where the Popen
+        # PID IS the proxy. On Windows we rely on /health responding
+        # to confirm the proxy actually started; if it doesn't, we
+        # raise after the timeout.
+        is_launcher = (os.name == "nt")
+        while time.time() < deadline:
+            if not is_launcher and proc.poll() is not None:
+                raise RuntimeError(
+                    f"eeCreds: detached proxy exited prematurely with code "
+                    f"{proc.returncode}. Run "
+                    f"`python -m geeViz.eeAuth --port {port}` directly to see "
+                    f"the error."
+                )
+            health = self._probe_detached_health(url, timeout=1.0)
+            if health is not None:
+                break
+            time.sleep(0.3)
+        if health is None:
+            raise RuntimeError(
+                f"eeCreds: detached proxy on port {port} didn't respond to "
+                f"/health within 15s. Run "
+                f"`python -m geeViz.eeAuth --port {port}` directly to see "
+                f"the error."
+            )
+        # Use the PID from /health — on Windows the Popen PID was the
+        # cmd-launcher (already exited), not the actual proxy process.
+        actual_pid = int(health.get("pid", 0) or proc.pid)
+        state = {
+            "pid": actual_pid,
+            "port": port,
+            "url": url,
+            "version": health.get("version", ""),
+            "tenant_fingerprint": health.get("tenant_fingerprint", ""),
+            "started_at": health.get("started_at", ""),
+            "python": sys.executable,
+        }
+        self._write_detached_state(state)
+        logger.info(
+            "eeCreds: spawned detached proxy pid=%s url=%s tenants=%s",
+            proc.pid, url, health.get("tenants", []),
+        )
+        return state
+
+    def _ensure_detached(self, proxy_port: int) -> dict:
+        """``ensure_started(mode='detached')`` core. Discover tenants,
+        compute expected tenant fingerprint, look at the state file:
+
+        - No state file → spawn fresh
+        - Stale state (PID dead, port unresponsive, version mismatch,
+          tenant-fingerprint mismatch) → kill it, spawn fresh
+        - Healthy state with matching fingerprint → attach
+        """
+        # Run discovery in THIS process first so we know what tenants
+        # SHOULD be loaded. The child process will run its own
+        # discover() at startup and (assuming the env is identical)
+        # arrive at the same fingerprint. Discrepancy means the
+        # detached process is stale — restart it.
+        if not self._entries:
+            try:
+                self.discover()
+            except Exception:
+                logger.exception("eeCreds.ensure_detached: discovery failed")
+
+        expected_fp = self._tenant_fingerprint()
+        try:
+            from geeViz import __version__ as _our_version
+        except Exception:
+            _our_version = ""
+
+        # Inspect any existing detached proxy.
+        state = self._read_detached_state()
+        if state is not None:
+            stale_reason = None
+            pid = int(state.get("pid", 0) or 0)
+            url = state.get("url") or ""
+            if not self._pid_alive(pid):
+                stale_reason = "pid not alive"
+            elif not url:
+                stale_reason = "no url in state"
+            else:
+                health = self._probe_detached_health(url)
+                if health is None:
+                    stale_reason = "health probe failed"
+                elif (state.get("version") or "") and _our_version \
+                        and health.get("version") != _our_version:
+                    stale_reason = (
+                        f"version mismatch (proxy={health.get('version')!r} "
+                        f"client={_our_version!r})"
+                    )
+                elif health.get("tenant_fingerprint") != expected_fp:
+                    stale_reason = (
+                        f"tenant fingerprint mismatch "
+                        f"(proxy={health.get('tenant_fingerprint')!r} "
+                        f"expected={expected_fp!r})"
+                    )
+
+            if stale_reason is None:
+                # Attach — set the inline-mode fields so callers that
+                # read .proxy_url see the detached URL transparently.
+                self._proxy_url = url
+                logger.info(
+                    "eeCreds: attached to detached proxy %s pid=%s",
+                    url, pid,
+                )
+                return {
+                    "proxy_url": url, "tenants": self.list(),
+                    "current": self.current(),
+                    "mode": "detached", "discovered": [],
+                    "attached": True, "pid": pid,
+                }
+
+            logger.info(
+                "eeCreds: detached proxy stale (%s); replacing", stale_reason,
+            )
+            self._kill_detached(state)
+            self._clear_detached_state()
+
+        # No usable existing proxy — spawn a new one.
+        new_state = self._spawn_detached(proxy_port)
+        self._proxy_url = new_state["url"]
+        return {
+            "proxy_url": new_state["url"], "tenants": self.list(),
+            "current": self.current(),
+            "mode": "detached", "discovered": [],
+            "attached": False, "pid": new_state["pid"],
+        }
+
+    @classmethod
+    def stop_detached(cls) -> bool:
+        """Public helper: kill the detached proxy (if any) and clear
+        the state file. Returns ``True`` if a process was actually
+        terminated, ``False`` if there was nothing to kill."""
+        state = cls._read_detached_state()
+        if not state:
+            return False
+        cls._kill_detached(state)
+        cls._clear_detached_state()
+        return True
+
     @property
     def proxy_url(self) -> Optional[str]:
         """URL of the in-process proxy (if one's running). Useful for
@@ -1265,8 +1639,14 @@ class EECreds:
         except Exception:
             pass
 
-        # 2. eeAuth proxy path.
-        mode = os.environ.get("GEEVIZ_EEAUTH_MODE", "auto").lower()
+        # 2. eeAuth proxy path. Default ``detached`` so multi-``Map.view()``
+        # workflows and successive script runs reuse one long-lived proxy
+        # process — no blocking ``input()`` at the end of each script, no
+        # daemon-thread death dragging the browser tab down. Set
+        # ``GEEVIZ_EEAUTH_MODE=auto`` to force the legacy in-process
+        # daemon-thread proxy (one-shot, dies with the script). ``legacy``
+        # skips proxy startup entirely.
+        mode = os.environ.get("GEEVIZ_EEAUTH_MODE", "detached").lower()
         if mode != "legacy":
             try:
                 status = self.ensure_started(mode=mode)
@@ -1300,12 +1680,40 @@ class EECreds:
                         f"falling back: {e}"
                     )
 
-        # 3. ``ee.Initialize()`` with no project. EE walks its own
-        #    resolution chain (credentials.quota_project_id → ADC →
-        #    env vars). On this user's machine this is what makes
-        #    everything Just Work — they reported that bare
-        #    ``ee.Initialize()`` succeeds and picks ``rcr-gee-ops`` from
-        #    ADC, which is what we want to mirror.
+        # 3a. Cached project from a previous prompt. When ``robust_init``
+        #     prompted the user once (step 4 below), it cached the
+        #     project id alongside the EE credentials file. Reuse it
+        #     before falling through to a re-auth — otherwise every
+        #     subsequent call would burn another ``ee.Authenticate(force=True)``
+        #     OAuth roundtrip and re-prompt the user (Sphinx imports
+        #     geeViz dozens of times during ``make html``).
+        cached_project = self._read_cached_project()
+        if cached_project:
+            try:
+                ee.Initialize(project=cached_project)
+                proj = _verify_and_return_project() or cached_project
+                if verbose:
+                    print(
+                        f"geeViz: EE initialized from cached project "
+                        f"(project={proj!r})"
+                    )
+                if self._entries:
+                    self.sync_oauth_project(proj)
+                return {"ok": True, "source": "ee-init-cached-project",
+                        "project": proj}
+            except Exception as e:
+                if verbose:
+                    print(
+                        f"geeViz: cached project {cached_project!r} "
+                        f"failed: {e}"
+                    )
+
+        # 3b. ``ee.Initialize()`` with no project. EE walks its own
+        #     resolution chain (credentials.quota_project_id → ADC →
+        #     env vars). On this user's machine this is what makes
+        #     everything Just Work — they reported that bare
+        #     ``ee.Initialize()`` succeeds and picks ``rcr-gee-ops`` from
+        #     ADC, which is what we want to mirror.
         try:
             ee.Initialize()
             proj = _verify_and_return_project()
@@ -1385,7 +1793,33 @@ class EECreds:
             }
 
     @staticmethod
-    def _prompt_for_project(*, verbose: bool = False) -> str:
+    def _project_cache_path() -> str:
+        """Path to the ``<creds_path>.proj_id`` cache file used by
+        ``_prompt_for_project`` / ``_read_cached_project``. Empty
+        string when EE's oauth module can't tell us where to put it."""
+        try:
+            import ee.oauth as _ee_oauth
+            creds_path = _ee_oauth.get_credentials_path()
+        except Exception:
+            return ""
+        return os.path.normpath(f"{creds_path}.proj_id") if creds_path else ""
+
+    @classmethod
+    def _read_cached_project(cls) -> str:
+        """Read the cached project id if one exists. Used by step 3a
+        of ``robust_init`` to short-circuit before any auth path
+        — once the user has answered the prompt once, subsequent calls
+        in the same env should never re-auth or re-prompt."""
+        cache = cls._project_cache_path()
+        if not cache or not os.path.isfile(cache):
+            return ""
+        try:
+            return open(cache, "r", encoding="utf-8").read().strip()
+        except Exception:
+            return ""
+
+    @classmethod
+    def _prompt_for_project(cls, *, verbose: bool = False) -> str:
         """Ask the user once for a GEE project ID and cache it next to
         the EE credentials file. Mirrors the legacy
         ``geeViz.geeView.simpleSetProject`` UX so workflows that used
@@ -1394,43 +1828,35 @@ class EECreds:
 
         Returns the project id (or ``""`` if no stdin and no cache).
         """
-        try:
-            import ee.oauth as _ee_oauth
-            creds_path = _ee_oauth.get_credentials_path()
-        except Exception:
-            return ""
-        cache = os.path.normpath(f"{creds_path}.proj_id")
-        cache_dir = os.path.dirname(cache)
+        # Reuse cached value when present (same path step 3a reads).
+        cached = cls._read_cached_project()
+        if cached:
+            if verbose:
+                print(f"geeViz: using cached project from {cls._project_cache_path()}")
+            return cached
+        cache = cls._project_cache_path()
+        cache_dir = os.path.dirname(cache) if cache else ""
         if cache_dir and not os.path.exists(cache_dir):
             try:
                 os.makedirs(cache_dir, exist_ok=True)
             except Exception:
                 pass
-        # Reuse cached value when present.
-        if os.path.isfile(cache):
-            try:
-                cached = open(cache, "r", encoding="utf-8").read().strip()
-            except Exception:
-                cached = ""
-            if cached:
-                if verbose:
-                    print(f"geeViz: using cached project from {cache}")
-                return cached
-        # Prompt only when stdin is a tty (no blocking on CI / daemons).
-        if not sys.stdin.isatty():
-            return ""
+        # Try to prompt. EOFError (no stdin / closed pipe / non-interactive
+        # daemons) returns "" so the caller can decide whether to fail or
+        # raise — never block waiting for input that can't arrive.
         try:
             entered = input("Please enter GEE project ID: ").strip()
-        except EOFError:
+        except (EOFError, OSError):
             return ""
         if not entered:
             return ""
         print(f"You entered: {entered}")
-        try:
-            with open(cache, "w", encoding="utf-8") as f:
-                f.write(entered)
-        except Exception:
-            pass
+        if cache:
+            try:
+                with open(cache, "w", encoding="utf-8") as f:
+                    f.write(entered)
+            except Exception:
+                pass
         return entered
 
     # ─────────────── ensure_started: discover + start in one call ───────────────
@@ -1446,20 +1872,30 @@ class EECreds:
 
         Modes:
 
-        - ``"auto"``: try discovery + start. If anything fails, return
-          a status dict with ``proxy_url=""`` — caller can fall back.
-        - ``"proxy"``: try discovery + start. RAISE if nothing can be
-          discovered or the proxy fails to bind.
+        - ``"auto"``: try discovery + start (inline daemon thread). If
+          anything fails, return a status dict with ``proxy_url=""`` —
+          caller can fall back.
+        - ``"proxy"``: try discovery + start (inline daemon thread).
+          RAISE if nothing can be discovered or the proxy fails to bind.
+        - ``"detached"``: attach to or spawn a long-lived background
+          subprocess running ``python -m geeViz.eeAuth``. Survives the
+          calling script's exit, so multi-``Map.view()`` workflows and
+          successive script invocations all share one proxy without
+          needing the blocking ``input()`` at the end of each. The
+          subprocess is identified by a state file at
+          ``<tmp>/.geeViz_eeauth_proxy.json``; clients verify version +
+          tenant fingerprint via ``/health`` and respawn if anything
+          drifted.
         - ``"legacy"``: do nothing. Returns immediately with ``""``.
 
         Returns ``{proxy_url, tenants, current, mode, discovered}``.
         ``proxy_url == ""`` means caller should fall back.
         """
         m = (mode or "auto").lower()
-        if m not in ("auto", "proxy", "legacy"):
+        if m not in ("auto", "proxy", "detached", "legacy"):
             raise ValueError(
-                f"eeCreds.ensure_started: mode must be auto/proxy/legacy, "
-                f"got {mode!r}"
+                f"eeCreds.ensure_started: mode must be auto/proxy/detached/"
+                f"legacy, got {mode!r}"
             )
 
         if m == "legacy":
@@ -1467,6 +1903,9 @@ class EECreds:
                 "proxy_url": "", "tenants": self.list(),
                 "current": "", "mode": m, "discovered": [],
             }
+
+        if m == "detached":
+            return self._ensure_detached(proxy_port)
 
         if self._started and self._proxy_url:
             return self._status_for_ensure(m, discovered=[])
