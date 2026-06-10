@@ -1,5 +1,79 @@
 # geeViz Release Notes
 
+## 2026.6.1 — June 10, 2026
+
+### geeViz.eeAuth — detached default + same-port `/geeView`
+
+- **`GEEVIZ_EEAUTH_MODE=detached` is the new default** (was `auto`). The
+  proxy is spawned as a separate `python -m geeViz.eeAuth` background
+  subprocess identified by a state file at
+  `<tmp>/.geeViz_eeauth_proxy.json` (PID, port, tenant fingerprint,
+  version). It survives the calling script's exit, so multi-`Map.view()`
+  scripts no longer block, and re-running the same script reuses the
+  existing proxy without re-spawning or re-authenticating. Override with
+  `GEEVIZ_EEAUTH_MODE=auto` for the legacy in-process daemon-thread
+  proxy (dies with the script).
+- **Same-port architecture** — the detached proxy now mounts the
+  geeView static tree at `/geeView/*` on the same port as `/ee-api/*`
+  (8889 by default). The browser tab loads from
+  `http://127.0.0.1:8889/geeView/` and makes EE calls back to
+  `http://127.0.0.1:8889/ee-api/t/<tenant>/v1/...` on the same origin.
+  No daemon-thread HTTP server, no CORS hop, no port juggling.
+- **Path-prefix tenant routing** — the FastAPI proxy (`eeAuth.server`)
+  now parses `/ee-api/t/<tenant>/<rest>`, strips the prefix, and routes
+  the request as that tenant. The legacy daemon-thread server used to
+  own this responsibility; moving it onto the FastAPI proxy is what
+  unblocks the same-port architecture above. A bare `/ee-api/t/<tenant>`
+  (no trailing segment) returns `204` as a tenant-ack ping.
+- **Thread-safe `TenantAwareHttp`** — the EE SDK's shared HTTP transport
+  now uses per-thread `httplib2.Http` instances (via `threading.local()`).
+  Parallel `getMapId` fan-out — for example `Map.testLayers()` with its
+  `ThreadPoolExecutor(max_workers=8)` — no longer hits the
+  `'NoneType' object has no attribute 'close'` /
+  `WinError 10038: not a socket` socket race that the previous
+  single-instance transport produced.
+- **Clean Windows spawn** — the detached subprocess now uses
+  `CREATE_NO_WINDOW` (0x08000000) instead of `DETACHED_PROCESS`. The
+  brief cmd-window flash that appeared on first `Map.view()` is gone.
+- **Standalone runner mounts `/geeView`** — `python -m geeViz.eeAuth`
+  now mounts both `/ee-api/*` and `/geeView/*` on its listening port,
+  so a Cloud-Run-deployed proxy can serve a `Map.view()` export the same
+  way the auto-spawned local proxy does. Default port aligned to `8889`
+  (the agent UI uses `8888`, so they coexist).
+
+### Map.view()
+
+- **Detached by default** — `Map.view()` defaults to
+  `GEEVIZ_EEAUTH_MODE=detached`, opens the browser to
+  `<proxy_base>/geeView/`, and returns immediately (no `time.sleep(3)`
+  to keep an in-process daemon alive). The browser tab is fully
+  self-sufficient and survives script exit.
+- **Skips the in-process daemon HTTP server** when running against a
+  detached proxy. `_ensure_server(self.port)` is only called for Colab,
+  Workbench/Cloud Run `/proxy/<port>/` deployments, and the legacy
+  fallback path.
+- **Skips `_set_ee_api_upstream`** in detached mode — the page is
+  same-origin to `/ee-api/`, so no reverse-proxy hook is needed.
+- **Multi-`Map.view()` scripts** — each call writes a per-session
+  `runGeeViz.js` and opens a tab; the script can exit before the
+  browser finishes loading and the detached proxy continues serving.
+
+### Documentation
+
+- **`examples/eeAuthExamples.ipynb` refreshed** — TL;DR, Section 1
+  (zero-config), Section 9 (`Map.view()` integration with the new
+  same-port architecture), Section 10 (added the `detached` mode and
+  the full four-mode comparison table), Section 11 (in-process vs
+  detached lifecycle, state-file inspection), Section 13 (standalone
+  CLI on port 8889 with both header-based and path-prefix tenant
+  examples), and the Quick Reference table all updated.
+- **Sphinx docs** — `eeAuthExamples` notebook now appears under a new
+  "Authentication & Multi-Tenant Proxy" section in `examples.rst`. The
+  `modules.rst` eeAuth prose rewritten to reflect the detached default,
+  same-port architecture, path-prefix routing, and thread-safe
+  transport. New "Authentication & Multi-Tenant Proxy" section added
+  to `overview.rst`.
+
 ## 2026.5.1 — May 29, 2026
 
 ### geeViz.eeAuth (new package)
