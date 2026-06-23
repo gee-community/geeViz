@@ -287,6 +287,31 @@ class Report:
         Args:
             ee_obj: ``ee.Image`` or ``ee.ImageCollection`` to summarize.
             geometry: ``ee.Geometry``, ``ee.Feature``, or ``ee.FeatureCollection``.
+        """
+        if not isinstance(ee_obj, (ee.Image, ee.ImageCollection)):
+            raise TypeError(
+                "HINT: rl.Report.add_section() first arg must be an ee.Image or "
+                "ee.ImageCollection (the data layer to summarize) — got "
+                f"{type(ee_obj).__name__}. If you wanted to summarize FC "
+                "properties, pass an ee.Image whose pixel values come from "
+                "reduceToImage() / paint() on the FC, or build a thematic "
+                "image first. The 2nd positional arg is the AOI geometry."
+            )
+        return self._add_section_impl(
+            ee_obj, geometry, title=title, prompt=prompt,
+            generate_table=generate_table, generate_chart=generate_chart,
+            thumb_format=thumb_format, chart_types=chart_types, **kwargs,
+        )
+
+    def _add_section_impl(self, ee_obj, geometry, title="Section", prompt=None,
+                   generate_table=True, generate_chart=True,
+                   thumb_format="png", chart_types=None, **kwargs):
+        """Original body — invoked after type-check passes. See add_section
+        for the public API.
+
+        Args:
+            ee_obj: ``ee.Image`` or ``ee.ImageCollection`` to summarize.
+            geometry: ``ee.Geometry``, ``ee.Feature``, or ``ee.FeatureCollection``.
             title (str): Section heading.
             prompt (str, optional): Per-section LLM guidance for the narrative.
             generate_table (bool): Include data table. Default True.

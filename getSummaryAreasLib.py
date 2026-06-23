@@ -205,11 +205,13 @@ def simple_buffer(geom, size=15000):
 # ---------------------------------------------------------------------------
 #  Political / administrative boundaries
 # ---------------------------------------------------------------------------
-def getAdminBoundaries(area=None, level=0, source="geob"):
+def getAdminBoundaries(area=None, level=0, source="geob", name=None):
     """Return administrative boundaries at a given level.
 
     When ``area`` is provided, results are filtered to boundaries that
     intersect it.  When ``None``, all boundaries at the level are returned.
+    When ``name`` is provided, results are filtered to the boundary whose
+    name (per the source's name property) equals or contains ``name``.
 
     Levels follow the standard admin hierarchy:
 
@@ -238,6 +240,10 @@ def getAdminBoundaries(area=None, level=0, source="geob"):
         area: ee.FeatureCollection, ee.Feature, or ee.Geometry to filter by.
         level (int): Administrative level (0–4). Default ``0``.
         source (str): Boundary source. Default ``"geob"``.
+        name (str, optional): Filter to the admin unit with this name.
+            Uses the source's name property automatically (e.g. ``shapeName``
+            for geob, ``ADM1_NAME`` for gaul). Exact match preferred,
+            falls back to case-insensitive substring contains.
 
     Returns:
         ee.FeatureCollection of admin boundary polygons.
@@ -247,6 +253,8 @@ def getAdminBoundaries(area=None, level=0, source="geob"):
         >>> states = getAdminBoundaries(my_area, level=1)
         >>> districts = getAdminBoundaries(my_area, level=2, source="gaul")
         >>> wards = getAdminBoundaries(my_area, level=3)  # auto-uses FieldMaps
+        >>> brazil = getAdminBoundaries(level=0, name="Brazil")
+        >>> mt_state = getAdminBoundaries(level=1, name="Montana")
     """
     source_assets = _ADMIN_SOURCES.get(source)
     if source_assets is None:
@@ -268,7 +276,22 @@ def getAdminBoundaries(area=None, level=0, source="geob"):
             f"Levels 3–4 are available via source='fieldmaps'."
         )
 
-    return _filter_bounds(asset, area)
+    fc = _filter_bounds(asset, area)
+    if name is not None:
+        # Determine the active source's name property at this level so the
+        # agent doesn't have to remember 'shapeName' vs 'ADM1_NAME' vs
+        # 'gaul1_name'. fall back to geob if the active source can't be
+        # introspected for this level.
+        try:
+            name_prop = getAdminNameProperty(level=level, source=source)
+        except Exception:
+            name_prop = "shapeName"
+        exact = fc.filter(ee.Filter.eq(name_prop, name))
+        loose = fc.filter(ee.Filter.stringContains(name_prop, name))
+        fc = ee.FeatureCollection(
+            ee.Algorithms.If(exact.size().gt(0), exact, loose)
+        )
+    return fc
 
 
 def getAdminNameProperty(level=0, source="geob"):
@@ -858,30 +881,128 @@ def _get_multi_country_fc(geom, root, key_type="iso3"):
 # ---------------------------------------------------------------------------
 #  Protected areas
 # ---------------------------------------------------------------------------
-def getProtectedAreas(area, iucn_cat=None, desig_type=None):
-    """Return WDPA protected area polygons that intersect ``area``.
+def getProtectedAreas(area=None, iucn_cat=None, desig_type=None, name=None):
+    """Return WDPA protected area polygons.
 
-    Properties include ``NAME``, ``DESIG_ENG``, ``IUCN_CAT``, ``STATUS``,
-    ``STATUS_YR``, ``GOV_TYPE``, ``DESIG_TYPE``, ``REP_AREA``, ``GIS_AREA``,
-    ``ISO3``.
+    Filter modes (combine freely):
+      * ``area``      — intersect with an ee.Geometry / Feature / FeatureCollection
+      * ``name``      — match the ``NAME`` field (e.g. ``"Yellowstone"``).
+                        Falls back to ``ORIG_NAME`` if the English NAME does
+                        not match, and finally to a case-insensitive
+                        substring contains. With no other filters this is the
+                        canonical "look up a park by name" path.
+      * ``iucn_cat``  — IUCN category (``"II"`` = National Park,
+                        ``"Ia"`` = Strict Nature Reserve, etc.)
+      * ``desig_type`` — Designation type (``"National"``, ``"Regional"``,
+                        ``"International"``, ``"Not Applicable"``).
+
+    Properties on each feature: ``NAME``, ``DESIG_ENG``, ``IUCN_CAT``,
+    ``STATUS``, ``STATUS_YR``, ``GOV_TYPE``, ``DESIG_TYPE``, ``REP_AREA``,
+    ``GIS_AREA``, ``ISO3``.
 
     Args:
-        area: ee.FeatureCollection, ee.Feature, or ee.Geometry.
-        iucn_cat (str, optional): Filter by IUCN category (e.g.
-            ``"II"`` for National Parks, ``"Ia"`` for Strict Nature Reserve).
-        desig_type (str, optional): Filter by designation type
-            (``"National"``, ``"Regional"``, ``"International"``,
-            ``"Not Applicable"``).
+        area: ee.FeatureCollection, ee.Feature, or ee.Geometry. Optional.
+        iucn_cat (str, optional): Filter by IUCN category.
+        desig_type (str, optional): Filter by designation type.
+        name (str, optional): Filter by NAME (exact match preferred; falls
+            back to ORIG_NAME, then case-insensitive contains).
 
     Returns:
         ee.FeatureCollection.
+
+    Examples:
+        Yellowstone by name::
+
+            yellowstone = sal.getProtectedAreas(name="Yellowstone")
+
+        All US national parks intersecting a study area::
+
+            parks = sal.getProtectedAreas(area=my_aoi, iucn_cat="II")
     """
     fc = _filter_bounds(_WDPA, area)
     if iucn_cat is not None:
         fc = fc.filter(ee.Filter.eq("IUCN_CAT", iucn_cat))
     if desig_type is not None:
         fc = fc.filter(ee.Filter.eq("DESIG_TYPE", desig_type))
+    if name is not None:
+        # Exact NAME match preferred, with two fallback layers so the agent
+        # doesn't have to know how the dataset spells the place. WDPA's
+        # NAME field is sometimes the English form and sometimes the
+        # native one — ORIG_NAME often holds the alternate.
+        exact = fc.filter(
+            ee.Filter.Or(
+                ee.Filter.eq("NAME", name),
+                ee.Filter.eq("ORIG_NAME", name),
+            )
+        )
+        # If exact match is empty (size == 0), broaden to case-insensitive
+        # substring. We do this server-side via ee.Algorithms.If to keep it
+        # in one round-trip.
+        loose = fc.filter(
+            ee.Filter.Or(
+                ee.Filter.stringContains("NAME", name),
+                ee.Filter.stringContains("ORIG_NAME", name),
+            )
+        )
+        fc = ee.FeatureCollection(
+            ee.Algorithms.If(exact.size().gt(0), exact, loose)
+        )
     return fc
+
+
+def getUSNationalParks(area=None, name=None, park_names=None, park_name=None):
+    """Return US National Park polygons (IUCN II + ISO3=USA).
+
+    Convenience wrapper over :func:`getProtectedAreas` for the lookup the
+    agent reaches for most often. Filters WDPA to IUCN category II (the
+    UN's "National Park" designation) AND ISO3=USA, optionally
+    restricted by ``area`` or by ``name`` / ``park_names`` (Yellowstone,
+    Glacier, etc.).
+
+    Args:
+        area: Optional ee.Geometry / Feature / FeatureCollection.
+        name (str, optional): Single park name. Passed through to
+            :func:`getProtectedAreas` (exact → ORIG_NAME → substring).
+        park_names (str | list[str], optional): Alias for ``name``; accepts
+            a single string OR a list of names (returns the union).
+            Mirrors the ``county_names=`` convention on
+            :func:`getUSCounties`.
+        park_name (str, optional): Alias for ``name`` (singular).
+
+    Returns:
+        ee.FeatureCollection.
+
+    Examples:
+        >>> yellowstone = sal.getUSNationalParks(name="Yellowstone")
+        >>> yellowstone = sal.getUSNationalParks(park_names="Yellowstone")
+        >>> several = sal.getUSNationalParks(park_names=["Yellowstone", "Glacier"])
+    """
+    # Normalize aliases — agent often guesses the kwarg shape that mirrors
+    # getUSCounties(county_names=...). Accept the synonyms transparently.
+    if name is None:
+        name = park_name
+    if park_names is not None:
+        # park_names may be a single string or a list; for a list, union
+        # multiple lookups via OR-filter on NAME / ORIG_NAME.
+        if isinstance(park_names, str):
+            name = name or park_names
+        elif isinstance(park_names, (list, tuple)) and park_names:
+            base = getProtectedAreas(area=area, iucn_cat="II").filter(
+                ee.Filter.eq("ISO3", "USA")
+            )
+            return base.filter(
+                ee.Filter.Or(*[
+                    ee.Filter.Or(
+                        ee.Filter.eq("NAME", n),
+                        ee.Filter.eq("ORIG_NAME", n),
+                        ee.Filter.stringContains("NAME", n),
+                    )
+                    for n in park_names
+                ])
+            )
+
+    fc = getProtectedAreas(area=area, iucn_cat="II", name=name)
+    return fc.filter(ee.Filter.eq("ISO3", "USA"))
 
 
 # ---------------------------------------------------------------------------
@@ -938,6 +1059,10 @@ AVAILABLE_SUMMARY_AREAS = {
     },
     "protected_areas": {
         "function": "getProtectedAreas",
-        "description": "WDPA protected area polygons",
+        "description": "WDPA protected area polygons (supports area=, name=, iucn_cat=, desig_type=)",
+    },
+    "us_national_parks": {
+        "function": "getUSNationalParks",
+        "description": "US National Parks (WDPA IUCN II + ISO3=USA); accepts area= and name= (e.g. 'Yellowstone')",
     },
 }

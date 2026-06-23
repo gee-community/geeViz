@@ -82,7 +82,34 @@
 
 ## Critical: self-contained `run_code` blocks
 
-Each `run_code` call should be **self-contained** — define all variables it needs (study area, collections, composites, etc.) within that single call so the user can download it as a standalone script.
+Each `run_code` call MUST be **fully self-contained** — define all variables it needs (study area, collections, composites, intermediate FCs, etc.) within that single call. The user can save ANY `run_code` block as a custom script that runs in a fresh REPL with `reset=True` — any reference to a variable defined in an earlier block becomes a `NameError` and the script fails.
+
+**Concrete rule for follow-up turns**: if you've already defined `study_area`, `lcms_slc`, etc. in turn N and the user asks for a derived chart in turn N+1, **re-paste those definitions at the top of the new block**. Yes, every block. The cost is a few extra lines; the benefit is every block is a portable script.
+
+**Wrong** (turn N+1 referencing turn N's vars):
+```python
+# turn N+1 — BREAKS as a saved script
+from geeViz.outputLib import charts as cl
+result = cl.summarize_and_chart(
+    lcms_slc.select(['Land_Cover']),    # NameError when saved
+    study_area,                          # NameError when saved
+    chart_type='sankey',
+)
+```
+
+**Right** (re-defines everything):
+```python
+# turn N+1 — runs standalone
+import ee
+from geeViz.outputLib import charts as cl
+study_area = ee.Geometry.Polygon([...])
+lcms_slc = ee.ImageCollection('USFS/GTAC/LCMS/v2024-10').filterBounds(study_area)
+result = cl.summarize_and_chart(
+    lcms_slc.select(['Land_Cover']),
+    study_area,
+    chart_type='sankey',
+)
+```
 
 **When the user asks to change one thing, copy the previous working code and change ONLY that one thing.** Do not restructure, rename variables, change colors, switch approaches, or "improve" anything the user didn't ask about. "Fix the date format" means: take the exact code that just worked, find the date format parameter, change it, run it. Nothing else changes.
 
@@ -379,6 +406,13 @@ Map.addLayer(data, viz, 'Data')
 Map.addLayer(study_area, {'strokeColor': '00F', 'layerType': 'geeVector'}, 'Study Area')
 Map.centerObject(study_area, 9)
 ```
+
+**Vector rendering — pick `geeVector` vs `geeVectorImage`:**
+- `'layerType': 'geeVector'` — client-side render via Google Maps Data layer. Use ONLY for SMALL FCs (≤ ~50 features) you want as crisp outlines or you want pop-up info on click. The browser downloads every feature's geometry; large FCs hang the tab.
+- `'layerType': 'geeVectorImage'` (the default if you don't set `layerType`) — server-painted tiles. Use for ANY FC with more than ~50 features, or whenever you want filled polygons / class-colored polygons.
+- **`autoViz: True` only works with `geeVectorImage`.** On `geeVector` it is silently ignored — every polygon ends up the same stroke color and the user sees an "all-black-outline" map.
+- For filled polygons (e.g. "shade the polygon", "fill it red"), set `styleParams` on the `geeVectorImage` viz: `{'styleParams': {'color': 'FF0000', 'fillColor': 'FF000060', 'width': 2}, 'layerType': 'geeVectorImage'}` — the trailing `60` on `fillColor` is the alpha (`60` ≈ 38% opacity).
+- Always check the FC is non-empty before centering on it: `print('features:', fc.size().getInfo())`. `Map.centerObject` on an empty FC now raises with a clear message — heed it instead of retrying the same broken filter.
 
 ---
 

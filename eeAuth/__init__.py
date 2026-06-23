@@ -157,3 +157,5 @@ __all__ = [
     "build_proxy_router",
     "create_proxy_app",
 ]
+
+__version__ = "2026.6.2"

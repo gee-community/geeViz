@@ -1,5 +1,9 @@
 # geeViz Release Notes
 
+## 2026.6.2 — June 23, 2026
+
+- **`eeAuth` and `outputLib` package inclusion bug fix
+
 ## 2026.6.1 — June 10, 2026
 
 ### geeViz.eeAuth — detached default + same-port `/geeView`

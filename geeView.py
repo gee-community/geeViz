@@ -1610,14 +1610,28 @@ class mapper:
 
         """
         try:
-            bounds = json.dumps(feature.geometry().bounds(100, "EPSG:4326").getInfo())
-        except Exception as e:
-            bounds = json.dumps(feature.bounds(100, "EPSG:4326").getInfo())
-        command = "synchronousCenterObject(" + bounds + ")"
+            bounds_info = feature.geometry().bounds(100, "EPSG:4326").getInfo()
+        except Exception:
+            bounds_info = feature.bounds(100, "EPSG:4326").getInfo()
+        # Empty FeatureCollections / non-existent assets / failed filters
+        # frequently surface here as ``None`` — emitting
+        # ``synchronousCenterObject(null)`` makes the viewer center on (0,0)
+        # which the user reads as "the map is broken". Refuse early with a
+        # message the agent's run_code stdout will surface.
+        if bounds_info is None:
+            raise ValueError(
+                "Map.centerObject: bounds resolved to None. The feature is "
+                "probably empty (a filter returned 0 rows) or the asset "
+                "doesn't exist. Verify with .size().getInfo() before "
+                "centering — e.g. "
+                "print(fc.size().getInfo()) — and confirm the filter "
+                "property/value match the asset's schema."
+            )
+        command = "synchronousCenterObject(" + json.dumps(bounds_info) + ")"
 
         self.mapCommandList.append(command)
 
-        if zoom != None:
+        if zoom is not None:
             self.setZoom(zoom)
 
     ######################################################################

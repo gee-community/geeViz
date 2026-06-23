@@ -446,6 +446,20 @@ def _logging_tool_decorator(*dec_args, **dec_kwargs):
                 _log_tool_call(fn.__name__, kwargs, error=exc)
                 raise
 
+        # Expose the LOGGED (but not FastMCP-decorated) function on THIS
+        # module's namespace so in-process callers (e.g. run_ui.py's
+        # /scripts/{id}/run route) can invoke it directly. Calling the
+        # FastMCP-decorated tool in-process hangs forever — it expects
+        # an MCP peer to respond. Use globals() (not sys.modules lookup)
+        # because server.py may be loaded under multiple names
+        # (``server`` via sys.path.insert AND ``geeViz.mcp.server`` via
+        # package import) — globals() always resolves to THIS module's
+        # actual namespace regardless of which alias the caller used.
+        try:
+            globals()[f"_{fn.__name__}_direct"] = logged_fn
+        except Exception:
+            pass
+
         # If original fn is not async, keep it sync for FastMCP
         if not _insp.iscoroutinefunction(fn):
             @functools.wraps(fn)
@@ -860,6 +874,19 @@ class _SessionState:
         self.stdout_active = False
         # Original Map reference (set during init, used to restore if clobbered)
         self._map_ref = None
+        # Per-session run_code call timestamps for the runaway-retry circuit
+        # breaker. Persona testing showed agents can stack 25+ run_code calls
+        # in a single turn while thrashing on the same equity join or
+        # unfamiliar geometry lookup, with the same minor tweak each time.
+        # Prompt-level rule "max 2 retries then restructure" alone is not
+        # sufficient. The breaker counts calls in a sliding window and
+        # returns a hard RESTRUCTURE_REQUIRED before executing call N+1.
+        self._recent_call_ts: list[float] = []
+        # When the breaker has fired this many times for this session, the
+        # next call is allowed through unconditionally (so we don't deadlock
+        # the agent if it actually does need many quick calls after a real
+        # restructure).
+        self._breaker_acks: int = 0
 
 
 _sessions: dict[str, _SessionState] = {}
@@ -1032,6 +1059,23 @@ def _ensure_initialized(session_id: str | None = None):
         return _safe_write_file(filename, content, mode, output_dir=sess.output_dir)
 
     sess._map_ref = session_map
+    # Helpful stubs that fire when the agent accidentally tries to call an
+    # MCP tool name as a Python function INSIDE run_code. The session audit
+    # found NameError: search_datasets and NameError: geeviz_search_places
+    # happening because the agent doesn't always remember MCP tools are
+    # separate tool calls, not importable symbols. A clear runtime message
+    # is more direct than the agent reading the rule in instructions.
+    def _mcp_tool_stub(tool_name: str):
+        def _raise(*_args, **_kwargs):
+            raise NameError(
+                f"'{tool_name}' is an MCP tool, not a Python function — call "
+                f"it as a separate tool from the model layer, not inside "
+                f"run_code. Inside run_code use ee.*/geeViz helpers (sal, "
+                f"gil, cl, tl, rl, Map, etc.) for the equivalent operation."
+            )
+        _raise.__name__ = tool_name
+        return _raise
+
     sess.namespace.update({
         "ee": ee,
         "Map": session_map,
@@ -1050,6 +1094,21 @@ def _ensure_initialized(session_id: str | None = None):
         "numpy": _np_mod,
         "np": _np_mod,
         "save_file": _session_save_file,
+        # Clear-error stubs for MCP tool names the agent sometimes calls
+        # from inside run_code as if they were Python functions.
+        "search_datasets": _mcp_tool_stub("search_datasets"),
+        "search_geeviz": _mcp_tool_stub("search_geeviz"),
+        "inspect_asset": _mcp_tool_stub("inspect_asset"),
+        "geeviz_search_places": _mcp_tool_stub("geeviz_search_places"),
+        "search_places": _mcp_tool_stub("search_places"),
+        "lookup_weather": _mcp_tool_stub("lookup_weather"),
+        "compute_routes": _mcp_tool_stub("compute_routes"),
+        "map_control": _mcp_tool_stub("map_control"),
+        "env_info": _mcp_tool_stub("env_info"),
+        "view_output": _mcp_tool_stub("view_output"),
+        "manage_asset": _mcp_tool_stub("manage_asset"),
+        "export_image": _mcp_tool_stub("export_image"),
+        "save_session": _mcp_tool_stub("save_session"),
         "__builtins__": _make_safe_builtins(),
     })
     sess.initialized = True
@@ -1429,6 +1488,238 @@ class _StreamingStdout(io.StringIO):
         return super().write(s)
 
 
+# Audit-driven error-translation table. Real-world recurring EE/geeViz error
+# strings the agent sees, mapped to one-line plain-English hints that point
+# at the actual fix. The original traceback is preserved underneath — these
+# just prepend a clear summary so the agent acts on the right thing instead
+# of retrying the same broken filter.
+_EE_ERROR_HINTS = [
+    (
+        "Element.toDictionary: Parameter 'element' is required and may not be null",
+        "HINT: You called .toDictionary() on a null Feature. This almost "
+        "always means the FeatureCollection you filtered returned 0 features "
+        "before .first(). Print fc.size().getInfo() to confirm, then either "
+        "fix the filter property/value or branch on the empty case.",
+    ),
+    (
+        "Image.bandNames: Parameter 'image' is required and may not be null",
+        "HINT: You called .bandNames() on a null Image. The ImageCollection "
+        "you filtered returned 0 images before .first() / .mosaic(). Print "
+        "ic.size().getInfo() to confirm, then loosen the date / bounds / "
+        "filter.",
+    ),
+    (
+        "Image.bandNames: Parameter 'image' is required and may not be null.\nAvailable band names: []",
+        "HINT: Same as above — the filtered ImageCollection is empty.",
+    ),
+    (
+        "Image.select: No match for",
+        "HINT: The band you asked for doesn't exist in this image. Call "
+        "inspect_asset(asset_id=...) to see the real band names — do not "
+        "guess. LCMS uses 'Land_Cover', NLCD uses 'landcover', Hansen uses "
+        "'lossyear' (NOT 'forest_loss'), Sentinel-2 SR uses 'B4/B8/B12', etc.",
+    ),
+    (
+        "Band pattern",
+        "HINT: A .select() pattern didn't match. inspect_asset(asset_id=...) "
+        "to see the actual band names; do not guess.",
+    ),
+    (
+        "User memory limit exceeded",
+        "HINT: EE compute too large. **DO NOT RETRY THE SAME EXPRESSION** "
+        "— it will fail every time at the same scale/AOI/time range. You "
+        "MUST change at least ONE of these on the next attempt: "
+        "(a) coarsen scale (Sentinel-2 30m → MODIS 250m/1000m, Landsat 30m → 250-1000m), "
+        "(b) restrict AOI (state → county, or tile the AOI), "
+        "(c) reduce time range (multi-decade → single year or seasonal slice), "
+        "(d) switch to a coarser dataset entirely (S2/Landsat NDSI → MODIS MOD10A1, "
+        "Hansen 30m → JRC GSW for water, Landsat NDVI for huge regions → MODIS MOD13A2). "
+        "Agent rule #5 caps retries at 2 — after the second failure here, "
+        "stop using getProcessedLandsatScenes / Sentinel-2 and switch to MODIS or "
+        "tell the user the AOI is too large.",
+    ),
+    (
+        "Description length exceeds maximum",
+        "HINT: Your EE expression chain is too complex — almost always from "
+        "passing a many-polygon FeatureCollection (e.g. sal.getUSStates()) "
+        "into .filterBounds(...). Use ee.Geometry.BBox(...) for the bounds "
+        "instead of the FC, or skip .filterBounds entirely on already-clipped "
+        "assets like CONUS LCMS / NLCD.",
+    ),
+    (
+        "EEException: Computation timed out",
+        "HINT: EE-side timeout. Coarsen scale (e.g. 30 -> 300 -> 1000), or "
+        "tile the AOI, or reduce the time range. Don't just retry the same "
+        "expression — it'll keep timing out.",
+    ),
+    (
+        "'Element' object has no attribute",
+        "HINT: An EE Element-typed object hit a method only Image/FC has. "
+        "Almost always from .copyProperties() / .get(...) / .first() which "
+        "returns ee.Element, not ee.Image. Wrap the result: "
+        "ee.Image(img.copyProperties(other)). Same fix for ee.Feature("
+        "fc.first()) when you want Feature methods.",
+    ),
+    (
+        "ReduceRegion.AggregationContainer",
+        "HINT: A Reducer.group() / Reducer.combine() needs exactly the band "
+        "shape it was asked for. Common cause: passing a 1-band image to a "
+        "Reducer that needs 2 (e.g. histogram by group). Either ensure the "
+        "image has the right band count, or use a simpler reducer like "
+        "ee.Reducer.frequencyHistogram() for class counts.",
+    ),
+    (
+        "Group input must come after weighted inputs",
+        "HINT: Reducer.group() requires the GROUP input to be added AFTER "
+        "any weighted inputs (per EE's reducer-construction rules). When "
+        "chaining Reducer.combine() / .group(), put .group(groupField=N) "
+        "as the LAST step in the chain, not in the middle.",
+    ),
+    (
+        "Map.centerObject: bounds resolved to None",
+        "HINT (same family as toDictionary-on-null): an upstream filter "
+        "returned 0 features. Print fc.size().getInfo() before adding "
+        "the layer; fix the filter property/value or short-circuit on "
+        "the empty case so you don't paint a layer the viewer can't "
+        "center on.",
+    ),
+    (
+        "Output of image computation is too large",
+        "HINT: A reduceRegions / reduceRegion over many features blew up. "
+        "This is the equity-join failure mode. **DO NOT RETRY** the same "
+        "shape — change ONE: "
+        "(a) coarsen scale (30 → 300 → 1000), "
+        "(b) reduce the number of features (filter the FC first, or use a "
+        "smaller boundary asset like census TRACT instead of BLOCK), "
+        "(c) split the FC and reduce in chunks (use .toList() + slice loop), "
+        "(d) for thematic + SVI/equity joins, compute per-class area "
+        "server-side with ee.Reducer.frequencyHistogram().forEach(...) "
+        "instead of joining DataFrames in Python.",
+    ),
+    (
+        "Collection.iterate",
+        "HINT: An iterate chain failed. Iterate accumulates server-side; if "
+        "you're using it to join FCs against properties, switch to "
+        "ee.Join.saveFirst() or ee.Join.inner() — they're cheaper. Or do the "
+        "join client-side: getInfo() both FCs and merge as DataFrames.",
+    ),
+    (
+        "Request payload size exceeds the limit",
+        "HINT: Your EE expression graph is too big — almost always from "
+        "iteratively building a FeatureCollection inside a Python loop, or "
+        "passing a huge FC into .filterBounds(). Build the expression in one "
+        "pass with ee.FeatureCollection(list_of_features), or replace "
+        ".filterBounds(big_fc) with ee.Geometry.BBox(...).",
+    ),
+]
+
+
+def _translate_ee_error(error_text: str) -> str:
+    """Prepend an actionable HINT line to recurring EE/geeViz errors.
+
+    The agent's session audit (47 sessions, 95 errors) showed that the same
+    handful of cryptic EE errors appear repeatedly and trigger long retry
+    chains because the agent doesn't immediately see the actual cause.
+    Catching them once at the run_code boundary saves ~3-5 retry round-trips
+    per occurrence. The original traceback is preserved verbatim underneath.
+    """
+    if not error_text:
+        return error_text
+    for needle, hint in _EE_ERROR_HINTS:
+        if needle in error_text:
+            return f"{hint}\n\n--- original traceback below ---\n{error_text}"
+    return error_text
+
+
+# ---------------------------------------------------------------------------
+# Thread-local stdout/stderr routing for stdio MCP servers.
+#
+# Problem: when this module is run as a stdio MCP server, FastMCP uses raw
+# stdout as the JSON-RPC byte channel. ANY ``print()`` from a tool function
+# (e.g. ``map_control`` doing ``print("Validating layer(s)...")``) lands
+# directly on that channel and corrupts the protocol — the parent reads
+# garbage between two well-formed JSON-RPC messages, request/response IDs
+# desync, and subsequent ``list_tools`` requests time out at the 300s
+# connection limit ("Failed to get tools from MCP server").
+#
+# Additional bug we used to ship: ``run_code`` wrapped its exec thread in
+# ``contextlib.redirect_stdout(buf)``, which mutates ``sys.stdout``
+# PROCESS-WIDE — every other thread's writes (including FastMCP's protocol
+# writer if it touched ``sys.stdout`` at the wrong moment) went into the
+# user-code buffer until the ``with`` block exited.
+#
+# Fix: install a single thread-local proxy as ``sys.stdout`` /
+# ``sys.stderr`` once at module init. The proxy routes per-thread:
+#   - Thread registered via ``register(buf)`` → writes go to ``buf``
+#     (``run_code`` uses this to capture user-code output).
+#   - Every other thread (FastMCP tool dispatch, asyncio loop, logging,
+#     stray ``print()`` calls in any tool) → writes go to ``sys.__stderr__``,
+#     the ORIGINAL stderr captured at interpreter startup. That keeps the
+#     output visible to the operator while guaranteeing it never reaches
+#     the JSON-RPC byte stream.
+#
+# FastMCP's protocol writer itself is unaffected: ``mcp/server/stdio.py``
+# wraps ``sys.stdout.buffer`` (the raw underlying buffer) at startup,
+# bypassing this proxy via ``__getattr__``. Protocol bytes go to the real
+# stdout pipe, ``print()`` strings go to stderr — clean separation.
+# ---------------------------------------------------------------------------
+class _ThreadLocalStreamProxy:
+    """Per-thread write router for sys.stdout / sys.stderr.
+
+    Unregistered threads fall back to ``sys.__stderr__`` rather than the
+    captured original stream — for ``sys.stdout`` that's critical: the
+    original stdout IS the JSON-RPC byte channel and must never receive
+    arbitrary ``print()`` output.
+    """
+
+    def __init__(self, real_stream):
+        # ``_real`` is the proxy's pass-through target for non-write
+        # attribute access (encoding, fileno, buffer, etc.). FastMCP relies
+        # on ``.buffer`` resolving to the original raw byte buffer.
+        self._real = real_stream
+        self._by_thread: dict[int, object] = {}
+
+    def register(self, target) -> None:
+        self._by_thread[threading.get_ident()] = target
+
+    def unregister(self) -> None:
+        self._by_thread.pop(threading.get_ident(), None)
+
+    def _resolve(self):
+        # Non-registered → stderr, NEVER the captured stdout (which would
+        # corrupt JSON-RPC).
+        return self._by_thread.get(threading.get_ident(), sys.__stderr__)
+
+    def write(self, s):
+        try:
+            return self._resolve().write(s)
+        except Exception:
+            return 0
+
+    def flush(self):
+        try:
+            return self._resolve().flush()
+        except Exception:
+            return None
+
+    def isatty(self):
+        return False
+
+    # Forward anything else (encoding, fileno, buffer, etc.) to the real
+    # stream so libraries that introspect sys.stdout don't break. In
+    # particular, FastMCP grabs ``sys.stdout.buffer`` once at startup —
+    # this attribute lookup gets the ORIGINAL stdout's raw buffer, so
+    # protocol writes bypass the routing logic entirely.
+    def __getattr__(self, name):
+        return getattr(self._real, name)
+
+
+_TL_STDOUT = _ThreadLocalStreamProxy(sys.stdout)
+_TL_STDERR = _ThreadLocalStreamProxy(sys.stderr)
+sys.stdout = _TL_STDOUT
+sys.stderr = _TL_STDERR
+
+
 @app.tool(annotations=_WRITE)
 async def run_code(code: str, timeout: int = 120, reset: bool = False,
                    stream_stdout: bool = False, session_id: str = None,
@@ -1469,6 +1760,40 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
     if reset:
         _reset_namespace(session_id)
     sess = _ensure_initialized(session_id)
+
+    # Runaway-retry circuit breaker. Window: last 90s. Threshold: 15 calls.
+    # When tripped, the agent gets a hard RESTRUCTURE_REQUIRED instead of
+    # executing the code, AND the recent-call list is half-cleared so it
+    # doesn't immediately trip again. The breaker self-disarms after a few
+    # acks so the agent isn't permanently throttled if it legitimately
+    # needs many quick calls after a real restructure.
+    # Use ``_time`` — module-top imports ``time as _time`` (bare ``time``
+    # is not in this module's namespace).
+    _now = _time.time()
+    sess._recent_call_ts = [t for t in sess._recent_call_ts if _now - t < 90.0]
+    if len(sess._recent_call_ts) >= 15 and sess._breaker_acks < 2:
+        sess._recent_call_ts = sess._recent_call_ts[len(sess._recent_call_ts) // 2:]
+        sess._breaker_acks += 1
+        return json.dumps({
+            "success": False,
+            "stdout": "",
+            "stderr": "",
+            "result": None,
+            "error": (
+                "RESTRUCTURE_REQUIRED: you have made 15+ run_code calls in the last "
+                "90 seconds — this is the runaway-retry pattern. **STOP RETRYING THE "
+                "SAME APPROACH.** Tell the user the current approach is not working "
+                "and ask which restructure to take: "
+                "(a) coarsen scale (30 → 300 → 1000), "
+                "(b) reduce AOI (county/tract instead of state/ZIP), "
+                "(c) shorter time range, "
+                "(d) different (coarser) dataset (Landsat → MODIS, Sentinel-2 → MODIS), "
+                "(e) compute server-side with frequencyHistogram instead of FC×FC join. "
+                "Do NOT call run_code again until you have a fundamentally different plan."
+            ),
+            "script_path": None,
+        })
+    sess._recent_call_ts.append(_now)
 
     # Strip redundant imports that would clobber pre-populated namespace variables.
     # The REPL already has ee, Map, gv, gil, sal, cl, tl, rl, gm, palettes, save_file.
@@ -1536,33 +1861,35 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
     }
     _files_before = set(_mtimes_before.keys())
 
-    # Save original streams so we can restore them after timeout (redirect_stdout
-    # modifies sys.stdout globally, which would capture the main thread's output
-    # if the exec thread is still running when we time out).
-    _orig_stdout = sys.stdout
-    _orig_stderr = sys.stderr
-
     _ns = sess.namespace  # capture for closure
 
     def _exec():
         global _audit_user_code_active
+        # Route THIS thread's stdout/stderr to the per-call buffers via the
+        # thread-local proxy. Other threads in the process (notably the MCP
+        # asyncio loop writing JSON-RPC responses) are unaffected — they
+        # still write to the original stdout, so the protocol pipe stays
+        # uncorrupted even with overlapping run_code calls.
+        _TL_STDOUT.register(stdout_buf)
+        _TL_STDERR.register(stderr_buf)
         try:
             if _SANDBOX_ENABLED:
                 _audit_user_code_active = True
-            with contextlib.redirect_stdout(stdout_buf), contextlib.redirect_stderr(stderr_buf):
-                tree = ast.parse(code)
-                if tree.body and isinstance(tree.body[-1], ast.Expr):
-                    if len(tree.body) > 1:
-                        mod = ast.Module(body=tree.body[:-1], type_ignores=[])
-                        exec(compile(mod, "<mcp>", "exec"), _ns)
-                    expr = ast.Expression(body=tree.body[-1].value)
-                    result_holder[0] = eval(compile(expr, "<mcp>", "eval"), _ns)
-                else:
-                    exec(compile(code, "<mcp>", "exec"), _ns)
+            tree = ast.parse(code)
+            if tree.body and isinstance(tree.body[-1], ast.Expr):
+                if len(tree.body) > 1:
+                    mod = ast.Module(body=tree.body[:-1], type_ignores=[])
+                    exec(compile(mod, "<mcp>", "exec"), _ns)
+                expr = ast.Expression(body=tree.body[-1].value)
+                result_holder[0] = eval(compile(expr, "<mcp>", "eval"), _ns)
+            else:
+                exec(compile(code, "<mcp>", "exec"), _ns)
         except Exception:
             error_holder[0] = traceback.format_exc()
         finally:
             _audit_user_code_active = False
+            _TL_STDOUT.unregister()
+            _TL_STDERR.unregister()
 
     thread = threading.Thread(target=_exec, daemon=True)
     thread.start()
@@ -1599,10 +1926,12 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
             except Exception:
                 pass  # don't let reporting errors kill the tool
 
-    # Restore original streams in case the thread's redirect is still active
-    # (happens on timeout when the thread's `with` block hasn't exited yet).
-    sys.stdout = _orig_stdout
-    sys.stderr = _orig_stderr
+    # On timeout the exec thread is a daemon that may keep running, but its
+    # writes are routed via the thread-local proxy — they land in the
+    # registered buffer, never on the global stdout/stderr that the MCP
+    # JSON-RPC protocol uses. The exec thread cleans up its OWN routing
+    # entry in its finally block when it eventually completes, so nothing
+    # to undo from the main thread here.
 
     # Guard: restore Map if user code clobbered it
     # (e.g. `from geeViz import geeView as Map` replaces the mapper instance with the module)
@@ -1649,7 +1978,7 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
             "stdout": stdout_buf.getvalue(),
             "stderr": stderr_val,
             "result": None,
-            "error": error_holder[0],
+            "error": _translate_ee_error(error_holder[0]),
             "script_path": None,
         })
 
@@ -3308,7 +3637,9 @@ import urllib.error
 # Dataset catalog cache (for search_datasets)
 _CACHE_DIR = os.path.join(_THIS_DIR, ".cache")
 _CACHE_META_FILE = os.path.join(_CACHE_DIR, "meta.json")
-_CACHE_TTL = 1 * 24 * 3600  # 1 day
+_CACHE_TTL = 30 * 24 * 3600  # 30 days — STAC catalog barely changes; long TTL
+                              # avoids day-2 chat spinner while the first
+                              # tool call refreshes 500+ STAC leaves.
 _CATALOG_FILES = {
     "official": "official_catalog.json",
     "community": "community_catalog.json",
@@ -3413,38 +3744,86 @@ def _write_cache_meta(meta: dict) -> None:
         json.dump(meta, f)
 
 
-def _get_cached_catalog(name: str) -> list[dict] | None:
-    """Return parsed JSON list for a catalog, fetching/caching as needed.
+# Track in-flight background refreshes per catalog so we don't spawn N
+# refresh threads when the model fires N tool calls in quick succession.
+_catalog_refresh_inflight: dict[str, bool] = {}
 
-    Args:
-        name: "official" or "community"
 
-    Returns:
-        List of dataset dicts, or None if unavailable.
+def _background_refresh_catalog(name: str) -> None:
+    """Re-fetch a catalog from upstream and write it to the cache.
+
+    Designed to be called from a daemon thread. Holds ``_cache_lock`` only
+    around the disk writes — the long-running HTTP crawl happens outside
+    the lock so concurrent reads of the existing (stale) cache aren't
+    blocked. Any failure leaves the existing cache untouched.
     """
-    with _cache_lock:
+    url = _CATALOG_URLS[name]
+    try:
+        data = _fetch_catalog(url, name)
+        if not data:
+            return
         cache_file = os.path.join(_CACHE_DIR, _CATALOG_FILES[name])
-        meta = _read_cache_meta()
-        ts_key = f"{name}_ts"
-        now = _time.time()
+        with _cache_lock:
+            os.makedirs(_CACHE_DIR, exist_ok=True)
+            with open(cache_file, "w", encoding="utf-8") as f:
+                json.dump(data, f)
+            meta = _read_cache_meta()
+            meta[f"{name}_ts"] = _time.time()
+            _write_cache_meta(meta)
+    except Exception:
+        pass
+    finally:
+        _catalog_refresh_inflight.pop(name, None)
 
-        # Check if cache is fresh
-        cached_exists = os.path.isfile(cache_file)
-        cache_fresh = cached_exists and (now - meta.get(ts_key, 0)) < _CACHE_TTL
 
-        if cache_fresh:
+def _get_cached_catalog(name: str) -> list[dict] | None:
+    """Return parsed JSON list for a catalog using stale-while-revalidate.
+
+    - Cache present and fresh    → return it.
+    - Cache present but stale    → return it, kick off a background refresh.
+    - Cache missing              → fetch synchronously (first-install only).
+
+    The synchronous-fetch path is the ONLY one that can block, and it only
+    fires when the catalog has never been cached on this machine. Day-2+
+    callers always get an instant response.
+    """
+    cache_file = os.path.join(_CACHE_DIR, _CATALOG_FILES[name])
+    meta = _read_cache_meta()
+    ts_key = f"{name}_ts"
+    now = _time.time()
+
+    cached_exists = os.path.isfile(cache_file)
+    cache_fresh = cached_exists and (now - meta.get(ts_key, 0)) < _CACHE_TTL
+
+    if cached_exists:
+        # Return whatever's on disk immediately. Spawn a background refresh
+        # if the cache is stale and no refresh is already running.
+        if not cache_fresh and not _catalog_refresh_inflight.get(name):
+            _catalog_refresh_inflight[name] = True
+            threading.Thread(
+                target=_background_refresh_catalog,
+                args=(name,),
+                daemon=True,
+            ).start()
+        try:
+            with open(cache_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass  # Corrupt cache — fall through to a sync fetch.
+
+    # No cache on disk — block on the fetch this one time.
+    with _cache_lock:
+        # Re-check inside the lock in case another thread populated it.
+        if os.path.isfile(cache_file):
             try:
                 with open(cache_file, "r", encoding="utf-8") as f:
                     return json.load(f)
             except Exception:
-                pass  # Fall through to fetch
-
-        # Fetch from remote
+                pass
         url = _CATALOG_URLS[name]
         try:
             data = _fetch_catalog(url, name)
             if data:
-                # Cache the normalized result
                 os.makedirs(_CACHE_DIR, exist_ok=True)
                 with open(cache_file, "w", encoding="utf-8") as f:
                     json.dump(data, f)
@@ -3452,13 +3831,6 @@ def _get_cached_catalog(name: str) -> list[dict] | None:
                 _write_cache_meta(meta)
                 return data
         except Exception:
-            # Fetch failed -- use stale cache if available
-            if cached_exists:
-                try:
-                    with open(cache_file, "r", encoding="utf-8") as f:
-                        return json.load(f)
-                except Exception:
-                    pass
             return None
 
 

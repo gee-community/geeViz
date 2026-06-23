@@ -502,12 +502,15 @@ class EECreds:
 
         1. ``ee.data._get_state().cloud_api_user_project`` — most
            reliable; populated by a successful ``ee.Initialize(project=...)``.
-        2. ``ee.oauth.get_appdefault_project()`` — reads
-           ``application_default_credentials.json``'s ``quota_project_id``;
-           this is the value EE's own ``get_persistent_credentials`` uses,
-           so honouring it keeps our proxy in lockstep with the SDK.
+        2. ``$GEE_PROJECT`` env var — geeViz convention. EE-specific, so
+           it beats ADC's bookkeeping when the caller explicitly named a
+           project (e.g. multi-tenant deploys where test EE runs on a
+           training-tier project but BQ/Storage stay on the commercial
+           tenant project).
         3. ``$GOOGLE_CLOUD_PROJECT`` env var — standard GCP convention.
-        4. ``$GEE_PROJECT`` env var — geeViz convention.
+        4. ``ee.oauth.get_appdefault_project()`` — reads
+           ``application_default_credentials.json``'s ``quota_project_id``;
+           this is the value EE's own ``get_persistent_credentials`` uses.
         5. ``gcloud config get-value project`` — last resort, subprocess
            call. Often diverges from ADC's quota project; lower priority
            than ADC for that reason.
@@ -545,7 +548,18 @@ class EECreds:
                 return proj
         except Exception:
             pass
-        # 2. ADC's quota_project_id — same source EE uses internally.
+        # 2. geeViz convention — explicit EE override; beats both the
+        #    standard GCP env var and the ADC bookkeeping value, because
+        #    a caller who set GEE_PROJECT explicitly meant "use THIS for
+        #    EE" (the geeViz multi-tenant test/prod split depends on it).
+        proj = os.environ.get("GEE_PROJECT", "").strip()
+        if _ok(proj):
+            return proj
+        # 3. GCP standard env var
+        proj = os.environ.get("GOOGLE_CLOUD_PROJECT", "").strip()
+        if _ok(proj):
+            return proj
+        # 4. ADC's quota_project_id — same source EE uses internally.
         if _ee_oauth is not None:
             try:
                 proj = _ee_oauth.get_appdefault_project() or ""
@@ -553,14 +567,6 @@ class EECreds:
                     return proj
             except Exception:
                 pass
-        # 3. GCP standard env var
-        proj = os.environ.get("GOOGLE_CLOUD_PROJECT", "").strip()
-        if _ok(proj):
-            return proj
-        # 4. geeViz convention
-        proj = os.environ.get("GEE_PROJECT", "").strip()
-        if _ok(proj):
-            return proj
         # 5. gcloud config get-value project — usually set by anyone
         #    who's run ``gcloud auth login``. Subprocess so this only
         #    runs once per discover() call.

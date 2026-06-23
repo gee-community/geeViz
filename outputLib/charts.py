@@ -3574,7 +3574,7 @@ def sankey_iframe(sankey_html, width=None, height=None):
 
 def summarize_and_chart(
     ee_obj,
-    geometry,
+    geometry=None,
     band_names=None,
     reducer=None,
     scale=30,
@@ -3606,6 +3606,9 @@ def summarize_and_chart(
     max_x_tick_labels=10,
     max_y_tick_labels=None,
     max_class_label_length=30,
+    x_label=None,
+    y_label=None,
+    **_compat,
 ):
     """
     Run zonal statistics and produce a chart in one call.
@@ -3859,6 +3862,38 @@ def summarize_and_chart(
         ...     title='LCMS Land Cover (Hectares)',
         ... )
     """
+    # User-passed axis-title overrides — agents reach for ``x_label``/``y_label``
+    # by matplotlib convention. Capture them BEFORE the function body's
+    # internal ``x_label``/``y_label`` locals get derived from area_format /
+    # class_dict and clobber the kwargs. We re-apply at every return path
+    # via ``_apply_axis_overrides`` so the user's intent always wins.
+    _user_x_label = x_label
+    _user_y_label = y_label
+
+    if geometry is None:
+        raise TypeError(
+            "HINT: cl.summarize_and_chart requires a geometry as the 2nd argument. "
+            "Pass an ee.Geometry, ee.Feature, or ee.FeatureCollection — not a DataFrame, "
+            "DataFrame.index, or list of column names. "
+            "Pattern: cl.summarize_and_chart(my_image_or_ic, my_geometry, chart_type='bar')."
+        )
+
+    def _apply_axis_overrides(result_dict):
+        """Override the chart's axis titles with the user-passed labels, if any."""
+        fig = result_dict.get("chart")
+        if fig is not None and hasattr(fig, "update_layout"):
+            kwargs = {}
+            if _user_x_label is not None:
+                kwargs["xaxis_title"] = _user_x_label
+            if _user_y_label is not None:
+                kwargs["yaxis_title"] = _user_y_label
+            if kwargs:
+                try:
+                    fig.update_layout(**kwargs)
+                except Exception:
+                    pass
+        return result_dict
+
     # Coerce band_names from string to list for robustness
     if isinstance(band_names, str):
         band_names = [b.strip() for b in band_names.split(",")]
@@ -3996,7 +4031,7 @@ def summarize_and_chart(
             opacity=opacity,
             hide_toolbar=True,
         )
-        return {"df": sankey_df, "chart": sankey_html, "matrix": matrix_dict}
+        return _apply_axis_overrides({"df": sankey_df, "chart": sankey_html, "matrix": matrix_dict})
 
     # Multi-feature path: reduceRegions
     geo_type, _ = detect_geometry_type(geometry)
@@ -4119,7 +4154,7 @@ def summarize_and_chart(
             class_palette=_class_palette,
             class_values=_class_values,
         )
-        return {"df": scatter_df[[c for c in out_cols if c in scatter_df.columns]], "chart": _set_download_filename(fig)}
+        return _apply_axis_overrides({"df": scatter_df[[c for c in out_cols if c in scatter_df.columns]], "chart": _set_download_filename(fig)})
 
     # Auto-detect feature_label for multi-feature FeatureCollections
     if geo_type == "multi" and not feature_label:
@@ -4222,7 +4257,7 @@ def summarize_and_chart(
                                 or any(trace_name.replace(SPLIT_STR, " ").strip() in hidden for _ in [0])):
                             trace.visible = "legendonly"
 
-            return {"df": per_feature_dfs, "chart": _set_download_filename(fig)}
+            return _apply_axis_overrides({"df": per_feature_dfs, "chart": _set_download_filename(fig)})
 
         # --- ee.Image + multi-feature: grouped bar chart (existing behavior) ---
         # Set index to feature label column
@@ -4316,7 +4351,7 @@ def summarize_and_chart(
                             or any(trace_name.replace(SPLIT_STR, " ").strip() in hidden for _ in [0])):
                         trace.visible = "legendonly"
 
-        return {"df": chart_df, "chart": _set_download_filename(fig)}
+        return _apply_axis_overrides({"df": chart_df, "chart": _set_download_filename(fig)})
 
     # Standard single-region zonal stats path
     # Safety fallback: dissolve multi-feature FCs without a label (shouldn't
@@ -4476,4 +4511,4 @@ def summarize_and_chart(
     _result = {"df": df_full, "chart": _set_download_filename(fig)}
     if _empty_warning:
         _result["warning"] = _empty_warning
-    return _result
+    return _apply_axis_overrides(_result)
