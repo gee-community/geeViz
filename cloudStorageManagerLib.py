@@ -282,7 +282,7 @@ def exportToCloudStorageWrapper(
     if overwrite and currently_exporting:
         tml.cancelByName(outputName)
     if overwrite or (not currently_exists and not currently_exporting):
-        t = ee.batch.Export.image.toCloudStorage(
+        t = geeViz.geeView.ee.batch.Export.image.toCloudStorage(
             imageForExport,
             outputNameDescription,
             bucketName,
