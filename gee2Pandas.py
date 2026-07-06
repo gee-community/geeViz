@@ -569,6 +569,91 @@ def extractPointValuesToDataFrame(
 
     return pandas.json_normalize(vals)
 
+def gdf_to_ee(gdf):
+    '''
+    Convert a GeoDataFrame to an Earth Engine FeatureCollection. Default behavior reprojects to EPSG:4326 if the GeoDataFrame has a different CRS, since Earth Engine expects lat/lon coordinates. 
+    Also converts any datetime fields to integer timestamps in milliseconds since epoch, which is a format that Earth Engine can handle. The function first converts the GeoDataFrame to a GeoJSON string, then parses it to a dictionary, and finally creates an ee.FeatureCollection from that dictionary.
+
+
+    @Args: 
+    gdf: GeoDataFrame to convert to ee.FeatureCollection
+
+    @Returns:
+    ee.FeatureCollection in EPSG:4326 CRS with datetime fields converted to timestamps.
+    Returns an empty ee.FeatureCollection if gdf is None or empty.
+
+    
+    '''
+
+    import geopandas as gpd
+
+    # Handle None or empty GeoDataFrame
+    if gdf is None:
+        return ee.FeatureCollection([])
+    
+    if isinstance(gdf, gpd.GeoDataFrame) and len(gdf) == 0:
+        return ee.FeatureCollection([])
+
+    # get CRS of GeoDataFrame
+    gdf_crs = gdf.crs if gpd and hasattr(gdf, 'crs') else None
+
+    # reproject to EPSG:4326 if not already
+    if gdf_crs and gdf_crs.to_epsg() != 4326:
+        gdf = gdf.to_crs(epsg=4326)
+    else:
+        gdf = gdf.copy()
+
+    # identify if there are any date fields. if so, convert them to a format that ee can handle
+    for col in gdf.columns:
+        if pandas.api.types.is_datetime64_any_dtype(gdf[col]):
+            gdf[col] = gdf[col].astype('int64') // 10**6
+
+    # Convert GeoDataFrame to GeoJSON string
+    geojson_str = gdf.to_json()
+    # Parse GeoJSON string to dictionary
+    geojson_dict = json.loads(geojson_str)
+    # Convert GeoJSON dictionary to ee.FeatureCollection
+    ee_fc = ee.FeatureCollection(geojson_dict)
+    return ee_fc
+
+def ee_to_gdf(ee_fc, out_crs = None):
+    '''
+
+    Convert an Earth Engine FeatureCollection to a GeoDataFrame.
+    
+    @ Args:
+    ee_fc: ee.FeatureCollection to convert to GeoDataFrame
+    out_crs: optional, if provided, reproject the geometries to this CRS (e.g., 'EPSG:3857'). If not provided, geometries will be in the original CRS (usually EPSG:4326).
+
+    @ Returns:
+    GeoDataFrame with geometries and properties from the ee.FeatureCollection. Geometries will be in EPSG:4326 by default, or reprojected to out_crs if specified.
+
+    '''
+
+    import geopandas as gpd
+    from shapely.geometry import shape
+
+    # Get GeoJSON dictionary from ee.FeatureCollection
+    geojson_dict = ee_fc.getInfo()
+    features = geojson_dict['features']
+
+    # Convert features to list of geometries and properties
+    geometries = []
+    properties = []
+    for feature in features:
+        geom = shape(feature['geometry'])
+        prop = feature['properties']
+        geometries.append(geom)
+        properties.append(prop)
+
+    # Create GeoDataFrame
+    gdf = gpd.GeoDataFrame(properties, geometry=geometries, crs="EPSG:4326")
+
+    # Reproject if out_crs is specified
+    if out_crs:
+        gdf = gdf.to_crs(out_crs)
+
+    return gdf
 
 ####################################################################################################
 if __name__ == "__main__":
