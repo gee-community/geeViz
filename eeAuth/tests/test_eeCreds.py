@@ -647,9 +647,14 @@ def test_map_view_bakes_tenant_into_run_js_not_url():
     proxy_branch_start = view_body.index("if ee_proxy_url:")
     proxy_branch_end = view_body.index("else:", proxy_branch_start)
     proxy_branch = view_body[proxy_branch_start:proxy_branch_end]
-    # Query string in the proxy branch must be empty — no tenant param.
-    assert 'query = ""' in proxy_branch, \
-        "proxy branch must leave the URL query empty; tenant goes in run_js"
+    # Query string must not carry the tenant (tenant is baked into
+    # run_js instead). The only allowed query is the per-call
+    # ``?v=<timestamp>`` cache-buster that forces the browser to
+    # actually reload on repeat ``Map.view()`` calls — added in
+    # 2026.7.1 to fix the notebook stale-tab bug.
+    assert 'query = f"?v={_v}"' in proxy_branch, \
+        "proxy branch must build a ?v=<timestamp> cache-buster " \
+        "so subsequent Map.view() calls force a browser reload"
     assert "?tenant=" not in proxy_branch, \
         "proxy branch must NOT add ?tenant= to the URL"
     # And _build_run_js must accept and emit the tenant.

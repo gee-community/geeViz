@@ -28,7 +28,7 @@ from geeViz.geeView import *
 import geeViz.cloudStorageManagerLib as cml
 import geeViz.assetManagerLib as aml
 import geeViz.taskManagerLib as tml
-import math, ee, json, pdb, datetime
+import math, ee, json, pdb, datetime, re
 from threading import Thread
 
 # %%
@@ -4793,9 +4793,11 @@ def exportToAssetWrapper(
         >>> roi = ee.Geometry.Rectangle([-105.5, 39.5, -105.0, 40.0])
         >>> exportToAssetWrapper(img, 'srtm_export', 'projects/my-project/assets/srtm', roi=roi, scale=30)
     """
-    # Get rid of any spaces
-    assetName = assetName.replace("/\s+/g", "-")
-    assetPath = assetPath.replace("/\s+/g", "-")
+    # Get rid of any whitespace runs (previously a JS-regex literal passed
+    # to str.replace, which never matched — this used to silently do
+    # nothing and left spaces in the asset name).
+    assetName = re.sub(r"\s+", "-", assetName)
+    assetPath = re.sub(r"\s+", "-", assetPath)
 
     # Pull geometry if feature or featureCollection
     if roi != None:
@@ -4891,7 +4893,7 @@ def exportToDriveWrapper(imageForExport: ee.Image, outputName: str, driveFolderN
         >>> roi = ee.Geometry.Rectangle([-105.5, 39.5, -105.0, 40.0])
         >>> exportToDriveWrapper(img, 'srtm_export', 'EE_Exports', roi, scale=30)
     """
-    outputName = outputName.replace("/\s+/g", "-")  # Get rid of any spaces
+    outputName = re.sub(r"\s+", "-", outputName)  # Get rid of any whitespace runs
 
     # Pull geometry if feature or featureCollection
     try:
@@ -4987,7 +4989,7 @@ def exportToCloudStorageWrapper(
         >>> roi = ee.Geometry.Rectangle([-105.5, 39.5, -105.0, 40.0])
         >>> exportToCloudStorageWrapper(img, 'srtm_cog', 'my-bucket', roi, scale=30)
     """
-    outputName = outputName.replace("/\s+/g", "-")  # Get rid of any spaces
+    outputName = re.sub(r"\s+", "-", outputName)  # Get rid of any whitespace runs
 
     extension_dict = {"GeoTIFF": [".tif"], "TFRecord": [".tfrecord", ".json"]}
     extensions = extension_dict[fileFormat]
@@ -6483,9 +6485,11 @@ def exportCollection(
     wrapOffset = dateWrapping[0]
     yearWithMajority = dateWrapping[1]
 
-    # Clean up output name
-    outputName = outputName.replace("/\s+/g", "-")
-    outputName = outputName.replace("/\//g", "-")
+    # Clean up output name: previously used JS-style regex literals as
+    # str.replace() patterns, which never matched anything — spaces and
+    # slashes would silently pass through into the export filename.
+    outputName = re.sub(r"\s+", "-", outputName)
+    outputName = outputName.replace("/", "-")
 
     # Select bands for export
     collection = collection.select(exportBands)
@@ -6632,9 +6636,11 @@ def exportCompositeCollection(
     wrapOffset = dateWrapping[0]
     yearWithMajority = dateWrapping[1]
 
-    # Clean up output name
-    outputName = outputName.replace("/\s+/g", "-")
-    outputName = outputName.replace("/\//g", "-")
+    # Clean up output name: previously used JS-style regex literals as
+    # str.replace() patterns, which never matched anything — spaces and
+    # slashes would silently pass through into the export filename.
+    outputName = re.sub(r"\s+", "-", outputName)
+    outputName = outputName.replace("/", "-")
 
     collection = collection.select(exportBands)
 

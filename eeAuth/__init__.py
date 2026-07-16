@@ -113,6 +113,8 @@ from .client import (
     reset_tenant,
     TenantAwareHttp,
     CURRENT_TENANT,
+    CURRENT_USER_EMAIL,
+    CURRENT_SESSION_ID,
 )
 from .server import (
     build_proxy_router,
@@ -153,9 +155,11 @@ __all__ = [
     "reset_tenant",
     "TenantAwareHttp",
     "CURRENT_TENANT",
+    "CURRENT_USER_EMAIL",
+    "CURRENT_SESSION_ID",
     # Server-side proxy
     "build_proxy_router",
     "create_proxy_app",
 ]
 
-__version__ = "2026.6.2"
+__version__ = "2026.7.4"

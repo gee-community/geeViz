@@ -486,6 +486,44 @@ class EECreds:
             f"  - impersonation config (type='impersonated_service_account')"
         )
 
+    # ─────────────── ADC stub-metadata guard ───────────────
+    @staticmethod
+    def _adc_is_stub_gce_metadata(creds) -> bool:
+        """Return True when ``google.auth.default()`` handed back a
+        ``compute_engine.Credentials`` but no metadata server is
+        actually reachable.
+
+        Colab is the motivating case: google-auth's environment probe
+        thinks it's on GCE (the Colab VM sets some of the same env
+        indicators) so it returns a ``compute_engine.Credentials``
+        object, but ``metadata.google.internal`` doesn't resolve.
+        Every subsequent ``refresh()`` then blocks on a 5-retry
+        exponential-backoff loop against the metadata server, emitting
+        a wall of TransportError tracebacks before the caller can
+        recover.
+
+        A quick 0.5s probe to the metadata "ping" endpoint tells us
+        whether we're actually on GCE. Any failure — HTTP error,
+        network error, timeout — means "this isn't a real GCE
+        instance" and the caller should skip registration.
+        """
+        try:
+            from google.auth.compute_engine import credentials as _gce_creds
+        except Exception:
+            return False
+        if not isinstance(creds, _gce_creds.Credentials):
+            return False
+        # Real GCE hosts respond to a ping in single-digit ms. The
+        # 0.5s cap is generous enough to survive a network hiccup
+        # without being long enough to hurt startup in the "actually
+        # on GCE" case.
+        try:
+            import google.auth.compute_engine._metadata as _md
+            import google.auth.transport.requests as _gart
+            return not _md.ping(_gart.Request(), timeout=0.5)
+        except Exception:
+            return True
+
     # ─────────────── auto-discovery ───────────────
     @staticmethod
     def _detect_oauth_project() -> str:
@@ -737,16 +775,34 @@ class EECreds:
         #    — environments where credentials come from the runtime, not
         #    a JSON file. Registers as ``"adc"`` so the proxy has at
         #    least one tenant to route through.
+        #
+        #    Exception: in Colab (and other environments where
+        #    ``google.auth.default()`` returns ``compute_engine.Credentials``
+        #    but the metadata server isn't actually reachable — Colab
+        #    fools google-auth's env-var probe), skip the ADC registration
+        #    entirely. Otherwise every proxy request would try to mint a
+        #    token via the metadata server, hit 404, retry with backoff up
+        #    to five times, and emit a wall of scary tracebacks before the
+        #    real ``ee.Authenticate(auth_mode='colab')`` path finishes and
+        #    the entry gets re-registered with valid creds.
         if not added and not self.has("adc"):
             try:
                 import google.auth
                 _creds, default_project = google.auth.default()
-                self.addADC(name="adc", project=default_project or None)
-                added.append("adc")
-                logger.info(
-                    "eeCreds.discover: registered ADC fallback "
-                    "(project=%s)", default_project or "<runtime>",
-                )
+                if self._adc_is_stub_gce_metadata(_creds):
+                    logger.info(
+                        "eeCreds.discover: skipping ADC fallback — "
+                        "compute_engine.Credentials returned but the "
+                        "metadata server isn't reachable (typical Colab "
+                        "pre-auth state). Waiting for user auth to run."
+                    )
+                else:
+                    self.addADC(name="adc", project=default_project or None)
+                    added.append("adc")
+                    logger.info(
+                        "eeCreds.discover: registered ADC fallback "
+                        "(project=%s)", default_project or "<runtime>",
+                    )
             except Exception:
                 logger.debug(
                     "eeCreds.discover: ADC fallback unavailable",
@@ -1570,19 +1626,28 @@ class EECreds:
         updated = 0
         with self._lock:
             for entry in self._entries.values():
-                if entry.type != "oauth":
+                # SA entries have an authoritative project_id from their
+                # JSON key — never overwrite that. OAuth and ADC entries
+                # can both be missing/stale (Colab's ADC in particular
+                # discovers no default project), so they get synced.
+                if entry.type not in ("oauth", "adc"):
                     continue
                 if entry.project_id == project:
                     continue
                 logger.info(
-                    "eeCreds: syncing OAuth entry %r project from %r to %r",
-                    entry.name, entry.project_id or "<empty>", project,
+                    "eeCreds: syncing %s entry %r project from %r to %r",
+                    entry.type, entry.name,
+                    entry.project_id or "<empty>", project,
                 )
                 entry.project_id = project
                 # Invalidate cached token so the next get_token() includes
-                # the new project on the response.
+                # the new project on the response, and also drop the
+                # cached Credentials object so ``_build_credentials`` will
+                # re-run with the new project applied via
+                # ``with_quota_project`` (ADC path).
                 entry._token = {}
                 entry._token_fetched_at = 0.0
+                entry._creds = None
                 updated += 1
         return updated
 
@@ -1631,6 +1696,17 @@ class EECreds:
             ee.Number(1).getInfo()
             return ee.data._get_state().cloud_api_user_project or ""
 
+        def _announce_ready(project: str, source: str) -> None:
+            """Single unconditional success line so the user knows
+            things worked — especially valuable after the interactive
+            auth path (Colab in particular emits a wall of noise from
+            google-auth's GCE-metadata retries before the flow
+            resolves). Skipped in the fast ``already-initialized``
+            path since repeat imports would just print the same line
+            over and over."""
+            proj_msg = f"project={project!r}" if project else "no project set"
+            print(f"geeViz: Earth Engine ready ({proj_msg}, source={source})")
+
         # 1. Already initialized + working?
         try:
             proj = _verify_and_return_project()
@@ -1652,7 +1728,16 @@ class EECreds:
         # ``GEEVIZ_EEAUTH_MODE=auto`` to force the legacy in-process
         # daemon-thread proxy (one-shot, dies with the script). ``legacy``
         # skips proxy startup entirely.
-        mode = os.environ.get("GEEVIZ_EEAUTH_MODE", "detached").lower()
+        #
+        # Exception: in Colab default to ``auto``. See geeView.py for
+        # the full rationale — short version: the interactive project
+        # prompt below only reaches the in-process tenant registry, so
+        # a detached-mode proxy would sign every EE request without
+        # ``x-goog-user-project`` and get 403. Auto mode keeps the
+        # proxy in-process so ``sync_oauth_project`` after the prompt
+        # actually takes effect.
+        _default_mode = "auto" if "google.colab" in sys.modules else "detached"
+        mode = os.environ.get("GEEVIZ_EEAUTH_MODE", _default_mode).lower()
         if mode != "legacy":
             try:
                 status = self.ensure_started(mode=mode)
@@ -1665,6 +1750,7 @@ class EECreds:
                                 f"({status['proxy_url']}, "
                                 f"project={proj!r})"
                             )
+                        _announce_ready(proj, "eeauth-proxy")
                         return {
                             "ok": True, "source": "eeauth-proxy",
                             "project": proj,
@@ -1705,6 +1791,7 @@ class EECreds:
                     )
                 if self._entries:
                     self.sync_oauth_project(proj)
+                _announce_ready(proj, "ee-init-cached-project")
                 return {"ok": True, "source": "ee-init-cached-project",
                         "project": proj}
             except Exception as e:
@@ -1713,6 +1800,12 @@ class EECreds:
                         f"geeViz: cached project {cached_project!r} "
                         f"failed: {e}"
                     )
+                # Cache is stale (project deleted, access revoked,
+                # different Google account signed in). Wipe it so the
+                # prompt path below can offer a fresh try instead of
+                # silently re-attempting the same broken value on every
+                # future run.
+                self._clear_cached_project()
 
         # 3b. ``ee.Initialize()`` with no project. EE walks its own
         #     resolution chain (credentials.quota_project_id → ADC →
@@ -1729,6 +1822,7 @@ class EECreds:
                 )
             if self._entries:
                 self.sync_oauth_project(proj)
+            _announce_ready(proj, "ee-auto-init")
             return {"ok": True, "source": "ee-auto-init", "project": proj}
         except Exception as e:
             if verbose:
@@ -1745,11 +1839,35 @@ class EECreds:
                 "$GOOGLE_APPLICATION_CREDENTIALS."
             ) from init_err
 
-        print(
-            "geeViz: running ee.Authenticate(force=True, "
-            "auth_mode='localhost') — a browser window should open."
-        )
-        ee.Authenticate(force=True, auth_mode="localhost")
+        # Hosted notebooks (Colab, Kaggle) run the Python kernel on a
+        # remote VM, so ``auth_mode='localhost'`` opens a loopback server
+        # the user's browser can't reach and the flow hangs. Detect those
+        # and use the auth mode EE picks for that environment
+        # (``colab`` in Colab → silent google.colab.auth flow, ``notebook``
+        # for other hosted Jupyter → URL-and-code paste). Everywhere else
+        # ``localhost`` remains the best desktop UX (auto-close browser tab,
+        # no code paste). See ee.oauth.authenticate for the auto-detection
+        # chain.
+        if "google.colab" in sys.modules:
+            print(
+                "geeViz: running ee.Authenticate(force=True, "
+                "auth_mode='colab') — Colab flow (localhost can't "
+                "reach your browser from a hosted notebook)."
+            )
+            ee.Authenticate(force=True, auth_mode="colab")
+        elif os.environ.get("KAGGLE_KERNEL_RUN_TYPE") or "kaggle_secrets" in sys.modules:
+            print(
+                "geeViz: running ee.Authenticate(force=True, "
+                "auth_mode='notebook') — hosted notebook flow "
+                "(copy the URL, sign in, paste the code back here)."
+            )
+            ee.Authenticate(force=True, auth_mode="notebook")
+        else:
+            print(
+                "geeViz: running ee.Authenticate(force=True, "
+                "auth_mode='localhost') — a browser window should open."
+            )
+            ee.Authenticate(force=True, auth_mode="localhost")
         try:
             ee.Initialize()
             proj = _verify_and_return_project()
@@ -1759,44 +1877,84 @@ class EECreds:
                 )
             if self._entries:
                 self.sync_oauth_project(proj)
+            _announce_ready(proj, "interactive-auth")
             return {
                 "ok": True, "source": "interactive-auth", "project": proj,
             }
         except Exception as e:
             # Auth succeeded but no quota project came with the creds.
-            # Restore the legacy ``simpleSetProject`` UX — prompt once,
-            # cache the answer next to the EE credentials file so the
-            # prompt only ever happens once per machine, and reuse on
-            # subsequent runs.
-            proj = self._prompt_for_project(verbose=verbose)
-            if not proj:
-                raise RuntimeError(
-                    f"geeViz: ee.Initialize() failed even after fresh "
-                    f"authentication: {e}\nNo quota project could be "
-                    "auto-resolved. Set one explicitly with one of:\n"
-                    "  earthengine set_project YOUR_PROJECT\n"
-                    "  gcloud auth application-default set-quota-project "
-                    "YOUR_PROJECT\n"
-                    "  ee.Initialize(project='YOUR_PROJECT')  "
-                    "# before importing geeViz"
-                ) from e
-            try:
-                ee.Initialize(project=proj)
-            except Exception as e2:
-                raise RuntimeError(
-                    f"geeViz: ee.Initialize(project={proj!r}) failed: {e2}"
-                ) from e2
-            if verbose:
-                print(
-                    f"geeViz: EE initialized after auth + project "
-                    f"prompt (project={proj!r})"
-                )
-            if self._entries:
-                self.sync_oauth_project(proj)
-            return {
-                "ok": True, "source": "interactive-auth-prompted-project",
-                "project": proj,
-            }
+            # Restore the legacy ``simpleSetProject`` UX: prompt for a
+            # project id, validate it against a live ``ee.Initialize``,
+            # and only persist the value on success. Give the user a
+            # few tries so a typo or an inaccessible project isn't
+            # instantly fatal — a common Colab failure mode is signing
+            # in with the wrong Google account, entering a project the
+            # right account owns, and having the wrong account's EE
+            # backend reject it. Three attempts is enough to survive a
+            # typo and one account-swap without becoming annoying.
+            MAX_PROJECT_ATTEMPTS = 3
+            last_err: Exception = e
+            for attempt in range(MAX_PROJECT_ATTEMPTS):
+                proj = self._prompt_for_project(verbose=verbose)
+                if not proj:
+                    # No stdin (batch worker, closed pipe) or the user
+                    # hit Enter to bail. Nothing else to try — surface
+                    # the concrete remedies and re-raise.
+                    raise RuntimeError(
+                        f"geeViz: ee.Initialize() failed even after "
+                        f"fresh authentication: {last_err}\n"
+                        "No quota project could be auto-resolved and "
+                        "no project id was entered. Set one explicitly "
+                        "with one of:\n"
+                        "  earthengine set_project YOUR_PROJECT\n"
+                        "  gcloud auth application-default "
+                        "set-quota-project YOUR_PROJECT\n"
+                        "  ee.Initialize(project='YOUR_PROJECT')  "
+                        "# before importing geeViz"
+                    ) from last_err
+                try:
+                    ee.Initialize(project=proj)
+                except Exception as e2:
+                    last_err = e2
+                    remaining = MAX_PROJECT_ATTEMPTS - attempt - 1
+                    if remaining <= 0:
+                        raise RuntimeError(
+                            f"geeViz: ee.Initialize(project={proj!r}) "
+                            f"failed after {MAX_PROJECT_ATTEMPTS} "
+                            f"attempts: {e2}\n"
+                            "Common causes:\n"
+                            "  - Project id has a typo or does not "
+                            "exist under this Google account\n"
+                            "  - Project isn't registered for Earth "
+                            "Engine (see https://earthengine.google.com"
+                            "/noncommercial/)\n"
+                            "  - Signed-in Google account lacks EE "
+                            "access to the project (Colab: check the "
+                            "account chip in the top-right)"
+                        ) from e2
+                    print(
+                        f"\ngeeViz: project {proj!r} did not work "
+                        f"({e2}).\nTry a different project id "
+                        f"({remaining} attempt"
+                        f"{'s' if remaining != 1 else ''} left)."
+                    )
+                    continue
+                # Success — persist the working value so subsequent
+                # runs pick it up from step 3a without re-prompting.
+                self._write_cached_project(proj)
+                if verbose:
+                    print(
+                        f"geeViz: EE initialized after auth + project "
+                        f"prompt (project={proj!r})"
+                    )
+                if self._entries:
+                    self.sync_oauth_project(proj)
+                _announce_ready(proj, "interactive-auth-prompted-project")
+                return {
+                    "ok": True,
+                    "source": "interactive-auth-prompted-project",
+                    "project": proj,
+                }
 
     @staticmethod
     def _project_cache_path() -> str:
@@ -1826,30 +1984,17 @@ class EECreds:
 
     @classmethod
     def _prompt_for_project(cls, *, verbose: bool = False) -> str:
-        """Ask the user once for a GEE project ID and cache it next to
-        the EE credentials file. Mirrors the legacy
-        ``geeViz.geeView.simpleSetProject`` UX so workflows that used
-        to depend on that one-time prompt (Sphinx docs build, etc.)
-        keep working under the new ``robust_init`` orchestration.
+        """Ask the user once for a GEE project ID.
 
-        Returns the project id (or ``""`` if no stdin and no cache).
+        Does NOT cache — the caller must validate against
+        ``ee.Initialize`` first and only persist on success
+        (``_write_cached_project``). A cached failure would otherwise
+        poison every subsequent run.
+
+        Returns the entered project id, or ``""`` when there is no
+        stdin (closed pipe / daemon / batch worker) so the caller can
+        decide whether to raise instead of blocking forever.
         """
-        # Reuse cached value when present (same path step 3a reads).
-        cached = cls._read_cached_project()
-        if cached:
-            if verbose:
-                print(f"geeViz: using cached project from {cls._project_cache_path()}")
-            return cached
-        cache = cls._project_cache_path()
-        cache_dir = os.path.dirname(cache) if cache else ""
-        if cache_dir and not os.path.exists(cache_dir):
-            try:
-                os.makedirs(cache_dir, exist_ok=True)
-            except Exception:
-                pass
-        # Try to prompt. EOFError (no stdin / closed pipe / non-interactive
-        # daemons) returns "" so the caller can decide whether to fail or
-        # raise — never block waiting for input that can't arrive.
         try:
             entered = input("Please enter GEE project ID: ").strip()
         except (EOFError, OSError):
@@ -1857,13 +2002,47 @@ class EECreds:
         if not entered:
             return ""
         print(f"You entered: {entered}")
-        if cache:
+        return entered
+
+    @classmethod
+    def _write_cached_project(cls, project: str) -> None:
+        """Persist a project id next to the EE credentials file so
+        subsequent runs (and step 3a of ``robust_init``) can reuse it
+        without another prompt.
+
+        Called ONLY after ``ee.Initialize(project=project)`` succeeds,
+        so a bad guess can't be baked into the cache.
+        """
+        cache = cls._project_cache_path()
+        if not cache:
+            return
+        cache_dir = os.path.dirname(cache)
+        if cache_dir and not os.path.exists(cache_dir):
             try:
-                with open(cache, "w", encoding="utf-8") as f:
-                    f.write(entered)
+                os.makedirs(cache_dir, exist_ok=True)
             except Exception:
                 pass
-        return entered
+        try:
+            with open(cache, "w", encoding="utf-8") as f:
+                f.write(project)
+        except Exception:
+            pass
+
+    @classmethod
+    def _clear_cached_project(cls) -> None:
+        """Remove the cached project file when its stored value no
+        longer works (project deleted, access revoked, wrong account
+        signed in). Silent on missing file; best-effort on delete
+        failure so the caller doesn't die just because it couldn't
+        clean up a stale cache."""
+        cache = cls._project_cache_path()
+        if not cache:
+            return
+        try:
+            if os.path.exists(cache):
+                os.remove(cache)
+        except Exception:
+            pass
 
     # ─────────────── ensure_started: discover + start in one call ───────────────
     def ensure_started(

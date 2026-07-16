@@ -148,7 +148,7 @@ pip install geeViz[all]            # Everything
 
 ## AI-Assisted Development (MCP)
 
-geeViz includes a built-in [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server with **21 tools** that give AI coding assistants live access to geeViz and Google Earth Engine. Instead of generating code from training data (which is often wrong or outdated), your AI assistant can look up real function signatures, read actual example scripts, execute and test code, inspect assets, export data, manage tasks, and more.
+geeViz includes a built-in [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server with **12 tools** that give AI coding assistants live access to geeViz and Google Earth Engine. Instead of generating code from training data (which is often wrong or outdated), your AI assistant can look up real function signatures, read actual example scripts, execute and test code, inspect assets, export data, and more.
 
 Works with **Cursor**, **Claude Code**, **VS Code with GitHub Copilot**, **Windsurf**, and any MCP-compatible client. The `mcp` SDK is included as a dependency — no extra install needed.
 
@@ -169,22 +169,20 @@ Works with **Cursor**, **Claude Code**, **VS Code with GitHub Copilot**, **Winds
 
 ### What the MCP server can do
 
-The 21 tools are organized into categories:
+The 12 tools are organized into categories:
 
 | Category | Tools |
 |----------|-------|
-| **Code Execution** | `run_code` — persistent REPL with `ee`, `Map`, `gv`, `gil`, `sal`, `tl`, `rl`, `cl` pre-loaded; `save_session` — export as `.py` or `.ipynb` |
-| **API Introspection** | `get_api_reference` — function signatures & docstrings; `search_functions` — search across all modules; `examples` — list/read example scripts; `get_reference_data` — lookup reference dicts |
+| **Code Execution** | `run_code` — persistent REPL with `ee`, `Map`, `gv`, `gil`, `sal`, `tl`, `rl`, `cl`, `gm`, `edwLib` pre-loaded; `save_session` — export as `.py` or `.ipynb` |
+| **API Introspection** | `search_geeviz` — unified search across function signatures, module members, reference dictionaries, and example scripts (AST-indexed, zero import cost) |
 | **Dataset Discovery** | `search_datasets` — keyword search across official & community catalogs |
-| **Asset Inspection** | `inspect_asset` — bands, CRS, scale, date range, properties; `list_assets` — browse GEE folders |
+| **Asset Inspection** | `inspect_asset` — bands, CRS, scale, date range, properties |
 | **Map Control** | `map_control` — view, list layers, or clear the interactive map |
-| **Exports** | `export_image` — export to asset, Drive, or Cloud Storage |
-| **Task/Asset Management** | `track_tasks`, `cancel_tasks`, `manage_asset` (delete/copy/move/create/update ACL) |
-| **Google Maps** | `get_streetview` — Street View imagery; `search_places` — places/geocoding |
-| **Reports** | `create_report`, `add_report_section`, `generate_report`, `get_report_status`, `clear_report` |
-| **Environment** | `env_info` — versions, namespace, project info |
+| **Exports & Asset Management** | `export_image` — to asset / Drive / Cloud Storage; `manage_asset` — delete / copy / move / create / update ACL |
+| **Google Maps** | `get_streetview` — Street View imagery; `geeviz_search_places` — places / geocoding |
+| **Environment** | `env_info` — versions, namespace, project info; `view_output` — open generated files (charts, thumbs, reports, HTML) |
 
-Charting (`cl.summarize_and_chart()`), thumbnails (`tl.generate_thumbs()`), EDW queries (`edwLib`), and geocoding (`gm.geocode()`) are accessed via `run_code` for maximum flexibility.
+Charting (`cl.summarize_and_chart()`), thumbnails (`tl.generate_thumbs()`), report generation (`rl.*`), EDW queries (`edwLib.*`), and geocoding (`gm.geocode()`) are accessed via `run_code` — one execution primitive plus a rich pre-loaded namespace beats a proliferation of narrow wrappers.
 
 For the complete tool reference, architecture details, and usage examples, see the **[MCP Server README](mcp/README.md)** and the [online MCP Server guide](https://geeviz.org/mcp_server.html).
 

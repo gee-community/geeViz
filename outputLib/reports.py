@@ -171,6 +171,79 @@ def _get_logo_b64(variant="dark"):
 # CSS is now generated dynamically by _render_report_css() from _templates.py
 
 
+class ReportGenerationError(RuntimeError):
+    """Raised by :meth:`Report.generate` when one or more sections
+    failed during data / thumbnail / narrative computation and
+    ``strict=True`` (the default).
+
+    Prior behavior — errors were caught per-section and injected as
+    red boxes INSIDE the rendered report. That's fine for a
+    human reviewer who reads the final HTML, but for an agent calling
+    ``rl.build_report(...).generate()`` inside ``run_code`` the final
+    HTML looks like a normal string — the agent has no cheap way to
+    tell "one section broke, I should debug and retry" apart from
+    "everything worked". Raising surfaces the failures the same way
+    any other Python exception would, so the agent's normal
+    error-handling loop kicks in.
+
+    Attributes:
+        errors (dict[str, str]): Section title -> error string. Includes
+            executive-summary errors as ``"__summary__"`` if present.
+        failed_sections (list[str]): Section titles that failed, in the
+            order they were added. Convenience for logging.
+        succeeded_sections (list[str]): Section titles that completed
+            without error. Included so an operator (or the agent) can
+            see at a glance "3 of 5 sections finished; 2 broke" instead
+            of just the failure list. Excludes the executive summary.
+        summary (str): Multi-line human-readable "X succeeded, Y failed"
+            block with a ✓/✗ per section title. Attached both as this
+            attribute and prepended to ``str(err)`` so it lands in
+            tracebacks by default.
+        html (str | None): The report content that WOULD have been
+            written to disk. Non-strict callers can pass ``strict=False``
+            to receive this via the normal return path; strict callers
+            can still read it off the exception if they want to inspect
+            the partial output before retrying.
+    """
+    def __init__(self, errors: dict,
+                 succeeded_sections: list | None = None,
+                 html: str | None = None):
+        self.errors = dict(errors)
+        self.failed_sections = [
+            t for t in errors.keys() if t != "__summary__"
+        ]
+        self.succeeded_sections = list(succeeded_sections or [])
+        self.html = html
+
+        n_ok = len(self.succeeded_sections)
+        n_fail = len(self.failed_sections)
+        n_total = n_ok + n_fail
+        has_summary_err = "__summary__" in self.errors
+
+        # Build the per-section status list. [OK] for each success in
+        # the order they were added; [FAIL] + first line of the error
+        # for each failure. Executive-summary errors get their own line
+        # so they don't get mixed up with section failures.
+        # Kept ASCII on purpose — the message shows up in tracebacks,
+        # logs, and terminal output on Windows (default cp1252), where
+        # ✓/✗ throw ``UnicodeEncodeError`` when Python tries to str()
+        # the exception into the console.
+        lines = [f"Report generation: {n_ok} of {n_total} section(s) succeeded, "
+                 f"{n_fail} failed"
+                 + (" (+ executive summary failed)" if has_summary_err else "")]
+        for title in self.succeeded_sections:
+            lines.append(f"  [OK]   {title}")
+        for title in self.failed_sections:
+            msg = self.errors[title].splitlines()[0]
+            lines.append(f"  [FAIL] {title}: {msg}")
+        if has_summary_err:
+            msg = self.errors["__summary__"].splitlines()[0]
+            lines.append(f"  [FAIL] Executive summary: {msg}")
+
+        self.summary = "\n".join(lines)
+        super().__init__(self.summary)
+
+
 # ---------------------------------------------------------------------------
 #  Internal section container
 # ---------------------------------------------------------------------------
@@ -273,6 +346,7 @@ class Report:
         self.max_workers = max_workers
         self._sections = []
         self._summary = None
+        self._summary_error = None  # set by _generate_executive_summary on failure
         self._api_key = api_key
         self._client = None
         self._computed_theme = None  # tracks theme used during thumbnail computation
@@ -389,6 +463,27 @@ class Report:
         ))
         return self
 
+    @property
+    def errors(self):
+        """Dict of per-section (and executive-summary) errors from the
+        most recent :meth:`generate` call.
+
+        Empty dict when everything succeeded — non-empty iff
+        ``generate(strict=False)`` finished with at least one failure.
+        ``strict=True`` callers get the same dict off
+        :attr:`ReportGenerationError.errors`, so this property is
+        primarily useful when you deliberately opted out of strict
+        mode and now want to poll status before deciding what to do.
+
+        Returns:
+            dict[str, str]: Section title -> ``"ErrorType: message"``.
+            The executive-summary failure key is ``"__summary__"``.
+        """
+        out = {sec.title: sec.error for sec in self._sections if sec.error}
+        if getattr(self, "_summary_error", None):
+            out["__summary__"] = self._summary_error
+        return out
+
     def metadata(self):
         """Return a summary DataFrame describing each section's generated outputs.
 
@@ -432,7 +527,7 @@ class Report:
         df = pd.concat([df, pd.DataFrame([summary_row])], ignore_index=True)
         return df
 
-    def generate(self, format="html", output_path=None):
+    def generate(self, format="html", output_path=None, strict=True):
         """Generate the report.
 
         All section data (charts, tables, thumbnails, GIFs) and LLM
@@ -449,9 +544,31 @@ class Report:
             output_path (str, optional): File path to write. If None, returns
                 the content as a string (except for PDF which always requires
                 a path).
+            strict (bool, default True): When True, raise
+                :class:`ReportGenerationError` if any section (or the
+                executive summary) recorded an error during compute.
+                The exception carries per-section error details AND the
+                partial HTML so callers can inspect what would have
+                been written.
+
+                When False, keep the legacy silent-partial behavior —
+                errors get inlined into the report as red boxes and
+                nothing is raised. Use ``strict=False`` when you want
+                a "best-effort" report for a human reviewer and are OK
+                seeing errors embedded in the output.
+
+                Agents driving report generation via ``run_code`` should
+                keep the default. The raised exception makes report
+                failures look like any other Python error in their
+                normal debug loop, instead of a silent partial success.
 
         Returns:
             str: The report content (or the file path if ``output_path`` given).
+
+        Raises:
+            ReportGenerationError: If ``strict=True`` and any section
+                (or the summary) errored. Inspect ``.errors`` for the
+                per-section detail and ``.html`` for the partial content.
         """
         # Only compute data once; subsequent generate() calls just re-render
         already_computed = any(
@@ -465,10 +582,43 @@ class Report:
         else:
             print(f"Re-rendering report: {self.title}")
 
+        # Collect per-section errors + successes before rendering. We
+        # still render the partial content so the caller (or the
+        # exception's ``.html`` attribute) can inspect what would have
+        # been output.
+        section_errors: dict[str, str] = {
+            sec.title: sec.error for sec in self._sections if sec.error
+        }
+        succeeded_sections: list[str] = [
+            sec.title for sec in self._sections if not sec.error
+        ]
+        # Executive-summary error is a distinct failure mode — surface
+        # under a reserved key so callers can distinguish it from
+        # per-section failures.
+        if getattr(self, "_summary_error", None):
+            section_errors["__summary__"] = self._summary_error
+
         if format == "md":
             content = self._render_md()
         elif format == "pdf":
-            return self._render_pdf(output_path)
+            # PDF path renders + writes internally and returns a path,
+            # not content. Still raise if strict and errors exist.
+            path = self._render_pdf(output_path)
+            if strict and section_errors:
+                # Read back so ``.html`` on the exception is populated
+                # for parity with html/md paths. Best-effort — skip if
+                # readback fails (e.g., wkhtmltopdf wrote a binary PDF).
+                try:
+                    with open(path, "rb") as _f:
+                        content_readback = _f.read()
+                except Exception:
+                    content_readback = None
+                raise ReportGenerationError(
+                    section_errors,
+                    succeeded_sections=succeeded_sections,
+                    html=content_readback,
+                )
+            return path
         else:
             content = self._render_html()
 
@@ -477,8 +627,20 @@ class Report:
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write(content)
             print(f"Report saved to: {output_path}")
+            if strict and section_errors:
+                raise ReportGenerationError(
+                    section_errors,
+                    succeeded_sections=succeeded_sections,
+                    html=content,
+                )
             return output_path
 
+        if strict and section_errors:
+            raise ReportGenerationError(
+                section_errors,
+                succeeded_sections=succeeded_sections,
+                html=content,
+            )
         return content
 
     # -- Private: fully parallel computation -------------------------------
@@ -1017,7 +1179,25 @@ class Report:
 
         Includes all available thumbnail and GIF images so the LLM can
         reference spatial patterns in the executive summary.
+
+        Any exception raised while building the prompt or calling the
+        LLM is caught, recorded on ``self._summary_error`` so
+        :meth:`generate` in strict mode can surface it, and swapped
+        for a fallback string. Prior behavior was to swallow silently
+        into the "could not be generated" fallback — fine for a human
+        reviewer but invisible to an agent inspecting return values.
         """
+        self._summary_error = None
+        try:
+            self._generate_executive_summary_inner()
+        except Exception as e:
+            self._summary_error = f"{type(e).__name__}: {e}"
+            print(f"  Executive summary error: {self._summary_error}")
+            traceback.print_exc()
+            if not self._summary:
+                self._summary = "Executive summary could not be generated."
+
+    def _generate_executive_summary_inner(self):
         print("  Generating executive summary...")
         briefs = []
         images = []

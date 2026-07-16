@@ -1,24 +1,38 @@
+"""
+Recursively migrate Google Earth Engine assets from one repository to another,
+manage their permissions, and (optionally) delete the originals.
+
+**Requirements** — the credential you use must either:
+
+- have editor permissions in both the source and destination repositories, OR
+- have editor permissions in the destination repository AND be willing to
+  change the permissions of all original assets to "Anyone Can Read"
+  (set ``changePermissions = True`` in the ``__main__`` block below).
+
+**Usage:** edit the ``sourceRoot`` / ``destinationRoot`` / permission variables
+at the bottom of this file, then run it directly:
+
+.. code-block:: bash
+
+    $ python -m geeViz.migrateGEEAssets
+
+Importing this module (as autodoc / other tooling does) is a no-op — the
+migration logic only executes under the ``if __name__ == "__main__":`` guard.
+
+Written by:
+    Ian Housman  ian.housman@usda.gov / ian.housman@gmail.com
+    Leah Campbell  leah.campbell@usda.gov / leahs.campbell@gmail.com
+    RedCastle Resources Inc.  (MIT License)
+"""
+
 import ee, os, json, re
 
-ee.Initialize()
 ###################################################################################################
-"""
- This script recursively migrates Google Earth Engine assets from one repository to a new one, sets permissions, and deletes old assets if needed.
- **Important** for this to work you need the following:
-       - The credential you're using must have editor permissions in both the source and destination repositories
-                               OR
-       - The credential you're using must have editor permissions in the destination repository, and you are willing to
-           change the permissions of all the original assets to "Anyone Can Read" (to do this, set changePermissions = True below)
-       - The geeViz package installed in your python instance. (https://github.com/gee-community/geeViz)
+# Default parameters for the script-mode run at the bottom of the file. Edit
+# these before ``python -m geeViz.migrateGEEAssets``; they are ignored when
+# this module is imported (autodoc, other libraries) — every callable below
+# accepts explicit args instead.
 
-"""
-
-# Written by:
-# Ian Housman ian.housman@usda.gov ian.housman@gmail.com
-# Leah Campbell leah.campbell@usda.gov leahs.campbell@gmail.com
-# RedCastle Resources Inc.
-# MIT License
-###################################################################################################
 # Repository you are moving from:
 sourceRoot = "users/iwhousman/test"
 # sourceRoot = 'projects/USFS/LCMS-NFS/R1/FNF'
@@ -72,15 +86,15 @@ def getTree(fromRoot, toRoot, treeList=[]):
     if re.match("^projects/[^/]+/assets/.*$", toRoot) == None:
         toRoot = pathPrefix + toRoot
     # print(fromRoot,toRoot)
-    # List assets
+    # List assets. When the parent doesn't exist / isn't readable, EE
+    # raises — swallow the error, log it, and skip this subtree so the
+    # walk continues instead of tripping an UnboundLocalError on ``assets``
+    # further down.
     try:
         assets = ee.data.listAssets({"parent": fromRoot})["assets"]
     except Exception as e1:
         print(e1)
-        # try:
-        #     assets = ee.data.listAssets({'parent':fromRoot})['assets']
-        # except Exception as e2:
-        #     print(e2)
+        return treeList
 
     # Reursively walk down the tree
     nextLevels = []
@@ -238,18 +252,33 @@ def deleteAssetTree(root):
 
 
 ###################################################################################################
-# Step 1: Make sure source has account added as reader (may need to use different credentials for this)
-batchChangePermissions(
-    None, sourceRoot, sourceReaders, sourceWriters, source_all_users_can_read
-)
-###################################################################################################
-# Step 2: Use this function to copy assets
-# copyAssetTree(sourceRoot,destinationRoot,changeDestinationPermissions,destinationReaders,destinationWriters,destination_all_users_can_read)
-###################################################################################################
-#!!!!!!! DANGER !!!!!!!!!
-#!!!!!!! DANGER !!!!!!!!!
-#!!!!!!! DANGER !!!!!!!!!
-#!!!!!!! DANGER !!!!!!!!!
-# Optional Step 3: Once all assets are copied and inspected, you can use this method to delete all files under the root level
-# This method is final and there is no way to undo this
-# deleteAssetTree(destinationRoot)
+# Script entry point — runs only when this file is invoked directly
+# (``python -m geeViz.migrateGEEAssets``). Autodoc + any other importer
+# gets zero side effects.
+if __name__ == "__main__":
+    # Initialize EE against whatever credentials the caller has already
+    # set up (ADC, an attached SA, a discovered SA key, etc.).
+    ee.Initialize()
+
+    ###############################################################################################
+    # Step 1: Make sure source has account added as reader (may need
+    # to use different credentials for this).
+    batchChangePermissions(
+        None, sourceRoot, sourceReaders, sourceWriters, source_all_users_can_read
+    )
+
+    ###############################################################################################
+    # Step 2: Use this function to copy assets
+    # copyAssetTree(sourceRoot, destinationRoot,
+    #               changeDestinationPermissions,
+    #               destinationReaders, destinationWriters,
+    #               destination_all_users_can_read)
+
+    ###############################################################################################
+    # !!!!!!! DANGER !!!!!!!!!
+    # !!!!!!! DANGER !!!!!!!!!
+    # !!!!!!! DANGER !!!!!!!!!
+    # !!!!!!! DANGER !!!!!!!!!
+    # Optional Step 3: Once all assets are copied and inspected, use this
+    # method to delete all files under the root level. Final — no undo.
+    # deleteAssetTree(destinationRoot)

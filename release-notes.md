@@ -1,5 +1,290 @@
 # geeViz Release Notes
 
+## 2026.7.4 — July 16, 2026
+
+### geeViz.outputLib._basemaps
+
+- **GIF title-strip auto-shrinks when the title is wider than the
+  strip.** Previously, a long title (e.g. "Great Salt Lake summer
+  surface reflectance, 1985 — 2024") was measured, centered, and
+  drawn against a fixed font size — if it overflowed the strip
+  width, the leading `G` and trailing `4` got clipped and the read
+  looked broken. The bold-font path now proportionally shrinks the
+  font size to fit inside `width − 2 × margin` (single verification
+  pass to correct for glyph-metric slop, plus a one-step tighten
+  loop for the rare case where a wide glyph dominated the estimate).
+  Font size is floored at 8 px so we don't render illegibly small
+  labels on very narrow strips. Affects every GIF and filmstrip
+  built through `outputLib.thumbs` that carries a title.
+
+### geeViz.getImagesLib
+
+- **Export-filename cleanup actually runs now.** Six lines across
+  `exportToAssetWrapper`, `exportToDriveWrapper`, and
+  `exportToCloudStorageWrapper` had a copy-paste bug that used a
+  literal JavaScript regex string as the argument to Python's
+  `str.replace` — e.g. `outputName.replace("/\s+/g", "-")`. Python's
+  `str.replace` does not take regex, so the calls silently did
+  nothing and spaces / forward slashes passed through untouched
+  into EE asset names and Drive / GCS output filenames. Rewritten
+  to `re.sub(r"\s+", "-", outputName)` (whitespace → dash) and
+  `outputName.replace("/", "-")` (slashes → dash); `import re` added
+  to the module. Also fixes the Python 3.12+ SyntaxWarning about
+  invalid `\s` / `\/` escape sequences that surfaced on every
+  sphinx-autodoc pass.
+
+### geeViz.migrateGEEAssets
+
+- **No side effects at import time.** The module previously ran
+  `ee.Initialize()` at line 3 and `batchChangePermissions(None,
+  sourceRoot, ...)` at the bottom, so `import geeViz.migrateGEEAssets`
+  from any tool (autodoc, an agent's tool listing, a REPL exploring
+  the package) actually tried to change permissions on a hardcoded
+  personal test asset — burning through the caller's EE creds and
+  raising confusing 404s along the way. All script-mode logic
+  (`ee.Initialize`, the `batchChangePermissions` seed call) is now
+  behind an `if __name__ == "__main__":` guard. Run the migration
+  the intended way with `python -m geeViz.migrateGEEAssets`.
+- **`getTree` no longer trips on unreadable subtrees.** When
+  `ee.data.listAssets({"parent": fromRoot})` raised (missing folder,
+  permission denied), the bare `except` printed the error but left
+  the local `assets` unbound; the very next `for asset in assets:`
+  then raised `UnboundLocalError`, masking the original EE error.
+  The except now returns the accumulated tree so far, letting the
+  outer walk continue past the bad subtree instead of aborting.
+
+### Documentation
+
+- **`ee_auth.rst` (new page in geeViz docs)** — dedicated Earth
+  Engine authentication guide. Covers the two-mode client init
+  (proxy vs. direct-token), the tenant-routing story
+  (`/ee-api/t/<tenant>/` URL path segment, prepended to per-session
+  `runGeeViz.js` by `Map.view()`), a worked two-maps / two-tenants /
+  two-billing-projects example with concrete traffic captures for
+  `getMapId` / `value:compute` / `image:computePixels` / thumbnails,
+  and non-Google runtime coverage (AWS Workload Identity Federation,
+  Azure Managed Identity, on-prem OIDC). Ships an interactive
+  drawio diagram + full-resolution PNG.
+- **New per-package READMEs.** `outputLib/README.md` describes the
+  charts / thumbs / reports / themes surface; `geeView/README.md`
+  walks the served-frontend layout (`index.html`, per-session
+  `runGeeViz.js`, `lcms-viewer.min.js`) and the JS boot order.
+- **`eeAuth/README.md` expanded.** Tenant routing section rewritten
+  to put the `/ee-api/t/<tenant>/` URL path prefix first (with the
+  actual JS snippet `Map.view()` prepends to `runGeeViz.js` shown
+  inline), adds the "How `Map.view()` pins each browser tab"
+  walk-through, and the same two-tenants / two-billing-projects
+  worked example that ships in the new `ee_auth.rst` doc page.
+- **`mcp/README.md` — accurate alias list + related-package links.**
+  The "Persistent REPL namespace" section now enumerates every
+  alias `run_code` binds (`ee`, `Map`, `gv`, `gil`, `sal`, `edw`,
+  `gm`, `palettes`, `cl`, `tl`, `rl`, `pd`/`pandas`, `np`/`numpy`,
+  `save_file`) instead of stopping at five, so the docs match what
+  `env_info(action="namespace")` actually returns.
+
+### Docstrings — sphinx build now clean
+
+Several module docstrings had formatting that tripped docutils on
+sphinx-autodoc (invalid indentation, block quotes without trailing
+blank lines, markdown code fences that RST doesn't understand,
+markdown table separators being interpreted as RST substitution
+references). All fixed with no behavior change:
+
+- `eeAuth/registry.py` — blank line before the env-var convention
+  bullet list.
+- `eeAuth/client.py` — `tenant_context` example rewritten as a
+  proper `.. code-block:: python` directive.
+- `foliumView.py` — module-level `Example:` code block reformatted.
+- `geePalettes.py` — replaced ` ```python ` fences with RST literal
+  blocks (`Example — X::`).
+- `esriLib.py` — markdown-style service-type table replaced with an
+  RST grid table.
+- `outputLib/charts.py` — blank line before the numbered list in
+  `prepare_sankey_data`.
+- `mcp/server.py` — `map_control` action-value list pulled out of
+  the `Args:` block into a standalone bulleted list so napoleon
+  doesn't have to parse nested bullets under an Args entry.
+
+### Notebooks
+
+- **`!python -m pip install geeViz` → `subprocess.check_call(...)`
+  across 18 example notebooks.** The bang-syntax is a Jupyter shell
+  magic, not valid Python, so pygments' Python lexer flagged every
+  notebook with a highlighting warning. Rewritten to a pure-Python
+  subprocess install (same semantics: install if missing, then
+  import), with the surrounding `except:` tightened to
+  `except ImportError:` so a stray SyntaxError elsewhere can't be
+  silently swallowed by the install fallback.
+- **First-cell heading promotion.** `Annual_NLCD_Viewer_Notebook`,
+  `LCMAP_and_LCMS_Viewer_Notebook`, and
+  `geeViewVSFoliumViewerExampleNotebook` opened with `## ` (H2)
+  instead of `# ` (H1); MyST / nbsphinx flagged them as
+  "Document headings start at H2, not H1." Promoted the first
+  markdown heading to H1 in each.
+- **`eeAuthExamples.ipynb` — Section 9 (`Map.view()` integration)
+  expanded.** New markdown intro explaining that the browser tab
+  is pinned to the current tenant via the `/ee-api/t/<tenant>/`
+  URL path segment (not the query string), plus a new inspection
+  code cell that prints `eeCreds.proxy_url`, `eeCreds.current()`,
+  and the exact URL `Map.view()` would open — so readers can see
+  the wiring without hunting through JS.
+
+## 2026.7.3 — July 13, 2026
+
+### geeViz.eeAuth
+
+- **Colab defaults to `auto` proxy mode.** The 2026.7.1 detached-mode
+  default breaks Colab: the detached proxy runs in a separate process
+  and doesn't see the project id resolved by `robust_init`'s
+  interactive prompt in the notebook kernel, so every `/ee-api`
+  request gets signed without `x-goog-user-project` and EE returns 403
+  (the viewer chrome loads but layers don't render). In Colab the
+  default is now `auto` (in-process daemon-thread proxy) so
+  `sync_oauth_project` after the prompt actually reaches the proxy's
+  tenant registry. Desktop users still get `detached` by default;
+  Colab users who want detached can opt in with
+  `GEEVIZ_EEAUTH_MODE=detached` (typically after setting the project
+  explicitly before importing geeViz).
+- **`sync_oauth_project` now covers ADC entries.** In Colab and other
+  ADC-based environments (Cloud Run, GCE, Cloud Build) the credential
+  is registered as an ADC entry, not OAuth. The old sync helper only
+  touched OAuth entries, so after `robust_init` prompted the user for
+  a project the ADC entry's `project_id` stayed empty and downstream
+  proxy calls signed without `x-goog-user-project`. ADC entries now
+  get the same treatment; SA entries are still left alone (their
+  `project_id` from the JSON key is authoritative). The cached
+  `Credentials` object is also invalidated so the next mint re-applies
+  `with_quota_project` against the new value.
+- **Skip stub GCE-metadata ADC in Colab.** In fresh Colab kernels
+  `google.auth.default()` hands back `compute_engine.Credentials`
+  because google-auth's env probe thinks it's on GCE, but
+  `metadata.google.internal` doesn't resolve. Every proxy request
+  then tried to mint a token, hit 404, retried five times with
+  exponential backoff, and emitted a wall of `TransportError`
+  tracebacks before `ee.Authenticate(auth_mode='colab')` finished. A
+  quick 0.5s ping to the metadata server now gates ADC registration
+  — if the credentials are GCE-typed but the metadata server isn't
+  reachable, the ADC entry isn't registered and the noisy retry loop
+  disappears. Real GCE hosts (which respond in single-digit ms) are
+  unaffected.
+- **Success message on `robust_init`.** Every non-fast-path success
+  now prints one unconditional line — e.g.
+  `geeViz: Earth Engine ready (project='geeviz-geo-agent', source=interactive-auth-prompted-project)`
+  — so the user gets clear confirmation the bootstrap worked,
+  especially valuable after the Colab flow's mix of google-auth
+  retries and the interactive project prompt. The already-initialized
+  fast path stays silent so repeat imports don't spam the output.
+
+### Notebooks
+
+- **Github + Colab badge headers on every notebook.** Six examples
+  (`eeAuthExamples`, `esri_integration`, `googleMapsLib_examples`,
+  `report_generation_examples`, `thumbLib_examples`,
+  `weather_forecast_examples`) were missing the standard "see
+  sources / open in Colab" badge header at the top. All 24 example
+  notebooks now carry the badges so anyone browsing the repo can
+  jump straight into a runnable Colab session.
+
+## 2026.7.2 — July 13, 2026
+
+### geeViz.eeAuth
+
+- **Project prompt retries on failure.** When the auto-resolution chain
+  fails and `robust_init` has to prompt for a project id, a typo or an
+  inaccessible project no longer instantly kills the import. The user
+  now gets three attempts, only the working value is cached, and stale
+  cached projects (deleted, access revoked, wrong Google account signed
+  in) are invalidated on failure instead of poisoning future runs. Also
+  addresses the common Colab pattern of authenticating with one Google
+  account and typing a project owned by another.
+
+### geeViz.geeView
+
+- **Colab map render fix (detached-mode proxy port).** When Colab users
+  explicitly opt into `GEEVIZ_EEAUTH_MODE=detached`, `Map.view()` now
+  exposes the eeCreds proxy's actual port (parsed from `ee_proxy_url`,
+  e.g. 8889) via `google.colab.kernel.proxyPort` instead of the default
+  `self.port` (8001). Under the 2026.7.1 detached-mode default the
+  in-process daemon server on 8001 wasn't started, so the old code was
+  asking Colab to proxy a port where nothing was listening and the
+  iframe rendered blank.
+
+## 2026.7.1 — July 13, 2026
+
+### MCP Server slimmed to 12 tools (21 → 12)
+
+- **Consolidation, not deletion.** Report tools, examples, list_assets,
+  and track/cancel_tasks were removed as dedicated tools; their
+  functionality is now reached through the pre-loaded REPL aliases
+  (`rl.build_report()`, `ee.data.listOperations()`, etc.) inside
+  `run_code`. One execution primitive plus a rich namespace ended up
+  more flexible than a proliferation of narrow wrappers.
+- **Unified search.** `search_functions`, `get_reference_data`, and
+  `examples` collapsed into a single `search_geeviz` tool that handles
+  keyword lookup, signature retrieval, module listing, reference-dict
+  values, and example script source. Backed by an AST-based module
+  index — zero imports until a runtime value is actually requested.
+- **Same feature coverage, fewer decisions for the agent.** Every
+  workflow that worked before still works; there's just one obvious
+  entry point per capability. The `run_code` REPL comes with `ee`,
+  `Map`, `gv`, `gil`, `sal`, `cl`, `tl`, `rl`, `gm`, `edwLib`,
+  and `save_file` pre-loaded.
+
+### geeViz.eeAuth
+
+- **Colab / hosted-notebook auth fix.** `robust_init` no longer hardcodes
+  `auth_mode='localhost'` in the interactive fallback. In Colab (detected
+  via `google.colab` in `sys.modules`) it uses `auth_mode='colab'` so
+  the silent `google.colab.auth` flow runs; in Kaggle it uses
+  `auth_mode='notebook'` for the URL/code-paste flow. Desktop dev keeps
+  `auth_mode='localhost'`. Fixes `from geeViz.geeView import *`
+  hanging in Colab when EE creds weren't already present (localhost from
+  the Colab VM can't reach the user's browser).
+- **Per-thread `httplib2.Http` cache** for `TenantAwareHttp` on top of
+  the 2026.6.1 thread-safety fix — cuts fan-out warm-up latency for
+  repeat parallel `getMapId` calls (e.g., iterated `Map.testLayers()`).
+
+### geeViz.outputLib.reports
+
+- **`Report.generate()` now raises on section failures by default.**
+  Prior behavior — errors were caught per-section, stored on
+  `sec.error`, and embedded as red boxes inside the rendered HTML.
+  Fine for a human reviewer who reads the final report; invisible
+  to an agent calling `rl.build_report(...).generate()` inside
+  `run_code`, which just saw a normal string return. Now
+  `generate()` raises `rl.ReportGenerationError` when any section
+  (or the executive summary) errored, carrying `.errors` (per-section
+  detail), `.failed_sections` (titles), and `.html` (the partial
+  report that would have been written). Successful section results
+  are cached, so a debug-and-retry cycle only recomputes the fixed
+  sections. Pass `generate(strict=False)` for the legacy
+  silent-partial behavior.
+- **New `Report.errors` property** exposes the same per-section
+  error dict for callers who opted into `strict=False` — poll it
+  after `generate()` returns.
+- **Executive-summary errors** are now tracked separately (under
+  key `"__summary__"` in `errors`) rather than swallowed into the
+  fallback string.
+
+### geeViz.geeView
+
+- **`Map.view()` cache-buster** — appends a per-call `?v=<timestamp>`
+  in detached-proxy mode. Fixes the notebook regression where a second
+  `Map.view()` after `Map.clearMap()` kept showing the previous cell's
+  layers because the browser tab's URL hadn't changed and Chrome
+  silently focused the existing tab without reloading. Each call now
+  navigates to a unique URL, forcing a full re-fetch of the embedded
+  `run_js` so the displayed layers always match the current
+  ``mapCommandList``.
+
+### Packaging
+
+- **Explicit eeAuth deps in `install_requires`** — ``fastapi``,
+  ``uvicorn``, ``httpx``, ``httplib2``, ``google-auth``. Previously
+  pulled transitively; declaring them keeps ``import geeViz.eeAuth``
+  robust to a future transitive drop by ``earthengine-api`` or
+  ``google-cloud-storage``.
+
 ## 2026.6.2 — June 23, 2026
 
 - **`eeAuth` and `outputLib` package inclusion bug fix

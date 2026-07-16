@@ -11,24 +11,23 @@ The palettes are organized into dictionaries based on their source or theme,
 such as `cmocean`, `colorbrewer`, `misc`, and more. Each palette contains 
 color codes in hexadecimal format.
 
-Example:
-    Import the module and access a palette:
-    
-    ```python
+Example — access a palette::
+
     from geePalettes import cmocean
 
     # Access the 'Thermal' palette with 7 colors
     thermal_palette = cmocean["Thermal"][7]
     print(thermal_palette)
     # Output: ['042333', '2c3395', '744992', 'b15f82', 'eb7958', 'fbb43d', 'e8fa5b']
-    
-    >>> import matplotlib.pyplot as plt
 
-    >>> # Example usage of a palette in a plot
-    >>> colors = cmocean["Thermal"][7]
-    >>> plt.bar(range(len(colors)), [1] * len(colors), color=[f"#{c}" for c in colors])
-    >>> plt.show()
-    
+Example — use a palette in a matplotlib plot::
+
+    import matplotlib.pyplot as plt
+
+    colors = cmocean["Thermal"][7]
+    plt.bar(range(len(colors)), [1] * len(colors),
+            color=[f"#{c}" for c in colors])
+    plt.show()
 """
 
 """

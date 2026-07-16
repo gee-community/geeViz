@@ -5,6 +5,7 @@ per-tenant token minting with caching. Used by the proxy server to pick
 which SA to authenticate as for each incoming request.
 
 Env-var convention:
+
 - ``GEE_SERVICE_ACCOUNT_B64`` — the default tenant (legacy name kept
   for backward compatibility).
 - ``GEE_<NAME>_SERVICE_ACCOUNT`` — additional tenants. The middle

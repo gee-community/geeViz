@@ -6,12 +6,14 @@ JavaScript changes required.  The viewer already supports both
 ``tileMapService`` (for raster tiles) and ``geoJSONVector`` (for vector
 features) layer types.
 
-| Service type | Mechanism |
-|---|---|
-| Image Service | ``Map.addTileLayer("<url>/tile/{z}/{y}/{x}")`` |
-| Map Service (cached) | ``Map.addTileLayer(...)`` — same tile path |
-| Feature Service (≤ max_features) | Fetch ``<url>/query?f=geojson`` → ``Map.addLayer(geojson_dict)`` |
-| Feature Service (> max_features) | ``ValueError`` with remediation message |
+======================================  ==================================================================================
+Service type                            Mechanism
+======================================  ==================================================================================
+Image Service                           ``Map.addTileLayer("<url>/tile/{z}/{y}/{x}")``
+Map Service (cached)                    ``Map.addTileLayer(...)`` — same tile path
+Feature Service (≤ ``max_features``)    Fetch ``<url>/query?f=geojson`` → ``Map.addLayer(geojson_dict)``
+Feature Service (> ``max_features``)    ``ValueError`` with remediation message
+======================================  ==================================================================================
 
 **Public API** — 7 functions + 1 constant::
 
