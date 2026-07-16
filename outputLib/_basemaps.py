@@ -1167,9 +1167,36 @@ def build_title_strip(width, title, bg_color=(0, 0, 0, 255),
     # Measure text — bbox[1] is the internal top offset (ascent leading)
     tmp = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
     bbox = tmp.textbbox((0, 0), title, font=font)
+    text_w = bbox[2] - bbox[0]
+
+    # If the title is wider than the strip, the centring math below
+    # produces a negative ``tx`` and the glyphs overflow on both edges
+    # (leading 'D' clipped on the left, trailing 's' clipped on the
+    # right — reported bug). Shrink the font to fit inside
+    # ``width - 2*margin`` and re-measure. Floor at 8px so we don't
+    # render illegibly small labels on very narrow strips; if even 8px
+    # doesn't fit, we accept the overflow rather than dropping the
+    # title entirely.
+    avail_w = max(1, width - 2 * margin)
+    if text_w > avail_w:
+        # Proportional first guess (font width ≈ linear in font size),
+        # then one verification pass to correct for glyph-metric slop.
+        # -1 gives us a small safety cushion so kerning at the edges
+        # doesn't push us back over.
+        font_size = max(8, int(font_size * avail_w / text_w) - 1)
+        font = _get_bold_font(font_size)
+        bbox = tmp.textbbox((0, 0), title, font=font)
+        text_w = bbox[2] - bbox[0]
+        # One more shrink if the first-pass estimate still overflows
+        # (rare, only when a single wide glyph dominated the estimate).
+        while text_w > avail_w and font_size > 8:
+            font_size -= 1
+            font = _get_bold_font(font_size)
+            bbox = tmp.textbbox((0, 0), title, font=font)
+            text_w = bbox[2] - bbox[0]
+
     glyph_top = bbox[1]       # pixels from draw y to first glyph pixel
     glyph_bottom = bbox[3]    # pixels from draw y to last glyph pixel
-    text_w = bbox[2] - bbox[0]
     glyph_h = glyph_bottom - glyph_top
 
     # We want the top of the glyphs at exactly y=margin

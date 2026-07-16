@@ -2382,6 +2382,7 @@ def prepare_sankey_data(
     helper exposed for advanced custom workflows only.
 
     For each consecutive pair of periods, this function:
+
     1. Filters the collection to each period
     2. Computes the mode for each period
     3. Creates a transition image encoding ``{from}0990{to}``

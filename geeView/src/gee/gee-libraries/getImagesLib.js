@@ -11,7 +11,17 @@ if((step>0&&start>=stop)||(step<0&&start<=stop)){return[];}
 var result=[];for(var i=start;step>0?i<stop:i>stop;i+=step){result.push(i);}
 return result;}
 var eeObjectTypes={Image:ee.Image,ImageCollection:ee.ImageCollection,Geometry:ee.Geometry,Feature:ee.Feature,FeatureCollection:ee.FeatureCollection,Array:ee.Array,List:ee.List,String:ee.String,Date:ee.Date,DateRange:ee.DateRange,Dictionary:ee.Dictionary,Filter:ee.Filter,Join:ee.Join,Kernel:ee.Kernel,Number:ee.Number,Projection:ee.Projection,Reducer:ee.Reducer,};function getObjType(obj,message){let t;Object.keys(eeObjectTypes).map(function(k){if(obj instanceof eeObjectTypes[k]){t=k;}});return t;}
-function eeObjInfo(eeObj,objType,addTime,timeFormat,timePropNameIn,timePropNameOut){objType=objType||getObjType(eeObj,"info");addTime=addTime||false;timeFormat=timeFormat||"YYYY";timePropNameIn=timePropNameIn||"system:time_start";timePropNameOut=timePropNameOut||objType=="ImageCollection"||objType==="FeatureCollection"?"dates":"date";eeObj=objType==="Geometry"?ee.Feature(eeObj):eeObj;var size;var props=ee.Dictionary();var bandNames;if(objType.indexOf("Collection")>-1){size=eeObj.size();if(objType==="ImageCollection"){bandNames=ee.Image(ee.ImageCollection(eeObj).first()).bandNames();props=ee.Image(ee.ImageCollection(eeObj).first()).toDictionary();}
+function eeObjInfo(eeObj,objType,addTime,timeFormat,timePropNameIn,timePropNameOut){objType=objType||getObjType(eeObj,"info");
+// Guard: if we still don't know the concrete EE type (getObjType returned
+// undefined for a serialize->deserialize round-tripped Element, and no
+// explicit hint was passed), fall back to ImageCollection — that's the
+// only case that reaches this path through addSerializedLayer +
+// canAreaChart in the current geeView Python surface. Without this, the
+// next line's ``objType.indexOf`` throws and the whole map dies with
+// "Cannot read properties of undefined (reading 'indexOf')" before ANY
+// layer renders. See buildLayer path in lcms-viewer's addSerializedLayer.
+if(!objType){console.warn("eeObjInfo: could not detect object type — falling back to ImageCollection. Set viz.layerType or viz.eeObjInfo explicitly on the Python side to avoid this.");objType="ImageCollection";eeObj=ee.ImageCollection(eeObj);}
+addTime=addTime||false;timeFormat=timeFormat||"YYYY";timePropNameIn=timePropNameIn||"system:time_start";timePropNameOut=timePropNameOut||objType=="ImageCollection"||objType==="FeatureCollection"?"dates":"date";eeObj=objType==="Geometry"?ee.Feature(eeObj):eeObj;var size;var props=ee.Dictionary();var bandNames;if(objType.indexOf("Collection")>-1){size=eeObj.size();if(objType==="ImageCollection"){bandNames=ee.Image(ee.ImageCollection(eeObj).first()).bandNames();props=ee.Image(ee.ImageCollection(eeObj).first()).toDictionary();}
 if(addTime){eeObj=eeObj.map(function(img){return img.set(timePropNameOut,ee.Date(img.get(timePropNameIn)).format(timeFormat));});var dates=eeObj.aggregate_histogram(timePropNameOut).keys();}}else{if(objType==="Image"){bandNames=ee.Image(eeObj).bandNames();props=ee.Image(eeObj).toDictionary();}
 if(addTime){var dates=ee.Date(eeObj.get(timePropNameIn)).format(timeFormat);}}
 props=props.set("layerType",objType);props=bandNames!==undefined?props.set("bandNames",bandNames):props;props=size!==undefined?props.set("size",size):props;if(addTime){props=props.set(timePropNameOut,dates);}

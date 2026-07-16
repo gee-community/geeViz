@@ -1,9 +1,10 @@
 """
 View GEE objects using Folium.
 
-geeViz.foliumView facilitates viewing GEE objects in Folium. Layers can be added to the map using `Map.addLayer` and then viewed using the `Map.view` method.
+geeViz.foliumView facilitates viewing GEE objects in Folium. Layers can be added to the map using ``Map.addLayer`` and then viewed using the ``Map.view`` method.
 
-Example:
+Example::
+
     from geeViz.foliumView import foliumMapper
 
     # Initialize the mapper
@@ -13,9 +14,11 @@ Example:
     mapper.setCenter(-122.4194, 37.7749, 10)
 
     # Add a layer (example assumes you have an ee.Image object)
-    mapper.addLayer(ee.Image("LANDSAT/LC08/C01/T1_SR/LC08_044034_20140318"), 
-                    {"bands": ["B4", "B3", "B2"], "min": 0, "max": 3000}, 
-                    "Landsat Image")
+    mapper.addLayer(
+        ee.Image("LANDSAT/LC08/C01/T1_SR/LC08_044034_20140318"),
+        {"bands": ["B4", "B3", "B2"], "min": 0, "max": 3000},
+        "Landsat Image",
+    )
 
     # View the map
     mapper.view()

@@ -2,7 +2,7 @@
 geeViz MCP Server -- execution and introspection tools for Earth Engine via geeViz.
 
 Unlike static doc snippets, this server executes code, inspects live GEE assets,
-and dynamically queries API signatures. 21 tools.
+and dynamically queries API signatures. 12 tools.
 """
 from __future__ import annotations
 
@@ -345,7 +345,46 @@ _WL_TAG_DISALLOWED = _wl_re.compile(r"[^a-z0-9_\-]")
 # subprocess. EE's normal SDK behavior is preserved for callers that
 # don't send a tenant (Claude Code etc.) — they hit the default SA.
 # ---------------------------------------------------------------------------
-from geeViz.eeAuth.client import CURRENT_TENANT as _CURRENT_TENANT_CV
+from geeViz.eeAuth.client import (
+    CURRENT_TENANT as _CURRENT_TENANT_CV,
+    CURRENT_USER_EMAIL as _CURRENT_USER_EMAIL_CV,
+    CURRENT_SESSION_ID as _CURRENT_SESSION_ID_CV,
+)
+
+
+def _extract_user_and_session_from_tag(tag: str) -> tuple[str, str]:
+    """Parse the workload tag the agent injected via ``_workload_tag``.
+
+    The agent's ``build_workload_tag`` produces tags shaped like:
+
+        ``agent__<tool_name>__<tenant>__<user_email>__<sess>``
+
+    where the email is already sanitized (``@`` -> ``-``, ``.`` -> ``-``)
+    and the session is a UUID prefix. We extract the user and session
+    slots so ``TenantAwareHttp`` can stamp them as headers on every
+    outbound EE call, giving the proxy an attribution source for MCP-
+    initiated traffic (thumb, gif, chart, zonal stats) that has no
+    browser Referer / cookie / IAP header.
+
+    Returns ``(user_email, session_id)`` — both empty when the tag
+    doesn't match the expected shape (or the user is ``anonymous``).
+    """
+    if not tag:
+        return "", ""
+    parts = tag.split("__")
+    if len(parts) < 5:
+        return "", ""
+    # ``agent__<tool>__<tenant>__<user>__<sess>``: user is index 3,
+    # session index 4. Drop the leading ``agent`` marker if present so
+    # a caller can also pass the shorter <action>__<tenant>__<user>__<sess>
+    # form without breaking the extraction.
+    if parts[0] == "agent":
+        user, session = parts[3], parts[4]
+    else:
+        user, session = parts[2], parts[3]
+    if user == "anonymous":
+        user = ""
+    return user, session
 
 
 def _sanitize_workload_tag(tag: str) -> str:
@@ -385,6 +424,18 @@ async def _tool_manager_call_tool_with_workload_tag(
     # EE request and stamps the routing header.
     tenant_token = _CURRENT_TENANT_CV.set(tenant) if tenant else None
 
+    # ContextVars for user + session: TenantAwareHttp stamps them as
+    # X-Agent-User-Email / X-Agent-Session-ID headers on outbound EE
+    # calls. The proxy's ``_agent_workload_tag_builder`` picks them
+    # up as a fallback attribution source when Referer/cookie/IAP
+    # are absent — which is EVERY MCP-initiated EE call (thumb,
+    # gif, chart, zonal stats). Prior to this, all those calls
+    # tagged as ``anonymous`` in Cloud Monitoring and were invisible
+    # in per-user cost attribution.
+    _user, _session = _extract_user_and_session_from_tag(tag)
+    user_token = _CURRENT_USER_EMAIL_CV.set(_user) if _user else None
+    session_token = _CURRENT_SESSION_ID_CV.set(_session) if _session else None
+
     try:
         if not tag:
             return await _orig_tool_manager_call_tool(
@@ -416,6 +467,10 @@ async def _tool_manager_call_tool_with_workload_tag(
     finally:
         if tenant_token is not None:
             _CURRENT_TENANT_CV.reset(tenant_token)
+        if user_token is not None:
+            _CURRENT_USER_EMAIL_CV.reset(user_token)
+        if session_token is not None:
+            _CURRENT_SESSION_ID_CV.reset(session_token)
 
 
 app._tool_manager.call_tool = _tool_manager_call_tool_with_workload_tag
@@ -532,7 +587,9 @@ def _log_tool_call(tool_name: str, args: dict, result=None, error=None):
 import threading
 import json
 
-_init_lock = threading.Lock()
+_init_lock = threading.RLock()  # reentrant: _ensure_initialized holds it
+                                # while calling _ensure_ee_initialized which
+                                # also acquires it on the same thread.
 _initialized = False
 
 # Dynamic module tree — populated at init time by _build_module_tree()
@@ -1025,7 +1082,19 @@ def _ensure_ee_initialized():
 
 
 def _ensure_initialized(session_id: str | None = None):
-    """Lazy-initialize EE (global) and populate session namespace. Thread-safe."""
+    """Lazy-initialize EE (global) and populate session namespace.
+
+    The whole body runs under ``_init_lock`` (reentrant) so concurrent tool
+    calls cannot race the module-tree build or the geeViz submodule import
+    cascade — that race wedged the asyncio dispatcher for 5+ minutes once
+    proxy-routed EE init was added in v2026.5.1 (the longer per-call init
+    widened the race window enough to hit reliably).
+    """
+    with _init_lock:
+        return _ensure_initialized_locked(session_id)
+
+
+def _ensure_initialized_locked(session_id: str | None = None):
     _ensure_ee_initialized()
     if not _MODULE_TREE:
         _build_module_tree()
@@ -2746,52 +2815,55 @@ def search_geeviz(query: str = "", name: str = "", module: str = "", session_id:
 def map_control(action: str = "view", open_browser: bool = True, filename: str = "map.html", session_id: str = None):
     """Control the geeView interactive map.
 
-    `action="view"` writes the per-session runGeeViz.js to disk and opens
-    `geeView/index.html`. In plain Python this is a `file:///` URL; in
-    notebooks it uses an in-process threaded HTTP server
-    (`http://localhost:<port>/...`) for iframe display. The access token
-    is passed via URL query string.
+    ``action="view"`` writes the per-session runGeeViz.js to disk and opens
+    ``geeView/index.html``. In plain Python this is a ``file:///`` URL;
+    in notebooks it uses an in-process threaded HTTP server
+    (``http://localhost:<port>/...``) for iframe display. The access
+    token is passed via URL query string.
+
+    Supported ``action`` values:
+
+    - ``"view"`` (default) — validates all layers first (runs
+      ``test_layers`` internally). If any layer fails, returns the errors
+      without opening the map. If all pass, opens the map and returns
+      the URL.
+    - ``"layers"`` — list current layers with visibility and viz params.
+    - ``"layer_names"`` — quick list of just layer names (lightweight).
+    - ``"clear"`` — remove all layers and commands.
+    - ``"test_layers"`` — fast validation, calls ``getMapId()`` on all
+      layers in parallel. Catches bad bands, invalid viz, computation
+      errors. No browser required. Returns pass/fail per layer.
+    - ``"preview"`` — quick visual check. Fetches a small grid of EE
+      map tiles for each layer around the current center/zoom and
+      returns them as inline images (one per layer). No browser
+      required. Use to visually verify layers have data in the right
+      area. Returns ``{layer_name: PNG image}`` plus center and zoom.
+      Optional: ``"preview,zoom=10,grid=2"`` to override zoom or grid.
+    - ``"export"`` — validates all layers first (like ``"view"``), then
+      writes a self-contained geeView HTML to
+      ``generated_outputs/{filename}``. If any layer fails, returns
+      errors without exporting. The HTML uses absolute asset paths
+      under ``/geeView/static`` and a ``__GEEVIZ_TOKEN__`` placeholder
+      for the access token. Suitable for chat UIs that serve the HTML
+      themselves and inject a fresh token on load. Use this for
+      chat-embedded maps that should survive session reloads.
+    - ``"export_layers_json"`` — bundle every currently-added layer
+      into a JSON file under ``generated_outputs/{filename}``. Use when
+      the agent is building a CUSTOM HTML dashboard (Leaflet, MapLibre,
+      etc.) and needs the EE layers to be re-mintable. The returned
+      ``refresh_url`` is an endpoint the agent embeds in its HTML;
+      fetching it returns fresh tile URLs for every layer so dashboards
+      survive after EE map IDs expire. Handles all the same input
+      types as ``addLayer`` (Image, ImageCollection, Geometry, Feature,
+      FeatureCollection) plus tile-URL layers added via
+      ``Map.addTileLayer``.
 
     Args:
-        action: Action to perform:
-            - "view" (default): Validates all layers first (runs
-              test_layers internally). If any layer fails, returns the
-              errors without opening the map. If all pass, opens the map
-              and returns the URL.
-            - "layers": List current layers with visibility and viz params.
-            - "layer_names": Quick list of just layer names (lightweight).
-            - "clear": Remove all layers and commands.
-            - "test_layers": Fast validation — calls getMapId() on all layers
-              in parallel. Catches bad bands, invalid viz, computation errors.
-              No browser required. Returns pass/fail per layer.
-            - "preview": Quick visual check — fetches a small grid of EE map
-              tiles for each layer around the current center/zoom and returns
-              them as inline images (one per layer). No browser required.
-              Use this to visually verify layers have data in the right area.
-              Returns a dict of {layer_name: PNG image} plus center and zoom.
-              Optional: "preview,zoom=10,grid=2" to override zoom or grid size.
-            - "export": Validates all layers first (like "view"), then
-              writes a self-contained geeView HTML to
-              ``generated_outputs/{filename}``. If any layer fails, returns
-              errors without exporting. The HTML uses absolute asset paths
-              under ``/geeView/static`` and a ``__GEEVIZ_TOKEN__``
-              placeholder for the access token. Suitable for chat UIs that
-              serve the HTML themselves and inject a fresh token on load.
-              Use this for chat-embedded maps that should survive session
-              reloads.
-            - "export_layers_json": Bundle every currently-added layer
-              into a JSON file under ``generated_outputs/{filename}``.
-              Use this when the agent is building a CUSTOM HTML dashboard
-              (Leaflet, MapLibre, etc.) and needs the EE layers to be
-              re-mintable. The returned ``refresh_url`` is an endpoint
-              the agent embeds in its HTML; fetching it returns fresh
-              tile URLs for every layer so dashboards survive after EE
-              mapids expire. Handles all the same input types as ``addLayer``
-              (Image, ImageCollection, Geometry, Feature, FeatureCollection)
-              plus tile-URL layers added via ``Map.addTileLayer``.
-        open_browser: For action="view", whether to open in browser (default True).
-        filename: For action="export", the output filename (saved under
-            ``generated_outputs/``). Defaults to ``map.html``.
+        action: One of the values listed above.
+        open_browser: For ``action="view"``, whether to open in browser
+            (default True).
+        filename: For ``action="export"``, the output filename (saved
+            under ``generated_outputs/``). Defaults to ``map.html``.
         session_id: Session identifier for namespace isolation.
 
     Returns:
@@ -4272,26 +4344,14 @@ def geeviz_search_places(
 # Entry point
 # ---------------------------------------------------------------------------
 
-def _eager_init():
-    """Pre-initialize EE in a background thread so the first tool call is fast."""
-    import threading
-
-    def _init():
-        try:
-            _ensure_initialized()
-            print("EE initialized (background warmup)", file=sys.stderr)
-        except Exception as exc:
-            print(f"Background warmup failed (will retry on first tool call): {exc}", file=sys.stderr)
-
-    t = threading.Thread(target=_init, daemon=True)
-    t.start()
-
-
 def main() -> None:
     global _SANDBOX_ENABLED
 
-    # Pre-warm EE auth so first tool call doesn't stall
-    _eager_init()
+    # Note: a background EE warmup used to live here but raced with the first
+    # tool-call thread inside _ensure_initialized (unguarded _MODULE_TREE
+    # build + cached-module reimport cascade), wedging the asyncio dispatcher
+    # for any tool that arrived before warmup completed. Removed deliberately
+    # — first tool call pays a one-time ~5-10s init cost; correctness wins.
 
     # stdio is standard for Cursor/IDE integration; use streamable-http for HTTP
     transport = os.environ.get("MCP_TRANSPORT", "stdio")

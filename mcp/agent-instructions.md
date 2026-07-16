@@ -208,6 +208,74 @@ Map.addLayer(mask, {'autoViz': True, 'canAreaChart': True}, 'Vegetation Mask')
 
 Default to **Case A** when the user says "where X > Y" or "above/below". Use **B** only when they explicitly want both shown.
 
+### Null-value handling for masked outputs — REQUIRED for area charts / sankey
+
+Any layer that is **thresholded, masked, or self-masked** and has `canAreaChart: True` MUST include `shouldUnmask: True` and `unmaskValue: 0` inside `areaChartParams`. Without these, the map viewer computes percentages against only the visible (non-null) pixels — which inflates every result and misleads the user. `.selfMask()`, `.updateMask(...)`, and any `.gt() / .lt() / .eq()` output that isn't `.unmask(0)`-ed all fall into this category.
+
+```python
+# WRONG — nulls are ignored, "above threshold" percentages look artificially high
+Map.addLayer(above, {
+    'autoViz': True,
+    'canAreaChart': True,
+}, 'NDVI > 0.5')
+
+# CORRECT — shouldUnmask puts nulls back into the denominator as class 0
+Map.addLayer(above, {
+    'autoViz': True,
+    'canAreaChart': True,
+    'areaChartParams': {'shouldUnmask': True, 'unmaskValue': 0},
+}, 'NDVI > 0.5')
+```
+
+This applies to **every** area-chart-enabled masked layer including the sankey pattern below. For Python-side `cl.summarize_and_chart()` the equivalent flag is `include_masked_area=True`.
+
+### In-map sankey — thematic ImageCollections with a time dimension
+
+When the user adds a **thematic ImageCollection that spans years** (LCMS, NLCD, MapBiomas, Dynamic World, MTBS, MODIS LC, etc.) to the map, enable in-viewer transition analysis by passing `sankey: True` inside `areaChartParams`. The user can then draw a polygon in the map viewer and get an interactive sankey diagram of the class transitions inside their AOI — no separate `cl.summarize_and_chart` call needed for that follow-up analysis.
+
+```python
+# Land-cover transitions available in-viewer when the user draws a polygon
+Map.addLayer(lcms.select(['Land_Cover']), {
+    'autoViz': True,
+    'canAreaChart': True,
+    'areaChartParams': {
+        'sankey': True,
+        # Optional: pin the periods the sankey compares. Flat list is
+        # coerced to nested pairs — [1985, 2000, 2024] becomes
+        # [[1985, 1985], [2000, 2000], [2024, 2024]] internally.
+        # Omit to let the viewer pick from the full time range.
+        'sankeyTransitionPeriods': [1985, 2000, 2024],
+        # 'line': True,   # add a stacked-area time series alongside
+        # 'sankeyMinPercentage': 0.1,   # hide flows smaller than 0.1%
+    },
+}, 'LCMS Land Cover')
+
+# If the ImageCollection is masked (e.g. LCMS filtered to change pixels only,
+# or a change-magnitude collection thresholded via .gt() + .selfMask()),
+# add shouldUnmask + unmaskValue so sankey transitions include the "no
+# change / below threshold" class — otherwise the flows only cover
+# already-classified pixels and the percentages look wrong.
+Map.addLayer(change_only.select(['Change']), {
+    'autoViz': True,
+    'canAreaChart': True,
+    'areaChartParams': {
+        'sankey': True,
+        'sankeyTransitionPeriods': [1985, 2024],
+        'shouldUnmask': True,
+        'unmaskValue': 0,
+    },
+}, 'LCMS Change (thresholded)')
+```
+
+Same pattern works with `Map.addTimeLapse` — the `areaChartParams` block sits inside the same viz-params dict passed as the second argument.
+
+**When to use in-map sankey vs `cl.summarize_and_chart(chart_type='sankey', ...)`:**
+
+- **In-map sankey (this pattern).** The user gets an INTERACTIVE tool inside the map: draw a polygon, see the transitions, redraw, compare. Preferred when the user says "show LCMS on the map" or "let me explore transitions" — one layer add, no static file. Works for `addLayer(ImageCollection)` and `addTimeLapse(ImageCollection)`.
+- **Static sankey HTML** (`cl.summarize_and_chart` + `cl.save_chart_html`). Preferred when the user asks for a specific fixed AOI and specific years and wants a file / report artifact. One shot, saveable, embeddable.
+
+If the user asks for both a map AND a sankey chart of the same data, add the layer with `areaChartParams: {'sankey': True, ...}` (they get interactive exploration for free) AND produce the static HTML for the specified AOI (they get the artifact they asked for). Don't skip either.
+
 ### MMU / sieve / clump-and-eliminate
 Use this exact order — connected components → mask ≤ threshold → `.reproject()` at the very end:
 ```python
@@ -452,11 +520,21 @@ Animated GIF with map frames above cumulative line charts. Can be slow for many 
 ```python
 report = rl.Report(title, theme="dark")
 report.add_section(ee_obj, geometry, title="Section", prompt="Optional narrative guidance")
-html = report.generate(format="html")
+html = report.generate(format="html")   # raises rl.ReportGenerationError if any section failed
 save_file("report.html", html)
 ```
 
 `add_section` signature: `add_section(ee_obj, geometry, title="Section", prompt=None, generate_table=True, generate_chart=True, thumb_format="png", chart_types=None, **kwargs)`. **There is NO `description` parameter.** Use `prompt="..."` to guide the narrative.
+
+**Report failures raise — treat them like any other `run_code` error.** `report.generate()` is strict by default: if any section (or the executive summary) errored during compute, it raises `rl.ReportGenerationError` with:
+
+- `err.errors` — dict mapping section title to `"ErrorType: message"`. Executive-summary errors appear under key `"__summary__"`.
+- `err.failed_sections` — list of failed section titles (ordered).
+- `err.html` — the partial report that WOULD have been written. Useful if you want to inspect what got produced before deciding what to fix.
+
+Debug the specific sections that failed, then re-run `generate()` — successful sections are cached (data isn't recomputed), so retries are fast.
+
+Only pass `strict=False` for a deliberate "best-effort partial report" workflow (rare for agents). In that mode errors get inlined into the HTML as red boxes and you check `report.errors` yourself.
 
 **Reports are for geospatial analysis only.** Each section requires a real `ee_obj` over a real study area. Do NOT use `rl.Report` for "explain yourself" / "make a presentation about how you work" / non-geospatial questions — answer those in chat. Don't invent `ee.Image(1)` placeholders to feed Report; the result will have errored sections.
 
@@ -494,6 +572,15 @@ The same pattern applies to MMU-filtered outputs, change-detection masks, and an
 - Always route binary content through `save_file("name.ext", bytes_or_str, mode='wb' if binary else 'w')`.
 - Never return raw image bytes or base64 HTML to the LLM as a tool result.
 - The `output_markdown` field in `run_code` responses auto-generates artifact links — the chat UI renders them. Do not paste those links into your reply.
+
+### NEVER emit LaTeX or math markup in chat replies or report content
+Geospatial work rarely needs equations. The chat UI and report HTML pipelines do not render LaTeX delimiters — dollar-sign math (single or double), backslash-paren, or backslash-bracket — and will print the raw markup literally.
+
+Do not write things like `≤ 10 ft` followed by `dollar` `3.05` `backslash` `text` `space-m-braces` `dollar` to mean "3.05 meters". Just write `≤ 10 ft (3.05 m)`.
+
+Use plain Unicode for units and operators (`≤ ≥ ± × ÷ ° µ ² ³ → ≈`), and word-style equations (`area_pct = matched_px / total_px * 100`) rather than LaTeX. The same rule applies to report sections you generate via `rl.Report` — the report HTML template doesn't include a math renderer either.
+
+**Why curly braces matter to the agent runtime, not just rendering**: ADK's instruction template parses any curly-brace-name-curly-brace pattern in the agent's prompt as a session-state variable lookup and crashes if the name isn't bound. So LaTeX expressions that use curly braces (like backslash-text-brace, backslash-frac-brace) will break the next agent invocation entirely, not just render badly. Never put curly braces around plain words in any narrative output unless the contents are a real session-state variable name. Python dict literals are safe (the colon disqualifies them as state-variable names).
 
 ---
 

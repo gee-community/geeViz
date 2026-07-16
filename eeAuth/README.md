@@ -70,14 +70,171 @@ in the same FastAPI app, sharing IAP and Cloud Logging integration.
 
 ## Tenant routing
 
-The proxy picks which SA to use, in this order:
+The proxy picks which SA to use per-request, in this precedence order:
 
-1. **`X-geeViz-Creds` header** — set by server-side EE SDK via the
-   `TenantAwareHttp` transport.
-2. **`?tenant=` query string** — set by browser map iframes via the JS
-   `ee.initialize(authProxyAPIURL, ...)` URL.
-3. **Default tenant** (`GEE_SERVICE_ACCOUNT_B64`) — when neither signal
-   is present.
+1. **`/ee-api/t/<tenant>/` URL path prefix** — the primary mechanism.
+   Used by every browser tab `Map.view()` opens. The tenant is
+   **not in the query string** — it's baked into the URL PATH of every
+   REST call the tab issues. See "How `Map.view()` pins each browser
+   tab" below.
+2. **`X-geeViz-Creds` header** — set by the server-side Python EE SDK
+   via the `TenantAwareHttp` transport. Reads from a `ContextVar`, so
+   `async` and threaded code carry their own tenant per-request.
+3. **`?tenant=` query string** — accepted as a fallback / manual override
+   (useful for one-off curl testing). Rarely used by real callers.
+4. **Default tenant** (`GEE_SERVICE_ACCOUNT_B64`, or the first registered
+   credential in `eeCreds`) — when none of the above resolve.
+
+### How `Map.view()` pins each browser tab
+
+The URL `Map.view()` opens in the browser has **no** tenant in it — just
+a cache-buster (`?v=<timestamp>`). Tenant routing works because
+`Map.view()` prepends a tiny JavaScript snippet to the per-session
+`runGeeViz.js` that gets fetched by the tab:
+
+```javascript
+// This runs BEFORE ee.initialize() fires, and reassigns the top-level
+// `authProxyAPIURL` variable that lcms-viewer.min.js set to the default
+// "/ee-api". Once reassigned, every REST call the EE JS SDK issues
+// carries the /t/<tenant>/ path prefix.
+try {
+  authProxyAPIURL = window.location.origin + '/ee-api/t/<tenant>';
+} catch (e) {}
+```
+
+So the full request lifecycle for a tab is:
+
+1. Python opens `http://127.0.0.1:8889/geeView/?v=<ts>` in the browser.
+2. Browser loads the page, then fetches the per-session `runGeeViz.js`.
+3. `runGeeViz.js` executes the snippet above, reassigning
+   `authProxyAPIURL` to include `/t/<tenant>`.
+4. `ee.initialize(authProxyAPIURL, ...)` is called, and every downstream
+   `getMapId` / `value:compute` / `computePixels` POST goes to
+   `http://127.0.0.1:8889/ee-api/t/<tenant>/v1/…`.
+5. The proxy reads `<tenant>` out of the URL path (see
+   `server.py` `_proxy_ee_api`, ~line 515) and mints the token for
+   that credential.
+
+Because the snippet is baked into each per-session `runGeeViz.js`, **each
+open browser tab is permanently pinned** to whichever tenant was current
+when `Map.view()` was called. A later `eeCreds.use("other")` in Python
+changes the process-wide default (so a *new* `Map.view()` call uses
+"other"), but existing tabs keep talking to their original tenant — no
+credential drift on open windows.
+
+### Worked example: two maps, two tenants, two billing projects
+
+Two service accounts, each registered with EE on a different GCP project.
+One Python process opens two `Map.view()` tabs — one per SA — and every
+EE call from each tab is billed to the matching project.
+
+**Setup (once at startup):**
+
+```python
+from geeViz.eeAuth import eeCreds
+
+eeCreds.addCreds("sa-a.json", name="tenant-a", project="project-a")
+eeCreds.addCreds("sa-b.json", name="tenant-b", project="project-b")
+eeCreds.start()      # spins up local proxy on 127.0.0.1:8889
+```
+
+After this the proxy's registry is just a Python dict:
+
+```python
+registry._sa_json = {
+    "tenant-a": { ...sa-a.json..., "project_id": "project-a" },
+    "tenant-b": { ...sa-b.json..., "project_id": "project-b" },
+}
+```
+
+**Open Map A (bills project-a):**
+
+```python
+from geeViz.geeView import Map
+import ee
+
+eeCreds.use("tenant-a")
+Map.clearMap()
+Map.addLayer(ee.Image("USGS/SRTMGL1_003"),
+             {"min": 0, "max": 4000, "palette": "green,yellow,white"},
+             "SRTM")
+Map.view()
+```
+
+The tab's per-session `runGeeViz.js` prepends:
+
+```javascript
+authProxyAPIURL = window.location.origin + "/ee-api/t/tenant-a";
+```
+
+**Open Map B in a second tab (bills project-b), same process:**
+
+```python
+eeCreds.use("tenant-b")
+Map.clearMap()
+Map.addLayer(ee.Image("USDA/NAIP/DOQQ/m_..."),
+             {"bands": ["R", "G", "B"], "min": 0, "max": 255},
+             "NAIP")
+Map.view()
+```
+
+Tab #2's `runGeeViz.js` prepends:
+
+```javascript
+authProxyAPIURL = window.location.origin + "/ee-api/t/tenant-b";
+```
+
+**Traffic on the wire — what each tab actually sends.** No
+Authorization header ever leaves the tab; the tenant sits in the URL
+path segment:
+
+```
+# Map A — every getMapId, value:compute, image:computePixels
+POST http://127.0.0.1:8889/ee-api/t/tenant-a/v1/projects/project-a/maps:getMap
+POST http://127.0.0.1:8889/ee-api/t/tenant-a/v1/projects/project-a/value:compute
+POST http://127.0.0.1:8889/ee-api/t/tenant-a/v1/projects/project-a/image:computePixels
+
+# Map B — same shape, different tenant + different EE project
+POST http://127.0.0.1:8889/ee-api/t/tenant-b/v1/projects/project-b/maps:getMap
+POST http://127.0.0.1:8889/ee-api/t/tenant-b/v1/projects/project-b/value:compute
+POST http://127.0.0.1:8889/ee-api/t/tenant-b/v1/projects/project-b/image:computePixels
+```
+
+**What the proxy forwards to Google.** For each request it parses
+`t/<name>/` out of the path, looks up `registry._sa_json[name]`,
+mints (or returns cached) an OAuth token, and stamps two headers:
+
+```
+# Map A's request as it leaves the proxy toward Google
+POST https://earthengine.googleapis.com/v1/projects/project-a/maps:getMap
+Authorization:       Bearer ya29.a0AS3H6NxTOKEN-A…
+x-goog-user-project: project-a           ← billing target
+
+# Map B's request
+POST https://earthengine.googleapis.com/v1/projects/project-b/maps:getMap
+Authorization:       Bearer ya29.a0AS3H6NxTOKEN-B…
+x-goog-user-project: project-b           ← billing target
+```
+
+**Tile bytes bypass the proxy.** The `getMapId` JSON that comes back
+contains a pre-signed tile URL that the browser hits directly:
+
+```
+GET https://earthengine.googleapis.com/v1/projects/project-a/maps/xxxxx/tiles/10/163/395
+  (no proxy hop, no Authorization header — URL carries its own signature)
+```
+
+**Net result:** every `getMapId` / `value:compute` / `image:computePixels`
+from tab A bills project-a; the same calls from tab B bill project-b.
+The two tabs are permanently pinned — a later `eeCreds.use("some-other")`
+in Python won't change what either tab does; it only changes what a
+*new* `Map.view()` call would use.
+
+**The only thing the client ever sends is a tenant NAME** — an opaque
+identifier like `"tenant-a"`. The credential material (SA JSON, minted
+OAuth token) never leaves the Python process. A network trace between
+the browser and the proxy shows no SA keys and no bearer tokens — just
+tenant names in URL paths.
 
 ## Initializing the Python EE SDK to use the proxy
 

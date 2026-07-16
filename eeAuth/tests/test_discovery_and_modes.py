@@ -884,10 +884,15 @@ def test_proxy_mode_url_registers_upstream_and_keeps_url_clean():
     # Upstream proxy URL must be handed to the local server for reverse-proxy.
     assert "_set_ee_api_upstream(ee_proxy_url)" in proxy_branch, \
         "proxy branch must register the upstream with the local server"
-    # Tenant is now baked into the per-session run_js, not the URL,
-    # so the page URL has no query string at all.
-    assert 'query = ""' in proxy_branch, \
-        "proxy branch must leave the URL query empty"
+    # Tenant is baked into the per-session run_js, not the URL. But
+    # the URL now carries a per-call ``?v=<timestamp>`` cache-buster
+    # so a second ``Map.view()`` in the same notebook triggers a
+    # real browser reload instead of Chrome silently focusing the
+    # existing tab (which showed layers from the previous cell).
+    # 2026.7.1 release-notes entry: "Map.view() cache-buster".
+    assert 'query = f"?v={_v}"' in proxy_branch, \
+        "proxy branch must build a ?v=<timestamp> cache-buster so " \
+        "each Map.view() triggers a fresh browser navigation"
     assert "?tenant=" not in proxy_branch, \
         "proxy branch must NOT add ?tenant= to URL — that flow drifts " \
         "open tabs when eeCreds.use() runs after Map.view()"
@@ -987,16 +992,70 @@ def test_robust_init_falls_back_to_authenticate_force_true_localhost():
         "auth_mode='localhost') as the interactive fallback"
 
 
-def test_robust_init_does_not_prompt_for_project():
-    """The simplest UX is no prompts. EE's own resolution decides the
-    project; a user who wants a specific one passes it via
-    ``ee.Initialize(project=...)`` themselves or runs
-    ``earthengine set_project`` ahead of time."""
+def test_robust_init_uses_colab_auth_mode_in_colab():
+    """In Colab, ``auth_mode='localhost'`` opens a loopback server on the
+    Colab VM that the user's browser can't reach — the flow hangs. The
+    interactive fallback must detect Colab (``google.colab`` in
+    ``sys.modules``) and switch to ``auth_mode='colab'`` (silent
+    google.colab.auth flow)."""
     body = _robust_init_body()
-    assert "input(" not in body, \
-        "robust_init must NOT prompt the user for a project ID"
-    assert "_prompt_for_project" not in body, \
-        "robust_init must NOT invoke any project-prompt helper"
+    assert '"google.colab" in sys.modules' in body, \
+        "robust_init must detect Colab via sys.modules to pick the " \
+        "right auth_mode"
+    assert 'ee.Authenticate(force=True, auth_mode="colab")' in body, \
+        "robust_init must use auth_mode='colab' when running in Colab"
+
+
+def test_robust_init_retries_project_prompt_on_failure():
+    """When the automatic resolution chain fails and the interactive
+    fallback has to prompt for a project id, a typo or an
+    inaccessible-project rejection must not be instantly fatal — a
+    common Colab failure is entering a project the wrong signed-in
+    account can't reach. The loop gives the user multiple attempts and
+    only raises when they're exhausted (or when there is no stdin to
+    read from)."""
+    body = _robust_init_body()
+    assert "_prompt_for_project" in body, \
+        "robust_init must invoke _prompt_for_project in the " \
+        "interactive fallback"
+    assert "MAX_PROJECT_ATTEMPTS" in body, \
+        "robust_init must define a bounded retry count for the " \
+        "project prompt loop"
+    # Loop structure: for attempt in range(MAX_PROJECT_ATTEMPTS): ...
+    assert "for attempt in range(MAX_PROJECT_ATTEMPTS)" in body, \
+        "robust_init must retry the project prompt in a bounded loop"
+    # Successful project must be cached (so the next run skips the
+    # prompt via step 3a); failed prompts must NOT be cached.
+    assert "_write_cached_project" in body, \
+        "robust_init must persist a working project id via " \
+        "_write_cached_project after ee.Initialize succeeds"
+
+
+def test_robust_init_invalidates_stale_cached_project():
+    """When step 3a's cached project no longer works (deleted, access
+    revoked, wrong Google account), the cache must be wiped so the
+    interactive fallback offers a fresh prompt instead of a future run
+    silently retrying the same broken value on every import."""
+    body = _robust_init_body()
+    assert "_clear_cached_project" in body, \
+        "robust_init must clear the cached project when it fails to " \
+        "prevent poisoning subsequent runs"
+
+
+def test_robust_init_defaults_to_auto_mode_in_colab():
+    """The detached proxy runs in a separate process, so the project id
+    resolved by the step-4 interactive prompt only reaches THIS
+    process's tenant registry. Every ``/ee-api`` request would then be
+    signed without ``x-goog-user-project`` and EE would return 403.
+    In Colab, default to ``auto`` mode so the proxy shares this
+    process's registry and ``sync_oauth_project`` after the prompt
+    actually takes effect. Users can still opt into detached explicitly
+    via ``GEEVIZ_EEAUTH_MODE=detached``."""
+    body = _robust_init_body()
+    assert '"google.colab" in sys.modules else "detached"' in body, \
+        "robust_init must default GEEVIZ_EEAUTH_MODE to 'auto' in " \
+        "Colab (and 'detached' elsewhere) so the interactive project " \
+        "prompt reaches the same tenant registry as Map.view()'s proxy"
 
 
 def test_robust_init_verifies_with_getinfo_call():

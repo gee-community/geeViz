@@ -43,6 +43,24 @@ logger = logging.getLogger(__name__)
 # ContextVar holding the current tenant id. ``TenantAwareHttp`` reads it
 # on every outbound EE REST call and stamps the routing header. Empty
 # string means "use the proxy's default tenant" (no header sent).
+# User + session context propagated from the calling agent to the
+# outbound EE proxy. Set by the MCP tool wrapper (or the caller of
+# ``initialize_via_proxy`` in a plain-Python setup) from the same
+# workload-tag builder the agent uses. ``TenantAwareHttp`` reads them
+# on every outbound request and stamps them as HTTP headers so the
+# proxy's own workload-tag builder can attribute the call to the
+# right user + session even when the request has no browser Referer,
+# session cookie, or IAP header (i.e., every MCP-generated EE call
+# — thumb, gif, chart, zonal stats, etc.). Without this thread-
+# through, those calls all collapsed into ``anonymous`` in Cloud
+# Monitoring and were invisible in the per-user spend table.
+CURRENT_USER_EMAIL: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "current_user_email", default=""
+)
+CURRENT_SESSION_ID: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "current_session_id", default=""
+)
+
 CURRENT_TENANT: contextvars.ContextVar[str] = contextvars.ContextVar(
     "geeViz_ee_tenant", default="",
 )
@@ -72,7 +90,9 @@ def reset_tenant(token) -> None:
 
 @contextmanager
 def tenant_context(tenant: str):
-    """Scoped tenant switch::
+    """Scoped tenant switch.
+
+    .. code-block:: python
 
         with tenant_context("training"):
             ee.Image(1).getInfo()
@@ -141,6 +161,21 @@ class TenantAwareHttp:
                     tenant = CURRENT_TENANT.get()
                     if tenant:
                         headers[self._tenant_header] = tenant
+                    # Stamp user + session so the proxy's workload-tag
+                    # builder has an attribution source when there's no
+                    # Referer (MCP-initiated calls: thumb, gif, chart,
+                    # zonal stats). Values come from ContextVars the
+                    # MCP tool wrapper set from the agent's ``_workload_tag``
+                    # argument on each tool call. Both header names are
+                    # ``X-Agent-*`` so they're clearly distinct from
+                    # any browser/IAP auth headers the proxy already
+                    # inspects.
+                    user = CURRENT_USER_EMAIL.get()
+                    if user:
+                        headers["X-Agent-User-Email"] = user
+                    session = CURRENT_SESSION_ID.get()
+                    if session:
+                        headers["X-Agent-Session-ID"] = session
                     return self._thread_http().request(
                         uri, method, body, headers, **kw
                     )

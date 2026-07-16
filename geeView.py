@@ -1910,7 +1910,20 @@ class mapper:
         # working. Override via ``GEEVIZ_EEAUTH_MODE=auto`` (inline
         # daemon-thread proxy, dies with the script) or ``legacy``
         # (skip proxy entirely, mint tokens into the URL).
-        _auth_mode = os.environ.get("GEEVIZ_EEAUTH_MODE", "detached").lower()
+        #
+        # Exception: in Colab default to ``auto``. The detached proxy
+        # runs in a separate process; when ``robust_init`` has to
+        # prompt for a project id (the common Colab path — Colab's
+        # ADC has no default project), the resolved project is only
+        # synced into the calling process's tenant registry, not the
+        # detached proxy's. Every downstream ``/ee-api`` request would
+        # then be signed without ``x-goog-user-project`` and EE would
+        # return 403. Auto mode keeps the proxy in-process so the
+        # ``sync_oauth_project`` after the prompt actually takes
+        # effect. Users on Colab who want detached can opt in
+        # explicitly with ``GEEVIZ_EEAUTH_MODE=detached``.
+        _default_mode = "auto" if IS_COLAB else "detached"
+        _auth_mode = os.environ.get("GEEVIZ_EEAUTH_MODE", _default_mode).lower()
         if _auth_mode != "legacy":
             try:
                 from geeViz.eeAuth.eeCreds import eeCreds as _eeCreds
@@ -1960,11 +1973,23 @@ class mapper:
             if ee_proxy_mode != "detached":
                 _set_ee_api_upstream(ee_proxy_url)
 
-            # No URL query needed — tenant is baked into the per-session
-            # run_js (see ``_build_run_js(tenant=…)``). URL bar stays at
-            # ``http://localhost:<port>/geeView/`` regardless of how many
-            # credentials are registered.
-            query = ""
+            # Cache-buster ``?v=<int>`` on each ``view()`` call.
+            # Tenant is baked into the per-session run_js (see
+            # ``_build_run_js(tenant=…)``) so it doesn't need a URL
+            # slot — but if we leave the query empty, ``webbrowser.open``
+            # calls the SAME URL every re-view, and browsers refuse to
+            # reload a page whose URL hasn't changed. Result: the tab
+            # keeps showing whatever layers the LAST notebook cell
+            # rendered, even after the current cell called
+            # ``Map.clearMap()`` and added completely different
+            # layers. A monotonic version param that increments on
+            # every ``view()`` forces the browser to treat each call
+            # as a fresh navigation, so the JS re-runs, ``run_js``
+            # rebuilds from the current ``mapCommandList``, and the
+            # displayed layers match the code the user just executed.
+            import time as _t_view
+            _v = int(_t_view.time() * 1000)
+            query = f"?v={_v}"
             print(
                 f"Using eeCreds proxy at {ee_proxy_url}"
                 f" (creds={ee_proxy_tenant or '<first registered>'})"
@@ -2002,7 +2027,24 @@ class mapper:
 
         # Open viewer — environment-specific URL construction
         if IS_COLAB:
-            proxy_js = "google.colab.kernel.proxyPort({})".format(self.port)
+            # In detached mode (the default since 2026.7.1) the in-process
+            # daemon server on ``self.port`` was skipped — the eeCreds
+            # proxy serves both ``/geeView/*`` and ``/ee-api/*`` on its
+            # own port. Asking Colab to expose ``self.port`` (still the
+            # constructor default, e.g. 8001) would proxy to a port
+            # where nothing is listening and the iframe would render
+            # blank. Parse the actual proxy port out of ``ee_proxy_url``
+            # and expose that one instead.
+            colab_port = self.port
+            if ee_proxy_mode == "detached" and ee_proxy_url:
+                try:
+                    from urllib.parse import urlparse as _urlparse
+                    _parsed_port = _urlparse(ee_proxy_url).port
+                    if _parsed_port:
+                        colab_port = _parsed_port
+                except Exception:
+                    pass
+            proxy_js = "google.colab.kernel.proxyPort({})".format(colab_port)
             proxy_url = eval_js(proxy_js)
             geeView_url = "{}/geeView/{}".format(proxy_url, query)
             print("Colab Proxy URL:", geeView_url)

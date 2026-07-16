@@ -40,6 +40,7 @@ to construct your own tag (e.g. include user / session).
 """
 from __future__ import annotations
 
+import asyncio
 import datetime
 import logging
 import os
@@ -51,6 +52,7 @@ from urllib.parse import parse_qsl, urlencode
 _PROCESS_STARTED_AT = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 
 from fastapi import APIRouter, FastAPI, Request, Response
+from starlette.requests import ClientDisconnect
 
 from .registry import get_registry
 from .tags import build_workload_tag
@@ -278,7 +280,18 @@ def build_proxy_router(
         tenant = path_tenant or resolver(request)
         registry = _resolve_creds()
         try:
-            tok = registry.get_token(tenant or None)
+            # ``get_token`` calls ``creds.refresh()`` (synchronous OAuth
+            # HTTP roundtrip, ~200-1000ms+ on cache miss) which would
+            # block the asyncio event loop. Offload to the default
+            # threadpool so other /ee-api requests — including the MCP
+            # subprocess's first-init verification call — can proceed
+            # in parallel. Cached tokens (TTL ~50min) return instantly,
+            # but the first request per tenant pays the refresh cost,
+            # and that's exactly when the agent's own map renderer and
+            # the MCP subprocess race for the same loop.
+            tok = await asyncio.to_thread(
+                registry.get_token, tenant or None
+            )
         except KeyError as e:
             return Response(
                 content=f"tenant routing failed: {e}",
@@ -338,7 +351,15 @@ def build_proxy_router(
         if quota_project and not is_discovery:
             fwd_headers["x-goog-user-project"] = quota_project
 
-        body = await request.body()
+        try:
+            body = await request.body()
+        except ClientDisconnect:
+            # Browser aborted the request before we finished reading it —
+            # typical map-viewer pattern where pan/zoom cancels in-flight
+            # tile fetches. Client is gone; no one to respond to. Return
+            # a 499 (Nginx's "Client Closed Request") so anything logging
+            # by status still sees this as a disconnect, not a 5xx.
+            return Response(status_code=499)
 
         # 4. Forward + retry once on 401 (token rotation). Uses the
         # shared ``upstream_client`` (keep-alive connection pool) — see
@@ -356,7 +377,9 @@ def build_proxy_router(
 
         if upstream_resp.status_code == 401:
             try:
-                tok = registry.get_token(actual_tenant, force_refresh=True)
+                tok = await asyncio.to_thread(
+                    registry.get_token, actual_tenant, True
+                )
                 fwd_headers["authorization"] = f"Bearer {tok['access_token']}"
                 qp = (tok.get("project_id")
                       or os.environ.get("GEE_PROJECT", ""))
