@@ -6,7 +6,7 @@ halves of the same question and look nothing alike:
 **FIA** (Forest Inventory and Analysis) — a probability sample of forest
 plots going back to 1984. Answers *what is in the forest, and how much,
 with a standard error*. Its API exposes 752 estimate attributes, 96
-grouping variables and 1,129 evaluations through one endpoint, and its
+grouping variables and 1,143 evaluations through one endpoint, and its
 documentation page still says "under construction".
 
 **LCMS** (Landscape Change Monitoring System) — wall-to-wall 30 m maps of
@@ -126,4 +126,4 @@ __all__ = [
     "UpstreamUnavailable",
 ]
 
-__version__ = "2026.9.3"
+__version__ = "2026.9.4"

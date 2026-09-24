@@ -61,12 +61,12 @@ DEFAULT_MAX_DISTANCE_M = 50_000
 #: Measured at 44.2 deg N with a uniform 1 m/s spread rate, comparing
 #: modeled arrival time against the analytic answer:
 #:
-#: ===================  =====  =====  ========
-#: setting              east   north  diagonal
-#: ===================  =====  =====  ========
-#: geodeticDistance=False 1.386  0.996  1.261
-#: geodeticDistance=True  0.997  0.993  1.053
-#: ===================  =====  =====  ========
+#: ======================  =====  =====  ========
+#: setting                 east   north  diagonal
+#: ======================  =====  =====  ========
+#: geodeticDistance=False  1.386  0.996  1.261
+#: geodeticDistance=True   0.997  0.993  1.053
+#: ======================  =====  =====  ========
 #:
 #: 1/cos(44.2 deg) = 1.394, which is the 1.386 almost exactly. A fire
 #: would have spread 39% too slowly east-west and correctly north-south

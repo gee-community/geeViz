@@ -4,13 +4,13 @@ FIADB-API's ``/fullreport`` takes an estimate attribute, a row grouping,
 a column grouping, and an evaluation. Live counts, measured against the
 API:
 
-===================  =====  =========================================
-Parameter            Count  What it selects
-===================  =====  =========================================
-``snum`` / ``sdenom``  752  Estimate attribute (numerator/denominator)
-``rselected`` etc.      96  Grouping variable (row / column / page)
-``wc``                1129  Evaluation (state + year + eval group)
-===================  =====  =========================================
+=====================  =====  =========================================
+Parameter              Count  What it selects
+=====================  =====  =========================================
+``snum`` / ``sdenom``    752  Estimate attribute (numerator/denominator)
+``rselected`` etc.        96  Grouping variable (row / column / page)
+``wc``                  1143  Evaluation (state + year + eval group)
+=====================  =====  =========================================
 
 That is a combinatorial space no one memorizes, and the published docs
 still say "This page is under construction". Nothing in the official
@@ -332,7 +332,7 @@ def describe_grouping(label: str) -> str:
 
 def find_evaluations(state: str = "", *, most_recent: bool = True,
                      growth_only: bool = False, limit: int = 25) -> "Any":
-    """Search the 1,129 FIA evaluations.
+    """Search the 1,143 FIA evaluations.
 
     Args:
         state: State name, matched case-insensitively on a prefix.

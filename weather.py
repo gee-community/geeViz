@@ -140,16 +140,16 @@ same job: redistributing a coarse forecast WITHIN its own cells using
 the terrain the forecast could not see. None of them adds information
 about the atmosphere.
 
-============================  ==================================
-function                      terrain term
-============================  ==================================
-:func:`downscaleWind`         slope in the wind direction, and
-                              curvature — needs a ``region``
-:func:`downscaleTemperature`  lapse rate on height above the
-                              cell mean
-:func:`downscaleDewpoint`     the same, at a shallower rate
+==============================  ==================================
+function                        terrain term
+==============================  ==================================
+:func:`downscaleWind`           slope in the wind direction, and
+                                curvature — needs a ``region``
+:func:`downscaleTemperature`    lapse rate on height above the
+                                cell mean
+:func:`downscaleDewpoint`       the same, at a shallower rate
 :func:`downscalePrecipitation`  orographic enhancement with height
-============================  ==================================
+==============================  ==================================
 
 Only the wind one needs ``region``: its terms are normalized against the
 strongest terrain in the domain, so the same mountain downscales

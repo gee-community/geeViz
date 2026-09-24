@@ -5,14 +5,14 @@ geography, and almost nobody joins them because the APIs look nothing
 alike. That is the opportunity. The hazard is that joining them invites
 a comparison that is easy to make and easy to get wrong.
 
-======================  ==========================  =========================
-                        LCMS                        FIA
-======================  ==========================  =========================
-Nature                  Wall-to-wall classified map Probability sample
-Resolution              30 m, annual, 1985-2025     Plots, multi-year panels
-Answers                 What changed, and where     What is there, +/- error
-Uncertainty             Map accuracy                Design-based std. error
-======================  ==========================  =========================
+======================  ===========================  ========================
+Aspect                  LCMS                         FIA
+======================  ===========================  ========================
+Nature                  Wall-to-wall classified map  Probability sample
+Resolution              30 m, annual, 1985-2025      Plots, multi-year panels
+Answers                 What changed, and where      What is there, +/- error
+Uncertainty             Map accuracy                 Design-based std. error
+======================  ===========================  ========================
 
 **Map-derived area is not a design-based area estimate.** Comparing them
 conflates map accuracy with sampling error, and the two can differ
@@ -222,11 +222,12 @@ def compare_area(*, wc: int, state: str = "", county: str = "",
     comparability that does not exist.
 
     Keys:
-        ``lcms``: per-year treed area frame.
-        ``fia``: forest-land estimate with ``se_pct`` and ``plots``.
-        ``comparison``: a small dict with both figures, their absolute
-            and percentage difference, and ``caveats`` — a list of the
-            reasons they can legitimately disagree.
+
+    * ``lcms`` — per-year treed area frame.
+    * ``fia`` — forest-land estimate with ``se_pct`` and ``plots``.
+    * ``comparison`` — a small dict with both figures, their absolute
+      and percentage difference, and ``caveats``, a list of the reasons
+      they can legitimately disagree.
 
     The difference is offered as an observation, never as an error term.
     A 15% gap between these does not mean either is 15% wrong.

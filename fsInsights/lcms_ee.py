@@ -153,8 +153,38 @@ def lcms_class_properties(product: str, release: str = "") -> dict:
             return [p.strip() for p in v.split(",") if p.strip()]
         return list(v or [])
 
-    return {
+    out = {
         "names": _listify(props.get(f"{product}_class_names")),
         "values": _listify(props.get(f"{product}_class_values")),
         "palette": _listify(props.get(f"{product}_class_palette")),
     }
+
+    # Splitting NAMES on commas is not always safe, and this is the
+    # "loudly" the docstring promises.
+    #
+    # ``values`` and ``palette`` never contain a comma, so splitting them
+    # is exact. A class NAME can: LCMS 2025-11 publishes
+    # ``Change_class_names`` containing "Insect, Disease, or Drought
+    # Stress", so a comma split yields 18 parts for 16 classes. Nothing
+    # errors -- the names simply shift against the values from that entry
+    # on, and every class after it gets labelled as its neighbour. That is
+    # exactly the mislabeled map this function exists to prevent, and it
+    # cannot be undone from the string alone: which commas are separators
+    # and which are part of a name is not recoverable.
+    #
+    # So say so, and flag it, rather than hand back a confident mapping
+    # that is wrong in the middle.
+    n_values = len(out["values"])
+    if n_values and len(out["names"]) != n_values:
+        out["names_unreliable"] = True
+        logger.warning(
+            "lcms_class_properties: %s on %s has %d class values but the "
+            "class_names string splits into %d parts, so at least one name "
+            "contains a comma and names cannot be matched to values. "
+            "Treat 'names' as unreliable here and label from 'values' "
+            "instead.",
+            product, lcms_asset_id(release), n_values, len(out["names"]),
+        )
+    else:
+        out["names_unreliable"] = False
+    return out

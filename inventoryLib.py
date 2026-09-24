@@ -2261,10 +2261,12 @@ def inventory_area(
         - ``metadata`` (dict): full run metadata (dedup stats, timing,
           tokens, model, sampling design, seed, ...)
         - ``reports`` (dict): file paths written when ``output_dir`` is
-          given, keyed by format:
-          ``{"html_path": "<output_dir>/inventory.html",
-             "json_path": "<output_dir>/inventory.json",
-             "md_path":   "<output_dir>/inventory.md"}``
+          given, keyed by format::
+
+              {"html_path": "<output_dir>/inventory.html",
+               "json_path": "<output_dir>/inventory.json",
+               "md_path":   "<output_dir>/inventory.md"}
+
           Only keys corresponding to formats in ``output_formats`` are
           present. Empty dict when ``output_dir=None``.
     """

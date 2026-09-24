@@ -38,6 +38,6 @@ Usage::
    limitations under the License.
 """
 
-__version__ = "2026.9.3"
+__version__ = "2026.9.4"
 
 

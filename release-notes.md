@@ -1,5 +1,166 @@
 # geeViz Release Notes
 
+## 2026.9.4 — September 24, 2026
+
+First PyPI release since 2026.8.1, so it carries everything stamped as
+2026.8.2, 2026.9.1, 2026.9.2 and 2026.9.3 as well — including the
+``fireLib`` and ``fsInsights`` subpackages and their bundled catalogs,
+which had never actually shipped.
+
+### geeViz.weather — wind as one layer
+
+- **A wind field is ONE layer that draws two things**, a speed raster and
+  an animated particle flow, added by :func:`addWindLayer`. Previously
+  they were two entries in the layer list that had to be toggled,
+  reordered and dimmed in step by hand, and any drift between them looked
+  like a rendering bug.
+- **``addWindTimeLapse`` animates that pair across a collection**, with
+  the colour-bar legend the time-lapse path never used to get.
+- **Opacity on a two-part layer has a defined meaning now.** ``opacity``
+  is the master and sets where BOTH dimmers start, so ``{"opacity": 0.8}``
+  gives a speed field and a flow each at 0.8 — what setting it on any
+  other layer would do. Before, neither of the two viz dicts carried
+  ``opacity`` at all, so the value was dropped on the floor and setting it
+  appeared to do nothing whatsoever. ``windSpeedOpacity`` overrides the
+  raster alone; ``particleOpacity`` is the per-particle stroke alpha, not a
+  layer dimmer. Each slider stays the single source of truth for its own
+  canvas, which is why these are two numbers rather than a number and a
+  multiplier — a multiplier would put a handle at 0.8 while the thing it
+  controls rendered at 0.4.
+- **Asking for a band before it existed says so, in Python.**
+  :data:`BAND_AVAILABLE_FROM` records when a band entered a product — GFS
+  ``precipitation`` and ``dewpoint_2m`` both begin 2025-01-15 — so a
+  window that predates one raises here, naming the band, the date and the
+  alternative, instead of failing inside Earth Engine with nothing
+  identifying the cause.
+
+### geeViz.geeView — wind particles
+
+Fourteen fixes, nearly all of them things the tests passed straight
+through because they were about where pixels land rather than what
+functions return:
+
+- **The particles drew in the wrong Google Maps pane.** They were added to
+  ``overlayLayer`` (pane z-index 101) while ``map.overlayMapTypes`` render
+  inside ``mapPane`` (100) — so the flow covered the satellite basemap's
+  label layer and no z-index could fix it, because z-index only orders
+  siblings within one stacking context. They draw in ``mapPane`` now, and
+  the labels sit on top where they belong.
+- **A drag reorder moved half the layer.** The viewer's reorder listener
+  knew about the speed raster and not the particle canvas, so dragging a
+  wind layer split the pair.
+- **The raster stayed on screen after the layer was switched off**, and
+  toggling a layer could leave a second copy of another layer's tiles
+  behind it.
+- **The time lapse froze the particles on every step.**
+- **The legend rendered as a white box and the sliders as hairlines.** The
+  two opacity sliders are stacked rather than scrunched side by side, use
+  the panel's stock slider styling and track, are ordered the way the map
+  stacks them, and are sized in ``rem`` — the viewer's root font-size
+  moves between 12 and 16 px with the viewport, so the px constants they
+  used before were right at one end of that range and wrong at the other.
+- **A time lapse can be switched off while it is still loading.** The
+  toggle appeared only once loading finished, so the answer to "I started
+  this by mistake" was to wait.
+
+### geeViz.esriLib — a patch over georest, not a fork of it
+
+- **``georest`` is a core dependency now and ``esriLib`` is deprecated.**
+  The module delegates to ``georest.restesri`` rather than carrying its own
+  copy of the same code: several bodies here were byte-identical to
+  georest's, which is exactly how the two would have drifted apart. 859
+  lines became 775.
+- **What deliberately stays on this side** is only what georest should not
+  have: geeViz's SSRF guard, applied at the new call boundary so
+  delegation does not quietly remove a security check; the exception
+  contract callers already depend on (georest raises ``RuntimeError`` for
+  an unreachable host, this module has always raised ``ConnectionError``,
+  so it translates at the boundary rather than rewriting a contract people
+  import); and the ``addEsri*Service`` helpers, because adding a service to
+  a geeViz ``Map`` is geeViz's business, not georest's.
+- ``georest`` is stdlib-only, so making it core costs an install nothing.
+  It is bounded ``>=0.2,<0.4``: ``esriLib`` reaches into private names
+  (``_http.fetch_json``, ``_http.build_params``,
+  ``portal._resolve_portal``, ``portal._resolve_url``,
+  ``portal._detect_service_type``), private names can move in any release,
+  and on a 0.x project the minor version IS the breaking boundary. 0.2.0
+  and 0.3.0 are both verified — the esriLib suites pass 96/96 on each.
+
+### geeViz.eeAuth
+
+- **A minted workload tag names the env it came from** —
+  ``wl_<16hex>__<env>``. The env was already part of the hash, so two
+  deployments already minted different tags; they minted two *opaque*
+  ones, and a usage poller handed a hash it did not mint cannot tell
+  "another deployment's traffic" from "traffic nobody attributed", because
+  Cloud Monitoring is per GCP project and every deployment of a tenant
+  shares one. Naming the env restores just enough legibility to answer "is
+  this mine?" without a lookup, and
+  :func:`~geeViz.eeAuth.tags.env_of_workload_tag` reads it back. A tag
+  carrying no env reads as "cannot say", never as foreign — every tag
+  minted before this change looks like that, and treating those as someone
+  else's would discard real usage.
+
+### geeViz.outputLib.charts
+
+- **``hovertemplate`` passes through**, and the figure is no longer
+  rebuilt on every call.
+
+### geeViz.fsInsights
+
+- **The bundled FIA evaluation catalog holds 1,143 evaluations, not
+  1,129.** The catalog had been refreshed and the prose describing it had
+  not, in four places.
+- **``lcms_class_properties`` now says so when class names cannot be
+  matched to class values.** LCMS 2025-11 publishes the ``*_class_*``
+  properties as comma-delimited strings, and one Change class is literally
+  named "Insect, Disease, or Drought Stress" — so a comma split yields 18
+  parts for 16 classes, and every label from that entry on silently shifts
+  onto its neighbour's value. Which commas are separators is not
+  recoverable from the string, so the function warns and flags
+  ``names_unreliable`` rather than returning a confident mapping that is
+  wrong in the middle. That is the "loudly, rather than through a
+  mislabeled map" its own docstring already promised.
+
+### Documentation
+
+- **``geeViz.weather`` has an API reference page.** So do
+  ``geeViz.esriLib`` (carrying its deprecation),
+  ``geeViz.eeAuth.monitoring`` and ``geeViz.geePalettes`` — all four
+  existed with no entry in the reference at all.
+- **Five docstrings rendered wrong and now do not.** Four were reST tables
+  whose cells were wider than their ``====`` border declared, which
+  docutils reports as "Malformed table" and then drops from the output
+  entirely: ``weather``'s downscaling table,
+  ``fireLib.spread.GEODETIC_DISTANCE``, ``fsInsights.align``'s LCMS/FIA
+  comparison, and ``fsInsights.vocab``'s parameter counts. The fifth was
+  an ``inventoryLib`` return-value block that needed to be a literal block.
+
+### Examples
+
+Every example was run. The ones that were broken:
+
+- **``areaChart_examples``** assumed the LCMS ``*_class_*`` properties were
+  lists; 2025-11 publishes them as comma-delimited strings, so building a
+  DataFrame from them raised "If using all scalar values, you must pass an
+  index". It normalizes them now, and does not pretend to align names it
+  cannot align.
+- **``report_generation_examples``** indexed ``FIRE_NAME``; the EDW MTBS
+  service returns ``fire_name`` today. ArcGIS REST makes no promise about
+  the case of the field names it returns, so the example matches
+  case-insensitively and ``edwLib``'s docstring now says why.
+- **``eeAuthExamples``** had four separate faults: it registered an OAuth
+  credential with no ``project=`` (an OAuth token carries none, so every
+  later call failed with "Not signed up for Earth Engine" — an account
+  error message standing in for a missing argument); it called
+  ``eeCreds.stop()`` with no matching ``start()``, leaving the rest of the
+  notebook with no proxy; it assumed every discovered credential can serve
+  EE, when an ``adc-default`` from ``gcloud`` commonly cannot; and it fell
+  back to ``__file__``, which does not exist in a notebook kernel.
+- Worth knowing: that notebook stops the SHARED detached proxy, so it
+  cannot run in parallel with other examples. Anything running beside it
+  fails with a connection error that has nothing to do with the example.
+
 ## 2026.9.2 — September 14, 2026
 
 ### geeViz.weather — new module surface

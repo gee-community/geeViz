@@ -19,6 +19,12 @@ Quick start::
         where="FIRE_NAME LIKE '%CAMERON PEAK%'",
         out_fields="FIRE_NAME,ACRES,YEAR")
 
+    # NOTE: ``where`` and ``out_fields`` are case-insensitive SQL, but the
+    # CASE of the keys in the returned properties is the service's choice
+    # and can change without notice -- EDW_MTBS_01 returns 'fire_name'
+    # today where it returned 'FIRE_NAME' before. Match field names
+    # case-insensitively rather than indexing one spelling.
+
     # Load into Earth Engine
     import ee
     fc = ee.FeatureCollection(geojson)

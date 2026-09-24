@@ -534,7 +534,17 @@ def addEsriMapService(
     import geeViz.geeView as _gv
     url = _resolve_url(url_or_result)
     try:
-        _meta = getServiceMetadata(url, token=token)
+        # georest DIRECTLY, not this module's public getServiceMetadata.
+        #
+        # That wrapper is deprecated and warns, and this is an INTERNAL
+        # call on the supported path: the addEsri*Service helpers are not
+        # deprecated (they add layers to a geeViz Map, which georest has
+        # no business doing), so a caller of addEsriMapService -- or of
+        # Map.addEsriMapService, or the MCP sandbox, which instructs
+        # agents to use exactly these helpers -- got a DeprecationWarning
+        # naming a function they never called and could not stop calling.
+        from georest.restesri import portal as _gp_meta
+        _meta = _gp_meta.getServiceMetadata(url, token=token)
     except Exception as _meta_err:
         # Metadata fetch failed — could be a bad URL, an auth wall, or
         # a transient network hiccup. Print a warning so the agent (and
