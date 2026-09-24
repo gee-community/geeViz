@@ -7,6 +7,23 @@ First PyPI release since 2026.8.1, so it carries everything stamped as
 ``fireLib`` and ``fsInsights`` subpackages and their bundled catalogs,
 which had never actually shipped.
 
+### Packaging — two dependencies that needed bounds
+
+- **``mcp`` is bounded ``>=1.26,<2.0``.** It was declared unbounded, and a
+  clean resolve now picks up 2.2.0. ``geeViz.mcp.server`` is built on
+  ``mcp.server.fastmcp``, which mcp 2.0 renamed to ``MCPServer`` and moved,
+  so ``import geeViz.mcp.server`` failed with ``ModuleNotFoundError`` on a
+  fresh ``pip install geeviz``. Every other geeViz module imported fine,
+  which is why nothing hinted at it — found by installing the built wheel
+  into an empty venv and importing all 37 modules.
+- **``georest`` is bounded ``>=0.2,<0.4``.** ``esriLib`` delegates through
+  some of georest's private names, those can move in any release, and on a
+  0.x project the minor version is the breaking boundary. 0.2.0 and 0.3.0
+  are both verified.
+
+If you installed 2026.9.3 or earlier from source and the MCP server would
+not import, this is why.
+
 ### geeViz.weather — wind as one layer
 
 - **A wind field is ONE layer that draws two things**, a speed raster and
