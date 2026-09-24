@@ -42,6 +42,20 @@ CODE = "\n".join(s for _, s in _cells("code"))
 PROSE = "\n".join(s for _, s in _cells("markdown"))
 
 
+def _strip_comments(text: str) -> str:
+    """Drop ``#`` comments so a test greps CODE, not commentary.
+
+    Crude on purpose: a ``#`` inside a string literal goes too, which
+    costs nothing here because every caller is looking for an identifier
+    that would appear outside a string anyway.
+    """
+    # chr(10) rather than a newline escape: this file has been edited
+    # through shell heredocs that mangle backslashes, and a literal
+    # newline inside the quotes is a SyntaxError that only shows up at
+    # collection time.
+    return chr(10).join(ln.split("#", 1)[0] for ln in text.splitlines())
+
+
 def test_the_notebook_exists():
     assert NB.is_file()
 
@@ -53,6 +67,13 @@ def test_it_is_still_the_only_example_using_fsinsights():
     users = []
     for f in list(EXAMPLES.glob("*.py")) + list(EXAMPLES.glob("*.ipynb")):
         txt = f.read_text(encoding="utf-8", errors="replace")
+        # Comments first, or this matches prose ABOUT fsInsights as
+        # though it were a use of it. areaChart_examples explains that
+        # geeViz normalizes LCMS class properties the same way
+        # fsInsights.lcms_class_properties does, and that sentence alone
+        # failed this test. The house rule is to strip comments before
+        # asserting on source, and this is exactly why it exists.
+        txt = _strip_comments(txt)
         # "fs.usda" / "fs2c" are URLs, not the fs handle.
         if re.search(r"\bfsInsights\b", txt) and "fsInsights_examples" not in f.name:
             users.append(f.name)
