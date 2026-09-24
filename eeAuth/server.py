@@ -173,6 +173,23 @@ def _default_workload_tag_builder(
             CURRENT_BILLING_TENANT as _CUR_BILL_TENANT,
         )
         _ctx_user = (_CUR_USER.get() or "").strip()
+        # Local fallback: $GEEVIZ_USER_EMAIL.
+        #
+        # CURRENT_USER_EMAIL is set by the MCP wrapper from the agent's
+        # before_tool_callback, so it is populated for agent-initiated
+        # work and empty for everything else. Plain library use -- a
+        # script or notebook doing ``Map.addLayer`` -- therefore minted a
+        # tag with no identity at all, the tag store wrote
+        # user_sub=UNATTRIBUTED, and the usage poller declined to bill it
+        # (correctly: it will not charge a user it cannot name). The
+        # symptom is EE work that shows up in ee_usage_hourly as
+        # ``unattributed`` and never reaches cdu_ledger.
+        #
+        # The ContextVar still wins, so nothing about the agent path
+        # changes. This only fills the gap where there was no identity to
+        # begin with.
+        if not _ctx_user:
+            _ctx_user = (os.environ.get("GEEVIZ_USER_EMAIL") or "").strip()
         _ctx_session = (_CUR_SESSION.get() or "").strip()
         _ctx_action = (_CUR_ACTION.get() or "").strip()
         _ctx_bill = (_CUR_BILL_TENANT.get() or "").strip()
