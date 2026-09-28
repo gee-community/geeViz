@@ -359,6 +359,29 @@ def serviceAccountToken(service_key_file_path):
 
 _RUNNING_SERVERS = {}  # port -> (server, thread)
 import threading as _threading
+
+
+def _js_str(value) -> str:
+    """A JavaScript string literal for arbitrary text, safe anywhere in the
+    generated viewer script.
+
+    Layer names, the map title and query settings come from users and from
+    agents, and they were interpolated into JS string literals unescaped.
+    One apostrophe -- ``Peak Nor'easter Wind`` -- ended the string early,
+    the whole runGeeViz.js failed to PARSE, ``runGeeViz`` was never
+    defined, and not a single layer loaded, ordinary names included. The
+    server-side validator never runs this script, so it reported PASS.
+
+    ``json.dumps`` emits a valid JS string literal for any input: it
+    escapes both quote styles, backslashes, control characters and --
+    because ``ensure_ascii`` is on -- U+2028/U+2029, which JSON allows raw
+    but older JS engines treat as line terminators. ``</`` becomes
+    ``<\\/`` (the same string to JS) so the text stays inert even when the
+    script is inlined into an HTML ``<script>`` element, where the HTML
+    parser closes the element at the first ``</script`` regardless of any
+    JS quoting.
+    """
+    return json.dumps("" if value is None else str(value)).replace("</", "<\\/")
 # Reentrant lock so `run_local_server` can call `_kill_server` (which also
 # acquires this lock) while holding it — a non-reentrant `Lock()` would
 # deadlock and hang `Map.view()` any time a stale state file is found.
@@ -2014,8 +2037,7 @@ class mapper:
             except Exception:
                 pass
         if _py_default:
-            _pd_esc = _py_default.replace("\\", "\\\\").replace('"', '\\"')
-            lines += 'try{ee.data.setDefaultWorkloadTag("' + _pd_esc + '");}catch(e){}'
+            lines += "try{ee.data.setDefaultWorkloadTag(" + _js_str(_py_default) + ");}catch(e){}"
         else:
             # No Python-side default to push. Explicitly clear the JS
             # viewer's built-in ``${mode}---viewer-exports`` fallback
@@ -2051,8 +2073,7 @@ class mapper:
             # substitute one, this IS the only tagging mechanism.
             _wt = "" if _EE_API_UPSTREAM else idDict.get("workloadTag", "")
             if _wt:
-                _wt_esc = _wt.replace('\\', '\\\\').replace('"', '\\"')
-                lines += 'try{ee.data.setWorkloadTag("' + _wt_esc + '");}catch(e){}'
+                lines += "try{ee.data.setWorkloadTag(" + _js_str(_wt) + ");}catch(e){}"
             else:
                 lines += "try{ee.data.resetWorkloadTag();}catch(e){}"
             if idDict.get("_is_dynamic_esri"):
@@ -2062,34 +2083,29 @@ class mapper:
                 # method on Map, so no ``Map.`` prefix. Escapes match
                 # the addREST branch below: any backslash / double
                 # quote in the URLs is doubled for JS string safety.
-                def _jsstr(s):
-                    return (s or "").replace("\\", "\\\\").replace('"', '\\"')
                 lines += (
-                    'try{{addDynamicToMap("{b1}","{b2}","{e1}","{e2}",'
-                    '{z1},{z2},"{name}",{visible},"","#layer-list");}}'
+                    'try{{addDynamicToMap({b1},{b2},{e1},{e2},'
+                    '{z1},{z2},{name},{visible},"","#layer-list");}}'
                     'catch(e){{layerLoadErrorMessages.push('
-                    '"Dynamic MapService \\"{name}\\" failed: "+e.message);}}'
+                    '"Dynamic MapService \\""+{name}+"\\" failed: "+e.message);}}'
                 ).format(
-                    b1=_jsstr(idDict["_dyn_base_url_1"]),
-                    b2=_jsstr(idDict["_dyn_base_url_2"]),
-                    e1=_jsstr(idDict["_dyn_ending_1"]),
-                    e2=_jsstr(idDict["_dyn_ending_2"]),
+                    b1=_js_str(idDict["_dyn_base_url_1"]),
+                    b2=_js_str(idDict["_dyn_base_url_2"]),
+                    e1=_js_str(idDict["_dyn_ending_1"]),
+                    e2=_js_str(idDict["_dyn_ending_2"]),
                     z1=int(idDict.get("_dyn_min_zoom_1", 0)),
                     z2=int(idDict.get("_dyn_min_zoom_2", 0)),
-                    name=_jsstr(idDict["name"]),
+                    name=_js_str(idDict["name"]),
                     visible=str(idDict["visible"]).lower(),
                 )
                 continue
             if idDict.get("_is_tile_url"):
                 # External XYZ tile service — emit a Map.addREST(...) call
                 # with a JS function literal that substitutes {x}/{y}/{z}.
-                # Backslash-escape any literal backslashes / double quotes in
-                # the URL so it lives safely inside a JS double-quoted string.
-                tpl = (idDict["_tile_url_template"]
-                       .replace("\\", "\\\\")
-                       .replace('"', '\\"'))
+                # _js_str makes the URL a valid JS string literal whatever
+                # characters it holds.
                 tile_url_fn = (
-                    'function(coord,zoom){return "' + tpl + '"'
+                    'function(coord,zoom){return ' + _js_str(idDict["_tile_url_template"]) +
                     '.replace("{x}",coord.x)'
                     '.replace("{y}",coord.y)'
                     '.replace("{z}",zoom);}'
@@ -2106,22 +2122,22 @@ class mapper:
                 # patches/apply_tile_layer_patch.py.
                 lines += (
                     # LOCAL PATCH tile legend v2 (2026-09-02): the stored viz, so a legend reaches the page.
-                    'try{{Map.addLayer({fn},{viz},"{name}",{visible});}}'
-                    'catch(e){{layerLoadErrorMessages.push("Tile layer \\"{name}\\" failed: "+e.message);}}'
+                    'try{{Map.addLayer({fn},{viz},{name},{visible});}}'
+                    'catch(e){{layerLoadErrorMessages.push("Tile layer \\""+{name}+"\\" failed: "+e.message);}}'
                 ).format(
                     fn=tile_url_fn,
-                    name=idDict["name"].replace('"', '\\"'),
+                    name=_js_str(idDict["name"]),
                     visible=str(idDict["visible"]).lower(),
                     viz=idDict["viz"],
                 )
                 continue
 
-            lines += "{}.{}({},{},'{}',{});".format(
+            lines += "{}.{}({},{},{},{});".format(
                 idDict["objectName"],
                 idDict["function"],
                 idDict["item"],
                 idDict["viz"],
-                idDict["name"],
+                _js_str(idDict["name"]),
                 str(idDict["visible"]).lower(),
             )
         # Reset back to the current default tag (the Python one we
@@ -2142,7 +2158,12 @@ class mapper:
         )
         lines+=f"localStorage['showToolTipModal-geeViz']={str(self.showToolTipModal).lower()};"
         lines += "};"
-        return lines
+        # item/viz are JSON and already valid JS, but text inside them (a
+        # legend label, a class name) can still contain "</script". Outside
+        # of string literals the generated code never contains "</", so
+        # rewriting it everywhere only ever touches string contents, where
+        # "<\\/" is the same string.
+        return lines.replace("</", "<\\/")
 
     ######################################################################
     # Access token minting — split out of view() so any code that needs
@@ -3647,7 +3668,7 @@ class mapper:
         >>> Map.setMapTitle("<h2>A Custom Title!!!</h2>")  # Set custom map title
         >>> Map.view()
         """
-        title_command = f'Map.setTitle("{title}")'
+        title_command = f"Map.setTitle({_js_str(title)})"
         if title_command not in self.mapCommandList:
             self.mapCommandList.append(title_command)
 
@@ -3691,7 +3712,7 @@ class mapper:
         >>> Map.view()
         """
         print("Setting click query crs to: {}".format(crs))
-        cmd = f"Map.setQueryCRS('{crs}')"
+        cmd = f"Map.setQueryCRS({_js_str(crs)})"
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
@@ -3791,7 +3812,7 @@ class mapper:
 
         """
         print("Setting default query date format to: {}".format(defaultQueryDateFormat))
-        cmd = f'Map.setQueryDateFormat("{defaultQueryDateFormat}")'
+        cmd = f"Map.setQueryDateFormat({_js_str(defaultQueryDateFormat)})"
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
@@ -3811,7 +3832,7 @@ class mapper:
         >>> Map.view()
         """
         print("Setting click query box color to: {}".format(color))
-        cmd = f'Map.setQueryBoxColor("{color}")'
+        cmd = f"Map.setQueryBoxColor({_js_str(color)})"
         if cmd not in self.mapCommandList:
             self.mapCommandList.append(cmd)
 
