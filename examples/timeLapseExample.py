@@ -62,11 +62,11 @@ Map.addTimeLapse(water, {"autoViz": True, "canAreaChart": True}, "JRC Surface Wa
 
 # Bring in Hansen loss
 declineYearPalette = "ffffe5,fff7bc,fee391,fec44f,fe9929,ec7014,cc4c02"
-hansen = ee.Image("UMD/hansen/global_forest_change_2023_v1_11")
+hansen = ee.Image("UMD/hansen/global_forest_change_2025_v1_13")
 
 hansenLoss = hansen.select(["lossyear"]).add(2000).int16()
 hansenStartYear = 2001
-hansenEndYear = 2023
+hansenEndYear = 2025
 
 hansenYears = ee.List.sequence(hansenStartYear, hansenEndYear)
 

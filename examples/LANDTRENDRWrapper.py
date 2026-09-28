@@ -191,7 +191,7 @@ scale = None
 ####################################################################################################
 # Start function calls
 ####################################################################################################
-hansen = ee.Image("UMD/hansen/global_forest_change_2023_v1_11").select(["lossyear"]).add(2000).int16()
+hansen = ee.Image("UMD/hansen/global_forest_change_2025_v1_13").select(["lossyear"]).add(2000).int16()
 hansen = hansen.updateMask(hansen.neq(2000).And(hansen.gte(startYear)).And(hansen.lte(endYear)))
 Map.addLayer(
     hansen,

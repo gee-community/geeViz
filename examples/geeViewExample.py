@@ -81,7 +81,7 @@ nps = ee.FeatureCollection("projects/USFS/LCMS-NFS/CONUS-Ancillary-Data/NPS_Boun
 Map.addLayer(nps, {"layerType": "geeVector"}, "Yellowstone National Park", True)
 
 # Bring in the JRS Surface water data
-water = ee.ImageCollection("JRC/GSW1_0/YearlyHistory")
+water = ee.ImageCollection("JRC/GSW1_4/YearlyHistory")
 
 # Here is another example of creating a lookup dictionary
 waterColors = ["ffffff", "99d9ea", "0000ff"]
