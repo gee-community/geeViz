@@ -4412,8 +4412,21 @@ def search_codebase(query: str = "", name: str = "", module: str = "", session_i
             _, mod_obj = _resolve_module(module, ns)
             if mod_obj is None:
                 return json.dumps({"error": f"Module {module!r} not found."})
-            # Try direct attribute
-            obj = getattr(mod_obj, name, None)
+            # Walk a dotted name within the module ("mapper.addLayer"). A single
+            # getattr(mod, "mapper.addLayer") can never succeed -- a dotted
+            # string is not an attribute name -- so this branch used to report
+            # "not found" for methods the unscoped lookup found fine, and the
+            # agent took the disagreement to mean the function did not exist.
+            # A name that repeats the module ("geeView.mapper.addLayer") is
+            # accepted too, since that is the full path people copy.
+            _parts = name.split(".")
+            if len(_parts) > 1 and _parts[0] in (module, module.rsplit(".", 1)[-1]):
+                _parts = _parts[1:]
+            obj = mod_obj
+            for _p in _parts:
+                obj = getattr(obj, _p, None)
+                if obj is None:
+                    break
             # geeView mapper fallback
             if obj is None and module in ("geeView", "geeViz.geeView"):
                 mapper_cls = getattr(mod_obj, "mapper", None)

@@ -345,6 +345,34 @@ SPEED_UNITS = {
     "kt": 3600.0 / 1852.0,
 }
 
+#: Spellings people actually write, mapped to the keys above. "mph" is
+#: how every weather product and every person writes miles per hour;
+#: rejecting it cost a failed call and a retry in real sessions.
+_SPEED_UNIT_ALIASES = {
+    "mph": "mi/hr", "mi/h": "mi/hr", "mile/hr": "mi/hr", "miles/hr": "mi/hr",
+    "kph": "km/hr", "km/h": "km/hr", "kmh": "km/hr", "kmph": "km/hr",
+    "knot": "kt", "knots": "kt", "kts": "kt", "kn": "kt",
+    "mps": "m/s", "m s-1": "m/s", "ms-1": "m/s",
+}
+
+
+def _speed_units(units):
+    """Canonical :data:`SPEED_UNITS` key for *units*, accepting common
+    spellings (``"mph"``, ``"kph"``, ``"knots"``...) case-insensitively."""
+    key = str(units).strip()
+    if key in SPEED_UNITS:
+        return key
+    low = key.lower()
+    for k in SPEED_UNITS:
+        if k.lower() == low:
+            return k
+    if low in _SPEED_UNIT_ALIASES:
+        return _SPEED_UNIT_ALIASES[low]
+    raise ValueError(
+        f"units must be one of {sorted(SPEED_UNITS)} "
+        f"(also accepted: mph, kph, km/h, knots, kts, mps); got {units!r}")
+
+
 #: Multiplier from degrees.
 DIRECTION_UNITS = {
     "degrees": 1.0,
@@ -1467,9 +1495,7 @@ def windImage(image, viz=None):
     """
     viz = viz or {}
     u_b, v_b = _uv(viz)
-    units = viz.get("units", "km/hr")
-    if units not in SPEED_UNITS:
-        raise ValueError(f"units must be one of {sorted(SPEED_UNITS)}")
+    units = _speed_units(viz.get("units", "km/hr"))
     conv = viz.get("directionConvention", "from")
     if conv not in ("from", "to"):
         raise ValueError('directionConvention must be "from" or "to"')
@@ -1564,9 +1590,7 @@ def _wind_vizzes(viz):
     stroke_weight = viz.get("particleStrokeWeight",
                             viz.get("particleLineWidth", 1.1))
     max_age = viz.get("particleMaxAge", 45)
-    units = viz.get("units", "km/hr")
-    if units not in SPEED_UNITS:
-        raise ValueError(f"units must be one of {sorted(SPEED_UNITS)}")
+    units = _speed_units(viz.get("units", "km/hr"))
     vmin = viz.get("min", 0)
     vmax = viz.get("max", DEFAULT_MAX_SPEED[units])
     # The particle speed bounds ARE the raster stretch.

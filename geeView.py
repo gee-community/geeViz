@@ -361,6 +361,62 @@ _RUNNING_SERVERS = {}  # port -> (server, thread)
 import threading as _threading
 
 
+#: Largest exported map page, in bytes. Not arbitrary: a hosted map is
+#: served through Cloud Run, which refuses a response over 32 MiB, and the
+#: agent drops any artifact over 64 MiB. A page over either never reaches
+#: the browser -- and before this guard, nothing told the model, so it
+#: reported a map the user never saw. Override per call with
+#: ``export_html(max_bytes=...)`` or process-wide with GEEVIZ_EXPORT_MAX_MB.
+_EXPORT_MAX_BYTES_DEFAULT = 25 * 1024 * 1024
+
+
+def _export_max_bytes(explicit=None) -> int:
+    """Resolve the export size limit: explicit arg, then env, then default.
+
+    ``0`` (from either source) disables the guard.
+    """
+    if explicit is not None:
+        return int(explicit)
+    env = os.environ.get("GEEVIZ_EXPORT_MAX_MB", "").strip()
+    if env:
+        try:
+            return int(float(env) * 1024 * 1024)
+        except ValueError:
+            pass
+    return _EXPORT_MAX_BYTES_DEFAULT
+
+
+#: The visualization keys Earth Engine's getMapId understands. Everything
+#: else in a geeView viz dict (layerType, autoViz, legends...) is for the
+#: viewer.
+_EE_VIZ_KEYS = ("bands", "min", "max", "gain", "bias", "gamma", "palette",
+                "opacity", "format")
+
+
+def _ee_viz_params(viz: dict) -> dict:
+    """The subset of a geeView viz dict to hand Earth Engine's getMapId.
+
+    ``opacity`` needs care. In geeView it is where the layer's slider
+    starts -- the viewer applies it client-side and never sends it to
+    Earth Engine -- so 0 is a legitimate choice ("start hidden"). Earth
+    Engine's own opacity must be in (0, 1], and forwarding a 0 made the
+    validator report a layer that renders fine as an error:
+    ``Image.visualize: Scale must be greater than zero``. An agent then
+    deleted a working wind layer on the strength of that report. Only an
+    opacity Earth Engine accepts is forwarded; the viewer still gets the
+    caller's value, untouched, through the viz dict itself.
+    """
+    out = {k: viz[k] for k in _EE_VIZ_KEYS if k in viz}
+    if "opacity" in out:
+        try:
+            ok = 0 < float(out["opacity"]) <= 1
+        except (TypeError, ValueError):
+            ok = False
+        if not ok:
+            del out["opacity"]
+    return out
+
+
 def _js_str(value) -> str:
     """A JavaScript string literal for arbitrary text, safe anywhere in the
     generated viewer script.
@@ -1587,33 +1643,36 @@ class mapper:
         # LOCAL PATCH (2026-08-28): pass self, or the layer lands on gv.Map.
         return _el.addEsriImageService(url_or_result, viz_params=viz_params, name=name, token=token, target_map=self)
 
-    def addEsriMapService(self, url_or_result, name=None, token=None, viz_params=None):
+    def addEsriMapService(self, url_or_result, name=None, token=None, viz_params=None,
+                          visible=None):
         """See ``geeViz.esriLib.addEsriMapService``. Delegates. If the
         service is dynamic (non-cached), esriLib now falls back to
         ``Map.addDynamicMapService`` internally instead of raising."""
         from geeViz import esriLib as _el
         # LOCAL PATCH (2026-08-28): pass self, or the layer lands on gv.Map.
-        return _el.addEsriMapService(url_or_result, name=name, token=token, viz_params=viz_params, target_map=self)
+        return _el.addEsriMapService(url_or_result, name=name, token=token, viz_params=viz_params, target_map=self, visible=visible)
 
     def addEsriFeatureService(self, url_or_result, viz_params=None, name=None,
                               max_features=1000, where="1=1", token=None,
-                              bbox=None):
+                              bbox=None, simplify="auto", max_layer_mb=None):
         """See ``geeViz.esriLib.addEsriFeatureService``. Delegates."""
         from geeViz import esriLib as _el
         # LOCAL PATCH (2026-08-28): pass self, or the layer lands on gv.Map.
         return _el.addEsriFeatureService(url_or_result, viz_params=viz_params, name=name,
                                           max_features=max_features, where=where, token=token,
-                                          target_map=self, bbox=bbox)
+                                          target_map=self, bbox=bbox,
+                                          simplify=simplify, max_layer_mb=max_layer_mb)
 
     def addEsriService(self, url_or_result, viz_params=None, name=None, token=None,
-                       max_features=1000, where="1=1"):
+                       max_features=1000, where="1=1", bbox=None, simplify="auto"):
         """See ``geeViz.esriLib.addEsriService``. Auto-detects the
         service type from URL / metadata and delegates to the right
         add-helper."""
         from geeViz import esriLib as _el
         # LOCAL PATCH (2026-08-28): pass self, or the layer lands on gv.Map.
         return _el.addEsriService(url_or_result, viz_params=viz_params, name=name, token=token,
-                                   max_features=max_features, where=where, target_map=self)
+                                   max_features=max_features, where=where, target_map=self,
+                                   bbox=bbox, simplify=simplify)
 
     ######################################################################
     # Function for adding a layer to the map
@@ -2196,6 +2255,7 @@ class mapper:
         token_time_placeholder: str = "__GEEVIZ_TOKEN_TIME__",
         project_placeholder: str = "__GEEVIZ_PROJECT__",
         auth_proxy_placeholder: str = "__GEEVIZ_AUTH_PROXY__",
+        max_bytes: int | None = None,
     ) -> str:
         """Write a self-contained geeView HTML to `output_path`.
 
@@ -2223,9 +2283,17 @@ class mapper:
                 access-token creation time (millis epoch).
             project_placeholder (str): String to use in place of the
                 EE project ID.
+            max_bytes (int, optional): Refuse to write a page larger than
+                this. Defaults to ``GEEVIZ_EXPORT_MAX_MB`` if set, else
+                25 MB -- below what a hosted page can be served at. ``0``
+                disables the check.
 
         Returns:
             str: Absolute path to the written HTML file.
+
+        Raises:
+            ValueError: If the page would exceed ``max_bytes``. The
+                message names the heaviest layers and how to shrink them.
         """
         # Auto-enable inspector if no turnOn commands have been set.
         if not any("turnOn" in c for c in self.mapCommandList):
@@ -2284,6 +2352,30 @@ class mapper:
         # Now rewrite the rest of the ./src/ asset paths
         html = html.replace('href="./src/', 'href="' + asset_base + '/src/')
         html = html.replace('src="./src/', 'src="' + asset_base + '/src/')
+
+        # Refuse a page that can never be delivered. Checked here, before
+        # the write, so an oversized map fails as an error the caller sees
+        # -- map_control returns it to the model -- instead of a file that
+        # is written, reported as a success, and silently never shown.
+        limit = _export_max_bytes(max_bytes)
+        size = len(html.encode("utf-8"))
+        if limit and size > limit:
+            heavy = sorted(
+                ((len(str(d.get("item", ""))), d.get("name", "?"))
+                 for d in self.idDictList),
+                reverse=True)[:3]
+            listing = "; ".join(f"{n!r} {b / 1e6:.1f} MB" for b, n in heavy)
+            raise ValueError(
+                f"This map would be {size / 1e6:.1f} MB, over the "
+                f"{limit / 1e6:.0f} MB a hosted map can be delivered at, so it "
+                f"would never appear. Heaviest layers: {listing}. Layers "
+                f"added as GeoJSON -- including Esri Feature Services -- carry "
+                f"every vertex inside the page. Shrink them: filter with "
+                f"where= or bbox=, request fewer features, or simplify the "
+                f"geometry before adding it. Raise the limit only if the "
+                f"page is not going to be hosted (max_bytes=, or "
+                f"GEEVIZ_EXPORT_MAX_MB)."
+            )
 
         os.makedirs(os.path.dirname(os.path.abspath(output_path)) or ".", exist_ok=True)
         with open(output_path, "w", encoding="utf-8") as f:
@@ -2949,7 +3041,7 @@ class mapper:
         full_path = _os.path.join(output_dir, _os.path.basename(filename))
 
         # Display-relevant viz keys (matches _test_layer)
-        _VIZ_KEYS = ("bands", "min", "max", "gain", "bias", "gamma", "palette", "opacity", "format")
+        _VIZ_KEYS = _EE_VIZ_KEYS
 
         layers = {}
         seen_names = {}      # base_name -> count assigned so far
@@ -3031,7 +3123,7 @@ class mapper:
                 continue
 
             # Build the display viz (same keys as _test_layer)
-            map_viz = {k: viz[k] for k in _VIZ_KEYS if k in viz}
+            map_viz = _ee_viz_params(viz)
 
             try:
                 styled_obj, style_mode = mapper._style_vector(ee_obj, viz)
@@ -3225,10 +3317,7 @@ class mapper:
                 # GeoJSON layers — no ee object to test
                 return {"name": name, "status": "ok", "error": None}
             # Build viz params for getMapId — only pass recognized keys
-            map_viz = {}
-            for k in ("bands", "min", "max", "gain", "bias", "gamma", "palette", "opacity", "format"):
-                if k in viz:
-                    map_viz[k] = viz[k]
+            map_viz = _ee_viz_params(viz)
             warnings = []
             try:
                 # Style vectors to match geeView viewer rendering
@@ -3526,10 +3615,7 @@ class mapper:
                 layer_fetchers[name] = cached_fetcher
                 continue
             # Otherwise create a new one (with vector styling)
-            map_viz = {}
-            for k in ("bands", "min", "max", "gain", "bias", "gamma", "palette", "opacity", "format"):
-                if k in viz:
-                    map_viz[k] = viz[k]
+            map_viz = _ee_viz_params(viz)
             try:
                 test_obj, style_mode = mapper._style_vector(ee_obj, viz)
                 if style_mode == "painted":

@@ -495,6 +495,7 @@ def addEsriMapService(
     token: str | None = None,
     viz_params: dict | None = None,
     target_map=None,
+    visible: bool | None = None,
 ) -> None:
     """Add a cached ArcGIS Map Service as an XYZ tile layer to the geeViz map.
 
@@ -520,6 +521,10 @@ def addEsriMapService(
             name="ESRI World Imagery",
         )
     """
+    # Every other add* takes visible=; an agent passing it here got
+    # TypeError. Folded into viz_params, which is where it was honored.
+    if visible is not None:
+        viz_params = {**(viz_params or {}), "visible": bool(visible)}
     # ── Preflight: cached or dynamic? Route accordingly. ──
     # CACHED MapServers (``singleFusedMapCache: true``) expose
     # ``/tile/{z}/{y}/{x}`` — same shape as an ImageServer, handled by
@@ -579,6 +584,149 @@ def addEsriMapService(
 _FEATURE_QUERY_SUFFIX = "/query"
 
 
+# ---------------------------------------------------------------------------
+# Display generalization for embedded GeoJSON
+# ---------------------------------------------------------------------------
+#
+# A Feature Service layer is embedded in the map page as GeoJSON, every
+# vertex included. Services are authored for analysis, not display: a
+# USFS landtype-association layer came back as 1.76 million vertices at
+# 15 decimal places, about 0.7 m apart, and made a 70.8 MB page that never
+# reached the browser. These helpers thin a layer to what a screen can
+# show, and only when it is too big to deliver as-is.
+
+#: Degrees per meter, near enough for a display tolerance at any latitude
+#: people map (it errs toward keeping detail in longitude at high latitude).
+_DEG_PER_M = 1.0 / 111_320.0
+
+#: Tolerances tried in order by ``simplify="auto"``, in meters. The last is
+#: about one screen pixel at the zoom where a whole national forest fits.
+_AUTO_TOLERANCES_M = (1, 5, 10, 20, 30, 50, 100)
+
+#: Default per-layer budget. Several layers share one page, and the page as
+#: a whole is refused by geeView above 25 MB.
+_LAYER_BUDGET_BYTES_DEFAULT = 8 * 1024 * 1024
+
+
+def _dp(pts, tol):
+    """Douglas-Peucker on a list of positions; iterative (no recursion
+    limit on long rings) and keeps both endpoints."""
+    n = len(pts)
+    if n < 3 or tol <= 0:
+        return pts
+    keep = [False] * n
+    keep[0] = keep[-1] = True
+    stack = [(0, n - 1)]
+    tol2 = tol * tol
+    while stack:
+        a, b = stack.pop()
+        ax, ay = pts[a][0], pts[a][1]
+        dx, dy = pts[b][0] - ax, pts[b][1] - ay
+        seg2 = dx * dx + dy * dy
+        best, idx = -1.0, -1
+        for i in range(a + 1, b):
+            px, py = pts[i][0] - ax, pts[i][1] - ay
+            if seg2:
+                t = (px * dx + py * dy) / seg2
+                t = 0.0 if t < 0 else 1.0 if t > 1 else t
+                ex, ey = px - t * dx, py - t * dy
+            else:
+                ex, ey = px, py
+            d2 = ex * ex + ey * ey
+            if d2 > best:
+                best, idx = d2, i
+        if best > tol2:
+            keep[idx] = True
+            stack.append((a, idx))
+            stack.append((idx, b))
+    return [q for q, k in zip(pts, keep) if k]
+
+
+def _gen_line(pts, tol, precision, min_pts):
+    out = _dp(pts, tol)
+    if len(out) < min_pts:
+        # Too aggressive for this ring/line: keep evenly spaced originals
+        # rather than emitting something invalid.
+        if len(pts) <= min_pts:
+            out = pts
+        else:
+            step = (len(pts) - 1) / (min_pts - 1)
+            out = [pts[round(i * step)] for i in range(min_pts)]
+    return [[round(c[0], precision), round(c[1], precision)] for c in out]
+
+
+def _gen_geom(g, tol, precision):
+    if not g:
+        return g
+    t, c = g.get("type"), g.get("coordinates")
+    if t == "LineString":
+        return {"type": t, "coordinates": _gen_line(c, tol, precision, 2)}
+    if t == "MultiLineString":
+        return {"type": t, "coordinates": [_gen_line(l, tol, precision, 2) for l in c]}
+    if t == "Polygon":
+        return {"type": t, "coordinates": [_gen_line(r, tol, precision, 4) for r in c]}
+    if t == "MultiPolygon":
+        return {"type": t, "coordinates": [[_gen_line(r, tol, precision, 4) for r in poly]
+                                           for poly in c]}
+    if t == "GeometryCollection":
+        return {"type": t, "geometries": [_gen_geom(x, tol, precision)
+                                          for x in g.get("geometries", [])]}
+    return g  # Point / MultiPoint: nothing to thin
+
+
+def _generalize_geojson(gj, tolerance_m, precision=6):
+    """Return a copy of *gj* simplified to *tolerance_m* and rounded to
+    *precision* decimal places. Features and properties are kept as-is."""
+    tol = float(tolerance_m) * _DEG_PER_M
+    feats = [{**f, "geometry": _gen_geom(f.get("geometry"), tol, precision)}
+             for f in gj.get("features", [])]
+    return {**gj, "features": feats}
+
+
+def _geojson_bytes(gj):
+    return len(json.dumps(gj, separators=(",", ":")))
+
+
+def _fit_geojson_for_display(gj, simplify="auto", budget_bytes=None):
+    """Thin *gj* for embedding in a map page.
+
+    Returns ``(geojson, note)`` where *note* describes what was done, or
+    ``None`` if nothing was.
+
+    * ``simplify=False`` / ``None`` -- never alter geometry.
+    * ``simplify=<number>`` -- simplify to that tolerance in meters.
+    * ``simplify="auto"`` -- leave a layer under *budget_bytes* exactly as
+      fetched; otherwise try increasing tolerances until it fits.
+
+    Simplifying polygons one at a time can open hairline gaps where
+    neighbors share an edge. At the tolerances used here that is below a
+    pixel at the zoom the layer is legible at; analysis should still run on
+    the service or an EE FeatureCollection, not on the display copy.
+    """
+    if simplify is False or simplify is None:
+        return gj, None
+    budget = _LAYER_BUDGET_BYTES_DEFAULT if budget_bytes is None else int(budget_bytes)
+    if isinstance(simplify, (int, float)) and not isinstance(simplify, bool):
+        out = _generalize_geojson(gj, simplify)
+        return out, f"simplified to ~{simplify:g} m for display"
+    if simplify != "auto":
+        raise ValueError(f"simplify must be 'auto', False, or a tolerance in meters; got {simplify!r}")
+    before = _geojson_bytes(gj)
+    if before <= budget:
+        return gj, None
+    out = gj
+    for tol_m in _AUTO_TOLERANCES_M:
+        out = _generalize_geojson(gj, tol_m)
+        after = _geojson_bytes(out)
+        if after <= budget:
+            return out, (f"simplified to ~{tol_m} m for display "
+                         f"({before / 1e6:.1f} MB -> {after / 1e6:.1f} MB)")
+    return out, (f"simplified to ~{_AUTO_TOLERANCES_M[-1]} m and still "
+                 f"{_geojson_bytes(out) / 1e6:.1f} MB -- filter with where= or bbox= "
+                 f"to request fewer features")
+
+
+
 def addEsriFeatureService(
     url_or_result: str | dict,
     viz_params: dict | None = None,
@@ -587,7 +735,9 @@ def addEsriFeatureService(
     where: str = "1=1",
     bbox: str | None = None,
     token: str | None = None,
-    target_map=None
+    target_map=None,
+    simplify="auto",
+    max_layer_mb: float | None = None,
 ) -> None:
     """Fetch and add an ArcGIS Feature Service layer as a GeoJSON vector layer.
 
@@ -617,6 +767,15 @@ def addEsriFeatureService(
             server-side filtering.  Defaults to ``"1=1"`` (all features).
             Example: ``where="STATE_FIPS='06'"`` (California only).
         token (str, optional): ArcGIS token for secured services.
+        simplify (str, bool or float, optional): ``"auto"`` (default)
+            leaves a layer under *max_layer_mb* exactly as fetched and
+            otherwise simplifies it at increasing tolerances until it
+            fits -- the whole layer is embedded in the map page, and a
+            page that is too large never reaches the browser. A number
+            is a fixed tolerance in meters; ``False`` never alters the
+            geometry.
+        max_layer_mb (float, optional): Size budget for this layer in the
+            page, used by ``simplify="auto"``. Defaults to 8 MB.
 
     Raises:
         ValueError: If the feature count exceeds *max_features*.
@@ -707,7 +866,11 @@ def addEsriFeatureService(
         ) from exc
 
     actual = len(geojson.get("features", []))
-    print(f"Adding Esri Feature Service: {name} ({actual:,} features)")
+    budget = None if max_layer_mb is None else int(float(max_layer_mb) * 1024 * 1024)
+    geojson, note = _fit_geojson_for_display(geojson, simplify=simplify,
+                                             budget_bytes=budget)
+    print(f"Adding Esri Feature Service: {name} ({actual:,} features)"
+          + (f" -- {note}" if note else ""))
 
     viz = dict(viz_params or {})
     # The viewer needs layerType=geoJSONVector; addLayer sets it automatically
@@ -728,7 +891,9 @@ def addEsriService(
     token: str | None = None,
     max_features: int = 1000,
     where: str = "1=1",
-    target_map=None
+    target_map=None,
+    bbox: str | None = None,
+    simplify="auto",
 ) -> None:
     """Auto-detect the Esri service type and call the appropriate add helper.
 
@@ -747,6 +912,9 @@ def addEsriService(
         max_features (int, optional): Forwarded to :func:`addEsriFeatureService`.
         where (str, optional): SQL WHERE clause forwarded to
             :func:`addEsriFeatureService`.
+        bbox (str, optional): Spatial filter forwarded to
+            :func:`addEsriFeatureService`.
+        simplify (optional): Forwarded to :func:`addEsriFeatureService`.
 
     Raises:
         ValueError: If the service type cannot be determined.
@@ -773,6 +941,11 @@ def addEsriService(
             max_features=max_features,
             where=where,
             token=token,
+            bbox=bbox,
+            simplify=simplify,
+            # Was missing: without it the layer went to the global
+            # gv.Map, not the map this call was made for.
+            target_map=target_map,
         )
     elif stype == "MapServer":
         addEsriMapService(url_or_result, name=name, token=token, viz_params=viz_params, target_map=target_map)
