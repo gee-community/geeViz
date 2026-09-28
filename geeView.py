@@ -417,6 +417,41 @@ def _ee_viz_params(viz: dict) -> dict:
     return out
 
 
+#: viz keys that only the wind renderer reads (see addWindLayer).
+_WIND_ONLY_VIZ_KEYS = ("windSpeedOpacity", "directionConvention")
+
+
+def _is_wind_timelapse_viz(viz: dict) -> bool:
+    """Whether an ``addTimeLapse`` viz was really meant for ``addWindTimeLapse``.
+
+    Handed a wind collection with ``{"units": "kt", "particleDensity": 1.5}``,
+    plain ``addTimeLapse`` raises nothing: it labels frames ``"YYYY"``,
+    collapses a sub-daily forecast into one mosaic, and draws raw u/v with
+    no stretch, so the map shows only the basemap. Those keys mean nothing
+    outside the wind renderer, so their presence is the signal.
+
+    The wind helpers call ``addTimeLapse`` themselves with the internal
+    ``windParticles`` marker; those calls are never routed, or they would
+    recurse.
+    """
+    if not viz or viz.get("windParticles"):
+        return False
+    if any(str(k).startswith("particle") for k in viz):
+        return True
+    if any(k in viz for k in _WIND_ONLY_VIZ_KEYS):
+        return True
+    if "units" in viz:
+        # Lazy: geeViz.weather pulls in fireLib, and geeView is imported
+        # by everything.
+        from geeViz.weather import _speed_units
+        try:
+            _speed_units(viz["units"])
+            return True
+        except ValueError:
+            return False
+    return False
+
+
 def _js_str(value) -> str:
     """A JavaScript string literal for arbitrary text, safe anywhere in the
     generated viewer script.
@@ -1840,6 +1875,14 @@ class mapper:
 
 
         """
+        if _is_wind_timelapse_viz(viz):
+            print("Wind viz keys given to addTimeLapse; drawing it with addWindTimeLapse")
+            from geeViz.weather import addWindTimeLapse as _addWindTimeLapse
+            return _addWindTimeLapse(self, image, viz, name=name or "Wind", visible=visible,
+                                     dateFormat=viz.get("dateFormat"),
+                                     advanceInterval=viz.get("advanceInterval"),
+                                     mosaic=bool(viz.get("mosaic", False)))
+
         if name == None:
             name = "Layer " + str(self.layerNumber)
             self.layerNumber += 1
