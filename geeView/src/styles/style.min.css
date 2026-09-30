@@ -2041,3 +2041,13 @@ ul,
 .toggle-off  { background-color: var(--deep-brown-80)!important;}
 .toggle-on:hover{background-color: var(--orange);}
 .toggle{width:100%;}*/
+
+/* LOCAL PATCH rounded panels v2 (2026-09-17)
+   The legend box only. `.sidebar` was rounded in v1 and reverted: its
+   scrollbar track and its `resize: horizontal` grip are painted by the
+   browser outside the element background, so neither clips to a radius
+   and both sat square inside the rounded corner. */
+.legendDiv {
+  border-top-left-radius: 0.6rem;
+  border-bottom-left-radius: 0.6rem;
+}
