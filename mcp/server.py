@@ -4822,6 +4822,8 @@ def _map_control_inner(Map, act, sess, open_browser, filename, _mc_stdout):
             passed = [l for l in test_result["layers"] if l["status"] == "ok"]
             for l in passed:
                 print(f"  PASS: {l['name']}")
+                for w in l.get("warnings") or []:
+                    print(f"    WARN: {w}")
             for l in failed:
                 print(f"  FAIL: {l['name']} — {l.get('error', 'unknown error')[:100]}")
             if failed:
@@ -5063,6 +5065,8 @@ def _map_control_inner(Map, act, sess, open_browser, filename, _mc_stdout):
             passed = [l for l in test_result["layers"] if l["status"] == "ok"]
             for l in passed:
                 print(f"  PASS: {l['name']}")
+                for w in l.get("warnings") or []:
+                    print(f"    WARN: {w}")
             for l in failed:
                 print(f"  FAIL: {l['name']} — {l.get('error', 'unknown error')[:100]}")
             if failed:

@@ -3300,9 +3300,61 @@ class mapper:
             False
         """
         import concurrent.futures
+        import re
 
         layers = []
         futures = {}
+
+        # The extent the viewer opens on (the last centerObject). getMapId
+        # succeeds for an image that is masked everywhere -- e.g. a median of
+        # scenes the cloud mask removed entirely -- so "PASS" alone let an
+        # agent hand the user a map with nothing on it.
+        view_bounds = None
+        for cmd in reversed(getattr(self, "mapCommandList", [])):
+            m = re.match(r"synchronousCenterObject\((.+)\)", cmd)
+            if m:
+                try:
+                    coords = json.loads(m.group(1))["coordinates"][0]
+                    lngs = [c[0] for c in coords]
+                    lats = [c[1] for c in coords]
+                    view_bounds = (min(lngs), min(lats), max(lngs), max(lats))
+                except Exception:
+                    pass
+                break
+
+        def _empty_in_view_warning(img):
+            """Warning text if ``img`` has no unmasked pixel in view_bounds.
+
+            Sampled coarsely (~256 px across) and abandoned after 20 s, so a
+            heavy layer costs at most that much and never fails the test.
+            """
+            if view_bounds is None:
+                return None
+            import math
+            import threading
+            w, s, e, n = view_bounds
+            width_m = max(e - w, n - s) * 111320 * max(math.cos(math.radians((s + n) / 2)), 0.1)
+            scale = max(30, round(width_m / 256))
+            out = {}
+
+            def _run():
+                try:
+                    out["v"] = (ee.Image(img).mask().reduce(ee.Reducer.max())
+                                .reduceRegion(ee.Reducer.max(), ee.Geometry.Rectangle([w, s, e, n]),
+                                              scale, bestEffort=True, maxPixels=1e7)
+                                .values().get(0).getInfo())
+                except Exception:
+                    pass
+
+            t = threading.Thread(target=_run, daemon=True)
+            t.start()
+            t.join(20)
+            if "v" not in out or out["v"]:
+                return None
+            return (f"No visible pixels in the map's centered extent (sampled at ~{scale} m): "
+                    f"every pixel there is masked. Common causes: a cloud-masked composite with "
+                    f"no clear scenes, a date range with no images, or a threshold nothing met. "
+                    f"Check before telling the user this layer shows something.")
 
         def _test_layer(idx, idDict):
             ee_obj = idDict.get("_ee_obj")
@@ -3391,6 +3443,11 @@ class mapper:
                 idDict["_tile_fetcher"] = map_id.get("tile_fetcher")
             except Exception as e:
                 return {"name": name, "status": "error", "error": str(e)}
+
+            if not style_mode and isinstance(test_obj, ee.Image):
+                empty = _empty_in_view_warning(test_obj)
+                if empty:
+                    warnings.append(empty)
 
             # --- autoViz validation: check class properties exist for band names ---
             # When autoViz is True, the viewer expects <bandName>_class_values,
