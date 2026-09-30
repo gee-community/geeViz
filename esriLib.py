@@ -130,7 +130,11 @@ _DATA_ONLY_EXCLUSIONS: list[str] = [
 # HTTP helpers (no third-party dependencies — stdlib only)
 # ---------------------------------------------------------------------------
 
-_TIMEOUT = 30  # seconds
+# LOCAL PATCH retry ladder v2 (2026-09-21): a SUCCESSFUL city-scale count
+# over FEMA NFHL took 18 s (measured 2026-09-21). Timing that out
+# turns a slow layer into a missing one. 45 s is what esri_paging
+# already allows the data path.
+_TIMEOUT = 45  # seconds
 
 
 def _fetch_json(url: str, params: dict | None = None) -> dict:
@@ -148,9 +152,15 @@ def _fetch_json(url: str, params: dict | None = None) -> dict:
         url = url + "?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers={"User-Agent": "geeViz/esriLib"})
     last_exc: Exception = urllib.error.URLError("no attempt made")
-    for attempt in range(3):
+    # LOCAL PATCH retry ladder v2 (2026-09-21): the ladder was shorter than
+    # the burst. hazards.fema.gov, 24 attempts one second apart:
+    # 7 succeeded, and the longest run of consecutive failures was 7
+    # attempts spanning 7.7 s. Three attempts with 1 s + 2 s of
+    # backoff give up well inside that - and because a reset comes
+    # back in 0.1 s, they were not waiting out anything.
+    for attempt in range(5):
         if attempt:
-            time.sleep(attempt)  # 1 s, then 2 s
+            time.sleep(2 ** (attempt - 1))  # 1, 2, 4, 8 s
         try:
             with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
                 raw = resp.read().decode("utf-8")
@@ -625,6 +635,211 @@ def addEsriMapService(
 
 _FEATURE_QUERY_SUFFIX = "/query"
 
+# ---------------------------------------------------------------------------
+# LOCAL PATCH esri paging v1 (2026-09-21)
+# ---------------------------------------------------------------------------
+#: Hard stop on the paging loop. 200 pages at a 2,000 maxRecordCount is
+#: 400,000 features - far past anything this viewer can draw, so reaching it
+#: means the server is misbehaving and the loop must not run forever.
+_MAX_PAGES = 200
+
+#: LOCAL PATCH esri paging v2 (2026-09-21): how many pages of one
+#: layer to fetch at the same time. Four, not more: the gain is in
+#: not waiting on round trips, and hazards.fema.gov already resets
+#: about a third of our handshakes without being crowded.
+_PAGE_WORKERS = 4
+
+
+def _exceeded_transfer(payload: dict) -> bool:
+    """True when ArcGIS says it withheld rows.
+
+    The flag sits at the top level of a GeoJSON response and under
+    ``properties`` in the Esri JSON one. Both shapes reach here, because
+    ``f=geojson`` is not honoured by every service version.
+    """
+    if not isinstance(payload, dict):
+        return False
+    if payload.get("exceededTransferLimit"):
+        return True
+    props = payload.get("properties")
+    return bool(isinstance(props, dict) and props.get("exceededTransferLimit"))
+
+
+#: LOCAL PATCH esri paging v3 (2026-09-21): one layer's metadata, fetched once.
+#: A classed source draws one sub-layer per class - six, for FEMA flood
+#: zones - and every one of them was asking the SAME layer the same
+#: question. Keyed on the URL and whether a token was used, never on the
+#: token itself.
+_CAPS_CACHE: dict = {}
+
+
+def _paging_caps(layer_url: str, token: str | None) -> dict:
+    """``{"paginates", "orders", "oid", "max_record"}`` for a layer.
+
+    ``objectIdField`` is present on FeatureServer layers and often absent on
+    MapServer ones, so the OID field is also looked for by TYPE. Without an
+    OID neither paging strategy is safe and the caller reports partial.
+
+    ``max_record`` is the server's own page size, which lets the caller skip
+    a fetch it would only discard - see LOCAL PATCH esri paging v3 (2026-09-21).
+    """
+    cache_key = (layer_url, bool(token))
+    if cache_key in _CAPS_CACHE:
+        return _CAPS_CACHE[cache_key]
+    caps = {"paginates": False, "orders": True, "oid": None,
+            "max_record": None}
+    try:
+        meta = _fetch_json(layer_url, _build_params({"f": "json"}, token))
+    except Exception:                                    # noqa: BLE001
+        return caps
+    if not isinstance(meta, dict) or "error" in meta:
+        return caps
+    adv = meta.get("advancedQueryCapabilities") or {}
+    caps["paginates"] = bool(adv.get("supportsPagination"))
+    caps["orders"] = bool(adv.get("supportsOrderBy", True))
+    oid = meta.get("objectIdField")
+    if not oid:
+        for field in meta.get("fields") or []:
+            if (field or {}).get("type") == "esriFieldTypeOID":
+                oid = field.get("name")
+                break
+    caps["oid"] = oid
+    try:
+        caps["max_record"] = int(meta.get("maxRecordCount") or 0) or None
+    except (TypeError, ValueError):
+        caps["max_record"] = None
+    _CAPS_CACHE[cache_key] = caps
+    return caps
+
+
+def _feature_id(feat: dict, oid: str | None):
+    """A feature's stable identity, or None when it has none.
+
+    GeoJSON from ArcGIS carries the OID as ``id``; when ``outFields`` brought
+    the field back it is in ``properties`` too. Either will do - what matters
+    is that repeated rows can be recognised, because a server that ignores
+    the paging parameters answers every page identically.
+    """
+    fid = feat.get("id")
+    if fid is None and oid:
+        fid = (feat.get("properties") or {}).get(oid)
+    return fid
+
+
+def _page_features(query_url: str, params: dict, matched: int,
+                   layer_url: str, token: str | None, first_page: list) -> list:
+    """Every feature the query matches, or as many as can be paged safely.
+
+    Returns ``first_page`` unchanged when no safe strategy exists - the
+    caller then names the layer as partial rather than drawing a slice that
+    looks whole.
+    """
+    caps = _paging_caps(layer_url, token)
+    oid = caps["oid"]
+    if not oid or not caps["orders"]:
+        return first_page
+    strategy = "offset" if caps["paginates"] else "oid_window"
+
+    # The first page was fetched with NO orderByFields, so its row order is
+    # whatever the server felt like. Offsetting into a different order skips
+    # and repeats rows, so that page is thrown away and paging restarts at 0
+    # under an explicit ORDER BY. One wasted request buys a correct layer.
+    base_where = params.get("where") or "1=1"
+    features: list = []
+    seen: set = set()
+    last = None
+
+    def _harvest(rows) -> int:
+        """Add the rows that are new. Returns how many, or -1 when the rows
+        carry no identity - a server ignoring the paging parameters cannot
+        be told from one honouring them, so that case must stop the loop
+        rather than collect duplicates as if complete."""
+        nonlocal last
+        added = 0
+        for feat in rows:
+            fid = _feature_id(feat, oid)
+            if fid is None:
+                return -1
+            if fid in seen:
+                continue
+            seen.add(fid)
+            last = fid
+            features.append(feat)
+            added += 1
+        return added
+
+    def _page(extra: dict):
+        page = dict(params)
+        page["orderByFields"] = oid
+        page.update(extra)
+        try:
+            got = _fetch_json(query_url, page)
+        except Exception:                                # noqa: BLE001
+            return None
+        if not isinstance(got, dict) or "error" in got:
+            return None
+        return got.get("features") or []
+
+    # LOCAL PATCH esri paging v2 (2026-09-21): the pages are independent
+    # under offset paging, and waiting for each in turn was the whole cost -
+    # measured over the Houston urban area, 16 geometry pages took 62.9 s of
+    # a 71.5 s draw, about 4 s per request whatever its size. Once the first
+    # page has shown how big a page is, the remaining offsets are arithmetic
+    # and can be fetched at the same time. Four at a time: the point is to
+    # stop waiting on round trips, not to hammer a federal server that
+    # already resets about a third of our handshakes.
+    # The first page carries `resultOffset` only under offset paging. A
+    # layer without `supportsPagination` IGNORES the parameter, and sending
+    # it there would hide that fact from anyone reading the requests.
+    rows = _page({"resultOffset": "0"} if strategy == "offset" else {})
+    if not rows:
+        return first_page
+    page_size = len(rows)
+    if _harvest(rows) < 0:
+        return features or first_page
+
+    if strategy == "offset" and page_size and len(features) < matched:
+        offsets = list(range(page_size, min(matched, page_size * _MAX_PAGES),
+                             page_size))
+        if offsets:
+            try:
+                from concurrent.futures import ThreadPoolExecutor
+                with ThreadPoolExecutor(max_workers=_PAGE_WORKERS) as pool:
+                    for got in pool.map(
+                            lambda off: _page({"resultOffset": str(off)}),
+                            offsets):
+                        if not got:
+                            continue
+                        if _harvest(got) < 0:
+                            break
+            except Exception:                            # noqa: BLE001
+                # Threads unavailable or the pool blew up: fall through to
+                # the sequential loop below, which finishes the job slowly
+                # rather than returning a layer that looks whole.
+                pass
+
+    # Sequential finish. It completes an OID-window layer, and it also picks
+    # up anything the parallel pass missed - a page that failed every retry
+    # leaves a hole, and a hole is exactly what must not be drawn as whole.
+    for _ in range(_MAX_PAGES):
+        if len(features) >= matched:
+            break
+        if strategy == "offset":
+            extra = {"resultOffset": str(len(features))}
+        elif last is not None:
+            extra = {"where": f"({base_where}) AND {oid} > {last}"}
+        else:
+            extra = {}
+        rows = _page(extra)
+        if not rows:
+            break
+        added = _harvest(rows)
+        if added <= 0:
+            break
+    # Paging that went backwards is a bug, not an improvement.
+    return features if len(features) >= len(first_page) else first_page
+
+
 
 def addEsriFeatureService(
     url_or_result: str | dict,
@@ -634,6 +849,20 @@ def addEsriFeatureService(
     where: str = "1=1",
     bbox: str | None = None,
     token: str | None = None,
+    # LOCAL PATCH esri generalise v1 (2026-09-17): server-side geometry
+    # thinning, in the units of outSR. None keeps every vertex.
+    max_allowable_offset: float | None = None,
+    # LOCAL PATCH readable popup v1 (2026-09-21): which fields to fetch, and
+    # the words to show them under. None keeps outFields="*" and the
+    # service's own field names, which is what every earlier caller
+    # gets. A 469-field layer makes an unreadable popup otherwise.
+    out_fields: str | None = None,
+    field_labels: dict | None = None,
+    # LOCAL PATCH layer visible v1 (2026-09-21): added to the map switched
+    # off. Three stacked translucent polygon layers is a brown wash in
+    # which none of them can be read; the layer still has to BE there,
+    # so it is added and left for the viewer to switch on.
+    visible: bool = True,
     target_map=None
 ) -> None:
     """Fetch and add an ArcGIS Feature Service layer as a GeoJSON vector layer.
@@ -758,20 +987,44 @@ def addEsriFeatureService(
     # ---- Fetch GeoJSON ----
     query_params: dict[str, Any] = {
         "where": where,
-        "outFields": "*",
+        # LOCAL PATCH readable popup v1 (2026-09-21)
+        "outFields": out_fields or "*",
         "outSR": "4326",           # always WGS84 so the viewer renders it natively
         "f": "geojson",
     }
     query_params.update(_bbox_params)
+    # LOCAL PATCH esri generalise v1 (2026-09-17): only when asked. The
+    # count query above is deliberately left alone - it returns no
+    # geometry, so there is nothing to thin.
+    if max_allowable_offset:
+        query_params["maxAllowableOffset"] = str(max_allowable_offset)
     if token:
         query_params["token"] = token
 
-    try:
-        geojson = _fetch_json(count_url, query_params)
-    except urllib.error.URLError as exc:
-        raise ConnectionError(
-            f"Could not fetch features from {count_url!r}: {exc}"
-        ) from exc
+    # LOCAL PATCH esri paging v3 (2026-09-21): when the count already exceeds
+    # the server's own page size, this fetch returns one page that the
+    # paging below immediately discards - it is unordered, so offsetting
+    # into it would skip and repeat rows. Measured: two of every five round
+    # trips a classed city-scale draw made were this and the metadata
+    # lookup. Skipping it is safe only when the layer HAS said what its
+    # page size is and can be paged; otherwise the original path runs.
+    _caps = _paging_caps(url, token)
+    _skip_first = bool(
+        _caps.get("max_record") and feature_count > _caps["max_record"]
+        and _caps.get("oid") and _caps.get("orders"))
+    if _skip_first:
+        # `exceededTransferLimit` is the honest description of what this
+        # stands in for: the whole layer is known not to fit in one
+        # response, which is exactly what the flag means.
+        geojson = {"type": "FeatureCollection", "features": [],
+                   "exceededTransferLimit": True}
+    else:
+        try:
+            geojson = _fetch_json(count_url, query_params)
+        except urllib.error.URLError as exc:
+            raise ConnectionError(
+                f"Could not fetch features from {count_url!r}: {exc}"
+            ) from exc
 
     if "error" in geojson:
         err = geojson["error"]
@@ -780,20 +1033,227 @@ def addEsriFeatureService(
             f"{err.get('code')} — {err.get('message', str(err))}"
         )
 
-    actual = len(geojson.get("features", []))
-    print(f"Adding Esri Feature Service: {name} ({actual:,} features)")
+    # LOCAL PATCH esri paging v1 (2026-09-21): ArcGIS caps ONE response at the
+    # layer's maxRecordCount (2,000 on every service this project maps),
+    # and this drew whatever came back. Measured on the shipped statewide
+    # fault draw: 10,245 matched, 2,000 drawn, exceededTransferLimit true
+    # in the response and nothing reading it. Page, and when paging still
+    # cannot finish, put the shortfall in the LAYER NAME - the legend is
+    # where a person at the booth would see it, not the console.
+    features = geojson.get("features") or []
+    if _exceeded_transfer(geojson) or 0 < len(features) < feature_count:
+        features = _page_features(count_url, query_params, feature_count,
+                                  url, token, features)
+        geojson["features"] = features
+
+    actual = len(features)
+    if actual < feature_count:
+        name = f"{name} - {actual:,} of {feature_count:,} drawn"
+        print(f"Adding Esri Feature Service: {name} (PARTIAL - the "
+              f"service would not return the rest)")
+    else:
+        print(f"Adding Esri Feature Service: {name} ({actual:,} features)")
+
+    # LOCAL PATCH readable popup v1 (2026-09-21): the viewer's popup prints
+    # property NAMES, so renaming them here is the only way a click
+    # can say "Hurricane" rather than "HRCN_RISKR". Applied in the
+    # order given, so the field that matters reaches the top of the
+    # popup; anything unlabelled keeps its name and follows.
+    if field_labels:
+        for feature in geojson.get("features") or []:
+            props = feature.get("properties")
+            if not isinstance(props, dict):
+                continue
+            renamed = {}
+            for field, label in field_labels.items():
+                if field in props:
+                    renamed[label] = props.pop(field)
+            renamed.update(props)
+            feature["properties"] = renamed
 
     viz = dict(viz_params or {})
     # The viewer needs layerType=geoJSONVector; addLayer sets it automatically
     # when passed a dict, but be explicit so callers can mix it with other keys.
     viz.setdefault("layerType", "geoJSONVector")
 
-    (target_map or gv.Map).addLayer(geojson, viz, name)
+    # LOCAL PATCH layer visible v1 (2026-09-21)
+    (target_map or gv.Map).addLayer(geojson, viz, name, visible)
 
 
 # ---------------------------------------------------------------------------
 # addEsriService — auto-dispatch
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# LOCAL PATCH classed fetch v1 (2026-09-21)
+# ---------------------------------------------------------------------------
+def _class_row_matches(props: dict, match: dict) -> bool:
+    """Does one feature satisfy one class spec?
+
+    Mirrors `agent_tools._row_matches`. The NULL rules are the whole reason
+    this is written out rather than done with a set membership test: FEMA
+    encodes the regulatory floodway as a SUBTYPE of Zone AE, so an ordinary
+    AE polygon carries ZONE_SUBTY NULL and IS the row that the "everything
+    except the floodway" class has to keep.
+    """
+    for field, rule in (match or {}).items():
+        value = props.get(field)
+        text = None if value is None else str(value)
+        wanted = rule.get("in") if isinstance(rule, dict) else rule
+        unwanted = rule.get("not_in") if isinstance(rule, dict) else None
+        if unwanted is not None:
+            if text is None:
+                if None in unwanted or "null" in [str(u).lower()
+                                                  for u in unwanted]:
+                    return False
+            elif text in [str(u) for u in unwanted]:
+                return False
+        if wanted is not None:
+            allow_null = any(w is None for w in wanted)
+            if text is None:
+                if not allow_null:
+                    return False
+            elif text not in [str(w) for w in wanted if w is not None]:
+                return False
+    return True
+
+
+def addEsriFeatureServiceClassed(
+    url: str,
+    classes: list,
+    bbox: str | None = None,
+    where: str = "1=1",
+    other: dict | None = None,
+    out_fields: str | None = None,
+    field_labels: dict | None = None,
+    max_allowable_offset: float | None = None,
+    max_features: int = 1000,
+    token: str | None = None,
+    target_map=None,
+) -> None:
+    """Fetch a layer ONCE and add one map layer per class.
+
+    Every class asks the same layer over the same box, so asking six times
+    is six count preflights, six metadata lookups and six paging runs.
+    Measured over the Houston urban area: 79.0 s that way, 27.7 s this way,
+    the same features either way.
+
+    Args:
+        classes: ``[{"name", "viz", "match", "visible"}]``. `match` is the
+            JSON form described in the patch docstring.
+        other: optional ``{"name", "viz", "visible"}`` for rows matching no
+            class. Without it those rows are DROPPED and the count is
+            reported, because a class we have not modelled must never
+            vanish in silence.
+        where: the outer filter - typically the source's exclude clause.
+    """
+    import geeViz.geeView as gv
+
+    url = _resolve_url(url)
+    if url.lower().endswith("featureserver"):
+        url = f"{url}/0"
+
+    count_params: dict[str, Any] = {"where": where, "returnCountOnly": "true",
+                                    "f": "json"}
+    bbox_params: dict[str, Any] = {}
+    if bbox:
+        bbox_params = {"geometry": bbox, "geometryType": "esriGeometryEnvelope",
+                       "inSR": "4326", "spatialRel": "esriSpatialRelIntersects"}
+        count_params.update(bbox_params)
+    if token:
+        count_params["token"] = token
+
+    query_url = f"{url}{_FEATURE_QUERY_SUFFIX}"
+    count_resp = _fetch_json(query_url, count_params)
+    if "error" in count_resp:
+        err = count_resp["error"]
+        raise ValueError(f"Feature Service returned an error: "
+                         f"{err.get('code')} - {err.get('message', str(err))}")
+    matched = count_resp.get("count", 0)
+    if matched > max_features:
+        raise ValueError(
+            f"Feature service has {matched:,} features "
+            f"(max_features={max_features:,}). Increase max_features OR "
+            f"narrow `where`.")
+
+    query_params: dict[str, Any] = {
+        "where": where, "outFields": out_fields or "*", "outSR": "4326",
+        "f": "geojson"}
+    query_params.update(bbox_params)
+    if max_allowable_offset:
+        query_params["maxAllowableOffset"] = str(max_allowable_offset)
+    if token:
+        query_params["token"] = token
+
+    caps = _paging_caps(url, token)
+    if (caps.get("max_record") and matched > caps["max_record"]
+            and caps.get("oid") and caps.get("orders")):
+        features = _page_features(query_url, query_params, matched, url,
+                                  token, [])
+    else:
+        payload = _fetch_json(query_url, query_params)
+        if "error" in payload:
+            err = payload["error"]
+            raise ValueError(f"Feature Service query returned an error: "
+                             f"{err.get('code')} - {err.get('message')}")
+        features = payload.get("features") or []
+        if _exceeded_transfer(payload) or 0 < len(features) < matched:
+            features = _page_features(query_url, query_params, matched, url,
+                                      token, features)
+
+    if field_labels:
+        for feature in features:
+            props = feature.get("properties")
+            if not isinstance(props, dict):
+                continue
+            renamed = {}
+            for field, label in field_labels.items():
+                if field in props:
+                    renamed[label] = props.pop(field)
+            renamed.update(props)
+            feature["properties"] = renamed
+
+    # Split. One pass, first matching class wins, exactly as the per-class
+    # SQL did - the classes are written to be disjoint and the floodway
+    # deliberately sits last so it beats the AE it is inside.
+    buckets = [[] for _ in classes]
+    leftovers = []
+    for feature in features:
+        props = feature.get("properties") or {}
+        for index, spec in enumerate(classes):
+            if _class_row_matches(props, spec.get("match") or {}):
+                buckets[index].append(feature)
+                break
+        else:
+            leftovers.append(feature)
+
+    short = len(features) < matched
+    for spec, rows in zip(classes, buckets):
+        name = spec.get("name") or "layer"
+        if short:
+            name = f"{name} - {len(features):,} of {matched:,} drawn"
+        viz = dict(spec.get("viz") or {})
+        viz.setdefault("layerType", "geoJSONVector")
+        print(f"Adding Esri Feature Service: {name} ({len(rows):,} features)")
+        (target_map or gv.Map).addLayer(
+            {"type": "FeatureCollection", "features": rows}, viz, name,
+            bool(spec.get("visible", True)))
+
+    if leftovers:
+        if other:
+            viz = dict(other.get("viz") or {})
+            viz.setdefault("layerType", "geoJSONVector")
+            name = other.get("name") or "Other classes"
+            print(f"Adding Esri Feature Service: {name} "
+                  f"({len(leftovers):,} features)")
+            (target_map or gv.Map).addLayer(
+                {"type": "FeatureCollection", "features": leftovers}, viz,
+                name, bool(other.get("visible", True)))
+        else:
+            print(f"WARNING: {len(leftovers):,} features matched no class and "
+                  f"were NOT drawn - pass `other=` to keep them.")
+
 
 def addEsriService(
     url_or_result: str | dict,

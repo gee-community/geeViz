@@ -1334,10 +1334,13 @@ class mapper:
         """
         if not isinstance(url_template, str) or not url_template:
             raise ValueError("url_template must be a non-empty string")
-        if not all(tok in url_template for tok in ("{x}", "{y}", "{z}")):
+        # LOCAL PATCH tile bbox v1 (2026-09-11): a WMS template names the
+        # tile by its bounding box, not by x/y/z. Either set is enough.
+        _xyz = all(tok in url_template for tok in ("{x}", "{y}", "{z}"))
+        if not _xyz and "{bbox}" not in url_template:
             raise ValueError(
-                f"url_template must contain {{x}}, {{y}}, and {{z}} placeholders. "
-                f"Got: {url_template!r}"
+                f"url_template must contain {{x}}, {{y}}, and {{z}} placeholders, "
+                f"or {{bbox}} for a WMS-style service. Got: {url_template!r}"
             )
 
         idDict = {
@@ -1490,13 +1493,40 @@ class mapper:
 
     def addEsriFeatureService(self, url_or_result, viz_params=None, name=None,
                               max_features=1000, where="1=1", token=None,
-                              bbox=None):
+                              bbox=None,
+                              # LOCAL PATCH esri generalise v2 (2026-09-21): esriLib
+                              # has taken this since v1 and this wrapper did not
+                              # forward it, so every hint carrying it died with a
+                              # TypeError and the layer simply never appeared.
+                              max_allowable_offset=None,
+                              # LOCAL PATCH readable popup v1 (2026-09-21)
+                              out_fields=None, field_labels=None,
+                              # LOCAL PATCH layer visible v1 (2026-09-21)
+                              visible=True):
         """See ``geeViz.esriLib.addEsriFeatureService``. Delegates."""
         from geeViz import esriLib as _el
         # LOCAL PATCH (2026-08-28): pass self, or the layer lands on gv.Map.
         return _el.addEsriFeatureService(url_or_result, viz_params=viz_params, name=name,
                                           max_features=max_features, where=where, token=token,
-                                          target_map=self, bbox=bbox)
+                                          target_map=self, bbox=bbox,
+                                          max_allowable_offset=max_allowable_offset,
+                                          out_fields=out_fields,
+                                          field_labels=field_labels,
+                                          visible=visible)
+
+    def addEsriFeatureServiceClassed(self, url, classes, bbox=None,
+                                     where="1=1", other=None,
+                                     out_fields=None, field_labels=None,
+                                     max_allowable_offset=None,
+                                     max_features=1000, token=None):
+        """LOCAL PATCH classed fetch v1 (2026-09-21): one fetch, then one
+        layer per class. See ``geeViz.esriLib`` for why."""
+        from geeViz import esriLib as _el
+        return _el.addEsriFeatureServiceClassed(
+            url, classes, bbox=bbox, where=where, other=other,
+            out_fields=out_fields, field_labels=field_labels,
+            max_allowable_offset=max_allowable_offset,
+            max_features=max_features, token=token, target_map=self)
 
     def addEsriService(self, url_or_result, viz_params=None, name=None, token=None,
                        max_features=1000, where="1=1"):
@@ -1947,11 +1977,21 @@ class mapper:
                 tpl = (idDict["_tile_url_template"]
                        .replace("\\", "\\\\")
                        .replace('"', '\\"'))
+                # LOCAL PATCH tile bbox v1 (2026-09-11): also substitute the tile's
+                # Web Mercator bounding box for {bbox}, so a WMS endpoint
+                # can stand in for a tile matrix that stops too early.
+                # minx,miny,maxx,maxy in EPSG:3857 metres (WMS 1.3.0 axis
+                # order for that CRS). Origin is the top-left of the world.
                 tile_url_fn = (
-                    'function(coord,zoom){return "' + tpl + '"'
+                    'function(coord,zoom){'
+                    'var _w=40075016.68557849,_h=_w/2,_t=_w/Math.pow(2,zoom),'
+                    '_x0=-_h+coord.x*_t,_y1=_h-coord.y*_t,'
+                    '_bb=[_x0,_y1-_t,_x0+_t,_y1].join(",");'
+                    'return "' + tpl + '"'
                     '.replace("{x}",coord.x)'
                     '.replace("{y}",coord.y)'
-                    '.replace("{z}",zoom);}'
+                    '.replace("{z}",zoom)'
+                    '.replace("{bbox}",_bb);}'
                 )
                 # addREST signature: (tileURLFunction, name, visible, maxZoom, helpBox, whichLayerList)
                 # Wrap in a try/catch so a single bad URL can't break the whole map load.
