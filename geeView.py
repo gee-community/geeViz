@@ -2347,14 +2347,20 @@ class mapper:
         with open(template, "r", encoding="utf-8") as f:
             html = f.read()
 
-        # LOCAL PATCH (2026-09-03): the template hard-codes geeViz's own
-        # Google Maps key, which is HTTP-referrer-restricted to geeViz's
-        # domains (plus localhost - which is why every local test passes
-        # and every OTHER deployment fails with RefererNotAllowedMapError,
-        # a blank grey map, and a console pointing at a key the deployer
-        # does not own). If the standard env var names a key, stamp it
-        # into the page instead; otherwise behave exactly as before.
-        _maps_key = os.environ.get("GOOGLE_MAPS_PLATFORM_API_KEY", "").strip()
+        # The template hard-codes geeViz's own Google Maps key, which is
+        # HTTP-referrer-restricted to geeViz's domains (plus localhost -
+        # which is why every local test passes and every OTHER deployment
+        # fails with RefererNotAllowedMapError and a blank grey map). A
+        # deployment supplies its own BROWSER key - referrer-restricted to
+        # its sites - in GOOGLE_MAPS_BROWSER_KEY, and it is stamped in here.
+        #
+        # Never GOOGLE_MAPS_PLATFORM_API_KEY: that is the server's key for
+        # geocoding, Places, Routes and the rest, with no referrer
+        # restriction (it is called from the server, so it cannot have
+        # one). This page is served to browsers, shared and downloaded, so
+        # anything stamped into it is public. It stamped the server key
+        # from 2026-09-11 until this was changed.
+        _maps_key = os.environ.get("GOOGLE_MAPS_BROWSER_KEY", "").strip()
         if _maps_key:
             import re as _re_key  # self-contained: geeView has no module-level re
             html = _re_key.sub(
