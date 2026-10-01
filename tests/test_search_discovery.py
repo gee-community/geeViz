@@ -335,6 +335,16 @@ def test_the_lcms_code_example_is_not_deprecated():
                 f"{line.strip()[:120]}")
 
 
+def test_no_lcms_year_range_ends_before_2025():
+    """The defaults table was corrected to 1985→2025 but the
+    "Known dataset coverage" list still said "LCMS: 1985 → 2023", telling
+    an agent that 0 images for 2024 or 2025 was expected and to stop."""
+    for line in INSTR.splitlines():
+        if "LCMS" in line and re.search(r"1985\s*(→|->|-|–)\s*20\d\d", line):
+            end = int(re.search(r"1985\s*(?:→|->|-|–)\s*(20\d\d)", line).group(1))
+            assert end >= 2025, f"stale LCMS year range: {line.strip()[:120]}"
+
+
 def test_the_hawaii_exception_survives():
     """Coverage is not monotonic: HAWAII and PRUSVI exist only in the
     older release, so a blanket 'always use the newest' instruction
