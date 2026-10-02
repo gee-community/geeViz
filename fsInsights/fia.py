@@ -46,7 +46,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from ._http import get_json
-from .vocab import FIA_BASE, get_attribute, get_evaluation
+from .vocab import FIA_BASE, get_attribute, get_evaluation, load_catalog
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +116,32 @@ def validate(wc: int, snum: int) -> None:
                 f"{ev.get('GROWTH_ACCT')!r}. Use "
                 f"find_evaluations('{ev.get('STATE')}', growth_only=True)."
             )
+
+
+def _check_grouping(which: str, label: str) -> None:
+    """Refuse a grouping label EVALIDator does not know. Raises if so.
+
+    EVALIDator does not reject an unknown ``rselected`` / ``cselected`` /
+    ``pselected``: it drops it and answers ungrouped. So "Forest-type
+    group" (the real label is "Forest type group") came back as the state
+    total, shaped like a one-row breakdown, with nothing to say the
+    grouping was ignored -- an agent then reports it as the answer by
+    forest type. Labels are display strings matched character for
+    character, so they are checked against the catalog here, with the
+    nearest real labels in the error.
+    """
+    labels = [str(r.get("LABEL_VAR") or "") for r in load_catalog("rselected")]
+    if label in labels:
+        return
+    import difflib
+    near = difflib.get_close_matches(label, labels, n=3, cutoff=0.5)
+    hint = (f" Did you mean {', '.join(repr(n) for n in near)}?" if near
+            else " Use find_groupings('<term>') to search them.")
+    raise FIAValidationError(
+        f"{which}={label!r} is not an FIA grouping label (labels are matched "
+        f"exactly; EVALIDator would silently ignore it and return ungrouped "
+        f"totals).{hint}"
+    )
 
 
 def estimate(wc: int, snum: int, *,
@@ -188,6 +214,10 @@ def estimate(wc: int, snum: int, *,
     """
     if validate_first:
         validate(wc, snum)
+        for _which, _label in (("rselected", rselected), ("cselected", cselected),
+                               ("pselected", pselected)):
+            if _label:
+                _check_grouping(_which, _label)
 
     fd = str(forest_definition).upper()
     if fd not in FOREST_DEFINITIONS:

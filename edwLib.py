@@ -444,9 +444,10 @@ def query_features(
         params["f"] = "json"
 
     if geometry is not None:
+        geometry = _ee_to_geojson(geometry)
         geom_str = _convert_geometry(geometry, geometry_type)
         params["geometry"] = geom_str
-        params["geometryType"] = geometry_type
+        params["geometryType"] = _geometry_type_for(geom_str, geometry_type)
         params["spatialRel"] = spatial_rel
         params["inSR"] = str(out_sr)
 
@@ -454,12 +455,65 @@ def query_features(
     data = _post_json(url, params)
 
     if "error" in data:
-        raise RuntimeError(f"EDW query error: {data['error'].get('message', data['error'])}")
+        raise RuntimeError(f"EDW query error: {_error_text(data['error'])}")
 
     if return_count_only:
         return {"count": data.get("count", 0)}
 
     return _sanitize_for_ee(data)
+
+
+def _ee_to_geojson(geometry):
+    """An ee.Geometry / ee.Feature / ee.FeatureCollection as GeoJSON.
+
+    query_features used to hand these straight to json.dumps, which fails
+    with "Object of type Geometry is not JSON serializable" -- and an ee
+    object is what an Earth Engine workflow has in hand ("forests
+    intersecting this state"). Duck-typed so this module never imports ee.
+    """
+    if isinstance(geometry, (dict, str)) or not hasattr(geometry, "getInfo"):
+        return geometry
+    if hasattr(geometry, "geometry"):          # Feature / FeatureCollection
+        geometry = geometry.geometry()
+    return geometry.getInfo()
+
+
+def _geometry_type_for(geom_str: str, requested: str) -> str:
+    """The Esri geometryType that matches the converted geometry.
+
+    A GeoJSON Polygon converts to Esri ``rings``, but the type stayed at
+    the default ``esriGeometryEnvelope``: the service was sent a polygon
+    labelled as a rectangle and answered with an error whose message is
+    empty. An explicit, non-default type from the caller is kept.
+    """
+    if requested != "esriGeometryEnvelope":
+        return requested
+    try:
+        g = json.loads(geom_str)
+    except (TypeError, ValueError):
+        return requested
+    if isinstance(g, dict):
+        if "rings" in g:
+            return "esriGeometryPolygon"
+        if "paths" in g:
+            return "esriGeometryPolyline"
+        if "points" in g:
+            return "esriGeometryMultipoint"
+        if "x" in g and "y" in g:
+            return "esriGeometryPoint"
+    return requested
+
+
+def _error_text(err) -> str:
+    """ArcGIS error JSON as text; its ``message`` is often empty and the
+    cause is in ``details``."""
+    if not isinstance(err, dict):
+        return str(err)
+    msg = str(err.get("message") or "").strip()
+    details = "; ".join(str(d) for d in (err.get("details") or []) if d)
+    code = err.get("code")
+    text = "; ".join(t for t in (msg, details) if t) or json.dumps(err)
+    return f"{text} (code {code})" if code else text
 
 
 def _convert_geometry(geometry: dict | str, geometry_type: str) -> str:
@@ -565,16 +619,17 @@ def query_features_with_pagination(
         }
 
         if geometry is not None:
+            geometry = _ee_to_geojson(geometry)   # once: a dict afterwards
             geom_str = _convert_geometry(geometry, geometry_type)
             params["geometry"] = geom_str
-            params["geometryType"] = geometry_type
+            params["geometryType"] = _geometry_type_for(geom_str, geometry_type)
             params["spatialRel"] = spatial_rel
             params["inSR"] = str(out_sr)
 
         data = _post_json(url, params)
 
         if "error" in data:
-            raise RuntimeError(f"EDW query error: {data['error'].get('message', data['error'])}")
+            raise RuntimeError(f"EDW query error: {_error_text(data['error'])}")
 
         features = data.get("features", [])
         if not features:
