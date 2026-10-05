@@ -180,6 +180,7 @@ cannot die on ``.first()``. Check that property before reporting numbers.
 """
 
 import datetime
+import functools
 import json
 import math
 
@@ -899,35 +900,8 @@ def getForecastData(startDate, endDate, model="gfs", variable="wind",
     if t1 <= tn:
         return _out(_analyses(t0, t1))
 
-    def _newest_run_reaching(end_ms):
-        """Newest run that actually has an image valid near ``end_ms``.
-
-        Not simply the newest run. WeatherNext interleaves 6-hourly inits
-        reaching 360 h with interim hourly inits that stop at 48 h, so
-        the most recent initialization is frequently one that cannot
-        cover a forward window at all: asking for two days out returned
-        twelve images at leads 37..48 and stopped a day and a half short.
-
-        Choosing among the runs that reach the far end keeps the "one
-        run" property while actually spanning what was asked for. It is
-        a no-op where every run has the same horizon, i.e. GFS and ECMWF.
-        """
-        # At or PAST the end, not merely near it. A window ending
-        # 09-13 was previously served by an hourly init whose 48-hour
-        # reach stopped at 09-12 11:00 — that image fell inside a
-        # "within 24 hours of the end" band, so the run looked like it
-        # covered the request and the result silently stopped a day
-        # short. Requiring an image at or beyond the end makes coverage
-        # a fact rather than an approximation.
-        span = 24 * 3600 * 1000
-        reaching = ic.filter(ee.Filter.And(
-            ee.Filter.gte(valid_p, _v(end_ms)),
-            ee.Filter.lte(valid_p, _v(end_ms + span))))
-        return ee.Algorithms.If(reaching.size().gt(0),
-                                reaching.aggregate_max(run_p),
-                                _latest_run_at_or_before(tn))
-
-    latest_run = _newest_run_reaching(t1)
+    latest_run = _most_complete_run(ic, key, spec, t0, t1, tn, look_ms,
+                                    _latest_run_at_or_before(tn))
 
     # ---- entirely future: one run ------------------------------------
     if t0 >= tn:
@@ -947,10 +921,116 @@ def getForecastData(startDate, endDate, model="gfs", variable="wind",
     seam = (ee.Date(run_ms).format("YYYY-MM-dd'T'HH:mm:ss'Z'")
             if iso else run_ms)
     before = _analyses(t0, t1).filter(ee.Filter.lt(valid_p, seam))
+    # Bounded below by the window start as well as the seam: the chosen
+    # run is the newest COMPLETE one, which can be several hours older
+    # than ``t0``, and its steps between its init and ``t0`` are outside
+    # what was asked for.
     after = ic.filter(ee.Filter.eq(run_p, latest_run)).filter(
         ee.Filter.And(ee.Filter.gte(valid_p, seam),
+                      ee.Filter.gte(valid_p, _v(t0)),
                       ee.Filter.lte(valid_p, _v(t1))))
     return _out(before.merge(after))
+
+
+@functools.lru_cache(maxsize=None)
+def _expected_leads(model_key):
+    """Every lead hour a complete run of ``model_key`` publishes.
+
+    ``(long, short)`` -- runs at ``long_run_hours`` reach ``horizon_h
+    ["long"]``, the rest ``["short"]`` -- stepping per ``lead_step_h``
+    (GFS: hourly to 120 h, then 3-hourly to 384 h = 209 steps, which is
+    what a fully ingested GFS run in EE holds). Pure arithmetic on the
+    MODELS table, computed once per model and reused.
+    """
+    spec = MODELS[model_key]
+    steps = sorted(spec["lead_step_h"])
+
+    def leads(horizon):
+        out = []
+        for i, (start, step) in enumerate(steps):
+            stop = steps[i + 1][0] if i + 1 < len(steps) else horizon + step
+            h = start
+            while h < stop and h <= horizon:
+                out.append(h)
+                h += step
+        return tuple(out)
+
+    hz = spec["horizon_h"]
+    # Lead 0 is left out: WeatherNext publishes leads 1..360, not 0..360,
+    # and expecting a lead 0 made every run whose window began at its own
+    # init look one step short -- so an older run, whose window happened
+    # to start later, won. A run that does have lead 0 (GFS) just counts
+    # one more than expected, which still reads as complete.
+    return (tuple(h for h in leads(hz["long"]) if h > 0),
+            tuple(h for h in leads(hz["short"]) if h > 0))
+
+
+def _most_complete_run(ic, model_key, spec, t0, t1, tn, look_ms, fallback):
+    """The run to serve a forward window from: the newest COMPLETE one.
+
+    Not simply the newest run, for two reasons:
+
+    * EE ingests a GFS/ECMWF run over hours. Until it finishes, the newest
+      run holds a scattering of steps -- on 2026-10-02 GFS 12Z had 60 of
+      its 209 images and hours 0-30 were 4, 10, 12, 15, 19... -- and a
+      forecast or chart built from it has holes. The previous run, six
+      hours older and complete, is the better forecast.
+    * WeatherNext interleaves 6-hourly inits reaching 360 h with hourly
+      inits that stop at 48 h, so the newest init often cannot cover the
+      window at all (two days out once returned leads 37..48 only).
+
+    So every recent run that could reach the window is scored on what it
+    actually holds in the window against what a complete run would hold
+    there (``_expected_leads``), and on whether it reaches the window's
+    end. Preference: reaches and complete (newest first) > reaches but
+    incomplete (most complete first, then newest) > does not reach.
+    Entirely server-side -- one expression, no getInfo -- so it costs a
+    single round trip when the result is finally used.
+    """
+    run_p, lead_p = spec["run_prop"], spec["lead_prop"]
+    iso = spec["iso_times"]
+    long_l, short_l = _expected_leads(model_key)
+    long_ms = spec["horizon_h"]["long"] * 3600 * 1000
+    short_ms = spec["horizon_h"]["short"] * 3600 * 1000
+    long_hours = ee.List(spec["long_run_hours"])
+    hour_ms = 3600 * 1000
+
+    # Candidates: published inside the lookback, and early enough that a
+    # long run could still reach the window's end.
+    lo = max(tn - look_ms, t1 - long_ms)
+    cands = ic.filter(ee.Filter.And(
+        ee.Filter.gt(run_p, _fmt_time(lo, iso)),
+        ee.Filter.lte(run_p, _fmt_time(tn, iso))))
+    runs = cands.aggregate_array(run_p).distinct()
+
+    def score(run):
+        r_ms = ee.Date(run).millis()
+        is_long = long_hours.contains(ee.Date(run).get("hour"))
+        leads = ee.List(ee.Algorithms.If(is_long, list(long_l), list(short_l)))
+        reach = ee.Number(ee.Algorithms.If(is_long, long_ms, short_ms))
+        # The part of the window this run serves: from its init (the seam
+        # when the window spans now) to the window's end, in lead hours.
+        lo_h = ee.Number(t0).max(r_ms).subtract(r_ms).divide(hour_ms)
+        hi_h = ee.Number(t1).subtract(r_ms).divide(hour_ms)
+        expected = leads.filter(ee.Filter.rangeContains("item", lo_h, hi_h)).size()
+        actual = (ic.filter(ee.Filter.eq(run_p, run))
+                    .filter(ee.Filter.rangeContains(lead_p, lo_h, hi_h)).size())
+        ratio = ee.Number(actual).divide(ee.Number(expected).max(1)).min(1)
+        complete = ee.Number(actual).gte(expected).And(ee.Number(expected).gt(0))
+        reaches = r_ms.add(reach).gte(t1)
+        # Lexicographic preference as one number: tier, then completeness,
+        # then recency (ms / 1e3 stays far below one completeness step).
+        tier = ee.Number(ee.Algorithms.If(reaches,
+                                          ee.Algorithms.If(complete, 3, 1), 0))
+        s = (tier.multiply(1e15)
+             .add(ee.Number(ee.Algorithms.If(complete, 0, ratio)).multiply(1e14))
+             .add(r_ms.divide(1e3)))
+        return ee.Feature(None, {"run": run, "score": s})
+
+    best = ee.FeatureCollection(runs.map(score)).sort("score", False)
+    return ee.Algorithms.If(runs.size().gt(0),
+                            ee.Feature(best.first()).get("run"),
+                            fallback)
 
 
 def _uv_image(image, viz):

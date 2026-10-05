@@ -777,23 +777,25 @@ EE has logical operators that clash with Python keywords. The method name is **c
 ### Vector data — pick the right source
 Vector features do NOT come from `search_datasets` (which finds raster/EE-catalog datasets and BigQuery public datasets). Route by the kind of source:
 
-- **ArcGIS / ESRI hosted services (`arcgis.com`, `.arcgis.com/rest/services/…`, any URL with `/FeatureServer/<n>`, `/MapServer/<n>`, or `/ImageServer`):** `esriLib` on the FIRST attempt. This includes city / county / state open-data portals (Austin AGOL, HIFLD, FEMA NFHL, USFS EDW, most state GIS clearinghouses) — every one of them is an ArcGIS Feature Service under the hood, and `esriLib` is the ONLY path that produces a usable `ee.FeatureCollection`. **Do NOT try any of these first** — every one WILL fail or waste turns:
-  - `import requests` / `import urllib.request` / `import httpx` / `import aiohttp` — **all HTTP client libraries are sandbox-blocked**. The block is intentional and unconditional; retrying with a different HTTP library produces the same `BLOCKED: import of 'X' is not allowed` error. Real incident (session c84fabd2, 2026-08): agent burned ~8 turns cycling `requests → urllib → pandas.read_json` before reaching `esriLib`.
+- **ArcGIS / ESRI hosted services (`arcgis.com`, `.arcgis.com/rest/services/…`, any URL with `/FeatureServer/<n>`, `/MapServer/<n>`, or `/ImageServer`):** `georest` + `Map.addEsri*` on the FIRST attempt. This includes city / county / state open-data portals (Austin AGOL, HIFLD, FEMA NFHL, USFS EDW, most state GIS clearinghouses) — every one of them is an ArcGIS Feature Service under the hood, and this is the ONLY path that produces a usable `ee.FeatureCollection`. **Do NOT try any of these first** — every one WILL fail or waste turns:
+  - `import requests` / `import urllib.request` / `import httpx` / `import aiohttp` — **all HTTP client libraries are sandbox-blocked**. The block is intentional and unconditional; retrying with a different HTTP library produces the same `BLOCKED: import of 'X' is not allowed` error. Real incident (session c84fabd2, 2026-08): agent burned ~8 turns cycling `requests → urllib → pandas.read_json` before reaching the Esri helpers.
   - `pd.read_json(esri_url)` — pandas can technically fetch the URL, but ESRI JSON's `{features: [{attributes, geometry}, ...]}` shape does NOT map to `ee.FeatureCollection` — you'd have to manually convert every geometry (with a `.getInfo()`-in-a-loop that trips another sandbox rule).
   - `ee.FeatureCollection('https://...')` — EE only accepts asset IDs, not URLs.
   - `ee.FeatureCollection.loadBigQueryTable(url)` — that helper is for `bigquery-public-data.*` paths, not ArcGIS URLs.
 
-  Right path — one call, one line:
+  Right path — `georest` (RCR's Esri REST client, already loaded in `run_code` as `georest`) to find and inspect, `Map.addEsri*` to draw:
   ```python
-  from geeViz.esriLib import addEsriFeatureService, searchPortal, getServiceMetadata
-  # Direct load of a known URL (with or without a token):
-  addEsriFeatureService("https://services.arcgis.com/.../FeatureServer/0", name="Ownership")
+  from georest.restesri.portal import searchPortal, getServiceMetadata
   # Discover services by keyword across a portal (ArcGIS Online, HIFLD, etc.):
   hits = searchPortal("wildfire perimeters", portal="agol")
-  # Inspect an unknown URL before loading:
+  # Inspect an unknown URL before loading (fields, layers, maxRecordCount):
   meta = getServiceMetadata(url)
+  # Draw it — a URL or a searchPortal hit:
+  Map.addEsriFeatureService("https://services.arcgis.com/.../FeatureServer/0", name="Ownership")
   ```
-  There is also `addEsriMapService`, `addEsriImageService`, and a generic `addEsriService(url)` that auto-detects the type. Look up full signatures with `search_codebase(module="esriLib")`. **These are ALSO on the `Map` object** for one-line ergonomics — `Map.addEsriFeatureService(...)`, `Map.addEsriMapService(...)`, `Map.addEsriImageService(...)`, `Map.addEsriService(...)` — same signatures, direct delegation. Prefer the `Map.*` form so all layer additions read the same.
+  There is also `Map.addEsriMapService`, `Map.addEsriImageService`, and a generic `Map.addEsriService(url)` that auto-detects the type. For the features themselves (to filter, join or reduce in EE rather than draw), `georest.restesri.services.queryFeatureService(url, where=..., geometry=...)` returns GeoJSON — wrap it as `ee.FeatureCollection(gj)`. It does **not** page: past `max_features` (default 1000) it raises `ValueError` naming the matched count, and there is no `*_with_pagination` variant — narrow it with `where` and a bbox, or raise `max_features`. Pass the spatial filter as a bbox string, `geometry="xmin,ymin,xmax,ymax"` (from an EE geometry: `ee.List(geom.bounds().coordinates().get(0))`, read its min/max lon/lat), never an `ee.Geometry` object. To count first: `queryFeatureServiceCount(url, where=...)`. Look up signatures with `search_codebase(module="georest.restesri.portal")` / `(module="georest.restesri.services")`.
+
+  **Do not import `geeViz.esriLib`.** It is deprecated: its `searchPortal` / `getServiceMetadata` now just delegate to georest, and it will be removed. Its layer functions live on `Map` (above). Private, loopback and link-local addresses are refused from `run_code` whichever path you use.
 
   **`addEsriMapService` handles both cached and dynamic services now.** Cached (`singleFusedMapCache: true`) go through the tile path; dynamic (FEMA NFHL, USFS Forest Roads, most authoritative government MapServers) auto-fall-back to `Map.addDynamicMapService`, which bridges to a per-viewport ArcGIS `/export?f=image` overlay in the viewer. Cartography (styles, legends, labels) is preserved as-is. If you want VECTOR access instead — for queries, joins, EE operations — use `Map.addEsriFeatureService('.../MapServer/<layer_id>')` on a specific sub-layer (use `getServiceMetadata(url)` to see the layer list).
 
@@ -802,10 +804,13 @@ Vector features do NOT come from `search_datasets` (which finds raster/EE-catalo
 - **EDW (USFS Enterprise Data Warehouse):** for USFS-authoritative layers — fire perimeters, timber sales, trails, roads, wilderness areas, critical habitat, districts, forests, etc. Prefer EDW over generic ArcGIS layers when the user's question is USFS-specific:
   ```python
   from geeViz.edwLib import search_services, query_features
-  service_url = search_services("fire perimeters")
-  fc = query_features(service_url, geometry, where_clause)
+  hits = search_services("forest boundaries")          # list of dicts: name, theme, ...
+  gj = query_features("EDW_ForestSystemBoundaries_01", 0,   # service NAME, layer id
+                      geometry=utah.geometry(),          # ee.Geometry/Feature, GeoJSON or "xmin,ymin,xmax,ymax"
+                      where="1=1", out_fields="forestname")
+  fc = ee.FeatureCollection(gj)                         # query_features returns a GeoJSON DICT, not an ee object
   ```
-  Returns `ee.FeatureCollection`.
+  `query_features` returns a **GeoJSON FeatureCollection dict** — call `len(gj["features"])` on it, or wrap it with `ee.FeatureCollection(gj)` before using ee methods (`.size()`, `.filterBounds()`). It caps at the layer's record limit; `query_features_with_pagination` pages past it.
 
 - **Everything else (states/counties, GADM, WDPA, etc.):** existing helpers like `sal.getUSNationalParks`, `sal.getUSCounties`, `sal.getProtectedAreas`, etc. — check `search_codebase(module="getSummaryAreasLib")` (the real module name behind the `sal` alias).
 

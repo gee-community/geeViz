@@ -206,6 +206,52 @@ if _SANDBOX_ENABLED:
         # (empty stdout, no namespace mutation, no file writes).
         return True
 
+    def _connect_refusal(args):
+        """Why this socket.connect must be refused even from trusted code,
+        or None.
+
+        Everything under site-packages is "trusted" -- which includes
+        georest, a full HTTP client. So user code could call
+        ``georest.restesri._http.fetch_json("http://169.254.169.254/...")``
+        and read the instance's service-account token: georest has no
+        SSRF policy, and geeViz's ``_ssrf.check_url`` only guards geeViz's
+        own helpers. Checked here, at the connect -- after DNS and after
+        any redirect, so neither a rebinding name nor a 30x gets past it:
+
+        * link-local (169.254/16, fe80::/10 -- where cloud metadata
+          lives) is refused for ALL sandboxed code;
+        * a connect made from georest code gets geeViz's full library
+          policy (no loopback/private/link-local/reserved), the same one
+          esriLib applies before delegating to it.
+
+        Loopback stays open to other trusted libraries: kaleido talks to
+        its own local Chromium over it.
+        """
+        try:
+            import ipaddress as _ip
+            addr = args[1] if len(args) > 1 else None
+            host = addr[0] if isinstance(addr, tuple) and addr else None
+            if not isinstance(host, str):
+                return None
+            ip = _ip.ip_address(host.split("%", 1)[0])
+        except (ValueError, TypeError):
+            return None
+        if ip.is_link_local:
+            return (f"Sandbox: connecting to {host} is blocked -- link-local "
+                    f"addresses serve cloud metadata (credentials).")
+        f = sys._getframe(2)
+        while f is not None:
+            fn = f.f_code.co_filename.replace("\\", "/").lower()
+            if "/georest/" in fn:
+                from geeViz._ssrf import _is_forbidden
+                if _is_forbidden(str(ip)):
+                    return (f"Sandbox: georest may not connect to {host} -- "
+                            f"loopback, private and link-local addresses are "
+                            f"refused, as geeViz.esriLib refuses them.")
+                return None
+            f = f.f_back
+        return None
+
     def _sandbox_audit_hook(event, args):
         if not _audit_user_code_active:
             return  # Allow server's own operations
@@ -241,6 +287,9 @@ if _SANDBOX_ENABLED:
             # block on ``socket`` — if user code somehow reaches a connect
             # via a trusted-lib import chain that shouldn't have leaked
             # sockets through, fail loud rather than silently exfiltrate.
+            _why = _connect_refusal(args)
+            if _why:
+                raise PermissionError(_why)
             if _called_from_trusted_lib():
                 return
             raise PermissionError("Sandbox: socket.connect is blocked.")
@@ -1978,6 +2027,18 @@ def _ensure_initialized_locked(session_id: str | None = None):
     # and `search_codebase(module="pd", query="...")` resolve without requiring
     # the agent to `import pandas` inside run_code first. Both are already
     # geeViz dependencies (setup.py) and on the sandbox allowlist.
+    # georest -- RCR's Esri/ArcGIS REST client, which geeViz.esriLib now
+    # delegates to. Pre-loaded (submodules too, so dotted paths resolve)
+    # for the same reason as pandas: search_codebase(module=
+    # "georest.restesri.portal") has to find it, or an agent told to use
+    # it concludes it does not exist. Its network access from run_code is
+    # held to geeViz's SSRF policy by _connect_refusal.
+    try:
+        import georest as _georest_mod
+        import georest.restesri.portal  # noqa: F401
+        import georest.restesri.services  # noqa: F401
+    except Exception:
+        _georest_mod = None
     import pandas as _pd_mod
     import numpy as _np_mod
 
@@ -2013,6 +2074,7 @@ def _ensure_initialized_locked(session_id: str | None = None):
         "gil": gil,
         "sal": sal,
         "edw": edw,
+        "georest": _georest_mod,
         "palettes": palettes,
         # Forecast wind/temperature/precipitation from ECMWF, GFS and
         # WeatherNext, plus Map.addWindLayer. Core, not optional: it
@@ -2761,13 +2823,13 @@ def _check_code_patterns(code: str) -> list[str]:
     # → try httpx → try pandas.read_json" thrash cycle when a bare
     # "blocked" message isn't enough of a nudge.
     _BLOCKED_MODULE_HINTS = {
-        "requests":   "HTTP libraries are unavailable in the sandbox. Use the domain wrapper: esriLib.addEsriFeatureService(url) for ArcGIS / AGOL / .arcgis.com URLs, edwLib for USFS EDW, sal.* for census/counties/parks, ee.FeatureCollection.runBigQuery(sql, geometryColumn='geom') for BigQuery. Do NOT retry with urllib / httpx / aiohttp / pandas.read_json — same block.",
-        "urllib":     "HTTP libraries are unavailable in the sandbox. See esriLib / edwLib / sal / ee.FeatureCollection.runBigQuery. Trying a different HTTP library will not work — the block is intentional.",
-        "httpx":      "HTTP libraries are unavailable in the sandbox. Use the domain wrapper for the data source (esriLib, edwLib, sal, ee.FeatureCollection.runBigQuery).",
-        "aiohttp":    "HTTP libraries are unavailable in the sandbox. Use the domain wrapper for the data source (esriLib, edwLib, sal, ee.FeatureCollection.runBigQuery).",
+        "requests":   "HTTP libraries are unavailable in the sandbox. Use the domain wrapper: Map.addEsriFeatureService(url) (draw) or georest.restesri (search / metadata / query) for ArcGIS / AGOL / .arcgis.com URLs, edwLib for USFS EDW, sal.* for census/counties/parks, ee.FeatureCollection.runBigQuery(sql, geometryColumn='geom') for BigQuery. Do NOT retry with urllib / httpx / aiohttp / pandas.read_json — same block.",
+        "urllib":     "HTTP libraries are unavailable in the sandbox. See georest / Map.addEsri* / edwLib / sal / ee.FeatureCollection.runBigQuery. Trying a different HTTP library will not work — the block is intentional.",
+        "httpx":      "HTTP libraries are unavailable in the sandbox. Use the domain wrapper for the data source (georest, edwLib, sal, ee.FeatureCollection.runBigQuery).",
+        "aiohttp":    "HTTP libraries are unavailable in the sandbox. Use the domain wrapper for the data source (georest, edwLib, sal, ee.FeatureCollection.runBigQuery).",
         "os":         "os is blocked. Use save_file(path, bytes) for output, and let geeViz/EE handle any filesystem or environment access.",
         "subprocess": "subprocess is blocked. Use geeViz helpers instead of shelling out.",
-        "socket":     "Raw sockets are blocked. Route network access through a domain wrapper (esriLib, edwLib, sal, gm, ee).",
+        "socket":     "Raw sockets are blocked. Route network access through a domain wrapper (georest, edwLib, sal, gm, ee).",
         "shutil":     "shutil is blocked. If you need to save a file, use save_file(path, bytes).",
         "pathlib":    "pathlib is blocked. Filesystem work goes through save_file / view_output; you don't need to build paths manually.",
         "inspect":    "inspect is blocked. To check a function's signature or whether it exists, call the MCP tool search_codebase(module='<lib>', name='<fn>') from the model layer — do NOT try to introspect via Python. Same for pydoc / dis / types.",
