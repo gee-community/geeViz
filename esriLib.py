@@ -418,13 +418,17 @@ def addEsriImageService(
     viz_params: dict | None = None,
     name: str | None = None,
     token: str | None = None,
-    target_map=None
+    target_map=None,
+    _meta: dict | None = None,
 ) -> None:
-    """Add an ArcGIS Image Service as an XYZ tile layer to the geeViz map.
+    """Add an ArcGIS Image Service to the geeViz map.
 
-    Constructs the ArcGIS tile URL pattern
-    ``<service_url>/tile/{z}/{y}/{x}`` and calls
-    ``geeViz.geeView.Map.addTileLayer``.
+    A CACHED service (its metadata reports ``tileInfo``) is added as an XYZ
+    tile layer on ``<service_url>/tile/{z}/{y}/{x}``. An UNCACHED one --
+    most of them, including every NAIP service on IIPP -- has no tiles to
+    serve; every ``/tile`` request answers 404 and the layer is blank. It
+    is drawn instead through ``<service_url>/exportImage``, re-rendered for
+    the viewport on each pan and zoom.
 
     .. note::
         ArcGIS tile URLs use ``{z}/{y}/{x}`` order (y before x), not the
@@ -464,6 +468,30 @@ def addEsriImageService(
     url = _resolve_url(url_or_result)
     if name is None:
         name = url.rstrip("/").split("/")[-2] if url.endswith(("ImageServer", "imageserver")) else url.rstrip("/").split("/")[-1]
+
+    # Cached or not? getImageServiceTileUrl cannot tell -- it is string
+    # construction -- and an uncached service yields a well-formed
+    # template whose every tile is a 404. Ask the service. A failed
+    # lookup keeps the tile path, as addEsriMapService does: the caller
+    # may know the service is cached.
+    if _meta is None:
+        try:
+            from georest.restesri import portal as _gp_meta
+            _meta = _gp_meta.getServiceMetadata(url, token=token)
+        except Exception as _meta_err:
+            print(f"WARNING: could not read service metadata for {url!r} "
+                  f"({_meta_err}); assuming it is cached.")
+            _meta = None
+    if (_meta is not None and url.rstrip("/").lower().endswith("imageserver")
+            and "tileInfo" not in _meta and not _meta.get("singleFusedMapCache")):
+        print(f"Adding Esri Image Service (dynamic, exportImage): {name}")
+        (target_map or gv.Map).addDynamicMapService(
+            url,
+            name=name,
+            visible=bool((viz_params or {}).get("visible", True)),
+            token=token,
+        )
+        return
 
     # The {z}/{y}/{x} template -- ArcGIS order, y before x, not the XYZ
     # standard -- and the token quoting are georest's. The body here was
@@ -574,7 +602,8 @@ def addEsriMapService(
         )
         return
     # Cached — same tile URL shape as ImageServer
-    addEsriImageService(url_or_result, viz_params=viz_params, name=name, token=token, target_map=target_map)
+    addEsriImageService(url_or_result, viz_params=viz_params, name=name, token=token,
+                        target_map=target_map, _meta=_meta)
 
 
 # ---------------------------------------------------------------------------
@@ -602,6 +631,23 @@ _DEG_PER_M = 1.0 / 111_320.0
 #: Tolerances tried in order by ``simplify="auto"``, in meters. The last is
 #: about one screen pixel at the zoom where a whole national forest fits.
 _AUTO_TOLERANCES_M = (1, 5, 10, 20, 30, 50, 100)
+
+#: Tolerance ``simplify="auto"`` asks the SERVER to generalize to, in
+#: meters. A few pixels at street zoom, invisible below it; see
+#: addEsriFeatureService for what it saves.
+_SERVER_OFFSET_M_AUTO = 5
+
+
+def _georest_generalizes(services_module) -> bool:
+    """Whether this georest's queryFeatureService takes server-side
+    generalization (added after 0.4.0)."""
+    import inspect
+    try:
+        return "max_allowable_offset" in inspect.signature(
+            services_module.queryFeatureService).parameters
+    except (TypeError, ValueError):
+        return False
+
 
 #: Default per-layer budget. Several layers share one page, and the page as
 #: a whole is refused by geeView above 25 MB.
@@ -768,11 +814,13 @@ def addEsriFeatureService(
             Example: ``where="STATE_FIPS='06'"`` (California only).
         token (str, optional): ArcGIS token for secured services.
         simplify (str, bool or float, optional): ``"auto"`` (default)
-            leaves a layer under *max_layer_mb* exactly as fetched and
-            otherwise simplifies it at increasing tolerances until it
-            fits -- the whole layer is embedded in the map page, and a
-            page that is too large never reaches the browser. A number
-            is a fixed tolerance in meters; ``False`` never alters the
+            asks the service for geometry generalized to ~5 m -- far
+            smaller and faster than full resolution -- then, if the layer
+            is still over *max_layer_mb*, simplifies it further at
+            increasing tolerances until it fits: the whole layer is
+            embedded in the map page, and a page that is too large never
+            reaches the browser. A number is a fixed tolerance in meters,
+            applied by the service. ``False`` fetches and keeps the exact
             geometry.
         max_layer_mb (float, optional): Size budget for this layer in the
             page, used by ``simplify="auto"``. Defaults to 8 MB.
@@ -839,6 +887,22 @@ def addEsriFeatureService(
     # a security check.
     _check_url(url)
 
+    # Let the SERVER thin the geometry. The layer is for display, and a
+    # full-resolution download is most of the wait: 37 NIFC fire
+    # perimeters are 34 MB / 31 s exact, 5.8 MB / 6 s at 5 m. The
+    # client-side pass below still runs, and only does anything when even
+    # the generalized layer is over budget. Older georest has no such
+    # parameters; there the fetch is exact, as it always was.
+    _gen_kw: dict[str, Any] = {}
+    _offset_m = None
+    if simplify == "auto":
+        _offset_m = _SERVER_OFFSET_M_AUTO
+    elif isinstance(simplify, (int, float)) and not isinstance(simplify, bool):
+        _offset_m = float(simplify)
+    if _offset_m is not None and _georest_generalizes(_gs):
+        _gen_kw = {"max_allowable_offset": round(_offset_m * _DEG_PER_M, 9),
+                   "geometry_precision": 6}
+
     try:
         geojson = _gs.queryFeatureService(
             url,
@@ -846,6 +910,7 @@ def addEsriFeatureService(
             geometry=bbox,
             max_features=max_features,
             token=token,
+            **_gen_kw,
         )
     except ValueError:
         # An Esri error body, or the overflow guard. Both mean the same

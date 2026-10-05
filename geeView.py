@@ -1614,28 +1614,43 @@ class mapper:
             token (str, optional): ArcGIS auth token appended to every
                 export request.
         """
-        if not isinstance(service_url, str) or "MapServer" not in service_url:
+        if not isinstance(service_url, str) or not (
+                "MapServer" in service_url or "ImageServer" in service_url):
             raise ValueError(
-                f"service_url must be an ArcGIS MapServer URL. Got: {service_url!r}"
+                f"service_url must be an ArcGIS MapServer or ImageServer URL. "
+                f"Got: {service_url!r}"
             )
-        # Strip trailing slash + any /export suffix the caller may have
-        # already appended — we build the query string ourselves so the
-        # base is always the bare service URL.
+        # Strip trailing slash + any /export or /exportImage suffix the
+        # caller may have already appended — we build the query string
+        # ourselves so the base is always the bare service URL.
         _base = service_url.rstrip("/")
-        if _base.lower().endswith("/export"):
-            _base = _base[: -len("/export")]
-        # /export params fixed BEFORE bbox (baseURL) and AFTER bbox
-        # (ending). getGroundOverlay inserts
+        for _suffix in ("/exportimage", "/export"):
+            if _base.lower().endswith(_suffix):
+                _base = _base[: -len(_suffix)]
+                break
+        # An UNCACHED ImageServer renders through /exportImage, which takes
+        # the same bbox / bboxSR / imageSR / size parameters as a
+        # MapServer's /export, so the viewer's ground-overlay path serves
+        # both. It has no ``layers`` or ``transparent``; ``jpgpng`` is JPEG
+        # where the image is opaque and PNG only along its edges -- a
+        # fraction of the bytes of png32 for aerial imagery.
+        _is_image = _base.lower().endswith("imageserver")
+        # Params fixed BEFORE bbox (baseURL) and AFTER bbox (ending).
+        # getGroundOverlay inserts
         #    ``<west>,<south>,<east>,<north>&bboxSR=3857&imageSR=3857&size=<w>,<h>``
         # between the two, so ``baseURL`` must end with ``bbox=`` and
         # ``ending`` must start with ``&``.
-        _q = ["f=image", "format=png32"]
-        if transparent:
-            _q.append("transparent=true")
-        if layers:
-            _q.append(f"layers={layers}")
+        if _is_image:
+            _q = ["f=image", "format=jpgpng"]
+        else:
+            _q = ["f=image", "format=png32"]
+            if transparent:
+                _q.append("transparent=true")
+            if layers:
+                _q.append(f"layers={layers}")
         _q.append("bbox=")   # trailing "bbox=" so JS appends coords
-        _base_url = f"{_base}/export?" + "&".join(_q)
+        _endpoint = "exportImage" if _is_image else "export"
+        _base_url = f"{_base}/{_endpoint}?" + "&".join(_q)
         _ending_bits = [f"dpi={int(dpi)}"]
         if token:
             _ending_bits.append(f"token={token}")
@@ -2179,24 +2194,33 @@ class mapper:
             else:
                 lines += "try{ee.data.resetWorkloadTag();}catch(e){}"
             if idDict.get("_is_dynamic_esri"):
-                # Dynamic (non-cached) ArcGIS MapServer overlay. Emit a
-                # bare ``addDynamicToMap(...)`` call — that JS function
-                # is a module-level function in lcms-viewer, NOT a
-                # method on Map, so no ``Map.`` prefix. Escapes match
-                # the addREST branch below: any backslash / double
-                # quote in the URLs is doubled for JS string safety.
-                lines += (
-                    'try{{addDynamicToMap({b1},{b2},{e1},{e2},'
-                    '{z1},{z2},{name},{visible},"","#layer-list");}}'
-                    'catch(e){{layerLoadErrorMessages.push('
-                    '"Dynamic MapService \\""+{name}+"\\" failed: "+e.message);}}'
-                ).format(
+                # Dynamic (non-cached) ArcGIS MapServer / ImageServer
+                # overlay, re-exported for the viewport on each pan/zoom.
+                #
+                # Through Map.addLayer with layerType "dynamicMapService"
+                # -- the viewer's working ground-overlay path, which reads
+                # item[0]/item[1] as {baseURL, minZoom, ending}. NOT the
+                # bare addDynamicToMap(): that builds a <dynamic-layer>
+                # element the viewer never defines, so every such layer
+                # failed with "layer.startUp is not a function" and drew
+                # nothing (measured in Chrome: 0 export requests). Same
+                # defect, and same fix, as Map.addREST for tile layers
+                # below.
+                _dyn_item = "[{{baseURL:{b1},minZoom:{z1},ending:{e1}}},{{baseURL:{b2},minZoom:{z2},ending:{e2}}}]".format(
                     b1=_js_str(idDict["_dyn_base_url_1"]),
                     b2=_js_str(idDict["_dyn_base_url_2"]),
                     e1=_js_str(idDict["_dyn_ending_1"]),
                     e2=_js_str(idDict["_dyn_ending_2"]),
                     z1=int(idDict.get("_dyn_min_zoom_1", 0)),
                     z2=int(idDict.get("_dyn_min_zoom_2", 0)),
+                )
+                lines += (
+                    'try{{Map.addLayer({item},{viz},{name},{visible});}}'
+                    'catch(e){{layerLoadErrorMessages.push('
+                    '"Dynamic MapService \\""+{name}+"\\" failed: "+e.message);}}'
+                ).format(
+                    item=_dyn_item,
+                    viz=idDict["viz"],
                     name=_js_str(idDict["name"]),
                     visible=str(idDict["visible"]).lower(),
                 )
@@ -3400,7 +3424,8 @@ class mapper:
                 # Dynamic Esri MapServer: probe the service metadata
                 # endpoint (strip the ``/export?...bbox=`` we appended).
                 _bu = idDict.get("_dyn_base_url_1", "")
-                _svc = _bu.split("/export?")[0]
+                import re as _re
+                _svc = _re.split(r"/export(?:Image)?\?", _bu)[0]
                 try:
                     import urllib.request as _ur, urllib.error as _ue
                     with _ur.urlopen(f"{_svc}?f=json", timeout=8) as _rsp:
