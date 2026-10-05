@@ -1,8 +1,24 @@
 # Esri Integration Design for geeViz
 
-**Status:** Implemented  
+**Status:** Implemented, since superseded in part (see below)  
 **Module:** `geeViz/esriLib.py`  
 **Date:** 2026-05-22
+
+> **Current state (2026-10).** This is the original design, kept as a
+> record. Two things have changed since:
+>
+> - **Search, metadata and queries moved to [`georest`](https://pypi.org/project/georest/).**
+>   `esriLib.searchPortal` / `getServiceMetadata` are deprecated wrappers
+>   over `georest.restesri.portal`; use that directly. The `addEsri*Service`
+>   functions (and `Map.addEsri*`) are not deprecated and delegate their
+>   REST calls to georest.
+> - **Uncached Image and Map Services are drawn through `exportImage` /
+>   `export`** per viewport (`Map.addDynamicMapService`), not as tiles --
+>   their `/tile` URLs answer 404. Feature Services are fetched with
+>   server-side generalization (~5 m) for display.
+>
+> The code samples below still use the `el.searchPortal` spelling of the
+> time; read them as `georest.restesri.portal.searchPortal`.
 
 ---
 

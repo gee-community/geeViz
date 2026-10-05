@@ -46,35 +46,36 @@ ArcGIS / Esri REST services client for geeViz. **DEPRECATED.**
    ``georest.restesri.services.queryFeatureService``; the ``{z}/{y}/{x}``
    tile template comes from ``getImageServiceTileUrl``.
 
-Bridges three Esri service types into the existing geeViz viewer with no
-JavaScript changes required.  The viewer already supports both
-``tileMapService`` (for raster tiles) and ``geoJSONVector`` (for vector
-features) layer types.
+Bridges three Esri service types into the geeViz viewer:
 
 ======================================  ==================================================================================
 Service type                            Mechanism
 ======================================  ==================================================================================
-Image Service                           ``Map.addTileLayer("<url>/tile/{z}/{y}/{x}")``
+Image Service (cached)                  ``Map.addTileLayer("<url>/tile/{z}/{y}/{x}")``
+Image Service (uncached, e.g. NAIP)     ``Map.addDynamicMapService`` — ``<url>/exportImage`` per viewport
 Map Service (cached)                    ``Map.addTileLayer(...)`` — same tile path
-Feature Service (≤ ``max_features``)    Fetch ``<url>/query?f=geojson`` → ``Map.addLayer(geojson_dict)``
+Map Service (dynamic, e.g. FEMA NFHL)   ``Map.addDynamicMapService`` — ``<url>/export`` per viewport
+Feature Service (≤ ``max_features``)    ``<url>/query?f=geojson``, generalized for display → ``Map.addLayer(geojson_dict)``
 Feature Service (> ``max_features``)    ``ValueError`` with remediation message
 ======================================  ==================================================================================
 
-**Public API** — 7 functions + 1 constant::
+Usage -- georest to find and inspect, esriLib (or ``Map.addEsri*``) to
+draw::
 
     import geeViz.esriLib as el
+    from georest.restesri import portal
 
     # Discover data on any ArcGIS Portal
-    results = el.searchPortal("naip 2023")                  # IIPP (default)
-    results = el.searchPortal("naip 2023", portal="agol")   # ArcGIS Online
-    results = el.searchPortal("naip 2023",
-                              portal="https://myagency.gov/portal")
+    results = portal.searchPortal("naip")                     # IIPP (default)
+    results = portal.searchPortal("naip", portal="agol")      # ArcGIS Online
+    results = portal.searchPortal("naip",
+                                  portal="https://myagency.gov/portal")
 
     # Available portals
-    el.PORTALS.keys()   # iipp, agol, usgs, noaa, usfs, nasa
+    portal.PORTALS.keys()   # iipp, agol, usgs, noaa, usfs, nasa
 
     # Inspect any service
-    meta = el.getServiceMetadata("https://.../ImageServer")
+    meta = portal.getServiceMetadata("https://.../ImageServer")
 
     # Add to the geeViz map (auto-dispatches by service type)
     el.addEsriService(result_or_url)
@@ -91,7 +92,7 @@ Token-gated portals::
     #   POST <portal>/sharing/rest/generateToken
     #     username=...&password=...&client=requestip&expiration=60&f=json
     token = "..."
-    el.searchPortal("classified data", token=token)
+    portal.searchPortal("classified data", token=token)
     el.addEsriFeatureService(url, token=token)
 
 Copyright 2026 Ian Housman
@@ -525,12 +526,14 @@ def addEsriMapService(
     target_map=None,
     visible: bool | None = None,
 ) -> None:
-    """Add a cached ArcGIS Map Service as an XYZ tile layer to the geeViz map.
+    """Add an ArcGIS Map Service to the geeViz map.
 
-    Cached Map Services expose the same ``/tile/{z}/{y}/{x}`` tile endpoint
-    as Image Services and are handled identically.  Dynamic (non-cached) Map
-    Services do not serve tiles this way; for those, use
-    :func:`addEsriFeatureService` on the individual sub-layer.
+    A cached service (``singleFusedMapCache: true``) is added as an XYZ
+    tile layer on ``/tile/{z}/{y}/{x}``. A dynamic one -- FEMA NFHL, most
+    authoritative government services -- is drawn through ``/export``,
+    re-rendered for the viewport on each pan and zoom, keeping the
+    server's own symbology. For the features themselves, use
+    :func:`addEsriFeatureService` on a sub-layer (``.../MapServer/<n>``).
 
     Args:
         url_or_result (str or dict): Service URL or :func:`searchPortal`
@@ -987,8 +990,9 @@ def addEsriService(
     Example::
 
         import geeViz.esriLib as el
+        from georest.restesri import portal
 
-        results = el.searchPortal("naip 2023", limit=5)
+        results = portal.searchPortal("naip", limit=5)
         for r in results:
             el.addEsriService(r)  # dispatches by type automatically
     """

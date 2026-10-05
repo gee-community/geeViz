@@ -1,5 +1,30 @@
 # geeViz Release Notes
 
+## Unreleased
+
+### geeViz.esriLib — uncached services draw, feature layers load faster
+
+- **Uncached Image Services draw.** ``addEsriImageService`` used
+  ``<url>/tile/{z}/{y}/{x}`` for every service, and an uncached one —
+  every NAIP service on IIPP — answers 404 for every tile, so the layer
+  was blank. It now reads the service metadata and draws services with no
+  tile cache through ``exportImage``, re-rendered for the viewport.
+- **Dynamic Map Services draw.** ``Map.addDynamicMapService`` (and so
+  ``addEsriMapService`` on FEMA NFHL and other uncached MapServers) emitted
+  a viewer call that fails with ``layer.startUp is not a function`` and
+  never requested an image. It now goes through the viewer's working
+  ``dynamicMapService`` layer path. Accepts ImageServer URLs too.
+- **Feature layers ask the server for display geometry.** Under
+  ``simplify="auto"`` (the default) ``addEsriFeatureService`` requests
+  geometry generalized to ~5 m; a number is the tolerance in meters, and
+  ``False`` still fetches exact geometry. 37 NIFC fire perimeters: 34 MB in
+  ~30 s before, 6 MB in ~6 s after. Needs a georest with
+  ``queryFeatureService(max_allowable_offset=...)``; with an older georest
+  the fetch is exact, as before.
+- The ``esri_integration`` example uses georest for search and metadata
+  (the ``esriLib`` wrappers are deprecated) and NAIP_plus — NAIP2023_CONUS
+  has no Utah, so it drew nothing over Salt Lake City.
+
 ## 2026.9.4 — September 24, 2026
 
 First PyPI release since 2026.8.1, so it carries everything stamped as
