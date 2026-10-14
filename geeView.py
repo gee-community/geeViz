@@ -1206,7 +1206,7 @@ class mapper:
 
     ######################################################################
     # Function for adding a layer to the map
-    def addLayer(self, image: ee.Image | ee.ImageCollection | ee.Geometry | ee.Feature | ee.FeatureCollection, viz: dict = {}, name: str | None = None, visible: bool = True):
+    def addLayer(self, image: ee.Image | ee.ImageCollection | ee.Geometry | ee.Feature | ee.FeatureCollection, viz: dict = {}, name: str | None = None, visible: bool = True, opacity: float | None = None):
         """
         Adds GEE object to the mapper object that will then be added to the map user interface with a `view` call.
 
@@ -1354,6 +1354,7 @@ class mapper:
                 }
             name (str): Descriptive name for map layer that will be shown on the map UI
             visible (bool, default True): Whether layer should be visible when map UI loads
+            opacity (float, optional): Initial opacity between 0 and 1. Same as ``viz["opacity"]``, which it overrides. Matches the argument order of the GEE Code Editor's ``Map.addLayer(eeObject, visParams, name, shown, opacity)``.
 
         >>> import geeViz.geeView as gv
         >>> Map = gv.Map
@@ -1372,6 +1373,8 @@ class mapper:
 
         # Make sure not to update viz dictionary elsewhere
         viz = dict(viz)
+        if opacity is not None:
+            viz["opacity"] = opacity
 
         # Handle reducer if ee object is given
         if "reducer" in viz.keys():
