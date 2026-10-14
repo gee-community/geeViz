@@ -2048,6 +2048,36 @@ def _ensure_initialized(session_id: str | None = None):
     return sess
 
 
+def _stringify_feature_ids(gj):
+    """Make every GeoJSON feature ``id`` a string. ee.Feature copies a
+    feature's ``id`` into system:index unchanged, and Earth Engine rejects
+    a non-string one server-side ("Value of property 'system:index' must
+    be a string"); ArcGIS ``f=geojson`` sends integer OBJECTIDs."""
+    if isinstance(gj, dict):
+        for f in gj.get("features") or ():
+            if isinstance(f, dict) and f.get("id") is not None and not isinstance(f["id"], str):
+                f["id"] = str(f["id"])
+    return gj
+
+
+def _install_string_feature_ids(services):
+    """Wrap georest's queryFeatureService so what it returns can go
+    straight into ee.FeatureCollection. In place on the module, so every
+    route to it (dotted path, ``from ... import``, geeViz.esriLib) gets it."""
+    import functools
+
+    orig = services.queryFeatureService
+    if getattr(orig, "_geeviz_string_ids", False):
+        return
+
+    @functools.wraps(orig)  # keeps the signature esriLib inspects
+    def queryFeatureService(*args, **kwargs):
+        return _stringify_feature_ids(orig(*args, **kwargs))
+
+    queryFeatureService._geeviz_string_ids = True
+    services.queryFeatureService = queryFeatureService
+
+
 def _ensure_initialized_locked(session_id: str | None = None):
     _ensure_ee_initialized()
     if not _MODULE_TREE:
@@ -2108,6 +2138,11 @@ def _ensure_initialized_locked(session_id: str | None = None):
         import georest.restesri.services  # noqa: F401
     except Exception:
         _georest_mod = None
+    else:
+        try:
+            _install_string_feature_ids(georest.restesri.services)
+        except Exception:
+            pass
     import pandas as _pd_mod
     import numpy as _np_mod
 
