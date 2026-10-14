@@ -51,11 +51,18 @@ def test_code_loads_the_whole_upload_by_the_name_the_user_gave(session_with_uplo
     assert out["result"] == [["slc_neighborhoods.geojson"], 23, "N22", 23]
 
 
-def test_no_upload_says_the_file_never_arrived():
+def test_no_upload_asks_for_it_again_without_saying_it_never_arrived():
+    # A file attached earlier can be out of reach later (the conversation
+    # moved to another server instance, or a small text file was sent
+    # inside the message rather than stored). "It never arrived" had the
+    # agent tell users who had attached it that they had not.
     sid = "test_upl_" + uuid.uuid4().hex[:10]
     out = _run("load_upload('x.zip')", sid)
     assert out["success"] is False
-    assert "never arrived" in (out.get("error") or "")
+    err = out.get("error") or ""
+    assert "No uploaded file is available" in err
+    assert "attach it again" in err
+    assert "never arrived" not in err
     shutil.rmtree(os.path.join(srv._BASE_OUTPUT_DIR, sid), ignore_errors=True)
 
 

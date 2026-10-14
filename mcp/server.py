@@ -2179,8 +2179,13 @@ def _ensure_initialized_locked(session_id: str | None = None):
         names = _session_list_uploads()
         if not names:
             raise FileNotFoundError(
-                "No uploads in this conversation. If the user mentions a file, "
-                "it never arrived: say so and ask them to attach it.")
+                "No uploaded file is available to this run. A file attached "
+                "earlier can be out of reach now (the server may have moved "
+                "this conversation, and small text files such as CSVs travel "
+                "inside the message instead of being stored). If the user "
+                "mentions a file whose contents are not already in the "
+                "conversation, tell them you cannot reach it here and ask "
+                "them to attach it again.")
         if name is None:
             if len(names) != 1:
                 raise ValueError(f"Several uploads; pass one of {names}")

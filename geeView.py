@@ -363,7 +363,7 @@ import threading as _threading
 
 #: Largest exported map page, in bytes. Not arbitrary: a hosted map is
 #: served through Cloud Run, which refuses a response over 32 MiB, and the
-#: agent drops any artifact over 64 MiB. A page over either never reaches
+#: agent drops an HTML artifact over 31 MiB. A page over either never reaches
 #: the browser -- and before this guard, nothing told the model, so it
 #: reported a map the user never saw. Override per call with
 #: ``export_html(max_bytes=...)`` or process-wide with GEEVIZ_EXPORT_MAX_MB.
