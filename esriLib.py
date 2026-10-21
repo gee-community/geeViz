@@ -943,10 +943,29 @@ def addEsriFeatureService(
         ) from exc
 
     actual = len(geojson.get("features", []))
+
+    # A service sends at most its maxRecordCount per request (1,000 is
+    # common) whatever max_features allows, and says so only with this
+    # flag. georest does not page, so say what is missing rather than
+    # announcing a partial layer as if it were the whole one.
+    counted = f"{actual:,} features"
+    if (geojson.get("properties") or {}).get("exceededTransferLimit") or geojson.get("exceededTransferLimit"):
+        try:
+            total = _gs.queryFeatureServiceCount(url, where=where, geometry=bbox, token=token)
+        except Exception:
+            total = None
+        if total and total > actual:
+            counted = (f"{actual:,} of {total:,} features -- the service returns at most "
+                       f"{actual:,} per request, so {total - actual:,} are missing from this "
+                       f"layer; narrow it with where= or bbox=")
+        else:
+            counted = (f"{actual:,} features, TRUNCATED by the service's per-request "
+                       f"limit; narrow it with where= or bbox=")
+
     budget = None if max_layer_mb is None else int(float(max_layer_mb) * 1024 * 1024)
     geojson, note = _fit_geojson_for_display(geojson, simplify=simplify,
                                              budget_bytes=budget)
-    print(f"Adding Esri Feature Service: {name} ({actual:,} features)"
+    print(f"Adding Esri Feature Service: {name} ({counted})"
           + (f" -- {note}" if note else ""))
 
     viz = dict(viz_params or {})

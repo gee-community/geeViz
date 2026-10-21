@@ -187,3 +187,41 @@ def test_bbox_tuple_reaches_georest_as_a_bbox_string(monkeypatch, bbox):
     el.addEsriFeatureService("https://example.test/arcgis/rest/services/X/FeatureServer/0",
                              name="fires", target_map=_FakeMap(), bbox=bbox)
     assert seen["geometry"] == "-124.6,41.9,-121.5,46.3"
+
+
+def test_truncated_fetch_says_how_many_are_missing(monkeypatch, capsys):
+    """A service returns at most its maxRecordCount per request.
+
+    From an askterra prod session: a statewide freight-network layer had
+    1,618 features, the request allowed 2,500, and the service sent 1,000
+    with only ``exceededTransferLimit`` to say so. The layer was announced
+    as "(1,000 features)" and the map silently left out the rest.
+    """
+    el = _el()
+    from georest.restesri import services as gs
+    page = _fc(3, 10)
+    page["properties"] = {"exceededTransferLimit": True}
+    monkeypatch.setattr(gs, "queryFeatureService", lambda *a, **k: page)
+    monkeypatch.setattr(gs, "queryFeatureServiceCount", lambda *a, **k: 7)
+    monkeypatch.setattr(el, "_check_url", lambda u: None)
+    el.addEsriFeatureService("https://example.test/arcgis/rest/services/X/FeatureServer/0",
+                             name="routes", target_map=_FakeMap(), max_features=2500)
+    out = capsys.readouterr().out
+    assert "3 of 7 features" in out, out
+    assert "4 are missing" in out and "where" in out and "bbox" in out, out
+
+
+def test_complete_fetch_is_announced_as_before(monkeypatch, capsys):
+    el = _el()
+    from georest.restesri import services as gs
+    monkeypatch.setattr(gs, "queryFeatureService", lambda *a, **k: _fc(3, 10))
+
+    def _no_count(*a, **k):
+        raise AssertionError("a complete fetch needs no extra count request")
+
+    monkeypatch.setattr(gs, "queryFeatureServiceCount", _no_count)
+    monkeypatch.setattr(el, "_check_url", lambda u: None)
+    el.addEsriFeatureService("https://example.test/arcgis/rest/services/X/FeatureServer/0",
+                             name="routes", target_map=_FakeMap())
+    out = capsys.readouterr().out
+    assert "(3 features)" in out and "missing" not in out, out
