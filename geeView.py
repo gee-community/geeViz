@@ -3343,7 +3343,12 @@ class mapper:
         # scenes the cloud mask removed entirely -- so "PASS" alone let an
         # agent hand the user a map with nothing on it.
         view_bounds = None
+        view_zoom = None  # the last setZoom after that center
         for cmd in reversed(getattr(self, "mapCommandList", [])):
+            z = re.match(r"map\.setZoom\((\d+)\)", cmd)
+            if z and view_zoom is None:
+                view_zoom = int(z.group(1))
+                continue
             m = re.match(r"synchronousCenterObject\((.+)\)", cmd)
             if m:
                 try:
@@ -3354,6 +3359,21 @@ class mapper:
                 except Exception:
                     pass
                 break
+
+        # Centering on a point (or anything under ~100 m across) records a box
+        # too small to hold a sampled pixel, so every layer looks masked.
+        # Judge the view the zoom opens on instead (~4 tiles across), or
+        # nothing without a zoom.
+        if view_bounds and min(view_bounds[2] - view_bounds[0], view_bounds[3] - view_bounds[1]) < 0.001:
+            if view_zoom is None:
+                view_bounds = None
+            else:
+                import math
+                lng = (view_bounds[0] + view_bounds[2]) / 2
+                lat = (view_bounds[1] + view_bounds[3]) / 2
+                half = 2 * 360 / 2 ** view_zoom
+                view_bounds = (lng - half, lat - half * math.cos(math.radians(lat)),
+                               lng + half, lat + half * math.cos(math.radians(lat)))
 
         def _empty_in_view_warning(img):
             """Warning text if ``img`` has no unmasked pixel in view_bounds.

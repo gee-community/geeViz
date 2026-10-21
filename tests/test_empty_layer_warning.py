@@ -83,6 +83,48 @@ def test_masked_outside_view_is_not_flagged_without_a_center():
     assert not any("No visible pixels" in w for w in _warnings(m, "all clouds"))
 
 
+def test_point_center_is_judged_over_the_zoomed_view():
+    """``centerObject(point, zoom)`` records a zero-area polygon.
+
+    From an askterra prod session (a coordinate in the Guyana rainforest):
+    the Sentinel-2 composite was ~99% clear around the point, but sampling a
+    zero-area extent finds no pixel, so the layer was flagged as masked
+    everywhere. The extent is now the view the zoom opens on.
+    """
+    if not _ee_ok():
+        pytest.skip("Earth Engine not reachable")
+    import ee
+    m = _gv().mapper()
+    pt = ee.Geometry.Point([-60.053354, 5.838802])
+    m.addLayer(ee.Image.constant(1), {"min": 0, "max": 1}, "visible")
+    m.addLayer(ee.Image.constant(1).updateMask(0), {"min": 0, "max": 1}, "all clouds")
+    m.centerObject(pt, 12)
+    assert not any("No visible pixels" in w for w in _warnings(m, "visible"))
+    assert any("No visible pixels" in w for w in _warnings(m, "all clouds"))
+
+
+def test_tiny_box_center_is_judged_over_the_zoomed_view():
+    """A ~20 m box is smaller than one sampled pixel: same false positive."""
+    if not _ee_ok():
+        pytest.skip("Earth Engine not reachable")
+    import ee
+    m = _gv().mapper()
+    m.addLayer(ee.Image.constant(1), {"min": 0, "max": 1}, "visible")
+    m.centerObject(ee.Geometry.Point([-60.053354, 5.838802]).buffer(10), 15)
+    assert not any("No visible pixels" in w for w in _warnings(m, "visible"))
+
+
+def test_point_center_without_zoom_stays_quiet():
+    """No zoom means no known extent around a point; do not guess."""
+    if not _ee_ok():
+        pytest.skip("Earth Engine not reachable")
+    import ee
+    m = _gv().mapper()
+    m.addLayer(ee.Image.constant(1), {"min": 0, "max": 1}, "visible")
+    m.centerObject(ee.Geometry.Point([-60.053354, 5.838802]))
+    assert not any("No visible pixels" in w for w in _warnings(m, "visible"))
+
+
 def test_map_control_export_prints_layer_warnings(tmp_path):
     import contextlib
     import io
