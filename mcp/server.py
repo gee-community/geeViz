@@ -6856,7 +6856,8 @@ def search_fia(query: str = "", kind: str = "attributes",
 
 @app.tool(annotations=_READ_ONLY)
 def fia_estimate(wc: int, snum: int, rselected: str = "",
-                 cselected: str = "", max_results: int = 60) -> str:
+                 cselected: str = "", str_filter: str = "",
+                 max_results: int = 60) -> str:
     """Run an FIA estimate. Returns values WITH their sampling error.
 
     Get ``wc``, ``snum`` and the grouping strings from ``search_fia``
@@ -6877,12 +6878,30 @@ def fia_estimate(wc: int, snum: int, rselected: str = "",
     built from correct data when the truth is 15,748 +/- 54.9% from four
     plots.
 
+    **A total over several rows comes from FIA, not from arithmetic.**
+    Rows of one evaluation can share sampling strata, so their errors
+    need not be independent, and percentages cannot be added: combining
+    row standard errors yourself can give a wrong SE for the combined
+    area. To estimate a region made of several rows (units, counties,
+    owners), restrict the query to them with ``str_filter`` and report
+    the ``Total`` row's estimate and ``se_pct`` (leave ``rselected``
+    empty to get only that row). The Total row carries the same
+    ``unreliable`` flag as any other.
+
     Args:
         wc: Evaluation group from ``search_fia(kind="evaluations")``.
         snum: Attribute number from ``search_fia(kind="attributes")``.
         rselected: Row grouping — exact ``label`` from ``search_fia``.
         cselected: Column grouping. Optional; cross-tabulating thins the
             plot count per cell fast, so expect more flagged rows.
+        str_filter: SQL-style filter restricting the estimate to a
+            domain, e.g. ``"plot.unitcd in (0, 1, 2)"``. Qualify columns
+            with the full table name (``plot.``, ``cond.``, ``tree.``);
+            the short aliases in ``db_column`` (``P.``, ``C.``) fail
+            upstream with an uninformative SQL error. Filter on the
+            stored code, not the row label: labels can prefix the state
+            code (a ``Unit code`` row labeled ``4100 ...`` is
+            ``plot.unitcd = 0``).
         max_results: Cap on rows returned.
 
     Returns:
@@ -6896,11 +6915,17 @@ def fia_estimate(wc: int, snum: int, rselected: str = "",
 
     try:
         df = _fs.estimate(wc=wc, snum=snum, rselected=rselected,
-                          cselected=cselected)
+                          cselected=cselected, str_filter=str_filter)
     except Exception as exc:
         # Validation errors name the fix; upstream errors say it is not
         # the caller's fault. Both are more useful than a raw traceback.
-        return json.dumps({"error": f"{type(exc).__name__}: {exc}"})
+        err = {"error": f"{type(exc).__name__}: {exc}"}
+        if str_filter and "no data" in str(exc).lower():
+            # Here it usually is the caller's fault: a filter matching no
+            # plots, most often a row label's code used as the stored one.
+            err["hint"] = ("str_filter may have matched no plots. Check its "
+                           "values are the stored codes, not the row labels.")
+        return json.dumps(err)
 
     rows = df.to_dict("records") if hasattr(df, "to_dict") else list(df)
     n_bad = sum(1 for r in rows if r.get("unreliable"))
