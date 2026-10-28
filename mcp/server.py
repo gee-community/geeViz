@@ -3613,6 +3613,82 @@ def _translate_ee_error(error_text: str) -> str:
 _NAME_ERROR_RE = _wl_re.compile(r"NameError: name '(\w+)' is not defined")
 
 
+def _names_a_block_assigns(code: str) -> list[str]:
+    """Names the block's own statements bind, in order of first binding.
+
+    Names local to a function, class, lambda or comprehension in the block
+    are left out: they were never going to exist after the block.
+    """
+    try:
+        tree = ast.parse(code)
+    except (SyntaxError, RecursionError):
+        return []
+    names: list[str] = []
+    seen: set[str] = set()
+
+    def add(name):
+        if name and name not in seen:
+            seen.add(name)
+            names.append(name)
+
+    # A stack, not recursion: a refused block can nest deeper than the
+    # interpreter's recursion limit.
+    stack = [tree]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            add(node.name)
+            continue
+        if isinstance(node, (ast.Lambda, ast.ListComp, ast.SetComp,
+                             ast.DictComp, ast.GeneratorExp)):
+            continue
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            # A refused module is not something to assign again.
+            if (_SANDBOX_ENABLED and isinstance(node, ast.ImportFrom)
+                    and (node.module or "").split(".")[0] in _BLOCKED_MODULES):
+                continue
+            for alias in node.names:
+                if alias.name == "*":
+                    continue
+                if (_SANDBOX_ENABLED and isinstance(node, ast.Import)
+                        and alias.name.split(".")[0] in _BLOCKED_MODULES):
+                    continue
+                add(alias.asname or alias.name.split(".")[0])
+            continue
+        if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
+            add(node.id)
+        elif isinstance(node, (ast.ExceptHandler, ast.MatchAs, ast.MatchStar)):
+            add(node.name)
+        elif isinstance(node, ast.MatchMapping):
+            add(node.rest)
+        stack.extend(reversed(list(ast.iter_child_nodes(node))))
+    return names
+
+
+def _refused_block_note(code: str, namespace: dict) -> str:
+    """Say that a refused block ran nothing, naming what it did not define.
+
+    After a refusal the model's next block used names the refused block
+    would have assigned, and failed with NameError (prod, 2026-10-27 and
+    28: four times in two sessions).
+    """
+    note = "Nothing in this block ran."
+    try:
+        names = _names_a_block_assigns(code)
+        missing = [n for n in names if n not in namespace]
+        earlier = [n for n in names if n in namespace]
+    except Exception:
+        return note
+    if missing:
+        note += (" Not defined: " + ", ".join(f"`{n}`" for n in missing)
+                 + ". Your next block must assign them itself, with the cause"
+                 " of the refusal fixed.")
+    if earlier:
+        note += (" Still holding values from an earlier block, not this one: "
+                 + ", ".join(f"`{n}`" for n in earlier) + ".")
+    return note
+
+
 def _lost_state_hint(error_text: str, sess: "_SessionState") -> str:
     """Explain a NameError for a name no run_code call in this process bound.
 
@@ -3854,7 +3930,8 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
             "stdout": "",
             "stderr": "\n".join(blocked),
             "result": None,
-            "error": "Code was blocked by security policy. " + " ".join(blocked),
+            "error": "Code was blocked by security policy. " + " ".join(blocked)
+                     + " " + _refused_block_note(code, getattr(sess, "namespace", {})),
             "script_path": None,
         })
 
