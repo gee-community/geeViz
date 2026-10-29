@@ -3375,39 +3375,110 @@ class mapper:
                 view_bounds = (lng - half, lat - half * math.cos(math.radians(lat)),
                                lng + half, lat + half * math.cos(math.radians(lat)))
 
-        def _empty_in_view_warning(img):
-            """Warning text if ``img`` has no unmasked pixel in view_bounds.
-
-            Sampled coarsely (~256 px across) and abandoned after 20 s, so a
-            heavy layer costs at most that much and never fails the test.
-            """
-            if view_bounds is None:
-                return None
+        def _view_scale():
+            """Sampling scale for view_bounds: ~256 px across, at least 30 m."""
             import math
-            import threading
             w, s, e, n = view_bounds
             width_m = max(e - w, n - s) * 111320 * max(math.cos(math.radians((s + n) / 2)), 0.1)
-            scale = max(30, round(width_m / 256))
+            return max(30, round(width_m / 256))
+
+        def _in_view_warnings(img, map_viz, check_range):
+            """Warnings about what ``img`` shows in view_bounds, from one sample.
+
+            - No unmasked pixel at all: the layer shows nothing.
+            - With ``check_range``: nearly every visible pixel is above ``max``
+              on every displayed band, or below ``min``, so the layer draws
+              as one flat color. getMapId is happy with both. In an askterra
+              session, 0-10000 Sentinel-2 reflectance drawn with a 0.02-0.25
+              stretch came out solid white and passed. One band out of range
+              is a tint, and a one-color palette is flat on purpose, so
+              neither is flagged.
+
+            One reduceRegion, sampled coarsely (~256 px across) and abandoned
+            after 20 s, so a heavy layer costs at most that much and never
+            fails the test.
+            """
+            if view_bounds is None:
+                return []
+            import threading
+
+            def _nums(v):
+                if isinstance(v, str):
+                    v = v.split(",")
+                return [float(x) for x in (v if isinstance(v, (list, tuple)) else [v])]
+
+            bands = map_viz.get("bands")
+            if isinstance(bands, str):
+                bands = [b.strip() for b in bands.split(",")]
+            palette = map_viz.get("palette")
+            if isinstance(palette, str):
+                palette = [c for c in palette.split(",") if c.strip()]
+            lo = hi = None
+            if (check_range and "min" in map_viz and "max" in map_viz
+                    and not (isinstance(palette, (list, tuple)) and len(palette) == 1)):
+                try:
+                    lo, hi = _nums(map_viz["min"]), _nums(map_viz["max"])
+                except (TypeError, ValueError):
+                    lo = hi = None
+                # A bound list that cannot pair with the shown bands, or a band
+                # shown twice (gray RGB, which select() refuses), would fail the
+                # whole sample, empty check included: skip the range check.
+                nb = len(bands) if bands else 1
+                if lo is not None and (not (len(lo) in (1, nb) and len(hi) in (1, nb))
+                                       or (bands and len(set(bands)) != len(bands))):
+                    lo = hi = None
+            w, s, e, n = view_bounds
+            scale = _view_scale()
             out = {}
 
             def _run():
                 try:
-                    out["v"] = (ee.Image(img).mask().reduce(ee.Reducer.max())
-                                .reduceRegion(ee.Reducer.max(), ee.Geometry.Rectangle([w, s, e, n]),
-                                              scale, bestEffort=True, maxPixels=1e7)
-                                .values().get(0).getInfo())
+                    image = ee.Image(img)
+                    stack = image.mask().reduce(ee.Reducer.max()).rename("visible")
+                    if hi is not None:
+                        shown = image.select(bands) if bands else image
+                        stack = ee.Image.cat([
+                            stack,
+                            shown.gt(ee.Image.constant(hi)).reduce(ee.Reducer.min()).rename("above"),
+                            shown.lt(ee.Image.constant(lo)).reduce(ee.Reducer.min()).rename("below"),
+                            shown.regexpRename("^", "shown_")])
+                    reducer = (ee.Reducer.min().combine(ee.Reducer.max(), sharedInputs=True)
+                               .combine(ee.Reducer.mean(), sharedInputs=True))
+                    out["v"] = stack.reduceRegion(reducer, ee.Geometry.Rectangle([w, s, e, n]),
+                                                  scale, bestEffort=True, maxPixels=1e7).getInfo()
                 except Exception:
                     pass
 
             t = threading.Thread(target=_run, daemon=True)
             t.start()
             t.join(20)
-            if "v" not in out or out["v"]:
-                return None
-            return (f"No visible pixels in the map's centered extent (sampled at ~{scale} m): "
-                    f"every pixel there is masked. Common causes: a cloud-masked composite with "
-                    f"no clear scenes, a date range with no images, or a threshold nothing met. "
-                    f"Check before telling the user this layer shows something.")
+            if "v" not in out:
+                return []
+            v = out["v"] or {}
+            if not v.get("visible_max"):
+                return [f"No visible pixels in the map's centered extent (sampled at ~{scale} m): "
+                        f"every pixel there is masked. Common causes: a cloud-masked composite with "
+                        f"no clear scenes, a date range with no images, or a threshold nothing met. "
+                        f"Check before telling the user this layer shows something."]
+            if hi is None:
+                return []
+            mins = [x for k, x in v.items() if k.startswith("shown_") and k.endswith("_min") and x is not None]
+            maxs = [x for k, x in v.items() if k.startswith("shown_") and k.endswith("_max") and x is not None]
+            in_view = f" (values in view: {min(mins):g} to {max(maxs):g})" if mins and maxs else ""
+            if (v.get("above_mean") or 0) >= 0.99:
+                return [f"Nearly every visible pixel in view is above this layer's stretch max "
+                        f"({map_viz['max']}) on every displayed band, so it draws as one flat "
+                        f"color{in_view}. The data's range differs from the stretch (for example, "
+                        f"reflectance scaled 0-10000 drawn with a 0-1 stretch): set min/max to the "
+                        f"values in view before describing this layer."]
+            if (v.get("below_mean") or 0) >= 0.99:
+                return [f"Nearly every visible pixel in view is below this layer's stretch min "
+                        f"({map_viz['min']}) on every displayed band, so it draws as one flat "
+                        f"color{in_view}. If the layer is mostly zero or no-data by nature (no "
+                        f"rain, no fire), mask those pixels (selfMask() or updateMask()) so the "
+                        f"basemap shows; otherwise set min/max to the values in view before "
+                        f"describing this layer."]
+            return []
 
         def _test_layer(idx, idDict):
             ee_obj = idDict.get("_ee_obj")
@@ -3499,9 +3570,8 @@ class mapper:
                 return {"name": name, "status": "error", "error": str(e)}
 
             if not style_mode and isinstance(test_obj, ee.Image):
-                empty = _empty_in_view_warning(test_obj)
-                if empty:
-                    warnings.append(empty)
+                warnings.extend(_in_view_warnings(test_obj, map_viz,
+                                                  check_range=not viz.get("autoViz")))
 
             # --- autoViz validation: check class properties exist for band names ---
             # When autoViz is True, the viewer expects <bandName>_class_values,
