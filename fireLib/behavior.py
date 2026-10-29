@@ -256,7 +256,8 @@ def flame_length(ros_ft_min, i_r=None, *, residence_time_min: float = 0.5):
 
 def crown_fire_initiation(fuels, flame_length_ft, *,
                           cbh_band: str = "CBH",
-                          cbh_scale: float = 0.1):
+                          cbh_scale: float = 0.1,
+                          cc_band: str = "CC"):
     """Van Wagner crown-fire initiation: does the surface fire torch?
 
     A surface fire transitions to crown fire when its intensity is
@@ -269,15 +270,27 @@ def crown_fire_initiation(fuels, flame_length_ft, *,
             so it can be an integer raster, so 0.1 converts to metres.
             Getting this wrong by a factor of ten produces a canopy
             10x too high and a landscape that never torches.
+        cc_band: Canopy cover band. Where ``fuels`` has it, a pixel with
+            0 cover has no canopy and cannot torch, whatever its CBH.
 
     Returns:
         ``ee.Image`` band ``crown_initiation`` — 1 where the surface
-        fire is expected to reach the canopy base, 0 otherwise.
+        fire is expected to reach the canopy base, 0 otherwise
+        (including wherever there is no canopy).
     """
     import ee
 
-    cbh_m = ee.Image(fuels).select(cbh_band).multiply(cbh_scale)
-    cbh_ft = cbh_m.multiply(3.28084)
+    fuels = ee.Image(fuels)
+    cbh = fuels.select(cbh_band)
+    cbh_ft = cbh.multiply(cbh_scale).multiply(3.28084)
+    # LANDFIRE codes "no canopy" as CBH 0 and CC 0. Compared bare, a
+    # 0 ft canopy base is reached by any flame, so every grass pixel
+    # would torch.
+    canopy = cbh.gt(0)
+    canopy = canopy.And(ee.Image(ee.Algorithms.If(
+        fuels.bandNames().contains(cc_band),
+        fuels.select([cc_band]).gt(0),
+        ee.Image(1))))
     # Torching when flame length reaches the canopy base.
-    return (ee.Image(flame_length_ft).gte(cbh_ft)
+    return (ee.Image(flame_length_ft).gte(cbh_ft).And(canopy)
             .rename("crown_initiation"))
