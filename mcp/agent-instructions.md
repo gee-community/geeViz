@@ -406,6 +406,9 @@ result = result.reproject(crs='EPSG:5070', scale=30)  # MUST be last
 ```
 Never reproject BEFORE `connectedPixelCount` — that changes the pixel grid the connectivity analysis runs on. The final reproject locks native resolution across all zoom levels and prevents single-pixel artifacts.
 
+### Pixel-unit operations change with zoom
+A map layer is computed at the pixel size of the zoom being drawn, so anything measured in pixels (`fastDistanceTransform`, pixel kernels in `focal*` / `reduceNeighborhood` / `convolve`) gives a different answer at each zoom. Convert to meters at the scale being computed, never with a fixed pixel size: `img.fastDistanceTransform(n).sqrt().multiply(ee.Image.pixelArea().sqrt())` is meters, and kernels and `focal*` take `units='meters'`. `n` is in pixels: choose it so `n` times the finest pixel size viewed exceeds your largest threshold. Beyond `n` pixels the transform returns a huge sentinel value, so mask distances above that threshold. `connectedPixelCount` cannot be converted; use the MMU pattern above. Features smaller than a pixel still drop out when zoomed out, so a meter-based layer still coarsens; that is expected and needs no reproject. For a thresholded distance layer, spot-check one point at a fine and a coarse `reduceRegion` scale: a difference beyond one pixel means a pixel-unit step remains.
+
 ### DEM derivatives — `.resample('bicubic')` on the raw DEM + restore native projection
 `ee.Terrain.slope(dem)` / `.aspect(dem)` / `.hillshade(dem)` on a raw DEM often produces **absurdly flat slopes AND diagonal hatch artifacts**. Fix: `.resample('bicubic')` on the raw elevation BEFORE the derivative, and restore the dataset's native projection so terrain math has a metric grid. Two patterns depending on the source:
 
