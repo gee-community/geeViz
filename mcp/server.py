@@ -6668,6 +6668,12 @@ def search_datasets(query: str, source: str = "all", max_results: int = 50) -> s
                 # Community catalog fields
                 result_entry["thematic_group"] = entry.get("thematic_group", "")
                 result_entry["docs"] = entry.get("docs", "")
+                # The catalog lists these, but they are shared only with
+                # its sponsors: reading one fails with "Asset not found".
+                if "insiders only" in result_entry["thematic_group"].lower():
+                    result_entry["access"] = (
+                        "insiders only: not public, so it cannot be read "
+                        "from this session. Do not offer it as available.")
 
             scored.append((score, result_entry))
 
