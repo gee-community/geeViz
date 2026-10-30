@@ -737,29 +737,40 @@ def getBuildings(area, source="vida"):
         Building collections are very large.  Use a small study area
         or the query may be slow / exceed memory limits.
 
+        Footprints drawn inside out (Earth Engine reads them as the whole
+        globe) are dropped, so a few real buildings can be missing.  That
+        check computes each footprint's area, so counting and painting
+        cost more than reading the raw collection.
+
     Example:
         >>> buildings = getBuildings(ee.Geometry.Point([-111, 40.7]).buffer(1000))
     """
     geom = _to_geometry(area)
 
     if source == "google":
-        return ee.FeatureCollection(_GOOGLE_OPEN_BUILDINGS).filterBounds(geom)
-
-    if source == "vida":
-        return _get_multi_country_fc(
+        fc = ee.FeatureCollection(_GOOGLE_OPEN_BUILDINGS).filterBounds(geom)
+    elif source == "vida":
+        fc = _get_multi_country_fc(
             geom,
             root=_VIDA_COMBINED_ROOT,
             key_type="iso3",
         )
-
-    if source == "ms":
-        return _get_multi_country_fc(
+    elif source == "ms":
+        fc = _get_multi_country_fc(
             geom,
             root=_MS_BUILDINGS_ROOT,
             key_type="country_name",
         )
+    else:
+        raise ValueError(f"Unknown building source: {source!r}. Use 'vida', 'ms', or 'google'.")
 
-    raise ValueError(f"Unknown building source: {source!r}. Use 'vida', 'ms', or 'google'.")
+    # Some footprints wind the wrong way, so Earth Engine reads them as the
+    # whole Earth minus the building: they intersect every area and paint
+    # every pixel. No building is anywhere near 1e10 m2; drop them.
+    return fc.map(
+        lambda f: ee.Algorithms.If(f.geometry().area(1000).lt(1e10), f, None),
+        True,
+    )
 
 
 # Country-name mapping for MS Buildings (ISO-3 → folder name)
