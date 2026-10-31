@@ -34,6 +34,23 @@ def test_ids_become_strings_and_other_ids_are_left_alone():
     assert srv._stringify_feature_ids(None) is None
 
 
+def test_dotted_field_names_are_renamed_for_earth_engine():
+    # Earth Engine rejects a property name with a period ("Invalid property
+    # name: 'Shape.STArea()'"); ArcGIS services on SQL Server name their
+    # geometry fields that way.
+    gj = {"type": "FeatureCollection", "features": [
+        {"type": "Feature", "id": 1, "geometry": None,
+         "properties": {"NAME": "x", "Shape.STArea()": 5.0, "a.b": 1, "a_b": 2}},
+        {"type": "Feature", "id": 2, "geometry": None, "properties": None},
+    ]}
+    props = srv._stringify_feature_ids(gj)["features"][0]["properties"]
+    assert not any("." in k for k in props)
+    assert props["NAME"] == "x"
+    assert props["Shape_STArea()"] == 5.0
+    assert props["a_b"] == 2  # an existing name is never overwritten
+    assert sorted(props.values(), key=str) == sorted([1, 2, 5.0, "x"], key=str)
+
+
 def test_query_feature_service_returns_string_ids(monkeypatch):
     def fake_fetch_json(url, params=None, *a, **k):
         if (params or {}).get("returnCountOnly") in (True, "true"):
@@ -56,6 +73,8 @@ def test_query_feature_service_returns_string_ids(monkeypatch):
 
     gj = services.queryFeatureService("https://example.com/arcgis/rest/services/x/FeatureServer/0")
     assert gj["features"][0]["id"] == "20"
+    # the renaming is discoverable where the model reads the signature
+    assert "Shape_STArea()" in services.queryFeatureService.__doc__
 
 
 def _code_only(src):

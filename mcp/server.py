@@ -2052,11 +2052,29 @@ def _stringify_feature_ids(gj):
     """Make every GeoJSON feature ``id`` a string. ee.Feature copies a
     feature's ``id`` into system:index unchanged, and Earth Engine rejects
     a non-string one server-side ("Value of property 'system:index' must
-    be a string"); ArcGIS ``f=geojson`` sends integer OBJECTIDs."""
+    be a string"); ArcGIS ``f=geojson`` sends integer OBJECTIDs.
+
+    Also renames property names with a period, which Earth Engine rejects
+    ("Invalid property name: 'Shape.STArea()'"): services on SQL Server
+    name their geometry fields that way. The period becomes ``_``, and an
+    existing name is never overwritten."""
     if isinstance(gj, dict):
         for f in gj.get("features") or ():
-            if isinstance(f, dict) and f.get("id") is not None and not isinstance(f["id"], str):
+            if not isinstance(f, dict):
+                continue
+            if f.get("id") is not None and not isinstance(f["id"], str):
                 f["id"] = str(f["id"])
+            props = f.get("properties")
+            if isinstance(props, dict) and any("." in str(k) for k in props):
+                renamed = {}
+                for k, v in props.items():
+                    if "." in str(k):
+                        new = str(k).replace(".", "_")
+                        while new in props or new in renamed:
+                            new += "_"
+                        k = new
+                    renamed[k] = v
+                f["properties"] = renamed
     return gj
 
 
@@ -2074,6 +2092,11 @@ def _install_string_feature_ids(services):
     def queryFeatureService(*args, **kwargs):
         return _stringify_feature_ids(orig(*args, **kwargs))
 
+    queryFeatureService.__doc__ = (orig.__doc__ or "") + (
+        "\n\nIn geeViz run_code: feature ids come back as strings, and a field "
+        "name with a period comes back with ``_`` in its place "
+        "(``Shape.STArea()`` -> ``Shape_STArea()``), so the result loads "
+        "straight into ``ee.FeatureCollection``.\n")
     queryFeatureService._geeviz_string_ids = True
     services.queryFeatureService = queryFeatureService
 
