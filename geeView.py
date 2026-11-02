@@ -393,6 +393,71 @@ _EE_VIZ_KEYS = ("bands", "min", "max", "gain", "bias", "gamma", "palette",
                 "opacity", "format")
 
 
+def _hand_styled_class_warning(viz: dict) -> str | None:
+    """A one-class layer drawn with a hand-picked color instead of autoViz.
+
+    ``{'palette': ['ffd700']}`` or ``{'min': 1, 'max': 1, ...}`` is how a
+    mask (``.eq(20).selfMask()``) gets drawn when it is not treated as
+    thematic data. The map shows it, but the legend has no class name and
+    an area chart has nothing to label. A sugarcane map drew four years
+    that way and then its time lapse the same way, until the user asked
+    for autoViz (session e4561fe2, 2026-10-22).
+    """
+    if not isinstance(viz, dict) or viz.get("autoViz"):
+        return None
+    pal = viz.get("palette")
+    if isinstance(pal, str):
+        pal = [p for p in pal.split(",") if p.strip()]
+    one_color = isinstance(pal, (list, tuple)) and len(pal) == 1
+    lo, hi = viz.get("min"), viz.get("max")
+    flat = lo is not None and lo == hi
+    if not (one_color or flat):
+        return None
+    return ("Styled by hand as a single class (a one-color palette or min == max). "
+            "A mask or class layer is thematic: set <band>_class_values, "
+            "_class_names and _class_palette on the image and use "
+            "{'autoViz': True, 'canAreaChart': True} (for a .selfMask() layer add "
+            "'areaChartParams': {'shouldUnmask': True, 'unmaskValue': 0}), so the "
+            "legend names the class and the area chart works.")
+
+
+import re as _re_mod
+
+_YEAR_IN_NAME = _re_mod.compile(r"(?<!\d)(19\d\d|20\d\d|21\d\d)(?!\d)")
+
+
+def _year_layer_groups(layers: list) -> dict:
+    """Groups of 3+ single-year raster layers that differ only by the year.
+
+    ``layers`` is ``[(name, is_time_lapse), ...]``. Returns ``{name: [years]}``
+    for each layer in such a group. "Sugarcane Extent (1995)", "(2005)",
+    "(2015)" and "(2023)" are one series that belongs in a time lapse.
+    """
+    groups = {}
+    for name, is_tl in layers:
+        if is_tl or not isinstance(name, str):
+            continue
+        years = _YEAR_IN_NAME.findall(name)
+        if len(years) != 1:
+            continue
+        groups.setdefault(_YEAR_IN_NAME.sub("#", name), []).append((name, years[0]))
+    out = {}
+    for members in groups.values():
+        years = sorted({y for _, y in members})
+        if len(years) >= 3:
+            for name, _ in members:
+                out[name] = years
+    return out
+
+
+def _year_layer_warning(years: list) -> str:
+    return (f"One of {len(years)} single-year layers of the same series "
+            f"({', '.join(years)}). Change over time belongs in one time lapse: "
+            f"build an ee.ImageCollection with system:time_start on each frame and "
+            f"add it with Map.addTimeLapse(ic, {{'autoViz': True, 'canAreaChart': True}}, name), "
+            f"without waiting to be asked. A summary layer can go alongside it.")
+
+
 def _ee_viz_params(viz: dict) -> dict:
     """The subset of a geeView viz dict to hand Earth Engine's getMapId.
 
@@ -3252,12 +3317,6 @@ class mapper:
                 mapid_target.getMapId(map_viz)
             except Exception as e:
                 err = str(e)
-                # Truncate verbose tracebacks so the agent sees something
-                # actionable rather than a wall of text.
-                if "\n" in err:
-                    err = err.split("\n")[0]
-                if len(err) > 300:
-                    err = err[:300] + "…"
                 skipped.append({"name": name, "reason": f"getMapId failed: {err}"})
                 continue
 
@@ -3573,6 +3632,38 @@ class mapper:
                 warnings.extend(_in_view_warnings(test_obj, map_viz,
                                                   check_range=not viz.get("autoViz")))
 
+            # --- thematic data drawn without autoViz ---
+            if not style_mode and not viz.get("autoViz"):
+                hand = _hand_styled_class_warning(viz)
+                if hand:
+                    warnings.append(hand)
+                else:
+                    # Class properties already on the image mean the data is
+                    # thematic; drawing it with a palette ignores them.
+                    try:
+                        src = ee_obj.first() if ee_obj.__class__.__name__ == "ImageCollection" else ee_obj
+                        if isinstance(src, ee.Image) or ee_obj.__class__.__name__ == "ImageCollection":
+                            info = ee.Dictionary({"b": ee.Image(src).bandNames(),
+                                                  "p": ee.Image(src).propertyNames()}).getInfo()
+                            props = set(info.get("p") or [])
+                            classed = [b for b in (info.get("b") or [])
+                                       if f"{b}_class_values" in props]
+                            shown = map_viz.get("bands")
+                            if isinstance(shown, str):
+                                shown = [s.strip() for s in shown.split(",")]
+                            if shown:
+                                classed = [b for b in classed if b in shown]
+                            elif info.get("b") and len(info["b"]) > 1:
+                                classed = [b for b in classed if b == info["b"][0]]
+                            if classed:
+                                warnings.append(
+                                    f"Band '{classed[0]}' carries class properties "
+                                    f"({classed[0]}_class_values...) but autoViz is off, so "
+                                    f"the legend and area chart ignore its classes. Use "
+                                    f"{{'autoViz': True, 'canAreaChart': True}}.")
+                    except Exception:
+                        pass
+
             # --- autoViz validation: check class properties exist for band names ---
             # When autoViz is True, the viewer expects <bandName>_class_values,
             # <bandName>_class_names, <bandName>_class_palette properties on the
@@ -3696,8 +3787,8 @@ class mapper:
                                 err_msg = (
                                     f"autoViz is True but class properties are set for "
                                     f"bands that don't exist in this image "
-                                    f"({', '.join(sorted(orphan_prefixes)[:3])}). "
-                                    f"Actual bands: {', '.join(band_names[:5])}. "
+                                    f"({', '.join(sorted(orphan_prefixes))}). "
+                                    f"Actual bands: {', '.join(band_names)}. "
                                     f"Rename the properties to match the band names "
                                     f"(e.g. {band_names[0]}_class_values)."
                                 )
@@ -3730,6 +3821,15 @@ class mapper:
         layers.sort(key=lambda x: next(
             (i for i, d in enumerate(self.idDictList) if d.get("name") == x["name"]), 0
         ))
+
+        # Single-year layers of one series belong in a time lapse.
+        year_groups = _year_layer_groups([
+            (d.get("name"), d.get("function") == "addSerializedTimeLapse")
+            for d in self.idDictList if d.get("_ee_obj") is not None
+        ])
+        for l in layers:
+            if l["status"] == "ok" and l["name"] in year_groups:
+                l.setdefault("warnings", []).append(_year_layer_warning(year_groups[l["name"]]))
 
         all_passed = all(l["status"] == "ok" for l in layers)
         return {"pass": all_passed, "layers": layers}
