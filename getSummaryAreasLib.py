@@ -89,8 +89,17 @@ _FIELDMAPS = {
     4: "projects/sat-io/open-datasets/field-maps/edge-matched-humanitarian/adm4_polygons",
 }
 
+# geoBoundaries high-precision single-country boundaries (community catalog,
+# levels 0-4). Reaches units the level-2 sources lump together, such as the
+# districts of a city that a country counts as one level-2 unit.
+_GEOB_HP = {
+    level: f"projects/sat-io/open-datasets/geoboundaries/HPSCGS-ADM{level}"
+    for level in range(5)
+}
+
 _ADMIN_SOURCES = {
     "geob": _GEOB_V6,
+    "geobhp": _GEOB_HP,
     "gaul": _GAUL_2015,
     "gaul2024": _GAUL_2024,
     "fieldmaps": _FIELDMAPS,
@@ -99,6 +108,7 @@ _ADMIN_SOURCES = {
 # Name properties for each source (the column containing the admin unit name)
 _ADMIN_NAME_PROPS = {
     "geob": "shapeName",
+    "geobhp": "shapeName",
     "gaul": lambda level: f"ADM{level}_NAME",
     "gaul2024": lambda level: f"gaul{level}_name",
     "fieldmaps": lambda level: f"adm{level}_name",
@@ -218,13 +228,22 @@ def getAdminBoundaries(area=None, level=0, source="geob", name=None):
     - **0** — Countries
     - **1** — States / provinces
     - **2** — Districts / counties / municipalities
-    - **3** — Sub-districts / wards (FieldMaps only)
-    - **4** — Neighborhoods / localities (FieldMaps only)
+    - **3** — Sub-districts / wards (geobhp, FieldMaps)
+    - **4** — Neighborhoods / localities (geobhp, FieldMaps)
+
+    Countries number their levels differently: in some, level 2 is a whole
+    city and the city's districts are level 3. If a unit is missing at one
+    level, or comes back as its parent, try the next level down and the
+    ``"geobhp"`` source before falling back to anything drawn by hand.
 
     Available sources and their level coverage:
 
     - ``"geob"`` — geoBoundaries v6.0 (official GEE catalog, levels 0–2).
       Name property: ``shapeName``.
+    - ``"geobhp"`` — geoBoundaries high-precision single-country
+      boundaries (community catalog, levels 0–4). Name property:
+      ``shapeName``. Reaches units the level-2 sources lump together;
+      its geometries are larger and slower, so use it only for those.
     - ``"gaul"`` — FAO GAUL 2015 (official GEE catalog, levels 0–2).
       Name property: ``ADM{level}_NAME`` (e.g. ``ADM0_NAME``).
     - ``"gaul2024"`` — FAO GAUL 2024 (community catalog, levels 0–2).
@@ -253,6 +272,7 @@ def getAdminBoundaries(area=None, level=0, source="geob", name=None):
         >>> states = getAdminBoundaries(my_area, level=1)
         >>> districts = getAdminBoundaries(my_area, level=2, source="gaul")
         >>> wards = getAdminBoundaries(my_area, level=3)  # auto-uses FieldMaps
+        >>> city_districts = getAdminBoundaries(my_area, level=3, source="geobhp")
         >>> brazil = getAdminBoundaries(level=0, name="Brazil")
         >>> mt_state = getAdminBoundaries(level=1, name="Montana")
     """
@@ -265,15 +285,16 @@ def getAdminBoundaries(area=None, level=0, source="geob", name=None):
     asset = source_assets.get(level)
 
     # Auto-fallback to FieldMaps for levels not in the requested source
-    if asset is None and source != "fieldmaps":
-        asset = _FIELDMAPS.get(level)
+    if asset is None and source != "fieldmaps" and level in _FIELDMAPS:
+        asset = _FIELDMAPS[level]
+        source = "fieldmaps"
 
     if asset is None:
         available = sorted(source_assets.keys())
         raise ValueError(
             f"Admin level {level} is not available for source {source!r}. "
             f"Available levels: {available}. "
-            f"Levels 3–4 are available via source='fieldmaps'."
+            f"Levels 3–4 are available via source='geobhp' or 'fieldmaps'."
         )
 
     fc = _filter_bounds(asset, area)
@@ -1022,7 +1043,7 @@ def getUSNationalParks(area=None, name=None, park_names=None, park_name=None):
 AVAILABLE_SUMMARY_AREAS = {
     "admin_boundaries": {
         "function": "getAdminBoundaries",
-        "description": "Admin boundaries: level 0 (countries), 1 (states), 2 (counties), 3 (sub-districts), 4 (localities). Sources: geob, gaul, gaul2024, fieldmaps.",
+        "description": "Admin boundaries: level 0 (countries), 1 (states), 2 (counties), 3 (sub-districts), 4 (localities). Sources: geob, geobhp, gaul, gaul2024, fieldmaps.",
     },
     "us_states": {
         "function": "getUSStates",
