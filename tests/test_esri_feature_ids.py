@@ -4,7 +4,7 @@ ArcGIS ``f=geojson`` gives each feature its integer OBJECTID as ``id``;
 ``ee.Feature`` copies that into ``system:index`` unchanged and Earth
 Engine rejects it server-side ("Value of property 'system:index' must be
 a string"). Agents loading a perimeter with
-``georest.restesri.services.queryFeatureService`` and wrapping it as
+``georest.esri.services.queryFeatureService`` and wrapping it as
 ``ee.FeatureCollection(gj)`` (as the instructions tell them to) hit this
 on the first server-side call.
 """
@@ -17,7 +17,7 @@ import pytest
 import geeViz.mcp.server as srv
 
 georest = pytest.importorskip("georest")
-import georest.restesri.services as services  # noqa: E402
+import georest.esri.services as services  # noqa: E402
 
 
 def test_ids_become_strings_and_other_ids_are_left_alone():

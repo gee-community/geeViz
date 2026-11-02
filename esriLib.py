@@ -14,8 +14,8 @@ ArcGIS / Esri REST services client for geeViz. **DEPRECATED.**
 
    The move, function by function::
 
-       geeViz.esriLib.searchPortal        -> georest.restesri.portal.searchPortal
-       geeViz.esriLib.getServiceMetadata  -> georest.restesri.portal.getServiceMetadata
+       geeViz.esriLib.searchPortal        -> georest.esri.portal.searchPortal
+       geeViz.esriLib.getServiceMetadata  -> georest.esri.portal.getServiceMetadata
 
    The signatures match, so the change is the import line.
 
@@ -43,7 +43,7 @@ ArcGIS / Esri REST services client for geeViz. **DEPRECATED.**
    own dict rather than a copy, so a name added at runtime through
    either module resolves in both; the feature-service count pre-flight,
    overflow guard and GeoJSON fetch are one call to
-   ``georest.restesri.services.queryFeatureService``; the ``{z}/{y}/{x}``
+   ``georest.esri.services.queryFeatureService``; the ``{z}/{y}/{x}``
    tile template comes from ``getImageServiceTileUrl``.
 
 Bridges three Esri service types into the geeViz viewer:
@@ -63,7 +63,7 @@ Usage -- georest to find and inspect, esriLib (or ``Map.addEsri*``) to
 draw::
 
     import geeViz.esriLib as el
-    from georest.restesri import portal
+    from georest.esri import portal
 
     # Discover data on any ArcGIS Portal
     results = portal.searchPortal("naip")                     # IIPP (default)
@@ -127,7 +127,7 @@ from geeViz._ssrf import check_url as _check_url  # noqa: E402
 #: silently ignored, because the lookup happens against the other
 #: dict. Aliasing keeps one source of truth and makes an edit
 #: through either name work.
-from georest.restesri.portal import PORTALS  # noqa: E402
+from georest.esri.portal import PORTALS  # noqa: E402
 """Module-level dict mapping short names to portal base URLs.
 
 Add your own at runtime::
@@ -219,7 +219,7 @@ def _fetch_json(url: str, params: dict | None = None) -> dict:
     Raises the same things it always did: ``urllib.error.URLError`` on
     network failure, ``ValueError`` on a non-JSON response.
     """
-    from georest.restesri import _http as _gh
+    from georest.esri import _http as _gh
 
     if params:
         url = url + "?" + urllib.parse.urlencode(params)
@@ -246,7 +246,7 @@ def _fetch_json(url: str, params: dict | None = None) -> dict:
 
 def _build_params(base: dict, token: str | None) -> dict:
     """Merge ``token`` into a params dict if supplied. Delegates."""
-    from georest.restesri import _http as _gh
+    from georest.esri import _http as _gh
     return _gh.build_params(base, token)
 
 
@@ -257,7 +257,7 @@ def _resolve_portal(portal: str) -> str:
     two would have drifted. :data:`PORTALS` is aliased to georest's own
     dict above, so a name added at runtime resolves here too.
     """
-    from georest.restesri import portal as _gp
+    from georest.esri import portal as _gp
     return _gp._resolve_portal(portal)
 
 def searchPortal(
@@ -331,8 +331,8 @@ def searchPortal(
         # Raw portal query DSL (bypasses data_only and filters)
         results = el.searchPortal("", raw_q='type:"Feature Service" owner:USGS')
     """
-    _deprecated("searchPortal", "georest.restesri.portal.searchPortal")
-    from georest.restesri import portal as _gp
+    _deprecated("searchPortal", "georest.esri.portal.searchPortal")
+    from georest.esri import portal as _gp
     return _gp.searchPortal(
         query, portal=portal, limit=limit, data_only=data_only,
         raw_q=raw_q, token=token, **filters)
@@ -382,8 +382,8 @@ def getServiceMetadata(url: str, token: str | None = None) -> dict[str, Any]:
         print([f["name"] for f in meta.get("fields", [])])
     """
     _deprecated("getServiceMetadata",
-                "georest.restesri.portal.getServiceMetadata")
-    from georest.restesri import portal as _gp
+                "georest.esri.portal.getServiceMetadata")
+    from georest.esri import portal as _gp
     _check_url(url)
     try:
         return _gp.getServiceMetadata(url, token=token)
@@ -402,7 +402,7 @@ def _detect_service_type(url: str, meta: dict | None = None) -> str:
     URL-segment match first, then metadata keys, then the ``fields`` /
     ``bandCount`` shape sniff.
     """
-    from georest.restesri import portal as _gp
+    from georest.esri import portal as _gp
     return _gp._detect_service_type(url, meta)
 
 def _resolve_url(url_or_result: str | dict) -> str:
@@ -411,7 +411,7 @@ def _resolve_url(url_or_result: str | dict) -> str:
     Another byte-identical copy, raising the same ``TypeError`` for a
     non-string/dict and ``ValueError`` for a result with no ``url``.
     """
-    from georest.restesri import portal as _gp
+    from georest.esri import portal as _gp
     return _gp._resolve_url(url_or_result)
 
 def addEsriImageService(
@@ -477,7 +477,7 @@ def addEsriImageService(
     # may know the service is cached.
     if _meta is None:
         try:
-            from georest.restesri import portal as _gp_meta
+            from georest.esri import portal as _gp_meta
             _meta = _gp_meta.getServiceMetadata(url, token=token)
         except Exception as _meta_err:
             print(f"WARNING: could not read service metadata for {url!r} "
@@ -498,7 +498,7 @@ def addEsriImageService(
     # standard -- and the token quoting are georest's. The body here was
     # identical to it line for line, which is the kind of copy that gets
     # a fix in one place and not the other.
-    from georest.restesri import services as _gs
+    from georest.esri import services as _gs
     tile_url = _gs.getImageServiceTileUrl(url, token=token)
 
     kw: dict[str, Any] = {}
@@ -579,7 +579,7 @@ def addEsriMapService(
         # Map.addEsriMapService, or the MCP sandbox, which instructs
         # agents to use exactly these helpers -- got a DeprecationWarning
         # naming a function they never called and could not stop calling.
-        from georest.restesri import portal as _gp_meta
+        from georest.esri import portal as _gp_meta
         _meta = _gp_meta.getServiceMetadata(url, token=token)
     except Exception as _meta_err:
         # Metadata fetch failed — could be a bad URL, an auth wall, or
@@ -884,7 +884,7 @@ def addEsriFeatureService(
     # `bbox` stays the parameter name here because it is this module's
     # published signature; georest spells the same thing as a geometry
     # plus its type, and an envelope intersect is its default.
-    from georest.restesri import services as _gs
+    from georest.esri import services as _gs
 
     # geeViz's SSRF guard, which georest does not have and should not:
     # it is this package's policy, not a REST client's. It used to be
@@ -1018,7 +1018,7 @@ def addEsriService(
     Example::
 
         import geeViz.esriLib as el
-        from georest.restesri import portal
+        from georest.esri import portal
 
         results = portal.searchPortal("naip", limit=5)
         for r in results:

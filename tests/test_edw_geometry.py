@@ -13,6 +13,7 @@ import json
 import pytest
 
 import geeViz.edwLib as edw
+from georest.esri import edw as georest_edw
 
 UTAH_BOX = {"type": "Polygon", "coordinates": [[[-114.05, 37.0], [-109.04, 37.0],
                                                 [-109.04, 42.0], [-114.05, 42.0],
@@ -26,7 +27,8 @@ def sent(monkeypatch):
     def fake_post(url, params):
         box.update(params)
         return {"type": "FeatureCollection", "features": []}
-    monkeypatch.setattr(edw, "_post_json", fake_post)
+    # edwLib delegates to georest; the request is built there.
+    monkeypatch.setattr(georest_edw, "post_json", fake_post)
     return box
 
 
@@ -54,7 +56,9 @@ class _FakeEEFeature:
 def test_ee_objects_are_converted(sent, obj):
     edw.query_features("EDW_ForestSystemBoundaries_01", 0, geometry=obj)
     assert sent["geometryType"] == "esriGeometryPolygon"
-    assert json.loads(sent["geometry"])["rings"] == UTAH_BOX["coordinates"]
+    # The same ring; georest winds it clockwise, the way Esri reads an exterior.
+    (ring,) = json.loads(sent["geometry"])["rings"]
+    assert sorted(map(tuple, ring)) == sorted(map(tuple, UTAH_BOX["coordinates"][0]))
 
 
 def test_a_bbox_string_stays_an_envelope(sent):
@@ -69,7 +73,7 @@ def test_an_explicit_type_is_kept(sent):
 
 
 def test_an_empty_error_message_still_says_something(monkeypatch):
-    monkeypatch.setattr(edw, "_post_json", lambda url, params: {
+    monkeypatch.setattr(georest_edw, "post_json", lambda url, params: {
         "error": {"code": 400, "message": "", "details": ["Invalid geometry."]}})
     with pytest.raises(RuntimeError, match=r"Invalid geometry\. \(code 400\)"):
         edw.query_features("X", 0, geometry=UTAH_BOX)

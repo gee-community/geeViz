@@ -101,7 +101,7 @@ class _FakeMap:
 def test_addEsriFeatureService_applies_it(monkeypatch):
     """Wiring: the fetch result must actually pass through the thinning."""
     el = _el()
-    from georest.restesri import services as gs
+    from georest.esri import services as gs
     big = _fc(40, 4000)
     monkeypatch.setattr(gs, "queryFeatureService", lambda *a, **k: big)
     monkeypatch.setattr(el, "_check_url", lambda u: None)
@@ -120,7 +120,7 @@ def test_addEsriService_feature_branch_honors_target_map(monkeypatch):
     target_map, so an auto-dispatched feature layer landed on the global
     gv.Map instead of the map it was asked to go on."""
     el = _el()
-    from georest.restesri import services as gs
+    from georest.esri import services as gs
     monkeypatch.setattr(gs, "queryFeatureService", lambda *a, **k: _fc(1, 10))
     monkeypatch.setattr(el, "_check_url", lambda u: None)
     monkeypatch.setattr(el, "_detect_service_type", lambda u: "FeatureServer")
@@ -175,7 +175,7 @@ def test_bbox_tuple_reaches_georest_as_a_bbox_string(monkeypatch, bbox):
     georest parses only "xmin,ymin,xmax,ymax", sent the tuple as a JSON
     list, and the service answered "'geometry' parameter is invalid"."""
     el = _el()
-    from georest.restesri import services as gs
+    from georest.esri import services as gs
     seen = {}
 
     def _q(*a, **k):
@@ -198,7 +198,7 @@ def test_truncated_fetch_says_how_many_are_missing(monkeypatch, capsys):
     as "(1,000 features)" and the map silently left out the rest.
     """
     el = _el()
-    from georest.restesri import services as gs
+    from georest.esri import services as gs
     page = _fc(3, 10)
     page["properties"] = {"exceededTransferLimit": True}
     monkeypatch.setattr(gs, "queryFeatureService", lambda *a, **k: page)
@@ -213,7 +213,7 @@ def test_truncated_fetch_says_how_many_are_missing(monkeypatch, capsys):
 
 def test_complete_fetch_is_announced_as_before(monkeypatch, capsys):
     el = _el()
-    from georest.restesri import services as gs
+    from georest.esri import services as gs
     monkeypatch.setattr(gs, "queryFeatureService", lambda *a, **k: _fc(3, 10))
 
     def _no_count(*a, **k):

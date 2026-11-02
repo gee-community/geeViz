@@ -99,8 +99,6 @@ def test_a_dns_failure_is_not_reported_as_a_security_block():
 @pytest.mark.parametrize("mod,call", [
     ("esriLib.py", "urlopen"),
     ("googleMapsLib.py", "urlopen"),
-    ("edwLib.py", "urlopen"),
-    ("fsInsights/_http.py", "requests.get"),
 ])
 def test_every_fetch_site_is_guarded(mod, call):
     """One unguarded helper is the whole hole again — they all take a URL
@@ -113,3 +111,14 @@ def test_every_fetch_site_is_guarded(mod, call):
     n_guard = len(re.findall(r"_check_url\(", body))
     assert n_guard >= n_fetch, (
         f"{mod}: {n_fetch} fetch call(s) but only {n_guard} guard call(s)")
+
+
+def test_edw_and_fs_insights_make_no_requests_of_their_own():
+    """They delegate to georest, whose connections the MCP sandbox holds to
+    the same policy (``_connect_refusal`` refuses georest frames too), so a
+    fetch reappearing here would need its own guard."""
+    for mod in ("edwLib.py", "fsInsights/__init__.py"):
+        src = (ROOT / mod).read_text(encoding="utf-8")
+        code = "\n".join(l for l in src.splitlines() if not l.strip().startswith("#"))
+        for call in ("urlopen", "requests.", "http.client", "socket"):
+            assert call not in code, f"{mod} fetches ({call}) without the guard"

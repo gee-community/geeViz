@@ -2,7 +2,7 @@
 
 Everything under site-packages counts as trusted library code -- which
 includes georest, a complete HTTP client with no SSRF policy. Verified
-2026-10-05 with the sandbox on: ``georest.restesri._http.fetch_json`` from
+2026-10-05 with the sandbox on: ``georest.esri._http.fetch_json`` from
 run_code fetched http://127.0.0.1:8899/ and returned it, and a request to
 169.254.169.254 got as far as the network. geeViz.esriLib refuses both
 (``geeViz._ssrf.check_url``), but nothing made a direct georest call do
@@ -21,7 +21,7 @@ from geeViz.tests.test_sandbox_trust import _run_under_sandbox
 
 def _fetch(url):
     return (
-        "from georest.restesri import _http\n"
+        "from georest.esri import _http\n"
         f"_http.fetch_json({url!r}, timeout=5)\n"
     )
 

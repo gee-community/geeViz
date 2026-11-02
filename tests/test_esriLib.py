@@ -349,19 +349,19 @@ class TestDetectServiceType(unittest.TestCase):
     def test_unknown_returns_unknown_without_metadata(self):
         # When URL has no recognizable segment AND metadata fetch fails, should
         # return "Unknown" without raising
-        with patch("georest.restesri.portal.getServiceMetadata", side_effect=Exception("no network")):
+        with patch("georest.esri.portal.getServiceMetadata", side_effect=Exception("no network")):
             result = el._detect_service_type("https://example.com/some/other/endpoint")
         self.assertEqual(result, "Unknown")
 
     def test_fields_key_in_meta_implies_featureserver(self):
         meta = {"fields": [{"name": "OBJECTID"}]}
-        with patch("georest.restesri.portal.getServiceMetadata", return_value=meta):
+        with patch("georest.esri.portal.getServiceMetadata", return_value=meta):
             result = el._detect_service_type("https://example.com/other")
         self.assertEqual(result, "FeatureServer")
 
     def test_bandcount_in_meta_implies_imageserver(self):
         meta = {"bandCount": 4, "pixelType": "U8"}
-        with patch("georest.restesri.portal.getServiceMetadata", return_value=meta):
+        with patch("georest.esri.portal.getServiceMetadata", return_value=meta):
             result = el._detect_service_type("https://example.com/other")
         self.assertEqual(result, "ImageServer")
 

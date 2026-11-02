@@ -100,7 +100,7 @@ def test_visible_reaches_the_layer(monkeypatch):
     def fake_image_service(url, name=None, token=None, viz_params=None, target_map=None, **_kw):
         seen["viz"] = dict(viz_params or {})
 
-    from georest.restesri import portal as gp
+    from georest.esri import portal as gp
     monkeypatch.setattr(el, "_check_url", lambda u: None)
     monkeypatch.setattr(gp, "getServiceMetadata",
                         lambda *a, **k: {"singleFusedMapCache": True})

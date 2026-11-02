@@ -42,7 +42,7 @@ def test_georest_is_a_declared_dependency():
 
 
 def test_georest_imports_and_has_what_we_delegate_to():
-    from georest.restesri import portal
+    from georest.esri import portal
     assert callable(portal.searchPortal)
     assert callable(portal.getServiceMetadata)
 
@@ -65,7 +65,7 @@ def test_the_body_delegates(name, target):
 def test_the_signatures_still_match_georest():
     """The migration note tells people the change is the import line.
     That has to be true, or the note is worse than no note."""
-    from georest.restesri import portal
+    from georest.esri import portal
 
     for name in ("searchPortal", "getServiceMetadata"):
         ours = inspect.signature(getattr(el, name)).parameters
@@ -209,7 +209,7 @@ def test_portals_is_georests_dict_not_a_copy():
     happens inside georest. A copy would accept
     ``esriLib.PORTALS['x'] = ...`` and then ignore it -- the worst kind
     of wrong, because the assignment appears to work."""
-    from georest.restesri import portal
+    from georest.esri import portal
     assert el.PORTALS is portal.PORTALS
 
     el.PORTALS["__probe__"] = "https://probe.example"

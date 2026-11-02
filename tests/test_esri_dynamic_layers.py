@@ -66,7 +66,7 @@ def test_a_cached_image_service_stays_on_tiles():
 def test_metadata_is_read_when_not_supplied(monkeypatch):
     """The wiring, not just the branch: called the ordinary way, the
     service is asked whether it is cached."""
-    from georest.restesri import portal
+    from georest.esri import portal
     asked = []
     monkeypatch.setattr(portal, "getServiceMetadata",
                         lambda url, token=None: asked.append(url) or UNCACHED_META)
@@ -130,7 +130,7 @@ GEOJSON = {"type": "FeatureCollection", "features": []}
 
 
 def _patch_query(monkeypatch, supports=True):
-    from georest.restesri import services
+    from georest.esri import services
     seen = {}
     if supports:
         def fake(url, where="1=1", geometry=None, max_features=1000, token=None,
