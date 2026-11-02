@@ -1077,6 +1077,14 @@ class EECreds:
             # google-auth handles refresh automatically.
             import google.auth
             from google.auth import impersonated_credentials
+            # An impersonation config that carries its own source
+            # credentials (an ADC file of type impersonated_service_account)
+            # is complete as written. Taking the source from ADC instead
+            # would, when that same file IS the ADC, make the target
+            # impersonate itself, which IAM refuses.
+            if isinstance(entry.data, dict) and entry.data.get("source_credentials"):
+                creds, _ = google.auth.load_credentials_from_dict(entry.data, scopes=list(scopes))
+                return creds
             target_email = (entry.client_email
                             or entry.data.get("client_email", ""))
             if not target_email:

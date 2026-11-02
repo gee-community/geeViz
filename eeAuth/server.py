@@ -242,6 +242,12 @@ def _default_workload_tag_builder(
         return build_workload_tag(*parts_list)
 
 
+def _is_operation_call(path: str) -> bool:
+    """A call on a long-running operation (``.../operations/<id>`` or
+    ``...:cancel``), which takes no workload tag."""
+    return "/operations/" in "/" + (path or "").lstrip("/")
+
+
 def _rewrite_query_with_workload_tag(
     query: str,
     tenant: str,
@@ -737,7 +743,11 @@ ee.initialize(authProxyAPIURL, null, onReady, onError);</pre>
         #    the internal tenant param; add our own workload tag on POSTs.
         #    GET requests can't carry unknown query params on most EE
         #    endpoints, so we just strip there without adding.
-        if request.method == "POST":
+        # Operation calls (``operations/<id>:cancel``, ``:delete``) are
+        # POSTs that compute nothing, and Earth Engine refuses a
+        # workloadTag on them ("Unknown name workloadTag: Cannot bind
+        # query parameter"); tagging them made every cancel fail.
+        if request.method == "POST" and not _is_operation_call(path):
             rewritten_query = _rewrite_query_with_workload_tag(
                 request.url.query or "",
                 actual_tenant,
