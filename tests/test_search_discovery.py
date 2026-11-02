@@ -162,16 +162,15 @@ def test_a_module_can_itself_be_the_answer():
         "EVALIDator' cannot be answered with the module")
 
 
-# ── the cap is honest ──────────────────────────────────────────────────
+# ── every match comes back, best first ─────────────────────────────────
 
-def test_a_capped_result_set_says_so():
-    """Whole-docstring matching makes common words match a lot. Serving
-    the top slice as if it were everything is the failure mode this
-    project already hit with fia_estimate's silent max_results."""
+def test_search_results_are_not_capped():
+    """Results are ranked, not cut: a top slice served as everything is
+    the failure mode this project already hit with fia_estimate's
+    silent max_results."""
     body = _func("search_codebase")
-    assert '"truncated": True' in body
-    assert '"total_matches"' in body, (
-        "the caller cannot tell how much was withheld")
+    assert "results[:" not in body
+    assert '"truncated": True' not in body
 
 
 # ── 4. a package points at its submodules ──────────────────────────────
@@ -201,7 +200,10 @@ def test_a_failed_fsinsights_import_does_not_put_none_in_the_namespace():
 
 # ── the content half: the word has to be in the prose ──────────────────
 
-FIA = (ROOT / "fsInsights" / "fia.py").read_text(encoding="utf-8")
+# fsInsights' FIA client moved to georest.usfs.fia; read its source there.
+import georest.usfs.fia as _georest_fia  # noqa: E402
+
+FIA = Path(_georest_fia.__file__).read_text(encoding="utf-8")
 
 
 def test_evalidator_is_named_in_public_documentation():

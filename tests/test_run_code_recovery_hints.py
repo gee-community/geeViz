@@ -130,3 +130,12 @@ def test_the_note_reaches_the_model():
     out = _run(code, "recovery-cm")
     assert out["success"] is True
     assert "errorMatrix" in out["stderr"]
+
+
+def test_a_builtin_the_sandbox_leaves_out_is_not_called_lost_state():
+    # The model called locals() in a replay (2026-10-26) and was told a
+    # server restart had erased it; prod had globals 6 times, getattr 5.
+    sess = srv._get_session("recovery-builtin")
+    err = srv._lost_state_hint("NameError: name 'locals' is not defined", sess)
+    assert "builtin that run_code does not provide" in err
+    assert "restart" not in err

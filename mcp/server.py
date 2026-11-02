@@ -88,6 +88,9 @@ if _SANDBOX_ENABLED:
         # trusted-lib function could reveal internal secrets or an admin
         # code path the attacker hasn't discovered yet.
         "gc", "inspect", "dis", "traceback",
+        # Name resolvers: pydoc.locate('os') and pkgutil.resolve_name('os')
+        # return any loaded module by name, os.environ included.
+        "pydoc", "pkgutil",
         # ── Archive libraries — file-extraction path traversal (zip slip) ──
         "zipfile", "tarfile", "gzip", "bz2", "lzma",
         # ── Serialization — unpickling can execute arbitrary code ──
@@ -212,7 +215,7 @@ if _SANDBOX_ENABLED:
 
         Everything under site-packages is "trusted" -- which includes
         georest, a full HTTP client. So user code could call
-        ``georest.restesri._http.fetch_json("http://169.254.169.254/...")``
+        ``georest.esri._http.fetch_json("http://169.254.169.254/...")``
         and read the instance's service-account token: georest has no
         SSRF policy, and geeViz's ``_ssrf.check_url`` only guards geeViz's
         own helpers. Checked here, at the connect -- after DNS and after
@@ -1122,8 +1125,8 @@ _pre_usage_call_tool = _tool_manager_call_tool_with_scrub
 _LLM_USAGE_FIELD = "_llm_usage"
 
 
-def _put_in_structured(structured: dict, records: list) -> None:
-    """Write the usage field into a structuredContent dict, in place.
+def _put_in_structured(structured: dict, records, field: str = _LLM_USAGE_FIELD) -> None:
+    """Write a transport field into a structuredContent dict, in place.
 
     A single-key ``{"result": "<json string>"}`` envelope holds the real
     payload as text, so the field goes INSIDE it — that is where the
@@ -1135,21 +1138,22 @@ def _put_in_structured(structured: dict, records: list) -> None:
         try:
             inner = json.loads(inner_text)
             if isinstance(inner, dict):
-                inner[_LLM_USAGE_FIELD] = records
+                inner[field] = records
                 structured["result"] = json.dumps(inner)
                 return
         except (json.JSONDecodeError, TypeError):
             pass
-    structured[_LLM_USAGE_FIELD] = records
+    structured[field] = records
 
 
-def _attach_llm_usage(result, records: list):
+def _attach_llm_usage(result, records: list, field: str = _LLM_USAGE_FIELD):
     """Put ``records`` on the tool result, wherever the result keeps data.
 
     Prefers ``structuredContent`` because it survives untouched; falls
     back to re-serializing the first JSON text part. Returns the result
     either way — a tool call must not fail because its accounting could
-    not be attached.
+    not be attached. ``field`` names the transport field; the map-layer
+    snapshot rides the same path as LLM usage.
     """
     if not records:
         return result
@@ -1167,14 +1171,14 @@ def _attach_llm_usage(result, records: list):
     # produces. Test the wiring, not just the helper.
     if (isinstance(result, tuple) and len(result) == 2
             and isinstance(result[1], dict)):
-        _put_in_structured(result[1], records)
+        _put_in_structured(result[1], records, field)
         return result
 
     structured = getattr(result, "structuredContent", None) or getattr(
         result, "structured_content", None
     )
     if isinstance(structured, dict):
-        _put_in_structured(structured, records)
+        _put_in_structured(structured, records, field)
         return result
 
     content = getattr(result, "content", None)
@@ -1190,7 +1194,7 @@ def _attach_llm_usage(result, records: list):
             continue
         if not isinstance(payload, dict):
             continue
-        payload[_LLM_USAGE_FIELD] = records
+        payload[field] = records
         new_text = json.dumps(payload)
         try:
             setattr(item, "text", new_text)
@@ -1220,19 +1224,118 @@ def _attach_llm_usage(result, records: list):
 from geeViz import llmUsage as _lu
 
 
+# ── Map layers, for the agent's export panel ──────────────────────────────
+#
+# The session's map layers live only in this process (``Map.idDictList``
+# in the session namespace), but the agent's export panel runs in the
+# agent server, possibly on another Cloud Run instance than the one that
+# ran the code. So when a map is SHOWN - map_control's view or export
+# got past layer validation and wrote the map - its
+# layers ride back on that tool result in ``_map_layers``: name, the
+# serialized Earth Engine expression, the viz and the map's name. The
+# agent drains it into its database, the same way ``_llm_usage`` is
+# drained. The model never sees it.
+#
+# Only shown maps count. Layers merely added, or on a map that failed
+# validation and never rendered, are not reported: the panel listed one
+# from a map that never appeared, which the person had never seen.
+#
+# Only layers carrying a serialized expression can be rebuilt and
+# exported; tile and GeoJSON layers are listed with an empty ``item``
+# so the panel can say why they cannot be.
+_MAP_LAYERS_FIELD = "_map_layers"
+_EXPORTABLE_LAYER_FUNCTIONS = frozenset({
+    "addSerializedLayer", "addSerializedTimeLapse", "addSerializedSelectLayer"})
+
+
+def _map_display_name(filename) -> str:
+    """A shown map's name for the panel, from its file: ``lcms_utah.html``
+    becomes ``lcms utah``."""
+    stem = os.path.splitext(os.path.basename(str(filename or "")))[0]
+    return _wl_re.sub(r"[_\s]+", " ", stem).strip() or "Map"
+
+
+def _map_file_of(url_or_path) -> str:
+    """The shown map's HTML file name (the chat's artifact name), from a
+    path or a ``file:///`` URL. Empty for a served map (http URL)."""
+    import urllib.parse
+
+    s = str(url_or_path or "")
+    if s.startswith(("http://", "https://")):
+        return ""
+    if s.startswith("file:"):
+        s = urllib.parse.unquote(urllib.parse.urlparse(s).path)
+    name = os.path.basename(s.replace("\\", "/"))
+    return name if name.lower().endswith((".html", ".htm")) else ""
+
+
+def _note_shown_map(sess, Map, map_name: str, map_file: str = "") -> None:
+    """Queue the layers of a map that was just shown, for the result of
+    the tool call that showed it. The shared default session is never
+    reported, so one person's layers cannot reach another's panel.
+    ``map_file`` is the map's HTML file, so the panel can open it."""
+    if getattr(sess, "session_id", None) in (None, "", _DEFAULT_SESSION_ID):
+        return
+    entries = []
+    for d in getattr(Map, "idDictList", None) or []:
+        fn = d.get("function", "")
+        item = d.get("item", "")
+        entries.append({
+            "name": d.get("name", ""),
+            "function": fn,
+            "item": item if fn in _EXPORTABLE_LAYER_FUNCTIONS and isinstance(item, str) else "",
+            "viz": d.get("viz", "{}") if isinstance(d.get("viz", "{}"), str) else json.dumps(d.get("viz")),
+            "map": map_name,
+            "map_file": map_file,
+        })
+    if entries:
+        pending = getattr(sess, "shown_map_layers", None) or []
+        sess.shown_map_layers = pending + entries
+
+
+def _map_layer_snapshot(session_id) -> list | None:
+    """The layers of maps shown since last reported (then forgotten), or None.
+
+    Never creates a session: a call with no session, or for one this
+    process has not seen, has nothing to report.
+    """
+    sid = str(session_id or "").strip()
+    if not sid or sid == _DEFAULT_SESSION_ID:
+        return None
+    sess = _sessions.get(sid)
+    if sess is None:
+        return None
+    entries = getattr(sess, "shown_map_layers", None) or None
+    if entries:
+        sess.shown_map_layers = []
+    return entries
+
+
 async def _tool_manager_call_tool_with_usage(
     name, arguments, context=None, convert_result=False
 ):
-    """Collect LLM usage reported during one tool call and attach it."""
+    """Collect LLM usage reported during one tool call and attach it,
+    along with the layers of any map the call showed."""
+    # Read before the call: an inner wrapper pops ``_agent_session_id``.
+    session_id = None
+    if isinstance(arguments, dict):
+        session_id = arguments.get("session_id") or arguments.get("_agent_session_id")
     with _lu.collect() as records:
         result = await _pre_usage_call_tool(
             name, arguments, context=context, convert_result=convert_result
         )
     try:
-        return _attach_llm_usage(result, list(records))
+        result = _attach_llm_usage(result, list(records))
     except Exception:
         # Accounting must never cost a caller their result.
         return result
+    try:
+        layers = _map_layer_snapshot(session_id)
+        if layers:
+            result = _attach_llm_usage(result, layers, _MAP_LAYERS_FIELD)
+    except Exception:
+        pass
+    return result
 
 
 app._tool_manager.call_tool = _tool_manager_call_tool_with_usage
@@ -1321,28 +1424,20 @@ _tool_logger.setLevel(_logging.DEBUG)
 _tool_fh = _logging.FileHandler(_TOOL_LOG_FILE, encoding="utf-8")
 _tool_fh.setFormatter(_logging.Formatter("%(message)s"))
 _tool_logger.addHandler(_tool_fh)
-_log_result_limit = 5000
-
 def _log_tool_call(tool_name: str, args: dict, result=None, error=None):
-    """Log a tool invocation to the tool_calls.log file."""
+    """Log a tool invocation, in full, to the tool_calls.log file."""
     ts = _datetime.datetime.now().isoformat(timespec="seconds")
-    # Truncate large arg values for readability
-    clean_args = {}
-    for k, v in (args or {}).items():
-        s = str(v)
-        clean_args[k] = s[:_log_result_limit] + "..." if len(s) > _log_result_limit else s
     entry = {
         "timestamp": ts,
         "tool": tool_name,
-        "args": clean_args,
+        "args": {k: str(v) for k, v in (args or {}).items()},
     }
     if error:
         entry["status"] = "ERROR"
-        entry["error"] = str(error)[:_log_result_limit]
+        entry["error"] = str(error)
     else:
-        result_str = str(result)
         entry["status"] = "OK"
-        entry["result_preview"] = result_str[:_log_result_limit] + "..." if len(result_str) > _log_result_limit else result_str
+        entry["result_preview"] = str(result)
     import json as _json_log
     _tool_logger.info(_json_log.dumps(entry))
 
@@ -1564,7 +1659,7 @@ def _build_module_tree():
 
         # Parse with AST
         members, module_doc = _ast_extract_members(spec.origin)
-        first_line = module_doc.split("\n")[0].strip()[:100] if module_doc else ""
+        first_line = module_doc.split("\n")[0].strip() if module_doc else ""
 
         short = leaf
         entry = {"fq": modname, "mod": None, "file": spec.origin,
@@ -1579,6 +1674,43 @@ def _build_module_tree():
             tree[short] = entry
         fq_map[short] = modname
         fq_map[modname] = modname
+
+    # --- georest.usfs, behind the geeViz.fsInsights front door ---------
+    # The FIA and LCMS clients moved to georest; geeViz/fsInsights is now
+    # an __init__ that re-exports them, with no source of its own to walk.
+    # Index georest's modules under their real names, under the old
+    # geeViz.fsInsights.* names (search_codebase(name=
+    # "geeViz.fsInsights.fia.estimate") is what sessions ask), and by
+    # short name (module="fia"), so discovery finds the moved code.
+    try:
+        import georest.usfs as _usfs
+    except Exception:
+        _usfs = None
+    if _usfs is not None:
+        for importer, modname, ispkg in pkgutil.walk_packages(
+            _usfs.__path__, prefix="georest.usfs."
+        ):
+            leaf = modname.rsplit(".", 1)[-1]
+            if leaf.startswith("_") or leaf.startswith("test_"):
+                continue
+            try:
+                spec = importlib.util.find_spec(modname)
+            except (ModuleNotFoundError, ValueError):
+                continue
+            if spec is None or spec.origin is None:
+                continue
+            members, module_doc = _ast_extract_members(spec.origin)
+            entry = {"fq": modname, "mod": None, "file": spec.origin,
+                     "members": members,
+                     "doc": module_doc.split("\n")[0].strip() if module_doc else "",
+                     "is_pkg": ispkg, "module_doc": module_doc}
+            old_name = "geeViz.fsInsights." + modname[len("georest.usfs."):]
+            for key in (modname, old_name):
+                tree[key] = entry
+                fq_map[key] = modname
+            if leaf not in tree:
+                tree[leaf] = entry
+                fq_map[leaf] = modname
 
     # --- Packages list their submodules -------------------------------
     # A package's spec.origin is its __init__.py, and a re-export-only
@@ -1615,7 +1747,7 @@ def _build_module_tree():
                 try:
                     ex_tree = ast.parse(source)
                     doc = ast.get_docstring(ex_tree) or ""
-                    desc = doc.split("\n")[0].strip()[:100] if doc else ""
+                    desc = doc.split("\n")[0].strip() if doc else ""
                 except SyntaxError:
                     pass
                 if not desc:
@@ -1634,7 +1766,7 @@ def _build_module_tree():
                     if cell.get("cell_type") == "markdown":
                         src = "".join(cell.get("source", [])).strip()
                         if src:
-                            desc = src.split("\n")[0].lstrip("#").strip()[:100]
+                            desc = src.split("\n")[0].lstrip("#").strip()
                             break
             except Exception:
                 pass
@@ -1674,7 +1806,7 @@ def _get_module(entry):
     return entry["mod"]
 
 
-def _describe_object(obj, name="", module_name="", max_size=20000):
+def _describe_object(obj, name="", module_name=""):
     """Return a JSON-safe description of any Python object."""
     result = {"name": name}
     if module_name:
@@ -1683,10 +1815,8 @@ def _describe_object(obj, name="", module_name="", max_size=20000):
     if _inspect.ismodule(obj):
         members = [m for m in sorted(dir(obj)) if not m.startswith("_")]
         result["type"] = "module"
-        result["docstring"] = (_inspect.getdoc(obj) or "")[:500]
-        result["public_members"] = members[:200]
-        if len(members) > 200:
-            result["note"] = f"Showing 200 of {len(members)} members. Use query= to filter."
+        result["docstring"] = _inspect.getdoc(obj) or ""
+        result["public_members"] = members
         return result
 
     if _inspect.isclass(obj):
@@ -1716,37 +1846,24 @@ def _describe_object(obj, name="", module_name="", max_size=20000):
     try:
         import ee as _ee
         if isinstance(obj, _ee.ComputedObject):
-            result["repr"] = repr(obj)[:500]
+            result["repr"] = repr(obj)
             return result
     except Exception:
         pass
 
     if isinstance(obj, dict):
-        serialized = json.dumps(_make_serializable(obj), default=str)
-        if len(serialized) > max_size:
-            result["keys"] = list(obj.keys())[:100]
-            # Show sample of first 3 entries
-            sample = {k: _make_serializable(v) for k, v in list(obj.items())[:3]}
-            result["sample"] = sample
-            result["note"] = f"Large dict ({len(obj)} keys). Showing keys + 3 samples."
-        else:
-            result["value"] = _make_serializable(obj)
+        result["value"] = _make_serializable(obj)
         return result
 
     if isinstance(obj, (list, tuple)):
-        if len(obj) > 50:
-            result["length"] = len(obj)
-            result["sample"] = _make_serializable(list(obj[:5]))
-            result["note"] = f"Large {type(obj).__name__} ({len(obj)} items). Showing first 5."
-        else:
-            result["value"] = _make_serializable(list(obj))
+        result["value"] = _make_serializable(list(obj))
         return result
 
     # Scalar or other
     try:
         result["value"] = _make_serializable(obj)
     except Exception:
-        result["repr"] = repr(obj)[:500]
+        result["repr"] = repr(obj)
     return result
 
 # ---------------------------------------------------------------------------
@@ -2152,22 +2269,26 @@ def _ensure_initialized_locked(session_id: str | None = None):
     # georest -- RCR's Esri/ArcGIS REST client, which geeViz.esriLib now
     # delegates to. Pre-loaded (submodules too, so dotted paths resolve)
     # for the same reason as pandas: search_codebase(module=
-    # "georest.restesri.portal") has to find it, or an agent told to use
+    # "georest.esri.portal") has to find it, or an agent told to use
     # it concludes it does not exist. Its network access from run_code is
     # held to geeViz's SSRF policy by _connect_refusal.
     try:
         import georest as _georest_mod
-        import georest.restesri.portal  # noqa: F401
-        import georest.restesri.services  # noqa: F401
+        import georest.esri.portal  # noqa: F401
+        import georest.esri.services  # noqa: F401
     except Exception:
         _georest_mod = None
     else:
         try:
-            _install_string_feature_ids(georest.restesri.services)
+            _install_string_feature_ids(georest.esri.services)
         except Exception:
             pass
     import pandas as _pd_mod
     import numpy as _np_mod
+    # Printed tables come back whole; pandas elides past 60 rows by default.
+    # (numpy's equivalent is set per run, in run_code.)
+    _pd_mod.set_option("display.max_rows", None, "display.max_columns", None,
+                       "display.width", None, "display.max_colwidth", None)
 
     # Each session gets its own Map instance for layer isolation
     session_map = gv.mapper() if session_id and session_id != _DEFAULT_SESSION_ID else gv.Map
@@ -2783,6 +2904,8 @@ _BLOCKED_MODULES = frozenset({
     "code", "codeop", "compileall", "py_compile",
     # ── Introspection ──
     "gc", "inspect", "dis", "traceback",
+    # Name resolvers: see _BLOCKED_RESOLVER_NAMES.
+    "pydoc", "pkgutil",
     # ── Archives / serialization ──
     "zipfile", "tarfile", "gzip", "bz2", "lzma",
     "pickle", "shelve", "dbm", "sqlite3",
@@ -2993,6 +3116,21 @@ _BLOCKED_MODULE_ATTRS = frozenset({
     "importlib", "marshal", "runpy", "zipimport", "builtins", "ctypes",
     "pickle", "shelve", "dbm", "sqlite3", "multiprocessing",
     "threading", "webbrowser", "getpass", "mmap",
+    "pydoc", "pkgutil",
+})
+
+#: Functions that turn a dotted string into the live object, which reaches
+#: any module already loaded without an import for the audit hook to see.
+#: Verified under --sandbox (2026-10-26): pkgutil.resolve_name('os').environ
+#: listed the server's 71 environment variables, API keys among them, and
+#: pydoc.locate('builtins.open') returned the real open. The modules are
+#: blocked too, but logging.config cannot be: the server has already
+#: loaded it, so ``import logging`` then ``logging.config._resolve('os')``
+#: needs no import of it. Its dictConfig/fileConfig resolve '()' factory
+#: strings the same way. Refused as attribute names and as imported names,
+#: and getattr() is blocked, so neither spelling has a way around.
+_BLOCKED_RESOLVER_NAMES = frozenset({
+    "locate", "resolve_name", "_resolve", "dictConfig", "fileConfig",
 })
 
 _BLOCKED_BUILTINS = frozenset({
@@ -3089,6 +3227,25 @@ def _make_safe_builtins() -> dict:
     return safe
 
 
+# Saved scripts (the agent's /scripts page) join the blocks of a chat into
+# one run: setup block 1 of 15, ..., main script. A limit that counts
+# across the whole code, like the .getInfo() cap, then trips on a script
+# whose every block passed it in the chat (script c1c51f24fdc3: 11 calls in
+# 15 blocks). run_saved_script marks such a run; it is not an MCP tool, so
+# the model cannot reach it. Checks on a single construct still apply.
+import contextvars as _contextvars
+_SAVED_SCRIPT_RUN = _contextvars.ContextVar("_SAVED_SCRIPT_RUN", default=False)
+
+
+async def run_saved_script(**kwargs):
+    """``run_code`` for a saved script assembled from several chat blocks."""
+    token = _SAVED_SCRIPT_RUN.set(True)
+    try:
+        return await run_code(**kwargs)
+    finally:
+        _SAVED_SCRIPT_RUN.reset(token)
+
+
 def _check_code_patterns(code: str) -> list[str]:
     """AST analysis: detect risky EE patterns AND blocked security patterns.
 
@@ -3110,7 +3267,7 @@ def _check_code_patterns(code: str) -> list[str]:
     # → try httpx → try pandas.read_json" thrash cycle when a bare
     # "blocked" message isn't enough of a nudge.
     _BLOCKED_MODULE_HINTS = {
-        "requests":   "HTTP libraries are unavailable in the sandbox. Use the domain wrapper: Map.addEsriFeatureService(url) (draw) or georest.restesri (search / metadata / query) for ArcGIS / AGOL / .arcgis.com URLs, edwLib for USFS EDW, sal.* for census/counties/parks, ee.FeatureCollection.runBigQuery(sql, geometryColumn='geom') for BigQuery. Do NOT retry with urllib / httpx / aiohttp / pandas.read_json — same block.",
+        "requests":   "HTTP libraries are unavailable in the sandbox. Use the domain wrapper: Map.addEsriFeatureService(url) (draw) or georest.esri (search / metadata / query) for ArcGIS / AGOL / .arcgis.com URLs, edwLib for USFS EDW, sal.* for census/counties/parks, ee.FeatureCollection.runBigQuery(sql, geometryColumn='geom') for BigQuery. Do NOT retry with urllib / httpx / aiohttp / pandas.read_json — same block.",
         "urllib":     "HTTP libraries are unavailable in the sandbox. See georest / Map.addEsri* / edwLib / sal / ee.FeatureCollection.runBigQuery. Trying a different HTTP library will not work — the block is intentional.",
         "httpx":      "HTTP libraries are unavailable in the sandbox. Use the domain wrapper for the data source (georest, edwLib, sal, ee.FeatureCollection.runBigQuery).",
         "aiohttp":    "HTTP libraries are unavailable in the sandbox. Use the domain wrapper for the data source (georest, edwLib, sal, ee.FeatureCollection.runBigQuery).",
@@ -3121,6 +3278,7 @@ def _check_code_patterns(code: str) -> list[str]:
         "pathlib":    "pathlib is blocked. Filesystem work goes through save_file / view_output; you don't need to build paths manually.",
         "inspect":    "inspect is blocked. To check a function's signature or whether it exists, call the MCP tool search_codebase(module='<lib>', name='<fn>') from the model layer — do NOT try to introspect via Python. Same for pydoc / dis / types.",
         "pydoc":      "pydoc is blocked. Use the MCP tool search_codebase(module='<lib>', name='<fn>') to look up functions and docstrings.",
+        "pkgutil":    "pkgutil is blocked. Import modules with a plain `import` statement; use search_codebase(module='<lib>') to list what a module has.",
         "dis":        "dis is blocked. Bytecode introspection isn't available in the sandbox — use search_codebase to read source.",
         "importlib":  "importlib is blocked (dynamic import escape). All modules must be imported statically via a top-level `import` statement; if the module isn't in the allowed list, no runtime import path will unblock it.",
     }
@@ -3176,6 +3334,22 @@ def _check_code_patterns(code: str) -> list[str]:
                     f"'{node.attr}' re-export it, so this is the same as "
                     f"importing it directly."
                 )
+            # String-to-object resolvers — see _BLOCKED_RESOLVER_NAMES.
+            if (isinstance(node, ast.Attribute)
+                    and node.attr in _BLOCKED_RESOLVER_NAMES):
+                warnings.append(
+                    f"BLOCKED: '.{node.attr}' looks an object up by name, "
+                    f"which reaches restricted modules. Import what you "
+                    f"need with a plain `import` statement."
+                )
+            if isinstance(node, ast.ImportFrom):
+                for alias in node.names:
+                    if alias.name in _BLOCKED_RESOLVER_NAMES:
+                        warnings.append(
+                            f"BLOCKED: importing '{alias.name}' is not "
+                            f"allowed. It looks objects up by name, which "
+                            f"reaches restricted modules."
+                        )
 
         # --- Deserialization back doors (sandbox only) --------------
         # ``pickle`` is already blocked as a module, but several libraries
@@ -3287,11 +3461,13 @@ def _check_code_patterns(code: str) -> list[str]:
     # them into one ee.Dictionary, and models still write five in a row
     # (accuracy, kappa, matrix, producers, consumers: session b2dffb2c,
     # 2026-10-09). Like the loop case, this is enforced, not suggested.
+    # Not for a saved script (run_saved_script): it joins every block of a
+    # chat into one run, and each block already passed this limit on its own.
     _MAX_GETINFO = 3
     _n_getinfo = sum(1 for n in ast.walk(tree)
                      if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
                      and n.func.attr == "getInfo")
-    if _n_getinfo > _MAX_GETINFO:
+    if _n_getinfo > _MAX_GETINFO and not _SAVED_SCRIPT_RUN.get():
         warnings.append(
             f"BLOCKED: {_n_getinfo} separate .getInfo() calls in one block; each is "
             f"its own server round trip (at most {_MAX_GETINFO} allowed). Put the "
@@ -3309,6 +3485,116 @@ def _check_code_patterns(code: str) -> list[str]:
             seen.add(w)
             unique.append(w)
     return unique
+
+
+# Values typed into code are not data from a tool: their source is whatever
+# they were copied from. A chart of 31 years of "FAOSTAT" vanilla
+# production was built from a table the model typed from memory, labeled
+# with the agency's name, and defended as FAOSTAT when the user asked
+# (session e4561fe2, 2026-10-22). The rule against writing numbers not seen
+# in tool output did not stop it: once typed into run_code, the numbers
+# were tool output. So run_code counts them and asks for their source.
+#
+# 20 sits just above setup code: across 4,586 earlier calls, everything
+# at or over it was a typed table (election results, storm tracks, FIA
+# estimates copied by hand; 17 calls), and everything under it was
+# study-area setup and chart settings.
+_TYPED_DATA_MIN = 20
+_TYPED_DATA_CONTAINERS = (ast.List, ast.Tuple, ast.Set, ast.Dict)
+
+
+def _typed_number(node):
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.USub, ast.UAdd)):
+        node = node.operand
+    return (isinstance(node, ast.Constant) and not isinstance(node.value, bool)
+            and isinstance(node.value, (int, float)))
+
+
+def _typed_sequence(elts):
+    """A flat run like [1985, 1990, ..., 2025]: an index, not data."""
+    if len(elts) < 3 or not all(_typed_number(e) for e in elts):
+        return False
+    vals = [ast.literal_eval(e) for e in elts]
+    step = vals[1] - vals[0]
+    return step != 0 and all(b - a == step for a, b in zip(vals, vals[1:]))
+
+
+def _typed_count(node):
+    if isinstance(node, (ast.List, ast.Tuple, ast.Set)) and _typed_sequence(node.elts):
+        return 0
+    if _typed_number(node):
+        return 1
+    if isinstance(node, ast.Call):
+        # Arguments to a call are settings (a scale, percentiles), not a
+        # table. A table passed to a call is still found by the walk below.
+        return 0
+    return sum(_typed_count(c) for c in ast.iter_child_nodes(node))
+
+
+def _dotted_name(func):
+    parts = []
+    while isinstance(func, ast.Attribute):
+        parts.append(func.attr)
+        func = func.value
+    if isinstance(func, ast.Name):
+        parts.append(func.id)
+    return ".".join(reversed(parts))
+
+
+# A literal list or table counts toward the total when it holds at least
+# this many numbers. A table is often typed as one list per column
+# (madagascar = [...], indonesia = [...]: 5 lists of 11 values in a replay
+# of the vanilla chart), so the total is over every such list, while
+# settings (a min and max, a center, a few percentiles) stay out of it.
+_TYPED_TABLE_MIN = 5
+
+
+def _typed_data_values(code):
+    """How many numbers are typed into literal tables in ``code``.
+
+    Sums every outermost literal list, tuple, set or dict holding at least
+    ``_TYPED_TABLE_MIN`` numbers. Coordinates given to an ``ee.Geometry``
+    constructor are not counted: a hand-drawn shape is governed by the
+    sketch rule in the instructions.
+    """
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return 0
+    total = 0
+
+    def walk(node, in_geometry, in_table):
+        nonlocal total
+        if isinstance(node, ast.Call):
+            # A table passed to a call is a table of its own.
+            in_table = False
+            if "Geometry" in _dotted_name(node.func):
+                in_geometry = True
+        if isinstance(node, _TYPED_DATA_CONTAINERS) and not in_geometry and not in_table:
+            n = _typed_count(node)
+            if n >= _TYPED_TABLE_MIN:
+                total += n
+            in_table = True
+        for c in ast.iter_child_nodes(node):
+            walk(c, in_geometry, in_table)
+
+    walk(tree, False, False)
+    return total
+
+
+def _typed_data_note(code):
+    n = _typed_data_values(code)
+    if n < _TYPED_DATA_MIN:
+        return ""
+    return (
+        f"NOTE: this code types {n} data values into a table; typed values "
+        "are not tool output. If they came from a tool result or web search "
+        "made before this code, or from the user, name that source in the "
+        "chart title and your answer. A search made after typing them does "
+        "not source them. If they came from your own memory, say so in the first "
+        "sentence, call them approximate in the chart title, and give no "
+        "dataset or agency name you did not retrieve them from."
+    )
 
 
 def _dedupe_new_outputs(new_files, files_before, output_dir, max_bytes=200 * 1024 * 1024):
@@ -3394,9 +3680,13 @@ def _save_and_clean_result(result_val):
 
     _EXT_MAP = {"image": ".png"}
 
-    def _clean(obj, depth=0):
-        if depth > 5:
-            return "<nested too deep>"
+    def _clean(obj, path=frozenset()):
+        # Nested values come back at any depth; only a container that
+        # holds itself would recurse forever.
+        if isinstance(obj, (dict, list, tuple)):
+            if id(obj) in path:
+                return "<contains itself>"
+            path = path | {id(obj)}
         if isinstance(obj, (bytes, bytearray)):
             # Save bytes to file, return path
             fname = f"output_{ts}_{id(obj) % 10000}.bin"
@@ -3413,8 +3703,6 @@ def _save_and_clean_result(result_val):
                 with open(fpath, "w", encoding="utf-8") as f:
                     f.write(obj)
                 return f"saved to {fpath}"
-            if len(obj) > 5000:
-                return obj[:200] + f"... <truncated, {len(obj)} chars>"
             return obj
         if isinstance(obj, dict):
             clean = {}
@@ -3433,30 +3721,24 @@ def _save_and_clean_result(result_val):
                         f.write(v)
                     clean[k] = f"saved to {fpath}"
                 else:
-                    clean[k] = _clean(v, depth + 1)
+                    clean[k] = _clean(v, path)
             return clean
         if isinstance(obj, (list, tuple)):
-            items = [_clean(x, depth + 1) for x in obj[:20]]
-            if len(obj) > 20:
-                items.append(f"... ({len(obj) - 20} more)")
-            return items
+            return [_clean(x, path) for x in obj]
         # Primitives (int, float, bool, None)
         try:
             json.dumps(obj)
             return obj
         except (TypeError, ValueError):
-            return repr(obj)[:500]
+            return repr(obj)
 
     cleaned = _clean(result_val)
 
-    # Final safety check — ensure it's JSON-serializable and not too big
     try:
-        s = json.dumps(cleaned)
-        if len(s) > 50000:
-            return "<result too large after cleaning>"
+        json.dumps(cleaned)
         return cleaned
     except (TypeError, ValueError):
-        return repr(cleaned)[:2000]
+        return repr(cleaned)
 
 
 class _StreamingStdout(io.StringIO):
@@ -3726,6 +4008,15 @@ def _lost_state_hint(error_text: str, sess: "_SessionState") -> str:
     if not m:
         return error_text
     name = m.group(1)
+    if name in _BLOCKED_BUILTINS:
+        # Not lost state: the sandbox leaves these builtins out, and
+        # saying a restart cleared them sent the model to re-create them
+        # (prod, 2026-10: globals 6 times, getattr 5).
+        return (f"HINT: '{name}' is a Python builtin that run_code does not "
+                f"provide. Do not look for a way around it: refer to your "
+                f"variables by name, use obj.attr instead of getattr, and use "
+                f"search_codebase or inspect_asset to look things up.\n\n"
+                f"--- original traceback below ---\n{error_text}")
     if any(name in meta.get("names_bound", ()) for meta in sess.code_history_meta
            if not meta.get("recovered")):
         return error_text
@@ -3787,6 +4078,7 @@ class _ThreadLocalStreamProxy:
         # on ``.buffer`` resolving to the original raw byte buffer.
         self._real = real_stream
         self._by_thread: dict[int, object] = {}
+        self._unregistered = None  # None → sys.__stderr__
 
     def register(self, target) -> None:
         """Route the calling thread's writes to ``target`` until unregistered.
@@ -3802,10 +4094,29 @@ class _ThreadLocalStreamProxy:
         """Stop routing this thread's writes. Falls back to ``sys.__stderr__``."""
         self._by_thread.pop(threading.get_ident(), None)
 
+    @contextlib.contextmanager
+    def capture_unregistered(self, target):
+        """Route every UNREGISTERED thread's writes to ``target`` for the block.
+
+        For tools that capture their own prints (``map_control``, exports):
+        their thread and any pool threads they start are unregistered, so
+        their output lands in ``target``, while a ``run_code`` exec thread
+        in another session keeps writing to its own buffer. Assigning
+        ``sys.stdout`` instead (or ``contextlib.redirect_stdout``) is
+        process-wide and took that session's output. Nests.
+        """
+        prev = self._unregistered
+        self._unregistered = target
+        try:
+            yield target
+        finally:
+            self._unregistered = prev
+
     def _resolve(self):
         # Non-registered → stderr, NEVER the captured stdout (which would
         # corrupt JSON-RPC).
-        return self._by_thread.get(threading.get_ident(), sys.__stderr__)
+        return self._by_thread.get(threading.get_ident(),
+                                   self._unregistered or sys.__stderr__)
 
     def write(self, s):
         """Route ``s`` to this thread's registered sink (or ``sys.__stderr__``)."""
@@ -3838,6 +4149,152 @@ _TL_STDOUT = _ThreadLocalStreamProxy(sys.stdout)
 _TL_STDERR = _ThreadLocalStreamProxy(sys.stderr)
 sys.stdout = _TL_STDOUT
 sys.stderr = _TL_STDERR
+
+
+# ---------------------------------------------------------------------------
+# What run_code returns, for the model.
+#
+# Measured on 45 days of prod calls (2026-10-26): 57% of what run_code
+# returned was the model's own code echoed back, and an error was mostly
+# Earth Engine and Google client frames. Nothing printed is cut; only a
+# repeat of something the model already has is referred to by name.
+# A saved script's run is read by a person and keeps the full form.
+# ---------------------------------------------------------------------------
+
+#: A string an error message repeats is referred to by name past this size.
+_ECHO_MIN_CHARS = 1000
+
+
+def _code_objects(code_obj):
+    """Every code object compiled from one block: the module and each
+    function or class body defined in it."""
+    out, todo = set(), [code_obj]
+    while todo:
+        c = todo.pop()
+        out.add(c)
+        todo.extend(k for k in c.co_consts if hasattr(k, "co_code"))
+    return out
+
+
+def _echoed_values(exc_chain):
+    """Long strings held by a frame of the traceback: {value: label}.
+
+    An exception message often repeats an argument whole: pd.read_json
+    given a GeoJSON string reported it as "File name too long", 2.8 MB
+    of it (prod, 2026-10). The value is the code's own input, so naming
+    where it came from loses nothing the model can act on."""
+    found = {}
+    for e in exc_chain:
+        for frame, _ in traceback.walk_tb(e.__traceback__):
+            co = frame.f_code
+            where = ("your code" if co.co_filename == "<mcp>" and co.co_name == "<module>"
+                     else f"{co.co_name}()")
+            for name, val in list(frame.f_locals.items()):
+                if isinstance(val, str) and len(val) >= _ECHO_MIN_CHARS and val not in found:
+                    found[val] = f"<the {len(val):,}-character value of {name} in {where}>"
+    return found
+
+
+def _user_error(exc, code, own_codes):
+    """What went wrong, for the model: every exception's message, each
+    line of its own code the error passed through, and the innermost
+    geeViz frame. Earth Engine, Google client and other library frames
+    are left out: the model cannot change them."""
+    chain, seen, e = [], set(), exc
+    while e is not None and id(e) not in seen:
+        seen.add(id(e))
+        chain.append(e)
+        e = e.__cause__ or (None if e.__suppress_context__ else e.__context__)
+    chain.reverse()  # root cause first, as Python prints it
+    src = code.splitlines()
+    final_msg = str(chain[-1]).strip()
+    out = []
+    for i, e in enumerate(chain):
+        part, geeviz_frame, saw_mcp = [], None, False
+        frames = list(traceback.walk_tb(e.__traceback__))
+        for frame, lineno in frames:
+            co = frame.f_code
+            if co.co_filename == "<mcp>":
+                saw_mcp = True
+                geeviz_frame = None  # only geeViz frames called from the model's code
+                # Every block compiles as "<mcp>"; only this block's
+                # line numbers index into this block's source.
+                where = "" if co.co_name == "<module>" else f" (in {co.co_name})"
+                if co in own_codes and 0 < lineno <= len(src):
+                    part.append(f"  line {lineno}{where}: {src[lineno - 1].strip()}")
+                else:
+                    part.append(f"  line {lineno} of {co.co_name}(), defined in an earlier call")
+            else:
+                p = co.co_filename.replace("\\", "/")
+                k = p.rfind("/geeViz/")
+                if k >= 0:
+                    geeviz_frame = (p[k + 1:], lineno, co.co_name)
+        if saw_mcp and geeviz_frame and frames[-1][0].f_code.co_filename != "<mcp>":
+            part.append(f"  in {geeviz_frame[0]}, line {geeviz_frame[1]}, in {geeviz_frame[2]}()")
+        msg = "".join(traceback.format_exception_only(type(e), e)).rstrip()
+        # A wrapped error repeats the one it became (HttpError, then
+        # EEException with the same text): say it once, at the end.
+        if i < len(chain) - 1 and final_msg and final_msg in msg:
+            if not part:
+                continue
+            msg = f"{type(e).__name__} (same message as below)"
+        if out:
+            out.append("The above exception was the direct cause of the following exception:"
+                       if e.__cause__ is not None else
+                       "During handling of the above exception, another exception occurred:")
+        out += part + [msg]
+    text = "\n".join(out)
+    for val, label in sorted(_echoed_values(chain).items(), key=lambda kv: -len(kv[0])):
+        for form in (repr(val), val):
+            text = text.replace(form, label)
+    return text
+
+
+#: print(ee_object) prints its JSON expression graph, not a value.
+_EE_GRAPH_RE = _wl_re.compile(
+    r'ee\.(\w+)\(\{\n  "(?:functionInvocationValue|constantValue|valueReference'
+    r'|arrayValue|dictionaryValue)".*?\n\}\)', _wl_re.S)
+
+#: A quoted string this long, printed again, is shown the first time only.
+_REPEAT_MIN_CHARS = 200
+_QUOTED_RE = _wl_re.compile(
+    r"'(?:[^'\\\n]|\\.){%d,}'|\"(?:[^\"\\\n]|\\.){%d,}\""
+    % (_REPEAT_MIN_CHARS, _REPEAT_MIN_CHARS))
+
+
+def _tidy_stdout(text):
+    """Printed output, for the model: an Earth Engine object not yet
+    computed says so instead of printing its expression graph, and a long
+    quoted string printed again (an image's getInfo() repeats one map
+    projection for every band) is shown the first time only."""
+    text = _EE_GRAPH_RE.sub(
+        lambda m: f"<ee.{m.group(1)}: not computed yet; print its .getInfo() to see the value>",
+        text)
+    counts = {}
+    for m in _QUOTED_RE.finditer(text):
+        counts[m.group(0)] = counts.get(m.group(0), 0) + 1
+    for s, n in counts.items():
+        if n > 1:
+            first = text.index(s) + len(s)
+            text = text[:first] + text[first:].replace(s, "<same as above>")
+    return text
+
+
+_BASE64_URI_RE = _wl_re.compile(r'data:(image|text)/[^;]+;base64,[A-Za-z0-9+/=]{100,}')
+
+
+def _stdout_for(raw, for_person):
+    """Printed output as returned: base64 data URIs (image bytes nobody
+    reads as text) are stripped, and for the model it is tidied."""
+    text = _BASE64_URI_RE.sub('<base64 data stripped>', raw)
+    return text if for_person else _tidy_stdout(text)
+
+
+def _drop_empty(payload, keep=()):
+    """A field with nothing in it says nothing: no "error": null on a
+    success, no empty stderr. ``keep`` fields stay even when empty."""
+    return {k: v for k, v in payload.items()
+            if k in keep or k == "success" or v not in (None, "")}
 
 
 @app.tool(annotations=_WRITE)
@@ -3875,7 +4332,12 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
         ctx: MCP Context (auto-injected by FastMCP). Used for progress reporting.
 
     Returns:
-        JSON with keys: success (bool), stdout, stderr, result, error.
+        JSON with ``success`` (bool) and ``stdout``, plus each of
+        ``stderr``, ``result``, ``error`` and ``output_markdown`` (new
+        output files) that has something in it. A success also gives
+        ``script_path``, the file holding every block run so far. An error
+        gives each exception's message and the lines of your code it
+        passed through.
     """
     if reset:
         _reset_namespace(session_id)
@@ -3896,9 +4358,6 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
         sess._breaker_acks += 1
         return json.dumps({
             "success": False,
-            "stdout": "",
-            "stderr": "",
-            "result": None,
             "error": (
                 "RESTRUCTURE_REQUIRED: you have made 15+ run_code calls in the last "
                 "90 seconds — this is the runaway-retry pattern. **STOP RETRYING THE "
@@ -3911,7 +4370,6 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
                 "(e) compute server-side with frequencyHistogram instead of FC×FC join. "
                 "Do NOT call run_code again until you have a fundamentally different plan."
             ),
-            "script_path": None,
         })
     sess._recent_call_ts.append(_now)
 
@@ -3948,14 +4406,11 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
     # Refuse execution if any BLOCKED patterns were found
     blocked = [w for w in code_warnings if w.startswith("BLOCKED:")]
     if blocked:
+        # Said once: the same text in stderr as well doubled every refusal.
         return json.dumps({
             "success": False,
-            "stdout": "",
-            "stderr": "\n".join(blocked),
-            "result": None,
             "error": "Code was blocked by security policy. " + " ".join(blocked)
                      + " " + _refused_block_note(code, getattr(sess, "namespace", {})),
-            "script_path": None,
         })
 
     # Set up stdout capture — streaming version appends to a file for polling
@@ -3995,6 +4450,9 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
     _ns_before_ids = _snapshot_namespace_ids(sess.namespace)
 
     _ns = sess.namespace  # capture for closure
+    # A saved script's run is read by a person on the scripts page, who
+    # gets the full traceback and output as printed.
+    _for_person = _SAVED_SCRIPT_RUN.get()
 
     def _exec():
         global _audit_user_code_active
@@ -4005,20 +4463,33 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
         # uncorrupted even with overlapping run_code calls.
         _TL_STDOUT.register(stdout_buf)
         _TL_STDERR.register(stderr_buf)
+        # numpy 2 keeps print options per context, so set them in the one
+        # the code runs in: arrays print whole, not elided past 1,000 values.
+        _ns["np"].set_printoptions(threshold=sys.maxsize)
+        own_codes = set()
         try:
             if _SANDBOX_ENABLED:
                 _audit_user_code_active = True
             tree = ast.parse(code)
             if tree.body and isinstance(tree.body[-1], ast.Expr):
                 if len(tree.body) > 1:
-                    mod = ast.Module(body=tree.body[:-1], type_ignores=[])
-                    exec(compile(mod, "<mcp>", "exec"), _ns)
-                expr = ast.Expression(body=tree.body[-1].value)
-                result_holder[0] = eval(compile(expr, "<mcp>", "eval"), _ns)
+                    mod = compile(ast.Module(body=tree.body[:-1], type_ignores=[]), "<mcp>", "exec")
+                    own_codes |= _code_objects(mod)
+                    exec(mod, _ns)
+                expr = compile(ast.Expression(body=tree.body[-1].value), "<mcp>", "eval")
+                own_codes |= _code_objects(expr)
+                result_holder[0] = eval(expr, _ns)
             else:
-                exec(compile(code, "<mcp>", "exec"), _ns)
-        except Exception:
+                mod = compile(code, "<mcp>", "exec")
+                own_codes |= _code_objects(mod)
+                exec(mod, _ns)
+        except Exception as e:
             error_holder[0] = traceback.format_exc()
+            if not _for_person:
+                try:
+                    error_holder[0] = _user_error(e, code, own_codes)
+                except Exception:
+                    pass  # the full traceback is never wrong
         finally:
             _audit_user_code_active = False
             _TL_STDOUT.unregister()
@@ -4103,25 +4574,20 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
                 "\nHint: the call ran for over 60s with no output. If this was a .getInfo() call, "
                 "consider using inspect_asset with filters, or reduce scale/region size."
             )
-        return _scrub_json_response({
+        return _scrub_json_response(_drop_empty({
             "success": False,
-            "code": code,
-            "stdout": stdout_buf.getvalue(),
+            "stdout": _stdout_for(stdout_buf.getvalue(), _for_person),
             "stderr": stderr_val,
-            "result": None,
             "error": timeout_hints,
-        })
+        }))
 
     if error_holder[0]:
-        return _scrub_json_response({
+        return _scrub_json_response(_drop_empty({
             "success": False,
-            "code": code,
-            "stdout": stdout_buf.getvalue(),
+            "stdout": _stdout_for(stdout_buf.getvalue(), _for_person),
             "stderr": stderr_val,
-            "result": None,
             "error": _lost_state_hint(_translate_ee_error(error_holder[0]), sess),
-            "script_path": None,
-        })
+        }))
 
     # Success -- record in history AND record per-block metadata (Level 2
     # tracker). ``names_bound`` uses the runtime namespace diff — that's
@@ -4144,6 +4610,9 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
         "parse_error": _block_ast["parse_error"],
         "succeeded": True,
     })
+    # Every block so far, rewritten each call. A client on the same
+    # machine (Claude Code, an IDE) can open it; save_session writes the
+    # cleaned version or a notebook.
     script_path = _save_history_to_file(sess)
 
     result_val = result_holder[0]
@@ -4204,29 +4673,24 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
         _filtered_stderr.append(_line)
     stderr_val = "\n".join(_filtered_stderr).strip()
 
-    # Clean stdout — strip base64 data URIs and cap size
-    import re as _re
-    stdout_val = stdout_buf.getvalue()
-    stdout_val = _re.sub(
-        r'data:(image|text)/[^;]+;base64,[A-Za-z0-9+/=]{100,}',
-        '<base64 data stripped>',
-        stdout_val,
-    )
-    if len(stdout_val) > 50000:
-        stdout_val = stdout_val[:50000] + "\n... (truncated)"
+    stdout_val = _stdout_for(stdout_buf.getvalue(), _for_person)
     if _dup_note:
         stdout_val = (stdout_val.rstrip("\n") + "\n" if stdout_val else "") + _dup_note[1]
+    # The note is for the model; a saved script's output is read by a person.
+    _typed_note = "" if _SAVED_SCRIPT_RUN.get() else _typed_data_note(code)
+    if _typed_note:
+        stdout_val = (stdout_val.rstrip("\n") + "\n" if stdout_val else "") + _typed_note
 
-    return _scrub_json_response({
+    # The code is the model's own input (and in the call's arguments for
+    # the chat page), so it is not echoed back.
+    return _scrub_json_response(_drop_empty({
         "success": True,
-        "code": code,
         "stdout": stdout_val,
         "stderr": stderr_val,
         "result": result_str,
-        "error": None,
-        "script_path": script_path,
         "output_markdown": output_markdown,
-    })
+        "script_path": script_path,
+    }, keep=("stdout",)))
 
 
 # ---------------------------------------------------------------------------
@@ -4628,15 +5092,7 @@ def inspect_asset(
                 "They have been normalized to lists in this response. Use the values shown."
             )
 
-    # Cap response size to prevent token overflow
-    response = json.dumps(result)
-    if len(response) > 100000:
-        # Strip large fields to fit
-        for key in ("asset", "info", "bands"):
-            if key in result and len(json.dumps(result.get(key, ""))) > 20000:
-                result[key] = f"<truncated: {len(json.dumps(result[key]))} chars>"
-        response = json.dumps(result)
-    return response
+    return json.dumps(result)
 
 
 # ---------------------------------------------------------------------------
@@ -4836,6 +5292,42 @@ def _looks_like_dataset_query(q: str) -> bool:
     return any(kw in q_lower for kw in _DATASET_KEYWORDS)
 
 
+def _loaded_modules(ns):
+    """Modules in the REPL namespace (ee, pd, np, ...), each once."""
+    seen, mods = set(), []
+    for v in list(ns.values()):
+        if _inspect.ismodule(v) and id(v) not in seen:
+            seen.add(id(v))
+            mods.append(v)
+    return mods
+
+
+def _classes_with(mod_obj, attr):
+    """``(class name, attribute)`` for each public class in ``mod_obj``
+    that has ``attr``, sorted by class name."""
+    found = []
+    for cls_name in sorted(dir(mod_obj)):
+        if cls_name.startswith("_"):
+            continue
+        cls = getattr(mod_obj, cls_name, None)
+        if not isinstance(cls, type):
+            continue
+        obj = getattr(cls, attr, None)
+        if obj is not None:
+            found.append((cls_name, obj))
+    return found
+
+
+def _describe_method_match(matches, attr, module_name):
+    """Describe the first ``(class, method)`` match and name the rest, so
+    ``to_markdown`` answers with DataFrame's and says Series has one too."""
+    cls_name, obj = matches[0]
+    out = _describe_object(obj, name=f"{cls_name}.{attr}", module_name=module_name)
+    if len(matches) > 1:
+        out["also_on"] = [f"{c}.{attr}" for c, _ in matches[1:]]
+    return json.dumps(out)
+
+
 @app.tool(annotations=_READ_ONLY)
 def search_codebase(query: str = "", name: str = "", module: str = "", session_id: str = None) -> str:
     """Search geeViz — plus any module in the REPL namespace (ee, pandas, numpy, etc.).
@@ -4971,6 +5463,20 @@ def search_codebase(query: str = "", name: str = "", module: str = "", session_i
                                         return json.dumps(_describe_object(obj, name=name, module_name=entry["fq"].rsplit(".", 1)[-1]))
                                     except AttributeError:
                                         pass
+                # ...or a class in a loaded module: "DataFrame.to_markdown"
+                # is pd.DataFrame.to_markdown.
+                for _m in _loaded_modules(ns):
+                    cls = getattr(_m, mod_name, None)
+                    if not isinstance(cls, type):
+                        continue
+                    try:
+                        obj = cls
+                        for p in attr_path.split("."):
+                            obj = getattr(obj, p)
+                    except AttributeError:
+                        continue
+                    return json.dumps(_describe_object(
+                        obj, name=name, module_name=_m.__name__.split(".")[0]))
 
         # If module specified, look there
         if module:
@@ -5001,6 +5507,12 @@ def search_codebase(query: str = "", name: str = "", module: str = "", session_i
                         name = f"mapper.{name}"
             if obj is not None:
                 return json.dumps(_describe_object(obj, name=name, module_name=module))
+            # A method on one of the module's classes: name="to_markdown",
+            # module="pd" is pd.DataFrame.to_markdown.
+            if "." not in name:
+                matches = _classes_with(mod_obj, name)
+                if matches:
+                    return _describe_method_match(matches, name, module)
             return json.dumps({"error": f"{name!r} not found in {module}."})
 
         # Bare name — check AST index first (no import needed if value was extracted)
@@ -5066,6 +5578,14 @@ def search_codebase(query: str = "", name: str = "", module: str = "", session_i
         # Check REPL namespace as last resort
         if name in ns:
             return json.dumps(_describe_object(ns[name], name=name, module_name="(REPL namespace)"))
+
+        # A method on a class in a loaded module: bare "to_markdown".
+        if "." not in name:
+            for _m in _loaded_modules(ns):
+                matches = _classes_with(_m, name)
+                if matches:
+                    return _describe_method_match(
+                        matches, name, _m.__name__.split(".")[0])
 
         return json.dumps({"error": f"{name!r} not found in any geeViz module or REPL namespace."})
 
@@ -5222,24 +5742,8 @@ def search_codebase(query: str = "", name: str = "", module: str = "", session_i
         # module-walk order — stable, so the same query always answers
         # the same way.
         results.sort(key=lambda r: r.get("_rank", RANK_BODY))
-        total = len(results)
-        # Whole-docstring matching makes a common word ("image", "band")
-        # match a great deal. Cap what comes back, and SAY the cap was
-        # hit rather than silently serving the top slice as if it were
-        # everything.
-        _CAP = 40
-        truncated = total > _CAP
-        results = results[:_CAP]
         for r in results:
             r.pop("_rank", None)
-        if truncated:
-            return json.dumps({
-                "query": query, "count": len(results), "total_matches": total,
-                "truncated": True,
-                "note": (f"{total} matches; showing the {_CAP} best. Narrow "
-                         f"the query, or use module=... to list one module."),
-                "results": results,
-            })
 
         # Empty result + dataset-shaped query → transparently forward to
         # search_datasets so the agent doesn't need a second tool call.
@@ -5352,13 +5856,13 @@ def map_control(action: str = "view", open_browser: bool = True, filename: str =
             f.write("")
     except Exception:
         pass
-    # Redirect stdout to the streaming file for live polling by the frontend.
-    # Use _StreamingStdout (same as run_code) so print() calls appear in the UI.
+    # Capture this tool's prints in the streaming file for live polling by
+    # the frontend. Use _StreamingStdout (same as run_code) so print() calls
+    # appear in the UI. Thread-routed, not a sys.stdout swap: other
+    # sessions' run_code output must stay theirs.
     _mc_stdout = _StreamingStdout(sess.stdout_stream_file)
-    _mc_orig = sys.stdout
-    sys.stdout = _mc_stdout
 
-    try:
+    with _TL_STDOUT.capture_unregistered(_mc_stdout):
         result_json = _map_control_inner(Map, act, sess, open_browser, filename, _mc_stdout)
         # Inject captured stdout into the response so the frontend shows it
         stdout_text = _mc_stdout.getvalue().strip()
@@ -5370,8 +5874,20 @@ def map_control(action: str = "view", open_browser: bool = True, filename: str =
             except (json.JSONDecodeError, TypeError):
                 pass
         return result_json
-    finally:
-        sys.stdout = _mc_orig
+
+
+def _passed_summary(passed, n_layers, then):
+    """The line after layer validation. A layer that passed with warnings
+    (most often: no visible pixels in the view) is not a clean pass, and
+    "All N passed" let answers describe layers that showed nothing."""
+    warned = [l["name"] for l in passed if l.get("warnings")]
+    if not warned:
+        return f"All {n_layers} layer(s) passed. {then}"
+    return (f"{n_layers - len(warned)} of {n_layers} layer(s) passed cleanly; "
+            f"{len(warned)} passed WITH WARNINGS: {', '.join(warned)}. {then} "
+            f"Until you have checked those layers (map_control action='preview'), "
+            f"do not describe them as showing anything, and tell the user about "
+            f"the warning.")
 
 
 def _map_control_inner(Map, act, sess, open_browser, filename, _mc_stdout):
@@ -5390,7 +5906,7 @@ def _map_control_inner(Map, act, sess, open_browser, filename, _mc_stdout):
                 for w in l.get("warnings") or []:
                     print(f"    WARN: {w}")
             for l in failed:
-                print(f"  FAIL: {l['name']} — {l.get('error', 'unknown error')[:100]}")
+                print(f"  FAIL: {l['name']} — {l.get('error', 'unknown error')}")
             if failed:
                 print(f"Validation failed — {len(failed)} layer(s) have errors.")
                 return json.dumps({
@@ -5398,7 +5914,7 @@ def _map_control_inner(Map, act, sess, open_browser, filename, _mc_stdout):
                                         "message": f"Map not opened — {len(failed)} layer(s) failed validation. Fix errors and retry.",
                     "layers": test_result["layers"],
                 })
-            print(f"All {n_layers} layer(s) passed validation.")
+            print(_passed_summary(passed, n_layers, "Opening map."))
         except Exception as exc:
             print(f"Validation error: {exc}")
             return json.dumps({
@@ -5429,7 +5945,7 @@ def _map_control_inner(Map, act, sess, open_browser, filename, _mc_stdout):
 
         url_buf = io.StringIO()
         try:
-            with contextlib.redirect_stdout(url_buf):
+            with _TL_STDOUT.capture_unregistered(url_buf):
                 Map.view(open_browser=open_browser, open_iframe=False)
         except Exception as exc:
             return json.dumps({"error": str(exc)})
@@ -5453,6 +5969,8 @@ def _map_control_inner(Map, act, sess, open_browser, filename, _mc_stdout):
                     break
         layer_count = len(Map.idDictList) if hasattr(Map, "idDictList") else 0
         print(f"Map opened with {layer_count} layer(s).")
+        if url:
+            _note_shown_map(sess, Map, "Map", _map_file_of(url))
         return json.dumps({
             "url": url,
             "layer_count": layer_count,
@@ -5633,7 +6151,7 @@ def _map_control_inner(Map, act, sess, open_browser, filename, _mc_stdout):
                 for w in l.get("warnings") or []:
                     print(f"    WARN: {w}")
             for l in failed:
-                print(f"  FAIL: {l['name']} — {l.get('error', 'unknown error')[:100]}")
+                print(f"  FAIL: {l['name']} — {l.get('error', 'unknown error')}")
             if failed:
                 print(f"Validation failed — {len(failed)} layer(s) have errors.")
                 return json.dumps({
@@ -5641,7 +6159,7 @@ def _map_control_inner(Map, act, sess, open_browser, filename, _mc_stdout):
                     "message": f"Map not exported — {len(failed)} layer(s) failed validation. Fix errors and retry.",
                     "layers": test_result["layers"],
                 })
-            print(f"All {n_layers} layer(s) passed. Exporting map...")
+            print(_passed_summary(passed, n_layers, "Exporting map..."))
         except Exception as exc:
             print(f"Validation error: {exc}")
             return json.dumps({
@@ -5677,6 +6195,7 @@ def _map_control_inner(Map, act, sess, open_browser, filename, _mc_stdout):
             return json.dumps({"error": str(exc)})
         layer_count = len(Map.idDictList) if hasattr(Map, "idDictList") else 0
         print(f"Map exported with {layer_count} layer(s) to {os.path.basename(written_path)}.")
+        _note_shown_map(sess, Map, _map_display_name(written_path), _map_file_of(written_path))
         return json.dumps({
             "path": written_path,
             "layer_count": layer_count,
@@ -5935,8 +6454,6 @@ def env_info(action: str = "version", session_id: str = None) -> str:
                     break
             try:
                 r = repr(obj)
-                if len(r) > 2000:
-                    r = r[:2000] + "..."
             except Exception:
                 r = "(repr failed)"
             entries.append({"name": name, "type": type_name, "repr": r})
@@ -5961,7 +6478,7 @@ def env_info(action: str = "version", session_id: str = None) -> str:
                 assets = assets_response.get("assets", [])
                 result["root_assets"] = [
                     {"id": a.get("id") or a.get("name", ""), "type": a.get("type", "UNKNOWN")}
-                    for a in assets[:500]
+                    for a in assets
                 ]
                 result["root_asset_count"] = len(assets)
             except Exception as exc:
@@ -6041,7 +6558,10 @@ def view_output(filename: str, session_id: str = None):
 
     import io
     from PIL import Image as _PILImage
-    max_dim = 256  # Aggressive — LLM doesn't need pixel-perfect, just a recognizable preview
+    # Gemini charges an image about 1,200 tokens whatever its size, and at
+    # 256 px it misread a chart: the dark-green Trees line at 34% came
+    # back as 0.5%. At 512 px and up every line read right (2026-10).
+    max_dim = 1024
 
     def _shrink_to_jpeg(pil_img):
         """Downscale and convert to JPEG bytes for minimal context cost."""
@@ -6175,7 +6695,7 @@ def export_image(
 
     stdout_buf = io.StringIO()
     try:
-        with contextlib.redirect_stdout(stdout_buf):
+        with _TL_STDOUT.capture_unregistered(stdout_buf):
             # In sandbox mode, create task but don't start it
             _start = not _SANDBOX_ENABLED
 
@@ -6806,7 +7326,7 @@ def manage_asset(
             return json.dumps({"error": f"Invalid folder_type: {folder_type!r}. Use 'Folder' or 'ImageCollection'."})
         stdout_buf = io.StringIO()
         try:
-            with contextlib.redirect_stdout(stdout_buf):
+            with _TL_STDOUT.capture_unregistered(stdout_buf):
                 if folder_type == "ImageCollection":
                     aml.create_image_collection(folder_path)
                 else:
@@ -6820,7 +7340,7 @@ def manage_asset(
         writers_list = [w.strip() for w in writers.split(",") if w.strip()] if writers else []
         stdout_buf = io.StringIO()
         try:
-            with contextlib.redirect_stdout(stdout_buf):
+            with _TL_STDOUT.capture_unregistered(stdout_buf):
                 aml.updateACL(asset_id, writers=writers_list, all_users_can_read=all_users_can_read, readers=readers_list)
         except Exception as exc:
             return json.dumps({"error": f"ACL update failed: {exc}", "stdout": stdout_buf.getvalue()})
