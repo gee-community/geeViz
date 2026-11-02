@@ -23,7 +23,7 @@ __author__ = "Ian Housman"
 __email__ = "ian.housman@gmail.com"
 
 # Version format yyyy.m.n
-__version__ = "2026.9.4"
+__version__ = "2026.11.1"
 
 __all__ = ["app", "__version__"]
 

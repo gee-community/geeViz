@@ -128,4 +128,4 @@ __all__ = [
     "UpstreamUnavailable",
 ]
 
-__version__ = "2026.9.4"
+__version__ = "2026.11.1"

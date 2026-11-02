@@ -1,6 +1,98 @@
 # geeViz Release Notes
 
-## Unreleased
+## 2026.11.1 (November 2, 2026)
+
+The first release on PyPI since 2026.8.1. 2026.9.4 was built but never
+uploaded, so this release carries everything since August,
+including the 2026.9.4 notes below.
+
+### georest is the foundation for Esri, EDW and the Forest Service data
+
+geeViz now requires ``georest>=0.5,<0.6``. georest 0.5.0 is the first
+release with the Forest Service clients, so geeViz keeps only what is
+specific to Earth Engine:
+
+- **``geeViz.fsInsights`` is a front door onto ``georest.usfs``.** Every
+  name still works (``fs.estimate``, ``fs.lcms_summary``,
+  ``fs.compare_area``, ...), and ``geeViz.fsInsights.fia`` *is*
+  ``georest.usfs.fia``, the same module object. The copied FIA and LCMS
+  code, its bundled catalogs and its tests moved to georest; geeViz's own
+  FIA tests pass against georest's code. ``FSInsightsError`` is
+  ``georest.usfs.USFSError``.
+- **``geeViz.edwLib`` is a thin layer over ``georest.esri.edw``** that
+  still accepts ``ee.Geometry``, ``ee.Feature`` and
+  ``ee.FeatureCollection`` as a spatial filter. EDW searches find a few more
+  services (georest's catalog is newer), and features keep the service's
+  object id as their ``id`` when it sends one.
+- **``esriLib`` uses ``georest.esri``**, the 0.5 name for ``restesri``.
+- The MCP server's ``search_codebase`` indexes ``georest.usfs`` under its
+  own names, the old ``geeViz.fsInsights.*`` names and short names, so
+  ``search_codebase(name="geeViz.fsInsights.fia.estimate")`` still works.
+
+### New: HRRR weather on demand (``geeViz.hrrr``)
+
+``getHRRR(region, startDate, endDate, variables, bucket)`` brings NOAA's
+3 km HRRR model into Earth Engine for a region and time window: temperature,
+humidity, dewpoint, wind, gusts, precipitation, cloud cover and near-surface
+smoke. It downloads only the fields and area asked for from NOAA's public
+bucket, writes Cloud Optimized GeoTIFFs to your bucket and returns an
+``ee.ImageCollection`` that reads them in place, with a status bar while it
+works. Past hours come from each hour's analysis, hours ahead from the
+newest run that reaches them. HRRR's grid-relative winds are rotated to true
+north (unrotated they were off by up to 25 degrees against ERA5).
+``pip install "geeViz[hrrr]"`` adds rasterio and tqdm. See
+``examples/hrrr_examples.ipynb``.
+
+### Maps
+
+- The map check points a hand-styled single-class layer to ``autoViz``, a
+  set of year-by-year layers to a time lapse, warns when a layer draws as
+  one flat color, and no longer calls a point-centered map blank. A layer
+  that passed with warnings is reported as such, not as a clean pass.
+- ``Map.addLayer`` takes Earth Engine's ``opacity`` argument.
+- A quote in a layer name no longer blanks the whole map.
+- Exported maps carry a browser Maps key, never the server key.
+
+### Esri services
+
+- Uncached Image Services and Dynamic Map Services draw, and feature
+  layers fetch display geometry; see the esriLib section below.
+- Feature Service fields with a period in their name load into Earth
+  Engine, GeoJSON reaches ``run_code`` with string feature ids, and
+  ``addEsriFeatureService`` says when the service truncated a layer.
+
+### Data and analysis
+
+- ``getAdminBoundaries`` reaches districts below a city level.
+- ``getBuildings`` drops footprints drawn inside out.
+- ``search_datasets`` marks insiders-only community datasets as unreadable.
+- ``fia_estimate`` can ask FIA for one total over several rows, and lists
+  each row once in one-way tables.
+- ``getFoliageChange`` (post minus leaf-on), with Sentinel-2 via
+  ``superSimpleGetS2``.
+- fireLib: crown fire initiation needs a canopy to initiate into.
+- Forecasts come from the newest complete run; WeatherNext 3 reaches back
+  to 2024.
+
+### Agent and MCP server
+
+- ``run_code``: a refusal says nothing ran and names what is not defined;
+  output reaches the model whole; typed-in data is questioned; a tool that
+  captures its own prints no longer takes other sessions' output; saved
+  scripts count the ``getInfo`` limit per block.
+- Reports, chart labels and test logs keep their output whole instead of
+  truncating it.
+- Instructions: CARTO raster basemaps need an API key now (use Esri tiles
+  or CARTO's vector styles), pixel-unit operations change with zoom, and
+  sketches are not data.
+
+### eeAuth
+
+- An impersonation config that carries its own source credentials is used
+  as written (it used to impersonate itself, which IAM refuses).
+- Export cancels go through the proxy without a workload tag, which Earth
+  Engine refuses on operation calls; every cancel through the proxy used
+  to fail and the export kept running.
 
 ### geeViz.esriLib — uncached services draw, feature layers load faster
 
