@@ -1309,7 +1309,7 @@ class Report:
             print(f"    LLM error: {e}", flush=True)
             return None
 
-    def _df_to_table_str(self, df, max_rows=80):
+    def _df_to_table_str(self, df):
         """Convert a DataFrame or dict of DataFrames to a markdown table string."""
         if df is None:
             return "(no data)"
@@ -1318,12 +1318,7 @@ class Report:
             for label, mdf in df.items():
                 parts.append(f"**{label}**\n{mdf.to_markdown()}")
             return "\n\n".join(parts) if parts else "(no data)"
-        if len(df) > max_rows:
-            half = max_rows // 2
-            table = df.head(half).to_markdown() + "\n\n... (truncated) ...\n\n" + df.tail(half).to_markdown()
-        else:
-            table = df.to_markdown()
-        return table
+        return df.to_markdown()
 
     def _generate_executive_summary(self):
         """Generate the executive summary from all sections.
@@ -1354,15 +1349,15 @@ class Report:
         images = []
         for sec in self._sections:
             if sec.narrative and sec.narrative != self._fallback_narrative(sec):
-                brief = sec.narrative[:200].replace("\n", " ")
-                briefs.append(f"**{sec.title}**: {brief}...")
+                brief = sec.narrative.replace("\n", " ")
+                briefs.append(f"**{sec.title}**: {brief}")
             elif sec.df is not None:
                 if isinstance(sec.df, dict):
                     n_matrices = len(sec.df)
                     briefs.append(f"**{sec.title}**: {n_matrices} transition matrices")
                 else:
                     shape = f"{len(sec.df)} rows x {len(sec.df.columns)} columns"
-                    cols = ", ".join(sec.df.columns[:10])
+                    cols = ", ".join(map(str, sec.df.columns))
                     briefs.append(f"**{sec.title}**: {shape}. Columns: {cols}")
             elif sec.error:
                 briefs.append(f"**{sec.title}**: Error -- {sec.error}")
@@ -1778,7 +1773,7 @@ class Report:
                 # Build descriptive table title: "Section Title - Annual units"
                 table_title = f'{sec.title} — Annual {units_label}'
                 title_html = f'<h4 class="matrix-title">{table_title}</h4>'
-                table_html = sec.df.to_html(classes="", border=0, max_rows=100)
+                table_html = sec.df.to_html(classes="", border=0)
                 parts.append(f'<div class="table-wrapper">{title_html}{table_html}</div>')
 
         if sec.error:
@@ -2129,7 +2124,7 @@ class Report:
                     print(f"PDF saved to: {output_path}", flush=True)
                     return output_path
                 else:
-                    stderr = result.stderr.decode(errors="replace")[:200]
+                    stderr = result.stderr.decode(errors="replace")
                     print(f"  Browser PDF failed: {stderr}", flush=True)
             except Exception as e:
                 print(f"  Browser PDF failed: {e}", flush=True)

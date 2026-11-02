@@ -34,11 +34,11 @@ async def run_test(qnum, description, steps):
                 result = await fn(**kwargs)
             else:
                 result = fn(**kwargs)
-            preview = str(result)[:5000]
+            preview = str(result)
             tool_calls.append({"tool": step_name, "status": "OK", "preview": preview})
             print(f"     OK ({len(str(result))} chars)")
         except Exception as e:
-            tool_calls.append({"tool": step_name, "status": "ERROR", "error": str(e)[:5000]})
+            tool_calls.append({"tool": step_name, "status": "ERROR", "error": str(e)})
             errors.append(f"{step_name}: {e}")
             print(f"     FAIL: {e}")
     elapsed = round(time.time() - t0, 1)
@@ -807,7 +807,7 @@ for label, mdf in matrix_dict.items():
         print(f"      Tools: {tools}")
         if r["errors"]:
             for e in r["errors"]:
-                print(f"      ERROR: {e[:100]}")
+                print(f"      ERROR: {e}")
 
     # Count
     passed = sum(1 for r in results.values() if r["status"] == "PASS")

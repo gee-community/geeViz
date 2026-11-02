@@ -1810,10 +1810,8 @@ def _render_html_report(result: dict, output_path: str) -> str:
     for s in result["samples"]:
         labels_summary = ", ".join(
             f"{l['category']}({l['count']})"
-            for l in s.get("canonical_labels", [])[:10]
+            for l in s.get("canonical_labels", [])
         )
-        if len(s.get("canonical_labels", [])) > 10:
-            labels_summary += f" … +{len(s['canonical_labels']) - 10} more"
         # Thumbnails per image type — data URIs so nothing external is needed.
         thumbs_html = ""
         for typ, path in sorted(s.get("image_paths", {}).items()):

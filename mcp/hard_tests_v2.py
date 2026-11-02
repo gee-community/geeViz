@@ -45,18 +45,18 @@ async def run_test(qnum, description, steps):
                 result = await fn(**kwargs)
             else:
                 result = fn(**kwargs)
-            preview = str(result)[:8000]
+            preview = str(result)
             tool_calls.append({"tool": step_name, "status": "OK", "preview": preview})
             outputs.append(preview)
             log(f"     OK ({len(str(result))} chars)")
-            log(f"     Output: {str(result)[:500]}")
+            log(f"     Output: {result}")
         except Exception as e:
             tb = traceback.format_exc()
-            tool_calls.append({"tool": step_name, "status": "ERROR", "error": str(e)[:5000]})
+            tool_calls.append({"tool": step_name, "status": "ERROR", "error": str(e)})
             errors.append(f"{step_name}: {e}")
             outputs.append(f"ERROR: {e}")
             log(f"     FAIL: {e}")
-            log(f"     Traceback: {tb[:500]}")
+            log(f"     Traceback: {tb}")
     elapsed = round(time.time() - t0, 1)
     status = "PASS" if not errors else "FAIL"
     results[qnum] = {
@@ -65,7 +65,7 @@ async def run_test(qnum, description, steps):
         "time": elapsed,
         "tool_calls": tool_calls,
         "errors": errors,
-        "output_preview": "\n---\n".join(outputs)[:10000],
+        "output_preview": "\n---\n".join(outputs),
     }
     log(f"  Result: {status} ({elapsed}s)")
     return status
@@ -582,7 +582,7 @@ print('All outputs saved.')
         log(f"      Tools: {tools}")
         if r["errors"]:
             for e in r["errors"]:
-                log(f"      ERROR: {e[:200]}")
+                log(f"      ERROR: {e}")
 
     passed = sum(1 for r in results.values() if r["status"] == "PASS")
     total = len(results)

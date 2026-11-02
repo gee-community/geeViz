@@ -750,16 +750,14 @@ def screenshot_url(url, width=1280, height=900, wait_seconds=12):
                 # Only report real failures, especially on EE tile URLs
                 if canceled or "ERR_ABORTED" in err:
                     return
-                if req_url and ("earthengine" in req_url or "googleapis" in req_url):
-                    network_errors.append(f"LOAD FAIL: {req_url[:120]} — {err}")
-                elif req_url:
-                    network_errors.append(f"LOAD FAIL: {req_url[:120]} — {err}")
+                if req_url:
+                    network_errors.append(f"LOAD FAIL: {req_url} — {err}")
             elif method == "Network.responseReceived":
                 resp = params.get("response", {})
                 status = resp.get("status", 0)
                 resp_url = resp.get("url", "")
                 if status >= 400 and ("earthengine" in resp_url or "googleapis" in resp_url):
-                    network_errors.append(f"HTTP {status}: {resp_url[:120]}")
+                    network_errors.append(f"HTTP {status}: {resp_url}")
 
         # Enable CDP domains
         _send("Console.enable")
