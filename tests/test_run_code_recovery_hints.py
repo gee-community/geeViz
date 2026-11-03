@@ -139,3 +139,27 @@ def test_a_builtin_the_sandbox_leaves_out_is_not_called_lost_state():
     err = srv._lost_state_hint("NameError: name 'locals' is not defined", sess)
     assert "builtin that run_code does not provide" in err
     assert "restart" not in err
+
+
+# --- a memory limit is fixed in the computation, not the data source ---------
+#
+# askterra prod, 2026-11-02: a Random Forest trained on a superSimpleGetS2
+# median hit "User memory limit exceeded" in stratifiedSample. The fix that
+# worked was sampling the label image first and reading the composite only at
+# those points, but the same step also replaced superSimpleGetS2 (Cloud Score+)
+# with the raw collection and a hand-written SCL mask. The hint used to suggest
+# switching datasets and never named the sampling fix.
+
+MEMORY_ERROR = "EEException: User memory limit exceeded."
+
+
+def test_memory_limit_names_the_sampling_fix():
+    hint = srv._translate_ee_error(MEMORY_ERROR).partition("--- original traceback below ---")[0]
+    assert "sampleRegions" in hint and "tileScale" in hint
+    assert "stratifiedSample the label image" in hint
+
+
+def test_memory_limit_keeps_the_geeviz_loaders():
+    hint = srv._translate_ee_error(MEMORY_ERROR).partition("--- original traceback below ---")[0]
+    assert "keep" in hint and "superSimpleGetS2" in hint
+    assert "never swap in the raw" in hint and "QA60" in hint

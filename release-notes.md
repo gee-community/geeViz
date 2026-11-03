@@ -82,6 +82,12 @@ north (unrotated they were off by up to 25 degrees against ERA5).
   scripts count the ``getInfo`` limit per block.
 - Reports, chart labels and test logs keep their output whole instead of
   truncating it.
+- Instructions: find the data, use it, and compute statistics only when they
+  change the next step or were asked for (a land cover classification went
+  from 28 run_code calls to 8); a recipe for land cover over several years
+  (one model per sensor, every year, agreement with a reference map called
+  agreement); and a memory-limit error points to sampling the labels first
+  instead of swapping in a raw collection with a hand-written cloud mask.
 - Instructions: CARTO raster basemaps need an API key now (use Esri tiles
   or CARTO's vector styles), pixel-unit operations change with zoom, and
   sketches are not data.

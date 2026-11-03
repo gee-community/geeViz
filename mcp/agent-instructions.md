@@ -14,7 +14,14 @@
    - `search_codebase(module="ee")` / `module="pd"` / `module="np"` — browse Earth Engine, pandas, numpy from inside the same tool. Anything the REPL has imported is searchable — no separate lookup needed.
    - `inspect_asset(asset_id="...")` — real band names, dtypes, and class properties. **Always inspect a dataset before using it.**
 
-2. **Test with `run_code`.** The user should never be the first to discover a bug. Validate before describing results.
+2. **Find the data, use it, then summarize only if asked.** Look up the datasets and functions (rule 1), build the analysis, and run it: the run is the test, and the user should never be the first to discover a bug. Spend a `.getInfo()`, `reduceRegion` or histogram only when its answer changes what you do next, or when it is what the user asked for.
+   - **Don't re-check what a tool already told you**: band names from `inspect_asset`, a geeViz function's band names and value scale from its docstring (`superSimpleGetS2` is 0-10000, `getProcessedLandsatScenes` is 0-1), an asset's date range.
+   - **Don't count scenes or print value ranges "to see".** If a composite is empty or mis-scaled, the next step fails or looks wrong, and that is when to look.
+   - **Zonal statistics, class histograms and summaries of your own outputs are results.** Compute them when the user asks, or when one decides the next step (which reference classes have enough pixels to train on). Not to narrate progress, and not twice.
+   - **Try one candidate dataset at a time.** Inspect a second only when the first cannot do the job.
+   - Write the next real step instead of a cell that only defines things and prints "defined".
+
+   "Validate before describing results" means the code that produced them ran without error and its output answers the question, not a separate round of checks. In one session an IPCC land cover classification took 28 `run_code` calls, about 10 of them needed.
 
 3. **Use exact parameter names from search results.** If the signature shows `fps=`, use `fps=` — never substitute synonyms like `framesPerSecond=`. Wrong parameter names cause silent failures.
 
@@ -496,6 +503,18 @@ All string params accept comma-separated values (`'MT,ID'`) or lists (`['MT', 'I
 
 ---
 
+## Land cover classification over several years
+
+A multi-date land cover map is one method applied the same way every year, so that differences between years are land change rather than method. When asked to classify land cover over several years:
+
+1. **Reference labels.** Use a mapped product (`inspect_asset` it; class meanings come from its own class names) or points the user supplies. Crosswalk every source class to a target class: a class left unmapped becomes 0 and pollutes the samples. For the six IPCC categories, inland and coastal water is Wetlands (flooded land), not Other Land. Clip to the land boundary so open ocean is not classified.
+2. **A composite for every year asked**, from one function mapped over the years (`ee.List.sequence`), not three hand-picked years when the user asked for annual maps. One sensor per year: Landsat (`gil.getProcessedLandsatScenes`, 0-1) before Sentinel-2 starts, Sentinel-2 (`gil.superSimpleGetS2`, 0-10000, divide by 10000) after. Before building the series, count the scenes of both sensors for every year in ONE `.getInfo()` (an `ee.Dictionary` keyed by year): a year with no scenes gives a composite with no bands, which fails every later step. Coverage varies by place: over Palau, `getProcessedLandsatScenes` finds no scenes for 2010-2012 unless `includeSLCOffL7=True` (then 12-13 a year), and Sentinel-2 has 3 scenes in 2016 against 295 in 2020. Pick the switch year and the Landsat options from those counts, all years in the one call. Persistent cloud leaves gaps; leave them masked rather than filling them from another year.
+3. **One model per sensor**, both trained in the reference year: sample the labels once (`stratifiedSample` on the label image alone), read the Landsat and the Sentinel-2 composite of that year at the same points (`sampleRegions`, with `tileScale`), and train a classifier on each. Apply each model only to its own sensor's years. A model trained on Sentinel-2 and applied to Landsat turns sensor differences into apparent land change.
+4. **Agreement with a map is not accuracy.** Held-out agreement with a reference map is agreement with that map in its year: report it as "agrees with ESA WorldCover 2020 on 82% of 154 held-out points", for each sensor's model, and say that the other years are not assessed.
+5. **Deliver the series**: an ImageCollection of the annual class maps with class properties, shown as a time lapse (`Map.addTimeLapse` with `autoViz`), plus the years the user named as layers of their own. Say which model made which years, and the year the sensor changes.
+
+---
+
 ## Charting — `cl` is canonical, other libraries are allowed with `cl.apply_theme`
 
 **Deliverables (charts the user will see):** use `cl.summarize_and_chart(...)` — it's themed, exported via `save_chart_html`, and consistent with every other chart in this UI. This is the default. The result is a dict with `{"df": DataFrame, "chart": Figure or HTML}`.
@@ -781,7 +800,7 @@ EE has logical operators that clash with Python keywords. The method name is **c
 
 ### Imports / band names
 - **Raw S2 bands `B4`, `B3`, `B2`** — wrong. geeViz renames bands. Use `red`, `green`, `blue`, `nir`, `swir1`, `swir2`.
-- **`ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')` directly** — wrong for most use cases. Use `gil.superSimpleGetS2(area, startDate, endDate)` (handles cloud masking + renaming).
+- **`ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')` directly** — wrong for most use cases. Use `gil.superSimpleGetS2(area, startDate, endDate)` (handles cloud masking + renaming). That holds after a "User memory limit exceeded" too: the cost is the computation, not the Cloud Score+ masking, so fix the computation (for training, sample the label image first, then `sampleRegions` the composite with `tileScale`) and keep `superSimpleGetS2`. Swapping in the raw collection with an SCL or QA60 mask gives a worse composite and does not fix the memory error.
 - **`ee.ImageCollection('LANDSAT/...')` directly** — wrong. Use `gil.getProcessedLandsatScenes(area, startYear, endYear, startJulian, endJulian)` (cloud masking, renaming, sensor harmonization).
 - **Mixing S2 and Landsat viz params** — `vizParamsFalse10k`/`vizParamsTrue10k` are for S2 (0–10000). `vizParamsFalse`/`vizParamsTrue` (no `10k`) are for Landsat (0–1). Using `10k` on Landsat produces a black image.
 - **Guessing band names** — always `inspect_asset` first. Names vary across datasets/versions (e.g. MapBiomas uses `classification_2000`, MODIS uses `LST_Day_1km`).
