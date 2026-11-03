@@ -1756,16 +1756,59 @@ class mapper:
     # in ``esriLib`` (URL parsing, portal search, metadata preflight,
     # feature count guardrails); this just delegates.
     def addEsriImageService(self, url_or_result, viz_params=None, name=None, token=None):
-        """See ``geeViz.esriLib.addEsriImageService``. Delegates."""
+        """Add an ArcGIS Image Service to this map.
+
+        A cached service (its metadata reports ``tileInfo``) is drawn as
+        tiles. An uncached one (most, including every NAIP service on
+        IIPP) has no tiles, so it is drawn through ``/exportImage``,
+        re-rendered for the viewport on each pan and zoom.
+
+        Args:
+            url_or_result (str or dict): ``.../ImageServer`` URL, or a
+                ``georest.esri.portal.searchPortal`` result dict.
+            viz_params (dict, optional): ``visible`` (bool) always;
+                ``opacity`` (float) and ``max_zoom`` (int) apply to a cached
+                service only and are ignored on the ``/exportImage`` path.
+            name (str, optional): Layer name. Defaults to the service name.
+            token (str, optional): ArcGIS token for secured services.
+
+        Example::
+
+            Map.addEsriImageService(
+                "https://naip.services.arcgis.com/.../ImageServer",
+                name="NAIP")
+        """
         from geeViz import esriLib as _el
         # LOCAL PATCH (2026-08-28): pass self, or the layer lands on gv.Map.
         return _el.addEsriImageService(url_or_result, viz_params=viz_params, name=name, token=token, target_map=self)
 
     def addEsriMapService(self, url_or_result, name=None, token=None, viz_params=None,
                           visible=None):
-        """See ``geeViz.esriLib.addEsriMapService``. Delegates. If the
-        service is dynamic (non-cached), esriLib now falls back to
-        ``Map.addDynamicMapService`` internally instead of raising."""
+        """Add an ArcGIS Map Service to this map.
+
+        A cached service is drawn as tiles. A dynamic one (FEMA NFHL, most
+        authoritative government services) is drawn through ``/export``
+        with ``Map.addDynamicMapService``, keeping the server's own
+        symbology. For the features themselves, use
+        ``Map.addEsriFeatureService`` on a sub-layer (``.../MapServer/<n>``).
+
+        Args:
+            url_or_result (str or dict): ``.../MapServer`` URL, or a
+                ``georest.esri.portal.searchPortal`` result dict.
+            name (str, optional): Layer name. Pass one: the default is the
+                service name for a dynamic service but the last URL segment
+                for a cached one.
+            token (str, optional): ArcGIS token for secured services.
+            viz_params (dict, optional): ``visible`` always; ``opacity`` and
+                ``max_zoom`` apply to a cached service only.
+            visible (bool, optional): Whether the layer starts visible.
+
+        Example::
+
+            Map.addEsriMapService(
+                "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer",
+                name="FEMA flood hazard")
+        """
         from geeViz import esriLib as _el
         # LOCAL PATCH (2026-08-28): pass self, or the layer lands on gv.Map.
         return _el.addEsriMapService(url_or_result, name=name, token=token, viz_params=viz_params, target_map=self, visible=visible)
@@ -1773,7 +1816,58 @@ class mapper:
     def addEsriFeatureService(self, url_or_result, viz_params=None, name=None,
                               max_features=1000, where="1=1", token=None,
                               bbox=None, simplify="auto", max_layer_mb=None):
-        """See ``geeViz.esriLib.addEsriFeatureService``. Delegates."""
+        """Fetch an ArcGIS Feature Service layer and add it to this map as vectors.
+
+        Counts the matching features first (with the same ``where`` and
+        ``bbox`` as the fetch), then fetches them as GeoJSON in WGS84.
+
+        Args:
+            url_or_result (str or dict): ``.../FeatureServer/<n>`` or
+                ``.../MapServer/<n>`` layer URL (a ``FeatureServer`` root
+                gets ``/0``), or a ``georest.esri.portal.searchPortal``
+                result dict.
+            viz_params (dict, optional): ``Map.addLayer`` vector viz keys
+                (``strokeColor``, ``fillColor``, ``strokeWidth``,
+                ``opacity``...).
+            name (str, optional): Layer name. Defaults to the URL's last
+                segment.
+            max_features (int, optional): If more features than this match,
+                ``ValueError`` names the count; narrow ``where`` or ``bbox``
+                rather than raising it far. Default 1000. A service also
+                sends at most its own ``maxRecordCount`` per request: past
+                that the layer is partial and the printed line says how many
+                features are missing.
+            where (str, optional): SQL WHERE clause, evaluated by the
+                service. Field names must be the layer's own (read them with
+                ``georest.esri.portal.getServiceMetadata(url)["fields"]``).
+                Default ``"1=1"``.
+            token (str, optional): ArcGIS token for secured services.
+            bbox (str, list or tuple, optional): ``"xmin,ymin,xmax,ymax"``
+                in WGS84 degrees, or the four numbers as a list.
+            simplify (str, bool or float, optional): ``"auto"`` (default)
+                asks the service for geometry generalized to about 5 m, then
+                simplifies further only if the layer is over
+                ``max_layer_mb``. A number is a fixed tolerance in meters;
+                ``False`` keeps exact geometry.
+            max_layer_mb (float, optional): Size budget for this layer in the
+                map page, used by ``simplify="auto"``. Default 8 MB.
+
+        Raises:
+            ValueError: If more than ``max_features`` features match.
+            ConnectionError: If the service URL is unreachable.
+
+        Example::
+
+            Map.addEsriFeatureService(
+                "https://services.arcgis.com/.../FeatureServer/0",
+                where="FIRE_YEAR = 2024 AND GIS_ACRES > 1000",
+                name="Large 2024 fires",
+                viz_params={"strokeColor": "D9381E"})
+
+        For the features as an ``ee.FeatureCollection`` (to filter, join or
+        reduce in Earth Engine), use
+        ``georest.esri.services.queryFeatureService`` and wrap the GeoJSON.
+        """
         from geeViz import esriLib as _el
         # LOCAL PATCH (2026-08-28): pass self, or the layer lands on gv.Map.
         return _el.addEsriFeatureService(url_or_result, viz_params=viz_params, name=name,
@@ -1783,9 +1877,37 @@ class mapper:
 
     def addEsriService(self, url_or_result, viz_params=None, name=None, token=None,
                        max_features=1000, where="1=1", bbox=None, simplify="auto"):
-        """See ``geeViz.esriLib.addEsriService``. Auto-detects the
-        service type from URL / metadata and delegates to the right
-        add-helper."""
+        """Add any ArcGIS service to this map, choosing the method by its type.
+
+        Reads the type from the URL (or the service metadata) and calls
+        ``Map.addEsriImageService``, ``Map.addEsriFeatureService`` or
+        ``Map.addEsriMapService``. A ``.../MapServer/<n>`` sub-layer URL
+        counts as a Map Service; for its features, call
+        ``Map.addEsriFeatureService`` on it directly.
+
+        Args:
+            url_or_result (str or dict): Service URL, or a
+                ``georest.esri.portal.searchPortal`` result dict.
+            viz_params (dict, optional): Passed to the chosen method.
+            name (str, optional): Layer name.
+            token (str, optional): ArcGIS token for secured services.
+            max_features (int, optional): Feature Services only; see
+                ``Map.addEsriFeatureService``.
+            where (str, optional): Feature Services only: SQL WHERE clause.
+            bbox (str, optional): Feature Services only:
+                ``"xmin,ymin,xmax,ymax"`` in WGS84 degrees.
+            simplify (optional): Feature Services only; see
+                ``Map.addEsriFeatureService``.
+
+        Raises:
+            ValueError: If the service type cannot be determined.
+
+        Example::
+
+            from georest.esri import portal
+            for r in portal.searchPortal("naip", limit=3):
+                Map.addEsriService(r)
+        """
         from geeViz import esriLib as _el
         # LOCAL PATCH (2026-08-28): pass self, or the layer lands on gv.Map.
         return _el.addEsriService(url_or_result, viz_params=viz_params, name=name, token=token,
