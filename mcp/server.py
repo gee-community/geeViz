@@ -7581,7 +7581,7 @@ def fia_estimate(wc: int, snum: int, rselected: str = "",
 def lcms_summary(product: str = "Land_Cover", state: str = "",
                  county: str = "", region: str = "", forest: str = "",
                  district: str = "", year: int = 0,
-                 max_results: int = 80) -> str:
+                 max_results: int = 0) -> str:
     """LCMS land cover / land use / change areas for a named area.
 
     Wall-to-wall 30 m maps, 1985-2025. Complements FIA: LCMS answers
@@ -7598,12 +7598,15 @@ def lcms_summary(product: str = "Land_Cover", state: str = "",
         state: State name. Required alongside ``county``.
         county: County name.
         region, forest, district: Forest Service units. ``district``
-            requires ``forest``.
+            requires ``forest``. Short names work: ``"Tonto"`` and
+            ``"Cave Creek"`` are sent as ``"Tonto National Forest"`` and
+            ``"Cave Creek Ranger District"`` when the API wants those.
         year: A single year, or 0 for the full 1985-2025 series.
-        max_results: Cap on rows returned.
+        max_results: 0 (the default) returns every row.
 
     Returns:
-        JSON rows of ``year``, ``class_name``, ``acres``, ``hectares``.
+        JSON rows of ``year``, ``class_name``, ``acres``, ``hectares``,
+        plus the ``forest`` and ``district`` names the API answered to.
 
     Note:
         Do not equate these areas with FIA area estimates. One is a
@@ -7616,21 +7619,36 @@ def lcms_summary(product: str = "Land_Cover", state: str = "",
     except Exception as exc:
         return json.dumps({"error": f"fsInsights unavailable: {exc}"})
 
-    try:
-        df = _fs.lcms_summary(product, state=state, county=county,
-                              region=region, forest=forest,
-                              district=district,
-                              year=(year or None))
-    except Exception as exc:
-        return json.dumps({"error": f"{type(exc).__name__}: {exc}"})
+    # The API knows a unit only by its full name and answers a short one
+    # with "Invalid Summary Area", so try the usual suffixes after the
+    # names as given.
+    def _forms(name, suffixes):
+        return [name] + [name + s for s in suffixes
+                         if name and not name.lower().endswith(s.lower())]
 
-    rows = df.to_dict("records") if hasattr(df, "to_dict") else list(df)
-    return json.dumps({
-        "product": product,
-        "count": len(rows),
-        "rows": rows[:max_results],
-        "truncated": len(rows) > max_results,
-    }, default=str)
+    first_exc = None
+    for f in _forms(forest, (" National Forest", " National Forests")):
+        for d in _forms(district, (" Ranger District",)):
+            try:
+                df = _fs.lcms_summary(product, state=state, county=county,
+                                      region=region, forest=f, district=d,
+                                      year=(year or None))
+            except Exception as exc:
+                if "Invalid Summary Area" not in str(exc):
+                    return json.dumps({"error": f"{type(exc).__name__}: {exc}"})
+                first_exc = first_exc or exc
+                continue
+            rows = df.to_dict("records") if hasattr(df, "to_dict") else list(df)
+            shown = rows[:max_results] if max_results > 0 else rows
+            return json.dumps({
+                "product": product,
+                "forest": f,
+                "district": d,
+                "count": len(rows),
+                "rows": shown,
+                "truncated": len(shown) < len(rows),
+            }, default=str)
+    return json.dumps({"error": f"{type(first_exc).__name__}: {first_exc}"})
 
 
 # Entry point
