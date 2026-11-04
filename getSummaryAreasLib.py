@@ -137,6 +137,26 @@ def _to_geometry(area):
     raise TypeError(f"Expected ee.FeatureCollection, ee.Feature, or ee.Geometry, got {type(area)}")
 
 
+_FOREST_SUFFIXES = (" National Forest", " National Forests")
+_DISTRICT_SUFFIXES = (" Ranger District",)
+
+
+def _usfs_name_filter(prop, names, suffixes):
+    """Filter on a Forest Service unit name, short or full.
+
+    ``"Lolo"`` finds ``"Lolo National Forest"`` and ``"Cave Creek"`` finds
+    ``"Cave Creek Ranger District"``: each name is tried as given and
+    with each of the unit's usual suffixes.
+    """
+    if isinstance(names, str):
+        names = [n.strip() for n in names.split(",") if n.strip()]
+    candidates = []
+    for n in names:
+        candidates.append(n)
+        candidates.extend(n + s for s in suffixes if not n.lower().endswith(s.lower()))
+    return ee.Filter.inList(prop, candidates)
+
+
 def _filter_bounds(asset_id, area=None):
     """Load a FeatureCollection and optionally filter by area bounds."""
     fc = ee.FeatureCollection(asset_id)
@@ -539,8 +559,9 @@ def getUSFSForests(area=None, region=None, forest_name=None):
         area (optional): Spatial filter.
         region (str or list, optional): USFS region number(s)
             (e.g. ``"01"`` or ``"01,04"``).
-        forest_name (str or list, optional): Forest name(s)
-            (e.g. ``"Lolo"`` or ``"Lolo,Bitterroot"``).
+        forest_name (str or list, optional): Forest name(s), short or
+            full (e.g. ``"Lolo"``, ``"Lolo National Forest"`` or
+            ``"Lolo,Bitterroot"``).
 
     Returns:
         ee.FeatureCollection.
@@ -556,12 +577,7 @@ def getUSFSForests(area=None, region=None, forest_name=None):
         else:
             fc = fc.filter(ee.Filter.inList("REGION", region))
     if forest_name is not None:
-        if isinstance(forest_name, str):
-            forest_name = [n.strip() for n in forest_name.split(",") if n.strip()]
-        if len(forest_name) == 1:
-            fc = fc.filter(ee.Filter.eq("FORESTNAME", forest_name[0]))
-        else:
-            fc = fc.filter(ee.Filter.inList("FORESTNAME", forest_name))
+        fc = fc.filter(_usfs_name_filter("FORESTNAME", forest_name, _FOREST_SUFFIXES))
     return fc
 
 
@@ -575,22 +591,18 @@ def getUSFSDistricts(area=None, forest_name=None, region=None, district_name=Non
 
     Args:
         area (optional): Spatial filter.
-        forest_name (str or list, optional): National Forest name(s).
+        forest_name (str or list, optional): National Forest name(s),
+            short or full (``"Tonto"`` or ``"Tonto National Forest"``).
         region (str or list, optional): USFS region number(s).
-        district_name (str or list, optional): District name(s)
-            (matches ``DISTRICTNA``).
+        district_name (str or list, optional): District name(s), short
+            or full (``"Cave Creek"`` or ``"Cave Creek Ranger District"``).
 
     Returns:
         ee.FeatureCollection.
     """
     fc = _filter_bounds(_USFS_DISTRICTS, area)
     if forest_name is not None:
-        if isinstance(forest_name, str):
-            forest_name = [n.strip() for n in forest_name.split(",") if n.strip()]
-        if len(forest_name) == 1:
-            fc = fc.filter(ee.Filter.eq("FORESTNAME", forest_name[0]))
-        else:
-            fc = fc.filter(ee.Filter.inList("FORESTNAME", forest_name))
+        fc = fc.filter(_usfs_name_filter("FORESTNAME", forest_name, _FOREST_SUFFIXES))
     if region is not None:
         if isinstance(region, str):
             region = [r.strip().zfill(2) for r in region.split(",") if r.strip()]
@@ -601,12 +613,7 @@ def getUSFSDistricts(area=None, forest_name=None, region=None, district_name=Non
         else:
             fc = fc.filter(ee.Filter.inList("REGION", region))
     if district_name is not None:
-        if isinstance(district_name, str):
-            district_name = [n.strip() for n in district_name.split(",") if n.strip()]
-        if len(district_name) == 1:
-            fc = fc.filter(ee.Filter.eq("DISTRICTNA", district_name[0]))
-        else:
-            fc = fc.filter(ee.Filter.inList("DISTRICTNA", district_name))
+        fc = fc.filter(_usfs_name_filter("DISTRICTNA", district_name, _DISTRICT_SUFFIXES))
     return fc
 
 
