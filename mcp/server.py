@@ -811,6 +811,9 @@ try:
     # tenant.tools.enable_street_view; absent = on for standalone use).
     from geeViz.googleMapsLib import street_view_instructions, street_view_enabled
     _SERVER_INSTRUCTIONS = street_view_instructions(_SERVER_INSTRUCTIONS, street_view_enabled())
+    # Skills: the one-line index (the load_skill tool serves the bodies).
+    from geeViz import skills as _skills_mod
+    _SERVER_INSTRUCTIONS = _SERVER_INSTRUCTIONS.replace("<!--SKILLS_INDEX-->", _skills_mod.index_markdown())
     print(f"[geeViz MCP] Loaded instructions: {len(_SERVER_INSTRUCTIONS)} chars, {len(_SERVER_INSTRUCTIONS.split())} words (gmaps AI: {'ENABLED' if _ai_on else 'DISABLED'})", file=sys.stderr, flush=True)
 except Exception:
     _SERVER_INSTRUCTIONS = None
@@ -1240,12 +1243,26 @@ from geeViz import llmUsage as _lu
 # validation and never rendered, are not reported: the panel listed one
 # from a map that never appeared, which the person had never seen.
 #
-# Only layers carrying a serialized expression can be rebuilt and
-# exported; tile and GeoJSON layers are listed with an empty ``item``
-# so the panel can say why they cannot be.
+# Layers carrying a serialized expression can be rebuilt and exported.
+# A GeoJSON layer (an ArcGIS Feature Service from addEsriFeatureService,
+# or a GeoJSON dict given to addLayer) carries its features instead, and
+# downloads as a file with no Earth Engine involved. Tile layers are
+# listed with an empty ``item`` so the panel can say why they cannot be.
 _MAP_LAYERS_FIELD = "_map_layers"
 _EXPORTABLE_LAYER_FUNCTIONS = frozenset({
     "addSerializedLayer", "addSerializedTimeLapse", "addSerializedSelectLayer"})
+
+
+def _is_geojson_layer(d) -> bool:
+    """A map layer drawn from GeoJSON held in the page."""
+    if d.get("function") != "addLayer" or not isinstance(d.get("item"), str):
+        return False
+    viz = d.get("viz", "{}")
+    try:
+        viz = json.loads(viz) if isinstance(viz, str) else (viz or {})
+    except ValueError:
+        return False
+    return isinstance(viz, dict) and viz.get("layerType") == "geoJSONVector"
 
 
 def _map_display_name(filename) -> str:
@@ -1283,7 +1300,8 @@ def _note_shown_map(sess, Map, map_name: str, map_file: str = "") -> None:
         entries.append({
             "name": d.get("name", ""),
             "function": fn,
-            "item": item if fn in _EXPORTABLE_LAYER_FUNCTIONS and isinstance(item, str) else "",
+            "item": item if isinstance(item, str) and (
+                fn in _EXPORTABLE_LAYER_FUNCTIONS or _is_geojson_layer(d)) else "",
             "viz": d.get("viz", "{}") if isinstance(d.get("viz", "{}"), str) else json.dumps(d.get("viz")),
             "map": map_name,
             "map_file": map_file,
@@ -2232,6 +2250,7 @@ def _ensure_initialized_locked(session_id: str | None = None):
     import geeViz.edwLib as edw
     import geeViz.geePalettes as palettes
     import geeViz.weather as wx
+    import geeViz.fireLib as _fl_mod
     from geeViz.outputLib import charts as cl
     from geeViz.outputLib import thumbs as tl
     from geeViz.outputLib import reports as rl
@@ -2379,6 +2398,9 @@ def _ensure_initialized_locked(session_id: str | None = None):
         # needs only ee and geeViz itself.
         "wx": wx,
         "weather": wx,
+        # Fire: official perimeters (NIFC) and the two-date burn change.
+        "fl": _fl_mod,
+        "fireLib": _fl_mod,
         "cl": cl,
         "tl": tl,
         "rl": rl,
@@ -5179,6 +5201,8 @@ def _resolve_module(name, session_ns=None):
         "palettes":         "geePalettes",
         "wx":               "weather",
         "weatherlib":       "weather",
+        "fl":               "fireLib",
+        "firelib":          "fireLib",
         "forecast":         "weather",
     }
     # Strip a leading ``geeViz.`` before looking anything up.
@@ -6415,6 +6439,30 @@ def save_session(filename: str = "", format: str = "py",
 # ---------------------------------------------------------------------------
 
 _NAMESPACE_BUILTINS = {"ee", "Map", "gv", "gil"}
+
+
+@app.tool(annotations=_READ_ONLY_OPEN)
+def load_skill(name: str) -> str:
+    """Load a skill: the tested workflow for one kind of request.
+
+    The instructions list every skill in one line (its name and when to
+    use it). Before working on a request a skill covers, load it and
+    follow it: it names the one or two calls that do the job, with their
+    signatures, so they need no lookup.
+
+    Args:
+        name: The skill's name, as listed (for example "fire").
+
+    Returns:
+        The skill's instructions (markdown), or an error naming the
+        skills there are.
+    """
+    from geeViz import skills as _skills
+
+    try:
+        return _skills.load_skill(name)
+    except KeyError as e:
+        return json.dumps({"error": str(e).strip("'\"")})
 
 
 @app.tool(annotations=_READ_ONLY_OPEN)

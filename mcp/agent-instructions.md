@@ -2,6 +2,12 @@
 
 **geeViz** is a Python package for Google Earth Engine visualization and analysis. Use MCP tools to look things up, then `run_code` to execute.
 
+## Skills: load the one that fits, then follow it
+
+A skill is the tested workflow for one kind of request: the one or two calls that do the job, with their signatures, and that subject's pitfalls. When a request matches a skill below, call `load_skill(name)` first and follow it. The functions a skill shows need no `search_codebase` lookup: rule 1 below is for everything else.
+
+<!--SKILLS_INDEX-->
+
 ---
 
 ## Core rules
@@ -81,6 +87,7 @@ When the user says a class of data without naming a specific dataset, use these 
 |---|---|---|
 | "NLCD", "land cover" (US, recent) | Annual NLCD: `projects/sat-io/open-datasets/USGS/ANNUAL_NLCD/LANDCOVER`, band `b1` | 40 years of annual coverage. `USGS/NLCD_RELEASES/YYYY_REL/NLCD` is a single-year release and should only be used when the user names a specific release year. Rename `b1` and set class properties. |
 | "LCMS", "land cover" (US, historical + change) | `projects/gtac-data-publish/assets/LCMS/Product_Version/2025-11` — bands `Land_Cover`, `Land_Use`, `Change` | 1985→2025: CONUS, Alaska, Hawaii and Puerto Rico/USVI. The `USFS/GTAC/LCMS/*` ids are all DEPRECATED in the catalog and stop at 2024; using one prints a deprecation warning and silently costs you the newest year. Study-area names differ between releases, so read them from the collection (`aggregate_histogram('study_area')`) before filtering on one. |
+| A named fire: perimeter, before/after change, dNBR, burn severity | `load_skill("fire")`: `fl.burn_change(name, year)` finds the official NIFC perimeter and the fire's dates and builds the comparison in one call | Searching EDW, ArcGIS Online or MTBS for a perimeter took 7-20 tool calls and sometimes found none. |
 | "MTBS", "wildfire severity" | `USFS/GTAC/MTBS/burned_area_boundaries/v1` + `USFS/GTAC/MTBS/annual_burn_severity_mosaics/v1` — always `.select([0], ['Severity'])` on the severity mosaics (band name changed 2023+) | MTBS band naming shifted; the explicit select avoids the mismatch. |
 | "Sentinel-2", "S2" | `gil.superSimpleGetS2(area, startDate, endDate, toaOrSR="SR")` (or `"TOA"`), then `.median()`. Never load `COPERNICUS/S2_SR_HARMONIZED` / `S2_HARMONIZED` yourself. Viz with `vizParamsFalse10k` / `vizParamsTrue10k`. | It reads the harmonized collections (2022 baseline shift handled), masks clouds and shadows with Cloud Score+, and renames bands. A hand-rolled QA60/SCL mask is weaker than Cloud Score+ and is one more thing to get wrong. |
 | "fall foliage", "fall color", "leaf color", "how golden / how red are the ..." | `gil.getFoliageChange(area, ...)`: a foliage-window composite MINUS a leaf-on composite. See "Fall foliage" below. | AskTerra 1.0's terraFoliage method. Color only means something as a change from the leaf-on baseline. |
@@ -835,7 +842,7 @@ Vector features do NOT come from `search_datasets` (which finds raster/EE-catalo
   ```python
   from georest.esri.portal import searchPortal, getServiceMetadata
   # Discover services by keyword across a portal (ArcGIS Online, HIFLD, etc.):
-  hits = searchPortal("wildfire perimeters", portal="agol")
+  hits = searchPortal("critical facilities", portal="agol")
   # Inspect an unknown URL before loading (fields, layers, maxRecordCount):
   meta = getServiceMetadata(url)
   # Draw it — a URL or a searchPortal hit:
@@ -849,7 +856,7 @@ Vector features do NOT come from `search_datasets` (which finds raster/EE-catalo
 
   **Common URL-prefix mistake.** ESRI REST services live under `/arcgis/rest/services/…` on almost every deployment. If the URL you were given uses `/gis/…/rest/services/…` (or any custom prefix), verify it responds with `?f=json` before adding — a 404 preflight now prints a warning and falls through to the tile path, which will silently produce a broken map. Example: FEMA NFHL is at `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer` (not `/gis/nfhl/…`, a common wrong guess).
 
-- **EDW (USFS Enterprise Data Warehouse):** for USFS-authoritative layers — fire perimeters, timber sales, trails, roads, wilderness areas, critical habitat, districts, forests, etc. Prefer EDW over generic ArcGIS layers when the user's question is USFS-specific:
+- **EDW (USFS Enterprise Data Warehouse):** for USFS-authoritative layers — timber sales, trails, roads, wilderness areas, critical habitat, districts, forests, etc. Prefer EDW over generic ArcGIS layers when the user's question is USFS-specific. (A named fire's perimeter is not an EDW search: use the `fire` skill.)
   ```python
   from geeViz.edwLib import search_services, query_features
   hits = search_services("forest boundaries")          # list of dicts: name, theme, ...

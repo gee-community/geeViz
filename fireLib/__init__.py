@@ -45,6 +45,13 @@ What this package will not do, stated so it can be designed around:
 * **No replacement for a project-level FSim run.**
 """
 
+from .burn import (
+    SEVERITY_CLASSES,
+    burn_change,
+    burn_windows,
+    fire_perimeter,
+    severity_classes,
+)
 from .wind import (
     UV_BANDS,
     WIND_10M_TO_20FT,

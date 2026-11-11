@@ -75,5 +75,6 @@ def test_an_explicit_type_is_kept(sent):
 def test_an_empty_error_message_still_says_something(monkeypatch):
     monkeypatch.setattr(georest_edw, "post_json", lambda url, params: {
         "error": {"code": 400, "message": "", "details": ["Invalid geometry."]}})
-    with pytest.raises(RuntimeError, match=r"Invalid geometry\. \(code 400\)"):
+    # georest's shared format_esri_error: "<code> (<details>)".
+    with pytest.raises(RuntimeError, match=r"400 \(Invalid geometry\.\)$"):
         edw.query_features("X", 0, geometry=UTAH_BOX)

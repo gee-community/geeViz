@@ -140,3 +140,27 @@ def test_a_call_that_shows_no_map_attaches_nothing(srv, session, monkeypatch):
 
 def test_the_field_name_matches_what_the_agent_drains(srv):
     assert srv._MAP_LAYERS_FIELD == "_map_layers"
+
+
+def test_a_geojson_layer_carries_its_features(srv, monkeypatch):
+    """A GeoJSON layer (addEsriFeatureService, or GeoJSON given to
+    addLayer) has no Earth Engine expression, but its features are in
+    hand, so they ride along and the panel can offer them as a file.
+    Another ``addLayer`` entry (not GeoJSON) still reports nothing."""
+    sid = "export-test-geojson"
+    gj = json.dumps({"type": "FeatureCollection", "features": [
+        {"type": "Feature", "properties": {"NAME": "Salt Lake"},
+         "geometry": {"type": "Point", "coordinates": [-111.9, 40.7]}}]})
+    Map = SimpleNamespace(idDictList=[
+        {"name": "Utah Counties", "function": "addLayer", "item": gj,
+         "viz": json.dumps({"strokeColor": "2b5c8f", "layerType": "geoJSONVector"})},
+        {"name": "Other", "function": "addLayer", "item": '{"not": "geojson"}', "viz": "{}"},
+        {"name": "Bad viz", "function": "addLayer", "item": gj, "viz": "not json"},
+    ])
+    sess = SimpleNamespace(namespace={"Map": Map}, session_id=sid)
+    monkeypatch.setitem(srv._sessions, sid, sess)
+    srv._note_shown_map(sess, Map, "utah counties")
+    snap = {e["name"]: e for e in srv._map_layer_snapshot(sid)}
+    assert snap["Utah Counties"]["item"] == gj
+    assert snap["Other"]["item"] == ""
+    assert snap["Bad viz"]["item"] == ""

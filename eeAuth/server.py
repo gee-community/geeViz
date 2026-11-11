@@ -48,6 +48,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+import json
 import logging
 import os
 from typing import Callable, Optional
@@ -246,6 +247,45 @@ def _is_operation_call(path: str) -> bool:
     """A call on a long-running operation (``.../operations/<id>`` or
     ``...:cancel``), which takes no workload tag."""
     return "/operations/" in "/" + (path or "").lstrip("/")
+
+
+def _body_workload_tag(body: bytes) -> str:
+    """The ``workloadTag`` a JSON request body carries, or ``""``."""
+    if not body or b'"workloadTag"' not in body:
+        return ""
+    try:
+        obj = json.loads(body)
+    except (ValueError, UnicodeDecodeError):
+        return ""
+    tag = obj.get("workloadTag") if isinstance(obj, dict) else None
+    return tag.strip() if isinstance(tag, str) else ""
+
+
+def _with_body_workload_tag(request: Request, body: bytes) -> Request:
+    """The request as tag builders should see it: with a tag the client
+    put in the body moved into its query.
+
+    The Earth Engine SDK sends the workload tag in the query for some
+    calls (``getMapId``, so every tile URL) and in the JSON body for the
+    rest: ``value:compute`` (getInfo), ``image:computePixels``, and every
+    export. Builders only read the query, so a body-carried tag never
+    counted as the client's: the proxy minted its own in its place, and
+    an export's usage reached Cloud Monitoring under a tag nobody had
+    registered. With the tag visible here, a builder treats it exactly as
+    it treats a tile URL's, with the same rules about when it wins.
+
+    The query's own tag, when there is one, is left as it is."""
+    if request.query_params.get("workloadTag"):
+        return request
+    tag = _body_workload_tag(body)
+    if not tag:
+        return request
+    scope = dict(request.scope)
+    qs = request.url.query or ""
+    scope["query_string"] = (
+        (qs + "&" if qs else "") + urlencode([("workloadTag", tag)])
+    ).encode("latin-1")
+    return Request(scope)
 
 
 def _rewrite_query_with_workload_tag(
@@ -739,6 +779,18 @@ ee.initialize(authProxyAPIURL, null, onReady, onError);</pre>
             or os.environ.get("GEE_PROJECT", "")
         )
 
+        # Read before the tag is chosen: the client's own tag can be in
+        # the body (see _with_body_workload_tag).
+        try:
+            body = await request.body()
+        except ClientDisconnect:
+            # Browser aborted the request before we finished reading it —
+            # typical map-viewer pattern where pan/zoom cancels in-flight
+            # tile fetches. Client is gone; no one to respond to. Return
+            # a 499 (Nginx's "Client Closed Request") so anything logging
+            # by status still sees this as a disconnect, not a 5xx.
+            return Response(status_code=499)
+
         # 2. Rewrite the query string: strip client-set workloadTag and
         #    the internal tenant param; add our own workload tag on POSTs.
         #    GET requests can't carry unknown query params on most EE
@@ -752,7 +804,7 @@ ee.initialize(authProxyAPIURL, null, onReady, onError);</pre>
                 request.url.query or "",
                 actual_tenant,
                 tag_builder,
-                request,
+                _with_body_workload_tag(request, body),
                 tenant_query_param,
             )
         else:
@@ -785,16 +837,6 @@ ee.initialize(authProxyAPIURL, null, onReady, onError);</pre>
         is_discovery = "$discovery/rest" in path
         if quota_project and not is_discovery:
             fwd_headers["x-goog-user-project"] = quota_project
-
-        try:
-            body = await request.body()
-        except ClientDisconnect:
-            # Browser aborted the request before we finished reading it —
-            # typical map-viewer pattern where pan/zoom cancels in-flight
-            # tile fetches. Client is gone; no one to respond to. Return
-            # a 499 (Nginx's "Client Closed Request") so anything logging
-            # by status still sees this as a disconnect, not a 5xx.
-            return Response(status_code=499)
 
         # 4. Forward + retry once on 401 (token rotation). Uses the
         # shared ``upstream_client`` (keep-alive connection pool) — see

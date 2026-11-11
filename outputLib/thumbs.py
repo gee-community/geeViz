@@ -1898,37 +1898,121 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
     if not pil_frames:
         return {"html": "<p>Failed to generate GIF frames.</p>", "bytes": b"", "format": "gif"}
 
+    bounds = _get_bounds_4326(geom)
+    # Resolve geometry colors for inset extent rectangle
+    _gif_gc = gc if burn_in_geometry else (
+        _resolve_geometry_color(geometry_outline_color, font_color, basemap, bounds)
+        if geometry_outline_color else None)
+    final_frames = compose_frames(
+        pil_frames, bounds, date_labels=date_labels, legend_info=legend_info,
+        crs=crs, basemap_crs=_effective_crs,
+        burn_in_date=burn_in_date, date_position=date_position,
+        date_font_size=date_font_size, label_font_size=label_font_size,
+        legend_scale=legend_scale, bg_color=bg_color, font_color=font_color,
+        font_outline_color=font_outline_color, margin=margin,
+        basemap=basemap, overlay_opacity=overlay_opacity,
+        scalebar=scalebar, scalebar_units=scalebar_units,
+        north_arrow=north_arrow, north_arrow_style=north_arrow_style,
+        inset_map=inset_map, inset_basemap=inset_basemap,
+        inset_scale=inset_scale, inset_on_map=inset_on_map, title=title,
+        inset_rect_color=_gif_gc, geometry_fill_color=geometry_fill_color,
+    )
+    _, _, _, bg_color = _resolve_font_colors(bg_color, font_color, font_outline_color)
+    gif_bytes = _frames_to_gif(final_frames, fps, bg_color=bg_color)
+
+    if output_path:
+        _write_bytes(output_path, gif_bytes)
+
+    b64 = base64.b64encode(gif_bytes).decode("ascii")
+    html = (
+        f'<figure class="gif-container">'
+        f'<img src="data:image/gif;base64,{b64}">'
+        f'</figure>'
+    )
+    return {"html": html, "bytes": gif_bytes, "format": "gif"}
+
+
+def compose_frames(frames, bounds_4326, date_labels=None, legend_info=None,
+                   crs=_DEFAULT_CRS, basemap_crs=None,
+                   burn_in_date=True, date_position="upper-left",
+                   date_font_size=None, label_font_size=_DEFAULT_LABEL_FONT_SIZE,
+                   legend_scale=1.0, bg_color=None, font_color=None,
+                   font_outline_color=None, margin=_DEFAULT_MARGIN,
+                   basemap=None, overlay_opacity=None, scalebar=True,
+                   scalebar_units="metric", north_arrow=True,
+                   north_arrow_style="solid", inset_map=True,
+                   inset_basemap=None, inset_scale=0.3, inset_on_map=False,
+                   title=None, inset_rect_color=None, geometry_fill_color=None):
+    """Finish rendered map frames into publication frames, the way
+    :func:`generate_gif` does: basemap underlay (or blank padding), date
+    label, legend panel, scalebar, north arrow, inset map, title strip
+    and margins.
+
+    This is the second half of :func:`generate_gif`, for frames that were
+    rendered some other way (an Earth Engine batch export, say). Every
+    frame must cover ``bounds_4326`` and have the same size. Pass one
+    frame and ``burn_in_date=False`` for a single picture.
+
+    Args:
+        frames (list of PIL.Image.Image): RGBA frames, transparent where
+            there is no data.
+        bounds_4326 (tuple or None): ``(xmin, ymin, xmax, ymax)`` the
+            frames cover, in EPSG:4326. ``None`` skips the basemap,
+            scalebar, north arrow and inset.
+        date_labels (list of str, optional): One label per frame, burned
+            in when ``burn_in_date``.
+        legend_info (dict, optional): As from ``_extract_legend_info``:
+            ``{"type": "thematic", "class_names", "class_palette"}`` or
+            ``{"type": "continuous", "min", "max", "palette",
+            "band_name"}``. ``None`` draws no legend.
+        crs (str, optional): The frames' CRS, for the scalebar and north
+            arrow. Defaults to ``"EPSG:3857"``.
+        basemap_crs (str, optional): CRS to fetch the basemap in.
+            Defaults to ``crs``.
+
+        The remaining arguments are those of :func:`generate_gif`.
+
+    Returns:
+        list of PIL.Image.Image: The finished RGBA frames.
+    """
+    if not frames:
+        return []
+    font_color, font_outline_color, _theme, bg_color = _resolve_font_colors(
+        bg_color, font_color, font_outline_color)
+    if basemap_crs is None:
+        basemap_crs = crs
+    bounds = tuple(bounds_4326) if bounds_4326 is not None else None
+    date_labels = list(date_labels or [])
+
     # Resolve overlay opacity: default 0.8 when basemap is set
     if overlay_opacity is None:
         overlay_opacity = 0.8 if basemap is not None else 1.0
 
     # Fetch basemap once for all frames (same geometry). Use the SAME
-    # effective CRS the render was requested in — otherwise the basemap
+    # effective CRS the render was requested in: otherwise the basemap
     # arrives on a different grid and visibly slides out from under the
-    # data (which is the exact bug that used to appear when crs=None
-    # let getThumbURL pick Albers while _fetch_basemap defaulted to 4326).
+    # data.
     basemap_img = None
-    bounds = _get_bounds_4326(geom)
-    if basemap is not None:
-        if bounds is not None and pil_frames:
-            fw, fh = pil_frames[0].size
-            basemap_img = _fetch_basemap(bounds, fw, fh, basemap, crs=_effective_crs)
+    if basemap is not None and bounds is not None:
+        fw, fh = frames[0].size
+        basemap_img = _fetch_basemap(bounds, fw, fh, basemap, crs=basemap_crs)
 
-    # Auto-scale font size for date — larger than scalebar tick labels
+    # Auto-scale font size for date: larger than scalebar tick labels
     if date_font_size is None:
         date_font_size = max(label_font_size, int(label_font_size * 1.4))
     font = _get_font(date_font_size)
 
     # Build legend panel once (same for all frames)
     legend_panel = _build_legend_panel_from_info(
-        legend_info, target_height=pil_frames[0].size[1],
+        legend_info, target_height=frames[0].size[1],
         bg_color=bg_color, scale=legend_scale, font_color=font_color,
     )
 
-    # Composite basemap (adds padding border) or add blank padding
+    # Composite basemap or add blank padding
     _has_inset_source = (basemap is not None or inset_basemap is not None)
     final_frames = []
-    for i, frame in enumerate(pil_frames):
+    for i, frame in enumerate(frames):
+        frame = frame.convert("RGBA")
         if basemap_img is not None:
             frame = _composite_with_basemap(frame, basemap_img, overlay_opacity)
         else:
@@ -1936,10 +2020,6 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
         if burn_in_date and i < len(date_labels) and date_labels[i]:
             _burn_in_text(frame, date_labels[i], date_position,
                           font_color, font_outline_color, font)
-        # Resolve geometry colors for inset extent rectangle
-        _gif_gc = gc if burn_in_geometry else (
-            _resolve_geometry_color(geometry_outline_color, font_color, basemap, bounds)
-            if geometry_outline_color else None)
         # Assemble with legend, inset, scalebar, north arrow, title
         frame, has_bottom = _assemble_with_cartography(
             frame, bounds,
@@ -1953,7 +2033,7 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
             inset_map=inset_map if (_has_inset_source and bounds is not None) else False,
             inset_basemap=inset_basemap if inset_basemap else basemap,
             inset_scale=inset_scale, inset_on_map=inset_on_map,
-            inset_rect_color=_gif_gc if _gif_gc is not None else None,
+            inset_rect_color=inset_rect_color,
             inset_rect_fill_color=_hex_fill_to_rgba(geometry_fill_color) if geometry_fill_color else None,
             legend_panel=legend_panel, margin=margin, crs=crs,
         )
@@ -1961,19 +2041,51 @@ def generate_gif(ee_obj, geometry, viz_params=None, band_name=None,
         mb = margin // 3 if has_bottom else margin
         frame = _add_margin(frame, (mt, margin, mb, margin), bg_color=bg_color)
         final_frames.append(frame)
+    return final_frames
 
-    gif_bytes = _frames_to_gif(final_frames, fps, bg_color=bg_color)
 
-    if output_path:
-        _write_bytes(output_path, gif_bytes)
+def frames_to_gif(frames, fps=_DEFAULT_FPS, bg_color=None):
+    """Animated GIF bytes from finished frames (see :func:`compose_frames`),
+    with one 256-color palette for every frame, as :func:`generate_gif`
+    writes them. ``bg_color`` fills transparent areas (theme default when
+    ``None``)."""
+    _, _, _, bg_color = _resolve_font_colors(bg_color, None, None)
+    return _frames_to_gif(frames, fps, bg_color=bg_color)
 
-    b64 = base64.b64encode(gif_bytes).decode("ascii")
-    html = (
-        f'<figure class="gif-container">'
-        f'<img src="data:image/gif;base64,{b64}">'
-        f'</figure>'
-    )
-    return {"html": html, "bytes": gif_bytes, "format": "gif"}
+
+def picture_to_png(frame, bg_color=None):
+    """PNG bytes of one finished frame, as :func:`generate_thumbs` writes
+    it (transparent areas filled with ``bg_color``)."""
+    _, _, _, bg_color = _resolve_font_colors(bg_color, None, None)
+    return _pil_to_png_bytes(frame, bg_color)
+
+
+def continuous_legend_info(viz_params, band_name=None):
+    """Legend info for a single band drawn with a palette, as
+    ``_extract_legend_info`` builds it; ``None`` when the viz has no
+    palette, min and max, or draws several bands."""
+    if not viz_params:
+        return None
+    palette = viz_params.get("palette")
+    bands = viz_params.get("bands", [])
+    vmin = viz_params.get("min")
+    vmax = viz_params.get("max")
+    if not (palette and vmin is not None and vmax is not None) or len(bands) > 1:
+        return None
+    bn = bands[0] if bands else (band_name or "value")
+    if isinstance(vmin, (list, tuple)):
+        vmin = vmin[0]
+    if isinstance(vmax, (list, tuple)):
+        vmax = vmax[0]
+    if isinstance(palette, str):
+        pal_list = [c.strip() for c in palette.split(",")]
+    elif isinstance(palette, (list, tuple)):
+        pal_list = list(palette)
+    else:
+        pal_list = [str(palette)]
+    return {"type": "continuous", "min": vmin, "max": vmax,
+            "palette": pal_list, "band_name": bn}
+
 
 
 # ---------------------------------------------------------------------------
@@ -2599,37 +2711,8 @@ def _extract_legend_info(ee_obj, band_name=None, viz_params=None, max_class_labe
         except Exception:
             pass
 
-    # --- Continuous path — single band + palette in viz_params ---
-    if viz_params is not None:
-        palette = viz_params.get("palette")
-        bands = viz_params.get("bands", [])
-        vmin = viz_params.get("min")
-        vmax = viz_params.get("max")
-        if palette and vmin is not None and vmax is not None:
-            # Only generate for single-band (palette doesn't apply to RGB)
-            if len(bands) <= 1:
-                bn = bands[0] if bands else (band_name or "value")
-                # Normalise min/max to scalar
-                if isinstance(vmin, (list, tuple)):
-                    vmin = vmin[0]
-                if isinstance(vmax, (list, tuple)):
-                    vmax = vmax[0]
-                # Normalise palette to a list of color strings
-                if isinstance(palette, str):
-                    pal_list = [c.strip() for c in palette.split(",")]
-                elif isinstance(palette, (list, tuple)):
-                    pal_list = list(palette)
-                else:
-                    pal_list = [str(palette)]
-                return {
-                    "type": "continuous",
-                    "min": vmin,
-                    "max": vmax,
-                    "palette": pal_list,
-                    "band_name": bn,
-                }
-
-    return None
+    # --- Continuous path: single band + palette in viz_params ---
+    return continuous_legend_info(viz_params, band_name=band_name)
 
 
 def _hex_to_rgb(hex_color):
