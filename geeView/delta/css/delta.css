@@ -152,16 +152,20 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
 
 /* layer rows (port of the mockup's layer row, v8 to v13) */
 .layer { padding: 7px 12px 8px; border-bottom: 1px solid var(--dz-line); container-type: inline-size; }
+/* row geometry shared by the opacity slider and a timelapse's Year and Speed sliders, so the three line up;
+   unregistered properties, so 100cqw resolves where they are used (inside the row, against the row) */
+.layer { --lrow-gap: 9px; --leg-w: 34px; --op-indent: 22px; --tl-pad: 8px;
+  --op-w-inline: clamp(64px, calc(100cqw - 250px), 180px); --op-w-stack: clamp(110px, calc(100cqw - 120px), 240px); }
 .layer.off .lname { color: var(--dz-mute); }
 .layer.err .lname { color: var(--dz-orange); }
-.lrow { display: flex; align-items: center; gap: 9px; }
+.lrow { display: flex; align-items: center; gap: var(--lrow-gap); }
 .tgl { width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid var(--dz-mute); background: transparent; padding: 0; flex: none; cursor: pointer; }
 .layer:not(.off) .tgl { background: var(--dz-teal); border-color: var(--dz-teal); box-shadow: inset 0 0 0 2px var(--dz-solid); }
 .tgl:focus-visible, .legbtn:focus-visible { outline: 2px solid var(--dz-teal); outline-offset: 1px; }
 .lname { flex: 1; font-weight: 600; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; user-select: none; }
 .spin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--dz-line); border-top-color: var(--dz-teal); animation: dz-sp 0.9s linear infinite; flex: none; }
 @keyframes dz-sp { to { transform: rotate(360deg); } }
-.legbtn { border: 0; background: transparent; color: var(--dz-mute); font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 1px; padding: 3px 2px 3px 4px; border-radius: 6px; flex: none; cursor: pointer; }
+.legbtn { border: 0; background: transparent; color: var(--dz-mute); font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 1px; padding: 3px 2px 3px 4px; border-radius: 6px; flex: none; width: var(--leg-w); cursor: pointer; }
 .legbtn.none { visibility: hidden; pointer-events: none; }
 .legbtn:hover { background: var(--dz-raise); color: var(--dz-ink); }
 .legbtn .ti { font-size: 11px; transition: transform 0.2s; }
@@ -171,13 +175,13 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
 .lsw i { flex: 1; }
 /* opacity: inline it starts at 64px, grows 1:1 with the row, stops at 180px; 250px is what toggle, name and legend toggle need */
 .opacity { display: flex; align-items: center; }
-.lrow .opacity { margin: 0; flex: 0 0 auto; width: clamp(64px, calc(100cqw - 250px), 180px); min-width: 0; }
+.lrow .opacity { margin: 0; flex: 0 0 auto; width: var(--op-w-inline); min-width: 0; }
 .lrow .opacity input { flex: 1 1 auto; width: 100%; min-width: 0; }
 /* JS sets .stack when the name would be cut off: the slider drops under the name */
 .layer.stack .lrow { flex-wrap: wrap; row-gap: 4px; }
 .layer.stack .lrow .lname { flex: 1 1 0; }
-.layer.stack .lrow .opacity { order: 10; flex: 0 0 100%; width: auto; padding-left: 22px; }
-.layer.stack .lrow .opacity input { flex: 0 0 auto; width: clamp(110px, calc(100cqw - 120px), 240px); }
+.layer.stack .lrow .opacity { order: 10; flex: 0 0 100%; width: auto; padding-left: var(--op-indent); }
+.layer.stack .lrow .opacity input { flex: 0 0 auto; width: var(--op-w-stack); }
 input[type="range"].dz { flex: 1; height: 16px; margin: 0; -webkit-appearance: none; appearance: none; background: transparent; }
 input[type="range"].dz::-webkit-slider-thumb { -webkit-appearance: none; border-radius: 50%; }
 /* the track's filled part and the handle's center take the layer's opacity (--a) */
@@ -198,20 +202,43 @@ input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border:
 .legend .lbl { overflow-wrap: anywhere; }
 .ramp { grid-column: 1 / -1; height: 10px; border-radius: 3px; }
 .ramp-l { grid-column: 1 / -1; display: flex; justify-content: space-between; font-size: 11px; }
-/* timelapse block inside the row (port of the mockup's .tl); an off timelapse folds it */
-.tl { margin: 8px 0 0 22px; padding: 8px; border-radius: 9px; background: var(--dz-orange-soft); }
+/* timelapse block inside the row (port of the mockup's .tl); an off timelapse folds it.
+   Its content starts where the name does. Inline, it ends where the opacity slider ends (the legend toggle's
+   column is left free), the sliders take the opacity slider's width at its right edge and the buttons sit to
+   their left, or above them when both do not fit. Stacked, buttons go on one line and the sliders under them
+   at the stacked opacity slider's width and left edge, labels to their right. Wrapping, never clipping. */
+.tl { margin: 8px calc(var(--leg-w) + var(--lrow-gap) - var(--tl-pad)) 0 calc(var(--op-indent) - var(--tl-pad)); padding: var(--tl-pad); border-radius: 9px; background: var(--dz-orange-soft); }
+.layer.stack .tl { margin-right: 0; }
 .layer.off .tl { display: none !important; }
-.tl-top { display: flex; align-items: center; gap: 6px; }
-.tl-year { font-family: var(--dz-font-mono); font-weight: 600; font-size: 20px; color: var(--dz-orange); margin-right: auto; line-height: 1; white-space: nowrap; }
+.tl-body { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.tl-top { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; flex: 0 1 auto; min-width: 0; }
+.tl-transport { display: flex; align-items: center; gap: 2px; flex: none; }
+.tl-year { font-family: var(--dz-font-mono); font-weight: 600; font-size: 20px; color: var(--dz-orange); line-height: 1; white-space: nowrap; }
 .tl.loading .tl-year { font-size: 13px; color: var(--dz-mute); }
 .tlb { width: 26px; height: 26px; border-radius: 7px; border: 0; display: grid; place-items: center; background: transparent; color: var(--dz-ink); font-size: 15px; cursor: pointer; padding: 0; flex: none; }
 .tlb:hover { background: var(--dz-raise); }
 .tlb.on { background: var(--dz-orange); color: var(--dz-on-accent); }
 .tlb:disabled { opacity: 0.4; cursor: default; background: transparent; }
-.tlb:focus-visible { outline: 2px solid var(--dz-orange); outline-offset: 1px; }
-.tl-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 11px; color: var(--dz-mute); }
-.tl-row label { width: 38px; margin: 0; }
-.tl-row .val { width: 52px; white-space: nowrap; text-align: right; }
+.tlb:focus-visible, .tl-cum:focus-visible { outline: 2px solid var(--dz-orange); outline-offset: 1px; }
+/* Cumulative: a labeled chip, outlined when off, the play button's accent fill when on */
+.tl-cum { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 26px; padding: 0 9px 0 7px; border-radius: 7px; flex: none; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--dz-orange) 45%, var(--dz-line)); background: transparent; color: var(--dz-ink); font: 600 11.5px var(--dz-font-body); white-space: nowrap; }
+.tl-cum .ti { font-size: 14px; }
+.tl-cum:hover { background: var(--dz-raise); }
+.tl-cum.on { background: var(--dz-orange); border-color: var(--dz-orange); color: var(--dz-on-accent); }
+.tl-cum:disabled { opacity: 0.4; cursor: default; background: transparent; }
+.tl-sl { display: flex; flex-direction: column; gap: 6px; flex: none; margin-left: auto; }
+.tl-row { display: flex; align-items: center; justify-content: flex-end; gap: 6px; font-size: 11px; color: var(--dz-mute); }
+.tl-row input[type="range"].dz { flex: 0 0 auto; width: var(--op-w-inline); }
+.tl-lbl { white-space: nowrap; }
+.layer.stack .tl-sl { flex-basis: 100%; margin-left: 0; }
+.layer.stack .tl-row { flex-direction: row-reverse; }
+.layer.stack .tl-row input[type="range"].dz { width: var(--op-w-stack); }
+/* very narrow rows: the chip keeps its icon, tooltip and name (aria-label) and drops the word */
+@container (max-width: 259px) {
+  .tl-cum { width: 26px; padding: 0; }
+  .tl-cum span { display: none; }
+}
 .tl-frames { display: none; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .tl.frames-open .tl-frames { display: flex; }
 .tlf { border: 1px solid var(--dz-line); background: transparent; color: var(--dz-mute); border-radius: 6px; font-size: 11px; padding: 1px 6px; cursor: pointer; }

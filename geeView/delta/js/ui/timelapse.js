@@ -1,6 +1,6 @@
 // Timelapse controls: the block inside a timelapse row (large year readout,
-// back, pause, stop, play, forward, refresh, frames, cumulative, year and
-// speed sliders), the year badge on the map while a timelapse plays, and the
+// back, pause, stop, play, forward, refresh, frames, the Cumulative chip, and
+// the year and speed sliders, which line up with the row's opacity slider), the year badge on the map while a timelapse plays, and the
 // phone's floating player.
 //
 // Ported from the approved mockup (docs/superpowers/specs/2026-11-18-delta-
@@ -51,7 +51,6 @@ export function timelapseBlock(id, getCtl) {
     pause: q("pause"),
     cumulative: q("cumulative"),
     yearIn: q("year"),
-    yearV: q("yearv"),
     speedIn: q("speed"),
     speedV: q("speedv"),
     frames: el.querySelector(".tl-frames"),
@@ -121,7 +120,6 @@ export function timelapseBlock(id, getCtl) {
     const frame = tl.frame || 0;
     if (Number(parts.yearIn.value) !== frame) parts.yearIn.value = String(frame);
     paint(parts.yearIn);
-    parts.yearV.textContent = years.length ? String(years[frame]) : "";
     const fps = tl.fps || DEFAULT_FPS;
     if (Number(parts.speedIn.value) !== fps) parts.speedIn.value = String(fps);
     paint(parts.speedIn);

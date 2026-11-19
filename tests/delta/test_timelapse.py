@@ -131,12 +131,17 @@ def test_cumulative(page):
     sel = row_sel(page, "LCMS TL")
     page.locator(sel + " input[data-tl=year]").fill("3")
     assert shown_years(page, "LCMS TL") == ["2018"]
+    chip = page.locator(sel + " [data-tl=cumulative]")
+    assert chip.inner_text().strip() == "Cumulative"
+    assert chip.get_attribute("aria-pressed") == "false"
     page.click(sel + " [data-tl=cumulative]")
     assert layer(page, "LCMS TL")["timelapse"]["cumulative"] is True
     assert "on" in page.get_attribute(sel + " [data-tl=cumulative]", "class")
+    assert chip.get_attribute("aria-pressed") == "true"
     assert shown_years(page, "LCMS TL") == ["2015", "2016", "2017", "2018"]
     page.click(sel + " [data-tl=cumulative]")
     assert shown_years(page, "LCMS TL") == ["2018"]
+    assert chip.get_attribute("aria-pressed") == "false"
 
 
 def test_off_folds_and_pauses(page):
