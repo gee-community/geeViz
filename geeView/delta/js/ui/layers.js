@@ -129,7 +129,7 @@ export function mountLayers(store, mountEl, opts = {}) {
       legendEl: el.querySelector(".legend"),
     };
     const id = layer.id;
-    if (layer.kind === "select") parts.name.title = "Select layer: with Query on, click a feature to select it";
+    if (layer.kind === "select") parts.name.title = "Select layer: with Chart area and Select on, click a feature to select it";
     const toggle = () => {
       const l = store.get().layers.find((x) => x.id === id);
       if (l) patchLayer(store, id, { visible: !l.visible }, "layer-toggle");

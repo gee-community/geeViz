@@ -240,3 +240,52 @@ test("queryPoint: results for a superseded token are dropped", async () => {
   assert.deepEqual((await second).map((r) => r.layerId), ["b"]);
   assert.deepEqual(seen, [["second", "b"]]);
 });
+
+// ---- review fixes ----
+import { queryableLayers, buildSelection } from "../js/engine/query.js";
+import { createMapApi } from "../js/api.js";
+import { createStore } from "../js/state.js";
+
+test("select layers are not queryable (port of addSelectLayerToMap canQuery = false)", () => {
+  const store = createStore();
+  const api = createMapApi(store, {});
+  api.addSelectLayer({}, {}, "S", true);
+  api.addSerializedSelectLayer({}, {}, "S2", true);
+  api.addLayer({}, {}, "I", true);
+  assert.deepEqual(store.get().layers.map((l) => l.queryable), [false, false, true]);
+});
+
+test("queryableLayers drops select layers even when marked queryable", () => {
+  const ls = [
+    { id: "s", kind: "select", visible: true, queryable: true },
+    { id: "i", kind: "ee", visible: true, queryable: true },
+  ];
+  assert.deepEqual(queryableLayers(ls).map((l) => l.id), ["i"]);
+});
+
+test("seriesResult: the tick format follows the resolved date format", () => {
+  const out = { ids: ["a"], labels: ["2020-01-01 10:00"], bands: ["b"], values: { a_b: 1 }, hasTime: true };
+  assert.equal(seriesResult({ id: "l", name: "L" }, {}, out, PT, null, "YYYY-MM-dd HH:mm").data.xTickDateFormat, "%Y-%m-%d\n%H:%M");
+  assert.equal(seriesResult({ id: "l", name: "L" }, {}, out, PT, null, "YYYY").data.xTickDateFormat, null);
+  assert.equal(seriesResult({ id: "l", name: "L" }, { queryDateFormat: "HH:mm" }, out, PT, null).data.xTickDateFormat, "%Y-%m-%d\n%H:%M");
+});
+
+test("buildSelection: one selection per click, names joined, fire years, original's layer name", () => {
+  const feats = [
+    { id: "2", properties: { nm: "Elk & Deer", yr: 2001, dz_area_m2: 10 } },
+    { id: "1", properties: { nm: "Bear", yr: 2003, dz_area_m2: 5 } },
+    { id: "3", properties: { yr: 2004 } },
+  ];
+  const viz = { selectLayerNameProperty: "nm", selectLayerIgnitionYearProperty: "yr" };
+  const s = buildSelection({ id: "L", name: "Units" }, viz, feats);
+  assert.deepEqual(s.ids, ["2", "1", "3"]);
+  assert.deepEqual(s.names, ["Elk & Deer", "Bear"]);
+  assert.deepEqual(s.years, [2001, 2003, 2004]);
+  assert.equal(s.name, "Elk & Deer-Bear");
+  assert.equal(s.label, "Selected Units Elk - Deer-Bear");
+  assert.equal(s.areaM2, 15);
+  assert.equal(s.key, buildSelection({ id: "L", name: "Units" }, viz, feats.slice().reverse()).key);
+  assert.equal(buildSelection({ id: "L", name: "Units" }, {}, [{ id: "9", properties: { a: 1 } }]).name, "9");
+  assert.equal(buildSelection({ id: "L", name: "Units" }, { selectLayerNameProperty: "nm" }, [{ id: "9", properties: {} }]), null);
+  assert.equal(buildSelection({ id: "L", name: "Units" }, {}, [{ id: "9", properties: {} }]).years, null);
+});

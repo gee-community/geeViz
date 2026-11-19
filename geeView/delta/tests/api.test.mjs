@@ -128,7 +128,7 @@ test("removeLayer, query setters and engine hooks", () => {
   api.setQueryScale(10);
   assert.equal(store.get().query.transform, null);
   api.turnOnUserDefinedAreaCharting();
-  assert.equal(store.get().tool, "area");
+  assert.equal(store.get().tool, "chart");
   assert.equal(store.get().areaFrom, "draw");
   api.turnOffUserDefinedAreaCharting();
   assert.equal(store.get().tool, null);

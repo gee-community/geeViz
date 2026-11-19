@@ -65,7 +65,8 @@ export function createMapApi(store, engine = {}) {
       legend: null,
       timelapse: kind === "timelapse" ? {} : null,
       chartable: !!viz.canAreaChart,
-      queryable: viz.canQuery !== false && kind !== "areaChartOnly",
+      // port of 4map-manager.js addSelectLayerToMap: select layers set canQuery = false
+      queryable: viz.canQuery !== false && kind !== "areaChartOnly" && kind !== "select",
       ...extra,
     };
     layer.pinned = isPinned(layer, store.get().canReorder);
@@ -148,12 +149,12 @@ export function createMapApi(store, engine = {}) {
 
   api.turnOnInspector = () => setTool("query", null, "turnOnInspector");
   api.turnOffInspector = () => clearTool("query", "turnOffInspector");
-  api.turnOnAutoAreaCharting = () => setTool("area", "view", "turnOnAutoAreaCharting");
-  api.turnOffAutoAreaCharting = () => clearTool("area", "turnOffAutoAreaCharting");
-  api.turnOnUserDefinedAreaCharting = () => setTool("area", "draw", "turnOnUserDefinedAreaCharting");
-  api.turnOffUserDefinedAreaCharting = () => clearTool("area", "turnOffUserDefinedAreaCharting");
-  api.turnOnSelectionAreaCharting = () => setTool("area", "select", "turnOnSelectionAreaCharting");
-  api.turnOffSelectionAreaCharting = () => clearTool("area", "turnOffSelectionAreaCharting");
+  api.turnOnAutoAreaCharting = () => setTool("chart", "view", "turnOnAutoAreaCharting");
+  api.turnOffAutoAreaCharting = () => clearTool("chart", "turnOffAutoAreaCharting");
+  api.turnOnUserDefinedAreaCharting = () => setTool("chart", "draw", "turnOnUserDefinedAreaCharting");
+  api.turnOffUserDefinedAreaCharting = () => clearTool("chart", "turnOffUserDefinedAreaCharting");
+  api.turnOnSelectionAreaCharting = () => setTool("chart", "select", "turnOnSelectionAreaCharting");
+  api.turnOffSelectionAreaCharting = () => clearTool("chart", "turnOffSelectionAreaCharting");
   api.turnOnTimeSeriesCharting = () => setTool("chart", null, "turnOnTimeSeriesCharting");
   api.turnOffTimeSeriesCharting = () => clearTool("chart", "turnOffTimeSeriesCharting");
 

@@ -302,7 +302,12 @@ export function createTimelapse(engine, layer, opts = {}) {
     async queryTarget() {
       if (!loader.prepare) return null;
       const p = await loader.prepare();
-      return p && p.item ? { type: "geeImageCollection", item: p.item, viz: p.viz } : null;
+      if (!p || !p.item) return null;
+      // port of addTimeLapseToMap: queryItem: viz.queryItem || item
+      let item = p.item;
+      const qi = p.viz && p.viz.queryItem;
+      if (qi) item = typeof qi.evaluate === "function" ? qi : (engine.ee || globalThis.ee).Deserializer.decode(qi);
+      return { type: "geeImageCollection", item, viz: p.viz };
     },
   };
 

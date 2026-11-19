@@ -265,7 +265,7 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
   function buildSelections(sel, units) {
     const card = el("div", "card-r sel-card");
     const h = el("div", "h");
-    h.append(el("b", null, "Selected areas"), el("span", "val-code mono", sel.length + (sel.length === 1 ? " feature" : " features")));
+    h.append(el("b", null, "Selected areas"), el("span", "val-code mono", sel.length + (sel.length === 1 ? " selection" : " selections")));
     const b = el("div", "b");
     const list = el("ul", "sel-list");
     sel.forEach((x) => {

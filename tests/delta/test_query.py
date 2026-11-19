@@ -35,6 +35,8 @@ def build(Map):
     Map.addLayer(ee.Image(SRTM), {"min": 1000, "max": 3500}, "SRTM")
     lc = ee.ImageCollection(LCMS).filter('study_area=="CONUS"').select(["Land_Cover"])
     Map.addLayer(lc, {"autoViz": True}, "LCMS Land Cover")
+    # An empty collection queries to a no-data card, not a failure.
+    Map.addLayer(lc.filter(ee.Filter.calendarRange(1900, 1900, "year")), {"min": 1, "max": 15}, "Empty LCMS")
     fc = ee.FeatureCollection(
         [ee.Feature(ee.Geometry.Polygon(_square(-111.40 + 0.05 * i, 40.50)), {"nm": n, "code": i}) for i, n in enumerate(UNITS)]
     )
@@ -141,7 +143,10 @@ def test_query_values_match_python(page):
     card = page.locator('#results-mount .card-r[data-rid="%s"]' % lcms["id"])
     assert "Trees" in card.inner_text()
     assert page.locator("#chips .chip").count() == len(rs)
-    assert page.delta_errors == []
+    empty = by_title(rs, "Empty LCMS")
+    assert empty["kind"] == "series" and empty["meta"] == "No data" and "error" not in empty["data"]
+    # The only console errors are the empty collection's map service (400); nothing from the query.
+    assert [e for e in page.delta_errors if "status of 400" not in e] == []
 
 
 def test_query_respects_scale_and_crs(page):
@@ -192,10 +197,19 @@ def test_select_layer_selection(page):
     page.click(row + " .tgl")
     wait_for(page, "(id) => __delta.engine.layers.stats(id).onMap", units["id"])  # drawn
     go(page, *unit_center(1))
+    # Under Query a click selects nothing (only Chart area's Select source does).
+    assert page.evaluate("__delta.store.get().tool") == "query"
+    page.mouse.click(*MAP_CENTER)
+    page.wait_for_timeout(2500)
+    assert page.evaluate("__delta.store.get().selections") == []
+    page.evaluate("__delta.api.turnOnSelectionAreaCharting()")
+    assert page.evaluate("[__delta.store.get().tool, __delta.store.get().areaFrom]") == ["chart", "select"]
     page.mouse.click(*MAP_CENTER)
     wait_for(page, "__delta.store.get().selections.length === 1")
     sel = page.evaluate("__delta.store.get().selections")
     assert [s["name"] for s in sel] == [UNITS[1]]
+    assert sel[0]["names"] == [UNITS[1]] and len(sel[0]["ids"]) == 1 and sel[0]["years"] is None
+    assert sel[0]["label"] == "Selected Units " + UNITS[1]
     assert sel[0]["areaM2"] > 0
     wait_for(page, "document.querySelector('#results-mount .sel-list') !== null")
     assert UNITS[1] in page.inner_text("#results-mount .sel-list")
@@ -214,6 +228,22 @@ def test_select_layer_selection(page):
     assert sorted(names) == sorted(UNITS[1:])
     page.click("#results-mount .sel-list [data-act=clear]")
     wait_for(page, "__delta.store.get().selections.length === 0")
+
+
+def test_select_layers_are_not_queried(page):
+    units = page.evaluate("__delta.store.get().layers.find(l => l.name === 'Units')")
+    page.click('#layer-list .layer[data-id="%s"] .tgl' % units["id"])
+    wait_for(page, "(id) => __delta.engine.layers.stats(id).onMap", units["id"])
+    go(page, *unit_center(1))  # inside a select polygon
+    dblclick_center(page)
+    wait_query_done(page)
+    wait_for(page, "__delta.store.get().results.length >= 2")
+    page.wait_for_timeout(2000)
+    rs = results(page)
+    assert {r["title"] for r in rs} >= {"SRTM", "LCMS Land Cover"}
+    assert [r for r in rs if r["layerId"] == units["id"]] == []
+    # and a double-click query does not edit the selection
+    assert page.evaluate("__delta.store.get().selections") == []
 
 
 def test_tool_toggle_off_folds_pane(page):

@@ -123,7 +123,7 @@ export function imageResult(layer, viz, values, point, precision) {
 // port of getCollectionValues: one trace per band over the collection's
 // images. `out` is {ids, labels, bands, values, hasTime} where values holds
 // the stacked image's reduceRegion answer keyed `${id}_${band}`.
-export function seriesResult(layer, viz, out, point, precision) {
+export function seriesResult(layer, viz, out, point, precision, dateFormat) {
   viz = viz || {};
   const ids = out.ids || [];
   const x = out.hasTime ? out.labels || ids : ids;
@@ -153,7 +153,8 @@ export function seriesResult(layer, viz, out, point, precision) {
       }
     }
   }
-  const dateFormat = viz.queryDateFormat || "";
+  // port of getQueryImages: the layer's queryDateFormat, else the default (setQueryDateFormat)
+  const fmt = String(dateFormat || viz.queryDateFormat || "");
   return {
     id: layer.id + "-s",
     layerId: layer.id,
@@ -165,7 +166,7 @@ export function seriesResult(layer, viz, out, point, precision) {
       ids,
       x,
       xLabel: out.hasTime ? "Time" : "ID",
-      xTickDateFormat: dateFormat.indexOf("HH:mm") > -1 ? "%Y-%m-%d\n%H:%M" : null,
+      xTickDateFormat: fmt.indexOf("HH:mm") > -1 ? "%Y-%m-%d\n%H:%M" : null,
       yLabel: (viz.queryParams && viz.queryParams.yLabel) || null,
       queryDict: dictFor(viz, (out.bands || [])[0]) || null,
       precision: precision || null,
@@ -278,27 +279,31 @@ function queryOne(eeApi, target, layer, point, query, opts) {
     return evaluate(reduce(eeApi.Image(target.item))).then((v) => [imageResult(layer, viz, v, point, precision)]);
   }
   if (target.type === "geeImageCollection") {
-    let c = eeApi.ImageCollection(target.item);
-    const first = eeApi.Image(c.first());
+    const source = eeApi.ImageCollection(target.item);
+    const first = eeApi.Image(source.first());
     const hasTime = first.propertyNames().contains("system:time_start");
-    c = eeApi.ImageCollection(eeApi.Algorithms.If(hasTime, c.sort("system:time_start"), c));
     const fmt = viz.queryDateFormat || query.dateFormat || "YYYY-MM-dd";
-    const ids = c.aggregate_array("system:index");
-    const labels = eeApi.List(
-      eeApi.Algorithms.If(
-        hasTime,
-        c.aggregate_array("system:time_start").map((t) => eeApi.Date(t).format(fmt)),
-        ids
-      )
-    );
-    const out = eeApi.Dictionary({
-      ids,
-      labels,
+    // Each image carries its own label, so ids and labels stay aligned even
+    // when some images have no system:time_start.
+    const c = eeApi
+      .ImageCollection(eeApi.Algorithms.If(hasTime, source.sort("system:time_start"), source))
+      .map((img) =>
+        img.set(
+          "dz_label",
+          eeApi.Algorithms.If(img.propertyNames().contains("system:time_start"), img.date().format(fmt), img.get("system:index"))
+        )
+      );
+    const full = eeApi.Dictionary({
+      ids: c.aggregate_array("system:index"),
+      labels: c.aggregate_array("dz_label"),
       hasTime,
       bands: first.bandNames(),
       values: reduce(c.toBands()),
     });
-    return evaluate(out).then((o) => [seriesResult(layer, viz, o, point, precision)]);
+    // An empty collection is a no-data card (the original's makeQueryTable(null)), not a failure.
+    const empty = eeApi.Dictionary({ ids: [], labels: [], hasTime: false, bands: [], values: {} });
+    const out = eeApi.Dictionary(eeApi.Algorithms.If(source.size().gt(0), full, empty));
+    return evaluate(out).then((o) => [seriesResult(layer, viz, o, point, precision, fmt)]);
   }
   if (VECTOR_TYPES.indexOf(target.type) > -1) {
     const item = target.item;
@@ -323,8 +328,52 @@ function errorResult(layer, point, err) {
   };
 }
 
+// port of 4map-manager.js addSelectLayerToMap (viz.canQuery = false): select
+// layers are never point queried; their selections feed Chart area.
 export function queryableLayers(layers) {
-  return layers.filter((l) => l.visible && l.queryable && l.kind !== "areaChartOnly");
+  return layers.filter((l) => l.visible && l.queryable && l.kind !== "areaChartOnly" && l.kind !== "select");
+}
+
+// One click on a select layer becomes one selection (port of
+// setupAreaLayerSelection: ids, names and fire years of every feature under
+// the click, names joined by "-"; addSelectedFeaturesToMapWrapper's layer
+// name). Features with no name are left out of names, as aggregate_array
+// leaves them out; a click with no names selects nothing (nms.length > 0).
+export function buildSelection(layer, viz, features) {
+  if (!features || !features.length) return null;
+  viz = viz || {};
+  const ids = features.map((f) => String(f.id));
+  const names = [];
+  const years = [];
+  let areaM2 = 0;
+  let areaKnown = false;
+  features.forEach((f) => {
+    const props = f.properties || {};
+    const prop = pickNameProperty(viz, props);
+    const n = prop === null ? String(f.id) : props[prop];
+    if (n !== undefined && n !== null) names.push(String(n));
+    if (!isNil(viz.selectLayerIgnitionYearProperty)) {
+      const y = props[viz.selectLayerIgnitionYearProperty];
+      if (y !== undefined && y !== null) years.push(y);
+    }
+    const a = Number(props.dz_area_m2);
+    if (Number.isFinite(a)) {
+      areaM2 += a;
+      areaKnown = true;
+    }
+  });
+  if (!names.length) return null;
+  return {
+    key: layer.id + ":" + ids.slice().sort().join("|"),
+    layerId: layer.id,
+    layerName: layer.name,
+    ids,
+    names,
+    years: isNil(viz.selectLayerIgnitionYearProperty) ? null : years,
+    name: names.join("-"),
+    label: "Selected " + layer.name + " " + names.join("-").replace(/&/g, "-"),
+    areaM2: areaKnown ? areaM2 : null,
+  };
 }
 
 // Query every visible queryable layer at latLng. All requests are issued at
@@ -453,7 +502,8 @@ export function createQueryTool(engine, store, opts = {}) {
 
   // ---- select layers ----
   // port of setupAreaLayerSelection and addSelectedFeaturesToMapWrapper:
-  // a click adds the features of each visible select layer under it, once.
+  // a click adds the features of each visible select layer under it as one
+  // selection, once (notSelected compares the selected ids).
   const selected = new g.Data({ map: gmap });
   const restyle = () =>
     selected.setStyle({ strokeColor: colors().selection, strokeWeight: 3, fillColor: colors().selection, fillOpacity: 0.15, clickable: false, zIndex: 3200 });
@@ -475,7 +525,7 @@ export function createQueryTool(engine, store, opts = {}) {
             .filterBounds(eeApi.Geometry.Point([point.lng, point.lat]))
             .map((f) => eeApi.Feature(f).simplify(tol).set("dz_area_m2", eeApi.Feature(f).geometry().area(1000)));
           const v = await evaluate(fc);
-          addSelections(layer, t.viz, v.features || []);
+          addSelection(layer, t.viz, v.features || []);
         } catch (e) {
           notify("Selecting from " + layer.name + " failed: " + (e && e.message));
         }
@@ -483,25 +533,15 @@ export function createQueryTool(engine, store, opts = {}) {
     );
   }
 
-  function addSelections(layer, viz, features) {
-    if (!features.length) return;
-    store.update((st) => {
-      const have = new Set(st.selections.map((x) => x.key));
-      const add = [];
-      features.forEach((f) => {
-        const key = layer.id + ":" + f.id;
-        if (have.has(key)) return;
-        have.add(key);
-        const props = { ...(f.properties || {}) };
-        const area = Number(props.dz_area_m2);
-        delete props.dz_area_m2;
-        const prop = pickNameProperty(viz, props);
-        const name = prop !== null && props[prop] !== undefined && props[prop] !== null ? String(props[prop]) : String(f.id);
-        add.push({ key, layerId: layer.id, layerName: layer.name, id: String(f.id), name, areaM2: Number.isFinite(area) ? area : null });
-        if (!drawn.has(key)) drawn.set(key, selected.addGeoJson({ type: "Feature", geometry: f.geometry, properties: {} }));
-      });
-      return add.length ? { ...st, selections: st.selections.concat(add) } : st;
-    }, "select-feature");
+  function addSelection(layer, viz, features) {
+    const sel = buildSelection(layer, viz, features);
+    if (!sel || store.get().selections.some((x) => x.key === sel.key)) return;
+    if (!drawn.has(sel.key)) {
+      const feats = [];
+      features.forEach((f) => feats.push(...selected.addGeoJson({ type: "Feature", geometry: f.geometry, properties: {} })));
+      drawn.set(sel.key, feats);
+    }
+    store.update((st) => ({ ...st, selections: st.selections.concat([sel]) }), "select-feature");
   }
 
   store.on("change:selections", (sel) => {
@@ -518,7 +558,7 @@ export function createQueryTool(engine, store, opts = {}) {
   async function selectionCollection() {
     const sel = store.get().selections;
     const byLayer = new Map();
-    sel.forEach((x) => byLayer.set(x.layerId, (byLayer.get(x.layerId) || []).concat([x.id])));
+    sel.forEach((x) => byLayer.set(x.layerId, (byLayer.get(x.layerId) || []).concat(x.ids)));
     const parts = [];
     for (const [layerId, ids] of byLayer) {
       const t = await engine.layers.queryTarget(layerId);
@@ -529,7 +569,9 @@ export function createQueryTool(engine, store, opts = {}) {
 
   // ---- map events ----
   const picking = () => (engine.isPicking ? engine.isPicking() : false);
-  const selecting = (s) => s.tool === "query" || (s.tool === "chart" && s.areaFrom === "select");
+  // port of setupAreaLayerSelection: only the dedicated select mode selects
+  // ("Area Tools-Select an Area on map" is Chart area with the Select source).
+  const selecting = (s) => s.tool === "chart" && s.areaFrom === "select";
   gmap.addListener("dblclick", (ev) => {
     if (!ev.latLng || picking() || isPhone()) return;
     if (store.get().tool === "query") run(ev.latLng);
