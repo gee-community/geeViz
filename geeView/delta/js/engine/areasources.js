@@ -10,6 +10,7 @@
 // The parsing helpers at the top are pure; createAreaSources wires the map.
 import { smartToFixed } from "../util.js";
 import { chartJobs } from "./areachart.js";
+import { sameLatLng, drawStyle, restyleShapes } from "./drawing.js";
 
 // port of 2templates.js #areaUpload accept
 export const UPLOAD_ACCEPT = ".zip,.geojson,.json,.kmz,.kml";
@@ -124,10 +125,9 @@ export function createAreaSources(engine, store, charter, opts = {}) {
   let viewStr = null;
   let idleId = 0;
 
-  const lineStyle = () => ({ strokeColor: colors().stroke, strokeOpacity: 1, strokeWeight: 3, fillColor: colors().stroke, fillOpacity: 0.12, clickable: false, geodesic: true, zIndex: 3100 });
+  const lineStyle = () => drawStyle(colors().stroke);
   function restyle() {
-    if (path) path.setOptions(lineStyle());
-    if (shape) shape.setOptions(lineStyle());
+    restyleShapes([path, shape], colors().stroke);
     const st = lineStyle();
     uploaded.setStyle({ strokeColor: st.strokeColor, strokeWeight: 3, fillColor: st.fillColor, fillOpacity: st.fillOpacity, clickable: false, zIndex: 3100 });
   }
@@ -158,7 +158,7 @@ export function createAreaSources(engine, store, charter, opts = {}) {
     const pts = path.getPath();
     const prev = pts.getLength() ? pts.getAt(pts.getLength() - 1) : null;
     // the second click of a double-click lands on the point just added
-    if (prev && Math.abs(prev.lat() - ev.latLng.lat()) < 1e-9 && Math.abs(prev.lng() - ev.latLng.lng()) < 1e-9) return;
+    if (sameLatLng(prev, ev.latLng)) return;
     pts.push(ev.latLng);
   });
   gmap.addListener("dblclick", (ev) => {
@@ -303,12 +303,10 @@ export function createAreaSources(engine, store, charter, opts = {}) {
   }
 
   // ---- reacting to the store ----
-  const cursor = () => gmap.setOptions({ draggableCursor: active("draw") ? "crosshair" : null });
   let source = store.get().tool === "chart" ? store.get().areaFrom : null;
   function sourceChanged() {
     const s = store.get();
     const now = s.tool === "chart" ? s.areaFrom : null;
-    cursor();
     if (now === source) return;
     source = now;
     opSeq++;

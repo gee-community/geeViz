@@ -4,9 +4,9 @@
 // google.maps.geometry.spherical; the text from util.js formatLength and
 // formatArea, in the units the Units switch holds.
 import { formatLength, formatArea } from "../util.js";
+import { sameLatLng, drawStyle, restyleShapes } from "./drawing.js";
 
 const spherical = () => globalThis.google.maps.geometry.spherical;
-const same = (a, b) => Math.abs(a.lat() - b.lat()) < 1e-9 && Math.abs(a.lng() - b.lng()) < 1e-9;
 
 export const MEASURE_ID = "measure";
 
@@ -61,7 +61,7 @@ export function createMeasure(engine, store, opts = {}) {
   let drawing = false;
   let shape = null;
 
-  const style = () => ({ strokeColor: colors().stroke, strokeOpacity: 1, strokeWeight: 3, fillColor: colors().stroke, fillOpacity: 0.12, clickable: false, geodesic: true, zIndex: 3100 });
+  const style = () => drawStyle(colors().stroke);
   function paint() {
     const path = drawing && hover ? pts.concat([hover]) : pts.slice();
     const wantPoly = tool() === "area" && (!drawing || path.length >= 3);
@@ -88,13 +88,14 @@ export function createMeasure(engine, store, opts = {}) {
     const r = measureResult(tool(), path, store.get().units);
     store.set({ results: r ? [r] : [], where: "" }, "measure");
   }
-  function clear(reason) {
+  // Clear the drawing; with `output` also empty the results card.
+  function clear(output = true) {
     pts = [];
     hover = null;
     drawing = false;
     if (shape) shape.setMap(null);
     shape = null;
-    if (reason !== "results") store.set({ results: [], where: "" }, "measure-clear");
+    if (output) store.set({ results: [], where: "" }, "measure");
   }
   function ready(ev) {
     return ev && ev.latLng && !picking() && active();
@@ -109,7 +110,7 @@ export function createMeasure(engine, store, opts = {}) {
       store.set({ results: [], where: "" }, "measure");
     }
     // the second click of a double-click lands on the point just added
-    if (!pts.length || !same(pts[pts.length - 1], ev.latLng)) pts.push(ev.latLng);
+    if (!pts.length || !sameLatLng(pts[pts.length - 1], ev.latLng)) pts.push(ev.latLng);
     hover = null;
     readout(paint());
   });
@@ -141,22 +142,19 @@ export function createMeasure(engine, store, opts = {}) {
       if (e.key === "Escape" && drawing && active()) clear();
     });
 
-  const cursor = () => gmap.setOptions({ draggableCursor: active() ? "crosshair" : null });
   // switching tools clears the previous tool's drawing; the tool-output reset
   // in tools.js empties the results
   store.on("change:tool", () => {
-    clear("results");
-    cursor();
+    clear(false);
   });
   // units re-render the card without redrawing
   store.on("change:units", () => {
     if (active() && shape) readout(drawing && hover ? pts.concat([hover]) : pts);
   });
-  // a Clear action (or anything that empties the output) removes the drawing
+  // anything else that empties the output removes the drawing
   store.on("change:results", (v, st, reason) => {
-    if (reason === "measure-clear" || (reason !== "measure" && shape && !(v || []).length)) clear("results");
+    if (reason !== "measure" && shape && !(v || []).length) clear(false);
   });
-  cursor();
 
-  return { finish, clear: () => clear(), restyle: () => shape && shape.setOptions(style()), path: () => pts.slice() };
+  return { finish, clear: () => clear(), restyle: () => restyleShapes([shape], colors().stroke), path: () => pts.slice() };
 }

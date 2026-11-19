@@ -214,7 +214,7 @@ function nameEnd(r) {
   return p ? " Queried Values for Lng " + p.lng.toFixed(3) + " Lat " + p.lat.toFixed(3) : "";
 }
 
-export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, query } = {}) {
+export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, query, measure } = {}) {
   const phoneMq = matchMedia("(max-width: 760px)");
   const cards = new Map(); // result id -> {el, result, body}
   const closed = new Set();
@@ -223,6 +223,7 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
   let modal = null;
   const settings = () => store.get().chartSettings || {};
   const say = notify || (() => {});
+  const getMeasure = () => (typeof measure === "function" ? measure() : measure);
   const getQuery = () => (typeof query === "function" ? query() : query);
 
   function act(r, name, body) {
@@ -241,7 +242,7 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
         window.Plotly.downloadImage(body._chart, { format: "png", width: 900, height: 600, filename: safeName(r.title + nameEnd(r)) });
       }
     } else if (name === "clear") {
-      store.set({ results: [], where: "" }, "measure-clear");
+      if (getMeasure()) getMeasure().clear();
     } else if (name === "expand") {
       expand(r);
     }

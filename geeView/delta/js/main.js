@@ -21,6 +21,7 @@ import { createQueryTool } from "./engine/query.js";
 import { createAreaCharter } from "./engine/areachart.js";
 import { createAreaSources } from "./engine/areasources.js";
 import { createMeasure } from "./engine/measure.js";
+import { createCursor } from "./engine/cursor.js";
 
 const store = createStore();
 store.set(initialShellState(store), "boot");
@@ -54,6 +55,7 @@ const outputUI = mountOutput(store, {
   busyEl: document.getElementById("out-busy"),
   notify: notice,
   query: () => queryTool,
+  measure: () => window.__delta && window.__delta.measure,
 });
 const cssToken = (name, fallback) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 
@@ -127,6 +129,7 @@ async function boot() {
       colors: () => ({ stroke: cssToken("--dz-orange", "#e2602a") }),
     });
     delta.measure = measure;
+    delta.cursor = createCursor(engine.gmap, store);
     store.on("change:theme", () => setTimeout(() => measure.restyle(), 0));
   } catch (e) {
     notice("The distance and area tools could not start: " + (e && e.message));

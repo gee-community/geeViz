@@ -117,3 +117,24 @@ def test_live_readout_clear_and_tool_switch(page):
     page.evaluate("__delta.store.set({tool: 'area'}, 'test')")
     wait_for(page, "__delta.store.get().results.length === 0 && __delta.measure.path().length === 0")
     assert page.delta_errors == []
+
+
+def test_crosshair_survives_switch_from_measure_to_chart_draw(page):
+    cursor = "__delta.engine.gmap.get('draggableCursor')"
+    page.evaluate("__delta.store.set({tool: 'distance'}, 'test')")
+    assert page.evaluate(cursor) == "crosshair"
+    page.evaluate("__delta.store.set({tool: 'chart', areaFrom: 'draw'}, 'test')")
+    assert page.evaluate(cursor) == "crosshair"
+    page.evaluate("__delta.store.set({areaFrom: 'view'}, 'test')")
+    assert not page.evaluate(cursor)
+    assert page.delta_errors == []
+
+
+def test_escape_cancels_a_measurement(page):
+    page.evaluate("__delta.store.set({tool: 'area'}, 'test')")
+    page.mouse.click(CX - 100, CY)
+    time.sleep(0.4)
+    page.mouse.click(CX + 100, CY)
+    time.sleep(0.4)
+    page.keyboard.press("Escape")
+    wait_for(page, "__delta.store.get().results.length === 0 && __delta.measure.path().length === 0")
