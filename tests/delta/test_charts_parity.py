@@ -26,7 +26,8 @@ TRANSFORM = [30, 0, -2361915.0, 0, -30, 3177735.0]
 SCALE = 30
 # A fixed polygon about 3 km on a side near (-111.6, 40.6).
 POLY = [[[-111.6177, 40.5865], [-111.5823, 40.5865], [-111.5823, 40.6135], [-111.6177, 40.6135], [-111.6177, 40.5865]]]
-SANKEY_PERIODS = [[2016, 2018], [2020, 2022]]
+# Three periods, so one reduction carries two stacked transition bands.
+SANKEY_PERIODS = [[2016, 2018], [2020, 2022], [2023, 2023]]
 
 # The same Earth Engine objects in both clients. The JS strings build them
 # from the page's window.ee.
@@ -35,6 +36,9 @@ JS_OBJECTS = {
     "nlcd": "ee.Image(%r).select(['landcover'])" % NLCD_2021,
     "ndvi": "ee.ImageCollection(%r).filterDate('2019-01-01', '2022-01-01').select(['NDVI'])" % NDVI,
     "lcms_all": "ee.ImageCollection(%r).filter('study_area==\"CONUS\"').select(['Land_Cover'])" % LCMS,
+    # 2017 masked over the whole area
+    "lcms_masked": "ee.ImageCollection(%r).filter('study_area==\"CONUS\"').select(['Land_Cover']).filter(ee.Filter.calendarRange(2015, 2019, 'year'))"
+    ".map((img) => ee.Image(ee.Algorithms.If(ee.Number(img.date().get('year')).eq(2017), img.updateMask(0), img)))" % LCMS,
 }
 
 
@@ -52,6 +56,9 @@ def py_object(key):
         "nlcd": e.Image(NLCD_2021).select(["landcover"]),
         "ndvi": e.ImageCollection(NDVI).filterDate("2019-01-01", "2022-01-01").select(["NDVI"]),
         "lcms_all": lcms_all,
+        "lcms_masked": lcms_all.filter(e.Filter.calendarRange(2015, 2019, "year")).map(
+            lambda img: e.Image(e.Algorithms.If(e.Number(img.date().get("year")).eq(2017), img.updateMask(0), img))
+        ),
     }[key]
 
 
@@ -108,6 +115,20 @@ def test_lcms_land_cover_collection_matches_charts_py(page):
     assert_tables_equal(js, py)
 
 
+def test_year_masked_over_the_area_is_a_gap_not_zero(page):
+    """Through zonalStats (unmask sentinel on): charts.py charts the masked
+    year as 0 for every class; Delta charts it as a gap. Every other year,
+    including its area totals, is charts.py's."""
+    js = js_zonal(page, "lcms_masked")
+    py = py_zonal("lcms_masked")
+    assert js["labels"] == ["2015", "2016", "2017", "2018", "2019"]
+    i = js["labels"].index("2017")
+    assert py["rows"][i]["values"] and all(v == 0 for v in py["rows"][i]["values"])
+    py["rows"][i]["values"] = [None] * len(py["columns"])
+    assert all(v is not None for r in js["rows"] if r["x"] != "2017" for v in r["values"])
+    assert_tables_equal(js, py)
+
+
 def test_nlcd_single_image_matches_charts_py(page):
     js = js_zonal(page, "nlcd")
     py = py_zonal("nlcd")
@@ -139,7 +160,7 @@ def test_lcms_sankey_matches_charts_py(page):
         {"poly": POLY, "crs": CRS, "transform": TRANSFORM, "scale": SCALE, "periods": SANKEY_PERIODS},
     )
     # every pair in one reduction: the raw dict has one band per pair
-    assert js["bands"] == ["2016-2018---2020-2022"]
+    assert js["bands"] == ["2016-2018---2020-2022", "2020-2022---2023"]
     res = cl.summarize_and_chart(
         py_object("lcms_all"), ee().Geometry.Polygon(POLY), chart_type="sankey",
         transition_periods=SANKEY_PERIODS, min_percentage=0.5, scale=SCALE, crs=CRS, transform=TRANSFORM,

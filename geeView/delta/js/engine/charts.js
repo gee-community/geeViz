@@ -290,10 +290,14 @@ export function convertPixelArea(count, scale, areaFormat, pixelTotal = 1) {
 }
 
 const emptyHist = (h) => h === undefined || h === null || typeof h !== "object" || Object.keys(h).length === 0;
+// the unmask sentinel's histogram keys (charts.py strips "0" and "0.0")
+const isSentinelKey = (k) => ["0", "0.0"].includes(String(k).trim());
 
 // port of charts.py parse_thematic_results. Returns {columns, rows}: rows
 // are {x, values} with values aligned to columns (x is null for an Image).
-export function parseThematicResults(raw, objInfo, labels, areaFormat = "Percentage", scale = 30) {
+// With sentinel true (images were unmask(0)ed), a histogram holding only
+// the sentinel class is a band masked over the whole area: a gap.
+export function parseThematicResults(raw, objInfo, labels, areaFormat = "Percentage", scale = 30, sentinel = false) {
   const { classInfo, bandNames } = objInfo;
   const multi = bandNames.length > 1;
   const lookups = {};
@@ -313,7 +317,7 @@ export function parseThematicResults(raw, objInfo, labels, areaFormat = "Percent
     const gaps = new Set();
     for (const bn of bandNames) {
       const hist = raw ? raw[keyOf(bn)] : undefined;
-      if (emptyHist(hist)) {
+      if (emptyHist(hist) || (sentinel && Object.keys(hist).every(isSentinelKey))) {
         gaps.add(bn);
         continue;
       }
@@ -385,12 +389,21 @@ export function parseContinuousResults(raw, objInfo, labels) {
 // port of charts.py zonal_stats _strip_sentinel_cols: drop the unmask
 // sentinel class (0) after it has counted toward the area total
 export function stripSentinelColumns(table) {
-  const keep = table.columns.map((c) => !["0", "0.0"].includes(String(c).trim()));
+  const keep = table.columns.map((c) => !isSentinelKey(c));
   return {
     ...table,
     columns: table.columns.filter((_, i) => keep[i]),
     rows: table.rows.map((r) => ({ ...r, values: r.values.filter((_, i) => keep[i]) })),
   };
+}
+
+// The parse step of charts.py zonal_stats (single region): thematic
+// results with the sentinel class dropped after it has counted toward each
+// year's total, or continuous results. zonalStats parses only through this.
+export function parseReduction(raw, objInfo, labels, { isHistogram, sentinel = false, areaFormat = "Percentage", scale = 30 }) {
+  if (!isHistogram) return parseContinuousResults(raw, objInfo, labels);
+  const table = parseThematicResults(raw, objInfo, labels, areaFormat, scale, sentinel);
+  return sentinel ? stripSentinelColumns(table) : table;
 }
 
 // The Earth Engine name of a reducer, read from the client object (no
@@ -416,6 +429,9 @@ export function reducerName(reducer) {
 // unmask keeps band names and properties, so the result is the same).
 // Resolves to {columns, rows, objInfo, labels, raw, isHistogram}; raw is
 // kept so a unit change can re-parse without Earth Engine.
+// Rows are the labels of the images that intersect the area (charts.py
+// filterBounds before reading labels): a label with no image over the area
+// has no row. A label whose image is masked over the whole area is a gap.
 export async function zonalStats(eeObj, geometry, opts = {}) {
   const ee = EE();
   const {
@@ -444,10 +460,7 @@ export async function zonalStats(eeObj, geometry, opts = {}) {
   }
   const prep = await prepareForReduction(eeObj, objInfo, xAxisProperty, dateFormat);
   const raw = await reduceArea(prep.image, geometry, reducer, { scale, crs, transform, tileScale });
-  let table = isHistogram
-    ? parseThematicResults(raw, objInfo, prep.labels, areaFormat, scale)
-    : parseContinuousResults(raw, objInfo, prep.labels);
-  if (isHistogram && sentinel) table = stripSentinelColumns(table);
+  const table = parseReduction(raw, objInfo, prep.labels, { isHistogram, sentinel, areaFormat, scale });
   return { ...table, objInfo, labels: prep.labels, stackBandNames: prep.bandNames, raw, isHistogram };
 }
 
@@ -480,8 +493,10 @@ export function areaChartInputs(params = {}, zoom) {
   let scale = params.scale !== undefined ? params.scale : null;
   const transform = params.transform !== undefined ? params.transform : DEFAULT_TRANSFORM;
   const crs = params.crs || DEFAULT_CRS;
-  // only one of scale and transform; the transform wins (it snaps)
-  if (scale !== null && transform !== null && transform !== undefined) scale = null;
+  // only when the layer gives both does the transform win (it snaps); a
+  // scale alone sizes the default grid in autoSetScale (scaleT || transformT[0])
+  const given = (v) => v !== undefined && v !== null;
+  if (given(params.scale) && given(params.transform)) scale = null;
   const r = autoScale(zoom, scale, params.minZoomSpecifiedScale || 11, 2 ** 6, transform);
   return { crs, scale: r.scale, transform: r.transform, scaleMult: r.scaleMult, nominalScale: r.nominalScale };
 }

@@ -224,6 +224,24 @@ def synthetic_missing_year():
     return {"name": "missing_year", "kind": "thematic", "raw": raw, "objInfoPy": info, "labels": ["2002", "2003", "2004", "2005"], "scales": [30, 60], "stripSentinel": True}
 
 
+def synthetic_sentinel_masked_year():
+    # zonal_stats unmask(0)s every image, so a fully masked year comes back
+    # holding only the sentinel class "0" (not missing, not empty)
+    raw = {
+        "2002----Land_Cover": {"0": 10, "1": 60, "3": 30},
+        "2003----Land_Cover": {"0": 100},
+        "2004----Land_Cover": {"1": 49.5, "3": 50.5},
+    }
+    info = {
+        "obj_type": "ImageCollection",
+        "band_names": ["Land_Cover"],
+        "is_thematic": True,
+        "class_info": {"Land_Cover": {"class_values": [1, 3], "class_names": ["Trees", "Shrubs"], "class_palette": ["004e2b", "f4ae38"]}},
+        "size": 3,
+    }
+    return {"name": "sentinel_masked_year", "kind": "thematic", "sentinelCase": True, "raw": raw, "objInfoPy": info, "labels": ["2002", "2003", "2004"], "scales": [30], "stripSentinel": True}
+
+
 def synthetic_multiband():
     raw = {
         "2020----Change": {"0": 5, "1": 90.5, "3": 4.5},
@@ -401,7 +419,7 @@ def build(record=False):
                 live[name] = json.loads(p.read_text(encoding="utf-8"))
     _patch_ee_for_fakes()
     cl = _charts()
-    fixtures = list(live.values()) + [synthetic_missing_year(), synthetic_multiband(), synthetic_image_unknown_classes(), synthetic_multi_output(), synthetic_sankey()]
+    fixtures = list(live.values()) + [synthetic_missing_year(), synthetic_sentinel_masked_year(), synthetic_multiband(), synthetic_image_unknown_classes(), synthetic_multi_output(), synthetic_sankey()]
     for fx in fixtures:
         # synthetic dicts get Earth Engine's key order; recorded ones have it
         fx["raw"] = ee_sorted(fx["raw"])

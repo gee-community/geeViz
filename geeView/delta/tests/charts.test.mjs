@@ -20,6 +20,9 @@ import {
   convertPixelArea,
   autoScale,
   stripSentinelColumns,
+  parseReduction,
+  areaChartInputs,
+  DEFAULT_TRANSFORM,
 } from "../js/engine/charts.js";
 
 const FIX = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "tests", "delta", "fixtures");
@@ -200,4 +203,66 @@ test("no getInfo, and one reduceRegion call site shared by charts and Sankey", (
   // prepareSankeyData reduces every period pair in one reduceArea call
   assert.equal(sankey.match(/reduceArea\(/g).length, 1);
   assert.ok(charts.includes("bestEffort: true, maxPixels: 1e13"));
+});
+
+test("a year masked over the whole area is a gap through zonalStats' parse wiring", () => {
+  // zonalStats unmask(0)s images, so a fully masked year arrives as {"0": N}
+  const fx = load("sentinel_masked_year.json");
+  for (const [key, want] of Object.entries(fx.expected)) {
+    const [af, scale] = key.split("@");
+    const got = parseReduction(fx.raw, fx.objInfo, fx.labels, { isHistogram: true, sentinel: true, areaFormat: af, scale: Number(scale) });
+    const i = fx.labels.indexOf("2003");
+    // charts.py charts the masked year as 0 for every class
+    assert.ok(want.rows[i].values.every((v) => v === 0), key);
+    const expected = structuredClone(want);
+    expected.rows[i].values = expected.columns.map(() => null);
+    // every other year is charts.py's, totals still counting masked pixels
+    close(got, expected, `sentinel ${key}`);
+  }
+  const pct = parseReduction(fx.raw, fx.objInfo, fx.labels, { isHistogram: true, sentinel: true, areaFormat: "Percentage", scale: 30 });
+  assert.deepEqual(pct.columns, ["Trees", "Shrubs"]);
+  assert.deepEqual(pct.rows.map((r) => r.values), [[60, 30], [null, null], [49.5, 50.5]]);
+  // without the sentinel (includeMaskedArea false) a lone "0" is a real class value
+  const raw = parseReduction(fx.raw, fx.objInfo, fx.labels, { isHistogram: true, sentinel: false, areaFormat: "Pixels", scale: 30 });
+  assert.deepEqual(raw.columns, ["0", "Trees", "Shrubs"]);
+  assert.deepEqual(raw.rows[1].values, [100, 0, 0]);
+});
+
+test("zonalStats parses only through parseReduction", () => {
+  const src = stripComments(readFileSync(join(ENGINE, "charts.js"), "utf-8"));
+  const body = src.slice(src.indexOf("export async function zonalStats"), src.indexOf("export function autoScale"));
+  assert.ok(body.length > 200);
+  assert.match(body, /parseReduction\(raw, objInfo, prep\.labels, \{ isHistogram, sentinel, areaFormat, scale \}\)/);
+  assert.doesNotMatch(body, /parseThematicResults\(|parseContinuousResults\(|stripSentinelColumns\(/);
+});
+
+test("areaChartInputs: port of area-charting.js scale/transform setup + autoSetScale", () => {
+  const T = DEFAULT_TRANSFORM;
+  const tx = (s, base = T) => [s, base[1], base[2], base[3], -s, base[5]];
+  const L = [10, 0, -2000000.0, 0, -10, 3000000.0];
+  const cases = [
+    // [params, zoom, scale, transform, scaleMult, nominalScale]
+    [{}, 11, null, tx(30), 1, 30],
+    [{}, 9, null, tx(120), 4, 120],
+    // a layer scale alone sizes the default snapped grid
+    [{ scale: 100 }, 11, null, tx(100), 1, 100],
+    [{ scale: 100 }, 9, null, tx(400), 4, 400],
+    [{ transform: L }, 11, null, tx(10, L), 1, 10],
+    [{ transform: L }, 9, null, tx(40, L), 4, 40],
+    // both given: the transform wins
+    [{ scale: 100, transform: L }, 11, null, tx(10, L), 1, 10],
+    [{ scale: 100, transform: L }, 9, null, tx(40, L), 4, 40],
+    // an explicit null transform keeps the scale
+    [{ scale: 100, transform: null }, 11, 100, null, 1, 100],
+    [{ scale: 100, transform: null }, 9, 400, null, 4, 400],
+    // minZoomSpecifiedScale honored
+    [{ minZoomSpecifiedScale: 9 }, 9, null, tx(30), 1, 30],
+  ];
+  for (const [params, zoom, scale, transform, scaleMult, nominalScale] of cases) {
+    const r = areaChartInputs(params, zoom);
+    assert.deepEqual(r, { crs: "EPSG:5070", scale, transform, scaleMult, nominalScale }, JSON.stringify([params, zoom]));
+  }
+  assert.equal(areaChartInputs({ crs: "EPSG:4326" }, 11).crs, "EPSG:4326");
+  assert.deepEqual(T, [30, 0, -2361915.0, 0, -30, 3177735.0]);
+  assert.deepEqual(L, [10, 0, -2000000.0, 0, -10, 3000000.0]);
 });

@@ -90,3 +90,13 @@ test("flows below the minimum percentage leave the links but stay in the matrix"
   // default minimum is the viewer's 0.5
   close(buildSankeyFromHistogram(fx.raw, ci, fx.periods, "Percentage", 30), at05, "default");
 });
+
+test("a multi-band class info dict is read for the Sankey band, like charts.py", () => {
+  const fx = load("sankey_synthetic.json");
+  const lc = classInfoFor(fx);
+  const other = { classValues: [1, 2, 3], classNames: ["A", "B", "C"], classPalette: ["111111", "222222", "333333"] };
+  const want = buildSankeyFromHistogram(fx.raw, lc, fx.periods, "Percentage", 30, 0.5);
+  close(buildSankeyFromHistogram(fx.raw, { Change: other, Land_Cover: lc }, fx.periods, "Percentage", 30, 0.5, "Land_Cover"), want, "by band");
+  // an unknown band falls back to the first band's info
+  close(buildSankeyFromHistogram(fx.raw, { Land_Cover: lc, Change: other }, fx.periods, "Percentage", 30, 0.5, "Nope"), want, "fallback");
+});

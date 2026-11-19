@@ -54,11 +54,12 @@ function bandInfo(classInfo, band) {
 
 // port of charts.py prepare_sankey_data (the parse half). hist is the raw
 // reduceRegion dict keyed by transition band name; classInfo is the band's
-// {classValues, classNames, classPalette}. Returns {links, matrix}: links
+// {classValues, classNames, classPalette}, or objInfo.classInfo with band
+// naming the entry to use (else the first, as charts.py does). Returns {links, matrix}: links
 // carry charts.py's sankey_df columns; matrix maps "{p1} → {p2}" to
 // {index, columns, values}.
-export function buildSankeyFromHistogram(hist, classInfo, periods, areaFormat = "Percentage", scale = 30, minPercentage = SANKEY_MIN_PERCENTAGE) {
-  const info = bandInfo(classInfo);
+export function buildSankeyFromHistogram(hist, classInfo, periods, areaFormat = "Percentage", scale = 30, minPercentage = SANKEY_MIN_PERCENTAGE, band = null) {
+  const info = bandInfo(classInfo, band);
   const classValues = info.classValues || [];
   const classNames = info.classNames || [];
   const classPalette = info.classPalette || [];
@@ -145,8 +146,7 @@ export async function prepareSankeyData(ic, band, periods, classInfo, geometry, 
     stacked = stacked === null ? transition : stacked.addBands(transition);
   }
   const raw = await reduceArea(stacked.toInt(), geometry, ee.Reducer.frequencyHistogram(), { scale, crs, transform, tileScale });
-  const info = bandInfo(classInfo, band);
-  return { ...buildSankeyFromHistogram(raw, info, periods, areaFormat, scale, minPercentage), raw };
+  return { ...buildSankeyFromHistogram(raw, classInfo, periods, areaFormat, scale, minPercentage, band), raw };
 }
 
 // port of charts.py summarize_and_chart's Sankey branch: class info from
