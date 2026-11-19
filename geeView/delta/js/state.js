@@ -11,6 +11,17 @@ export function defaultState() {
     results: [],
     where: "",
     querying: false,
+    // Chart area: busy flag, the area last charted ({label, key, bounds}),
+    // Sankey transition periods (port of setupTransitionPeriodUI's two
+    // default rows) and settings choices of which layers chart.
+    charting: false,
+    chartArea: null,
+    chartPeriods: [
+      [1985, 1987],
+      [2022, 2024],
+    ],
+    chartPeriodsUser: false,
+    chartChoices: {},
     selections: [],
     notices: [],
     theme: "system",

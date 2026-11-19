@@ -132,6 +132,20 @@ test("removeLayer, query setters and engine hooks", () => {
   assert.equal(store.get().areaFrom, "draw");
   api.turnOffUserDefinedAreaCharting();
   assert.equal(store.get().tool, null);
+  // port of 4map-manager.js turnOnTimeSeriesCharting: the Pixel Tools time
+  // series tool is Delta's Query tool, not Chart area
+  api.turnOnTimeSeriesCharting();
+  assert.equal(store.get().tool, "query");
+  api.turnOffTimeSeriesCharting();
+  assert.equal(store.get().tool, null);
+  api.turnOnAutoAreaCharting();
+  assert.deepEqual([store.get().tool, store.get().areaFrom], ["chart", "view"]);
+  api.turnOffTimeSeriesCharting();
+  assert.equal(store.get().tool, "chart", "turning off time series leaves Chart area alone");
+  api.turnOnSelectionAreaCharting();
+  assert.deepEqual([store.get().tool, store.get().areaFrom], ["chart", "select"]);
+  api.turnOffAutoAreaCharting();
+  assert.equal(store.get().tool, null);
   api.setCenter(-111, 41, 10);
   assert.deepEqual(calls, [["setCenter", [-111, 41, 10]]]);
 });

@@ -18,6 +18,8 @@ import { mountTimelapseHud } from "./ui/timelapse.js";
 import { mountTools } from "./ui/tools.js";
 import { mountOutput } from "./ui/output.js";
 import { createQueryTool } from "./engine/query.js";
+import { createAreaCharter } from "./engine/areachart.js";
+import { createAreaSources } from "./engine/areasources.js";
 
 const store = createStore();
 store.set(initialShellState(store), "boot");
@@ -37,7 +39,12 @@ const notice = (msg) => store.update((s) => ({ ...s, notices: [...s.notices, msg
 
 // Right pane: tool options and output. The query tool starts with the map.
 let queryTool = null;
-const toolsUI = mountTools(store, { optionsEl: document.getElementById("tool-options"), unitsEl: document.querySelector("#pane-right .units") });
+let chartSources = null;
+const toolsUI = mountTools(store, {
+  optionsEl: document.getElementById("tool-options"),
+  unitsEl: document.querySelector("#pane-right .units"),
+  chart: () => chartSources,
+});
 const outputUI = mountOutput(store, {
   mountEl: document.getElementById("results-mount"),
   whereEl: document.getElementById("where"),
@@ -96,6 +103,20 @@ async function boot() {
     store.on("change:theme", () => setTimeout(() => queryTool.restyle(), 0));
   } catch (e) {
     notice("The query tool could not start: " + (e && e.message));
+  }
+  try {
+    // Chart area: the charter computes and caches, the sources supply areas.
+    const charter = createAreaCharter(store, { ee: window.ee, zoom: () => engine.gmap.getZoom(), notify: notice });
+    engine.charter = charter;
+    chartSources = createAreaSources(engine, store, charter, {
+      notify: notice,
+      query: () => queryTool,
+      colors: () => ({ stroke: cssToken("--dz-orange", "#e2602a") }),
+    });
+    Object.assign(delta, { charter, chartSources });
+    store.on("change:theme", () => setTimeout(() => chartSources.restyle(), 0));
+  } catch (e) {
+    notice("The chart area tool could not start: " + (e && e.message));
   }
 
   for (const [what, mount] of [

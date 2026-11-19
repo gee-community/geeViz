@@ -100,6 +100,45 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
 .dz-info { color: var(--dz-ink); font: 13px/1.45 var(--dz-font-body); max-width: 320px; }
 .dz-info .card-r { margin: 6px 0 0; }
 .layer.is-select .lname { font-style: italic; }
+/* Chart area options (port of the mockup's .row2, .lbl, settings button) */
+.row2 { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.row2 .seg { margin: 0; flex: 1; }
+.row2 .lbl { width: 52px; flex: none; font-size: 12px; color: var(--dz-mute); }
+.ib.on { background: var(--dz-teal-soft); color: var(--dz-teal); }
+.csrc { margin-top: 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.topt-hint.sub { font-size: 11.5px; color: var(--dz-faint); }
+.file-chip { display: inline-flex; align-items: center; gap: 5px; }
+.file-chip input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.file-chip:focus-within { outline: 2px solid var(--dz-teal); outline-offset: 1px; }
+.chip:disabled { opacity: 0.45; cursor: default; border-color: var(--dz-line); color: var(--dz-mute); }
+.cset { margin-top: 8px; padding: 8px; border: 1px solid var(--dz-line); border-radius: 10px; background: var(--dz-raise); display: flex; flex-direction: column; gap: 10px; font-size: 12px; }
+.cset-h { font-family: var(--dz-font-cond); font-weight: 600; font-size: 12px; letter-spacing: 0.04em; color: var(--dz-mute); margin-bottom: 4px; }
+.cset-layer { display: flex; align-items: center; gap: 6px; padding: 2px 0; cursor: pointer; }
+.cset-layer input { accent-color: var(--dz-teal); }
+.cset-name { flex: 1; min-width: 0; overflow-wrap: anywhere; color: var(--dz-ink); }
+.cset-periods { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.cset-prow { display: flex; align-items: center; gap: 6px; }
+.cset-year { width: 72px; border: 1px solid var(--dz-line); border-radius: 6px; background: var(--dz-solid); color: var(--dz-ink); padding: 2px 6px; font-size: 12px; }
+.cset-year:focus-visible { outline: 2px solid var(--dz-teal); outline-offset: 0; }
+.cset-acts { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+.cset-acts .ib { width: 26px; height: 26px; font-size: 14px; }
+.cset-err { color: var(--dz-orange); font-size: 11.5px; }
+/* Chart area results: Plotly charts with a legend, d3 Sankey (port of the mockup's .sankey-wrap, .tip, .legend-mini) */
+.achart { width: 100%; margin-top: 6px; }
+.achart-plot { width: 100%; min-height: 240px; }
+.achart.big .achart-plot { min-height: 520px; }
+.legend-mini { display: flex; flex-wrap: wrap; gap: 3px 10px; font-size: 11px; color: var(--dz-mute); margin-top: 6px; }
+.legend-mini span { display: flex; align-items: center; gap: 4px; overflow-wrap: anywhere; }
+.legend-mini i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; flex: none; box-shadow: inset 0 0 0 1px var(--dz-swatch-edge); }
+.sankey-wrap { position: relative; width: 100%; margin-top: 6px; }
+.sankey-wrap svg { width: 100%; height: auto; display: block; }
+.sankey-wrap.big { width: min(900px, calc(100vw - 80px)); }
+.sankey-wrap .link { transition: stroke-opacity 0.12s; }
+.tip { position: fixed; z-index: 1100; pointer-events: none; opacity: 0; transition: opacity 0.12s; background: var(--dz-solid); color: var(--dz-ink); border: 1px solid var(--dz-line);
+  border-radius: 8px; padding: 5px 9px; font-size: 12px; box-shadow: var(--dz-shadow); white-space: nowrap; font-family: var(--dz-font-body); }
+.tip.on { opacity: 1; }
+.tip b { display: block; font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .sankey-wrap .link, .tip { transition: none; } }
 
 @media (min-width: 761px) {
   body.no-tool .pane-right { width: var(--dz-right-folded); }

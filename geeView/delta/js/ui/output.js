@@ -6,6 +6,10 @@
 // as y tick labels). Names, labels and values are set as text.
 import { formatArea, smartToFixed } from "../util.js";
 import { breakLabels, resultCsv, resultText, isInfoWindowMode } from "../engine/query.js";
+import { chartCsv } from "../engine/areachart.js";
+import { chartTheme } from "../charts/theme.js";
+import { renderChart, chartPng } from "../charts/plotly.js";
+import { renderSankey, sankeyPng } from "../charts/sankey.js";
 
 const ACTIONS = {
   copy: { icon: "ti-copy", title: "Copy" },
@@ -129,6 +133,32 @@ function seriesBody(r, settings) {
   return b;
 }
 
+// Chart area cards: a Plotly chart with its legend, or a d3 Sankey drawn at
+// the card's width (redrawn when the width changes).
+function areaChartBody(r, settings) {
+  const b = el("div", "qa");
+  const chart = el("div", r.kind === "sankey" ? "sankey-wrap" : "achart");
+  b.appendChild(chart);
+  b._chart = chart;
+  if (r.kind === "sankey") {
+    let width = 0;
+    b._plot = () => {
+      width = chart.clientWidth;
+      renderSankey(chart, r, chartTheme());
+    };
+    if (typeof ResizeObserver === "function") {
+      const ro = new ResizeObserver(() => {
+        if (chart.clientWidth && Math.abs(chart.clientWidth - width) > 1) b._plot();
+      });
+      ro.observe(chart);
+      b._dispose = () => ro.disconnect();
+    }
+  } else {
+    b._plot = () => renderChart(chart, r, chartTheme(), settings);
+  }
+  return b;
+}
+
 function tableBody(r) {
   const b = el("div", "qt");
   if (!r.data.rows.length) {
@@ -159,6 +189,12 @@ function download(name, text, type) {
 }
 
 const safeName = (s) => String(s).replace(/[\\/:*?"<>|]+/g, "-").trim() || "query";
+const isAreaChart = (r) => r.kind === "chart" || r.kind === "sankey";
+
+// port of area-charting.js makeChart outFilename: layer name, area name and scale
+function chartFileName(r) {
+  return safeName(`${r.data.layerName} ${r.data.areaLabel} (${r.data.nominalScale}m)`);
+}
 
 // port of getQueryImages nameEnd
 function nameEnd(r) {
@@ -181,8 +217,13 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
     if (name === "copy") {
       const text = resultText(r);
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => say("Copied " + r.title), () => say("Copy is not allowed here"));
+    } else if (name === "csv" && isAreaChart(r)) {
+      download(chartFileName(r) + ".csv", chartCsv(r), "text/csv;charset=utf-8");
     } else if (name === "csv") {
       download(safeName(r.title + nameEnd(r)) + ".csv", resultCsv(r), "text/csv");
+    } else if (name === "png" && isAreaChart(r)) {
+      const save = r.kind === "sankey" ? sankeyPng : chartPng;
+      Promise.resolve(body && body._chart ? save(body._chart, chartFileName(r), chartTheme()) : null).catch((e) => say(String(e && e.message ? e.message : e)));
     } else if (name === "png") {
       if (window.Plotly && body && body._chart) {
         window.Plotly.downloadImage(body._chart, { format: "png", width: 900, height: 600, filename: safeName(r.title + nameEnd(r)) });
@@ -193,6 +234,7 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
   }
 
   function buildBody(r) {
+    if (isAreaChart(r)) return areaChartBody(r, settings());
     if (r.kind === "series") return seriesBody(r, settings());
     if (r.kind === "table") return tableBody(r);
     return valueBody(r);
@@ -255,6 +297,16 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
       body.replaceChildren(chart);
       modal.showModal();
       plot(chart, r, settings(), true);
+    } else if (r.kind === "chart") {
+      const chart = el("div", "achart big");
+      body.replaceChildren(chart);
+      modal.showModal();
+      renderChart(chart, r, chartTheme(), settings(), { big: true });
+    } else if (r.kind === "sankey") {
+      const chart = el("div", "sankey-wrap big");
+      body.replaceChildren(chart);
+      modal.showModal();
+      renderSankey(chart, r, chartTheme());
     } else {
       body.replaceChildren(buildBody(r));
       modal.showModal();
@@ -292,8 +344,11 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
 
   function render() {
     const s = store.get();
-    if (whereEl) whereEl.textContent = s.where || "";
-    if (busyEl) busyEl.hidden = !s.querying;
+    // Chart area: where the charts apply, with the area's size in the units chosen
+    const chartTool = s.tool === "chart";
+    const size = chartTool && s.where && s.chartArea && s.chartArea.areaM2 ? ", " + formatArea(s.chartArea.areaM2, s.units) : "";
+    if (whereEl) whereEl.textContent = (s.where || "") + size;
+    if (busyEl) busyEl.hidden = !(s.querying || s.charting);
     const infoMode = phoneMq.matches && isInfoWindowMode(s.query.windowMode);
     const results = s.results || [];
 
@@ -301,6 +356,7 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
     const keep = new Set(results.map((r) => r.id));
     for (const [id, c] of cards) {
       if (!keep.has(id) || c.result !== results.find((r) => r.id === id)) {
+        if (c.body._dispose) c.body._dispose();
         c.el.remove();
         cards.delete(id);
       }
@@ -323,9 +379,12 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
     }
     if (emptyEl) emptyEl.remove();
     emptyEl = null;
-    if (!results.length && s.where && !s.querying) {
+    if (!results.length && s.where && !s.querying && !s.charting) {
       emptyEl = el("div", "droptip");
-      emptyEl.append(el("i", "ti ti-info-circle"), el("span", null, "No visible layer could be queried here. Turn one on in Layers."));
+      const msg = chartTool
+        ? "No visible layer can be charted here. Turn on a chartable layer in Layers, or choose one in the chart settings."
+        : "No visible layer could be queried here. Turn one on in Layers.";
+      emptyEl.append(el("i", "ti ti-info-circle"), el("span", null, msg));
       nodes.push(emptyEl);
     }
     nodes.forEach((n, i) => {
@@ -367,7 +426,7 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
     cards.forEach((c) => c.body._plot && c.body._plot());
   }
 
-  ["results", "where", "querying", "selections", "units", "query"].forEach((k) => store.on("change:" + k, render));
+  ["results", "where", "querying", "charting", "chartArea", "selections", "units", "query", "tool"].forEach((k) => store.on("change:" + k, render));
   store.on("change:theme", () => setTimeout(replot, 0));
   store.on("change:chartSettings", replot);
   phoneMq.addEventListener("change", render);

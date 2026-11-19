@@ -155,8 +155,10 @@ export function createMapApi(store, engine = {}) {
   api.turnOffUserDefinedAreaCharting = () => clearTool("chart", "turnOffUserDefinedAreaCharting");
   api.turnOnSelectionAreaCharting = () => setTool("chart", "select", "turnOnSelectionAreaCharting");
   api.turnOffSelectionAreaCharting = () => clearTool("chart", "turnOffSelectionAreaCharting");
-  api.turnOnTimeSeriesCharting = () => setTool("chart", null, "turnOnTimeSeriesCharting");
-  api.turnOffTimeSeriesCharting = () => clearTool("chart", "turnOffTimeSeriesCharting");
+  // port of 4map-manager.js turnOnTimeSeriesCharting: it toggles the Pixel
+  // Tools time series tool, which is Delta's Query tool.
+  api.turnOnTimeSeriesCharting = () => setTool("query", null, "turnOnTimeSeriesCharting");
+  api.turnOffTimeSeriesCharting = () => clearTool("query", "turnOffTimeSeriesCharting");
 
   api.setQueryCRS = (crs) => patchQuery({ crs }, "setQueryCRS");
   api.setQueryScale = (scale) => patchQuery({ scale, transform: null }, "setQueryScale");
