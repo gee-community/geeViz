@@ -54,6 +54,60 @@ body.left-hidden .pane-left { transform: translateX(-100%); }
   .pane-right { transition: width 0.2s ease; }
 }
 
+/* layer rows (port of the mockup's layer row, v8 to v13) */
+.layer { padding: 7px 12px 8px; border-bottom: 1px solid var(--dz-line); container-type: inline-size; }
+.layer.off .lname { color: var(--dz-mute); }
+.layer.err .lname { color: var(--dz-orange); }
+.lrow { display: flex; align-items: center; gap: 9px; }
+.tgl { width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid var(--dz-mute); background: transparent; padding: 0; flex: none; cursor: pointer; }
+.layer:not(.off) .tgl { background: var(--dz-teal); border-color: var(--dz-teal); box-shadow: inset 0 0 0 2px var(--dz-solid); }
+.tgl:focus-visible, .legbtn:focus-visible { outline: 2px solid var(--dz-teal); outline-offset: 1px; }
+.lname { flex: 1; font-weight: 600; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; user-select: none; }
+.spin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--dz-line); border-top-color: var(--dz-teal); animation: dz-sp 0.9s linear infinite; flex: none; }
+@keyframes dz-sp { to { transform: rotate(360deg); } }
+.legbtn { border: 0; background: transparent; color: var(--dz-mute); font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 1px; padding: 3px 2px 3px 4px; border-radius: 6px; flex: none; cursor: pointer; }
+.legbtn.none { visibility: hidden; pointer-events: none; }
+.legbtn:hover { background: var(--dz-raise); color: var(--dz-ink); }
+.legbtn .ti { font-size: 11px; transition: transform 0.2s; }
+.layer.leg-open .legbtn { background: var(--dz-raise); }
+.layer.leg-open .legbtn .ti { transform: rotate(180deg); }
+.lsw { display: flex; width: 16px; height: 12px; border-radius: 3px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--dz-swatch-edge); }
+.lsw i { flex: 1; }
+/* opacity: inline it starts at 64px, grows 1:1 with the row, stops at 180px; 250px is what toggle, name and legend toggle need */
+.opacity { display: flex; align-items: center; }
+.lrow .opacity { margin: 0; flex: 0 0 auto; width: clamp(64px, calc(100cqw - 250px), 180px); min-width: 0; }
+.lrow .opacity input { flex: 1 1 auto; width: 100%; min-width: 0; }
+/* JS sets .stack when the name would be cut off: the slider drops under the name */
+.layer.stack .lrow { flex-wrap: wrap; row-gap: 4px; }
+.layer.stack .lrow .lname { flex: 1 1 0; }
+.layer.stack .lrow .opacity { order: 10; flex: 0 0 100%; width: auto; padding-left: 22px; }
+.layer.stack .lrow .opacity input { flex: 0 0 auto; width: clamp(110px, calc(100cqw - 120px), 240px); }
+input[type="range"].dz { flex: 1; height: 16px; margin: 0; -webkit-appearance: none; appearance: none; background: transparent; }
+input[type="range"].dz::-webkit-slider-thumb { -webkit-appearance: none; border-radius: 50%; }
+/* the track's filled part and the handle's center take the layer's opacity (--a) */
+input[type="range"].dz.op { --a: 1; --v: 100%; }
+input[type="range"].dz.op::-webkit-slider-runnable-track { height: 6px; border-radius: 4px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dz-teal) 55%, var(--dz-line));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), transparent) var(--v), transparent var(--v)); }
+input[type="range"].dz.op::-webkit-slider-thumb { width: 13px; height: 13px; margin-top: -3.5px; border: 2px solid var(--dz-teal); background: color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), var(--dz-solid)); }
+input[type="range"].dz.op::-moz-range-track { height: 6px; border-radius: 4px; border: 1px solid color-mix(in srgb, var(--dz-teal) 55%, var(--dz-line)); background: transparent; }
+input[type="range"].dz.op::-moz-range-progress { height: 6px; border-radius: 4px; background: color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), transparent); }
+input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border: 2px solid var(--dz-teal); border-radius: 50%; background: color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), var(--dz-solid)); }
+/* legend inside the row; an off layer folds it and keeps its open state */
+.legend { margin: 8px 0 0 22px; display: none; gap: 3px 8px; grid-template-columns: 12px 1fr; font-size: 12px; color: var(--dz-mute); }
+.layer.leg-open .legend { display: grid; }
+.layer.off .legend { display: none !important; }
+.layer.off .legbtn { opacity: 0.45; pointer-events: none; }
+.layer.off .spin { display: none; }
+.sw { width: 12px; height: 12px; border-radius: 3px; margin-top: 2px; box-shadow: inset 0 0 0 1px var(--dz-swatch-edge); }
+.legend .lbl { overflow-wrap: anywhere; }
+.ramp { grid-column: 1 / -1; height: 10px; border-radius: 3px; }
+.ramp-l { grid-column: 1 / -1; display: flex; justify-content: space-between; font-size: 11px; }
+/* drag to reorder by the name; pinned layers do not move */
+.layer.sortable-ghost { opacity: 0.35; background: var(--dz-teal-soft); }
+.layer.sortable-chosen { background: var(--dz-raise); }
+.layer.sortable-drag { box-shadow: var(--dz-shadow); border-radius: 10px; }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
 /* map chrome */
 .hud { position: absolute; z-index: 3; pointer-events: none; }
 .status { left: var(--lw, var(--dz-left-default)); right: var(--rw, var(--dz-right-default)); bottom: 0; height: var(--dz-status-h); display: flex; align-items: center; gap: 16px; padding: 0 12px;
@@ -99,6 +153,8 @@ body.left-hidden .floating-hb { display: inline-grid; }
   body.m-full .pane { height: calc(100vh - 140px); }
   .tools { padding-top: 4px; }
   .tool { padding: 10px 2px; }
+  .layer { padding: 10px 14px; }
+  .tgl { width: 18px; height: 18px; }
   .mtabs { display: grid; grid-template-columns: 1fr 1fr; position: fixed; z-index: 9; left: 0; right: 0; bottom: 0; height: 64px; padding-bottom: 6px;
     background: var(--dz-solid); border-top: 1px solid var(--dz-line); }
   .mtabs button { border: 0; background: transparent; color: var(--dz-mute); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;

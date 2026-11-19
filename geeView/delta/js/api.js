@@ -166,6 +166,15 @@ export function createMapApi(store, engine = {}) {
     patchQuery({ boxColor: color }, "setQueryBoxColor");
   };
 
+  // Every layer in the layer list on or off (not select or area-chart-only layers).
+  const setAllVisible = (visible, reason) =>
+    store.update(
+      (s) => ({ ...s, layers: s.layers.map((l) => (l.kind === "select" || l.kind === "areaChartOnly" ? l : { ...l, visible })) }),
+      reason
+    );
+  api.turnOffAllLayers = () => setAllVisible(false, "turnOffAllLayers");
+  api.turnOnAllLayers = () => setAllVisible(true, "turnOnAllLayers");
+
   api.showSpinner = () => hook("showSpinner");
   api.hideSpinner = () => hook("hideSpinner");
 

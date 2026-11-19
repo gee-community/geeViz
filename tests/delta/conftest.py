@@ -86,14 +86,18 @@ def delta_page(delta_server, _browser):
 
 @pytest.fixture
 def live_map(_browser):
-    """live_map(build) -> Page. build(Map) adds layers; needs Earth Engine."""
+    """live_map(build, skin="delta") -> Page. build(Map) adds layers; needs Earth Engine.
+
+    With skin="original" the original viewer opens and the page is returned
+    as soon as it has loaded; the caller waits for what it needs.
+    """
     contexts = []
 
-    def make(build):
+    def make(build, skin="delta"):
         import geeViz.geeView as gv
 
         Map = gv.mapper()
-        Map.setSkin("delta")
+        Map.setSkin(skin)
         build(Map)
         # view() returns None; it hands the viewer URL to webbrowser.open, so
         # capture it there (nothing opens). It uses the already-running local
@@ -112,6 +116,8 @@ def live_map(_browser):
         page = ctx.new_page()
         _collect_errors(page)
         page.goto(url)
+        if skin != "delta":
+            return page
         page.wait_for_function("window.__delta !== undefined && window.__delta.ready === true", timeout=90000)
         deadline = time.time() + 60
         while time.time() < deadline:

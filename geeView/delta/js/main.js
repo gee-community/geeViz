@@ -12,12 +12,15 @@ import { mountMapControls } from "./ui/mapctl.js";
 import { mountSearch } from "./ui/search.js";
 import { createMap, whenGoogleReady } from "./engine/maps.js";
 import { initEE, describeEEFailure } from "./engine/ee.js";
+import { createLayerEngine } from "./engine/layers.js";
+import { mountLayers } from "./ui/layers.js";
 
 const store = createStore();
 store.set(initialShellState(store), "boot");
 
 const shell = mountShell(store, { mapEl: document.getElementById("map") });
 const status = mountStatus(store, document.getElementById("status"), document.getElementById("loadbar"));
+const layersUI = mountLayers(store, document.getElementById("layers-mount"));
 
 const notice = (msg) => store.update((s) => ({ ...s, notices: [...s.notices, msg] }), "notice");
 
@@ -27,7 +30,7 @@ function plainText(html) {
 }
 
 async function boot() {
-  const delta = (window.__delta = { store, shell, status, ready: false, eeError: null });
+  const delta = (window.__delta = { store, shell, status, layersUI, ready: false, eeError: null });
   try {
     await whenGoogleReady();
   } catch (e) {
@@ -44,6 +47,16 @@ async function boot() {
     notice("The map could not start: " + (e && e.message));
     delta.ready = true;
     return;
+  }
+  try {
+    const layers = createLayerEngine(engine.gmap, store);
+    Object.assign(engine, {
+      layers,
+      layerAdded: (layer) => layers.addLayerToMap(layer),
+      layerRemoved: (layer) => layers.removeLayer(layer),
+    });
+  } catch (e) {
+    notice("The layer engine could not start: " + (e && e.message));
   }
   const api = createMapApi(store, engine);
   Object.assign(delta, { api, engine });
@@ -89,6 +102,7 @@ async function boot() {
     closeLoading: () => {},
     notify: notice,
   });
+  layersUI.restoreOrder();
   delta.ready = true;
 }
 
@@ -96,7 +110,7 @@ if (new URLSearchParams(location.search).get("delta-test") === "shell") {
   // The stub engine has no hooks: every engine call is ignored.
   const engine = {};
   const api = createMapApi(store, engine);
-  window.__delta = { store, api, engine, shell, status, ready: true };
+  window.__delta = { store, api, engine, shell, status, layersUI, ready: true };
 } else {
   boot();
 }

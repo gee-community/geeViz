@@ -117,6 +117,19 @@
     </div>
 
     <div id="status" class="hud status"></div>
-    <div id="tpl"><template></template></div>
+    <div id="tpl">
+      <template id="tpl-layer-row">
+        <div class="layer">
+          <div class="lrow">
+            <button class="tgl" type="button" aria-pressed="true"></button>
+            <span class="lname"></span>
+            <span class="spin" title="Loading tiles" hidden></span>
+            <div class="opacity"><input class="dz op" type="range" min="0" max="100" step="1" value="100" aria-label="Opacity" /></div>
+            <button class="legbtn none" type="button" title="Show or hide legend" tabindex="-1"><span class="lsw"></span><i class="ti ti-chevron-down"></i></button>
+          </div>
+          <div class="legend"></div>
+        </div>
+      </template>
+    </div>
   </body>
 </html>
