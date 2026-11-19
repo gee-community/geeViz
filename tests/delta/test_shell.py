@@ -340,3 +340,111 @@ def test_drag_right_pane_once_on_release(delta_page):
     ctl = rect(page, "#mapctl")
     assert abs((1500 - ctl["right"]) - (want + 12)) <= 1, ctl
     assert abs(rect(page, "#status")["right"] - (1500 - want)) <= 1
+
+
+# ---- the drag always ends (Task 11d fix round 1) ----
+
+END_DRAG = """async ({how, xs}) => {
+  const { store } = __delta;
+  const grip = document.querySelector('.grip[data-side=left]');
+  let updates = 0;
+  const off = store.on('change:panes', (v, s, reason) => { if (reason === 'pane-width') updates++; });
+  const pe = (type, x, id = 9) => new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id, clientX: x, clientY: 300 });
+  const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  grip.dispatchEvent(pe('pointerdown', xs[0]));
+  // pointer capture did not take: the moves land on whatever is under the pointer
+  for (const x of xs) document.body.dispatchEvent(pe('pointermove', x));
+  await frame();
+  const during = { resizing: document.body.classList.contains('resizing'), width: document.querySelector('#pane-left').getBoundingClientRect().width };
+  const last = xs[xs.length - 1];
+  if (how === 'up-document') document.dispatchEvent(pe('pointerup', last));
+  else if (how === 'up-window') window.dispatchEvent(pe('pointerup', last));
+  else if (how === 'cancel') window.dispatchEvent(pe('pointercancel', last));
+  else if (how === 'lost') grip.dispatchEvent(pe('lostpointercapture', last));
+  else if (how === 'blur') window.dispatchEvent(new Event('blur'));
+  else if (how === 'escape') document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  else if (how === 'other-pointer-up') document.dispatchEvent(pe('pointerup', last, 3));
+  await frame();
+  const out = {
+    during,
+    resizing: document.body.classList.contains('resizing'),
+    drag: grip.classList.contains('drag'),
+    storeWidth: store.get().panes.left.width,
+    stored: localStorage.getItem('delta-left'),
+    width: document.querySelector('#pane-left').getBoundingClientRect().width,
+    updates,
+  };
+  off();
+  return out;
+}"""
+
+
+@pytest.mark.parametrize("how", ["up-document", "up-window", "cancel", "lost", "blur", "escape"])
+def test_drag_ends_however_the_pointer_is_released(delta_page, how):
+    page = delta_page(SHELL)
+    xs = [500 - i * 5 for i in range(40)]  # to 305
+    m = page.evaluate(END_DRAG, {"how": how, "xs": xs})
+    assert m["during"]["resizing"] and abs(m["during"]["width"] - xs[-1]) <= 1, m
+    assert not m["resizing"] and not m["drag"], m
+    assert m["storeWidth"] == xs[-1] and m["stored"] == str(xs[-1]) and m["updates"] == 1, m
+    assert abs(m["width"] - xs[-1]) <= 1, m
+    assert page.evaluate("getComputedStyle(document.querySelector('#map')).pointerEvents") != "none"
+
+
+def test_drag_ignores_other_pointers(delta_page):
+    page = delta_page(SHELL)
+    m = page.evaluate(END_DRAG, {"how": "other-pointer-up", "xs": [480, 450]})
+    assert m["resizing"] and m["drag"] and m["updates"] == 0, m
+    page.evaluate("document.dispatchEvent(new PointerEvent('pointerup', {bubbles: true, pointerId: 9, clientX: 450}))")
+    frames(page)
+    assert "resizing" not in page.evaluate("document.body.className")
+    assert page.evaluate("__delta.store.get().panes.left.width") == 450
+
+
+def test_new_pointerdown_ends_the_old_drag(delta_page):
+    page = delta_page(SHELL)
+    out = page.evaluate("""async () => {
+      const grip = document.querySelector('.grip[data-side=left]');
+      const pe = (type, x, id) => new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id, clientX: x, clientY: 300 });
+      grip.dispatchEvent(pe('pointerdown', 500, 1));
+      document.body.dispatchEvent(pe('pointermove', 400, 1));
+      grip.dispatchEvent(pe('pointerdown', 400, 2));
+      const mid = __delta.store.get().panes.left.width;
+      document.body.dispatchEvent(pe('pointermove', 350, 1));  // the old drag no longer moves the pane
+      document.body.dispatchEvent(pe('pointermove', 380, 2));
+      document.dispatchEvent(pe('pointerup', 380, 2));
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return { mid, end: __delta.store.get().panes.left.width, resizing: document.body.classList.contains('resizing') };
+    }""")
+    assert out == {"mid": 400, "end": 380, "resizing": False}, out
+
+
+def test_click_on_grip_keeps_width(delta_page):
+    page = delta_page(SHELL)
+    page.evaluate("__delta.store.update(s => ({...s, panes: {...s.panes, left: {...s.panes.left, width: 420}}}), 'test')")
+    box = page.locator(".grip[data-side=left]").bounding_box()
+    page.mouse.click(box["x"] + 2, box["y"] + 300)
+    frames(page)
+    assert page.evaluate("__delta.store.get().panes.left.width") == 420
+    assert "resizing" not in page.evaluate("document.body.className")
+
+
+def test_real_drag_released_over_the_map(delta_page):
+    page = delta_page(SHELL)
+    # As seen on the running demo: pointer capture does not take, so the moves
+    # and the release reach whatever is under the pointer (here the map, past the 750px cap).
+    page.evaluate("Element.prototype.setPointerCapture = function () { throw new DOMException('no capture', 'NotFoundError'); }; null")
+    box = page.locator(".grip[data-side=left]").bounding_box()
+    x, y = box["x"] + box["width"] / 2, box["y"] + 300
+    page.mouse.move(x, y)
+    page.mouse.down()
+    page.mouse.move(1000, y, steps=20)
+    over = page.evaluate("(p) => document.elementFromPoint(p[0], p[1]).id", [1000, y])
+    page.mouse.up()
+    frames(page)
+    assert over in ("map", ""), over  # not the pane, not the grip
+    assert abs(width(page, "#pane-left") - 750) <= 1
+    assert page.evaluate("__delta.store.get().panes.left.width") == 750
+    assert page.evaluate("localStorage.getItem('delta-left')") == "750"
+    assert "resizing" not in page.evaluate("document.body.className")
+    assert page.evaluate("document.querySelector('.grip[data-side=left]').classList.contains('drag')") is False

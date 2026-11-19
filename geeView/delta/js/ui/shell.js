@@ -147,16 +147,24 @@ export function mountShell(store, { mapEl } = {}) {
     }
   }
 
+  // A drag always ends: pointer capture can fail or be lost (seen on the
+  // running demo, with the map under the pointer), so the moves and the
+  // release are heard on window (capture phase, before the map can stop them),
+  // filtered by pointer id, and the drag also ends on lostpointercapture,
+  // window blur, Escape, or a new pointerdown on a grip.
+  let endDrag = null;
   $$(".grip").forEach((grip) => {
     const side = grip.dataset.side;
     grip.addEventListener("pointerdown", (e) => {
       e.preventDefault();
+      if (endDrag) endDrag();
+      const pid = e.pointerId;
       grip.classList.add("drag");
       body.classList.add("resizing");
       try {
-        grip.setPointerCapture(e.pointerId);
+        grip.setPointerCapture(pid);
       } catch (err) {
-        /* synthetic events have no capturable pointer */
+        /* synthetic events have no capturable pointer; window still hears the drag */
       }
       // One update per animation frame, from the latest pointer x.
       let latest = null;
@@ -167,24 +175,46 @@ export function mountShell(store, { mapEl } = {}) {
         if (latest !== null) applyLive(side, latest);
       };
       const move = (ev) => {
+        if (ev.pointerId !== pid) return;
         latest = widthAt(ev.clientX);
         if (!raf) raf = requestAnimationFrame(frame);
       };
-      const up = () => {
+      const opts = { capture: true };
+      const end = () => {
+        if (endDrag !== end) return;
+        endDrag = null;
         if (raf) cancelAnimationFrame(raf);
         raf = 0;
         grip.classList.remove("drag");
         body.classList.remove("resizing");
-        grip.removeEventListener("pointermove", move);
-        grip.removeEventListener("pointerup", up);
-        grip.removeEventListener("pointercancel", up);
+        removeEventListener("pointermove", move, opts);
+        removeEventListener("pointerup", onPointerEnd, opts);
+        removeEventListener("pointercancel", onPointerEnd, opts);
+        removeEventListener("blur", end);
+        removeEventListener("keydown", onKey, opts);
+        grip.removeEventListener("lostpointercapture", onPointerEnd);
+        try {
+          if (grip.hasPointerCapture && grip.hasPointerCapture(pid)) grip.releasePointerCapture(pid);
+        } catch (err) {
+          /* nothing to release */
+        }
         if (latest !== null && latest !== store.get().panes[side].width) setWidth(side, latest);
         applyLive(side, null);
         lsSet("delta-" + side, store.get().panes[side].width);
       };
-      grip.addEventListener("pointermove", move);
-      grip.addEventListener("pointerup", up);
-      grip.addEventListener("pointercancel", up);
+      const onPointerEnd = (ev) => {
+        if (ev.pointerId === pid) end();
+      };
+      const onKey = (ev) => {
+        if (ev.key === "Escape") end();
+      };
+      endDrag = end;
+      addEventListener("pointermove", move, opts);
+      addEventListener("pointerup", onPointerEnd, opts);
+      addEventListener("pointercancel", onPointerEnd, opts);
+      addEventListener("blur", end);
+      addEventListener("keydown", onKey, opts);
+      grip.addEventListener("lostpointercapture", onPointerEnd);
     });
     grip.addEventListener("dblclick", () => {
       setWidth(side, null);
