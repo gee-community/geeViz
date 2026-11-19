@@ -39,11 +39,59 @@
   </head>
   <body>
     <div id="map"></div>
-    <div id="pane-left"></div>
-    <div id="pane-right"></div>
-    <div id="status"></div>
-    <div id="mtop"></div>
-    <div id="mtabs"></div>
+    <div id="loadbar" class="loadbar" hidden></div>
+    <div id="mtop" class="mtop">
+      <button class="ib mlogo-btn" id="mlogo-btn" title="Theme and about"><img class="logo-img" alt="geeViz menu" /></button>
+      <button class="ib" data-act="locate" title="Go to my location"><i class="ti ti-current-location"></i></button>
+      <input data-role="search" placeholder="Search places" aria-label="Search places" />
+      <button class="ib" data-act="prev-view" title="Previous view"><i class="ti ti-chevron-left"></i></button>
+      <button class="ib" data-act="next-view" title="Next view"><i class="ti ti-chevron-right"></i></button>
+    </div>
+    <div id="mmenu" class="mmenu">
+      <div class="mm-h">Theme</div>
+      <button data-t="system"><i class="ti ti-device-mobile"></i>Match phone</button>
+      <button data-t="light"><i class="ti ti-sun"></i>Light</button>
+      <button data-t="dark"><i class="ti ti-moon"></i>Dark</button>
+    </div>
+    <nav id="mtabs" class="mtabs">
+      <button data-m="layers"><i class="ti ti-stack-2"></i>Layers</button>
+      <button data-m="tools"><i class="ti ti-tools"></i>Tools</button>
+    </nav>
+
+    <button id="hamburger-float" class="ib floating-hb" title="Show sidebar"><i class="ti ti-menu-2"></i></button>
+
+    <aside id="pane-left" class="pane pane-left">
+      <div class="brand">
+        <button id="hamburger" class="ib" title="Hide sidebar"><i class="ti ti-menu-2"></i></button>
+        <img class="logo-img" alt="" />
+        <span class="name" id="title">geeViz <b>Delta</b></span>
+        <button id="theme-btn" class="ib" title="Switch light or dark"><i class="ti ti-sun"></i></button>
+      </div>
+      <div class="search">
+        <button class="ib" data-act="locate" title="Go to my location"><i class="ti ti-current-location"></i></button>
+        <input data-role="search" placeholder="Search places or coordinates" aria-label="Search places" />
+        <span class="div"></span>
+        <button class="ib" data-act="prev-view" title="Previous view"><i class="ti ti-chevron-left"></i></button>
+        <button class="ib" data-act="next-view" title="Next view"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <div class="scroll" id="layers-mount"></div>
+      <div class="grip" data-side="left"></div>
+    </aside>
+
+    <aside id="pane-right" class="pane pane-right">
+      <div class="tools" role="group" aria-label="Tools" title="Click the active tool again to turn it off">
+        <button class="tool" data-tool="distance"><i class="ti ti-ruler-measure"></i>Distance</button>
+        <button class="tool" data-tool="area"><i class="ti ti-ruler-2"></i>Area</button>
+        <button class="tool" data-tool="query"><i class="ti ti-crosshair"></i>Query</button>
+        <button class="tool" data-tool="chart"><i class="ti ti-chart-area-line"></i>Chart area</button>
+      </div>
+      <div id="tool-options"></div>
+      <div class="out-h"><i class="ti ti-list-details"></i>Output <span class="where mono" id="where"></span></div>
+      <div class="scroll" id="results-mount"></div>
+      <div class="grip" data-side="right"></div>
+    </aside>
+
+    <div id="status" class="hud status"></div>
     <div id="tpl"><template></template></div>
   </body>
 </html>
