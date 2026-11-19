@@ -156,3 +156,71 @@ def test_no_page_errors(delta_page):
     page = delta_page(SHELL)
     errs = [e for e in page.delta_errors if "Failed to load resource" not in e]
     assert errs == []
+
+
+def focusable_in(page, sel):
+    """Tab through the page; return True if focus ever lands inside sel."""
+    page.evaluate("document.activeElement && document.activeElement.blur()")
+    for _ in range(40):
+        page.keyboard.press("Tab")
+        if page.evaluate("s => !!document.activeElement.closest(s)", sel):
+            return True
+    return False
+
+
+def test_hidden_left_pane_is_inert_and_restored(delta_page):
+    page = delta_page(SHELL)
+    page.click("#hamburger")
+    assert page.evaluate("document.querySelector('#pane-left').inert") is True
+    assert page.get_attribute("#pane-left", "aria-hidden") == "true"
+    page.evaluate("document.querySelector('#theme-btn').focus()")
+    assert page.evaluate("document.activeElement.id") != "theme-btn"
+    assert not focusable_in(page, "#pane-left")
+    page.click("#hamburger-float")
+    assert page.evaluate("document.querySelector('#pane-left').inert") is False
+    assert page.get_attribute("#pane-left", "aria-hidden") is None
+    page.evaluate("document.querySelector('#theme-btn').focus()")
+    assert page.evaluate("document.activeElement.id") == "theme-btn"
+
+
+def test_hidden_state_survives_reload_inert(delta_page):
+    page = delta_page({**SHELL, "showSidebar": "false"})
+    assert page.evaluate("document.querySelector('#pane-left').inert") is True
+
+
+def test_closed_phone_sheets_are_inert(delta_page):
+    page = delta_page(SHELL, viewport={"width": 390, "height": 844})
+    inert = lambda sel: page.evaluate("s => document.querySelector(s).inert", sel)
+    assert inert("#pane-left") and inert("#pane-right")
+    page.click("#mtabs [data-m=layers]")
+    assert not inert("#pane-left") and inert("#pane-right")
+    page.click("#mtabs [data-m=tools]")
+    assert inert("#pane-left") and not inert("#pane-right")
+    page.click("#mtabs [data-m=tools]")
+    assert inert("#pane-left") and inert("#pane-right")
+    # back to desktop width: both panes are live again
+    page.set_viewport_size({"width": 1500, "height": 900})
+    assert not inert("#pane-left") and not inert("#pane-right")
+
+
+def test_theme_applied_before_module_runs(delta_server, _browser):
+    ctx = _browser.new_context(color_scheme="dark")
+    ctx.route("**/*", lambda r: r.continue_() if r.request.url.startswith(delta_server) else r.abort())
+    page = ctx.new_page()
+    # block the module so only the inline head script can set the theme
+    page.route("**/delta/js/main.js", lambda r: r.abort())
+    page.goto(delta_server + "/delta.html?delta-test=shell")
+    assert theme(page) == "dark"
+    ctx.close()
+
+
+def test_stored_width_is_clamped_on_load_and_resize(delta_page, delta_server):
+    page = delta_page(SHELL)
+    page.evaluate("localStorage.setItem('delta-left', '5000')")
+    page.reload()
+    booted(page)
+    assert abs(width(page, "#pane-left") - 750) <= 1
+    page.set_viewport_size({"width": 800, "height": 900})
+    page.wait_for_function("Math.abs(document.querySelector('#pane-left').getBoundingClientRect().width - 400) <= 1")
+    # the stored preference itself is untouched
+    assert page.evaluate("localStorage.getItem('delta-left')") == "5000"

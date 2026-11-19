@@ -11,6 +11,17 @@
       var mode = "geeViz";
     </script>
 
+    <!-- Apply the theme before first paint (delta-theme, else the system setting) -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("delta-theme");
+          if (t !== "light" && t !== "dark") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          document.documentElement.setAttribute("data-bs-theme", t);
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- Google Maps API -->
     <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBGYMetcutixj0RwQG838jzqnS4ZK-6jeQ&libraries=places,geometry"></script>
 

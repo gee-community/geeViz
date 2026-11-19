@@ -40,14 +40,19 @@ export function clampWidth(side, w, windowWidth) {
   return Math.round(Math.max(min, Math.min(windowWidth * 0.5, w)));
 }
 
+function clampStored(side) {
+  const w = readStoredWidth(side);
+  return w === null ? null : clampWidth(side, w, innerWidth);
+}
+
 // Initial store patch from the url and local storage; call before mountShell.
 export function initialShellState(store) {
   const panes = store.get().panes;
   return {
     theme: readStoredTheme(),
     panes: {
-      left: { ...panes.left, visible: readShowSidebar(), width: readStoredWidth("left") },
-      right: { ...panes.right, width: readStoredWidth("right") },
+      left: { ...panes.left, visible: readShowSidebar(), width: clampStored("left") },
+      right: { ...panes.right, width: clampStored("right") },
     },
   };
 }
@@ -58,7 +63,23 @@ export function mountShell(store, { mapEl } = {}) {
   const body = document.body;
   const root = document.documentElement;
   const sysDark = matchMedia("(prefers-color-scheme: dark)");
-  const isPhone = () => matchMedia("(max-width: 760px)").matches;
+  const phoneMq = matchMedia("(max-width: 760px)");
+  const isPhone = () => phoneMq.matches;
+
+  // A pane that is slid off-screen (hidden sidebar, closed phone sheet) must
+  // also leave the tab order and the accessibility tree.
+  function renderInert() {
+    const phone = isPhone();
+    const leftShown = phone ? body.classList.contains("m-layers") : store.get().panes.left.visible !== false;
+    const rightShown = phone ? body.classList.contains("m-tools") : true;
+    [["#pane-left", leftShown], ["#pane-right", rightShown]].forEach(([sel, shown]) => {
+      const el = $(sel);
+      el.inert = !shown;
+      if (shown) el.removeAttribute("aria-hidden");
+      else el.setAttribute("aria-hidden", "true");
+    });
+  }
+  phoneMq.addEventListener("change", renderInert);
 
   // ---- theme ----
   const effectiveTheme = () => {
@@ -99,6 +120,7 @@ export function mountShell(store, { mapEl } = {}) {
     if (left.visible === false) url.searchParams.set("showSidebar", "false");
     else url.searchParams.delete("showSidebar");
     if (url.href !== location.href) history.replaceState(null, "", url);
+    renderInert();
   }
   store.on("change:panes", renderPanes);
 
@@ -136,6 +158,17 @@ export function mountShell(store, { mapEl } = {}) {
     });
   });
 
+  // Stored or earlier widths can exceed the window after it shrinks: clamp what is shown.
+  function reclamp() {
+    const { left, right } = store.get().panes;
+    const l = left.width ? clampWidth("left", left.width, innerWidth) : null;
+    const r = right.width ? clampWidth("right", right.width, innerWidth) : null;
+    if (l !== left.width) setWidth("left", l);
+    if (r !== right.width) setWidth("right", r);
+  }
+  addEventListener("resize", reclamp);
+  reclamp();
+
   const setLeftVisible = (visible) =>
     store.update((s) => ({ ...s, panes: { ...s.panes, left: { ...s.panes.left, visible } } }), "hamburger");
   $("#hamburger").addEventListener("click", () => setLeftVisible(false));
@@ -172,6 +205,7 @@ export function mountShell(store, { mapEl } = {}) {
     body.classList.remove("m-layers", "m-tools", "m-full");
     if (!was) body.classList.add("m-" + name);
     $$("#mtabs [data-m]").forEach((b) => b.classList.toggle("on", body.classList.contains("m-" + b.dataset.m)));
+    renderInert();
   }
   $$("#mtabs [data-m]").forEach((b) => b.addEventListener("click", () => openSheet(b.dataset.m)));
   $$(".pane").forEach((p) =>
