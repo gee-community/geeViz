@@ -68,6 +68,8 @@ export function createLayerEngine(gmap, store, deps = {}) {
   // visibility, opacity, tile services, removal.
   const listeners = new Set();
   const changed = () => listeners.forEach((fn) => fn());
+  // The labels overlay (engine/maps.js labelsOverlay), or null.
+  const labelsOverlay = deps.labels || (() => null);
 
   function patch(id, p, reason) {
     if (!recs.has(id)) return;
@@ -88,7 +90,9 @@ export function createLayerEngine(gmap, store, deps = {}) {
   // equals list order (bottom of the list at index 0); Data layers take zIndex.
   // A timelapse fills one slot per frame, first year lowest (the original adds
   // its frames in year order), and is on the map only while its controller
-  // shows it.
+  // shows it. The labels overlay comes last, above every layer (port of
+  // 4map-manager.js addLabelOverlay: index = number of layers), and nothing
+  // follows it.
   function slotsFor(r) {
     if (isWindViz(r.viz)) return r.timelapse ? r.frames.map(() => null) : [null];
     if (r.timelapse) return r.frames.map((f) => (r.framesShown && f.overlay ? f.overlay : null));
@@ -103,11 +107,14 @@ export function createLayerEngine(gmap, store, deps = {}) {
       r.slot = slots.length;
       slots.push(...slotsFor(r));
     });
+    const labels = labelsOverlay();
+    if (labels) slots.push(labels);
     while (omt.getLength() < slots.length) omt.push(null);
     slots.forEach((want, i) => {
       if (omt.getAt(i) !== want) omt.setAt(i, want);
     });
-    for (let i = slots.length; i < omt.getLength(); i++) if (omt.getAt(i) !== null) omt.setAt(i, null);
+    // Only empty slots can follow; dropping them shifts nothing.
+    while (omt.getLength() > slots.length) omt.removeAt(omt.getLength() - 1);
     const vectors = stackOrder(order, (id) => recs.has(id) && recs.get(id).dataType);
     vectors.forEach((id, i) => {
       const r = recs.get(id);
@@ -556,6 +563,8 @@ export function createLayerEngine(gmap, store, deps = {}) {
     });
   });
   store.on("change:order", (o) => applyOrder(o));
+  // The labels overlay is on the map before any layer is.
+  sync();
 
-  return { addLayerToMap, setLayerVisible, setLayerOpacity, applyOrder, removeLayer, zOrder, slotOrder, stats, timelapse, queryTarget, windSources, onChange, setLayerLoading };
+  return { sync, addLayerToMap, setLayerVisible, setLayerOpacity, applyOrder, removeLayer, zOrder, slotOrder, stats, timelapse, queryTarget, windSources, onChange, setLayerLoading };
 }

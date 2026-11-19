@@ -90,8 +90,10 @@ def test_frames_and_years(page):
     z = page.evaluate("__delta.engine.layers.zOrder()")
     ids = {n: layer(page, n)["id"] for n in ("SRTM", "LCMS TL", "SRTM top")}
     assert z["tiles"] == [ids["SRTM"]] + [ids["LCMS TL"]] * 9 + [ids["SRTM top"]], z["tiles"]
-    omt = page.evaluate("__delta.engine.gmap.overlayMapTypes.getArray().filter(o => o).length")
+    # Eleven layer overlays, then the labels overlay on top (test_labels.py).
+    omt = page.evaluate("__delta.engine.gmap.overlayMapTypes.getArray().filter(o => o && o !== __delta.engine.labelsOverlay()).length")
     assert omt == 11
+    assert page.evaluate("(a => a[a.length - 1] === __delta.engine.labelsOverlay())(__delta.engine.gmap.overlayMapTypes.getArray())")
     assert layer(page, "NDVI TL")["timelapse"]["years"] == ["2018", "2019", "2020"]
     sel = row_sel(page, "LCMS TL")
     assert page.locator(sel + " .tl").is_visible()

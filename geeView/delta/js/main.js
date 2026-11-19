@@ -85,8 +85,10 @@ async function boot() {
     return;
   }
   try {
-    const layers = createLayerEngine(engine.gmap, store);
+    const layers = createLayerEngine(engine.gmap, store, { labels: () => engine.labelsOverlay() });
     layerEngine = layers;
+    // A basemap switch swaps the labels overlay's style.
+    engine.onBasemap(() => layers.sync());
     Object.assign(engine, {
       layers,
       layerAdded: (layer) => layers.addLayerToMap(layer),

@@ -12,6 +12,22 @@ export const DARK_STYLE = [
 
 export const BASEMAPS = { satellite: "hybrid", map: "roadmap", dark: "dark" };
 
+// The labels overlay: a labels-only map drawn above every layer, so opaque
+// layers do not hide place names. port of 4map-manager.js labelsMapType
+// (geometry fill off, strokes as hairlines). The dark basemap's labels keep
+// DARK_STYLE's colors, so they stay light on dark.
+export const LABELS_STYLE = [
+  { elementType: "geometry.fill", stylers: [{ visibility: "off" }] },
+  { elementType: "geometry.stroke", stylers: [{ weight: 0.01 }] },
+];
+export function labelsStyleFor(baseStyle) {
+  const keep = (s) => (s.elementType && s.elementType.indexOf("labels") === 0) || (s.featureType && !s.elementType && s.stylers.some((x) => x.visibility === "off"));
+  return [...LABELS_STYLE, ...(baseStyle || []).filter(keep)];
+}
+// port of smartAddLabelOverlay: on unless the URL says addLabelOverlay=false.
+// The original's urlParams are JSON-parsed (false); Delta's are strings.
+export const labelsEnabled = (params) => String((params || {}).addLabelOverlay) !== "false";
+
 const SAME = 1e-7;
 
 // Resolves once the async Google Maps script (with places) has defined itself.
@@ -85,6 +101,12 @@ export function createMap(el, store) {
     gestureHandling: "greedy",
   });
   gmap.mapTypes.set("dark", new g.StyledMapType(DARK_STYLE, { name: "Dark" }));
+  // One labels map type per style, made once; the layer engine stacks the
+  // current one above every layer (engine/layers.js sync).
+  const withLabels = labelsEnabled(params);
+  const labels = withLabels
+    ? { light: new g.StyledMapType(LABELS_STYLE, { name: "Labels" }), dark: new g.StyledMapType(labelsStyleFor(DARK_STYLE), { name: "Dark labels" }) }
+    : null;
 
   const listeners = { history: [], streetView: [], pick: [], cursor: [], zoom: [], basemap: [] };
   const emit = (k, ...a) => listeners[k].forEach((fn) => fn(...a));
@@ -252,6 +274,8 @@ export function createMap(el, store) {
     gmap,
     setBasemap,
     basemap: () => basemap,
+    // The labels map type for the current basemap, or null (addLabelOverlay=false).
+    labelsOverlay: () => (labels ? (basemap === "dark" ? labels.dark : labels.light) : null),
     setCenter,
     centerObject,
     synchronousCenterObject,
