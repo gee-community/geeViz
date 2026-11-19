@@ -126,6 +126,14 @@ py_viz_dir = os.path.dirname(__file__)
 
 # Specify location of files to run
 template = os.path.join(py_viz_dir, geeViewFolder, "index.html")
+
+# Viewer skins. "original" is geeView/index.html; "delta" is
+# geeView/delta.html (assets under geeView/delta/). Both load the same
+# per-session runGeeViz.js, so everything the Python side emits is
+# skin-independent. GEEVIZ_SKIN picks the default; Map.setSkin() overrides.
+SKINS = ("original", "delta")
+delta_template = os.path.join(py_viz_dir, geeViewFolder, "delta.html")
+_SKIN_PAGES = {"original": "", "delta": "delta.html"}
 ee_run_dir = os.path.join(py_viz_dir, geeViewFolder, "src/gee/gee-run/")
 if os.path.exists(ee_run_dir) == False:
     os.makedirs(ee_run_dir)
@@ -1209,6 +1217,8 @@ class mapper:
         # here raises NameError — which breaks `import geeViz.geeView`
         # outright.
         self._port_explicit = int(port) != int(self._DEFAULT_PORT)
+        _env_skin = os.environ.get("GEEVIZ_SKIN", "").strip().lower()
+        self.skin = _env_skin if _env_skin in SKINS else "original"
         self.layerNumber = 1
         self.idDictList = []
         self.mapCommandList = []
@@ -2504,6 +2514,25 @@ class mapper:
 
     ######################################################################
     # Standalone HTML export for embedding in chat UIs / cloud-hosted viewers
+    def setSkin(self, name: str) -> None:
+        """Choose the viewer page: ``"original"`` or ``"delta"``.
+
+        Affects :meth:`view`, :meth:`export_html` and :meth:`testView`.
+        The default comes from the ``GEEVIZ_SKIN`` environment variable
+        when it names a valid skin, else ``"original"``.
+
+        Args:
+            name (str): One of ``SKINS``.
+
+        Raises:
+            ValueError: If ``name`` is not a known skin.
+        """
+        if name not in SKINS:
+            raise ValueError(
+                "Unknown skin {!r}; choose one of: {}".format(name, ", ".join(SKINS))
+            )
+        self.skin = name
+
     def export_html(
         self,
         output_path: str,
@@ -2558,7 +2587,7 @@ class mapper:
 
         run_js = self._build_run_js()
 
-        with open(template, "r", encoding="utf-8") as f:
+        with open(delta_template if self.skin == "delta" else template, "r", encoding="utf-8") as f:
             html = f.read()
 
         # The template hard-codes geeViz's own Google Maps key, which is
@@ -2615,6 +2644,9 @@ class mapper:
         # Now rewrite the rest of the ./src/ asset paths
         html = html.replace('href="./src/', 'href="' + asset_base + '/src/')
         html = html.replace('src="./src/', 'src="' + asset_base + '/src/')
+        # Delta skin assets (no-ops for the original page).
+        html = html.replace('href="./delta/', 'href="' + asset_base + '/delta/')
+        html = html.replace('src="./delta/', 'src="' + asset_base + '/delta/')
 
         # Refuse a page that can never be delivered. Checked here, before
         # the write, so an oversized map fails as an error the caller sees
@@ -2923,7 +2955,7 @@ class mapper:
                     pass
             proxy_js = "google.colab.kernel.proxyPort({})".format(colab_port)
             proxy_url = eval_js(proxy_js)
-            geeView_url = "{}/geeView/{}".format(proxy_url, query)
+            geeView_url = "{}/geeView/{}{}".format(proxy_url, _SKIN_PAGES[self.skin], query)
             print("Colab Proxy URL:", geeView_url)
             self.IFrame = IFrame(src=geeView_url, width="100%", height="{}px".format(iframe_height))
             display(self.IFrame)
@@ -2932,8 +2964,8 @@ class mapper:
             if self.proxy_url is None:
                 self.proxy_url = _detect_proxy_url()
             self.proxy_url = baseDomain(self.proxy_url)
-            geeView_url = "{}/proxy/{}/geeView/{}".format(
-                self.proxy_url, self.port, query
+            geeView_url = "{}/proxy/{}/geeView/{}{}".format(
+                self.proxy_url, self.port, _SKIN_PAGES[self.skin], query
             )
             print("Proxy URL:", geeView_url)
             self.IFrame = IFrame(src=geeView_url, width="100%", height="{}px".format(iframe_height))
@@ -2948,7 +2980,7 @@ class mapper:
             base = ee_proxy_url.rstrip("/")
             if base.endswith("/ee-api"):
                 base = base[: -len("/ee-api")]
-            url = f"{base}/geeView/{query}"
+            url = f"{base}/geeView/{_SKIN_PAGES[self.skin]}{query}"
             print("geeView URL:", url)
             if want_iframe:
                 self.IFrame = IFrame(src=url, width="100%", height="{}px".format(iframe_height))
@@ -2967,7 +2999,7 @@ class mapper:
             # first, the http.server only binds IPv4, and naive tools
             # (older Python `requests`, curl without Happy Eyeballs)
             # fail with "connection refused" even though 127.0.0.1 works.
-            url = "http://127.0.0.1:{}/geeView/{}".format(self.port, query)
+            url = "http://127.0.0.1:{}/geeView/{}{}".format(self.port, _SKIN_PAGES[self.skin], query)
             print("geeView URL:", url)
             if want_iframe:
                 self.IFrame = IFrame(src=url, width="100%", height="{}px".format(iframe_height))

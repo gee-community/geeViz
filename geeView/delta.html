@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+    <meta content="utf-8" http-equiv="encoding" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>geeViz Delta</title>
+    <link rel="icon" href="./src/assets/images/geeViz-logo-light.png" />
+
+    <script type="text/javascript">
+      var mode = "geeViz";
+    </script>
+
+    <!-- Google Maps API -->
+    <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBGYMetcutixj0RwQG838jzqnS4ZK-6jeQ&libraries=places,geometry"></script>
+
+    <!-- Google Earth Engine API -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/google/earthengine-api@0.1.384/javascript/build/ee_api_js.js" integrity="sha384-tVeKMyegigBNslCtw6N8XPV6d0lspVooP+BNun6SrZw5uy4aLRu2ihAeA129D5Lo" crossorigin="anonymous"></script>
+
+    <!-- Libraries -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" integrity="sha384-Hl48Kq2HifOWdXEjMsKo6qxqvRLTYqIGbvlENBmkHAxZKIGCXv43H6W1jA671RzC" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+
+    <!-- Delta styles and compatibility shim -->
+    <link rel="stylesheet" href="./delta/css/tokens.css" />
+    <link rel="stylesheet" href="./delta/css/delta.css" />
+    <script type="text/javascript" src="./delta/js/compat.js"></script>
+
+    <!-- Per-session run script (same tag as index.html) -->
+    <script type="text/javascript" src="./src/gee/gee-run/runGeeViz.js"></script>
+    <script type="module" src="./delta/js/main.js"></script>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="pane-left"></div>
+    <div id="pane-right"></div>
+    <div id="status"></div>
+    <div id="mtop"></div>
+    <div id="mtabs"></div>
+    <div id="tpl"><template></template></div>
+  </body>
+</html>
