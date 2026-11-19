@@ -448,3 +448,73 @@ def test_real_drag_released_over_the_map(delta_page):
     assert page.evaluate("localStorage.getItem('delta-left')") == "750"
     assert "resizing" not in page.evaluate("document.body.className")
     assert page.evaluate("document.querySelector('.grip[data-side=left]').classList.contains('drag')") is False
+
+
+# ---- grips are easy to grab (Task 11f) ----
+
+HIT = """([x, y]) => { const e = document.elementFromPoint(x, y); return e ? (e.classList.contains('grip') ? 'grip:' + e.dataset.side : (e.id || e.className || e.tagName)) : null; }"""
+
+
+def test_grip_hit_area_and_neighbors(delta_page):
+    page = delta_page(SHELL)
+    page.evaluate("__delta.store.set({tool: 'query'})")
+    page.wait_for_function("Math.abs(document.querySelector('#pane-right').getBoundingClientRect().width - 330) <= 1")
+    for i in range(40):
+        page.evaluate("(i) => __delta.api.addLayer({}, {}, 'Layer ' + i)", i)
+    settle = "() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))"
+    page.evaluate(settle)
+    y = 400
+    left_edge = rect(page, "#pane-left")["right"]
+    right_edge = rect(page, "#pane-right")["left"]
+    for d in (-6, -3, 0, 3, 6):
+        assert page.evaluate(HIT, [left_edge + d, y]) == "grip:left", d
+        assert page.evaluate(HIT, [right_edge + d, y]) == "grip:right", d
+    for side, edge in (("left", left_edge), ("right", right_edge)):
+        g = rect(page, ".grip[data-side=%s]" % side)
+        assert abs(g["width"] - 14) <= 0.5 and abs((g["left"] + g["right"]) / 2 - edge) <= 0.5, (side, g, edge)
+        assert page.evaluate("(s) => getComputedStyle(document.querySelector(s)).cursor", ".grip[data-side=%s]" % side) == "col-resize"
+    # the layer list scrolls, and its scrollbar is not under the grip
+    sc = page.evaluate("() => { const s = document.querySelector('#layers-mount'); const b = s.getBoundingClientRect(); return {over: s.scrollHeight > s.clientHeight, right: b.right, bar: s.offsetWidth - s.clientWidth}; }")
+    # (headless Chromium may draw overlay scrollbars, width 0; the bar sits at the box's right edge either way)
+    assert sc["over"], sc
+    assert sc["right"] <= rect(page, ".grip[data-side=left]")["left"] + 0.5, sc
+    # the layer row's controls and the map controls beside the right pane stay clickable
+    for sel in ("#layer-list .layer .tgl", "#layer-list .layer .legbtn", "#mapctl [data-act=zoom-in]", "#mapctl .bm.on"):
+        page.evaluate("(s) => document.querySelector(s).classList.remove('none')", sel)
+        b = page.evaluate("(s) => { const r = document.querySelector(s).getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.right - 1]; }", sel)
+        for x in (b[0], b[2]):
+            assert page.evaluate("([x, y, s]) => document.querySelector(s).contains(document.elementFromPoint(x, y))", [x, b[1], sel]), (sel, x)
+
+
+@pytest.mark.parametrize("scheme", ["dark", "light"])
+def test_grip_affordance_on_hover_and_drag(delta_page, scheme):
+    page = delta_page(SHELL, color_scheme=scheme)
+    pill = "(s) => { const c = getComputedStyle(document.querySelector(s), '::before'); return {op: c.opacity, bg: c.backgroundColor, h: parseFloat(c.height), w: parseFloat(c.width)}; }"
+    teal = page.evaluate("() => { const d = document.createElement('div'); d.style.color = 'var(--dz-teal)'; document.body.appendChild(d); const c = getComputedStyle(d).color; d.remove(); return c; }")
+    g = ".grip[data-side=left]"
+    assert page.evaluate(pill, g)["op"] == "0"
+    box = page.locator(g).bounding_box()
+    page.mouse.move(box["x"] + 7, box["y"] + 300)
+    page.wait_for_function("(s) => getComputedStyle(document.querySelector(s), '::before').opacity === '1'", arg=g)
+    p = page.evaluate(pill, g)
+    assert p["bg"] == teal and p["h"] >= 24 and 2 <= p["w"] <= 6, (p, teal)
+    page.mouse.down()
+    page.mouse.move(box["x"] - 50, box["y"] + 300, steps=5)
+    assert page.evaluate(pill, g)["op"] == "1"  # still shown while dragging, pointer off the grip or not
+    page.mouse.up()
+
+
+def test_real_drag_right_grip_wider_then_narrower(delta_page):
+    page = delta_page(SHELL)
+    page.evaluate("__delta.store.set({tool: 'query'})")
+    page.wait_for_function("Math.abs(document.querySelector('#pane-right').getBoundingClientRect().width - 330) <= 1")
+    y = 400
+    for dx, want in ((-250, 580), (250, 330)):
+        edge = rect(page, "#pane-right")["left"]
+        page.mouse.move(edge, y)
+        page.mouse.down()
+        page.mouse.move(edge + dx, y, steps=25)
+        page.mouse.up()
+        frames(page)
+        assert abs(width(page, "#pane-right") - want) <= 2, (dx, width(page, "#pane-right"))
+        assert page.evaluate("__delta.store.get().panes.right.width") == round(width(page, "#pane-right"))

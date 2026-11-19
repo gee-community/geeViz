@@ -17,11 +17,22 @@ body.left-hidden .pane-left { transform: translateX(-100%); }
 body.resizing { user-select: none; -webkit-user-select: none; cursor: col-resize; }
 body.resizing .pane { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--dz-solid); transition: none; }
 body.resizing #map { pointer-events: none; }
-.grip { position: absolute; top: 0; bottom: 0; width: 9px; cursor: col-resize; z-index: 6; touch-action: none; }
-.pane-left .grip { right: -5px; }
-.pane-right .grip { left: -5px; }
-.grip::after { content: ""; position: absolute; left: 4px; top: 0; bottom: 0; width: 1px; background: transparent; transition: background 0.15s; }
+/* grips: a 14px hit area centered on the pane edge, a teal edge line and a short pill on hover and while dragging */
+.pane { --grip-half: 7px; }
+.grip { position: absolute; top: 0; bottom: 0; width: calc(2 * var(--grip-half)); cursor: col-resize; z-index: 6; touch-action: none; }
+/* offsets count from the padding box: the extra 1px is the pane's border, so the grip centers on its outer edge */
+.pane-left .grip { right: calc(-1 * var(--grip-half) - 1px); }
+.pane-right .grip { left: calc(-1 * var(--grip-half) - 1px); }
+.grip::after { content: ""; position: absolute; left: calc(50% - 0.5px); top: 0; bottom: 0; width: 1px; background: transparent; transition: background 0.15s; }
+.grip::before { content: ""; position: absolute; left: calc(50% - 2px); top: calc(50% - 20px); width: 4px; height: 40px; border-radius: 2px; background: var(--dz-teal);
+  box-shadow: 0 0 0 2px var(--dz-solid); opacity: 0; transition: opacity 0.15s; z-index: 1; }
 .grip:hover::after, .grip.drag::after { background: var(--dz-teal); }
+.grip:hover::before, .grip.drag::before { opacity: 1; }
+/* the layer list's scrollbar stays clear of the grip's inner half; rows keep their content width */
+@media (min-width: 761px) {
+  .pane-left > .scroll { margin-right: var(--grip-half); }
+  .pane-left .layer { padding-right: calc(12px - var(--grip-half)); }
+}
 .scroll { overflow-y: auto; flex: 1; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--dz-faint) transparent; }
 .floating-hb { position: absolute; left: 12px; top: 12px; z-index: 4; background: var(--dz-panel); backdrop-filter: blur(10px); }
 
