@@ -155,6 +155,20 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
 .tip b { display: block; font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .sankey-wrap .link, .tip { transition: none; } }
 
+/* desktop panes are as tall as their content, at most the window; the content area scrolls under the pinned
+   header (brand and search on the left, the tool strip on the right) and the map is live below a short pane */
+@media (min-width: 761px) {
+  .pane { bottom: auto; max-height: 100%; border-bottom: 1px solid var(--dz-line); }
+  .pane-left { border-bottom-right-radius: 12px; }
+  .pane-right { border-bottom-left-radius: 12px; }
+  .pane-body { flex: 0 1 auto; min-height: 0; }
+  .pane-body { overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--dz-faint) transparent; }
+  .pane-body > .scroll { overflow: visible; }
+}
+/* phones: the wrapper steps aside and the sheet keeps its layout (results scroll) */
+@media (max-width: 760px) {
+  .pane-body { display: contents; }
+}
 @media (min-width: 761px) {
   body.no-tool .pane-right { width: var(--dz-right-folded); }
   body.no-tool .pane-right > *:not(.tools) { display: none !important; }

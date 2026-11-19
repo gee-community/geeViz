@@ -18,7 +18,7 @@ def test_left_default_is_a_third(delta_page):
 
 def drag_left_grip(page, to_x):
     box = page.locator(".grip[data-side=left]").bounding_box()
-    x, y = box["x"] + box["width"] / 2, box["y"] + 200
+    x, y = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
     page.mouse.move(x, y)
     page.mouse.down()
     page.mouse.move((x + to_x) / 2, y, steps=4)
@@ -246,7 +246,7 @@ def test_drag_left_smaller_and_back(delta_page, scheme):
     assert abs(width(page, "#pane-left") - 500) <= 1
     for target, stacked in ((260, True), (500, False)):
         box = page.locator(".grip[data-side=left]").bounding_box()
-        x, y = box["x"] + box["width"] / 2, box["y"] + 300
+        x, y = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
         page.mouse.move(x, y)
         page.mouse.down()
         page.mouse.move(target, y, steps=30)
@@ -423,7 +423,7 @@ def test_click_on_grip_keeps_width(delta_page):
     page = delta_page(SHELL)
     page.evaluate("__delta.store.update(s => ({...s, panes: {...s.panes, left: {...s.panes.left, width: 420}}}), 'test')")
     box = page.locator(".grip[data-side=left]").bounding_box()
-    page.mouse.click(box["x"] + 2, box["y"] + 300)
+    page.mouse.click(box["x"] + 2, box["y"] + box["height"] / 2)
     frames(page)
     assert page.evaluate("__delta.store.get().panes.left.width") == 420
     assert "resizing" not in page.evaluate("document.body.className")
@@ -435,7 +435,7 @@ def test_real_drag_released_over_the_map(delta_page):
     # and the release reach whatever is under the pointer (here the map, past the 750px cap).
     page.evaluate("Element.prototype.setPointerCapture = function () { throw new DOMException('no capture', 'NotFoundError'); }; null")
     box = page.locator(".grip[data-side=left]").bounding_box()
-    x, y = box["x"] + box["width"] / 2, box["y"] + 300
+    x, y = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
     page.mouse.move(x, y)
     page.mouse.down()
     page.mouse.move(1000, y, steps=20)
@@ -463,12 +463,13 @@ def test_grip_hit_area_and_neighbors(delta_page):
         page.evaluate("(i) => __delta.api.addLayer({}, {}, 'Layer ' + i)", i)
     settle = "() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))"
     page.evaluate(settle)
-    y = 400
+    # panes are as tall as their content: probe each grip at its own middle
+    mid = lambda side: page.evaluate("(s) => { const b = document.querySelector(s).getBoundingClientRect(); return b.top + b.height / 2; }", ".grip[data-side=%s]" % side)
     left_edge = rect(page, "#pane-left")["right"]
     right_edge = rect(page, "#pane-right")["left"]
     for d in (-6, -3, 0, 3, 6):
-        assert page.evaluate(HIT, [left_edge + d, y]) == "grip:left", d
-        assert page.evaluate(HIT, [right_edge + d, y]) == "grip:right", d
+        assert page.evaluate(HIT, [left_edge + d, mid("left")]) == "grip:left", d
+        assert page.evaluate(HIT, [right_edge + d, mid("right")]) == "grip:right", d
     for side, edge in (("left", left_edge), ("right", right_edge)):
         g = rect(page, ".grip[data-side=%s]" % side)
         assert abs(g["width"] - 14) <= 0.5 and abs((g["left"] + g["right"]) / 2 - edge) <= 0.5, (side, g, edge)
@@ -494,12 +495,12 @@ def test_grip_affordance_on_hover_and_drag(delta_page, scheme):
     g = ".grip[data-side=left]"
     assert page.evaluate(pill, g)["op"] == "0"
     box = page.locator(g).bounding_box()
-    page.mouse.move(box["x"] + 7, box["y"] + 300)
+    page.mouse.move(box["x"] + 7, box["y"] + box["height"] / 2)
     page.wait_for_function("(s) => getComputedStyle(document.querySelector(s), '::before').opacity === '1'", arg=g)
     p = page.evaluate(pill, g)
     assert p["bg"] == teal and p["h"] >= 24 and 2 <= p["w"] <= 6, (p, teal)
     page.mouse.down()
-    page.mouse.move(box["x"] - 50, box["y"] + 300, steps=5)
+    page.mouse.move(box["x"] - 50, box["y"] + box["height"] / 2, steps=5)
     assert page.evaluate(pill, g)["op"] == "1"  # still shown while dragging, pointer off the grip or not
     page.mouse.up()
 
@@ -508,7 +509,7 @@ def test_real_drag_right_grip_wider_then_narrower(delta_page):
     page = delta_page(SHELL)
     page.evaluate("__delta.store.set({tool: 'query'})")
     page.wait_for_function("Math.abs(document.querySelector('#pane-right').getBoundingClientRect().width - 330) <= 1")
-    y = 400
+    y = page.evaluate("() => { const b = document.querySelector('.grip[data-side=right]').getBoundingClientRect(); return b.top + b.height / 2; }")
     for dx, want in ((-250, 580), (250, 330)):
         edge = rect(page, "#pane-right")["left"]
         page.mouse.move(edge, y)
