@@ -1,7 +1,7 @@
 // Where a Chart area comes from: Draw (click the map to add points,
 // double-click to finish), Map view (the current bounds, charted again
-// when the map rests after moving), Upload (a .zip shapefile, .geojson,
-// .json, .kmz or .kml file) and Select (the features picked from select
+// when the map rests after moving), Upload (a .zip shapefile, .kml, .kmz,
+// .gpkg, .gpx, .fgb, .geojson or .json file) and Select (the features picked from select
 // layers). Ports of lcms-viewer 5chart-manager.js startUserDefinedAreaCharting
 // and chartUserDefinedArea, area-charting.js startAutoCharting and
 // chartMapExtent, runShpDefinedCharting with 4map-manager.js
@@ -12,18 +12,22 @@ import { smartToFixed } from "../util.js";
 import { chartJobs } from "./areachart.js";
 import { sameLatLng, drawStyle, restyleShapes } from "./drawing.js";
 
-// port of 2templates.js #areaUpload accept
-export const UPLOAD_ACCEPT = ".zip,.geojson,.json,.kmz,.kml";
-// port of 4map-manager.js convertToGeoJSON: shapefiles and KMZ are converted by ogre
-export const CONVERT_URL = "https://ogre.adc4gis.com/convert";
+// The original's #areaUpload types plus the other vector formats the converter reads.
+export const UPLOAD_ACCEPT = ".zip,.kml,.kmz,.gpkg,.gpx,.fgb,.geojson,.json";
+// Files that are not GeoJSON are converted by the geeViz server that serves
+// this page (geeViz.eeAuth.vector_convert, at <proxy>/convert/vector), never
+// by a third party. The original sent them to ogre.adc4gis.com.
+export function convertUrl(proxyBase, origin) {
+  const base = String(proxyBase || "").replace(/\/+$/, "") || String(origin || "").replace(/\/+$/, "") + "/ee-api";
+  return base + "/convert/vector";
+}
 // port of area-charting.js startAutoCharting idleDelay
 export const IDLE_DELAY = 2000;
 
 export function uploadKind(name) {
   const ext = String(name || "").toLowerCase().split(".").pop();
   if (ext === "geojson" || ext === "json") return "geojson";
-  if (ext === "kml") return "kml";
-  if (ext === "zip" || ext === "kmz") return "convert";
+  if (["zip", "kml", "kmz", "gpkg", "gpx", "fgb"].indexOf(ext) > -1) return "convert";
   return null;
 }
 
@@ -230,16 +234,24 @@ export function createAreaSources(engine, store, charter, opts = {}) {
   async function readFeatures(file) {
     const kind = uploadKind(file.name);
     if (kind === "geojson") return featuresFromGeoJSON(JSON.parse(await file.text()));
-    if (kind === "kml") return featuresFromKml(await file.text());
     if (kind === "convert") {
       const data = new FormData();
-      data.append("targetSrs", "EPSG:4326");
-      data.append("upload", file);
-      const res = await fetch(CONVERT_URL, { method: "POST", body: data });
-      if (!res.ok) throw new Error(`The file could not be converted (${res.status})`);
-      return featuresFromGeoJSON(await res.json());
+      data.append("file", file);
+      const url = convertUrl(opts.proxyBase ? opts.proxyBase() : "", location.origin);
+      const res = await fetch(url, { method: "POST", body: data, credentials: "same-origin" });
+      let body = null;
+      try {
+        body = await res.json();
+      } catch (e) {
+        body = null;
+      }
+      if (!res.ok) {
+        const why = body && body.error ? body.error + (body.hint ? ". " + body.hint : "") : `The file could not be converted (${res.status})`;
+        throw new Error(why);
+      }
+      return featuresFromGeoJSON(body);
     }
-    throw new Error("Please select a .zip shapefile, .geojson, .json, .kml or .kmz file to summarize across");
+    throw new Error("Please select a .zip shapefile, .kml, .kmz, .gpkg, .gpx, .fgb, .geojson or .json file to summarize across");
   }
   function ringArea(r) {
     return spherical() ? spherical().computeArea(r.map((c) => new g.LatLng(c[1], c[0]))) : 0;

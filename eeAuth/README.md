@@ -317,6 +317,35 @@ mapping is recorded in a `TagStore`; recover it with
 `eeCreds.lookupWorkloadTag(tag)`. See `tags.py` for the
 tag-construction rules and the available stores.
 
+## Vector file conversion
+
+`POST <prefix>/convert/vector` (also `<prefix>/t/<tenant>/convert/vector`)
+takes one file as `multipart/form-data` and returns a GeoJSON
+FeatureCollection in EPSG:4326. The map viewer's Chart area Upload uses
+it, so uploaded files are converted by your own geeViz server rather than
+a third-party service. geeViz's local map server (`Map.view()` without the
+proxy) answers the same path with the same code.
+
+- Formats: a `.zip` shapefile (its `.prj` is honored), `.kml`, `.kmz`,
+  `.gpkg`, `.gpx`, `.fgb`, `.geojson` and `.json`. Sources with several
+  layers (KMZ folders, GeoPackage tables) are merged; each feature keeps a
+  `layer` property. Rasters are refused.
+- Conversion runs in-process through `pyogrio` (GDAL), no `ogr2ogr`
+  binary, in `vector_convert.py`.
+- Limits: 50 MB uploaded, 200 MB unpacked, 1,000 zip members, 50,000
+  features, 2,000,000 vertices, 150 MB of GeoJSON out, 60 seconds, two
+  conversions at a time. A file over a limit is refused with a message,
+  never truncated.
+- Untrusted input: zip members with absolute or parent paths, or links,
+  are refused; VRT and GDALG content (which can point GDAL at other files)
+  is refused before GDAL opens it; work happens in a fresh temporary
+  directory that is always removed; cross-site browser posts are refused. No CORS headers are
+  added, like every other route here.
+- Errors come back as `{"error": ..., "hint": ...}` with a 4xx or 5xx
+  status.
+
+A running proxy picks up this route only after a restart.
+
 ## Testing
 
 The proxy can be exercised against any EE endpoint:

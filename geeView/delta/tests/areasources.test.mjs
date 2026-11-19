@@ -3,18 +3,24 @@
 // and the map view's label (port of chartMapExtent).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { UPLOAD_ACCEPT, uploadKind, featuresFromGeoJSON, featuresFromKml, dropZ, viewLabel, ringBounds } from "../js/engine/areasources.js";
+import { UPLOAD_ACCEPT, uploadKind, convertUrl, featuresFromGeoJSON, featuresFromKml, dropZ, viewLabel, ringBounds } from "../js/engine/areasources.js";
 
 const SQUARE = [[[-111.6, 40.6], [-111.58, 40.6], [-111.58, 40.62], [-111.6, 40.62], [-111.6, 40.6]]];
 
-test("the upload accepts what the original's upload accepts", () => {
-  assert.equal(UPLOAD_ACCEPT, ".zip,.geojson,.json,.kmz,.kml");
+test("the upload accepts the original's types plus the converter's; only GeoJSON stays in the browser", () => {
+  assert.equal(UPLOAD_ACCEPT, ".zip,.kml,.kmz,.gpkg,.gpx,.fgb,.geojson,.json");
   assert.equal(uploadKind("a.GeoJSON"), "geojson");
   assert.equal(uploadKind("a.json"), "geojson");
-  assert.equal(uploadKind("a.kml"), "kml");
-  assert.equal(uploadKind("a.zip"), "convert");
-  assert.equal(uploadKind("a.kmz"), "convert");
+  ["a.kml", "a.zip", "a.kmz", "a.gpkg", "a.gpx", "a.FGB"].forEach((n) => assert.equal(uploadKind(n), "convert", n));
   assert.equal(uploadKind("a.txt"), null);
+  assert.equal(uploadKind("a.tif"), null);
+});
+
+test("conversion goes to the geeViz server behind the page, never a third party", () => {
+  assert.equal(convertUrl("http://127.0.0.1:8889/ee-api", "http://127.0.0.1:8889"), "http://127.0.0.1:8889/ee-api/convert/vector");
+  assert.equal(convertUrl("https://askterra.io/ee-api/t/askterra/", "https://askterra.io"), "https://askterra.io/ee-api/t/askterra/convert/vector");
+  // direct token mode: no proxy, the local geeView server answers on the page origin
+  assert.equal(convertUrl("", "http://localhost:1234"), "http://localhost:1234/ee-api/convert/vector");
 });
 
 test("featuresFromGeoJSON: FeatureCollection, Feature or bare geometry; non-polygons left out", () => {

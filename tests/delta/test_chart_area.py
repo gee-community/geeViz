@@ -279,8 +279,8 @@ def test_upload_geojson_source(page):
     assert page.evaluate("__delta.store.get().areaFrom") == "upload"
     # where uploaded files go is disclosed
     hint = page.inner_text("#tool-options")
-    assert ".zip and .kmz files are converted by the ogre.adc4gis.com service" in hint
-    assert ".geojson, .json and .kml stay in your browser" in hint
+    assert "converted on the geeViz server that serves this map" in hint
+    assert "ogre" not in hint
     poly = [[[-111.62, 40.59], [-111.59, 40.59], [-111.59, 40.615], [-111.62, 40.615], [-111.62, 40.59]]]
     gj = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"name": "Test unit"}, "geometry": {"type": "Polygon", "coordinates": poly}}]}
     page.set_input_files("#tool-options input[data-role=area-upload]", files=[{"name": "test unit.geojson", "mimeType": "application/geo+json", "buffer": json.dumps(gj).encode()}])
@@ -294,6 +294,59 @@ def test_upload_geojson_source(page):
     assert_tables_equal(nl["data"], py_table(nlcd_image(), fc.geometry(), nl["data"], "Hectares", False))
     # the heading carries the area's size
     assert "ha" in page.inner_text("#where")
+
+
+def _zipped_shapefile(tmp_path, poly_lonlat, crs="EPSG:5070"):
+    """A .zip of a one-polygon shapefile written in a projected CRS (so the server must reproject)."""
+    import zipfile
+    import geopandas as gpd
+    from shapely.geometry import Polygon
+    gdf = gpd.GeoDataFrame({"name": ["Zip unit"]}, geometry=[Polygon(poly_lonlat)], crs="EPSG:4326").to_crs(crs)
+    shp = tmp_path / "zip unit.shp"
+    gdf.to_file(shp)
+    zpath = tmp_path / "zip unit.zip"
+    with zipfile.ZipFile(zpath, "w") as z:
+        for f in tmp_path.glob("zip unit.*"):
+            if f.suffix != ".zip":
+                z.write(f, f.name)
+    return zpath.read_bytes()
+
+
+def test_upload_zip_is_converted_by_our_server(page, tmp_path):
+    """A zipped shapefile goes to <proxy>/convert/vector on the page's own server, never to a third
+    party. The route is answered in-process by the same converter the proxy and the local geeView
+    server run (their endpoints are tested in eeAuth/tests/test_vector_convert.py), because the
+    running proxy may predate the endpoint."""
+    from geeViz.eeAuth import vector_convert as vc
+    seen = []
+
+    def answer(route, request):
+        seen.append(request.url)
+        status, body = vc.handle_upload(request.headers, request.post_data_buffer)
+        route.fulfill(status=status, body=body, content_type="application/json")
+
+    outside = []
+    page.on("request", lambda r: "adc4gis" in r.url and outside.append(r.url))
+    page.route("**/convert/vector", answer)
+    try:
+        page.evaluate("__delta.api.turnOnUserDefinedAreaCharting()")
+        page.click("#tool-options .seg[data-k=src] [data-v=upload]")
+        poly = [(-111.62, 40.59), (-111.59, 40.59), (-111.59, 40.615), (-111.62, 40.615), (-111.62, 40.59)]
+        data = _zipped_shapefile(tmp_path, poly)
+        page.set_input_files("#tool-options input[data-role=area-upload]", files=[{"name": "zip unit.zip", "mimeType": "application/zip", "buffer": data}])
+        wait_for(page, "__delta.store.get().where === 'zip unit'")
+        wait_charts(page)
+    finally:
+        page.unroute("**/convert/vector")
+    origin = page.evaluate("location.origin")
+    assert len(seen) == 1 and seen[0].startswith(origin + "/ee-api"), (seen, origin)
+    assert outside == []
+    assert page.evaluate("__delta.store.get().chartArea.source") == "upload"
+    # reprojected back to lon/lat: the uploaded outline matches the polygon
+    ring = page.evaluate("(() => { const f = __delta.store.get().chartArea.features[0].geometry; return f.type === 'MultiPolygon' ? f.coordinates[0][0] : f.coordinates[0]; })()")
+    lons = [c[0] for c in ring]
+    lats = [c[1] for c in ring]
+    assert abs(min(lons) + 111.62) < 1e-4 and abs(max(lats) - 40.615) < 1e-4, ring
 
 
 def test_csv_and_png_actions(page):

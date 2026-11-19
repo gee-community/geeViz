@@ -25,7 +25,7 @@ const SOURCES = [
 const SOURCE_HINTS = {
   draw: "Click the map to outline an area. Double-click to finish.",
   view: "Charts what the map shows, and again each time the map rests after you move it.",
-  upload: "A .zip shapefile, .geojson, .json, .kml or .kmz file. .zip and .kmz files are converted by the ogre.adc4gis.com service; .geojson, .json and .kml stay in your browser.",
+  upload: "A .zip shapefile, .kml, .kmz, .gpkg, .gpx, .fgb or .geojson file. Files are converted on the geeViz server that serves this map; only the area outline is sent to Earth Engine.",
   select: "Click features of a select layer on the map, then chart them.",
 };
 

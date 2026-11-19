@@ -120,6 +120,8 @@ async function boot() {
     chartSources = createAreaSources(engine, store, charter, {
       notify: notice,
       query: () => queryTool,
+      // uploads are converted by the geeViz server behind this page (compat.js's authProxyAPIURL)
+      proxyBase: () => authProxyAPIURL,
       colors: () => ({ stroke: cssToken("--dz-orange", "#e2602a") }),
     });
     Object.assign(delta, { charter, chartSources });

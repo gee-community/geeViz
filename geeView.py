@@ -796,10 +796,43 @@ class _GeeVizRequestHandler(http.server.SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_POST(self):  # noqa: N802 - stdlib API
-        """Proxy ``/ee-api/*`` POSTs; anything else → 405."""
+        """Convert ``/ee-api[/t/<tenant>]/convert/vector`` here; proxy
+        other ``/ee-api/*`` POSTs; anything else → 405."""
+        from geeViz.eeAuth import vector_convert as _vc
+        if _vc.is_convert_path(self.path):
+            return self._convert_vector()
         if self._is_ee_api():
             return self._proxy_ee_api()
         self.send_error(405, "Method Not Allowed")
+
+    def _convert_vector(self) -> None:
+        """Vector upload conversion (``geeViz.eeAuth.vector_convert``),
+        answered by this server itself so direct-token mode, with no
+        eeAuth proxy behind it, converts too. Same code as the proxy's
+        ``/ee-api/convert/vector``; no CORS headers, like the rest of
+        this server."""
+        from geeViz.eeAuth import vector_convert as _vc
+        headers = dict(self.headers.items())
+        rejected = _vc.request_rejection(headers)
+        if rejected:
+            status, body = rejected
+            # The body is unread; do not reuse the connection.
+            self.close_connection = True
+        else:
+            try:
+                n = int(self.headers.get("Content-Length", "0") or 0)
+            except ValueError:
+                n = 0
+            body = self.rfile.read(n) if n > 0 else b""
+            status, body = _vc.handle_upload(headers, body)
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        try:
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            return
 
     def do_PUT(self):  # noqa: N802 - stdlib API
         """Proxy ``/ee-api/*`` PUTs; anything else → 405."""

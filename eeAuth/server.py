@@ -704,6 +704,54 @@ ee.initialize(authProxyAPIURL, null, onReady, onError);</pre>
             "started_at": _PROCESS_STARTED_AT,
         }
 
+    # Vector file conversion for the viewer's Upload (see
+    # ``vector_convert``). Registered before the catch-all so it is never
+    # forwarded to Earth Engine, and on both spellings the viewer can use:
+    # ``authProxyAPIURL`` carries a ``/t/<tenant>`` prefix. The tenant is
+    # irrelevant here (no token is minted), and no CORS headers are added,
+    # same as every other route on this router.
+    @router.api_route(
+        "/convert/vector",
+        methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
+        include_in_schema=False,
+    )
+    @router.api_route(
+        "/t/{tenant}/convert/vector",
+        methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
+        include_in_schema=False,
+    )
+    async def convert_vector(request: Request) -> Response:
+        """POST one vector file as multipart/form-data; get GeoJSON in
+        EPSG:4326, or ``{error, hint}`` JSON with a 4xx/5xx status."""
+        from . import vector_convert as vc
+
+        if request.method != "POST":
+            return Response(
+                content=json.dumps({"error": "Method not allowed", "hint": "POST the file."}),
+                status_code=405, media_type="application/json",
+                headers={"Allow": "POST"},
+            )
+        headers = dict(request.headers)
+        rejected = vc.request_rejection(headers)
+        if rejected:
+            status, body = rejected
+            return Response(content=body, status_code=status, media_type="application/json")
+        limit = vc.max_body_bytes()
+        chunks, total = [], 0
+        try:
+            async for chunk in request.stream():
+                total += len(chunk)
+                if total > limit:
+                    break
+                chunks.append(chunk)
+        except ClientDisconnect:
+            return Response(status_code=499)
+        if total > limit:
+            status, body = vc.oversize_reply()
+        else:
+            status, body = await asyncio.to_thread(vc.handle_upload, headers, b"".join(chunks))
+        return Response(content=body, status_code=status, media_type="application/json")
+
     @router.api_route(
         "/{path:path}",
         methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
