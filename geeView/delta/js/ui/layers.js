@@ -155,7 +155,10 @@ export function mountLayers(store, mountEl, opts = {}) {
       el.insertBefore(tl.el, parts.legendEl);
       el.classList.add("is-tl");
     }
-    return { el, parts, tl, last: {} };
+    const row = { el, parts, tl, last: {} };
+    nameRows.set(parts.name, row);
+    nameRo.observe(parts.name);
+    return row;
   }
 
   function updateRow(row, l) {
@@ -178,6 +181,8 @@ export function mountLayers(store, mountEl, opts = {}) {
     }
     if (last.legend !== l.legend) paintLegend(row, l.legend);
     if (row.tl && last.timelapse !== l.timelapse) row.tl.update(l);
+    // a new name in the same box: the name observer does not see it
+    if (last.name !== undefined && last.name !== l.name && el.isConnected) fitRow(row);
     row.last = { name: l.name, opacity: l.opacity, legend: l.legend, timelapse: l.timelapse };
   }
 
@@ -188,6 +193,7 @@ export function mountLayers(store, mountEl, opts = {}) {
     let added = false;
     for (const [id, row] of rows) {
       if (!shown.includes(id)) {
+        nameRo.unobserve(row.parts.name);
         row.el.remove();
         rows.delete(id);
       }
@@ -206,14 +212,27 @@ export function mountLayers(store, mountEl, opts = {}) {
   }
 
   // ---- fit: inline opacity only if the name is not cut off ----
+  function fitRow({ el, parts }) {
+    el.classList.remove("stack");
+    if (parts.name.scrollWidth > parts.name.clientWidth + 1) el.classList.add("stack");
+  }
   function fitRows() {
-    rows.forEach(({ el, parts }) => {
-      el.classList.remove("stack");
-      if (parts.name.scrollWidth > parts.name.clientWidth + 1) el.classList.add("stack");
-    });
+    rows.forEach(fitRow);
   }
   const ro = new ResizeObserver(() => fitRows());
   ro.observe(mountEl);
+  // A row's own content can take room from its name (the loading spinner
+  // appears, the timelapse block mounts) or the name itself can change: refit
+  // that row when its name's box changes. ResizeObserver reports once per
+  // frame and only for a final size that differs, so a row that settles into
+  // stacked does not loop.
+  const nameRows = new WeakMap();
+  const nameRo = new ResizeObserver((entries) => {
+    entries.forEach((e) => {
+      const row = nameRows.get(e.target);
+      if (row && rows.get(row.el.dataset.id) === row) fitRow(row);
+    });
+  });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitRows);
 
   // ---- drag to reorder; pinned layers keep their index ----
