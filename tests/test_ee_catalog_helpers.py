@@ -4,6 +4,7 @@ from dataclasses import asdict, FrozenInstanceError
 import importlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -41,13 +42,20 @@ def source_helpers():
 
 @pytest.fixture
 def catalog_helpers(monkeypatch):
+    package_dir = ROOT / "eeCatalogHelpers"
     spec = importlib.util.spec_from_file_location(
-        "geeViz.eeCatalogHelpers", ROOT / "eeCatalogHelpers.py"
+        "geeViz.eeCatalogHelpers",
+        package_dir / "__init__.py",
+        submodule_search_locations=[str(package_dir)],
     )
     module = importlib.util.module_from_spec(spec)
     monkeypatch.setitem(sys.modules, spec.name, module)
-    spec.loader.exec_module(module)
-    return module
+    try:
+        spec.loader.exec_module(module)
+        yield module
+    finally:
+        for name in [n for n in sys.modules if n.startswith(spec.name + ".")]:
+            del sys.modules[name]
 
 
 @pytest.fixture(params=["source", "geeviz"])
@@ -424,6 +432,11 @@ import importlib
 import importlib.abc
 import sys
 sys.path.insert(0, {str(module_root)!r})
+if {module_name!r}.startswith('geeViz.'):
+    import types
+    stub = types.ModuleType('geeViz')
+    stub.__path__ = [{str(module_root)!r}]
+    sys.modules['geeViz'] = stub
 blocked = ('ee', 'geeViz.geeView', 'geeViz.assetManagerLib', 'osgeo')
 class NoRuntimeImports(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path=None, target=None):
@@ -528,7 +541,7 @@ def test_cog_conversion_is_atomic_and_normalizes_options(
         partial.write_bytes(b"converted")
 
     run = Mock(side_effect=translate)
-    monkeypatch.setattr(helpers.subprocess, "run", run)
+    monkeypatch.setattr(subprocess, "run", run)
     kwargs = {} if kind == "default" else {"cog_path": output}
     assert helpers.convert_tif_to_cog(source, options=options, **kwargs) is None
     run.assert_called_once()
@@ -545,7 +558,7 @@ def test_cog_conversion_respects_no_overwrite(helpers, tmp_path, monkeypatch):
     output = tmp_path / "existing.tif"
     output.write_bytes(b"keep")
     run = Mock()
-    monkeypatch.setattr(helpers.subprocess, "run", run)
+    monkeypatch.setattr(subprocess, "run", run)
     assert helpers.convert_tif_to_cog(source, output, overwrite=False) is None
     run.assert_not_called()
     assert output.read_bytes() == b"keep"
@@ -571,9 +584,9 @@ def test_failed_cog_conversion_cleans_partial_and_preserves_output(
         if failure != "replacement":
             raise error
 
-    monkeypatch.setattr(helpers.subprocess, "run", Mock(side_effect=translate))
+    monkeypatch.setattr(subprocess, "run", Mock(side_effect=translate))
     if failure == "replacement":
-        monkeypatch.setattr(helpers.os, "replace", Mock(side_effect=error))
+        monkeypatch.setattr(os, "replace", Mock(side_effect=error))
     with pytest.raises(type(error)) as raised:
         helpers.convert_tif_to_cog(source, output)
     assert raised.value is error
@@ -587,7 +600,7 @@ def test_failed_cog_conversion_cleans_partial_and_preserves_output(
 )
 def test_cog_options_validation(helpers, tmp_path, monkeypatch, options, message):
     run = Mock()
-    monkeypatch.setattr(helpers.subprocess, "run", run)
+    monkeypatch.setattr(subprocess, "run", run)
     with pytest.raises(ValueError, match=message):
         helpers.convert_tif_to_cog(tmp_path / "input.tif", options=options)
     run.assert_not_called()
@@ -597,7 +610,7 @@ def test_cog_options_validation(helpers, tmp_path, monkeypatch, options, message
 def test_confirm_cog_preserves_gdalinfo_contract(helpers, tmp_path, monkeypatch, stdout, expected):
     path = tmp_path / "input.tif"
     run = Mock(return_value=SimpleNamespace(stdout=stdout))
-    monkeypatch.setattr(helpers.subprocess, "run", run)
+    monkeypatch.setattr(subprocess, "run", run)
     assert helpers.confirm_cog(path) is expected
     run.assert_called_once_with(["gdalinfo", str(path)], capture_output=True, text=True)
 
