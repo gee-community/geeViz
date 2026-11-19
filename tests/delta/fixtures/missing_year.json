@@ -1,0 +1,421 @@
+{
+ "name": "missing_year",
+ "kind": "thematic",
+ "raw": {
+  "2002----Land_Cover": {
+   "1": 120.5,
+   "3": 30,
+   "5": 49.5
+  },
+  "2004----Land_Cover": {
+   "1": 100,
+   "3": 60.25,
+   "5": 39.75
+  },
+  "2005----Land_Cover": {
+   "1": 80,
+   "3": 70
+  }
+ },
+ "objInfoPy": {
+  "obj_type": "ImageCollection",
+  "band_names": [
+   "Land_Cover"
+  ],
+  "is_thematic": true,
+  "class_info": {
+   "Land_Cover": {
+    "class_values": [
+     1,
+     3,
+     5
+    ],
+    "class_names": [
+     "Trees",
+     "Shrubs",
+     "Barren"
+    ],
+    "class_palette": [
+     "004e2b",
+     "f4ae38",
+     "b3a397"
+    ]
+   }
+  },
+  "size": 4
+ },
+ "labels": [
+  "2002",
+  "2003",
+  "2004",
+  "2005"
+ ],
+ "scales": [
+  30,
+  60
+ ],
+ "stripSentinel": true,
+ "objInfo": {
+  "objType": "ImageCollection",
+  "bandNames": [
+   "Land_Cover"
+  ],
+  "isThematic": true,
+  "classInfo": {
+   "Land_Cover": {
+    "classValues": [
+     1,
+     3,
+     5
+    ],
+    "classNames": [
+     "Trees",
+     "Shrubs",
+     "Barren"
+    ],
+    "classPalette": [
+     "004e2b",
+     "f4ae38",
+     "b3a397"
+    ]
+   }
+  },
+  "size": 4
+ },
+ "expected": {
+  "Percentage@30": {
+   "columns": [
+    "Trees",
+    "Shrubs",
+    "Barren"
+   ],
+   "rows": [
+    {
+     "x": "2002",
+     "values": [
+      60.25,
+      15.0,
+      24.75
+     ]
+    },
+    {
+     "x": "2003",
+     "values": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "x": "2004",
+     "values": [
+      50.0,
+      30.12,
+      19.88
+     ]
+    },
+    {
+     "x": "2005",
+     "values": [
+      53.33,
+      46.67,
+      0.0
+     ]
+    }
+   ]
+  },
+  "Hectares@30": {
+   "columns": [
+    "Trees",
+    "Shrubs",
+    "Barren"
+   ],
+   "rows": [
+    {
+     "x": "2002",
+     "values": [
+      11.0,
+      3.0,
+      4.0
+     ]
+    },
+    {
+     "x": "2003",
+     "values": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "x": "2004",
+     "values": [
+      9.0,
+      5.0,
+      4.0
+     ]
+    },
+    {
+     "x": "2005",
+     "values": [
+      7.0,
+      6.0,
+      0.0
+     ]
+    }
+   ]
+  },
+  "Acres@30": {
+   "columns": [
+    "Trees",
+    "Shrubs",
+    "Barren"
+   ],
+   "rows": [
+    {
+     "x": "2002",
+     "values": [
+      27.0,
+      7.0,
+      11.0
+     ]
+    },
+    {
+     "x": "2003",
+     "values": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "x": "2004",
+     "values": [
+      22.0,
+      13.0,
+      9.0
+     ]
+    },
+    {
+     "x": "2005",
+     "values": [
+      18.0,
+      16.0,
+      0.0
+     ]
+    }
+   ]
+  },
+  "Pixels@30": {
+   "columns": [
+    "Trees",
+    "Shrubs",
+    "Barren"
+   ],
+   "rows": [
+    {
+     "x": "2002",
+     "values": [
+      120.5,
+      30.0,
+      49.5
+     ]
+    },
+    {
+     "x": "2003",
+     "values": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "x": "2004",
+     "values": [
+      100.0,
+      60.25,
+      39.75
+     ]
+    },
+    {
+     "x": "2005",
+     "values": [
+      80.0,
+      70.0,
+      0.0
+     ]
+    }
+   ]
+  },
+  "Percentage@60": {
+   "columns": [
+    "Trees",
+    "Shrubs",
+    "Barren"
+   ],
+   "rows": [
+    {
+     "x": "2002",
+     "values": [
+      60.25,
+      15.0,
+      24.75
+     ]
+    },
+    {
+     "x": "2003",
+     "values": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "x": "2004",
+     "values": [
+      50.0,
+      30.12,
+      19.88
+     ]
+    },
+    {
+     "x": "2005",
+     "values": [
+      53.33,
+      46.67,
+      0.0
+     ]
+    }
+   ]
+  },
+  "Hectares@60": {
+   "columns": [
+    "Trees",
+    "Shrubs",
+    "Barren"
+   ],
+   "rows": [
+    {
+     "x": "2002",
+     "values": [
+      43.0,
+      11.0,
+      18.0
+     ]
+    },
+    {
+     "x": "2003",
+     "values": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "x": "2004",
+     "values": [
+      36.0,
+      22.0,
+      14.0
+     ]
+    },
+    {
+     "x": "2005",
+     "values": [
+      29.0,
+      25.0,
+      0.0
+     ]
+    }
+   ]
+  },
+  "Acres@60": {
+   "columns": [
+    "Trees",
+    "Shrubs",
+    "Barren"
+   ],
+   "rows": [
+    {
+     "x": "2002",
+     "values": [
+      107.0,
+      27.0,
+      44.0
+     ]
+    },
+    {
+     "x": "2003",
+     "values": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "x": "2004",
+     "values": [
+      89.0,
+      54.0,
+      35.0
+     ]
+    },
+    {
+     "x": "2005",
+     "values": [
+      71.0,
+      62.0,
+      0.0
+     ]
+    }
+   ]
+  },
+  "Pixels@60": {
+   "columns": [
+    "Trees",
+    "Shrubs",
+    "Barren"
+   ],
+   "rows": [
+    {
+     "x": "2002",
+     "values": [
+      120.5,
+      30.0,
+      49.5
+     ]
+    },
+    {
+     "x": "2003",
+     "values": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "x": "2004",
+     "values": [
+      100.0,
+      60.25,
+      39.75
+     ]
+    },
+    {
+     "x": "2005",
+     "values": [
+      80.0,
+      70.0,
+      0.0
+     ]
+    }
+   ]
+  }
+ },
+ "stackBandNames": [
+  "2002----Land_Cover",
+  "2003----Land_Cover",
+  "2004----Land_Cover",
+  "2005----Land_Cover"
+ ]
+}

@@ -1,0 +1,282 @@
+{
+ "name": "multiband",
+ "kind": "thematic",
+ "raw": {
+  "2020----Change": {
+   "0": 5,
+   "1": 90.5,
+   "3": 4.5
+  },
+  "2020----Land_Use": {
+   "0": 5,
+   "1": 60,
+   "10": 0.25,
+   "2": 35
+  },
+  "2021----Change": {
+   "1": 91,
+   "2": 2
+  },
+  "2021----Land_Use": null
+ },
+ "objInfoPy": {
+  "obj_type": "ImageCollection",
+  "band_names": [
+   "Change",
+   "Land_Use"
+  ],
+  "is_thematic": true,
+  "class_info": {
+   "Change": {
+    "class_values": [
+     1,
+     2,
+     3
+    ],
+    "class_names": [
+     "Stable",
+     "Slow Loss",
+     "Fast Loss"
+    ],
+    "class_palette": [
+     "3d4551",
+     "f39268",
+     "d54309"
+    ]
+   },
+   "Land_Use": {
+    "class_values": [
+     1,
+     2
+    ],
+    "class_names": [
+     "Agriculture",
+     "Developed"
+    ],
+    "class_palette": [
+     "fbff97",
+     "e6558b"
+    ]
+   }
+  },
+  "size": 2
+ },
+ "labels": [
+  "2020",
+  "2021"
+ ],
+ "scales": [
+  30
+ ],
+ "stripSentinel": true,
+ "objInfo": {
+  "objType": "ImageCollection",
+  "bandNames": [
+   "Change",
+   "Land_Use"
+  ],
+  "isThematic": true,
+  "classInfo": {
+   "Change": {
+    "classValues": [
+     1,
+     2,
+     3
+    ],
+    "classNames": [
+     "Stable",
+     "Slow Loss",
+     "Fast Loss"
+    ],
+    "classPalette": [
+     "3d4551",
+     "f39268",
+     "d54309"
+    ]
+   },
+   "Land_Use": {
+    "classValues": [
+     1,
+     2
+    ],
+    "classNames": [
+     "Agriculture",
+     "Developed"
+    ],
+    "classPalette": [
+     "fbff97",
+     "e6558b"
+    ]
+   }
+  },
+  "size": 2
+ },
+ "expected": {
+  "Percentage@30": {
+   "columns": [
+    "Change----0",
+    "Change----Stable",
+    "Change----Fast Loss",
+    "Land_Use----0",
+    "Land_Use----Agriculture",
+    "Land_Use----10",
+    "Land_Use----Developed",
+    "Change----Slow Loss"
+   ],
+   "rows": [
+    {
+     "x": "2020",
+     "values": [
+      5.0,
+      90.5,
+      4.5,
+      4.99,
+      59.85,
+      0.25,
+      34.91,
+      0.0
+     ]
+    },
+    {
+     "x": "2021",
+     "values": [
+      0.0,
+      97.85,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      2.15
+     ]
+    }
+   ]
+  },
+  "Hectares@30": {
+   "columns": [
+    "Change----0",
+    "Change----Stable",
+    "Change----Fast Loss",
+    "Land_Use----0",
+    "Land_Use----Agriculture",
+    "Land_Use----10",
+    "Land_Use----Developed",
+    "Change----Slow Loss"
+   ],
+   "rows": [
+    {
+     "x": "2020",
+     "values": [
+      0.0,
+      8.0,
+      0.0,
+      0.0,
+      5.0,
+      0.0,
+      3.0,
+      0.0
+     ]
+    },
+    {
+     "x": "2021",
+     "values": [
+      0.0,
+      8.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   ]
+  },
+  "Acres@30": {
+   "columns": [
+    "Change----0",
+    "Change----Stable",
+    "Change----Fast Loss",
+    "Land_Use----0",
+    "Land_Use----Agriculture",
+    "Land_Use----10",
+    "Land_Use----Developed",
+    "Change----Slow Loss"
+   ],
+   "rows": [
+    {
+     "x": "2020",
+     "values": [
+      1.0,
+      20.0,
+      1.0,
+      1.0,
+      13.0,
+      0.0,
+      8.0,
+      0.0
+     ]
+    },
+    {
+     "x": "2021",
+     "values": [
+      0.0,
+      20.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   ]
+  },
+  "Pixels@30": {
+   "columns": [
+    "Change----0",
+    "Change----Stable",
+    "Change----Fast Loss",
+    "Land_Use----0",
+    "Land_Use----Agriculture",
+    "Land_Use----10",
+    "Land_Use----Developed",
+    "Change----Slow Loss"
+   ],
+   "rows": [
+    {
+     "x": "2020",
+     "values": [
+      5.0,
+      90.5,
+      4.5,
+      5.0,
+      60.0,
+      0.25,
+      35.0,
+      0.0
+     ]
+    },
+    {
+     "x": "2021",
+     "values": [
+      0.0,
+      91.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      2.0
+     ]
+    }
+   ]
+  }
+ },
+ "stackBandNames": [
+  "2020----Change",
+  "2020----Land_Use",
+  "2021----Change",
+  "2021----Land_Use"
+ ]
+}

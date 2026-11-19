@@ -1,0 +1,84 @@
+{
+ "name": "multi_output",
+ "kind": "continuous",
+ "raw": {
+  "2019----EVI": 0.3,
+  "2019----NDVI_p5": 0.1,
+  "2019----NDVI_p50": 0.45,
+  "2019----NDVI_p95": 0.8,
+  "2020----EVI": 0.31,
+  "2020----NDVI_p5": null,
+  "2020----NDVI_p50": 0.5,
+  "2020----NDVI_p95": 0.85
+ },
+ "objInfoPy": {
+  "obj_type": "ImageCollection",
+  "band_names": [
+   "NDVI",
+   "EVI"
+  ],
+  "is_thematic": false,
+  "class_info": {},
+  "size": 2
+ },
+ "labels": [
+  "2019",
+  "2020",
+  "2021"
+ ],
+ "objInfo": {
+  "objType": "ImageCollection",
+  "bandNames": [
+   "NDVI",
+   "EVI"
+  ],
+  "isThematic": false,
+  "classInfo": {},
+  "size": 2
+ },
+ "expected": {
+  "columns": [
+   "NDVI_p5",
+   "NDVI_p50",
+   "NDVI_p95",
+   "EVI"
+  ],
+  "rows": [
+   {
+    "x": "2019",
+    "values": [
+     0.1,
+     0.45,
+     0.8,
+     0.3
+    ]
+   },
+   {
+    "x": "2020",
+    "values": [
+     null,
+     0.5,
+     0.85,
+     0.31
+    ]
+   },
+   {
+    "x": "2021",
+    "values": [
+     null,
+     null,
+     null,
+     null
+    ]
+   }
+  ]
+ },
+ "stackBandNames": [
+  "2019----NDVI",
+  "2019----EVI",
+  "2020----NDVI",
+  "2020----EVI",
+  "2021----NDVI",
+  "2021----EVI"
+ ]
+}
