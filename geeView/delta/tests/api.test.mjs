@@ -135,3 +135,59 @@ test("removeLayer, query setters and engine hooks", () => {
   api.setCenter(-111, 41, 10);
   assert.deepEqual(calls, [["setCenter", [-111, 41, 10]]]);
 });
+
+test("native Map constructor survives, before and after install", () => {
+  const { ctx } = makeContext();
+  assert.equal(vm.runInContext("new Map([[1,2]]).get(1)", ctx), 2);
+  assert.equal(vm.runInContext("typeof Map.addLayer", ctx), "function");
+  installApi(ctx, createStore());
+  assert.equal(vm.runInContext("new Map([[1,2]]).get(1)", ctx), 2);
+});
+
+test("Map.addLayer queues before install and forwards after", () => {
+  const { ctx } = makeContext();
+  vm.runInContext('Map.addLayer({}, {}, "Early", true)', ctx);
+  const store = createStore();
+  installApi(ctx, store);
+  assert.deepEqual(store.get().layers.map((l) => l.name), ["Early"]);
+  vm.runInContext('Map.addLayer({}, {}, "Late", true)', ctx);
+  assert.deepEqual(store.get().layers.map((l) => l.name), ["Early", "Late"]);
+});
+
+test("data properties set before install reach the store", () => {
+  const { ctx } = makeContext();
+  vm.runInContext("Map.turnOffLayersWhenTimeLapseIsOn = false; Map.canReorderLayers = false;", ctx);
+  assert.equal(vm.runInContext("Map.turnOffLayersWhenTimeLapseIsOn", ctx), false);
+  assert.equal(vm.runInContext("typeof Map.canReorderLayers", ctx), "boolean");
+  const store = createStore();
+  installApi(ctx, store);
+  assert.equal(store.get().turnOffLayersWhenTimeLapseIsOn, false);
+  assert.equal(store.get().canReorder, false);
+  vm.runInContext("Map.turnOffLayersWhenTimeLapseIsOn = true", ctx);
+  assert.equal(store.get().turnOffLayersWhenTimeLapseIsOn, true);
+  assert.equal(vm.runInContext("Map.turnOffLayersWhenTimeLapseIsOn", ctx), true);
+});
+
+test("a failing queued call announces and does not abort replay", () => {
+  const { ctx } = makeContext();
+  vm.runInContext('map.noSuchThing(); Map.addLayer({}, {}, "After", true)', ctx);
+  const store = createStore();
+  const api = createMapApi(store, {});
+  ctx.__deltaCompat.install({
+    Map: api,
+    map: {},
+    notify: (m) => store.update((s) => ({ ...s, notices: [...s.notices, m] }), "notice"),
+  });
+  assert.equal(store.get().layers.length, 1);
+  assert.equal(store.get().notices.length, 1);
+  assert.ok(store.get().notices[0].includes("noSuchThing"));
+});
+
+test("compat defines a static for every original Map method", { skip: !fs.existsSync(new URL("../../../../lcms-viewer/src/js/4map-manager.js", import.meta.url)) && "lcms-viewer checkout not found" }, () => {
+  const text = fs.readFileSync(new URL("../../../../lcms-viewer/src/js/4map-manager.js", import.meta.url), "utf8");
+  const body = text.slice(text.indexOf("function mp()"), text.indexOf("const Map2 = new mp()"));
+  const { ctx } = makeContext();
+  for (const m of body.matchAll(/this\.([A-Za-z_$][\w$]*)\s*=\s*function/g)) {
+    assert.equal(vm.runInContext("typeof Map." + m[1], ctx), "function", m[1]);
+  }
+});

@@ -7,9 +7,9 @@
 // them. Calls made before main.js installs the real engine are recorded and
 // replayed, in order, by window.__deltaCompat.install({...}).
 //
-// Note: this replaces the built-in global Map, exactly as the original viewer
-// does. Delta modules must not call `new Map()`; the native constructor is kept
-// at window.__NativeMap.
+// Note: window.Map stays the native Map constructor. As in the original viewer
+// (`Object.keys(Map2).map((k) => (Map[k] = Map2[k]))`), the viewer methods are
+// attached to it as static properties, so `new Map()` keeps working everywhere.
 
 // Top-level `let` so the generator's `authProxyAPIURL=...` reassignment works.
 let authProxyAPIURL = "";
@@ -17,7 +17,6 @@ let authProxyAPIURL = "";
 (function () {
   "use strict";
   var w = window;
-  w.__NativeMap = w.Map;
 
   var queue = []; // {t: target, op: "call"|"set"|"fn", name, args|value}
   var targets = {}; // Map, map, areaChart, synchronousCenterObject (object or function)
@@ -68,7 +67,44 @@ let authProxyAPIURL = "";
     );
   }
 
-  w.Map = makeProxy("Map");
+  var MAP_METHODS = [
+    "addLayer", "removeLayer", "addSerializedLayer", "hideSelectLayerAreaCharting",
+    "showSelectLayerAreaCharting", "addSelectLayer", "addSelectLayerGroup",
+    "addSerializedSelectLayer", "addTimeLapse", "addSerializedTimeLapse", "addREST",
+    "addExport", "addPlot", "addFeatureView", "addMBSankey", "centerObject", "setCenter",
+    "setTitle", "turnOnInspector", "turnOffInspector", "turnOnAutoAreaCharting",
+    "turnOffAutoAreaCharting", "turnOnUserDefinedAreaCharting",
+    "turnOffUserDefinedAreaCharting", "turnOnSelectionAreaCharting",
+    "turnOffSelectionAreaCharting", "turnOnTimeSeriesCharting", "turnOffTimeSeriesCharting",
+    "setQueryCRS", "setQueryScale", "setQueryTransform", "setQueryPrecision",
+    "setQueryDateFormat", "setQueryBoxColor", "showSpinner", "hideSpinner",
+  ];
+  var MAP_PROPS = { selectLayerAdded: false, canReorderLayers: true, turnOffLayersWhenTimeLapseIsOn: true };
+
+  MAP_METHODS.forEach(function (name) {
+    Object.defineProperty(w.Map, name, {
+      configurable: true,
+      writable: true,
+      enumerable: false,
+      value: function () {
+        return dispatchTarget("Map", "call", name, Array.prototype.slice.call(arguments));
+      },
+    });
+  });
+  Object.keys(MAP_PROPS).forEach(function (name) {
+    Object.defineProperty(w.Map, name, {
+      configurable: true,
+      enumerable: false,
+      get: function () {
+        return targets.Map ? targets.Map[name] : MAP_PROPS[name];
+      },
+      set: function (v) {
+        MAP_PROPS[name] = v;
+        if (targets.Map) targets.Map[name] = v;
+        else queue.push({ t: "Map", op: "set", name: name, payload: v });
+      },
+    });
+  });
   w.map = makeProxy("map");
   w.areaChart = makeProxy("areaChart");
   w.synchronousCenterObject = function () {
@@ -163,12 +199,13 @@ let authProxyAPIURL = "";
       var pending = queue;
       queue = [];
       pending.forEach(function (e) {
-        if (e.t === "@handler") {
-          dispatchHandler(e.name, e.payload);
-        } else if (e.op === "fn") {
-          dispatchTarget(e.t, "fn", null, e.payload);
-        } else {
-          dispatchTarget(e.t, e.op, e.name, e.payload);
+        try {
+          if (e.t === "@handler") dispatchHandler(e.name, e.payload);
+          else dispatchTarget(e.t, e.op, e.name, e.payload);
+        } catch (err) {
+          var msg = (e.t === "@handler" ? e.name : e.t + (e.name ? "." + e.name : "")) + " failed during startup: " + (err && err.message);
+          if (handlers.notify) handlers.notify(msg);
+          else if (w.console) w.console.error(msg);
         }
       });
     },

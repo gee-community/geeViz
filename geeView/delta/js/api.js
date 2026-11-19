@@ -25,6 +25,12 @@ function kindFor(item, viz) {
   return "ee";
 }
 
+function serialize(viz) {
+  viz = viz || {};
+  viz.serialized = true;
+  return viz;
+}
+
 export function createMapApi(store, engine = {}) {
   let counter = 0;
   const hook = (name, ...args) => {
@@ -91,16 +97,14 @@ export function createMapApi(store, engine = {}) {
     push(makeLayer(kindFor(item, viz), item, viz, name, visible));
   };
   api.addSerializedLayer = (item, viz, name, visible) => {
-    viz = viz || {};
-    viz.serialized = true;
+    viz = serialize(viz);
     push(makeLayer(kindFor(item, viz), item, viz, name, visible));
   };
   api.addTimeLapse = (item, viz, name, visible) => {
     push(makeLayer("timelapse", item, viz || {}, name, visible));
   };
   api.addSerializedTimeLapse = (item, viz, name, visible) => {
-    viz = viz || {};
-    viz.serialized = true;
+    viz = serialize(viz);
     push(makeLayer("timelapse", item, viz, name, visible));
   };
   api.addSelectLayer = (item, viz, name, visible) => {
@@ -108,8 +112,7 @@ export function createMapApi(store, engine = {}) {
     push(makeLayer("select", item, viz || {}, name, visible));
   };
   api.addSerializedSelectLayer = (item, viz, name, visible) => {
-    viz = viz || {};
-    viz.serialized = true;
+    viz = serialize(viz);
     api.selectLayerAdded = true;
     api.showSelectLayerAreaCharting();
     push(makeLayer("select", item, viz, name, visible));
@@ -195,8 +198,7 @@ export function createMapApi(store, engine = {}) {
       push(makeLayer("areaChartOnly", item, viz, name, visible, { chartable: true }));
     },
     addSerializedLayer: (item, viz, name, visible) => {
-      viz = viz || {};
-      viz.serialized = true;
+      viz = serialize(viz);
       push(makeLayer("areaChartOnly", item, viz, name, visible, { chartable: true }));
     },
     populateChartLayerSelect: () => hook("populateChartLayerSelect"),

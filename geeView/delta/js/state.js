@@ -30,7 +30,7 @@ export function defaultState() {
 
 export function createStore(initial) {
   let state = { ...defaultState(), ...(initial || {}) };
-  const handlers = Object.create(null); // not Map: compat.js shadows the global Map
+  const handlers = Object.create(null);
 
   function emit(event, ...args) {
     const list = handlers[event];

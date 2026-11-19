@@ -17,7 +17,7 @@ function originalMethodNames() {
   return [...names];
 }
 
-test("MapApi implements every method on the original mp object", () => {
+test("MapApi implements every method on the original mp object", { skip: !fs.existsSync(SRC) && "lcms-viewer checkout not found beside geeViz; skipping contract check" }, () => {
   const names = originalMethodNames();
   assert.ok(names.length > 30, "extracted " + names.length);
   const api = createMapApi(createStore(), {});
