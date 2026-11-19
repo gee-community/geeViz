@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createViewHistory } from "../js/engine/maps.js";
+import { createViewHistory, sameView } from "../js/engine/maps.js";
 import { parseCoordinates } from "../js/engine/search.js";
-import { hasAccessToken, projectIdFrom, describeEEFailure } from "../js/engine/ee.js";
+import { hasAccessToken, projectIdFrom, describeEEFailure, initEE } from "../js/engine/ee.js";
 
 const v = (lng, lat, zoom = 10) => ({ lng, lat, zoom });
 
@@ -52,4 +52,76 @@ test("ee: token detection and project id", () => {
   assert.equal(projectIdFrom({ projectID: "None" }), null);
   assert.equal(projectIdFrom({ projectID: "p" }), "p");
   assert.match(describeEEFailure("x", { accessToken: "t", projectID: "p" }), /x/);
+});
+
+// ---- initEE wiring, against a stubbed `ee` global ----
+function stubEE({ fail = false } = {}) {
+  const calls = [];
+  globalThis.ee = {
+    data: {
+      setAuthToken: (...a) => calls.push(["setAuthToken", ...a]),
+      setDefaultWorkloadTag: (t) => calls.push(["setDefaultWorkloadTag", t]),
+    },
+    initialize: (proxy, api, ok, err, lib, project) => {
+      calls.push(["initialize", proxy, api, lib, project]);
+      if (fail) err("boom");
+      else ok();
+    },
+  };
+  globalThis.location = { origin: "http://127.0.0.1:8889" };
+  globalThis.mode = "geeViz";
+  return calls;
+}
+const names = (calls) => calls.map((c) => c[0]);
+
+test("initEE token mode: setAuthToken, then initialize(null, null) with the project", async () => {
+  const calls = stubEE();
+  await initEE({ accessToken: "ya29", projectID: "my-proj", geeAuthProxyURL: "http://x" }, "http://tenant");
+  assert.deepEqual(names(calls), ["setAuthToken", "initialize", "setDefaultWorkloadTag"]);
+  assert.deepEqual(calls[0].slice(1, 4), ["", "Bearer", "ya29"]);
+  assert.deepEqual(calls[1], ["initialize", null, null, null, "my-proj"]);
+});
+
+test("initEE proxy mode: the tenant-prefixed url beats geeAuthProxyURL; a getter is read at call time", async () => {
+  let calls = stubEE();
+  await initEE({ geeAuthProxyURL: "http://param" }, "http://127.0.0.1:8889/ee-api/t/acme");
+  assert.equal(calls.find((c) => c[0] === "initialize")[1], "http://127.0.0.1:8889/ee-api/t/acme");
+  assert.equal(names(calls).includes("setAuthToken"), false);
+  calls = stubEE();
+  let current = "";
+  const getter = () => current;
+  current = "http://late/ee-api/t/t";
+  await initEE({}, getter);
+  assert.equal(calls.find((c) => c[0] === "initialize")[1], "http://late/ee-api/t/t");
+});
+
+test("initEE proxy mode: geeAuthProxyURL, then origin + /ee-api", async () => {
+  let calls = stubEE();
+  await initEE({ geeAuthProxyURL: "http://param" }, "");
+  assert.equal(calls.find((c) => c[0] === "initialize")[1], "http://param");
+  calls = stubEE();
+  await initEE({ accessToken: "None" }, "");
+  const init = calls.find((c) => c[0] === "initialize");
+  assert.equal(init[1], "http://127.0.0.1:8889/ee-api");
+  assert.equal(init[2], "https://earthengine.googleapis.com");
+  assert.equal(init[4], null);
+});
+
+test("initEE sets the default workload tag from mode, after initialize", async () => {
+  const calls = stubEE();
+  await initEE({}, "");
+  assert.deepEqual(calls[calls.length - 1], ["setDefaultWorkloadTag", "geeviz---viewer-exports"]);
+});
+
+test("initEE rejects when ee.initialize fails and sets no tag", async () => {
+  const calls = stubEE({ fail: true });
+  await assert.rejects(initEE({}, ""), /boom/);
+  assert.equal(names(calls).includes("setDefaultWorkloadTag"), false);
+});
+
+test("sameView: tolerance scales with zoom, zoom must match", () => {
+  const px = 360 / (256 * 2 ** 10);
+  assert.equal(sameView({ lng: 0, lat: 0, zoom: 10 }, { lng: px, lat: 0, zoom: 10 }), true);
+  assert.equal(sameView({ lng: 0, lat: 0, zoom: 10 }, { lng: 5 * px, lat: 0, zoom: 10 }), false);
+  assert.equal(sameView({ lng: 0, lat: 0, zoom: 10 }, { lng: 0, lat: 0, zoom: 11 }), false);
 });

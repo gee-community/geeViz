@@ -45,6 +45,11 @@ def settle(page):
 
 def test_ee_initialized(page):
     assert page.evaluate("ee.data.getAuthToken() !== null || !!authProxyAPIURL")
+    # Neither of those tells success from failure: check the boot outcome and a round trip.
+    assert page.evaluate("__delta.ready === true")
+    assert page.evaluate("__delta.eeError") is None
+    got = page.evaluate("new Promise((res) => ee.Number(1).add(1).evaluate((v, err) => res(err ? 'err:' + err : v)))")
+    assert got == 2
     assert page.delta_errors == []
 
 
@@ -67,6 +72,27 @@ def test_view_history(page):
     settle(page)
     v = view(page)
     assert abs(v["lng"] + 110.9) < 1e-4 and abs(v["lat"] - 41.1) < 1e-4
+    # Repeated cycles keep working (no recorded echo of a programmatic move).
+    for _ in range(2):
+        page.click("#pane-left [data-act=prev-view]")
+        settle(page)
+        v = view(page)
+        assert abs(v["lng"] + 111.2) < 1e-4
+        page.click("#pane-left [data-act=next-view]")
+        settle(page)
+        v = view(page)
+        assert abs(v["lng"] + 110.9) < 1e-4
+        assert page.evaluate("__delta.engine.history().canForward") is False
+    # A zoom change is its own history entry.
+    go(page, -110.9, 41.1, 14)
+    page.click("#pane-left [data-act=prev-view]")
+    settle(page)
+    assert view(page)["zoom"] == 11
+    page.click("#pane-left [data-act=next-view]")
+    settle(page)
+    assert view(page)["zoom"] == 14
+    page.click("#pane-left [data-act=prev-view]")
+    settle(page)
     # A new pan after going back drops the forward branch.
     page.click("#pane-left [data-act=prev-view]")
     settle(page)
@@ -108,3 +134,13 @@ def test_search_coordinates(page):
     settle(page)
     v = view(page)
     assert abs(v["lng"] + 111.9) < 1e-4 and abs(v["lat"] - 40.5) < 1e-4
+
+
+def test_street_view_no_imagery_notice_and_stays_picking(page):
+    # Open ocean: no panorama within 80 m.
+    go(page, -150.0, 30.0, 8)
+    page.click("#svBtn")
+    box = page.locator("#map").bounding_box()
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.wait_for_function("__delta.store.get().notices.some(n => n.includes('No Street View imagery'))", timeout=20000)
+    assert page.evaluate("document.body.classList.contains('sv-pick')")

@@ -1,8 +1,8 @@
 // Earth Engine initialization. No DOM access.
 //
-// `authProxyAPIURL` is the top-level `let` in compat.js; the generated
-// runGeeViz.js reassigns it (with a tenant prefix) while it loads, so this
-// module reads the same global binding at call time, never a copy.
+// The caller passes the proxy url (the top-level `authProxyAPIURL` in
+// compat.js, which the generated runGeeViz.js reassigns with a tenant
+// prefix) as a string or a getter, so it is read at call time, never copied.
 
 const NO_TOKEN = [null, undefined, "null", "None", ""];
 
@@ -17,13 +17,13 @@ export function projectIdFrom(urlParams) {
 
 // The same-origin proxy default, used when nothing sets a proxy url.
 function defaultProxyUrl(urlParams) {
-  return urlParams.geeAuthProxyURL || location.origin + "/ee-api";
+  return urlParams.geeAuthProxyURL || globalThis.location.origin + "/ee-api";
 }
 
 // port of 1variables.js (token vs proxy mode) and 4map-manager.js eeInit and
 // eeInitSuccessCallback. Resolves once ee.initialize succeeds, with the
 // default workload tag set; rejects with the failure.
-export function initEE(urlParams = window.urlParams || {}) {
+export function initEE(urlParams = globalThis.urlParams || {}, authProxyAPIURL = "") {
   let proxy;
   let apiUrl = "https://earthengine.googleapis.com";
   if (hasAccessToken(urlParams)) {
@@ -31,15 +31,15 @@ export function initEE(urlParams = window.urlParams || {}) {
     apiUrl = null;
     ee.data.setAuthToken("", "Bearer", urlParams.accessToken, 3600, [], undefined, false);
   } else {
-    // eslint-disable-next-line no-undef
-    proxy = typeof authProxyAPIURL === "string" && authProxyAPIURL ? authProxyAPIURL : defaultProxyUrl(urlParams);
+    const tenantUrl = typeof authProxyAPIURL === "function" ? authProxyAPIURL() : authProxyAPIURL;
+    proxy = typeof tenantUrl === "string" && tenantUrl ? tenantUrl : defaultProxyUrl(urlParams);
   }
   return new Promise((resolve, reject) => {
     ee.initialize(
       proxy,
       apiUrl,
       () => {
-        ee.data.setDefaultWorkloadTag(`${window.mode || "geeViz"}---viewer-exports`.toLowerCase());
+        ee.data.setDefaultWorkloadTag(`${globalThis.mode || "geeViz"}---viewer-exports`.toLowerCase());
         resolve();
       },
       (failure) => reject(new Error("Failed to authenticate to GEE: " + failure)),

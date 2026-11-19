@@ -36,15 +36,33 @@ async function boot() {
     delta.ready = true;
     return;
   }
-  const engine = createMap(document.getElementById("map"), store);
+  let engine;
+  try {
+    engine = createMap(document.getElementById("map"), store);
+  } catch (e) {
+    delta.api = createMapApi(store, {});
+    notice("The map could not start: " + (e && e.message));
+    delta.ready = true;
+    return;
+  }
   const api = createMapApi(store, engine);
   Object.assign(delta, { api, engine });
 
-  mountMapControls(engine, shell, status);
-  mountSearch(engine, { notify: notice });
+  for (const [what, mount] of [
+    ["map controls", () => mountMapControls(engine, shell, status)],
+    ["search", () => mountSearch(engine, { notify: notice })],
+  ]) {
+    try {
+      mount();
+    } catch (e) {
+      notice("The " + what + " could not start: " + (e && e.message));
+    }
+  }
 
   try {
-    await initEE(window.urlParams);
+    // authProxyAPIURL is compat.js's top-level `let`, which runGeeViz.js reassigns.
+    await initEE(window.urlParams, () => authProxyAPIURL);
+    engine.setEEReady(true);
   } catch (e) {
     delta.eeError = String(e && e.message ? e.message : e);
     notice(plainText(describeEEFailure(e, window.urlParams)));

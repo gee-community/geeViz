@@ -27,6 +27,13 @@ export function whenGoogleReady(timeoutMs = 30000) {
   });
 }
 
+// True when two views are the same to within `px` screen pixels at their zoom.
+export function sameView(a, b, px = 2) {
+  if (a.zoom !== b.zoom) return false;
+  const degPerPx = 360 / (256 * Math.pow(2, a.zoom));
+  return Math.abs(a.lng - b.lng) <= px * degPerPx && Math.abs(a.lat - b.lat) <= px * degPerPx;
+}
+
 // Pure view-history stack. port of 4map-manager.js trackView, checkViewIndex,
 // backView and forwardView: a list plus a 1-based index; recording truncates
 // the forward branch. Recording a view equal to the current one is ignored,
@@ -138,13 +145,22 @@ export function createMap(el, store) {
     const c = gmap.getCenter();
     return { lng: c.lng(), lat: c.lat(), zoom: gmap.getZoom() };
   };
+  // A back/forward move is programmatic: the idle it causes must not be
+  // recorded, whatever rounding getCenter() adds. `pending` is the target; the
+  // next idle at (about) that view is swallowed, any other idle is a real move.
+  let pending = null;
   gmap.addListener("idle", () => {
-    hist.record(currentView());
+    const here = currentView();
+    const programmatic = pending !== null && sameView(here, pending);
+    pending = null;
+    if (!programmatic) hist.record(here);
     emit("history", hist.state());
     emit("zoom", gmap.getZoom());
   });
   function apply(view) {
     if (!view) return;
+    // No move, no idle: do not leave a pending target to swallow the next pan.
+    pending = sameView(currentView(), view, 0.01) ? null : view;
     setCenter(view.lng, view.lat, view.zoom);
     emit("history", hist.state());
   }
@@ -153,8 +169,10 @@ export function createMap(el, store) {
 
   // ---- elevation ----
   // port of 4map-manager.js getElevation (GLO-30 mosaic, first value at a point)
+  let eeReady = false;
   function elevationAt(latLng) {
     return new Promise((resolve) => {
+      if (!eeReady) return resolve(null);
       try {
         const lat = typeof latLng.lat === "function" ? latLng.lat() : latLng.lat;
         const lng = typeof latLng.lng === "function" ? latLng.lng() : latLng.lng;
@@ -172,15 +190,20 @@ export function createMap(el, store) {
 
   // Cursor position, throttled elevation (one lookup per second, as the original).
   let lastElevationAt = 0;
+  let elevationBusy = false;
   gmap.addListener("mousemove", (ev) => {
     if (!ev.latLng) return;
     const lat = ev.latLng.lat();
     const lng = ev.latLng.lng();
     emit("cursor", lat, lng, undefined);
     const now = Date.now();
-    if (now - lastElevationAt > 1000) {
+    if (eeReady && !elevationBusy && now - lastElevationAt > 1000) {
       lastElevationAt = now;
-      elevationAt(ev.latLng).then((m) => emit("cursor", lat, lng, m));
+      elevationBusy = true;
+      elevationAt(ev.latLng).then((m) => {
+        elevationBusy = false;
+        emit("cursor", lat, lng, m);
+      });
     }
   });
 
@@ -211,6 +234,9 @@ export function createMap(el, store) {
         pano.setPano(data.location.pano);
         pano.setPov({ heading: 0, pitch: 0 });
         pano.setVisible(true);
+      } else if (store) {
+        // Stay in pick mode so the next click can try a blue line.
+        store.update((s) => ({ ...s, notices: [...s.notices, "No Street View imagery here. Click a blue line."] }), "notice");
       }
     });
   });
@@ -242,5 +268,8 @@ export function createMap(el, store) {
     onZoom: on("zoom"),
     onBasemap: on("basemap"),
     elevationAt,
+    setEEReady: (ok) => {
+      eeReady = !!ok;
+    },
   };
 }
