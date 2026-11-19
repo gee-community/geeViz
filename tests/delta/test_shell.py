@@ -224,3 +224,119 @@ def test_stored_width_is_clamped_on_load_and_resize(delta_page, delta_server):
     page.wait_for_function("Math.abs(document.querySelector('#pane-left').getBoundingClientRect().width - 400) <= 1")
     # the stored preference itself is untouched
     assert page.evaluate("localStorage.getItem('delta-left')") == "5000"
+
+
+# ---- pane resize drag (Task 11d): one update per frame, store commit on release ----
+
+import pytest  # noqa: E402
+
+
+def rect(page, sel):
+    return page.evaluate("s => { const b = document.querySelector(s).getBoundingClientRect(); return {left: b.left, right: b.right, width: b.width}; }", sel)
+
+
+def frames(page, n=2):
+    page.evaluate("(n) => new Promise(r => { const f = (k) => k ? requestAnimationFrame(() => f(k - 1)) : r(); f(n); })", n)
+
+
+@pytest.mark.parametrize("scheme", ["dark", "light"])
+def test_drag_left_smaller_and_back(delta_page, scheme):
+    page = delta_page(SHELL, color_scheme=scheme)
+    page.evaluate("__delta.api.addLayer({}, {}, 'Forest canopy cover change')")
+    assert abs(width(page, "#pane-left") - 500) <= 1
+    for target, stacked in ((260, True), (500, False)):
+        box = page.locator(".grip[data-side=left]").bounding_box()
+        x, y = box["x"] + box["width"] / 2, box["y"] + 300
+        page.mouse.move(x, y)
+        page.mouse.down()
+        page.mouse.move(target, y, steps=30)
+        page.mouse.up()
+        frames(page)
+        w = width(page, "#pane-left")
+        assert abs(w - target) <= 2, (target, w)
+        assert page.evaluate("localStorage.getItem('delta-left')") == str(round(w))
+        assert page.evaluate("__delta.store.get().panes.left.width") == round(w)
+        assert abs(rect(page, "#status")["left"] - rect(page, "#pane-left")["right"]) <= 1
+        # steady state is store driven again: no live inline width left behind
+        assert page.evaluate("document.querySelector('#pane-left').style.width") == ""
+        assert "resizing" not in page.evaluate("document.body.className")
+        # layer rows end fitted to the final width (opacity inline only when the name fits)
+        row = page.evaluate("() => { const r = document.querySelector('#layer-list .layer'); const n = r.querySelector('.lname'); return {stack: r.classList.contains('stack'), cut: n.scrollWidth > n.clientWidth + 1}; }")
+        assert row["stack"] is stacked and not (not row["stack"] and row["cut"]), (target, row)
+
+
+DRAG = """async ({side, xs}) => {
+  const { store } = __delta;
+  const grip = document.querySelector('.grip[data-side=' + side + ']');
+  const counts = { updates: 0, rootMutations: 0 };
+  const off = store.on('change:panes', (v, s, reason) => { if (reason === 'pane-width') counts.updates++; });
+  const mo = new MutationObserver((recs) => { counts.rootMutations += recs.length; });
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+  const ev = (type, x) => grip.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 7, clientX: x, clientY: 300 }));
+  const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const flush = () => new Promise((r) => setTimeout(r, 0));
+  const out = {};
+  ev('pointerdown', xs[0]);
+  out.resizingAtDown = document.body.classList.contains('resizing');
+  const t0 = performance.now();
+  for (const x of xs) ev('pointermove', x);
+  out.moveMs = performance.now() - t0;
+  await flush();
+  out.duringUpdates = counts.updates;
+  await frame();
+  out.duringRootMutations = counts.rootMutations;
+  out.duringUpdatesAfterFrame = counts.updates;
+  out.duringWidth = document.querySelector('#pane-' + side).getBoundingClientRect().width;
+  out.resizingDuring = document.body.classList.contains('resizing');
+  out.backdropDuring = getComputedStyle(document.querySelector('#pane-' + side)).backdropFilter;
+  out.mapPointerDuring = getComputedStyle(document.querySelector('#map')).pointerEvents;
+  out.userSelectDuring = getComputedStyle(document.body).userSelect;
+  ev('pointerup', xs[xs.length - 1]);
+  await flush();
+  out.afterUpdates = counts.updates;
+  out.afterRootMutations = counts.rootMutations;
+  out.resizingAfter = document.body.classList.contains('resizing');
+  out.backdropAfter = getComputedStyle(document.querySelector('#pane-' + side)).backdropFilter;
+  await frame();
+  out.finalWidth = document.querySelector('#pane-' + side).getBoundingClientRect().width;
+  out.stored = localStorage.getItem('delta-' + side);
+  off(); mo.disconnect();
+  return out;
+}"""
+
+
+@pytest.mark.parametrize("scheme", ["dark", "light"])
+def test_drag_updates_store_once_on_release(delta_page, scheme):
+    page = delta_page(SHELL, color_scheme=scheme)
+    xs = [500 - i * 4 for i in range(60)]  # 500 down to 264
+    m = page.evaluate(DRAG, {"side": "left", "xs": xs})
+    # no store update and no :root custom property change while dragging
+    assert m["duringUpdates"] == 0 and m["duringUpdatesAfterFrame"] == 0, m
+    assert m["duringRootMutations"] == 0, m
+    # but the pane follows the pointer within a frame
+    assert abs(m["duringWidth"] - xs[-1]) <= 1, m
+    # one commit on release
+    assert m["afterUpdates"] == 1, m
+    assert m["afterRootMutations"] >= 1, m
+    assert abs(m["finalWidth"] - xs[-1]) <= 1, m
+    assert m["stored"] == str(xs[-1]), m
+    # resizing only between down and up: no blur, no map pointer events, no text selection
+    assert m["resizingAtDown"] and m["resizingDuring"] and not m["resizingAfter"], m
+    assert m["backdropDuring"] == "none" and m["backdropAfter"] != "none", m
+    assert m["mapPointerDuring"] == "none" and m["userSelectDuring"] == "none", m
+
+
+def test_drag_right_pane_once_on_release(delta_page):
+    page = delta_page(SHELL)
+    page.evaluate("__delta.store.set({tool: 'query'})")
+    page.wait_for_function("Math.abs(document.querySelector('#pane-right').getBoundingClientRect().width - 330) <= 1")
+    xs = [1500 - 330 - i * 3 for i in range(60)]
+    m = page.evaluate(DRAG, {"side": "right", "xs": xs})
+    assert m["duringUpdates"] == 0 and m["duringRootMutations"] == 0, m
+    want = 1500 - xs[-1]
+    assert abs(m["duringWidth"] - want) <= 1 and abs(m["finalWidth"] - want) <= 1, m
+    assert m["afterUpdates"] == 1, m
+    # map controls and the status bar track the right pane
+    ctl = rect(page, "#mapctl")
+    assert abs((1500 - ctl["right"]) - (want + 12)) <= 1, ctl
+    assert abs(rect(page, "#status")["right"] - (1500 - want)) <= 1

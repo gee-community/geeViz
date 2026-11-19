@@ -127,25 +127,59 @@ export function mountShell(store, { mapEl } = {}) {
   function setWidth(side, width) {
     store.update((s) => ({ ...s, panes: { ...s.panes, [side]: { ...s.panes[side], width } } }), "pane-width");
   }
+  // Live width while dragging: only the elements that depend on it, never :root
+  // (a custom property on :root restyles the whole page on every move).
+  // The store, and so --lw/--rw on :root, takes the final width on release.
+  const liveTargets = {
+    left: { pane: "#pane-left", vars: ["#status", "#loadbar"], name: "--lw" },
+    right: { pane: "#pane-right", vars: ["#status", "#loadbar", "#mapctl"], name: "--rw" },
+  };
+  function applyLive(side, w) {
+    const t = liveTargets[side];
+    const pane = $(t.pane);
+    const vars = t.vars.map((sel) => $(sel)).filter(Boolean);
+    if (w === null) {
+      pane.style.removeProperty("width");
+      vars.forEach((el) => el.style.removeProperty(t.name));
+    } else {
+      pane.style.width = w + "px";
+      vars.forEach((el) => el.style.setProperty(t.name, w + "px"));
+    }
+  }
+
   $$(".grip").forEach((grip) => {
     const side = grip.dataset.side;
     grip.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       grip.classList.add("drag");
+      body.classList.add("resizing");
       try {
         grip.setPointerCapture(e.pointerId);
       } catch (err) {
         /* synthetic events have no capturable pointer */
       }
+      // One update per animation frame, from the latest pointer x.
+      let latest = null;
+      let raf = 0;
+      const widthAt = (x) => clampWidth(side, side === "left" ? x : innerWidth - x, innerWidth);
+      const frame = () => {
+        raf = 0;
+        if (latest !== null) applyLive(side, latest);
+      };
       const move = (ev) => {
-        const raw = side === "left" ? ev.clientX : innerWidth - ev.clientX;
-        setWidth(side, clampWidth(side, raw, innerWidth));
+        latest = widthAt(ev.clientX);
+        if (!raf) raf = requestAnimationFrame(frame);
       };
       const up = () => {
+        if (raf) cancelAnimationFrame(raf);
+        raf = 0;
         grip.classList.remove("drag");
+        body.classList.remove("resizing");
         grip.removeEventListener("pointermove", move);
         grip.removeEventListener("pointerup", up);
         grip.removeEventListener("pointercancel", up);
+        if (latest !== null && latest !== store.get().panes[side].width) setWidth(side, latest);
+        applyLive(side, null);
         lsSet("delta-" + side, store.get().panes[side].width);
       };
       grip.addEventListener("pointermove", move);
