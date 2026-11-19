@@ -236,8 +236,9 @@ export function createLayerEngine(gmap, store, deps = {}) {
   // Frame hooks for engine/timelapse.js. Each frame counts the tiles it is
   // asked for; the timelapse reports loading until its frames have map
   // services and, while shown, until every frame's tiles are in.
+  // An off timelapse never reports loading, even while its frames load.
   function frameLoading(r) {
-    setLoading(r, !r.ready || (r.framesShown && r.pending.size > 0));
+    setLoading(r, !!r.visible && (!r.ready || (r.framesShown && r.pending.size > 0)));
   }
   const frameHooks = {
     store,
@@ -299,6 +300,9 @@ export function createLayerEngine(gmap, store, deps = {}) {
     setLegend(id, legend) {
       patch(id, { legend }, "layer-legend");
     },
+    clearError(id) {
+      patch(id, { error: null }, "layer-error");
+    },
     fail(id, err) {
       const r = recs.get(id);
       if (r) fail(r, err);
@@ -325,7 +329,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
       item: layer.item,
     };
     recs.set(layer.id, r);
-    setLoading(r, true);
+    frameLoading(r);
     r.tl = createTimelapse(frameHooks, layer);
   }
 
@@ -402,7 +406,10 @@ export function createLayerEngine(gmap, store, deps = {}) {
     const r = recs.get(id);
     if (!r) return;
     r.visible = !!on;
-    if (r.timelapse) return r.tl.setVisible(r.visible);
+    if (r.timelapse) {
+      r.tl.setVisible(r.visible);
+      return frameLoading(r);
+    }
     if (r.tileType) sync();
     else if (r.dataType) r.overlay && r.overlay.setMap(on ? gmap : null);
     else if (r.layerType === "dynamicMapService") refreshGround(r);

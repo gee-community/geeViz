@@ -54,7 +54,9 @@ export function createMapApi(store, engine = {}) {
       kind,
       item,
       viz,
-      visible: visible === undefined || visible === null ? true : !!visible,
+      // port of 4map-manager.js addTimeLapseToMap: "Force time lapses to be
+      // turned off on load to speed up loading" (visible = false).
+      visible: kind === "timelapse" ? false : visible === undefined || visible === null ? true : !!visible,
       opacity: typeof viz.opacity === "number" ? viz.opacity : 1,
       legendOpen: false,
       pinned: false,

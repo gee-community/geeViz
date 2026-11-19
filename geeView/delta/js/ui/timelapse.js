@@ -9,6 +9,8 @@
 // sliders). The buttons call the engine's controller; the block reads
 // layer.timelapse from the store. Years are written as text.
 
+import { DEFAULT_FPS } from "../engine/timelapse.js";
+
 // Speed slider range and step, as the original's speed slider.
 export const SPEED = { min: 0.5, max: 3, step: 0.5 };
 
@@ -120,7 +122,7 @@ export function timelapseBlock(id, getCtl) {
     if (Number(parts.yearIn.value) !== frame) parts.yearIn.value = String(frame);
     paint(parts.yearIn);
     parts.yearV.textContent = years.length ? String(years[frame]) : "";
-    const fps = tl.fps || SPEED.min;
+    const fps = tl.fps || DEFAULT_FPS;
     if (Number(parts.speedIn.value) !== fps) parts.speedIn.value = String(fps);
     paint(parts.speedIn);
     parts.speedV.textContent = fpsText(fps);

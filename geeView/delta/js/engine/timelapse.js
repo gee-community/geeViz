@@ -130,9 +130,12 @@ export function createTimelapse(engine, layer, opts = {}) {
   const timers = opts.timers || { setInterval: (f, ms) => setInterval(f, ms), clearInterval: (t) => clearInterval(t) };
   const loader = (opts.loader || eeFrameLoader)(engine, layer);
 
+  // Timelapses start off (api.js, as addTimeLapseToMap). A toggle while
+  // frames load only records the choice (timelapse-toggle.js INTENT).
   let visible = !!layer.visible;
-  let touched = false; // the toggle changed while frames loaded (timelapse-toggle.js INTENT)
   let shown = false;
+  const failed = new Set();
+  let firstError = null;
   let timer = null;
   let disposed = false;
   const st = {
@@ -143,6 +146,7 @@ export function createTimelapse(engine, layer, opts = {}) {
     cumulative: false,
     loaded: false,
     nLoaded: 0,
+    failed: [],
     ...(layer.timelapse || {}),
   };
 
@@ -187,29 +191,34 @@ export function createTimelapse(engine, layer, opts = {}) {
   }
 
   // port of 4map-manager.js selectFrame
-  function selectFrame(i, user = true) {
+  function selectFrame(i) {
     st.frame = wrapFrame(i, st.years.length);
-    if (user) turnOffOtherLayers();
+    turnOffOtherLayers();
     patch({ frame: st.frame }, "timelapse-frame");
     render();
   }
 
-  // Turning on (port of timeLapseCheckbox -> pauseButtonFunction). A user's
-  // choice turns other layers off; the show at load does not, and there the
-  // topmost visible timelapse wins.
-  function activate(user) {
-    if (!user) {
-      const { order, layers } = store.get();
-      const above = order.slice(0, order.indexOf(id));
-      const higher = layers.some((l) => l.kind === "timelapse" && l.visible && l.timelapse && l.timelapse.loaded && above.indexOf(l.id) > -1);
-      if (higher) {
-        setVisibleIn((l) => l.id === id, false, "timelapse-exclusive");
-        return;
-      }
-    }
+  // Turning on (port of timeLapseCheckbox -> pauseButtonFunction).
+  function activate() {
     turnOffOtherTimelapses();
-    selectFrame(st.frame, user);
+    selectFrame(st.frame);
   }
+
+  // The other direction (port of 2templates.js addLayer turnOn ->
+  // turnOffTimeLapseCheckboxes): a layer in the list turned on turns a visible
+  // timelapse off when the setting is true, so playback does not switch the
+  // user's layer straight back off.
+  const listLayer = (l) => l.id !== id && l.kind !== "timelapse" && ROWLESS.indexOf(l.kind) === -1;
+  let prevVisible = new Map(store.get().layers.filter(listLayer).map((l) => [l.id, !!l.visible]));
+  const unsubscribe = store.on("change:layers", () => {
+    const layers = store.get().layers.filter(listLayer);
+    const turnedOn = layers.some((l) => l.visible && prevVisible.get(l.id) === false);
+    prevVisible = new Map(layers.map((l) => [l.id, !!l.visible]));
+    if (turnedOn && visible && store.get().turnOffLayersWhenTimeLapseIsOn) {
+      ctl.pause();
+      setVisibleIn((l) => l.id === id, false, "turnOffTimeLapseCheckboxes");
+    }
+  });
 
   // port of 4map-manager.js stopTimeLapse (the off side of timeLapseCheckbox)
   function deactivate() {
@@ -229,11 +238,8 @@ export function createTimelapse(engine, layer, opts = {}) {
       on = !!on;
       if (on === visible) return;
       visible = on;
-      if (!st.loaded) {
-        touched = true;
-        return;
-      }
-      if (on) activate(true);
+      if (!st.loaded) return;
+      if (on) activate();
       else deactivate();
     },
     setFrame(i) {
@@ -276,15 +282,18 @@ export function createTimelapse(engine, layer, opts = {}) {
       patch({ cumulative: !!on }, "timelapse-cumulative");
       render();
     },
-    // port of jitterZoom(true): re-request tiles that got stuck
+    // port of jitterZoom(true): re-request tiles that got stuck; also asks
+    // again for the map service of any frame that failed to load.
     refresh() {
       engine.jitter();
+      if (st.loaded) [...failed].forEach(requestFrame);
     },
     // The layer opacity changed.
     render,
     dispose() {
       disposed = true;
       clearTimer();
+      unsubscribe();
     },
     state: () => ({ ...st }),
     _visible: () => visible,
@@ -301,23 +310,55 @@ export function createTimelapse(engine, layer, opts = {}) {
       patch({ years: years.slice(), frame: wrapFrame(st.frame, years.length) }, "timelapse-years");
       engine.initFrames(id, years.length);
       let n = 0;
-      await Promise.all(
+      // A frame that fails does not hold the others back: it is marked, the
+      // row shows the error, and refresh asks for it again.
+      await Promise.allSettled(
         years.map((_, i) =>
-          loader.frame(i).then((url) => {
-            if (disposed) return;
-            engine.setFrameUrl(id, i, url);
-            patch({ nLoaded: ++n }, "timelapse-progress");
-          })
+          loader.frame(i).then(
+            (url) => {
+              if (disposed) return;
+              engine.setFrameUrl(id, i, url);
+              patch({ nLoaded: ++n }, "timelapse-progress");
+            },
+            (err) => {
+              failed.add(i);
+              if (firstError === null) firstError = err;
+            }
+          )
         )
       );
       if (disposed) return;
-      patch({ loaded: true }, "timelapse-loaded");
+      patch({ loaded: true, failed: [...failed].sort((a, b) => a - b) }, "timelapse-loaded");
       engine.framesReady(id);
-      // timelapse-toggle.js reconcile: the recorded choice applies now.
-      if (visible) activate(touched);
+      reportFailures();
+      // timelapse-toggle.js reconcile: a choice made while loading applies now.
+      if (visible) activate();
     } catch (e) {
       if (!disposed && engine.fail) engine.fail(id, e);
     }
+  }
+
+  function reportFailures() {
+    if (!failed.size || !engine.fail) return;
+    const msg = firstError && firstError.message ? firstError.message : String(firstError);
+    engine.fail(id, failed.size + " of " + st.years.length + " frames failed to load: " + msg);
+  }
+
+  function requestFrame(i) {
+    loader.frame(i).then(
+      (url) => {
+        if (disposed || !failed.has(i)) return;
+        failed.delete(i);
+        engine.setFrameUrl(id, i, url);
+        patch({ nLoaded: st.nLoaded + 1, failed: [...failed].sort((a, b) => a - b) }, "timelapse-retry");
+        if (!failed.size && engine.clearError) engine.clearError(id);
+        if (shown) render();
+      },
+      (err) => {
+        firstError = err;
+        reportFailures();
+      }
+    );
   }
   patch({}, "timelapse-init");
   load();

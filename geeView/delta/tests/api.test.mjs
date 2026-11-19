@@ -191,3 +191,14 @@ test("compat defines a static for every original Map method", { skip: !fs.exists
     assert.equal(vm.runInContext("typeof Map." + m[1], ctx), "function", m[1]);
   }
 });
+
+test("timelapses start off whatever visible says (4map-manager.js addTimeLapseToMap visible = false)", () => {
+  const store = createStore();
+  const api = createMapApi(store, {});
+  api.addTimeLapse({}, {}, "T1", true);
+  api.addSerializedTimeLapse({}, {}, "T2", true);
+  api.addTimeLapse({}, {}, "T3");
+  api.addLayer({}, {}, "L", true);
+  const vis = Object.fromEntries(store.get().layers.map((l) => [l.name, l.visible]));
+  assert.deepEqual(vis, { T1: false, T2: false, T3: false, L: true });
+});
