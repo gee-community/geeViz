@@ -107,3 +107,19 @@ test("createWind leaves records it did not make alone", () => {
   layers.fire();
   assert.ok(reg.other);
 });
+
+import { windQueryItem, WIND_UNIT_PROPS } from "../js/engine/wind.js";
+
+test("windQueryItem: a wind layer's serialized speed/direction object, decoded; null otherwise", () => {
+  const seen = [];
+  const ee = { Deserializer: { fromJSON: (s) => (seen.push(s), { decoded: s }), decode: (o) => ({ decodedObj: o }) } };
+  assert.deepEqual(windQueryItem({ windParticles: true, windQueryItem: '{"result":"0"}' }, ee), { decoded: '{"result":"0"}' });
+  assert.deepEqual(windQueryItem({ windParticles: true, windQueryItem: { result: "0" } }, ee), { decodedObj: { result: "0" } });
+  const live = { evaluate() {} };
+  assert.equal(windQueryItem({ windParticles: true, windQueryItem: live }, ee), live);
+  assert.equal(windQueryItem({ windQueryItem: '{"result":"0"}' }, ee), null);
+  assert.equal(windQueryItem({ windParticles: true }, ee), null);
+  assert.equal(windQueryItem(null, ee), null);
+  assert.deepEqual(seen, ['{"result":"0"}']);
+  assert.deepEqual(WIND_UNIT_PROPS, { speed: "wind_units", direction: "wind_direction_units" });
+});

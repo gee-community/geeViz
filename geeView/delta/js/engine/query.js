@@ -98,7 +98,10 @@ function colorOf(viz, band, v) {
 
 // port of makeQueryTable for a geeImage: one value per band, class names
 // from the layer's query dictionary, floats rounded for display only.
-export function imageResult(layer, viz, values, point, precision) {
+// Units per band: `units` is {band: unit string}, shown after the value.
+const withUnit = (display, unit) => (unit && display !== "No data" ? display + " " + unit : display);
+
+export function imageResult(layer, viz, values, point, precision, units) {
   viz = viz || {};
   let keys = values && typeof values === "object" ? Object.keys(values) : [];
   // An RGB-visualized query image carries viz-red/green/blue; show the main band.
@@ -107,7 +110,7 @@ export function imageResult(layer, viz, values, point, precision) {
   }
   const bands = keys.map((band) => {
     const value = values[band];
-    return { band, value, display: displayOf(value, precision), label: labelOf(viz, band, value), color: colorOf(viz, band, value) };
+    return { band, value, display: withUnit(displayOf(value, precision), units && units[band]), label: labelOf(viz, band, value), color: colorOf(viz, band, value) };
   });
   return {
     id: layer.id + "-v",
@@ -123,7 +126,7 @@ export function imageResult(layer, viz, values, point, precision) {
 // port of getCollectionValues: one trace per band over the collection's
 // images. `out` is {ids, labels, bands, values, hasTime} where values holds
 // the stacked image's reduceRegion answer keyed `${id}_${band}`.
-export function seriesResult(layer, viz, out, point, precision, dateFormat) {
+export function seriesResult(layer, viz, out, point, precision, dateFormat, units) {
   viz = viz || {};
   const ids = out.ids || [];
   const x = out.hasTime ? out.labels || ids : ids;
@@ -135,8 +138,9 @@ export function seriesResult(layer, viz, out, point, precision, dateFormat) {
           const v = values[id + "_" + band];
           return v === undefined ? null : v;
         });
+        const unit = units && units[band];
         return {
-          name: band,
+          name: unit ? band + " (" + unit + ")" : band,
           y,
           labels: y.map((v) => labelOf(viz, band, v)),
           color: palette[i] !== undefined ? addColorHash(String(palette[i]).replace(/^#/, "")) : null,
@@ -275,8 +279,26 @@ function queryOne(eeApi, target, layer, point, query, opts) {
   const { crs, scale, crsTransform } = queryInputs(query);
   const reduce = (img) => img.reduceRegion(eeApi.Reducer.first(), pt, scale, crs, crsTransform, true, 1e13, 4);
   const precision = query.precision;
+  // target.unitProps {band: image property naming its units}: read in the
+  // same request as the values.
+  const props = target.unitProps || null;
+  const propNames = props ? Object.keys(props).map((b) => props[b]) : [];
+  const unitsOf = (got) => {
+    if (!props || !got) return null;
+    const out = {};
+    Object.keys(props).forEach((b) => {
+      if (got[props[b]] !== undefined && got[props[b]] !== null) out[b] = String(got[props[b]]);
+    });
+    return out;
+  };
   if (target.type === "geeImage") {
-    return evaluate(reduce(eeApi.Image(target.item))).then((v) => [imageResult(layer, viz, v, point, precision)]);
+    const img = eeApi.Image(target.item);
+    if (props) {
+      return evaluate(eeApi.Dictionary({ values: reduce(img), units: img.toDictionary(propNames) })).then((o) => [
+        imageResult(layer, viz, o.values, point, precision, unitsOf(o.units)),
+      ]);
+    }
+    return evaluate(reduce(img)).then((v) => [imageResult(layer, viz, v, point, precision)]);
   }
   if (target.type === "geeImageCollection") {
     const source = eeApi.ImageCollection(target.item);
@@ -299,11 +321,12 @@ function queryOne(eeApi, target, layer, point, query, opts) {
       hasTime,
       bands: first.bandNames(),
       values: reduce(c.toBands()),
+      units: props ? first.toDictionary(propNames) : {},
     });
     // An empty collection is a no-data card (the original's makeQueryTable(null)), not a failure.
     const empty = eeApi.Dictionary({ ids: [], labels: [], hasTime: false, bands: [], values: {} });
     const out = eeApi.Dictionary(eeApi.Algorithms.If(source.size().gt(0), full, empty));
-    return evaluate(out).then((o) => [seriesResult(layer, viz, o, point, precision, fmt)]);
+    return evaluate(out).then((o) => [seriesResult(layer, viz, o, point, precision, fmt, unitsOf(o.units))]);
   }
   if (VECTOR_TYPES.indexOf(target.type) > -1) {
     const item = target.item;

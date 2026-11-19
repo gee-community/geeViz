@@ -23,6 +23,7 @@
 // State lives in the store at layer.timelapse = {years, frame, playing, fps,
 // cumulative, loaded, nLoaded}.
 import { prepareViz } from "./viz.js";
+import { windQueryItem, WIND_UNIT_PROPS } from "./wind.js";
 
 // port of 4map-manager.js intervalPeriod (666.67 ms) as frames per second
 export const DEFAULT_FPS = 1.5;
@@ -307,6 +308,10 @@ export function createTimelapse(engine, layer, opts = {}) {
       let item = p.item;
       const qi = p.viz && p.viz.queryItem;
       if (qi) item = typeof qi.evaluate === "function" ? qi : (engine.ee || globalThis.ee).Deserializer.decode(qi);
+      // A wind timelapse is queried on its speed/direction collection (the
+      // original's retargetQuery), as a time series like any timelapse.
+      const windItem = windQueryItem(p.viz, engine.ee || globalThis.ee);
+      if (windItem) return { type: "geeImageCollection", item: windItem, viz: p.viz, unitProps: WIND_UNIT_PROPS };
       return { type: "geeImageCollection", item, viz: p.viz };
     },
   };

@@ -51,6 +51,24 @@ export function windEntries(sources) {
 
 export const frameKey = (id, i) => id + "-frame-" + i;
 
+// What a wind layer's click reads. The tiles are u/v encoded as RGB, so
+// querying them reports bytes that look like numbers. geeViz.weather sends the
+// speed/direction image (a timelapse: collection) as viz.windQueryItem,
+// serialized; the original viewer points its query there (wind-particles.js
+// retargetQuery). Returns the Earth Engine object, or null for any other layer.
+export function windQueryItem(viz, eeApi) {
+  const q = viz && viz.windParticles ? viz.windQueryItem : null;
+  if (q === null || q === undefined) return null;
+  if (typeof q === "string") return eeApi.Deserializer.fromJSON(q);
+  if (typeof q.evaluate === "function") return q;
+  return eeApi.Deserializer.decode(q);
+}
+
+// geeViz.weather.windImage stamps each band's units on the image as
+// properties; the query reads them in the same request, so the values are
+// labeled in the units the script chose (the speed is already converted).
+export const WIND_UNIT_PROPS = { speed: "wind_units", direction: "wind_direction_units" };
+
 // registry: compat.js's layerObj (mutated in place: wind-particles.js holds the
 // binding, not a copy). particles: window.geeVizWindParticles, once loaded.
 export function createWind(layers, registry, opts = {}) {

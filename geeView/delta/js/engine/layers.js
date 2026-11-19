@@ -12,6 +12,7 @@
 // hooks below, and sync() stacks the frames in the timelapse's list slot.
 import { prepareViz, createColorCycle, normVecStyle } from "./viz.js";
 import { createTimelapse } from "./timelapse.js";
+import { windQueryItem, WIND_UNIT_PROPS } from "./wind.js";
 
 const TILE_TYPES = ["geeImage", "geeImageCollection", "geeVectorImage", "tileMapService"];
 const DATA_TYPES = ["geeVector", "geoJSONVector"];
@@ -401,8 +402,12 @@ export function createLayerEngine(gmap, store, deps = {}) {
       // port of 2templates.js addLayer: layer.queryItem = viz.queryItem || item
       let queryItem = r.viz.queryItem || item;
       if (r.viz.queryItem && vizIn.serialized === true && typeof queryItem.evaluate !== "function") queryItem = eeApi.Deserializer.decode(queryItem);
+      // A wind layer is queried on its speed/direction image, not its tiles.
+      const windItem = windQueryItem(r.viz, eeApi);
       const qType = r.layerType || r.viz.layerType;
-      resolveTarget(NOT_QUERYABLE.indexOf(qType) > -1 ? null : { type: qType, item: queryItem, viz: r.viz });
+      const target = { type: qType, item: windItem || queryItem, viz: r.viz };
+      if (windItem) target.unitProps = WIND_UNIT_PROPS;
+      resolveTarget(NOT_QUERYABLE.indexOf(qType) > -1 ? null : target);
       if (!r.layerType) {
         // layerType defaulted from the Earth Engine object type
         r.layerType = r.viz.layerType;

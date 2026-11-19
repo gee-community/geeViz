@@ -289,3 +289,34 @@ test("buildSelection: one selection per click, names joined, fire years, origina
   assert.equal(buildSelection({ id: "L", name: "Units" }, { selectLayerNameProperty: "nm" }, [{ id: "9", properties: {} }]), null);
   assert.equal(buildSelection({ id: "L", name: "Units" }, {}, [{ id: "9", properties: {} }]).years, null);
 });
+
+test("imageResult and seriesResult label values with their units", () => {
+  const r = imageResult({ id: "w", name: "Wind" }, {}, { speed: 12.345, direction: 270 }, PT, null, { speed: "mi/hr", direction: "degrees" });
+  assert.deepEqual(r.data.bands.map((b) => b.display), ["12.345 mi/hr", "270 degrees"]);
+  const none = imageResult({ id: "w", name: "Wind" }, {}, { speed: null }, PT, null, { speed: "mi/hr" });
+  assert.equal(none.data.bands[0].display, "No data");
+  const s = seriesResult({ id: "w", name: "Wind" }, {}, { ids: ["0"], labels: ["x"], bands: ["speed", "direction"], values: { "0_speed": 1, "0_direction": 2 }, hasTime: true }, PT, null, "", { speed: "m/s" });
+  assert.deepEqual(s.data.series.map((x) => x.name), ["speed (m/s)", "direction"]);
+});
+
+test("queryPoint: a target with unitProps reads values and units in one request", async () => {
+  const evaluated = [];
+  const ee = {
+    Geometry: { Point: (c) => ({ point: c }) },
+    Reducer: { first: () => "first" },
+    Image: (img) => ({
+      reduceRegion: () => ({ reduced: img }),
+      toDictionary: (names) => ({ props: names }),
+    }),
+    Dictionary: (d) => ({ evaluate: (cb) => evaluated.push({ d, cb }) }),
+  };
+  const engine = fakeEngine({ a: { type: "geeImage", item: "speedDir", viz: {}, unitProps: { speed: "wind_units", direction: "wind_direction_units" } } });
+  const p = queryPoint(engine, [LAYERS[0]], PT, defaultState().query, { ee });
+  await flush();
+  assert.equal(evaluated.length, 1);
+  assert.deepEqual(evaluated[0].d.values, { reduced: "speedDir" });
+  assert.deepEqual(evaluated[0].d.units, { props: ["wind_units", "wind_direction_units"] });
+  evaluated[0].cb({ values: { speed: 5, direction: 90 }, units: { wind_units: "kt", wind_direction_units: "degrees" } });
+  const [r] = await p;
+  assert.deepEqual(r.data.bands.map((b) => b.display), ["5 kt", "90 degrees"]);
+});

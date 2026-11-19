@@ -147,3 +147,61 @@ def test_wind_timelapse_draws_particles_and_toggles_off(live_map):
     page.click(row_sel(page, "Wind TL") + " .tgl")
     assert_cleared(page, key)
     assert not page.delta_errors, page.delta_errors
+
+
+# ---- Query: wind layers answer from viz.windQueryItem (speed, direction) ----
+MAP_CENTER = (750, 450)  # the map fills the 1500 x 900 window; panes overlay it
+
+
+def wait_results(page, name):
+    wait_for(
+        page,
+        "(n) => __delta.store.get().querying === false && __delta.store.get().results.some(r => r.title === n)",
+        name,
+    )
+    return [r for r in page.evaluate("__delta.store.get().results") if r["title"] == name][0]
+
+
+def test_wind_layer_query_reports_speed_and_direction(live_map):
+    import geeViz.geeView as gv
+    import geeViz.weather as wx
+
+    page = live_map(build_layer)
+    page.mouse.dblclick(*MAP_CENTER)
+    r = wait_results(page, "Wind")
+    assert r["kind"] == "value", r
+    bands = {b["band"]: b for b in r["data"]["bands"]}
+    # The speed/direction image, not the encoded u/v tile bands (vis-red ...).
+    assert sorted(bands) == ["direction", "speed"], r
+    assert 0 <= bands["speed"]["value"] < 150 and 0 <= bands["direction"]["value"] <= 360, bands
+    assert bands["speed"]["display"].endswith(" mi/hr") and bands["direction"]["display"].endswith(" degrees"), bands
+
+    # The same numbers as the Python earthengine-api for the same point and inputs.
+    ee = gv.ee
+    p, q = r["data"]["point"], page.evaluate("__delta.store.get().query")
+    img = wx.windImage(ee.Image(gfs_run(ee, [0]).first()), {"units": "mi/hr"})
+    kw = {"crs": q["crs"]}
+    if q["transform"]:
+        kw["crsTransform"] = q["transform"]
+    else:
+        kw["scale"] = q["scale"]
+    want = img.reduceRegion(ee.Reducer.first(), ee.Geometry.Point([p["lng"], p["lat"]]), **kw).getInfo()
+    assert abs(bands["speed"]["value"] - want["speed"]) < 1e-6, (bands, want)
+    assert abs(bands["direction"]["value"] - want["direction"]) < 1e-6, (bands, want)
+    assert not page.delta_errors, page.delta_errors
+
+
+def test_wind_timelapse_query_is_a_speed_and_direction_series(live_map):
+    page = live_map(build_lapse)
+    wait_for(page, "(n) => { const l = __delta.store.get().layers.find(x => x.name === n); return l && l.timelapse && l.timelapse.loaded; }", "Wind TL")
+    page.click(row_sel(page, "Wind TL") + " .tgl")
+    page.mouse.dblclick(*MAP_CENTER)
+    r = wait_results(page, "Wind TL")
+    assert r["kind"] == "series", r
+    names = [s["name"] for s in r["data"]["series"]]
+    assert names == ["speed (m/s)", "direction (degrees)"], names
+    assert len(r["data"]["x"]) == 3, r["data"]["x"]
+    speed, direction = (s["y"] for s in r["data"]["series"])
+    assert all(v is not None and 0 <= v < 70 for v in speed), speed
+    assert all(v is not None and 0 <= v <= 360 for v in direction), direction
+    assert not page.delta_errors, page.delta_errors
