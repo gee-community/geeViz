@@ -132,7 +132,7 @@ def test_cumulative(page):
     page.locator(sel + " input[data-tl=year]").fill("3")
     assert shown_years(page, "LCMS TL") == ["2018"]
     chip = page.locator(sel + " [data-tl=cumulative]")
-    assert chip.inner_text().strip() == "Cumulative"
+    assert chip.get_attribute("aria-label") == "Cumulative"
     assert chip.get_attribute("aria-pressed") == "false"
     page.click(sel + " [data-tl=cumulative]")
     assert layer(page, "LCMS TL")["timelapse"]["cumulative"] is True

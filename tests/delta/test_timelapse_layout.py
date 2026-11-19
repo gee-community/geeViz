@@ -182,34 +182,46 @@ def test_labels_and_no_year_value(page):
     assert abs(after["left"] - before["left"]) < 0.5 and abs(after["width"] - before["width"]) < 0.5
 
 
-def test_cumulative_chip(page):
+def test_cumulative_button(page):
     at(page, LEFT_DEFAULT)
-    chip = page.locator("#layer-list .layer.is-tl [data-tl=cumulative]")
-    assert chip.inner_text().strip() == "Cumulative"
-    assert chip.get_attribute("title") == "Show every year up to this one stacked together"
-    assert chip.get_attribute("aria-label") == "Cumulative"
-    assert chip.get_attribute("aria-pressed") == "false"
-    assert chip.locator("svg").count() == 2  # one icon per state; CSS shows one
-    off = page.evaluate("(s) => getComputedStyle(document.querySelector(s)).backgroundColor", "#layer-list .layer.is-tl [data-tl=cumulative]")
-    page.evaluate("() => __delta.store.update(s => ({...s, layers: s.layers.map(l => l.kind === 'timelapse' ? {...l, timelapse: {...l.timelapse, cumulative: true}} : l)}), 'test')")
-    assert chip.get_attribute("aria-pressed") == "true"
-    assert "on" in chip.get_attribute("class")
+    sel = "#layer-list .layer.is-tl [data-tl=cumulative]"
+    btn = page.locator(sel)
+    # an icon-only transport button, right after refresh
+    assert btn.inner_text().strip() == ""
+    assert btn.get_attribute("title") == "Show every year up to this one stacked together"
+    assert btn.get_attribute("aria-label") == "Cumulative"
+    assert btn.get_attribute("aria-pressed") == "false"
+    assert btn.locator("svg").count() == 2  # one icon per state; CSS shows one
+    geo = page.evaluate("""(s) => {
+      const c = document.querySelector(s);
+      const r = c.closest('.tl').querySelector('[data-tl=refresh]');
+      const vis = Array.from(c.parentElement.children).filter(e => e.getClientRects().length);
+      const cr = c.getBoundingClientRect(), rr = r.getBoundingClientRect();
+      return {same: c.className === r.className || c.classList.contains('tlb') && r.classList.contains('tlb'),
+              parentSame: c.parentElement === r.parentElement, next: vis[vis.indexOf(r) + 1] === c,
+              w: cr.width, h: cr.height, rw: rr.width, rh: rr.height, gap: cr.left - rr.right, dy: Math.abs(cr.top - rr.top),
+              radius: getComputedStyle(c).borderRadius === getComputedStyle(r).borderRadius,
+              border: getComputedStyle(c).borderStyle === getComputedStyle(r).borderStyle};
+    }""", sel)
+    assert geo["same"] and geo["parentSame"] and geo["next"], geo
+    assert geo["w"] == geo["rw"] and geo["h"] == geo["rh"] and geo["radius"] and geo["border"], geo
+    assert 0 <= geo["gap"] <= 6 and geo["dy"] < 0.5, geo
+    assert page.locator("#layer-list .layer.is-tl .tl-cum").count() == 0
+    off = page.evaluate("(s) => getComputedStyle(document.querySelector(s)).backgroundColor", sel)
+    set_cumulative(page, True)
+    assert btn.get_attribute("aria-pressed") == "true"
+    assert "on" in btn.get_attribute("class")
     # on: the same accent fill as the play button when it is on
     js = """() => {
       const b = document.querySelector('#layer-list .layer.is-tl [data-tl=play]');
       b.classList.add('on');
       const c = document.querySelector('#layer-list .layer.is-tl [data-tl=cumulative]');
-      const out = [getComputedStyle(c).backgroundColor, getComputedStyle(b).backgroundColor];
+      const out = [getComputedStyle(c).backgroundColor, getComputedStyle(b).backgroundColor, getComputedStyle(c).color, getComputedStyle(b).color];
       b.classList.remove('on');
       return out;
     }"""
-    on, play_on = page.evaluate(js)
-    assert on == play_on and on != off, (on, play_on, off)
-    # very narrow rows: the chip may go icon only but never wraps mid-word
-    set_left_width(page, LEFT_MIN)
-    h = page.evaluate("(s) => { const c = document.querySelector(s); return [c.getBoundingClientRect().height, Array.from(c.querySelectorAll('svg')).find(v => v.getClientRects().length).getBoundingClientRect().height]; }", "#layer-list .layer.is-tl [data-tl=cumulative]")
-    assert h[0] < 2 * max(h[1], 14), h
-
+    on, play_on, on_c, play_c = page.evaluate(js)
+    assert on == play_on and on_c == play_c and on != off, (on, play_on, off)
 
 
 ICON = """(s) => {
@@ -230,11 +242,11 @@ def set_cumulative(page, on):
 def test_cumulative_icon_switches_with_state(delta_page, scheme, w):
     page = open_page(delta_page, color_scheme=scheme)
     set_left_width(page, w)
-    # icon only in the narrowest rows, word plus icon otherwise
-    assert page.locator(CHIP + " span").is_visible() is (w != LEFT_MIN)
     off = page.evaluate(ICON, CHIP)
     assert [i["state"] for i in off] == ["off"] and not off[0]["joined"], off
-    assert abs(off[0]["w"] - 16) <= 0.5 and abs(off[0]["h"] - 16) <= 0.5, off
+    # the size of the neighbors' icons (the transport buttons' font size)
+    size = page.evaluate("(s) => parseFloat(getComputedStyle(document.querySelector(s).closest('.tl').querySelector('[data-tl=refresh]')).fontSize)", CHIP)
+    assert abs(off[0]["w"] - size) <= 0.5 and abs(off[0]["h"] - size) <= 0.5, (off, size)
     assert off[0]["stroke"] == "currentColor" and off[0]["fill"] == "none", off
     set_cumulative(page, True)
     assert page.get_attribute(CHIP, "aria-pressed") == "true"
