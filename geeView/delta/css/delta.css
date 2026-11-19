@@ -132,7 +132,16 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
 .cset-layer input { accent-color: var(--dz-teal); }
 .cset-name { flex: 1; min-width: 0; overflow-wrap: anywhere; color: var(--dz-ink); }
 .cset-periods { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
-.cset-prow { display: flex; align-items: center; gap: 6px; }
+/* transition period rows: drag handle, start year, "to", end year, remove */
+.cset-prow { display: grid; grid-template-columns: 24px 72px auto 72px 24px; align-items: center; justify-content: start; gap: 6px; }
+.cset-phead { font-size: 11px; color: var(--dz-mute); }
+.cset-prow .ib { width: 24px; height: 24px; font-size: 13px; }
+.cset-grip { cursor: grab; }
+.cset-prow.sortable-ghost { opacity: 0.4; }
+.cset-prow.sortable-chosen { background: var(--dz-solid); border-radius: 6px; }
+/* Chart area's empty state: chartable layers that are off, with their toggles */
+.chartable-off { margin: 0 12px 8px; }
+.chartable-off .layer { padding: 5px 0; border-bottom: 0; }
 .cset-year { width: 72px; border: 1px solid var(--dz-line); border-radius: 6px; background: var(--dz-solid); color: var(--dz-ink); padding: 2px 6px; font-size: 12px; }
 .cset-year:focus-visible { outline: 2px solid var(--dz-teal); outline-offset: 0; }
 .cset-acts { display: flex; align-items: center; gap: 4px; margin-top: 4px; }

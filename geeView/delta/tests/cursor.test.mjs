@@ -25,7 +25,7 @@ test("switching Distance to Chart area (Draw) leaves the crosshair", () => {
   createCursor(g, store);
   store.set({ tool: "distance" }, "t");
   assert.equal(g.last(), "crosshair");
-  store.set({ tool: "chart" }, "t");
+  store.set({ tool: "chart", areaFrom: "draw" }, "t");
   assert.equal(g.last(), "crosshair"); // not wiped
   store.set({ areaFrom: "view" }, "t");
   assert.equal(g.last(), null);

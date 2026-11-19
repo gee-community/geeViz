@@ -378,7 +378,7 @@ test("sankey module exports what the charter uses", () => {
 });
 
 // ---- coordinator rulings: class dictionaries, shouldUnmask, per-band Sankey, auto periods ----
-import { autoPeriods, classProps } from "../js/engine/areachart.js";
+import { classProps, defaultPeriods, yearRange, insertPeriod, removePeriod, currentDefaults } from "../js/engine/areachart.js";
 
 test("chartParams: class dictionaries given with the layer, and their bands", () => {
   const viz = { class_names: { lc: ["A", "B"] }, class_values: { lc: [1, 2] }, class_palette: { lc: ["ff0000", "00ff00"] } };
@@ -397,11 +397,54 @@ test("chartParams: shouldUnmask and unmaskValue (port of addLayer)", () => {
   assert.deepEqual([p.shouldUnmask, p.unmaskValue], [true, 99]);
 });
 
-test("autoPeriods: port of autoSankeyTransitionPeriods (first row from the earliest year, last row to the latest)", () => {
-  assert.deepEqual(autoPeriods([[1985, 1987], [2022, 2024]], [[2015, 2023], [2010, 2020]]), [[2010, 2010], [2023, 2023]]);
-  assert.deepEqual(autoPeriods([[1, 2], [5, 6], [8, 9]], [[2000, 2010]]), [[2000, 2000], [5, 6], [2010, 2010]], "middle rows kept");
-  assert.deepEqual(autoPeriods([[1, 2], [3, 4]], [null]), [[1, 2], [3, 4]], "no years: unchanged");
-  assert.deepEqual(autoPeriods([[1, 2], [3, 4]], [[2000, 2010]], 2), [[2000, 2002], [2008, 2010]]);
+test("defaultPeriods: single years at the ends of the range; given periods clipped, outside ones dropped", () => {
+  assert.deepEqual(defaultPeriods([2015, 2023]), [[2015, 2015], [2023, 2023]]);
+  assert.equal(defaultPeriods(null), null);
+  assert.deepEqual(defaultPeriods([2015, 2023], [[1990, 2016], [2018, 2019], [2022, 2030]]), [[2015, 2016], [2018, 2019], [2022, 2023]]);
+  assert.deepEqual(defaultPeriods([2015, 2023], [[1990, 1995], [2018, 2019], [2022, 2030]]), [[2018, 2019], [2022, 2023]], "entirely outside: dropped");
+  assert.deepEqual(defaultPeriods([2015, 2023], [[1990, 1995], [2030, 2031]]), [[2015, 2015], [2023, 2023]], "fewer than two left: the ends");
+});
+
+const sk = (id, extra = {}) => ({ id, kind: "ee", chartable: true, visible: true, viz: { areaChartParams: { sankey: true, ...extra } } });
+test("yearRange: visible Sankey layers' years, else every Sankey layer's; currentDefaults never leaves it", () => {
+  const s = { layers: [sk("a"), { ...sk("b"), visible: false }, { id: "c", kind: "ee", chartable: true, visible: true, viz: {} }], order: ["a", "b", "c"], chartYears: { a: [2015, 2023], b: [1985, 2024], c: [1900, 2100] } };
+  assert.deepEqual(yearRange(s), [2015, 2023]);
+  assert.deepEqual(currentDefaults(s), [[2015, 2015], [2023, 2023]]);
+  const off = { ...s, layers: s.layers.map((l) => ({ ...l, visible: false })) };
+  assert.deepEqual(yearRange(off), [1985, 2024], "none visible: every Sankey layer");
+  assert.equal(yearRange({ ...s, chartYears: {} }), null);
+  assert.deepEqual(currentDefaults({ ...s, chartPeriodsGiven: [[2010, 2016], [2020, 2025]] }), [[2015, 2016], [2020, 2023]]);
+  const own = { ...s, layers: [sk("a", { sankeyTransitionPeriods: [[2016, 2017], [2019, 2020]] })] };
+  assert.deepEqual(currentDefaults(own), [[2016, 2017], [2019, 2020]], "the run script's periods");
+});
+
+test("insertPeriod: in the middle of the largest gap, at its midpoint year", () => {
+  assert.deepEqual(insertPeriod([[2015, 2015], [2023, 2023]], [2015, 2023]), { rows: [[2015, 2015], [2019, 2019], [2023, 2023]], index: 1 });
+  // largest gap wins
+  assert.deepEqual(insertPeriod([[2015, 2015], [2017, 2017], [2023, 2023]], [2015, 2023]).rows, [[2015, 2015], [2017, 2017], [2020, 2020], [2023, 2023]]);
+  // ties: the middle-most gap
+  assert.deepEqual(insertPeriod([[2000, 2000], [2004, 2004], [2008, 2008], [2012, 2012], [2016, 2016]], [2000, 2016]).index, 2);
+  // a one-year gap: the year between
+  assert.deepEqual(insertPeriod([[2015, 2015], [2017, 2017]], [2015, 2017]).rows[1], [2016, 2016]);
+  // no free year: inserted anyway, validation reports the overlap
+  const r = insertPeriod([[2015, 2015], [2016, 2016]], [2015, 2016]);
+  assert.equal(r.rows.length, 3);
+  assert.ok(validatePeriods(r.rows, [2015, 2016]).errors.some((e) => /overlap/.test(e)));
+  // never outside the range
+  r.rows.forEach((row) => row.forEach((y) => assert.ok(y >= 2015 && y <= 2016)));
+  assert.deepEqual(insertPeriod([[2015, 2015]], [2015, 2023]).rows, [[2015, 2015], [2023, 2023]]);
+});
+
+test("removePeriod: port of removeLastTransitionRow (second to last; the last with fewer than three)", () => {
+  assert.deepEqual(removePeriod([[1, 1], [2, 2], [3, 3]]), [[1, 1], [3, 3]]);
+  assert.deepEqual(removePeriod([[1, 1], [3, 3]]), [[1, 1]]);
+});
+
+test("validatePeriods: the year range check and the original's texts", () => {
+  const v = validatePeriods([[2014, 2014], [2023, 2023]], [2015, 2023]);
+  assert.deepEqual(v.errors, ["Found years outside the available year range. Please ensure all years are >= 2015 and <= 2023."]);
+  assert.deepEqual(validatePeriods([[2015, 2015], [2023, 2023]], [2015, 2023]).periods, [[2015, 2015], [2023, 2023]]);
+  assert.ok(validatePeriods([[2019, 2019], [2019, 2019]]).errors.some((e) => /overlap/.test(e)), "single years must strictly increase");
 });
 
 test("charter: one Sankey card per band, and default periods from the layers' years", async () => {

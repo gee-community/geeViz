@@ -6,7 +6,7 @@
 // transition periods: port of area-charting.js populateChartLayerSelect and
 // 2templates.js setupTransitionPeriodUI). Names are set as text.
 import { UPLOAD_ACCEPT } from "../engine/areasources.js";
-import { DEFAULT_PERIODS, validatePeriods } from "../engine/areachart.js";
+import { currentDefaults, insertPeriod, removePeriod, validatePeriods, yearRange } from "../engine/areachart.js";
 
 const HINTS = {
   distance: "Click the map to start measuring. Double-click to finish.",
@@ -28,6 +28,32 @@ const SOURCE_HINTS = {
   upload: "A .zip shapefile, .geojson, .json, .kml or .kmz file. .zip and .kmz files are converted by the ogre.adc4gis.com service; .geojson, .json and .kml stay in your browser.",
   select: "Click features of a select layer on the map, then chart them.",
 };
+
+// Which tools have something to work on: Chart area needs a layer that can
+// be area charted, Query a layer that can be queried. Distance and Area always.
+export function toolAvailability(s) {
+  return {
+    chart: s.layers.some((l) => l.chartable && l.kind !== "select"),
+    query: s.layers.some((l) => l.queryable),
+  };
+}
+export const hasSelectLayers = (s) => s.layers.some((l) => l.kind === "select");
+
+// Transition periods in the url (the original's urlParams.transitionChartingYears).
+export const PERIODS_PARAM = "transitionChartingYears";
+export function readPeriodsParam(urlParams) {
+  let v = urlParams && urlParams[PERIODS_PARAM];
+  if (typeof v === "string") {
+    try {
+      v = JSON.parse(v);
+    } catch (e) {
+      v = null;
+    }
+  }
+  if (!Array.isArray(v)) return null;
+  const rows = v.filter((r) => Array.isArray(r) && r.length === 2).map((r) => [Number.parseInt(r[0], 10), Number.parseInt(r[1], 10)]);
+  return rows.length ? rows : null;
+}
 
 export function hintFor(tool, phone) {
   if (!tool) return "";
@@ -66,7 +92,7 @@ function seg(key, label, options, value, onPick) {
   return row;
 }
 
-export function mountTools(store, { optionsEl, unitsEl, chart, notify } = {}) {
+export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, notify, urlParams } = {}) {
   const say = notify || (() => {});
   // a source action that fails tells the user instead of failing silently
   const attempt = (what, fn) =>
@@ -79,6 +105,9 @@ export function mountTools(store, { optionsEl, unitsEl, chart, notify } = {}) {
   let settingsOpen = false;
   let draft = null; // transition period rows being edited
   let periodErrors = [];
+  const params = urlParams || window.urlParams || (window.urlParams = {});
+  const fromUrl = readPeriodsParam(params);
+  if (fromUrl) store.set({ chartPeriodsGiven: fromUrl }, "chart-periods-url");
 
   function renderUnits() {
     const u = store.get().units;
@@ -111,59 +140,153 @@ export function mountTools(store, { optionsEl, unitsEl, chart, notify } = {}) {
     return box;
   }
 
+  // ---- Sankey transition periods: port of 2templates.js setupTransitionPeriodUI,
+  // addRow, addTransitionRow, removeLastTransitionRow, removeRow and
+  // getTransitionRowData. One row per period; single-year defaults at the ends
+  // of the valid year range; "+" adds in the middle; rows drag to reorder.
+  let sortable = null;
+  function moveRow(from, to) {
+    if (to < 0 || to >= draft.length || from === to) return;
+    const [row] = draft.splice(from, 1);
+    draft.splice(to, 0, row);
+  }
+  function storePeriodsParam(rows) {
+    params[PERIODS_PARAM] = JSON.stringify(rows);
+    try {
+      const url = new URL(location.href);
+      url.searchParams.set(PERIODS_PARAM, JSON.stringify(rows));
+      history.replaceState(history.state, "", url);
+    } catch (e) {
+      /* history can be unavailable */
+    }
+  }
   function periodEditor(s) {
-    if (!draft) draft = (s.chartPeriods || DEFAULT_PERIODS).map((r) => r.slice());
+    const range = yearRange(s);
+    if (!draft) {
+      const start = s.chartPeriods || currentDefaults(s);
+      if (start) draft = start.map((r) => r.slice());
+    }
     const box = el("div", "cset-sec");
+    box.dataset.role = "periods";
+    box.title =
+      "Define periods for transition area charting. Each row is a period (start year to end year). Periods should not overlap. The most common value for each period is used in the Sankey chart. Add or remove rows as needed.";
     box.appendChild(el("div", "cset-h", "Transition periods"));
-    box.appendChild(el("div", "val-code", "Each row is a period, start year to end year. Sankey charts use the most common class in each period."));
+    if (!draft || !range) {
+      box.appendChild(el("div", "val-code", "Reading the years of the Sankey layers."));
+      return box;
+    }
+    box.appendChild(el("div", "val-code", `Each row is a period, start year to end year, from ${range[0]} to ${range[1]}. Drag a row by its handle to reorder.`));
+    const rangeTitle = `Enter a year within the valid range (${range[0]} - ${range[1]})`;
+    const head = el("div", "cset-prow cset-phead");
+    head.append(el("span"), el("span", "cset-ph", "Start year"), el("span"), el("span", "cset-ph", "End year"));
     const table = el("div", "cset-periods");
     draft.forEach((row, i) => {
       const r = el("div", "cset-prow");
+      r.dataset.i = String(i);
+      const grip = el("button", "ib cset-grip");
+      grip.type = "button";
+      grip.title = "Drag to reorder. The up and down arrow keys move this period.";
+      grip.setAttribute("aria-label", `Move period ${i + 1} (up and down arrow keys)`);
+      grip.appendChild(el("i", "ti ti-grip-vertical"));
+      grip.addEventListener("keydown", (e) => {
+        const to = e.key === "ArrowUp" ? i - 1 : e.key === "ArrowDown" ? i + 1 : null;
+        if (to === null) return;
+        e.preventDefault();
+        if (to < 0 || to >= draft.length) return;
+        moveRow(i, to);
+        renderOptions();
+        const g = optionsEl.querySelector(`.cset-prow[data-i="${to}"] .cset-grip`);
+        if (g) g.focus();
+      });
+      r.appendChild(grip);
       [0, 1].forEach((j) => {
         const inp = el("input", "cset-year mono");
         inp.type = "number";
         inp.step = "1";
+        inp.min = String(range[0]);
+        inp.max = String(range[1]);
+        inp.title = rangeTitle;
+        inp.placeholder = "Year";
         inp.value = Number.isFinite(row[j]) ? String(row[j]) : "";
+        inp.dataset.j = String(j);
         inp.setAttribute("aria-label", (j ? "End year of period " : "Start year of period ") + (i + 1));
-        inp.addEventListener("input", () => (draft[i][j] = Number.parseInt(inp.value, 10)));
+        inp.addEventListener("input", () => {
+          draft[i][j] = Number.parseInt(inp.value, 10);
+          showErrors();
+        });
         r.appendChild(inp);
         if (!j) r.appendChild(el("span", "val-code", "to"));
       });
+      const x = el("button", "ib");
+      x.type = "button";
+      x.dataset.act = "remove-period";
+      x.title = "Remove this transition period";
+      x.setAttribute("aria-label", `Remove period ${i + 1}`);
+      x.appendChild(el("i", "ti ti-x"));
+      x.addEventListener("click", () => {
+        draft.splice(i, 1);
+        renderOptions();
+      });
+      r.appendChild(x);
       table.appendChild(r);
     });
-    box.appendChild(table);
+    box.append(head, table);
+    if (sortable) sortable.destroy();
+    sortable = null;
+    if (window.Sortable) {
+      sortable = window.Sortable.create(table, {
+        handle: ".cset-grip",
+        draggable: ".cset-prow",
+        animation: 120,
+        onEnd(e) {
+          if (e.oldIndex !== e.newIndex) moveRow(e.oldIndex, e.newIndex);
+          renderOptions();
+        },
+      });
+    }
     const acts = el("div", "cset-acts");
-    const add = el("button", "ib");
-    add.type = "button";
-    add.title = "Add a period";
-    add.setAttribute("aria-label", "Add a period");
-    add.appendChild(el("i", "ti ti-plus"));
-    add.addEventListener("click", () => {
-      const lastRow = draft[draft.length - 1] || [2020, 2022];
-      draft.push([lastRow[1] + 1, lastRow[1] + 3]);
+    const button = (act, icon, title, fn) => {
+      const b = el("button", "ib");
+      b.type = "button";
+      b.dataset.act = act;
+      b.title = title;
+      b.setAttribute("aria-label", title);
+      b.appendChild(el("i", "ti " + icon));
+      b.addEventListener("click", fn);
+      return b;
+    };
+    const add = button("add-period", "ti-plus", "Add a transition period in the middle", () => {
+      draft = insertPeriod(draft, yearRange(store.get())).rows;
       renderOptions();
     });
-    const rm = el("button", "ib");
-    rm.type = "button";
-    rm.title = "Remove the last period";
-    rm.setAttribute("aria-label", "Remove the last period");
-    rm.appendChild(el("i", "ti ti-minus"));
-    rm.addEventListener("click", () => {
-      if (draft.length) draft.pop();
+    const rm = button("remove-last-period", "ti-minus", "Remove the second to last transition period", () => {
+      draft = removePeriod(draft);
       renderOptions();
     });
     const apply = el("button", "chip", "Apply");
     apply.type = "button";
     apply.dataset.act = "apply-periods";
     apply.addEventListener("click", () => {
-      const v = validatePeriods(draft);
+      const v = validatePeriods(draft, yearRange(store.get()));
       periodErrors = v.errors;
-      if (v.periods) store.set({ chartPeriods: v.periods, chartPeriodsUser: true }, "chart-periods");
+      if (v.periods) {
+        store.set({ chartPeriods: v.periods, chartPeriodsUser: true }, "chart-periods");
+        storePeriodsParam(v.periods);
+      }
       renderOptions();
     });
     acts.append(add, rm, apply);
     box.appendChild(acts);
-    periodErrors.forEach((e) => box.appendChild(el("div", "cset-err", e)));
+    const errBox = el("div", "cset-errs");
+    errBox.setAttribute("role", "status");
+    box.appendChild(errBox);
+    // port of getTransitionRowData: every check, shown as the rows change; nothing charts until they pass
+    function showErrors() {
+      periodErrors = validatePeriods(draft, yearRange(store.get())).errors;
+      errBox.replaceChildren(...periodErrors.map((e) => el("div", "cset-err", e)));
+      apply.disabled = periodErrors.length > 0;
+    }
+    showErrors();
     return box;
   }
 
@@ -201,7 +324,9 @@ export function mountTools(store, { optionsEl, unitsEl, chart, notify } = {}) {
 
   function chartOptions(s) {
     const nodes = [hintEl(HINTS.chart)];
-    nodes.push(seg("src", "Area from", SOURCES, s.areaFrom, (v) => store.set({ areaFrom: v }, "areaFrom")));
+    // Select only when there is a select layer to pick from
+    const sources = SOURCES.filter(([v]) => v !== "select" || hasSelectLayers(s));
+    nodes.push(seg("src", "Area from", sources, s.areaFrom, (v) => store.set({ areaFrom: v }, "areaFrom")));
     const show = seg("showas", "Show as", [["area", s.units === "imperial" ? "Acres" : "Hectares"], ["pct", "% of area"]], s.showAs, (v) => store.set({ showAs: v }, "showAs"));
     const gear = el("button", "ib" + (settingsOpen ? " on" : ""));
     gear.type = "button";
@@ -258,6 +383,8 @@ export function mountTools(store, { optionsEl, unitsEl, chart, notify } = {}) {
       (s.selections || []).length,
       s.chartChoices,
       s.chartPeriods,
+      s.chartYears,
+      hasSelectLayers(s),
       s.layers.filter((l) => l.chartable).map((l) => [l.id, l.name, l.kind, l.visible]),
     ]);
   let lastSig = chartSig(store.get());
@@ -271,7 +398,69 @@ export function mountTools(store, { optionsEl, unitsEl, chart, notify } = {}) {
     if (s.tool === "chart") renderOptions();
   });
   phoneMq.addEventListener("change", renderOptions);
+
+  // ---- tool strip: Chart area and Query show only with layers to work on ----
+  // Checked after the current task, so a map script that turns a tool on
+  // before or after adding its layers ends the same way. A script request
+  // the layers cannot meet yet waits and applies when they arrive.
+  const strip = toolsEl || document.querySelector("#pane-right .tools");
+  let pending = null; // {tool, areaFrom} the map script asked for
+  let pendingFrom = null; // "select" asked for before any select layer
+  let lastToolReason = "";
+  let queued = false;
+  const fromScript = (reason) => /^turnOn/.test(String(reason || ""));
+  function gate() {
+    queued = false;
+    const s = store.get();
+    const av = toolAvailability(s);
+    if (strip) {
+      strip.querySelectorAll("[data-tool]").forEach((b) => {
+        const t = b.dataset.tool;
+        const hide = t in av && !av[t];
+        if (b.hidden !== hide) b.hidden = hide;
+      });
+    }
+    if (s.tool in av && !av[s.tool]) {
+      if (fromScript(lastToolReason)) pending = { tool: s.tool, areaFrom: s.tool === "chart" ? s.areaFrom : null };
+      store.set({ tool: null }, "tool-unavailable");
+      return;
+    }
+    if (pending && !s.tool && av[pending.tool]) {
+      const p = pending;
+      pending = null;
+      store.set(p.areaFrom ? { tool: p.tool, areaFrom: p.areaFrom } : { tool: p.tool }, "turnOn-pending");
+      return;
+    }
+    if (s.areaFrom === "select" && !hasSelectLayers(s)) {
+      if (s.tool === "chart" && fromScript(lastToolReason)) pendingFrom = "select";
+      store.set({ areaFrom: "view" }, "areaFrom-unavailable");
+      return;
+    }
+    if (pendingFrom === "select" && hasSelectLayers(s) && s.tool === "chart" && s.areaFrom === "view") {
+      pendingFrom = null;
+      store.set({ areaFrom: "select" }, "areaFrom-pending");
+    }
+  }
+  const schedule = () => {
+    if (queued) return;
+    queued = true;
+    queueMicrotask(gate);
+  };
+  store.on("change:tool", (t, s, reason) => {
+    lastToolReason = reason;
+    // the user picked a tool: an earlier script request no longer applies
+    if (reason === "tool-button") pending = pendingFrom = null;
+    schedule();
+  });
+  store.on("change:areaFrom", (v, s, reason) => {
+    if (reason === "areaFrom") pendingFrom = null;
+    schedule();
+  });
+  store.on("change:layers", schedule);
+  gate();
+
   renderUnits();
   renderOptions();
-  return { renderOptions };
+  return { renderOptions, gate };
+
 }

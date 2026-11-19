@@ -7,20 +7,22 @@ export function defaultState() {
     tool: null,
     units: "metric",
     showAs: "area",
-    areaFrom: "draw",
+    areaFrom: "view",
     results: [],
     where: "",
     querying: false,
     // Chart area: busy flag, the area last charted ({label, key, bounds}),
-    // Sankey transition periods (port of setupTransitionPeriodUI's two
-    // default rows) and settings choices of which layers chart.
+    // Sankey transition periods (null until the Sankey layers' years are
+    // known; then single years at the ends of their range, port of
+    // setupTransitionPeriodUI's two default rows), whether the user applied
+    // them, periods given by the url, the layers' years, and settings choices
+    // of which layers chart.
     charting: false,
     chartArea: null,
-    chartPeriods: [
-      [1985, 1987],
-      [2022, 2024],
-    ],
+    chartPeriods: null,
     chartPeriodsUser: false,
+    chartPeriodsGiven: null,
+    chartYears: {},
     chartChoices: {},
     selections: [],
     notices: [],

@@ -74,7 +74,7 @@ def test_right_pane_heights(delta_page):
     # no tool: folded, the tool strip only
     pane, tools = r(page, "#pane-right"), r(page, "#pane-right .tools")
     assert abs(pane["bottom"] - tools["bottom"] - 1) <= 2 and pane["height"] < VH / 2, (pane, tools)
-    page.evaluate("__delta.store.set({tool: 'query'})")
+    page.evaluate("__delta.store.set({tool: 'distance'})")
     page.wait_for_function("Math.abs(document.querySelector('#pane-right').getBoundingClientRect().width - 330) <= 1")
     short = r(page, "#pane-right")
     assert short["height"] < VH / 2, short
@@ -100,7 +100,7 @@ def test_right_pane_heights(delta_page):
 def test_grips_follow_pane_height(delta_page):
     page = delta_page(SHELL)
     add_layers(page, 3)
-    page.evaluate("__delta.store.set({tool: 'query'})")
+    page.evaluate("__delta.store.set({tool: 'distance'})")
     page.wait_for_function("Math.abs(document.querySelector('#pane-right').getBoundingClientRect().width - 330) <= 1")
     for side in ("left", "right"):
         p, g = r(page, "#pane-" + side), r(page, ".grip[data-side=%s]" % side)

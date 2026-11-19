@@ -358,6 +358,40 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
     return card;
   }
 
+  // Chart area's empty state: the layers that could chart here if they were
+  // on, each with the Layers row's toggle (turning one on re-charts).
+  const hiddenChartable = (s) => {
+    const byId = new Map(s.layers.map((l) => [l.id, l]));
+    return s.order
+      .map((id) => byId.get(id))
+      .filter((l) => l && l.chartable && !l.visible && l.kind !== "select" && l.kind !== "areaChartOnly");
+  };
+  let listSig = "";
+  let offEl = null;
+  function chartableList(layers) {
+    const list = el("div", "chartable-off");
+    list.dataset.role = "chartable-off";
+    list.appendChild(el("div", "cset-h", "Layers that can be charted here"));
+    layers.forEach((l) => {
+      const row = el("div", "layer off chartable-row");
+      row.dataset.id = l.id;
+      const r = el("div", "lrow");
+      const tgl = el("button", "tgl");
+      tgl.type = "button";
+      tgl.setAttribute("aria-pressed", "false");
+      tgl.setAttribute("aria-label", "Show " + l.name);
+      tgl.title = "Turn on " + l.name + " and chart it";
+      const name = el("span", "lname", l.name);
+      const on = () => store.update((st) => ({ ...st, layers: st.layers.map((x) => (x.id === l.id ? { ...x, visible: true } : x)) }), "layer-toggle");
+      tgl.addEventListener("click", on);
+      name.addEventListener("click", on);
+      r.append(tgl, name);
+      row.appendChild(r);
+      list.appendChild(row);
+    });
+    return list;
+  }
+
   function render() {
     const s = store.get();
     // Chart area: where the charts apply, with the area's size in the units chosen
@@ -395,6 +429,8 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
     }
     if (emptyEl) emptyEl.remove();
     emptyEl = null;
+    if (offEl) offEl.remove();
+    offEl = null;
     if (!results.length && s.where && !s.querying && !s.charting) {
       emptyEl = el("div", "droptip");
       const msg = chartTool
@@ -402,6 +438,10 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
         : "No visible layer could be queried here. Turn one on in Layers.";
       emptyEl.append(el("i", "ti ti-info-circle"), el("span", null, msg));
       nodes.push(emptyEl);
+      if (chartTool) {
+        const off = hiddenChartable(s);
+        if (off.length) nodes.push((offEl = chartableList(off)));
+      }
     }
     nodes.forEach((n, i) => {
       if (mountEl.children[i] !== n) mountEl.insertBefore(n, mountEl.children[i] || null);
@@ -443,6 +483,14 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
   }
 
   ["results", "where", "querying", "charting", "chartArea", "selections", "units", "query", "tool"].forEach((k) => store.on("change:" + k, render));
+  // the empty state's list follows the layers (not every loading tick)
+  store.on("change:layers", (layers, s) => {
+    const sig = s.tool === "chart" ? JSON.stringify(hiddenChartable(s).map((l) => [l.id, l.name])) : "";
+    if (sig !== listSig) {
+      listSig = sig;
+      render();
+    }
+  });
   store.on("change:theme", () => setTimeout(replot, 0));
   store.on("change:chartSettings", replot);
   phoneMq.addEventListener("change", render);

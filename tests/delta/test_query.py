@@ -202,7 +202,11 @@ def test_select_layer_selection(page):
     page.mouse.click(*MAP_CENTER)
     page.wait_for_timeout(2500)
     assert page.evaluate("__delta.store.get().selections") == []
+    # Chart area shows only with a layer that can be area charted; add one so Select has something to chart.
+    page.evaluate("Map.addLayer(ee.Image(1).rename('one'), {min: 0, max: 1, canAreaChart: true}, 'Chartable', true)")
+    wait_for(page, "!document.querySelector('#pane-right .tool[data-tool=chart]').hidden")
     page.evaluate("__delta.api.turnOnSelectionAreaCharting()")
+    wait_for(page, "__delta.store.get().tool === 'chart'")
     assert page.evaluate("[__delta.store.get().tool, __delta.store.get().areaFrom]") == ["chart", "select"]
     page.mouse.click(*MAP_CENTER)
     wait_for(page, "__delta.store.get().selections.length === 1")
@@ -265,7 +269,7 @@ def test_tool_toggle_off_folds_pane(page):
     # The other tools show their one-line hints.
     page.click("#pane-right .tool[data-tool=distance]")
     assert "Click the map to start measuring" in page.inner_text("#tool-options")
-    page.click("#pane-right .tool[data-tool=chart]")
-    assert "Every visible chartable layer" in page.inner_text("#tool-options")
+    # No layer on this map can be area charted, so Chart area is not offered.
+    assert page.locator("#pane-right .tool[data-tool=chart]").is_hidden()
     page.click("#pane-right .units [data-u=imperial]")
     assert page.evaluate("__delta.store.get().units") == "imperial"

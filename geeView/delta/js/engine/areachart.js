@@ -276,28 +276,124 @@ export function chartCsv(r) {
   return csvLines([["Class Name", d.yLabel]].concat(d.columns.map((c, i) => [sanitize(c), fix(values[i])])));
 }
 
-// port of 2templates.js getTransitionRowData's checks (the year range
-// check is left out: a geeViz map has no fixed range).
+// port of 2templates.js getTransitionRowData's checks, with its year range
+// check against the years of the Sankey layers (yearRange). Wording kept,
+// grammar fixed.
 const PERIOD_ERRORS = {
-  noValues: "No year pairs provided. Please add at least two rows of years.",
-  blank: "One or more blank value found",
-  backwards: "One or more row has a first year that is greater than the last year",
-  overlap: "Please ensure all transition periods have values and are in succession of one another and do not overlap",
+  noValues: () => "No year pairs provided. Please add at least two rows of years.",
+  blank: () => "One or more blank values found.",
+  outsideYearRange: (r) => `Found years outside the available year range. Please ensure all years are >= ${r[0]} and <= ${r[1]}.`,
+  backwards: () => "One or more rows have a first year that is greater than the last year.",
+  overlap: () => "Please ensure all transition periods have values, are in succession of one another and do not overlap.",
 };
-export function validatePeriods(periods) {
+export function validatePeriods(periods, range = null) {
   const errs = [];
   if (!Array.isArray(periods) || periods.length <= 1) errs.push("noValues");
   else {
     periods.forEach((row, i) => {
       row.forEach((n) => {
         if (!Number.isFinite(n)) errs.push("blank");
+        else if (range && (n < range[0] || n > range[1])) errs.push("outsideYearRange");
       });
       if (row[1] < row[0]) errs.push("backwards");
       if (i > 0 && periods[i - 1][1] >= row[0]) errs.push("overlap");
     });
   }
-  const errors = [...new Set(errs)].map((e) => PERIOD_ERRORS[e]);
+  const errors = [...new Set(errs)].map((e) => PERIOD_ERRORS[e](range));
   return { periods: errors.length ? null : periods.map((r) => r.slice()), errors };
+}
+
+// Layers that draw Sankey charts (chartable, sankey on).
+export function sankeyLayers(s) {
+  return s.layers.filter((l) => l.chartable && l.kind !== "select" && chartParams(l).sankey);
+}
+
+// The valid year range for transition periods: the union of the years of
+// the visible Sankey layers that chart, else of every Sankey layer (port of
+// autoSankeyTransitionPeriods' activeStartYear and activeEndYear). Years are
+// s.chartYears[layer id] = [first, last]. Null while none are known.
+export function yearRange(s) {
+  const ys = s.chartYears || {};
+  const known = (ls) => ls.map((l) => ys[l.id]).filter((v) => v && v.length);
+  const charting = new Set(chartJobs(s).filter((j) => j.kind === "sankey").map((j) => j.layer.id));
+  let spans = known(sankeyLayers(s).filter((l) => charting.has(l.id)));
+  if (!spans.length) spans = known(sankeyLayers(s));
+  if (!spans.length) return null;
+  return [Math.min(...spans.map((v) => v[0])), Math.max(...spans.map((v) => v[v.length - 1]))];
+}
+
+// Default periods: periods given (url or the run script) clipped to the
+// range, periods entirely outside it dropped; else single years at the two
+// ends of the range (the original defaulted to start..start+2 and end-2..end).
+export function defaultPeriods(range, given = null) {
+  if (!range) return null;
+  const [a, b] = range;
+  if (Array.isArray(given)) {
+    const clipped = given
+      .filter((r) => Array.isArray(r) && r.length === 2 && Number.isFinite(r[0]) && Number.isFinite(r[1]) && r[1] >= a && r[0] <= b)
+      .map((r) => [Math.max(a, r[0]), Math.min(b, r[1])]);
+    if (clipped.length >= 2) return clipped;
+  }
+  return [
+    [a, a],
+    [b, b],
+  ];
+}
+
+// The periods to chart with when the user has not applied their own.
+export function currentDefaults(s) {
+  const range = yearRange(s);
+  let given = s.chartPeriodsGiven || null;
+  if (!given) {
+    const own = sankeyLayers(s).map((l) => chartParams(l).sankeyTransitionPeriods).find((p) => Array.isArray(p) && p.length);
+    if (own) given = own;
+  }
+  return defaultPeriods(range, given);
+}
+
+// "+": a new single-year row in the middle, between the two rows with the
+// largest gap (ties: the middle-most), at the gap's midpoint year (rounded
+// down) kept clear of its neighbors when a free year exists. Returns the
+// new rows and the index of the added row.
+export function insertPeriod(rows, range) {
+  const out = rows.map((r) => r.slice());
+  const [a, b] = range || [NaN, NaN];
+  if (out.length < 2) {
+    const y = out.length ? (Number.isFinite(b) ? b : out[0][1] + 1) : Number.isFinite(a) ? a : NaN;
+    out.push([y, y]);
+    return { rows: out, index: out.length - 1 };
+  }
+  const mid = (out.length - 2) / 2;
+  let best = -1;
+  let bestGap = -Infinity;
+  for (let i = 0; i < out.length - 1; i++) {
+    const lo = out[i][1];
+    const hi = out[i + 1][0];
+    const gap = Number.isFinite(lo) && Number.isFinite(hi) ? hi - lo : -Infinity;
+    if (gap > bestGap || (gap === bestGap && Math.abs(i - mid) < Math.abs(best - mid))) {
+      best = i;
+      bestGap = gap;
+    }
+  }
+  const lo = out[best][1];
+  const hi = out[best + 1][0];
+  let y;
+  if (Number.isFinite(lo) && Number.isFinite(hi)) {
+    y = Math.floor((lo + hi) / 2);
+    if (hi - lo >= 2) y = Math.min(hi - 1, Math.max(lo + 1, y));
+  } else y = Number.isFinite(lo) ? lo + 1 : Number.isFinite(hi) ? hi - 1 : a;
+  if (Number.isFinite(a)) y = Math.min(b, Math.max(a, y));
+  out.splice(best + 1, 0, [y, y]);
+  return { rows: out, index: best + 1 };
+}
+
+// port of 2templates.js removeLastTransitionRow: with three or more rows the
+// second to last goes (the first and last stay), else the last.
+export function removePeriod(rows) {
+  const out = rows.map((r) => r.slice());
+  if (out.length < 3) out.pop();
+  else out.splice(out.length - 2, 1);
+  return out;
 }
 
 const title = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -340,20 +436,6 @@ function withClassProps(ee, obj, type, params) {
   const props = classProps(params.classDicts);
   if (!props) return obj;
   return type === "ImageCollection" ? obj.map((img) => img.set(props)) : ee.Image(obj).set(props);
-}
-
-// port of area-charting.js autoSankeyTransitionPeriods: the first row starts
-// at the earliest first year of the Sankey layers, the last row ends at the
-// latest last year (sankeyTransitionPeriodYearBuffer 0).
-export function autoPeriods(current, layerYears, buffer = 0) {
-  const ys = layerYears.filter((v) => v && v.length);
-  if (!ys.length) return current;
-  const start = Math.min(...ys.map((v) => v[0]));
-  const end = Math.max(...ys.map((v) => v[v.length - 1]));
-  const out = (current && current.length >= 2 ? current : DEFAULT_PERIODS).map((r) => r.slice());
-  out[0] = [start, start + buffer];
-  out[out.length - 1] = [end - buffer, end];
-  return out;
 }
 
 function reducerOf(ee, params) {
@@ -487,6 +569,53 @@ export function createAreaCharter(store, deps = {}) {
     store.set({ results }, reason);
   }
 
+  // The first and last years of Sankey layers, read once per layer, kept in
+  // the store (chartYears) for the period editor's range; periods the user
+  // has not applied follow the range (single years at its ends).
+  function yearsOf(layer) {
+    if (!years.has(layer.id)) {
+      const pr = Promise.resolve()
+        .then(() => (compute.years ? compute.years(itemOf(layer), chartParams(layer)) : null))
+        .catch(() => null);
+      years.set(layer.id, pr);
+    }
+    return years.get(layer.id);
+  }
+  async function loadYears(layers = sankeyLayers(store.get())) {
+    const ys = await Promise.all(layers.map((l) => yearsOf(l).then((y) => [l.id, y])));
+    const known = { ...(store.get().chartYears || {}) };
+    let changed = false;
+    ys.forEach(([id, y]) => {
+      if (y && y.length && JSON.stringify(known[id]) !== JSON.stringify([y[0], y[y.length - 1]])) {
+        known[id] = [y[0], y[y.length - 1]];
+        changed = true;
+      }
+    });
+    if (changed) store.set({ chartYears: known }, "chart-years");
+    syncDefaults();
+  }
+  function syncDefaults() {
+    const st = store.get();
+    if (st.chartPeriodsUser) return;
+    const next = currentDefaults(st);
+    if (next && JSON.stringify(next) !== JSON.stringify(st.chartPeriods)) store.set({ chartPeriods: next }, "chart-periods-auto");
+  }
+  // the editor needs the range before any chart: read the years while Chart area is on
+  const sankeySig = (st) => sankeyLayers(st).map((l) => l.id).join(",");
+  let lastSankey = "";
+  const yearsWhenCharting = () => {
+    const st = store.get();
+    if (st.tool !== "chart") return;
+    const sig = sankeySig(st);
+    if (sig === lastSankey) return syncDefaults();
+    lastSankey = sig;
+    loadYears();
+  };
+  store.on("change:tool", yearsWhenCharting);
+  store.on("change:layers", yearsWhenCharting);
+  store.on("change:order", () => store.get().tool === "chart" && syncDefaults());
+  store.on("change:chartPeriodsGiven", () => syncDefaults());
+
   async function chartArea(geometry, label, extra = {}) {
     const token = tokens();
     const s = store.get();
@@ -498,25 +627,12 @@ export function createAreaCharter(store, deps = {}) {
 
     let shared = null;
     const sharedJobs = jobs.filter((j) => j.kind === "sankey" && !j.params.sankeyTransitionPeriods);
-    if (sharedJobs.length && !s.chartPeriodsUser && compute.years) {
-      // port of autoSankeyTransitionPeriods: default rows from the layers' own years
-      const ys = await Promise.all(
-        sharedJobs.map((j) => {
-          if (!years.has(j.layer.id)) {
-            const pr = Promise.resolve()
-              .then(() => compute.years(itemOf(j.layer), j.params))
-              .catch(() => null);
-            years.set(j.layer.id, pr);
-          }
-          return years.get(j.layer.id);
-        })
-      );
-      if (!token.isCurrent()) return;
-      const next = autoPeriods(store.get().chartPeriods, ys);
-      if (JSON.stringify(next) !== JSON.stringify(store.get().chartPeriods)) store.set({ chartPeriods: next }, "chart-periods-auto");
-    }
     if (sharedJobs.length) {
-      const v = validatePeriods(store.get().chartPeriods || DEFAULT_PERIODS);
+      // port of autoSankeyTransitionPeriods: the year range from the layers' own years
+      await loadYears(sharedJobs.map((j) => j.layer));
+      if (!token.isCurrent()) return;
+      const st = store.get();
+      const v = validatePeriods(st.chartPeriods || DEFAULT_PERIODS, yearRange(st));
       if (v.periods) shared = v.periods;
       else notify("Invalid Transition Periods Provided: " + v.errors.join(" "));
     }
@@ -572,7 +688,7 @@ export function createAreaCharter(store, deps = {}) {
   store.on("change:query", rerender);
   store.on("change:tool", (tool) => tool !== "chart" && cancel());
 
-  return { chartArea, rerender, cancel, cacheSize: () => cache.size, current: () => current };
+  return { chartArea, rerender, cancel, loadYears, cacheSize: () => cache.size, current: () => current };
 }
 
 // chartArea(engine, store, geometry, sourceLabel): the Chart area entry point.
