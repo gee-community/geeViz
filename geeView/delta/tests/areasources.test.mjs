@@ -49,3 +49,88 @@ test("ringBounds and viewLabel", () => {
   assert.deepEqual(ringBounds(featuresFromGeoJSON({ type: "Polygon", coordinates: SQUARE })), { west: -111.6, south: 40.6, east: -111.58, north: 40.62 });
   assert.equal(viewLabel({ west: -111.123456, north: 40.5, east: -110.9, south: 40.25 }), "Map view (-111.123, 40.5, -110.9, 40.25)");
 });
+
+// ---- uploads and selections that finish after the user moved on ----
+import { createStore } from "../js/state.js";
+import { createAreaSources } from "../js/engine/areasources.js";
+
+function fakes() {
+  class Data {
+    constructor() { this.f = []; }
+    setStyle() {}
+    forEach(fn) { this.f.slice().forEach(fn); }
+    remove(x) { this.f = this.f.filter((y) => y !== x); }
+    addGeoJson(gj) { this.f.push(...gj.features); return gj.features; }
+  }
+  const listeners = {};
+  const gmap = {
+    addListener: (ev, fn) => (listeners[ev] = fn),
+    fitBounds: () => setTimeout(() => listeners.__idleOnce && listeners.__idleOnce(), 0),
+    setOptions: () => {},
+    getBounds: () => null,
+  };
+  const google = { Data, event: { addListenerOnce: (m, ev, fn) => (listeners.__idleOnce = fn) } };
+  const sent = [];
+  const ee = {
+    Feature: (g) => (sent.push(g), { dissolve: () => ({ g }) }),
+    FeatureCollection: (fs) => ({ fs }),
+    Projection: (p) => p,
+  };
+  return { gmap, google, ee, sent };
+}
+
+function deferred() {
+  let resolve;
+  const p = new Promise((r) => (resolve = r));
+  return { p, resolve };
+}
+
+const GJ = { type: "FeatureCollection", features: [{ type: "Feature", properties: { secret: "owner name" }, geometry: { type: "Polygon", coordinates: SQUARE } }] };
+
+function setup(areaFrom) {
+  const store = createStore();
+  const f = fakes();
+  const charted = [];
+  const charter = { chartArea: (g, label) => (charted.push(label), Promise.resolve()), cancel: () => {} };
+  const sel = deferred();
+  const sources = createAreaSources({ gmap: f.gmap }, store, charter, {
+    google: f.google,
+    ee: f.ee,
+    query: () => ({ selectionCollection: () => sel.p }),
+  });
+  store.set({ tool: "chart", areaFrom });
+  return { store, sources, charted, sel, sent: f.sent };
+}
+
+test("upload: a file converted after the user switched tools charts nothing", async () => {
+  const { store, sources, charted } = setup("upload");
+  const fetched = deferred();
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = () => fetched.p;
+  try {
+    const done = sources.upload({ name: "units.zip" });
+    store.set({ tool: "query" });
+    fetched.resolve({ ok: true, json: async () => GJ });
+    assert.equal(await done, null);
+    assert.deepEqual(charted, []);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("upload: a file read while Upload stays on charts it, sending only geometry", async () => {
+  const { sources, charted, sent } = setup("upload");
+  await sources.upload({ name: "units.geojson", text: async () => JSON.stringify(GJ) });
+  assert.deepEqual(charted, ["units"]);
+  assert.deepEqual(sent, [GJ.features[0].geometry], "no properties go to Earth Engine");
+});
+
+test("select: selections collected after the source changed chart nothing", async () => {
+  const { store, sources, charted, sel } = setup("select");
+  store.set({ selections: [{ label: "Selected Units A", areaM2: 1 }] });
+  const done = sources.chartSelection();
+  store.set({ areaFrom: "view" });
+  sel.resolve({ fc: true });
+  assert.equal(await done, null);
+  assert.deepEqual(charted, []);
+});

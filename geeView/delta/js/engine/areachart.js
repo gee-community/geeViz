@@ -226,6 +226,7 @@ export function sankeyResult(layer, params, entry, ctx) {
       links,
       matrix,
       classNames: info.classNames || [],
+      classValues: info.classValues || [],
       classPalette: (info.classPalette || []).map(ensureHexColor),
       minPercentage: params.sankeyMinPercentage,
       areaFormat: fmt,
@@ -316,7 +317,7 @@ function makeItemOf(ee) {
 // The layer's declared type wins (port of setupAreaChartParams layerType):
 // a deserialized collection.filter() is typed FeatureCollection by its
 // function signature, so instanceof alone cannot tell.
-function eeTypeOf(ee, obj, hint) {
+export function eeTypeOf(ee, obj, hint) {
   if (hint === "ImageCollection" || hint === "geeImageCollection") return "ImageCollection";
   if (hint === "Image" || hint === "geeImage") return "Image";
   return getObjType(obj, ee);
@@ -440,6 +441,8 @@ export function createAreaCharter(store, deps = {}) {
   const zoom = deps.zoom || (() => 11);
   const keyOf = deps.key || ((g) => hashString(ee.Serializer.toJSON(g)));
   const notify = deps.notify || (() => {});
+  // reductions kept, least recently used dropped first
+  const cacheMax = deps.cacheMax || 50;
   const tokens = tokenSource();
   const cache = new Map(); // "layer|kind|area|scale[|periods]" -> Promise of a cached reduction
   const years = new Map(); // layer id -> Promise of the collection's [first, last] years
@@ -447,6 +450,13 @@ export function createAreaCharter(store, deps = {}) {
 
   function build(d) {
     const s = store.get();
+    const sig = JSON.stringify([s.units, s.showAs, s.query && s.query.precision]);
+    if (d.built && d.built.sig === sig) return d.built.results;
+    d.built = { sig, results: buildFresh(d, s) };
+    return d.built.results;
+  }
+
+  function buildFresh(d, s) {
     const ctx = {
       units: s.units,
       showAs: s.showAs,
@@ -521,14 +531,18 @@ export function createAreaCharter(store, deps = {}) {
       }
       const ck = [job.layer.id, job.kind, areaKey, inputs.nominalScale, periods ? JSON.stringify(periods) : ""].join("|");
       let pr = cache.get(ck);
-      if (!pr) {
+      if (pr) {
+        cache.delete(ck); // most recently used last
+        cache.set(ck, pr);
+      } else {
         try {
           pr = Promise.resolve(compute[job.kind](itemOf(job.layer), p, geometry, inputs, periods));
         } catch (e) {
           pr = Promise.reject(e);
         }
         cache.set(ck, pr);
-        pr.catch(() => cache.delete(ck));
+        while (cache.size > cacheMax) cache.delete(cache.keys().next().value);
+        pr.catch(() => cache.get(ck) === pr && cache.delete(ck));
       }
       return pr.then(
         (entry) => {

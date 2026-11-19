@@ -126,3 +126,19 @@ test("linkTip: source, target and value with the unit", () => {
   const t = linkTip({ source: { name: "Trees", period: "2016-2018" }, target: { name: "Shrubs", period: "2020-2022" }, value: 12.5 }, "%");
   assert.deepEqual(t, ["Trees (2016-2018) → Shrubs (2020-2022)", "12.5 %"]);
 });
+
+test("sankeyGraph: classes per column come from the class values (charts.py offsets)", () => {
+  const r = {
+    data: {
+      classNames: ["A", "B"], // fewer names than values
+      classValues: [1, 2, 3],
+      classPalette: ["#111111", "#222222", "#333333"],
+      periods: ["2000", "2010"],
+      links: [{ source: 2, target: 3 + 0, value: 5, source_color: "#333333", target_color: "#111111", source_name: "2000 3", target_name: "2010 A" }],
+    },
+  };
+  const g = sankeyGraph(r);
+  assert.deepEqual(g.nodes.map((n) => [n.period, n.col]), [["2000", 0], ["2010", 1]]);
+  assert.equal(g.nodes[1].name, "A");
+  assert.equal(g.nodes[0].color, "#333333");
+});

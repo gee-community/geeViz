@@ -14,7 +14,8 @@ const MIN_LABEL_HEIGHT = 10;
 // that carries flow, links re-indexed to them, colors from the classes.
 export function sankeyGraph(r) {
   const d = r.data;
-  const n = d.classNames.length || 1;
+  // classes per column: charts.py offsets nodes by the number of class values
+  const n = (d.classValues && d.classValues.length) || d.classNames.length || 1;
   const used = [...new Set(d.links.flatMap((l) => [l.source, l.target]))].sort((a, b) => a - b);
   const at = new Map(used.map((g, i) => [g, i]));
   const nodes = used.map((g) => {

@@ -277,6 +277,10 @@ def test_upload_geojson_source(page):
     page.evaluate("__delta.api.turnOnUserDefinedAreaCharting()")
     page.click("#tool-options .seg[data-k=src] [data-v=upload]")
     assert page.evaluate("__delta.store.get().areaFrom") == "upload"
+    # where uploaded files go is disclosed
+    hint = page.inner_text("#tool-options")
+    assert ".zip and .kmz files are converted by the ogre.adc4gis.com service" in hint
+    assert ".geojson, .json and .kml stay in your browser" in hint
     poly = [[[-111.62, 40.59], [-111.59, 40.59], [-111.59, 40.615], [-111.62, 40.615], [-111.62, 40.59]]]
     gj = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"name": "Test unit"}, "geometry": {"type": "Polygon", "coordinates": poly}}]}
     page.set_input_files("#tool-options input[data-role=area-upload]", files=[{"name": "test unit.geojson", "mimeType": "application/geo+json", "buffer": json.dumps(gj).encode()}])
@@ -284,7 +288,8 @@ def test_upload_geojson_source(page):
     wait_charts(page)
     assert page.evaluate("__delta.store.get().chartArea.source") == "upload"
     e = ee()
-    fc = e.FeatureCollection([e.Feature(f).dissolve(100, e.Projection("EPSG:4326")) for f in gj["features"]])
+    # only the geometry goes to Earth Engine (as the page sends it)
+    fc = e.FeatureCollection([e.Feature(e.Geometry(f["geometry"])).dissolve(100, e.Projection("EPSG:4326")) for f in gj["features"]])
     nl = result(page, "NLCD 2021", "chart")
     assert_tables_equal(nl["data"], py_table(nlcd_image(), fc.geometry(), nl["data"], "Hectares", False))
     # the heading carries the area's size

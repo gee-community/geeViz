@@ -25,7 +25,7 @@ const SOURCES = [
 const SOURCE_HINTS = {
   draw: "Click the map to outline an area. Double-click to finish.",
   view: "Charts what the map shows, and again each time the map rests after you move it.",
-  upload: "A .zip shapefile, .geojson, .json, .kml or .kmz file.",
+  upload: "A .zip shapefile, .geojson, .json, .kml or .kmz file. .zip and .kmz files are converted by the ogre.adc4gis.com service; .geojson, .json and .kml stay in your browser.",
   select: "Click features of a select layer on the map, then chart them.",
 };
 
@@ -66,7 +66,13 @@ function seg(key, label, options, value, onPick) {
   return row;
 }
 
-export function mountTools(store, { optionsEl, unitsEl, chart } = {}) {
+export function mountTools(store, { optionsEl, unitsEl, chart, notify } = {}) {
+  const say = notify || (() => {});
+  // a source action that fails tells the user instead of failing silently
+  const attempt = (what, fn) =>
+    Promise.resolve()
+      .then(fn)
+      .catch((e) => say(`${what} failed: ${e && e.message ? e.message : e}`));
   const phoneMq = matchMedia("(max-width: 760px)");
   const unitButtons = unitsEl ? Array.from(unitsEl.querySelectorAll("[data-u]")) : [];
   const sources = () => (typeof chart === "function" ? chart() : chart);
@@ -176,7 +182,7 @@ export function mountTools(store, { optionsEl, unitsEl, chart } = {}) {
       inp.addEventListener("change", () => {
         const f = inp.files && inp.files[0];
         const src = sources();
-        if (f && src) src.upload(f);
+        if (f && src) attempt("Charting the uploaded area", () => src.upload(f));
         inp.value = "";
       });
       lab.appendChild(inp);
@@ -187,7 +193,7 @@ export function mountTools(store, { optionsEl, unitsEl, chart } = {}) {
       b.type = "button";
       b.dataset.act = "chart-selection";
       b.disabled = !n;
-      b.addEventListener("click", () => sources() && sources().chartSelection());
+      b.addEventListener("click", () => sources() && attempt("Charting the selected areas", () => sources().chartSelection()));
       box.appendChild(b);
     }
     return box;

@@ -437,3 +437,54 @@ test("charter: one Sankey card per band, and default periods from the layers' ye
   assert.equal(yearsCalls, 1);
   assert.deepEqual(seen[1], [[2017, 2018], [2020, 2021]]);
 });
+
+// ---- review fixes: type precedence, result reuse, bounded cache ----
+import { eeTypeOf, eeCompute } from "../js/engine/areachart.js";
+
+test("eeTypeOf: the layer's declared type wins over instanceof; a vector still cannot chart", async () => {
+  class Image {}
+  class ImageCollection {}
+  class FeatureCollection {}
+  const fakeEE = { Image, ImageCollection, FeatureCollection, Geometry: class {}, Feature: class {} };
+  const filtered = new FeatureCollection(); // a deserialized collection.filter() is typed FeatureCollection
+  assert.equal(eeTypeOf(fakeEE, filtered, "geeImageCollection"), "ImageCollection");
+  assert.equal(eeTypeOf(fakeEE, filtered, "ImageCollection"), "ImageCollection");
+  assert.equal(eeTypeOf(fakeEE, new Image(), "geeImage"), "Image");
+  assert.equal(eeTypeOf(fakeEE, filtered, "geeVectorImage"), "FeatureCollection");
+  await assert.rejects(eeCompute(fakeEE).line(filtered, { layerType: "geeVectorImage" }, null, {}), /Cannot chart ee object type FeatureCollection/);
+});
+
+test("charter: results already published are reused as each new one arrives", async () => {
+  const { store, charter, pending } = setup({ hold: true });
+  const run = charter.chartArea({ id: "A" }, "a");
+  pending[0]();
+  await new Promise((r) => setTimeout(r, 0));
+  const first = store.get().results[0];
+  pending[1]();
+  pending[2]();
+  await run;
+  assert.equal(store.get().results.find((r) => r.id === first.id), first, "same object: the card is not rebuilt");
+  store.set({ units: "imperial" });
+  assert.notEqual(store.get().results.find((r) => r.id === first.id), first, "a units change builds new results");
+});
+
+test("charter: the reduction cache keeps at most cacheMax entries", async () => {
+  const store = createStore();
+  const api = createMapApi(store, {});
+  api.addLayer({ tag: "nlcd" }, { canAreaChart: true }, "NLCD", true);
+  let calls = 0;
+  const charter = createAreaCharter(store, {
+    compute: { line: () => (calls++, Promise.resolve({ raw: NLCD.raw, objInfo: NLCD.objInfo, labels: [], isHistogram: true, sentinel: false, scale: 30 })) },
+    item: (l) => l.item,
+    zoom: () => 12,
+    key: (g) => g.id,
+    cacheMax: 3,
+  });
+  store.set({ tool: "chart" });
+  for (const id of ["A", "B", "C", "D"]) await charter.chartArea({ id }, id);
+  assert.equal(charter.cacheSize(), 3);
+  await charter.chartArea({ id: "D" }, "D");
+  assert.equal(calls, 4, "recent areas are still cached");
+  await charter.chartArea({ id: "A" }, "A");
+  assert.equal(calls, 5, "the least recently used area was dropped");
+});

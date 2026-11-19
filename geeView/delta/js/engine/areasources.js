@@ -114,6 +114,13 @@ export function createAreaSources(engine, store, charter, opts = {}) {
   let shape = null; // the finished polygon
   const uploaded = new g.Data({ map: gmap });
   let last = null; // the area last charted: {geometry, label, extra}
+  // Uploads and selections wait on the network: each takes a token, and a
+  // source or tool change in the meantime makes it stale.
+  let opSeq = 0;
+  function opToken(src) {
+    const id = ++opSeq;
+    return () => id === opSeq && active(src);
+  }
   let viewStr = null;
   let idleId = 0;
 
@@ -174,7 +181,7 @@ export function createAreaSources(engine, store, charter, opts = {}) {
     const areaM2 = spherical() ? spherical().computeArea(pts) : null;
     return run({ geometry: ee.Geometry.Polygon([ring]), label: "Drawn area", extra: { source: "draw", areaM2, ring } });
   }
-  document.addEventListener("keydown", (e) => {
+  if (typeof document !== "undefined") document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && path && active("draw")) {
       path.setMap(null);
       path = null;
@@ -243,10 +250,13 @@ export function createAreaSources(engine, store, charter, opts = {}) {
   }
   async function upload(file) {
     if (!file) return null;
+    const still = opToken("upload");
     let features;
     try {
       features = (await readFeatures(file)).map(dropZ);
+      if (!still()) return null;
     } catch (e) {
+      if (!still()) return null;
       notify("Error ingesting study area: " + (e && e.message ? e.message : e));
       return null;
     }
@@ -257,7 +267,8 @@ export function createAreaSources(engine, store, charter, opts = {}) {
     clearShapes();
     uploaded.addGeoJson({ type: "FeatureCollection", features });
     // port of runShpDefinedCharting: each feature dissolved, then charted as one area
-    const fc = ee.FeatureCollection(features.map((f) => ee.Feature(f).dissolve(100, ee.Projection("EPSG:4326"))));
+    // only the geometry goes to Earth Engine, not the file's properties
+    const fc = ee.FeatureCollection(features.map((f) => ee.Feature(f.geometry).dissolve(100, ee.Projection("EPSG:4326"))));
     const b = ringBounds(features);
     await new Promise((resolve) => {
       let done = false;
@@ -270,6 +281,7 @@ export function createAreaSources(engine, store, charter, opts = {}) {
       setTimeout(finish, 2500);
       gmap.fitBounds({ west: b.west, south: b.south, east: b.east, north: b.north });
     });
+    if (!still()) return null;
     const name = file.name.replace(/\.[^.]*$/, "");
     const areaM2 = features.reduce((a, f) => a + featureArea(f), 0);
     return run({ geometry: fc, label: name, extra: { source: "upload", areaM2, features } });
@@ -283,7 +295,9 @@ export function createAreaSources(engine, store, charter, opts = {}) {
       notify("Click features of a select layer on the map first, then chart them.");
       return null;
     }
+    const still = opToken("select");
     const fc = await q.selectionCollection();
+    if (!still()) return null;
     const areaM2 = sel.every((x) => x.areaM2 !== null && x.areaM2 !== undefined) ? sel.reduce((a, x) => a + x.areaM2, 0) : null;
     return run({ geometry: fc, label: sel.map((x) => x.label).join(", "), extra: { source: "select", areaM2 } });
   }
@@ -297,6 +311,7 @@ export function createAreaSources(engine, store, charter, opts = {}) {
     cursor();
     if (now === source) return;
     source = now;
+    opSeq++;
     clearShapes();
     last = null;
     viewStr = null;
