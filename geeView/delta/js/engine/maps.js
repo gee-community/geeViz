@@ -13,7 +13,7 @@ export const DARK_STYLE = [
 // Basemaps carry no labels of their own: labels come only from the labels
 // overlay above every layer, so they are never hidden by a layer, never drawn
 // twice, and can be turned off with one toggle.
-export const BASEMAPS = { satellite: "satellite", map: "roadmap-base", dark: "dark" };
+export const BASEMAPS = { satellite: "satellite", map: "roadmap-base", terrain: "terrain", dark: "dark" };
 const NO_LABELS = [{ elementType: "labels", stylers: [{ visibility: "off" }] }];
 
 // The labels overlay: a labels-only map drawn above every layer, so opaque
@@ -110,6 +110,9 @@ export function createMap(el, store) {
     tilt: 0,
     streetViewControl: false,
     gestureHandling: "greedy",
+    // Google's own roadmap and terrain types draw no labels either (map-wide
+    // styles apply to them); labels come from the overlay.
+    styles: NO_LABELS,
   });
   gmap.mapTypes.set("dark", new g.StyledMapType([...DARK_STYLE, ...NO_LABELS], { name: "Dark" }));
   gmap.mapTypes.set("roadmap-base", new g.StyledMapType(NO_LABELS, { name: "Map" }));
@@ -120,6 +123,7 @@ export function createMap(el, store) {
   const labels = {
     satellite: new g.StyledMapType(SATELLITE_LABELS_STYLE, { name: "Satellite labels" }),
     map: new g.StyledMapType(LABELS_STYLE, { name: "Labels" }),
+    terrain: null,
     dark: new g.StyledMapType(labelsStyleFor(DARK_STYLE), { name: "Dark labels" }),
   };
 
@@ -305,7 +309,7 @@ export function createMap(el, store) {
     setBasemap,
     basemap: () => basemap,
     // The labels map type for the current basemap, or null while labels are off.
-    labelsOverlay: () => (labelsOn ? labels[basemap] : null),
+    labelsOverlay: () => (labelsOn ? labels[basemap] || labels.map : null),
     labelsOn: () => labelsOn,
     setLabels,
     onLabels: on("labels"),

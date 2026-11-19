@@ -113,7 +113,7 @@ def test_labels_stay_on_top(live_map):
     assert_last(page, "turning a layer on")
 
     # Every basemap; dark uses DARK_STYLE's label colors.
-    for key, name in (("map", "Labels"), ("dark", "Dark labels"), ("satellite", "Satellite labels")):
+    for key, name in (("map", "Labels"), ("terrain", "Labels"), ("dark", "Dark labels"), ("satellite", "Satellite labels")):
         page.evaluate("(k) => __delta.engine.setBasemap(k)", key)
         assert_last(page, "basemap " + key)
         assert page.evaluate("__delta.engine.labelsOverlay().name") == name
