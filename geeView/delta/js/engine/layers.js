@@ -18,7 +18,9 @@ const DATA_TYPES = ["geeVector", "geoJSONVector"];
 const VIZ_KEYS = ["bands", "min", "max", "gain", "bias", "gamma", "palette", "forceRgbOutput"];
 // the original's possibleVizKeys
 const POSSIBLE_VIZ_KEYS = ["bands", "min", "max", "gain", "bias", "gamma", "palette", "color"];
-const SKIP_KINDS = ["select", "areaChartOnly"];
+// Select layers draw like any vector (port of 4map-manager.js addSelectLayerToMap).
+const SKIP_KINDS = ["areaChartOnly"];
+const NOT_QUERYABLE = ["geoJSONVector", "tileMapService", "dynamicMapService"];
 
 function layerTypeOf(layer) {
   if (layer.kind === "timelapse") return "timelapse";
@@ -109,7 +111,9 @@ export function createLayerEngine(gmap, store, deps = {}) {
   // ---- Data (vector) layers ----
   function applyDataStyle(r) {
     if (!r.overlay) return;
-    const style = { ...r.style, zIndex: r.zIndex || 1000 };
+    // Vectors pass clicks to the map unless the viz asks for clickable
+    // features, so the Query tool's double-click works over them.
+    const style = { clickable: false, ...r.style, zIndex: r.zIndex || 1000 };
     // port of 2templates.js addLayer opacity slide: stroke takes the opacity, fill keeps its ratio
     if (r.opacity !== 1 || r.opacityTouched) {
       style.strokeOpacity = r.opacity;
@@ -351,7 +355,12 @@ export function createLayerEngine(gmap, store, deps = {}) {
       groundRequest: 0,
       viz: null,
       item: layer.item,
+      target: null,
     };
+    // What the Query tool reduces: the layer's queryItem (else the item as
+    // given, before any reduce or paint), its type and prepared viz.
+    let resolveTarget;
+    r.target = new Promise((res) => (resolveTarget = res));
     recs.set(layer.id, r);
     setLoading(r, true);
     try {
@@ -363,9 +372,14 @@ export function createLayerEngine(gmap, store, deps = {}) {
       }
       if (layerType === "geoJSONVector" && typeof item === "string") item = JSON.parse(item);
       const prepared = await prepareViz(item, vizIn, { name: layer.name, nextColor, ee: eeApi });
-      if (!recs.has(r.id)) return;
+      if (!recs.has(r.id)) return resolveTarget(null);
       r.viz = prepared.viz;
       item = prepared.item;
+      // port of 2templates.js addLayer: layer.queryItem = viz.queryItem || item
+      let queryItem = r.viz.queryItem || item;
+      if (r.viz.queryItem && vizIn.serialized === true && typeof queryItem.evaluate !== "function") queryItem = eeApi.Deserializer.decode(queryItem);
+      const qType = r.layerType || r.viz.layerType;
+      resolveTarget(NOT_QUERYABLE.indexOf(qType) > -1 ? null : { type: qType, item: queryItem, viz: r.viz });
       if (!r.layerType) {
         // layerType defaulted from the Earth Engine object type
         r.layerType = r.viz.layerType;
@@ -398,6 +412,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
         fail(r, "Unknown layer type: " + r.layerType);
       }
     } catch (e) {
+      resolveTarget(null);
       fail(r, e);
     }
   }
@@ -466,6 +481,13 @@ export function createLayerEngine(gmap, store, deps = {}) {
     return { requests: r.requests, loading: r.loading, layerType: r.layerType, onMap: !!(r.overlay && (r.tileType ? omt.includes(r.overlay) : r.overlay.getMap())) };
   };
   const timelapse = (id) => (recs.get(id) && recs.get(id).tl) || null;
+  // Promise of {type, item, viz} for the Query tool, or null.
+  const queryTarget = (id) => {
+    const r = recs.get(id);
+    if (!r) return Promise.resolve(null);
+    if (r.tl) return r.tl.queryTarget ? r.tl.queryTarget() : Promise.resolve(null);
+    return r.target || Promise.resolve(null);
+  };
 
   // React to the store: visibility, opacity and order are state.
   store.on("change:layers", (layers) => {
@@ -478,5 +500,5 @@ export function createLayerEngine(gmap, store, deps = {}) {
   });
   store.on("change:order", (o) => applyOrder(o));
 
-  return { addLayerToMap, setLayerVisible, setLayerOpacity, applyOrder, removeLayer, zOrder, slotOrder, stats, timelapse };
+  return { addLayerToMap, setLayerVisible, setLayerOpacity, applyOrder, removeLayer, zOrder, slotOrder, stats, timelapse, queryTarget };
 }

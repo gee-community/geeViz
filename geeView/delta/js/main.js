@@ -15,6 +15,9 @@ import { initEE, describeEEFailure } from "./engine/ee.js";
 import { createLayerEngine } from "./engine/layers.js";
 import { mountLayers } from "./ui/layers.js";
 import { mountTimelapseHud } from "./ui/timelapse.js";
+import { mountTools } from "./ui/tools.js";
+import { mountOutput } from "./ui/output.js";
+import { createQueryTool } from "./engine/query.js";
 
 const store = createStore();
 store.set(initialShellState(store), "boot");
@@ -32,13 +35,26 @@ const timelapseHud = mountTimelapseHud(store, timelapseOf, {
 
 const notice = (msg) => store.update((s) => ({ ...s, notices: [...s.notices, msg] }), "notice");
 
+// Right pane: tool options and output. The query tool starts with the map.
+let queryTool = null;
+const toolsUI = mountTools(store, { optionsEl: document.getElementById("tool-options"), unitsEl: document.querySelector("#pane-right .units") });
+const outputUI = mountOutput(store, {
+  mountEl: document.getElementById("results-mount"),
+  whereEl: document.getElementById("where"),
+  chipsEl: document.getElementById("chips"),
+  busyEl: document.getElementById("out-busy"),
+  notify: notice,
+  query: () => queryTool,
+});
+const cssToken = (name, fallback) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+
 function plainText(html) {
   const doc = new DOMParser().parseFromString(String(html || ""), "text/html");
   return (doc.body.textContent || "").trim();
 }
 
 async function boot() {
-  const delta = (window.__delta = { store, shell, status, layersUI, timelapseHud, ready: false, eeError: null });
+  const delta = (window.__delta = { store, shell, status, layersUI, timelapseHud, toolsUI, outputUI, ready: false, eeError: null });
   try {
     await whenGoogleReady();
   } catch (e) {
@@ -69,6 +85,18 @@ async function boot() {
   }
   const api = createMapApi(store, engine);
   Object.assign(delta, { api, engine });
+  try {
+    const phone = matchMedia("(max-width: 760px)");
+    queryTool = createQueryTool(engine, store, {
+      isPhone: () => phone.matches,
+      notify: notice,
+      colors: () => ({ pin: cssToken("--dz-orange", "#e2602a"), pinEdge: cssToken("--dz-on-accent", "#fff"), selection: cssToken("--dz-orange", "#e2602a") }),
+    });
+    delta.query = queryTool;
+    store.on("change:theme", () => setTimeout(() => queryTool.restyle(), 0));
+  } catch (e) {
+    notice("The query tool could not start: " + (e && e.message));
+  }
 
   for (const [what, mount] of [
     ["map controls", () => mountMapControls(engine, shell, status)],
@@ -119,7 +147,7 @@ if (new URLSearchParams(location.search).get("delta-test") === "shell") {
   // The stub engine has no hooks: every engine call is ignored.
   const engine = {};
   const api = createMapApi(store, engine);
-  window.__delta = { store, api, engine, shell, status, layersUI, ready: true };
+  window.__delta = { store, api, engine, shell, status, layersUI, toolsUI, outputUI, ready: true };
 } else {
   boot();
 }

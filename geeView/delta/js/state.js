@@ -9,13 +9,18 @@ export function defaultState() {
     showAs: "area",
     areaFrom: "draw",
     results: [],
+    where: "",
+    querying: false,
+    selections: [],
     notices: [],
     theme: "system",
     panes: { left: { visible: true, width: null }, right: { width: null } },
+    // port of 1variables.js crs, transform and scale: the query grid is the
+    // 30 m CONUS Albers grid until setQueryScale or setQueryTransform.
     query: {
       crs: "EPSG:5070",
-      scale: 30,
-      transform: null,
+      scale: null,
+      transform: [30, 0, -2361915.0, 0, -30, 3177735.0],
       precision: { chartPrecision: 3, chartDecimalProportion: 0.25 },
       dateFormat: "YYYY-MM-dd",
       boxColor: null,

@@ -297,6 +297,13 @@ export function createTimelapse(engine, layer, opts = {}) {
     },
     state: () => ({ ...st }),
     _visible: () => visible,
+    // port of 4map-manager.js addTimeLapseToMap queryObj: the collection is
+    // queried as a time series (type geeImageCollection).
+    async queryTarget() {
+      if (!loader.prepare) return null;
+      const p = await loader.prepare();
+      return p && p.item ? { type: "geeImageCollection", item: p.item, viz: p.viz } : null;
+    },
   };
 
   async function load() {

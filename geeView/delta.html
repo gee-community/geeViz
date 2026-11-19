@@ -103,8 +103,10 @@
         <button class="tool" data-tool="query"><i class="ti ti-crosshair"></i>Query</button>
         <button class="tool" data-tool="chart"><i class="ti ti-chart-area-line"></i>Chart area</button>
       </div>
-      <div id="tool-options"></div>
-      <div class="out-h"><i class="ti ti-list-details"></i>Output <span class="where mono" id="where"></span></div>
+      <div class="units"><span class="lbl">Units</span><div class="seg" role="group" aria-label="Units"><button type="button" data-u="metric">Metric</button><button type="button" data-u="imperial">Imperial</button></div></div>
+      <div id="tool-options" class="topt"></div>
+      <div class="out-h"><i class="ti ti-list-details"></i>Output <span class="spin" id="out-busy" title="Querying" hidden></span><span class="where mono" id="where"></span></div>
+      <div class="chips" id="chips"></div>
       <div class="scroll" id="results-mount"></div>
       <div class="grip" data-side="right"></div>
     </aside>

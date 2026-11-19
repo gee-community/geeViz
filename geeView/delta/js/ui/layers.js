@@ -11,14 +11,17 @@ import { legendMarkup, swatchColors, gradient, restorePinned, orderFromStored, t
 import { timelapseBlock } from "./timelapse.js";
 
 const LIST_ID = "layer-list";
-const NO_ROW_KINDS = ["select", "areaChartOnly"];
+// Area-chart-only layers have no row. Select layers are listed (Task 7) but,
+// as in the original, turning every layer on or off leaves them alone.
+const NO_ROW_KINDS = ["areaChartOnly"];
+const NOT_ALL_KINDS = ["select", "areaChartOnly"];
 
 const patchLayer = (store, id, p, reason) =>
   store.update((s) => ({ ...s, layers: s.layers.map((l) => (l.id === id ? { ...l, ...p } : l)) }), reason);
 
 export function setAllVisible(store, visible, reason) {
   store.update(
-    (s) => ({ ...s, layers: s.layers.map((l) => (NO_ROW_KINDS.indexOf(l.kind) > -1 ? l : { ...l, visible })) }),
+    (s) => ({ ...s, layers: s.layers.map((l) => (NOT_ALL_KINDS.indexOf(l.kind) > -1 ? l : { ...l, visible })) }),
     reason
   );
 }
@@ -126,6 +129,7 @@ export function mountLayers(store, mountEl, opts = {}) {
       legendEl: el.querySelector(".legend"),
     };
     const id = layer.id;
+    if (layer.kind === "select") parts.name.title = "Select layer: with Query on, click a feature to select it";
     const toggle = () => {
       const l = store.get().layers.find((x) => x.id === id);
       if (l) patchLayer(store, id, { visible: !l.visible }, "layer-toggle");
@@ -164,6 +168,7 @@ export function mountLayers(store, mountEl, opts = {}) {
     parts.tgl.setAttribute("aria-pressed", String(!!l.visible));
     el.classList.toggle("leg-open", !!l.legendOpen);
     el.classList.toggle("pinned", !!l.pinned);
+    el.classList.toggle("is-select", l.kind === "select");
     el.classList.toggle("err", !!l.error);
     el.title = l.error ? "Layer failed to load: " + l.error : "";
     parts.spin.hidden = !(l.loading && l.visible);
@@ -234,7 +239,7 @@ export function mountLayers(store, mountEl, opts = {}) {
       },
       onEnd() {
         const ids = restorePinned(domOrder(), pinnedAt);
-        // Rows not in the list (select, area chart only) keep their place at the end.
+        // Rows not in the list (area chart only) keep their place at the end.
         const rest = store.get().order.filter((id) => !rows.has(id));
         storeOrder(ids.concat(rest), "layer-drag");
         render();

@@ -49,3 +49,26 @@ export function requestToken() {
   const id = ++tokenCounter;
   return { id, isCurrent: () => id === tokenCounter };
 }
+
+// An independent stream of request tokens: a newer token from the same source
+// makes the older ones not current, without touching other sources.
+export function tokenSource() {
+  let counter = 0;
+  return () => {
+    const id = ++counter;
+    return { id, isCurrent: () => id === counter };
+  };
+}
+
+const isNumber = (n) => typeof n === "number" && !Number.isNaN(n) && Number.isFinite(n);
+
+// port of 1variables.js smartToFixed: keep at least `precision` decimals, or
+// `proportion` of the decimals the number has, whichever is more.
+// Non-numbers (strings included, as the original's isNumber) come back as given;
+// so do numbers in exponent notation, which the original could not split.
+export function smartToFixed(v, proportion = 0.25, precision = 3) {
+  if (!isNumber(v) || Number.isInteger(v) || /e/i.test(String(v))) return v;
+  const decimals = (String(v).split(".")[1] || "").length;
+  const toFixedL = Math.max(precision, Math.ceil(decimals * proportion));
+  return Number.parseFloat(v.toFixed(Math.min(100, toFixedL)));
+}
