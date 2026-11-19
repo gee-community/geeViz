@@ -8,6 +8,7 @@
 // Ordering is a port of 2templates.js addLayerSortListener, getLayerIDOrder
 // and urlParams.layerOrders.
 import { legendMarkup, swatchColors, gradient, restorePinned, orderFromStored, toStoredOrder } from "./legend.js";
+import { timelapseBlock } from "./timelapse.js";
 
 const LIST_ID = "layer-list";
 const NO_ROW_KINDS = ["select", "areaChartOnly"];
@@ -143,7 +144,14 @@ export function mountLayers(store, mountEl, opts = {}) {
       paintRange(parts.range, a);
       patchLayer(store, id, { opacity: a }, "layer-opacity");
     });
-    return { el, parts, last: {} };
+    // A timelapse's controls sit between the row and its legend, as the mockup.
+    let tl = null;
+    if (layer.kind === "timelapse") {
+      tl = timelapseBlock(id, (lid) => (opts.timelapse ? opts.timelapse(lid) : null));
+      el.insertBefore(tl.el, parts.legendEl);
+      el.classList.add("is-tl");
+    }
+    return { el, parts, tl, last: {} };
   }
 
   function updateRow(row, l) {
@@ -164,7 +172,8 @@ export function mountLayers(store, mountEl, opts = {}) {
       paintRange(parts.range, l.opacity);
     }
     if (last.legend !== l.legend) paintLegend(row, l.legend);
-    row.last = { name: l.name, opacity: l.opacity, legend: l.legend };
+    if (row.tl && last.timelapse !== l.timelapse) row.tl.update(l);
+    row.last = { name: l.name, opacity: l.opacity, legend: l.legend, timelapse: l.timelapse };
   }
 
   function render() {

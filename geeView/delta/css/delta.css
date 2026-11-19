@@ -102,6 +102,32 @@ input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border:
 .legend .lbl { overflow-wrap: anywhere; }
 .ramp { grid-column: 1 / -1; height: 10px; border-radius: 3px; }
 .ramp-l { grid-column: 1 / -1; display: flex; justify-content: space-between; font-size: 11px; }
+/* timelapse block inside the row (port of the mockup's .tl); an off timelapse folds it */
+.tl { margin: 8px 0 0 22px; padding: 8px; border-radius: 9px; background: var(--dz-orange-soft); }
+.layer.off .tl { display: none !important; }
+.tl-top { display: flex; align-items: center; gap: 6px; }
+.tl-year { font-family: var(--dz-font-mono); font-weight: 600; font-size: 20px; color: var(--dz-orange); margin-right: auto; line-height: 1; white-space: nowrap; }
+.tl.loading .tl-year { font-size: 13px; color: var(--dz-mute); }
+.tlb { width: 26px; height: 26px; border-radius: 7px; border: 0; display: grid; place-items: center; background: transparent; color: var(--dz-ink); font-size: 15px; cursor: pointer; padding: 0; flex: none; }
+.tlb:hover { background: var(--dz-raise); }
+.tlb.on { background: var(--dz-orange); color: var(--dz-on-accent); }
+.tlb:disabled { opacity: 0.4; cursor: default; background: transparent; }
+.tlb:focus-visible { outline: 2px solid var(--dz-orange); outline-offset: 1px; }
+.tl-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 11px; color: var(--dz-mute); }
+.tl-row label { width: 38px; margin: 0; }
+.tl-row .val { width: 52px; white-space: nowrap; text-align: right; }
+.tl-frames { display: none; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.tl.frames-open .tl-frames { display: flex; }
+.tlf { border: 1px solid var(--dz-line); background: transparent; color: var(--dz-mute); border-radius: 6px; font-size: 11px; padding: 1px 6px; cursor: pointer; }
+.tlf.on { border-color: var(--dz-orange); color: var(--dz-orange); }
+input[type="range"].dz.orange { --v: 0%; }
+input[type="range"].dz.orange::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--dz-orange) var(--v), var(--dz-line) var(--v)); }
+input[type="range"].dz.orange::-webkit-slider-thumb { width: 12px; height: 12px; margin-top: -4.5px; background: var(--dz-solid); border: 2px solid var(--dz-orange); }
+input[type="range"].dz.orange::-moz-range-track { height: 3px; border-radius: 2px; background: var(--dz-line); }
+input[type="range"].dz.orange::-moz-range-progress { height: 3px; border-radius: 2px; background: var(--dz-orange); }
+input[type="range"].dz.orange::-moz-range-thumb { width: 10px; height: 10px; border: 2px solid var(--dz-orange); border-radius: 50%; background: var(--dz-solid); }
+input[type="range"].dz.orange:disabled { opacity: 0.5; }
+
 /* drag to reorder by the name; pinned layers do not move */
 .layer.sortable-ghost { opacity: 0.35; background: var(--dz-teal-soft); }
 .layer.sortable-chosen { background: var(--dz-raise); }
@@ -110,6 +136,9 @@ input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border:
 
 /* map chrome */
 .hud { position: absolute; z-index: 3; pointer-events: none; }
+/* year badge top center while a timelapse plays */
+.yearbadge { left: 50%; top: 14px; transform: translateX(-50%); padding: 4px 14px; border-radius: 999px; background: var(--dz-panel); backdrop-filter: blur(10px);
+  border: 1px solid var(--dz-line); font: 600 22px var(--dz-font-mono); color: var(--dz-orange); box-shadow: var(--dz-shadow); }
 .status { left: var(--lw, var(--dz-left-default)); right: var(--rw, var(--dz-right-default)); bottom: 0; height: var(--dz-status-h); display: flex; align-items: center; gap: 16px; padding: 0 12px;
   background: linear-gradient(transparent, var(--dz-scrim)); color: var(--dz-on-media); font: 11px var(--dz-font-mono); pointer-events: auto; white-space: nowrap; overflow: hidden; }
 body.left-hidden .status, body.left-hidden .loadbar { left: 0; }
@@ -175,7 +204,15 @@ body.left-hidden .floating-hb { display: inline-grid; }
   .mm-h { font: 700 11px var(--dz-font-cond); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dz-faint); padding: 4px 8px; }
   .mmenu button { display: flex; gap: 10px; align-items: center; border: 0; background: transparent; color: var(--dz-ink); padding: 9px 8px; border-radius: 8px; font-size: 14px; text-align: left; }
   .mmenu button.on { background: var(--dz-teal-soft); color: var(--dz-teal); }
+  .yearbadge { top: 64px; font-size: 18px; }
+  body.m-layers .yearbadge, body.m-tools .yearbadge { display: none; }
+  /* floating player while a timelapse is on and no sheet is open */
+  body.tl-on .mplayer { display: flex; position: fixed; z-index: 6; left: 50%; transform: translateX(-50%); bottom: 76px; align-items: center; gap: 4px; padding: 4px 6px 4px 12px;
+    background: var(--dz-panel); backdrop-filter: blur(14px); border: 1px solid var(--dz-line); border-radius: 999px; box-shadow: var(--dz-shadow); }
+  .mplayer .tl-year { font-size: 18px; margin-right: 6px; }
+  .mplayer .tlb { width: 34px; height: 34px; font-size: 17px; }
+  body.m-layers .mplayer, body.m-tools .mplayer { display: none !important; }
 }
 
 /* Street View: every pane and control steps aside (last, so it wins) */
-body.sv .pane, body.sv .mapctl, body.sv .status, body.sv .loadbar, body.sv .floating-hb, body.sv .mtop, body.sv .mtabs, body.sv .mplayer, body.sv .mmenu { display: none !important; }
+body.sv .pane, body.sv .mapctl, body.sv .status, body.sv .loadbar, body.sv .yearbadge, body.sv .floating-hb, body.sv .mtop, body.sv .mtabs, body.sv .mplayer, body.sv .mmenu { display: none !important; }

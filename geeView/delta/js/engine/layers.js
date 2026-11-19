@@ -7,17 +7,21 @@
 // geeView/src/js/lcms-viewer.min.js, with its LOCAL PATCH tile legend v3) and
 // 4map-manager.js getGroundOverlay. Store-driven: the engine reacts to each
 // layer's `visible` and `opacity` and to `order`, and writes `loading`,
-// `error` and `legend` back.
+// `error` and `legend` back. A timelapse is one record with a frame overlay
+// per year; its controller (engine/timelapse.js) drives it through the frame
+// hooks below, and sync() stacks the frames in the timelapse's list slot.
 import { prepareViz, createColorCycle, normVecStyle } from "./viz.js";
+import { createTimelapse } from "./timelapse.js";
 
 const TILE_TYPES = ["geeImage", "geeImageCollection", "geeVectorImage", "tileMapService"];
 const DATA_TYPES = ["geeVector", "geoJSONVector"];
 const VIZ_KEYS = ["bands", "min", "max", "gain", "bias", "gamma", "palette", "forceRgbOutput"];
 // the original's possibleVizKeys
 const POSSIBLE_VIZ_KEYS = ["bands", "min", "max", "gain", "bias", "gamma", "palette", "color"];
-const SKIP_KINDS = ["timelapse", "select", "areaChartOnly"];
+const SKIP_KINDS = ["select", "areaChartOnly"];
 
 function layerTypeOf(layer) {
+  if (layer.kind === "timelapse") return "timelapse";
   if (layer.kind === "geojson") return "geoJSONVector";
   if (layer.kind === "tile") return "tileMapService";
   if (layer.kind === "dynamic") return "dynamicMapService";
@@ -69,16 +73,23 @@ export function createLayerEngine(gmap, store, deps = {}) {
   // ---- stacking ----
   // port of 2templates.js updateMapLayerOrder: overlayMapTypes index order
   // equals list order (bottom of the list at index 0); Data layers take zIndex.
+  // A timelapse fills one slot per frame, first year lowest (the original adds
+  // its frames in year order), and is on the map only while its controller
+  // shows it.
+  function slotsFor(r) {
+    if (r.timelapse) return r.frames.map((f) => (r.framesShown && f.overlay ? f.overlay : null));
+    return [r.visible && r.overlay ? r.overlay : null];
+  }
   function sync() {
     const omt = gmap.overlayMapTypes;
     const tiles = stackOrder(order, (id) => recs.has(id) && recs.get(id).tileType);
-    while (omt.getLength() < tiles.length) omt.push(null);
-    tiles.forEach((id, i) => {
-      const r = recs.get(id);
-      const want = r.visible && r.overlay ? r.overlay : null;
+    const slots = [];
+    tiles.forEach((id) => slots.push(...slotsFor(recs.get(id))));
+    while (omt.getLength() < slots.length) omt.push(null);
+    slots.forEach((want, i) => {
       if (omt.getAt(i) !== want) omt.setAt(i, want);
     });
-    for (let i = tiles.length; i < omt.getLength(); i++) if (omt.getAt(i) !== null) omt.setAt(i, null);
+    for (let i = slots.length; i < omt.getLength(); i++) if (omt.getAt(i) !== null) omt.setAt(i, null);
     const vectors = stackOrder(order, (id) => recs.has(id) && recs.get(id).dataType);
     vectors.forEach((id, i) => {
       const r = recs.get(id);
@@ -162,9 +173,20 @@ export function createLayerEngine(gmap, store, deps = {}) {
       item = viz.styleParams !== undefined ? item.style(viz.styleParams) : eeApi.Image().paint(item, null, viz.strokeWeight);
       viz.palette = viz.strokeColor;
     }
-    // port of 2templates.js addLayer getGEEMapService
+    requestMap(item, viz, (tilesUrl, failure) => {
+      if (!recs.has(r.id)) return;
+      if (failure) return fail(r, failure);
+      r.overlay = tileOverlay(r, (coord, zoom) => tilesUrl.replace("{x}", coord.x).replace("{y}", coord.y).replace("{z}", zoom));
+      if (!r.visible) setLoading(r, false);
+      sync();
+    });
+  }
+
+  // port of 2templates.js addLayer getGEEMapService: one retry when Earth
+  // Engine returns nothing. cb(urlFormat) or cb(null, failure).
+  function requestMap(item, viz, cb) {
     const vizFound = POSSIBLE_VIZ_KEYS.some((k) => k in viz);
-    let usedViz = {};
+    const usedViz = {};
     if (vizFound && !viz.autoViz && viz.styleParams === undefined) {
       VIZ_KEYS.forEach((k) => {
         if (viz[k] !== undefined && viz[k] !== null) usedViz[k] = viz[k];
@@ -175,13 +197,9 @@ export function createLayerEngine(gmap, store, deps = {}) {
     const request = () => {
       tries++;
       eeApi.Image(mapItem).getMap(usedViz, (eeLayer, failure) => {
-        if (!recs.has(r.id)) return;
         if (eeLayer === undefined && tries <= 1) return request();
-        if (eeLayer === undefined || failure !== undefined) return fail(r, failure || "Earth Engine did not return a map service");
-        const tilesUrl = eeLayer.urlFormat;
-        r.overlay = tileOverlay(r, (coord, zoom) => tilesUrl.replace("{x}", coord.x).replace("{y}", coord.y).replace("{z}", zoom));
-        if (!r.visible) setLoading(r, false);
-        sync();
+        if (eeLayer === undefined || failure !== undefined) return cb(null, failure || "Earth Engine did not return a map service");
+        cb(eeLayer.urlFormat);
       });
     };
     request();
@@ -214,9 +232,107 @@ export function createLayerEngine(gmap, store, deps = {}) {
     img.src = url;
   }
 
+  // ---- timelapses ----
+  // Frame hooks for engine/timelapse.js. Each frame counts the tiles it is
+  // asked for; the timelapse reports loading until its frames have map
+  // services and, while shown, until every frame's tiles are in.
+  function frameLoading(r) {
+    setLoading(r, !r.ready || (r.framesShown && r.pending.size > 0));
+  }
+  const frameHooks = {
+    store,
+    ee: eeApi,
+    requestMap,
+    initFrames(id, n) {
+      const r = recs.get(id);
+      if (!r) return;
+      r.frames = Array.from({ length: n }, () => ({ overlay: null, opacity: 0 }));
+      sync();
+    },
+    setFrameUrl(id, i, tilesUrl) {
+      const r = recs.get(id);
+      if (!r || !r.frames[i]) return;
+      const overlay = new g.ImageMapType({
+        tileSize: new g.Size(256, 256),
+        getTileUrl: (coord, zoom) => {
+          r.requests++;
+          r.pending.add(i);
+          if (r.framesShown) setLoading(r, true);
+          return tilesUrl.replace("{x}", coord.x).replace("{y}", coord.y).replace("{z}", zoom);
+        },
+      });
+      overlay.addListener("tilesloaded", () => {
+        r.pending.delete(i);
+        frameLoading(r);
+      });
+      overlay.setOpacity(r.frames[i].opacity);
+      r.frames[i].overlay = overlay;
+    },
+    framesReady(id) {
+      const r = recs.get(id);
+      if (!r) return;
+      r.ready = true;
+      frameLoading(r);
+    },
+    // ops: per-frame opacities (every frame stays on the map so the next one
+    // is already loaded, as the original's opacity-0 frames), or null: off.
+    showFrames(id, ops) {
+      const r = recs.get(id);
+      if (!r) return;
+      if (ops) {
+        r.frames.forEach((f, i) => {
+          f.opacity = ops[i] || 0;
+          if (f.overlay && f.overlay.getOpacity() !== f.opacity) f.overlay.setOpacity(f.opacity);
+        });
+      } else r.pending.clear();
+      r.framesShown = !!ops;
+      sync();
+      frameLoading(r);
+    },
+    // port of 4map-manager.js jitterZoom(true); the view history ignores the
+    // return to the same view.
+    jitter() {
+      const z = gmap.getZoom();
+      gmap.setZoom(z - 1);
+      gmap.setZoom(z);
+    },
+    setLegend(id, legend) {
+      patch(id, { legend }, "layer-legend");
+    },
+    fail(id, err) {
+      const r = recs.get(id);
+      if (r) fail(r, err);
+    },
+  };
+
+  function addTimelapse(layer) {
+    const r = {
+      id: layer.id,
+      layerType: "timelapse",
+      tileType: true,
+      dataType: false,
+      timelapse: true,
+      visible: layer.visible,
+      opacity: layer.opacity,
+      overlay: null,
+      frames: [],
+      framesShown: false,
+      ready: false,
+      pending: new Set(),
+      loading: false,
+      requests: 0,
+      viz: layer.viz,
+      item: layer.item,
+    };
+    recs.set(layer.id, r);
+    setLoading(r, true);
+    r.tl = createTimelapse(frameHooks, layer);
+  }
+
   // ---- public ----
   async function addLayerToMap(layer) {
     if (SKIP_KINDS.indexOf(layer.kind) > -1) return;
+    if (layer.kind === "timelapse") return addTimelapse(layer);
     const layerType = layerTypeOf(layer);
     const r = {
       id: layer.id,
@@ -286,6 +402,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
     const r = recs.get(id);
     if (!r) return;
     r.visible = !!on;
+    if (r.timelapse) return r.tl.setVisible(r.visible);
     if (r.tileType) sync();
     else if (r.dataType) r.overlay && r.overlay.setMap(on ? gmap : null);
     else if (r.layerType === "dynamicMapService") refreshGround(r);
@@ -296,7 +413,8 @@ export function createLayerEngine(gmap, store, deps = {}) {
     const r = recs.get(id);
     if (!r) return;
     r.opacity = a;
-    if (r.dataType) {
+    if (r.timelapse) r.tl.render();
+    else if (r.dataType) {
       r.opacityTouched = true;
       applyDataStyle(r);
     } else if (r.overlay) r.overlay.setOpacity(a);
@@ -306,6 +424,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
     const r = recs.get(layer.id);
     if (!r) return;
     recs.delete(layer.id);
+    if (r.tl) r.tl.dispose();
     if (r.listener) r.listener.remove();
     if (r.overlay && (r.dataType || r.layerType === "dynamicMapService")) r.overlay.setMap(null);
     order = order.filter((id) => id !== layer.id);
@@ -316,7 +435,10 @@ export function createLayerEngine(gmap, store, deps = {}) {
   // Data layers by zIndex. For tests and debugging.
   function zOrder() {
     const byOverlay = new Map();
-    recs.forEach((r) => r.overlay && byOverlay.set(r.overlay, r.id));
+    recs.forEach((r) => {
+      if (r.overlay) byOverlay.set(r.overlay, r.id);
+      if (r.frames) r.frames.forEach((f) => f.overlay && byOverlay.set(f.overlay, r.id));
+    });
     const tiles = gmap.overlayMapTypes.getArray().filter((o) => o && byOverlay.has(o)).map((o) => byOverlay.get(o));
     const vectors = [...recs.values()]
       .filter((r) => r.dataType && r.overlay && r.overlay.getMap())
@@ -328,8 +450,15 @@ export function createLayerEngine(gmap, store, deps = {}) {
   const slotOrder = () => stackOrder(order, (id) => recs.has(id) && recs.get(id).tileType);
   const stats = (id) => {
     const r = recs.get(id);
-    return r ? { requests: r.requests, loading: r.loading, layerType: r.layerType, onMap: !!(r.overlay && (r.tileType ? gmap.overlayMapTypes.getArray().includes(r.overlay) : r.overlay.getMap())) } : null;
+    if (!r) return null;
+    const omt = gmap.overlayMapTypes.getArray();
+    if (r.timelapse) {
+      const frames = r.frames.map((f) => ({ onMap: !!f.overlay && omt.includes(f.overlay), opacity: f.overlay ? f.overlay.getOpacity() : 0 }));
+      return { requests: r.requests, loading: r.loading, layerType: r.layerType, onMap: frames.some((f) => f.onMap), frames };
+    }
+    return { requests: r.requests, loading: r.loading, layerType: r.layerType, onMap: !!(r.overlay && (r.tileType ? omt.includes(r.overlay) : r.overlay.getMap())) };
   };
+  const timelapse = (id) => (recs.get(id) && recs.get(id).tl) || null;
 
   // React to the store: visibility, opacity and order are state.
   store.on("change:layers", (layers) => {
@@ -342,5 +471,5 @@ export function createLayerEngine(gmap, store, deps = {}) {
   });
   store.on("change:order", (o) => applyOrder(o));
 
-  return { addLayerToMap, setLayerVisible, setLayerOpacity, applyOrder, removeLayer, zOrder, slotOrder, stats };
+  return { addLayerToMap, setLayerVisible, setLayerOpacity, applyOrder, removeLayer, zOrder, slotOrder, stats, timelapse };
 }

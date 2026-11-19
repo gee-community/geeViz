@@ -51,6 +51,7 @@
   <body>
     <div id="map"></div>
     <div id="loadbar" class="loadbar" hidden></div>
+    <div id="yearbadge" class="hud yearbadge mono" hidden></div>
     <div id="mtop" class="mtop">
       <button class="ib mlogo-btn" id="mlogo-btn" title="Theme and about"><img class="logo-img" alt="geeViz menu" /></button>
       <button class="ib" data-act="locate" title="Go to my location"><i class="ti ti-current-location"></i></button>
@@ -63,6 +64,12 @@
       <button data-t="system"><i class="ti ti-device-mobile"></i>Match phone</button>
       <button data-t="light"><i class="ti ti-sun"></i>Light</button>
       <button data-t="dark"><i class="ti ti-moon"></i>Dark</button>
+    </div>
+    <div id="mplayer" class="mplayer" role="group" aria-label="Timelapse player">
+      <span class="tl-year mono"></span>
+      <button class="tlb" type="button" data-tl="back" title="Back one frame" aria-label="Back one frame"><i class="ti ti-player-skip-back"></i></button>
+      <button class="tlb" type="button" data-tl="play" title="Play" aria-label="Play or pause"><i class="ti ti-player-play"></i></button>
+      <button class="tlb" type="button" data-tl="forward" title="Forward one frame" aria-label="Forward one frame"><i class="ti ti-player-skip-forward"></i></button>
     </div>
     <nav id="mtabs" class="mtabs">
       <button data-m="layers"><i class="ti ti-stack-2"></i>Layers</button>
@@ -128,6 +135,24 @@
             <button class="legbtn none" type="button" title="Show or hide legend" tabindex="-1"><span class="lsw"></span><i class="ti ti-chevron-down"></i></button>
           </div>
           <div class="legend"></div>
+        </div>
+      </template>
+      <template id="tpl-timelapse">
+        <div class="tl" title="Time lapse layers load one map layer per frame. Once loaded, play them as an animation or step through single frames. The right-most button shows this frame and all frames before it.">
+          <div class="tl-top">
+            <span class="tl-year mono"></span>
+            <button class="tlb" type="button" data-tl="back" title="Back one frame" aria-label="Back one frame"><i class="ti ti-player-skip-back"></i></button>
+            <button class="tlb" type="button" data-tl="pause" title="Pause" aria-label="Pause"><i class="ti ti-player-pause"></i></button>
+            <button class="tlb" type="button" data-tl="stop" title="Clear animation" aria-label="Clear animation" hidden><i class="ti ti-player-stop"></i></button>
+            <button class="tlb" type="button" data-tl="play" title="Play" aria-label="Play"><i class="ti ti-player-play"></i></button>
+            <button class="tlb" type="button" data-tl="forward" title="Forward one frame" aria-label="Forward one frame"><i class="ti ti-player-skip-forward"></i></button>
+            <button class="tlb" type="button" data-tl="refresh" title="Reload tiles that failed" aria-label="Reload tiles that failed"><i class="ti ti-refresh"></i></button>
+            <button class="tlb" type="button" data-tl="frames" title="Show or hide frames" aria-label="Show or hide frames" hidden><i class="ti ti-eye"></i></button>
+            <button class="tlb" type="button" data-tl="cumulative" title="Cumulative: show this frame and all before it" aria-label="Cumulative" aria-pressed="false"><i class="ti ti-stack-3"></i></button>
+          </div>
+          <div class="tl-row"><label>Year</label><input class="dz orange" data-tl="year" type="range" min="0" max="0" step="1" value="0" aria-label="Frame" /><span class="val mono" data-tl="yearv"></span></div>
+          <div class="tl-row"><label>Speed</label><input class="dz orange" data-tl="speed" type="range" min="0.5" max="3" step="0.5" value="1.5" aria-label="Speed in frames per second" /><span class="val mono" data-tl="speedv"></span></div>
+          <div class="tl-frames"></div>
         </div>
       </template>
     </div>

@@ -86,14 +86,17 @@ def delta_page(delta_server, _browser):
 
 @pytest.fixture
 def live_map(_browser):
-    """live_map(build, skin="delta") -> Page. build(Map) adds layers; needs Earth Engine.
+    """live_map(build, skin="delta", setup=None, wait_layers=True) -> Page.
 
+    build(Map) adds layers; needs Earth Engine. setup(context) runs before the
+    page opens (to route requests). With wait_layers=False the page is
+    returned once Delta is ready, without waiting for layers to load.
     With skin="original" the original viewer opens and the page is returned
     as soon as it has loaded; the caller waits for what it needs.
     """
     contexts = []
 
-    def make(build, skin="delta"):
+    def make(build, skin="delta", setup=None, wait_layers=True):
         import geeViz.geeView as gv
 
         Map = gv.mapper()
@@ -113,12 +116,16 @@ def live_map(_browser):
         url = opened[0]
         ctx = _browser.new_context(viewport={"width": 1500, "height": 900})
         contexts.append(ctx)
+        if setup is not None:
+            setup(ctx)
         page = ctx.new_page()
         _collect_errors(page)
         page.goto(url)
         if skin != "delta":
             return page
         page.wait_for_function("window.__delta !== undefined && window.__delta.ready === true", timeout=90000)
+        if not wait_layers:
+            return page
         deadline = time.time() + 60
         while time.time() < deadline:
             if not page.evaluate("window.__delta.store.get().layers.some(l => l.loading)"):

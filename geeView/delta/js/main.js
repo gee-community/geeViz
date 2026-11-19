@@ -14,13 +14,21 @@ import { createMap, whenGoogleReady } from "./engine/maps.js";
 import { initEE, describeEEFailure } from "./engine/ee.js";
 import { createLayerEngine } from "./engine/layers.js";
 import { mountLayers } from "./ui/layers.js";
+import { mountTimelapseHud } from "./ui/timelapse.js";
 
 const store = createStore();
 store.set(initialShellState(store), "boot");
 
 const shell = mountShell(store, { mapEl: document.getElementById("map") });
 const status = mountStatus(store, document.getElementById("status"), document.getElementById("loadbar"));
-const layersUI = mountLayers(store, document.getElementById("layers-mount"));
+// Timelapse controllers live in the layer engine, which starts after Google loads.
+let layerEngine = null;
+const timelapseOf = (id) => (layerEngine ? layerEngine.timelapse(id) : null);
+const layersUI = mountLayers(store, document.getElementById("layers-mount"), { timelapse: timelapseOf });
+const timelapseHud = mountTimelapseHud(store, timelapseOf, {
+  badge: document.getElementById("yearbadge"),
+  player: document.getElementById("mplayer"),
+});
 
 const notice = (msg) => store.update((s) => ({ ...s, notices: [...s.notices, msg] }), "notice");
 
@@ -30,7 +38,7 @@ function plainText(html) {
 }
 
 async function boot() {
-  const delta = (window.__delta = { store, shell, status, layersUI, ready: false, eeError: null });
+  const delta = (window.__delta = { store, shell, status, layersUI, timelapseHud, ready: false, eeError: null });
   try {
     await whenGoogleReady();
   } catch (e) {
@@ -50,6 +58,7 @@ async function boot() {
   }
   try {
     const layers = createLayerEngine(engine.gmap, store);
+    layerEngine = layers;
     Object.assign(engine, {
       layers,
       layerAdded: (layer) => layers.addLayerToMap(layer),
