@@ -110,8 +110,41 @@ def test_delta_page_tags_match_original():
         mo, md = re.search(p, o), re.search(p, d)
         assert mo and md, p
         assert mo.group(0) == md.group(0)
+    assert "libraries=places,geometry" in re.search(r"maps/api/js\?[^\"]+", d).group(0)
 
 
-def test_view_url_uses_skin_page(monkeypatch):
+
+
+def _spy_view(monkeypatch, m, mode, skin):
+    """Run view() under `skin`; return the URL it hands to the browser."""
     gv = _gv()
-    assert gv._SKIN_PAGES == {"original": "", "delta": "delta.html"}
+    opened = []
+    monkeypatch.setattr(gv.webbrowser, "open", lambda u, new=0: opened.append(u))
+    monkeypatch.setattr(gv.time, "sleep", lambda *_a: None)
+    monkeypatch.setattr(gv, "_ensure_server", lambda port: port)
+    monkeypatch.setattr(gv, "_set_ee_api_upstream", lambda *_a: None)
+    if mode == "local":
+        m.setAuthMode("legacy")
+    else:
+        m.setAuthMode(None)
+        from geeViz.eeAuth import eeCreds as ec_mod
+        monkeypatch.setattr(
+            ec_mod, "ensure_started",
+            lambda **kw: {"proxy_url": "http://127.0.0.1:8123", "current": "t",
+                          "tenants": ["t"], "mode": "detached"})
+    m.setSkin(skin)
+    m.view(open_browser=True, open_iframe=False)
+    assert len(opened) == 1
+    return opened[0]
+
+
+@pytest.mark.parametrize("mode", ["local", "detached"])
+def test_view_url_uses_skin_page_per_branch(monkeypatch, mode):
+    import ee
+    _, m = _fresh(monkeypatch)
+    m.addLayer(ee.Image(1), {}, "one")
+    orig = _spy_view(monkeypatch, m, mode, "original")
+    delta = _spy_view(monkeypatch, m, mode, "delta")
+    assert "/geeView/delta.html" in delta
+    assert "delta.html" not in orig
+    assert "/geeView/" in orig

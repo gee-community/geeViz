@@ -2512,8 +2512,6 @@ class mapper:
             else:
                 self.accessTokenCreationTime = None
 
-    ######################################################################
-    # Standalone HTML export for embedding in chat UIs / cloud-hosted viewers
     def setSkin(self, name: str) -> None:
         """Choose the viewer page: ``"original"`` or ``"delta"``.
 
@@ -2533,6 +2531,8 @@ class mapper:
             )
         self.skin = name
 
+    ######################################################################
+    # Standalone HTML export for embedding in chat UIs / cloud-hosted viewers
     def export_html(
         self,
         output_path: str,
