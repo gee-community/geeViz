@@ -148,3 +148,72 @@ def test_view_url_uses_skin_page_per_branch(monkeypatch, mode):
     assert "/geeView/delta.html" in delta
     assert "delta.html" not in orig
     assert "/geeView/" in orig
+
+
+def _spy_iframe_view(monkeypatch, m, env, skin):
+    """Run view() in a mocked Colab or Workbench; return the IFrame src."""
+    gv = _gv()
+    frames = []
+    monkeypatch.setattr(gv, "IFrame", lambda src, **kw: frames.append(src) or src)
+    monkeypatch.setattr(gv, "display", lambda *_a, **_k: None)
+    monkeypatch.setattr(gv, "_ensure_server", lambda port: port)
+    monkeypatch.setattr(gv, "_set_ee_api_upstream", lambda *_a: None)
+    monkeypatch.setattr(gv, "_detect_proxy_url", lambda: "https://wb.example.com/lab/tree")
+    m.setAuthMode("legacy")
+    if env == "colab":
+        monkeypatch.setattr(gv, "IS_COLAB", True)
+        monkeypatch.setattr(gv, "eval_js", lambda js: "https://colab.example.com", raising=False)
+    else:
+        monkeypatch.setattr(gv, "IS_COLAB", False)
+        monkeypatch.setattr(gv, "IS_WORKBENCH", True)
+        m.proxy_url = None
+    m.setSkin(skin)
+    m.view()
+    assert len(frames) == 1, frames
+    return frames[0]
+
+
+@pytest.mark.parametrize("env", ["colab", "workbench"])
+def test_view_url_uses_skin_page_in_notebook_hosts(monkeypatch, env):
+    import ee
+    _, m = _fresh(monkeypatch)
+    m.addLayer(ee.Image(1), {}, "one")
+    orig = _spy_iframe_view(monkeypatch, m, env, "original")
+    delta = _spy_iframe_view(monkeypatch, m, env, "delta")
+    host = "https://colab.example.com/geeView/" if env == "colab" else "https://wb.example.com/proxy/"
+    assert orig.startswith(host) and delta.startswith(host), (orig, delta)
+    assert "/geeView/delta.html?" in delta
+    assert "/geeView/?" in orig and "delta.html" not in orig
+
+
+@pytest.mark.parametrize("skin", ["original", "delta"])
+def test_testView_screenshots_the_page_view_built(monkeypatch, skin):
+    import ee
+    gv = _gv()
+    from geeViz.outputLib import charts
+    _, m = _fresh(monkeypatch)
+    m.addLayer(ee.Image(1), {}, "one")
+    shots, opened, frames = [], [], []
+    monkeypatch.setattr(charts, "screenshot_url",
+                        lambda url, **kw: shots.append(url) or (None, ["stub"]))
+    monkeypatch.setattr(gv.webbrowser, "open", lambda u, new=0: opened.append(u))
+    monkeypatch.setattr(gv, "IFrame", lambda src, **kw: frames.append(src))
+    monkeypatch.setattr(gv, "display", lambda *_a, **_k: None)
+    monkeypatch.setattr(gv.time, "sleep", lambda *_a: None)
+    monkeypatch.setattr(gv, "_ensure_server", lambda port: port)
+    monkeypatch.setattr(gv, "_set_ee_api_upstream", lambda *_a: None)
+    from geeViz.eeAuth import eeCreds as ec_mod
+    monkeypatch.setattr(
+        ec_mod, "ensure_started",
+        lambda **kw: {"proxy_url": "http://127.0.0.1:8123", "current": "t",
+                      "tenants": ["t"], "mode": "detached"})
+    m.setAuthMode(None)
+    m.setSkin(skin)
+    res = m.testView()
+    # It screenshots the page view() built, without opening a browser or
+    # an inline frame of its own.
+    assert len(shots) == 1, res
+    assert shots[0] == m.view_url
+    assert shots[0].startswith("http://127.0.0.1:8123/geeView/" + gv._SKIN_PAGES[skin] + "?v=")
+    assert opened == [] and frames == []
+    assert res == {"error": "Screenshot failed.", "console_messages": ["stub"]}

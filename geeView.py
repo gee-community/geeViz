@@ -1256,6 +1256,8 @@ class mapper:
         self.idDictList = []
         self.mapCommandList = []
         self.ee_run_name = "runGeeViz"
+        # The viewer URL the last view() built (None before the first).
+        self.view_url = None
 
         self.typeLookup = {
             "Image": "geeImage",
@@ -2746,6 +2748,9 @@ class mapper:
         ``open_browser=False``), the other opens instead. Both can be
         set to ``True`` to get both.
 
+        The page opened follows the skin (``Map.setSkin``). The viewer URL
+        is kept on ``Map.view_url`` (``testView`` screenshots it).
+
         Args:
             open_browser (bool | None): Open in the default browser.
                 Default ``None`` (auto: ``True`` outside notebooks,
@@ -2767,6 +2772,7 @@ class mapper:
             "open_iframe": open_iframe,
             "iframe_height": iframe_height,
         }
+        self.view_url = None
 
         # Auto-enable inspector if no turnOn commands have been set.
         if not any("turnOn" in c for c in self.mapCommandList):
@@ -2990,6 +2996,7 @@ class mapper:
             proxy_url = eval_js(proxy_js)
             geeView_url = "{}/geeView/{}{}".format(proxy_url, _SKIN_PAGES[self.skin], query)
             print("Colab Proxy URL:", geeView_url)
+            self.view_url = geeView_url
             self.IFrame = IFrame(src=geeView_url, width="100%", height="{}px".format(iframe_height))
             display(self.IFrame)
         elif IS_WORKBENCH or (self.proxy_url is not None):
@@ -3001,6 +3008,7 @@ class mapper:
                 self.proxy_url, self.port, _SKIN_PAGES[self.skin], query
             )
             print("Proxy URL:", geeView_url)
+            self.view_url = geeView_url
             self.IFrame = IFrame(src=geeView_url, width="100%", height="{}px".format(iframe_height))
             display(self.IFrame)
         elif ee_proxy_mode == "detached" and ee_proxy_url:
@@ -3015,6 +3023,7 @@ class mapper:
                 base = base[: -len("/ee-api")]
             url = f"{base}/geeView/{_SKIN_PAGES[self.skin]}{query}"
             print("geeView URL:", url)
+            self.view_url = url
             if want_iframe:
                 self.IFrame = IFrame(src=url, width="100%", height="{}px".format(iframe_height))
                 display(self.IFrame)
@@ -3034,6 +3043,7 @@ class mapper:
             # fail with "connection refused" even though 127.0.0.1 works.
             url = "http://127.0.0.1:{}/geeView/{}{}".format(self.port, _SKIN_PAGES[self.skin], query)
             print("geeView URL:", url)
+            self.view_url = url
             if want_iframe:
                 self.IFrame = IFrame(src=url, width="100%", height="{}px".format(iframe_height))
                 display(self.IFrame)
@@ -4221,10 +4231,13 @@ class mapper:
         from geeViz.outputLib import charts as _cl
         import datetime as _dt
 
-        # Get the viewer URL without opening a browser
-        url = self.view(open_browser=False)
+        # Build the viewer page without opening a browser or an inline
+        # frame, then screenshot the URL view() built. view() returns
+        # nothing; it records the URL on ``self.view_url``.
+        self.view(open_browser=False, open_iframe=False)
+        url = self.view_url
         if not url:
-            return {"error": "No viewer URL available — add layers first."}
+            return {"error": "No viewer URL available. Add layers first."}
 
         png_bytes, console_msgs = _cl.screenshot_url(url, width=width, height=height, wait_seconds=wait_seconds)
 
