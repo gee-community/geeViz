@@ -16,6 +16,7 @@ const ACTIONS = {
   csv: { icon: "ti-file-spreadsheet", title: "Download CSV" },
   png: { icon: "ti-photo-down", title: "Save PNG" },
   expand: { icon: "ti-arrows-maximize", title: "Expand" },
+  clear: { icon: "ti-trash", title: "Clear" },
 };
 
 function el(tag, cls, text) {
@@ -96,6 +97,17 @@ function plot(chartEl, r, settings, big) {
 }
 
 // ---- card bodies ----
+// Distance and Area: the measured values in the mono font.
+function measureBody(r) {
+  const b = el("div", "qv");
+  r.data.lines.forEach(([label, value]) => {
+    const row = el("div", "val-big");
+    row.append(el("span", "val-band", label), el("span", "val-main mono", value));
+    b.appendChild(row);
+  });
+  return b;
+}
+
 function valueBody(r) {
   const b = el("div", "qv");
   if (r.data.error) b.appendChild(el("div", "val-code mono", r.data.error));
@@ -215,7 +227,7 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
 
   function act(r, name, body) {
     if (name === "copy") {
-      const text = resultText(r);
+      const text = r.kind === "measure" ? r.data.text : resultText(r);
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => say("Copied " + r.title), () => say("Copy is not allowed here"));
     } else if (name === "csv" && isAreaChart(r)) {
       download(chartFileName(r) + ".csv", chartCsv(r), "text/csv;charset=utf-8");
@@ -228,6 +240,8 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
       if (window.Plotly && body && body._chart) {
         window.Plotly.downloadImage(body._chart, { format: "png", width: 900, height: 600, filename: safeName(r.title + nameEnd(r)) });
       }
+    } else if (name === "clear") {
+      store.set({ results: [], where: "" }, "measure-clear");
     } else if (name === "expand") {
       expand(r);
     }
@@ -235,6 +249,7 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
 
   function buildBody(r) {
     if (isAreaChart(r)) return areaChartBody(r, settings());
+    if (r.kind === "measure") return measureBody(r);
     if (r.kind === "series") return seriesBody(r, settings());
     if (r.kind === "table") return tableBody(r);
     return valueBody(r);

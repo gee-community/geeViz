@@ -20,6 +20,7 @@ import { mountOutput } from "./ui/output.js";
 import { createQueryTool } from "./engine/query.js";
 import { createAreaCharter } from "./engine/areachart.js";
 import { createAreaSources } from "./engine/areasources.js";
+import { createMeasure } from "./engine/measure.js";
 
 const store = createStore();
 store.set(initialShellState(store), "boot");
@@ -118,6 +119,17 @@ async function boot() {
     store.on("change:theme", () => setTimeout(() => chartSources.restyle(), 0));
   } catch (e) {
     notice("The chart area tool could not start: " + (e && e.message));
+  }
+
+  try {
+    const measure = createMeasure(engine, store, {
+      notify: notice,
+      colors: () => ({ stroke: cssToken("--dz-orange", "#e2602a") }),
+    });
+    delta.measure = measure;
+    store.on("change:theme", () => setTimeout(() => measure.restyle(), 0));
+  } catch (e) {
+    notice("The distance and area tools could not start: " + (e && e.message));
   }
 
   for (const [what, mount] of [
