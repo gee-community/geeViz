@@ -22,6 +22,12 @@ const POSSIBLE_VIZ_KEYS = ["bands", "min", "max", "gain", "bias", "gamma", "pale
 const SKIP_KINDS = ["areaChartOnly"];
 const NOT_QUERYABLE = ["geoJSONVector", "tileMapService", "dynamicMapService"];
 
+// A wind layer (geeViz.weather addWindLayer / addWindTimeLapse): its tiles
+// are u/v encoded as RGB, decoded and drawn by wind-particles.js through
+// engine/wind.js, never shown as a picture. It keeps its slot (or one per
+// frame) in the stack, empty, so the particles stack there.
+export const isWindViz = (viz) => !!(viz && viz.windParticles);
+
 function layerTypeOf(layer) {
   if (layer.kind === "timelapse") return "timelapse";
   if (layer.kind === "geojson") return "geoJSONVector";
@@ -57,6 +63,10 @@ export function createLayerEngine(gmap, store, deps = {}) {
   const recs = new Map();
   const nextColor = createColorCycle();
   let order = store.get().order.slice();
+  // Called after anything engine/wind.js mirrors changes: stacking, frames,
+  // visibility, opacity, tile services, removal.
+  const listeners = new Set();
+  const changed = () => listeners.forEach((fn) => fn());
 
   function patch(id, p, reason) {
     if (!recs.has(id)) return;
@@ -79,6 +89,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
   // its frames in year order), and is on the map only while its controller
   // shows it.
   function slotsFor(r) {
+    if (isWindViz(r.viz)) return r.timelapse ? r.frames.map(() => null) : [null];
     if (r.timelapse) return r.frames.map((f) => (r.framesShown && f.overlay ? f.overlay : null));
     return [r.visible && r.overlay ? r.overlay : null];
   }
@@ -86,7 +97,11 @@ export function createLayerEngine(gmap, store, deps = {}) {
     const omt = gmap.overlayMapTypes;
     const tiles = stackOrder(order, (id) => recs.has(id) && recs.get(id).tileType);
     const slots = [];
-    tiles.forEach((id) => slots.push(...slotsFor(recs.get(id))));
+    tiles.forEach((id) => {
+      const r = recs.get(id);
+      r.slot = slots.length;
+      slots.push(...slotsFor(r));
+    });
     while (omt.getLength() < slots.length) omt.push(null);
     slots.forEach((want, i) => {
       if (omt.getAt(i) !== want) omt.setAt(i, want);
@@ -101,6 +116,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
         applyDataStyle(r);
       }
     });
+    changed();
   }
 
   function applyOrder(next) {
@@ -180,8 +196,11 @@ export function createLayerEngine(gmap, store, deps = {}) {
     requestMap(item, viz, (tilesUrl, failure) => {
       if (!recs.has(r.id)) return;
       if (failure) return fail(r, failure);
-      r.overlay = tileOverlay(r, (coord, zoom) => tilesUrl.replace("{x}", coord.x).replace("{y}", coord.y).replace("{z}", zoom));
-      if (!r.visible) setLoading(r, false);
+      r.tileUrl = (coord, zoom) => tilesUrl.replace("{x}", coord.x).replace("{y}", coord.y).replace("{z}", zoom);
+      r.overlay = tileOverlay(r, r.tileUrl);
+      // A wind layer is never on the map, so Google never reports its tiles
+      // loaded; wind.js reports the particles' own tile loading instead.
+      if (!r.visible || isWindViz(r.viz)) setLoading(r, false);
       sync();
     });
   }
@@ -257,13 +276,14 @@ export function createLayerEngine(gmap, store, deps = {}) {
     setFrameUrl(id, i, tilesUrl) {
       const r = recs.get(id);
       if (!r || !r.frames[i]) return;
+      const tileUrl = (coord, zoom) => tilesUrl.replace("{x}", coord.x).replace("{y}", coord.y).replace("{z}", zoom);
       const overlay = new g.ImageMapType({
         tileSize: new g.Size(256, 256),
         getTileUrl: (coord, zoom) => {
           r.requests++;
           r.pending.add(i);
           if (r.framesShown) setLoading(r, true);
-          return tilesUrl.replace("{x}", coord.x).replace("{y}", coord.y).replace("{z}", zoom);
+          return tileUrl(coord, zoom);
         },
       });
       overlay.addListener("tilesloaded", () => {
@@ -272,12 +292,15 @@ export function createLayerEngine(gmap, store, deps = {}) {
       });
       overlay.setOpacity(r.frames[i].opacity);
       r.frames[i].overlay = overlay;
+      r.frames[i].tileUrl = tileUrl;
+      changed();
     },
     framesReady(id) {
       const r = recs.get(id);
       if (!r) return;
       r.ready = true;
       frameLoading(r);
+      changed();
     },
     // ops: per-frame opacities (every frame stays on the map so the next one
     // is already loaded, as the original's opacity-0 frames), or null: off.
@@ -423,12 +446,14 @@ export function createLayerEngine(gmap, store, deps = {}) {
     r.visible = !!on;
     if (r.timelapse) {
       r.tl.setVisible(r.visible);
-      return frameLoading(r);
+      frameLoading(r);
+      return changed();
     }
     if (r.tileType) sync();
     else if (r.dataType) r.overlay && r.overlay.setMap(on ? gmap : null);
     else if (r.layerType === "dynamicMapService") refreshGround(r);
     if (!on) setLoading(r, false);
+    changed();
   }
 
   function setLayerOpacity(id, a) {
@@ -440,6 +465,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
       r.opacityTouched = true;
       applyDataStyle(r);
     } else if (r.overlay) r.overlay.setOpacity(a);
+    changed();
   }
 
   function removeLayer(layer) {
@@ -480,6 +506,32 @@ export function createLayerEngine(gmap, store, deps = {}) {
     }
     return { requests: r.requests, loading: r.loading, layerType: r.layerType, onMap: !!(r.overlay && (r.tileType ? omt.includes(r.overlay) : r.overlay.getMap())) };
   };
+  // The wind layers, for engine/wind.js: each with its stack slot, its tile
+  // url function (not counted as a request: the particles fetch their own
+  // tiles) and, for a timelapse, one entry per frame in year order.
+  const windSources = () =>
+    [...recs.values()]
+      .filter((r) => r.tileType && isWindViz(r.viz))
+      .map((r) => ({
+        id: r.id,
+        viz: r.viz,
+        visible: !!r.visible,
+        opacity: r.opacity,
+        slot: r.slot,
+        timelapse: !!r.timelapse,
+        tileUrl: r.tileUrl || null,
+        ready: r.timelapse ? !!r.ready : !!r.tileUrl,
+        shown: r.timelapse ? !!(r.visible && r.framesShown) : !!r.visible,
+        frames: r.timelapse ? r.frames.map((f) => ({ tileUrl: f.tileUrl || null, opacity: f.opacity })) : [],
+      }));
+  const onChange = (fn) => {
+    listeners.add(fn);
+    return () => listeners.delete(fn);
+  };
+  const setLayerLoading = (id, loading) => {
+    const r = recs.get(id);
+    if (r) setLoading(r, !!loading);
+  };
   const timelapse = (id) => (recs.get(id) && recs.get(id).tl) || null;
   // Promise of {type, item, viz} for the Query tool, or null.
   const queryTarget = (id) => {
@@ -500,5 +552,5 @@ export function createLayerEngine(gmap, store, deps = {}) {
   });
   store.on("change:order", (o) => applyOrder(o));
 
-  return { addLayerToMap, setLayerVisible, setLayerOpacity, applyOrder, removeLayer, zOrder, slotOrder, stats, timelapse, queryTarget };
+  return { addLayerToMap, setLayerVisible, setLayerOpacity, applyOrder, removeLayer, zOrder, slotOrder, stats, timelapse, queryTarget, windSources, onChange, setLayerLoading };
 }

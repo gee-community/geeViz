@@ -14,6 +14,11 @@
 // Top-level `let` so the generator's `authProxyAPIURL=...` reassignment works.
 let authProxyAPIURL = "";
 
+// The layer registry geeView/src/js/wind-particles.js reads, as the original
+// viewer's top-level `let layerObj`: a global lexical binding, not a property
+// of window. engine/wind.js fills it with Delta's wind layers.
+let layerObj = {};
+
 (function () {
   "use strict";
   var w = window;
@@ -161,8 +166,42 @@ let authProxyAPIURL = "";
   }
   w.urlParams = Object.assign(parseQuery(w.location && w.location.search), w.urlParams || {});
 
+  // An empty, chainable jQuery set: what jQuery returns for no match.
+  function emptySet() {
+    var set = new Proxy(
+      { length: 0 },
+      {
+        get: function (o, key) {
+          if (typeof key === "symbol") return undefined;
+          if (key in o) return o[key];
+          return function () {
+            return set;
+          };
+        },
+      }
+    );
+    return set;
+  }
+  // wind-particles.js looks up the original viewer's layer panel elements
+  // (#<layer id>-spinner2, -layer-container, -class-container, -opacity...)
+  // for the layers in layerObj. Delta has no such elements, so those lookups
+  // find nothing, quietly, as jQuery would.
+  function windSelector(selector) {
+    if (selector === undefined) return true;
+    if (typeof selector !== "string" || selector.charAt(0) !== "#") return false;
+    for (var k in layerObj) {
+      var L = layerObj[k];
+      var ids = [k, L && L.viz && L.viz.timeLapseID];
+      for (var i = 0; i < ids.length; i++) {
+        if (ids[i] && selector.indexOf("#" + ids[i] + "-") === 0) return true;
+      }
+    }
+    return false;
+  }
+
   // jQuery stand-in: only $('#close-modal-button').click() is meaningful.
   w.$ = function (selector) {
+    if (windSelector(selector)) return emptySet();
     if (selector === "#close-modal-button") {
       return {
         click: function () {
@@ -212,5 +251,6 @@ let authProxyAPIURL = "";
     pending: function () {
       return queue.length;
     },
+    layerObj: layerObj,
   };
 })();

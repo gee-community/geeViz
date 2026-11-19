@@ -22,6 +22,7 @@ import { createAreaCharter } from "./engine/areachart.js";
 import { createAreaSources } from "./engine/areasources.js";
 import { createMeasure } from "./engine/measure.js";
 import { createCursor } from "./engine/cursor.js";
+import { createWind } from "./engine/wind.js";
 
 const store = createStore();
 store.set(initialShellState(store), "boot");
@@ -176,6 +177,17 @@ async function boot() {
     closeLoading: () => {},
     notify: notice,
   });
+  // Wind layers: wind-particles.js reads the Google map as window.map. Set
+  // only now, so calls the map script made while loading stay queued and
+  // replay in order.
+  if (layerEngine) {
+    try {
+      window.map = engine.gmap;
+      delta.wind = createWind(layerEngine, window.__deltaCompat.layerObj);
+    } catch (e) {
+      notice("Wind layers could not start: " + (e && e.message));
+    }
+  }
   layersUI.restoreOrder();
   delta.ready = true;
 }

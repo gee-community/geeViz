@@ -92,6 +92,26 @@ test("other jQuery selectors announce", () => {
   assert.equal(store.get().notices.length, 1);
 });
 
+test("wind-particles.js lookups of a wind layer's panel elements find nothing, quietly", () => {
+  const { ctx } = makeContext();
+  const store = createStore();
+  installApi(ctx, store);
+  // compat.js's layerObj is the lexical binding wind-particles.js reads.
+  assert.equal(vm.runInContext("layerObj === __deltaCompat.layerObj", ctx), true);
+  vm.runInContext("layerObj['layer-1'] = {viz: {}}; layerObj['layer-2-frame-0'] = {viz: {timeLapseID: 'layer-2'}};", ctx);
+  vm.runInContext(
+    "$('#layer-1-spinner2').show(); $('#layer-1-layer-container').css('background', 'x');" +
+      "if ($('#layer-2-class-container').find('li').first().length !== 0) throw new Error('not empty');" +
+      "if ($('#layer-2-opacity-slider').length !== 0) throw new Error('not empty');" +
+      "$().empty();",
+    ctx
+  );
+  assert.equal(store.get().notices.length, 0);
+  // Anything else still announces.
+  vm.runInContext("$('#layer-3-spinner2').show()", ctx);
+  assert.equal(store.get().notices.length, 1);
+});
+
 test("unsupported calls announce", () => {
   const { ctx } = makeContext();
   const store = createStore();
