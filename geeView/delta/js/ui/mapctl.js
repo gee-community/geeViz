@@ -38,6 +38,15 @@ export function mountMapControls(engine, shell, status) {
   );
   engine.onBasemap((key) => $$("#mapctl .bm").forEach((b) => b.classList.toggle("on", b.dataset.bm === key)));
 
+  // map labels on or off (the labels overlay drawn above every layer)
+  const labelsBtn = $("#labelsBtn");
+  if (labelsBtn && engine.setLabels) {
+    const showLabels = (on) => labelsBtn.setAttribute("aria-pressed", String(!!on));
+    showLabels(engine.labelsOn());
+    labelsBtn.addEventListener("click", () => engine.setLabels(!engine.labelsOn()));
+    engine.onLabels(showLabels);
+  }
+
   // Street View
   $("#svBtn").addEventListener("click", () => engine.streetViewPick(!engine.isPicking()));
   engine.onPick((on) => {

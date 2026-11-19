@@ -92,7 +92,7 @@ def test_labels_stay_on_top(live_map):
     on_map(page, "Opaque")
     assert_last(page, "initial load")
     labels_loaded(page)
-    assert page.evaluate("__delta.engine.labelsOverlay().name") == "Labels"
+    assert page.evaluate("__delta.engine.labelsOverlay().name") == "Satellite labels"
 
     # A layer added later (asynchronously, after the map service arrives).
     page.evaluate("Map.addLayer(ee.Image(2).visualize({palette: ['ff8800']}), {}, 'Later', true)")
@@ -113,7 +113,7 @@ def test_labels_stay_on_top(live_map):
     assert_last(page, "turning a layer on")
 
     # Every basemap; dark uses DARK_STYLE's label colors.
-    for key, name in (("map", "Labels"), ("dark", "Dark labels"), ("satellite", "Labels")):
+    for key, name in (("map", "Labels"), ("dark", "Dark labels"), ("satellite", "Satellite labels")):
         page.evaluate("(k) => __delta.engine.setBasemap(k)", key)
         assert_last(page, "basemap " + key)
         assert page.evaluate("__delta.engine.labelsOverlay().name") == name
@@ -185,4 +185,31 @@ def test_add_label_overlay_false_turns_it_off(live_map):
     assert page.evaluate("__delta.engine.labelsOverlay()") is None
     assert page.evaluate("__delta.engine.gmap.overlayMapTypes.getArray().filter(o => o && /abels/.test(o.name || '')).length") == 0
     assert page.evaluate("(" + LABEL_TILES + ")().length") == 0
+    assert not page.delta_errors, page.delta_errors
+
+
+def test_labels_toggle(live_map):
+    page = live_map(build)
+    on_map(page, "Opaque")
+    assert_last(page, "initial load")
+    assert page.get_attribute("#labelsBtn", "aria-pressed") == "true"
+    # Labels off: no labels overlay at all, the button says so, the URL remembers it.
+    page.click("#labelsBtn")
+    assert page.get_attribute("#labelsBtn", "aria-pressed") == "false"
+    assert page.evaluate("__delta.engine.labelsOverlay()") is None
+    assert page.evaluate("__delta.engine.gmap.overlayMapTypes.getArray().filter(o => o && /abels/.test(o.name || '')).length") == 0
+    assert "addLabelOverlay=false" in page.url
+    # A basemap switch while off keeps them off.
+    page.evaluate("__delta.engine.setBasemap('map')")
+    assert page.evaluate("__delta.engine.labelsOverlay()") is None
+    # On again: the overlay for the current basemap, last above every layer.
+    page.click("#labelsBtn")
+    assert page.get_attribute("#labelsBtn", "aria-pressed") == "true"
+    assert page.evaluate("__delta.engine.labelsOverlay().name") == "Labels"
+    assert_last(page, "labels back on")
+    assert "addLabelOverlay" not in page.url
+    # The basemaps themselves carry no labels, so labels are never drawn twice.
+    styles = page.evaluate("['roadmap-base', 'dark'].map(id => JSON.stringify(__delta.engine.gmap.mapTypes.get(id).styles || []))")
+    for st in styles:
+        assert '"elementType":"labels"' in st and '"visibility":"off"' in st, st
     assert not page.delta_errors, page.delta_errors

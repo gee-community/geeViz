@@ -89,6 +89,8 @@ async function boot() {
     layerEngine = layers;
     // A basemap switch swaps the labels overlay's style.
     engine.onBasemap(() => layers.sync());
+    // The labels toggle adds or removes the overlay above every layer.
+    engine.onLabels(() => layers.sync());
     Object.assign(engine, {
       layers,
       layerAdded: (layer) => layers.addLayerToMap(layer),

@@ -124,6 +124,33 @@ export function mountShell(store, { mapEl } = {}) {
   }
   store.on("change:panes", renderPanes);
 
+  // Panes are as tall as their content (desktop). The status bar and the map
+  // controls make room only for a pane that reaches down to them: left-reach and
+  // right-reach when a pane's bottom gets to the status bar, right-over-ctl when
+  // the right pane comes down into the band the map controls occupy.
+  function measureReach() {
+    const vh = innerHeight;
+    const statusH = $("#status") ? $("#status").offsetHeight : 0;
+    const bottomOf = (sel) => {
+      const el = $(sel);
+      if (!el || el.offsetParent === null) return 0;
+      return el.getBoundingClientRect().bottom;
+    };
+    const ctl = $("#mapctl");
+    const ctlTop = ctl ? vh - parseFloat(getComputedStyle(ctl).bottom || "0") - ctl.offsetHeight : vh;
+    const lb = bottomOf("#pane-left");
+    const rb = bottomOf("#pane-right");
+    body.classList.toggle("left-reach", lb >= vh - statusH - 1);
+    body.classList.toggle("right-reach", rb >= vh - statusH - 1);
+    body.classList.toggle("right-over-ctl", rb > ctlTop - 8);
+  }
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => requestAnimationFrame(measureReach));
+    ["#pane-left", "#pane-right", "#mapctl"].forEach((sel) => $(sel) && ro.observe($(sel)));
+  }
+  addEventListener("resize", measureReach);
+  measureReach();
+
   function setWidth(side, width) {
     store.update((s) => ({ ...s, panes: { ...s.panes, [side]: { ...s.panes[side], width } } }), "pane-width");
   }

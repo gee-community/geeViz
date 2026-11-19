@@ -174,8 +174,14 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
   body.no-tool .pane-right > *:not(.tools) { display: none !important; }
   body.no-tool .tools { grid-template-columns: 1fr; padding: 10px 6px; }
   body.no-tool .tool { font-size: 10.5px; padding: 8px 0; }
-  body.no-tool .status, body.no-tool .loadbar { right: var(--dz-right-folded); }
-  body.no-tool .mapctl { right: calc(var(--dz-right-folded) + 12px); }
+  body.no-tool .loadbar { right: var(--dz-right-folded); }
+  /* Panes are as tall as their content, so the status bar and the map controls only
+     make room for a pane that actually reaches down to them (shell.js sets the classes). */
+  body.left-reach .status { left: var(--lw, var(--dz-left-default)); }
+  body.right-reach .status { right: var(--rw, var(--dz-right-default)); }
+  body.no-tool.right-reach .status { right: var(--dz-right-folded); }
+  body.right-over-ctl .mapctl { right: calc(var(--rw, var(--dz-right-default)) + 12px); }
+  body.no-tool.right-over-ctl .mapctl { right: calc(var(--dz-right-folded) + 12px); }
   .pane-right { transition: width 0.2s ease; }
 }
 
@@ -284,7 +290,7 @@ input[type="range"].dz.orange:disabled { opacity: 0.5; }
 .yearbadge { left: 50%; top: 14px; transform: translateX(-50%); padding: 4px 14px; border-radius: 999px; background: var(--dz-panel); backdrop-filter: blur(10px);
   border: 1px solid var(--dz-line); font: 600 22px var(--dz-font-mono); color: var(--dz-orange); box-shadow: var(--dz-shadow); }
 .status { left: var(--lw, var(--dz-left-default)); right: var(--rw, var(--dz-right-default)); bottom: 0; height: var(--dz-status-h); display: flex; align-items: center; gap: 16px; padding: 0 12px;
-  background: linear-gradient(transparent, var(--dz-scrim)); color: var(--dz-on-media); font: 11px var(--dz-font-mono); pointer-events: auto; white-space: nowrap; overflow: hidden; }
+  background: var(--dz-panel); backdrop-filter: blur(10px); border-top: 1px solid var(--dz-line); color: var(--dz-ink); font: 11px var(--dz-font-mono); pointer-events: auto; white-space: nowrap; overflow: hidden; }
 body.left-hidden .status, body.left-hidden .loadbar { left: 0; }
 .status .sep { opacity: 0.35; }
 .status .grow { flex: 1; }
@@ -292,6 +298,12 @@ body.left-hidden .status, body.left-hidden .loadbar { left: 0; }
 .loadbar::after { content: ""; position: absolute; top: 0; bottom: 0; width: 30%; background: linear-gradient(90deg, transparent, var(--dz-teal), transparent); animation: dz-lb 1.4s ease-in-out infinite; }
 @keyframes dz-lb { from { left: -30%; } to { left: 100%; } }
 .mapctl { position: absolute; z-index: 3; right: calc(var(--rw, var(--dz-right-default)) + 12px); bottom: 38px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+/* desktop defaults for content-height panes: span the window and hug the right edge;
+   the body.left-reach / right-reach / right-over-ctl rules above make room for a pane that reaches down */
+@media (min-width: 761px) {
+  .status { left: 0; right: 0; }
+  .mapctl { right: 12px; }
+}
 .ctlgrp { display: flex; flex-direction: column; background: var(--dz-panel); backdrop-filter: blur(10px); border: 1px solid var(--dz-line); border-radius: 10px; overflow: hidden; box-shadow: var(--dz-shadow); }
 .ctlgrp .ib { border-radius: 0; color: var(--dz-ink); }
 .ctlgrp .ib.on { background: var(--dz-teal-soft); color: var(--dz-teal); }
@@ -300,6 +312,13 @@ body.left-hidden .status, body.left-hidden .loadbar { left: 0; }
 .bm i { display: block; height: 34px; border-radius: 7px; margin-bottom: 2px; background-size: cover; box-shadow: inset 0 0 0 1px var(--dz-line); }
 .bm.on { color: var(--dz-teal); }
 .bm.on i { box-shadow: 0 0 0 2px var(--dz-teal); }
+/* labels toggle beside the basemaps: a tile-sized button that lights while labels are on */
+.bm-labels { width: 46px; border: 0; background: transparent; padding: 0; color: var(--dz-mute); font-size: 10px; cursor: pointer; text-align: center; }
+.bm-labels i { display: flex; align-items: center; justify-content: center; height: 34px; border-radius: 7px; margin-bottom: 2px; font-size: 18px;
+  box-shadow: inset 0 0 0 1px var(--dz-line); color: var(--dz-mute); }
+.bm-labels[aria-pressed="true"] { color: var(--dz-teal); }
+.bm-labels[aria-pressed="true"] i { color: var(--dz-teal); background: var(--dz-teal-soft); box-shadow: 0 0 0 2px var(--dz-teal); }
+.bm-labels:focus-visible i { outline: 2px solid var(--dz-teal); outline-offset: 1px; }
 @media (prefers-reduced-motion: reduce) { .loadbar::after { animation: none; } .pane, .pane-right { transition: none; } }
 
 /* floating hamburger shows only while the left pane is hidden */
@@ -337,8 +356,10 @@ body.left-hidden .floating-hb { display: inline-grid; }
   .mapctl { right: 10px; top: 64px; bottom: auto; }
   .mapctl .ctlgrp { display: none; }
   .basemaps { flex-direction: column; padding: 4px; }
-  .basemaps .bm:not(.on) { display: none; }
-  body.bm-open .basemaps .bm { display: block; }
+  .basemaps .bm:not(.on), .basemaps .bm-labels { display: none; }
+  body.bm-open .basemaps .bm, body.bm-open .basemaps .bm-labels { display: block; }
+  .bm-labels { width: 40px; }
+  .bm-labels i { height: 30px; }
   .bm { width: 40px; }
   .bm i { height: 30px; }
   .mlogo-btn { width: 38px !important; }

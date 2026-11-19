@@ -67,7 +67,7 @@ def test_hamburger_hides_and_shows(delta_page):
 
 def test_right_pane_folds_without_tool(delta_page):
     page = delta_page(SHELL)
-    page.evaluate("__delta.store.set({tool: 'query'})")
+    page.evaluate("__delta.store.set({tool: 'distance'})")
     page.wait_for_function("Math.abs(document.querySelector('#pane-right').getBoundingClientRect().width - 330) <= 1")
     page.evaluate("__delta.store.set({tool: null})")
     page.wait_for_function("Math.abs(document.querySelector('#pane-right').getBoundingClientRect().width - 64) <= 1")
@@ -84,7 +84,7 @@ def test_tool_buttons_drive_the_store(delta_page):
 
 def test_streetview_hides_everything(delta_page):
     page = delta_page(SHELL)
-    page.evaluate("__delta.store.set({tool: 'query'})")
+    page.evaluate("__delta.store.set({tool: 'distance'})")
     for sel in ("#pane-left", "#pane-right", "#status"):
         assert page.locator(sel).is_visible()
     page.evaluate("__delta.shell.setStreetView(true)")
@@ -256,7 +256,10 @@ def test_drag_left_smaller_and_back(delta_page, scheme):
         assert abs(w - target) <= 2, (target, w)
         assert page.evaluate("localStorage.getItem('delta-left')") == str(round(w))
         assert page.evaluate("__delta.store.get().panes.left.width") == round(w)
-        assert abs(rect(page, "#status")["left"] - rect(page, "#pane-left")["right"]) <= 1
+        # the status bar makes room for the left pane only when the pane reaches down to it
+        reach = "left-reach" in page.evaluate("document.body.className")
+        want_left = rect(page, "#pane-left")["right"] if reach else 0
+        assert abs(rect(page, "#status")["left"] - want_left) <= 1, (reach, want_left)
         # steady state is store driven again: no live inline width left behind
         assert page.evaluate("document.querySelector('#pane-left').style.width") == ""
         assert "resizing" not in page.evaluate("document.body.className")
@@ -328,7 +331,7 @@ def test_drag_updates_store_once_on_release(delta_page, scheme):
 
 def test_drag_right_pane_once_on_release(delta_page):
     page = delta_page(SHELL)
-    page.evaluate("__delta.store.set({tool: 'query'})")
+    page.evaluate("__delta.store.set({tool: 'distance'})")
     page.wait_for_function("Math.abs(document.querySelector('#pane-right').getBoundingClientRect().width - 330) <= 1")
     xs = [1500 - 330 - i * 3 for i in range(60)]
     m = page.evaluate(DRAG, {"side": "right", "xs": xs})
@@ -336,10 +339,13 @@ def test_drag_right_pane_once_on_release(delta_page):
     want = 1500 - xs[-1]
     assert abs(m["duringWidth"] - want) <= 1 and abs(m["finalWidth"] - want) <= 1, m
     assert m["afterUpdates"] == 1, m
-    # map controls and the status bar track the right pane
+    # map controls and the status bar track the right pane when it reaches down to them
+    cls = page.evaluate("document.body.className")
     ctl = rect(page, "#mapctl")
-    assert abs((1500 - ctl["right"]) - (want + 12)) <= 1, ctl
-    assert abs(rect(page, "#status")["right"] - (1500 - want)) <= 1
+    want_ctl = want + 12 if "right-over-ctl" in cls else 12
+    assert abs((1500 - ctl["right"]) - want_ctl) <= 1, (cls, ctl)
+    want_status = 1500 - want if "right-reach" in cls else 1500
+    assert abs(rect(page, "#status")["right"] - want_status) <= 1, cls
 
 
 # ---- the drag always ends (Task 11d fix round 1) ----
@@ -457,7 +463,7 @@ HIT = """([x, y]) => { const e = document.elementFromPoint(x, y); return e ? (e.
 
 def test_grip_hit_area_and_neighbors(delta_page):
     page = delta_page(SHELL)
-    page.evaluate("__delta.store.set({tool: 'query'})")
+    page.evaluate("__delta.store.set({tool: 'distance'})")
     page.wait_for_function("Math.abs(document.querySelector('#pane-right').getBoundingClientRect().width - 330) <= 1")
     for i in range(40):
         page.evaluate("(i) => __delta.api.addLayer({}, {}, 'Layer ' + i)", i)
@@ -507,7 +513,7 @@ def test_grip_affordance_on_hover_and_drag(delta_page, scheme):
 
 def test_real_drag_right_grip_wider_then_narrower(delta_page):
     page = delta_page(SHELL)
-    page.evaluate("__delta.store.set({tool: 'query'})")
+    page.evaluate("__delta.store.set({tool: 'distance'})")
     page.wait_for_function("Math.abs(document.querySelector('#pane-right').getBoundingClientRect().width - 330) <= 1")
     y = page.evaluate("() => { const b = document.querySelector('.grip[data-side=right]').getBoundingClientRect(); return b.top + b.height / 2; }")
     for dx, want in ((-250, 580), (250, 330)):
@@ -519,3 +525,51 @@ def test_real_drag_right_grip_wider_then_narrower(delta_page):
         frames(page)
         assert abs(width(page, "#pane-right") - want) <= 2, (dx, width(page, "#pane-right"))
         assert page.evaluate("__delta.store.get().panes.right.width") == round(width(page, "#pane-right"))
+
+
+# ---- status bar and map controls follow the panes' reach ----
+# Panes are as tall as their content, so the status bar spans the window and the
+# map controls sit at the right edge unless a pane actually comes down to them.
+
+def _reach(page):
+    return page.evaluate("""() => {
+      const r = (s) => document.querySelector(s).getBoundingClientRect();
+      return {status: r('#status'), right: r('#pane-right'), left: r('#pane-left'), ctl: r('#mapctl'),
+              vw: innerWidth, vh: innerHeight, bg: getComputedStyle(document.querySelector('#status')).backgroundColor,
+              cls: document.body.className};
+    }""")
+
+
+def _settle(page):
+    page.wait_for_timeout(350)  # the right pane animates its width for 0.2 s
+    page.evaluate("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
+
+
+def test_short_panes_leave_status_and_controls_at_the_edges(delta_page):
+    page = delta_page(SHELL)
+    page.evaluate("__delta.store.set({tool: 'distance'})")
+    _settle(page)
+    m = _reach(page)
+    assert m["right"]["bottom"] < m["vh"] - 100, m["right"]
+    assert abs(m["status"]["left"]) <= 1 and abs(m["status"]["right"] - m["vw"]) <= 1, m["status"]
+    assert abs(m["ctl"]["right"] - (m["vw"] - 12)) <= 1, m["ctl"]
+    # the status bar has its own background so its text reads over any map
+    assert m["bg"] not in ("rgba(0, 0, 0, 0)", "transparent"), m["bg"]
+
+
+def test_tall_right_pane_pushes_controls_and_status(delta_page):
+    page = delta_page(SHELL)
+    page.evaluate("__delta.store.set({tool: 'distance'})")
+    page.evaluate("""() => { const d = document.createElement('div'); d.id = 'tall-test'; d.style.height = '3000px';
+                             document.querySelector('#results-mount').appendChild(d); }""")
+    _settle(page)
+    m = _reach(page)
+    assert m["right"]["bottom"] >= m["vh"] - 1, m["right"]
+    assert abs(m["ctl"]["right"] - (m["right"]["left"] - 12)) <= 1, (m["ctl"], m["right"])
+    assert abs(m["status"]["right"] - m["right"]["left"]) <= 1, (m["status"], m["right"])
+    # and back when the content goes away
+    page.evaluate("document.querySelector('#tall-test').remove()")
+    _settle(page)
+    m = _reach(page)
+    assert abs(m["ctl"]["right"] - (m["vw"] - 12)) <= 1, m["ctl"]
+    assert abs(m["status"]["right"] - m["vw"]) <= 1, m["status"]

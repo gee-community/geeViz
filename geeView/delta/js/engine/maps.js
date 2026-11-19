@@ -10,7 +10,11 @@ export const DARK_STYLE = [
   { featureType: "poi", stylers: [{ visibility: "off" }] },
 ];
 
-export const BASEMAPS = { satellite: "hybrid", map: "roadmap", dark: "dark" };
+// Basemaps carry no labels of their own: labels come only from the labels
+// overlay above every layer, so they are never hidden by a layer, never drawn
+// twice, and can be turned off with one toggle.
+export const BASEMAPS = { satellite: "satellite", map: "roadmap-base", dark: "dark" };
+const NO_LABELS = [{ elementType: "labels", stylers: [{ visibility: "off" }] }];
 
 // The labels overlay: a labels-only map drawn above every layer, so opaque
 // layers do not hide place names. port of 4map-manager.js labelsMapType
@@ -24,6 +28,13 @@ export function labelsStyleFor(baseStyle) {
   const keep = (s) => (s.elementType && s.elementType.indexOf("labels") === 0) || (s.featureType && !s.elementType && s.stylers.some((x) => x.visibility === "off"));
   return [...LABELS_STYLE, ...(baseStyle || []).filter(keep)];
 }
+// Labels for the satellite basemap look like Google's hybrid labels: light
+// text with a dark halo, readable on imagery.
+export const SATELLITE_LABELS_STYLE = [
+  ...LABELS_STYLE,
+  { elementType: "labels.text.fill", stylers: [{ color: "#ffffff" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#000000" }, { weight: 2 }] },
+];
 // port of smartAddLabelOverlay: on unless the URL says addLabelOverlay=false.
 // The original's urlParams are JSON-parsed (false); Delta's are strings.
 export const labelsEnabled = (params) => String((params || {}).addLabelOverlay) !== "false";
@@ -92,7 +103,7 @@ export function createMap(el, store) {
     center: { lat: num(params.lat, 39.5), lng: num(params.lng, -98.5) },
     zoom: num(params.zoom, 4),
     minZoom: 2,
-    mapTypeId: "hybrid",
+    mapTypeId: "satellite",
     disableDefaultUI: true,
     disableDoubleClickZoom: true,
     clickableIcons: false,
@@ -100,15 +111,19 @@ export function createMap(el, store) {
     streetViewControl: false,
     gestureHandling: "greedy",
   });
-  gmap.mapTypes.set("dark", new g.StyledMapType(DARK_STYLE, { name: "Dark" }));
-  // One labels map type per style, made once; the layer engine stacks the
-  // current one above every layer (engine/layers.js sync).
-  const withLabels = labelsEnabled(params);
-  const labels = withLabels
-    ? { light: new g.StyledMapType(LABELS_STYLE, { name: "Labels" }), dark: new g.StyledMapType(labelsStyleFor(DARK_STYLE), { name: "Dark labels" }) }
-    : null;
+  gmap.mapTypes.set("dark", new g.StyledMapType([...DARK_STYLE, ...NO_LABELS], { name: "Dark" }));
+  gmap.mapTypes.set("roadmap-base", new g.StyledMapType(NO_LABELS, { name: "Map" }));
+  // One labels map type per basemap style, made once; the layer engine stacks
+  // the current one above every layer (engine/layers.js sync). The toggle
+  // (setLabels) starts from the URL (addLabelOverlay=false starts it off).
+  let labelsOn = labelsEnabled(params);
+  const labels = {
+    satellite: new g.StyledMapType(SATELLITE_LABELS_STYLE, { name: "Satellite labels" }),
+    map: new g.StyledMapType(LABELS_STYLE, { name: "Labels" }),
+    dark: new g.StyledMapType(labelsStyleFor(DARK_STYLE), { name: "Dark labels" }),
+  };
 
-  const listeners = { history: [], streetView: [], pick: [], cursor: [], zoom: [], basemap: [] };
+  const listeners = { history: [], streetView: [], pick: [], cursor: [], zoom: [], basemap: [], labels: [] };
   const emit = (k, ...a) => listeners[k].forEach((fn) => fn(...a));
   const on = (k) => (fn) => {
     listeners[k].push(fn);
@@ -121,6 +136,21 @@ export function createMap(el, store) {
     basemap = key;
     gmap.setMapTypeId(BASEMAPS[key]);
     emit("basemap", key);
+  }
+  function setLabels(on) {
+    on = !!on;
+    if (on === labelsOn) return;
+    labelsOn = on;
+    // Remembered the way the original reads it: addLabelOverlay=false in the URL.
+    try {
+      const url = new URL(location.href);
+      if (on) url.searchParams.delete("addLabelOverlay");
+      else url.searchParams.set("addLabelOverlay", "false");
+      if (url.href !== location.href) history.replaceState(history.state, "", url);
+    } catch (e) {
+      /* no URL to update (tests, file pages) */
+    }
+    emit("labels", on);
   }
 
   // ---- centering ----
@@ -274,8 +304,11 @@ export function createMap(el, store) {
     gmap,
     setBasemap,
     basemap: () => basemap,
-    // The labels map type for the current basemap, or null (addLabelOverlay=false).
-    labelsOverlay: () => (labels ? (basemap === "dark" ? labels.dark : labels.light) : null),
+    // The labels map type for the current basemap, or null while labels are off.
+    labelsOverlay: () => (labelsOn ? labels[basemap] : null),
+    labelsOn: () => labelsOn,
+    setLabels,
+    onLabels: on("labels"),
     setCenter,
     centerObject,
     synchronousCenterObject,
