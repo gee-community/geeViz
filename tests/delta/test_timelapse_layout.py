@@ -189,7 +189,7 @@ def test_cumulative_chip(page):
     assert chip.get_attribute("title") == "Show every year up to this one stacked together"
     assert chip.get_attribute("aria-label") == "Cumulative"
     assert chip.get_attribute("aria-pressed") == "false"
-    assert chip.locator("i.ti").count() == 1
+    assert chip.locator("svg").count() == 2  # one icon per state; CSS shows one
     off = page.evaluate("(s) => getComputedStyle(document.querySelector(s)).backgroundColor", "#layer-list .layer.is-tl [data-tl=cumulative]")
     page.evaluate("() => __delta.store.update(s => ({...s, layers: s.layers.map(l => l.kind === 'timelapse' ? {...l, timelapse: {...l.timelapse, cumulative: true}} : l)}), 'test')")
     assert chip.get_attribute("aria-pressed") == "true"
@@ -207,6 +207,38 @@ def test_cumulative_chip(page):
     assert on == play_on and on != off, (on, play_on, off)
     # very narrow rows: the chip may go icon only but never wraps mid-word
     set_left_width(page, LEFT_MIN)
-    h = page.evaluate("(s) => { const c = document.querySelector(s); return [c.getBoundingClientRect().height, c.querySelector('i').getBoundingClientRect().height]; }", "#layer-list .layer.is-tl [data-tl=cumulative]")
+    h = page.evaluate("(s) => { const c = document.querySelector(s); return [c.getBoundingClientRect().height, Array.from(c.querySelectorAll('svg')).find(v => v.getClientRects().length).getBoundingClientRect().height]; }", "#layer-list .layer.is-tl [data-tl=cumulative]")
     assert h[0] < 2 * max(h[1], 14), h
 
+
+
+ICON = """(s) => {
+  const c = document.querySelector(s);
+  const shown = Array.from(c.querySelectorAll('svg')).filter(v => v.getClientRects().length > 0);
+  return shown.map(v => ({state: v.dataset.state, w: v.getBoundingClientRect().width, h: v.getBoundingClientRect().height,
+    joined: !!v.querySelector('path[d="M4 12h12"]'), stroke: v.getAttribute('stroke'), fill: v.getAttribute('fill')}));
+}"""
+CHIP = "#layer-list .layer.is-tl [data-tl=cumulative]"
+
+
+def set_cumulative(page, on):
+    page.evaluate("(on) => __delta.store.update(s => ({...s, layers: s.layers.map(l => l.kind === 'timelapse' ? {...l, timelapse: {...l.timelapse, cumulative: on}} : l)}), 'test')", on)
+
+
+@pytest.mark.parametrize("scheme", ["dark", "light"])
+@pytest.mark.parametrize("w", [LEFT_DEFAULT, LEFT_MIN])
+def test_cumulative_icon_switches_with_state(delta_page, scheme, w):
+    page = open_page(delta_page, color_scheme=scheme)
+    set_left_width(page, w)
+    # icon only in the narrowest rows, word plus icon otherwise
+    assert page.locator(CHIP + " span").is_visible() is (w != LEFT_MIN)
+    off = page.evaluate(ICON, CHIP)
+    assert [i["state"] for i in off] == ["off"] and not off[0]["joined"], off
+    assert abs(off[0]["w"] - 16) <= 0.5 and abs(off[0]["h"] - 16) <= 0.5, off
+    assert off[0]["stroke"] == "currentColor" and off[0]["fill"] == "none", off
+    set_cumulative(page, True)
+    assert page.get_attribute(CHIP, "aria-pressed") == "true"
+    on = page.evaluate(ICON, CHIP)
+    assert [i["state"] for i in on] == ["on"] and on[0]["joined"], on
+    set_cumulative(page, False)
+    assert [i["state"] for i in page.evaluate(ICON, CHIP)] == ["off"]

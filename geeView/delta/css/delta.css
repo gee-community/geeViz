@@ -227,7 +227,10 @@ input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border:
 /* Cumulative: a labeled chip, outlined when off, the play button's accent fill when on */
 .tl-cum { display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 26px; padding: 0 9px 0 7px; border-radius: 7px; flex: none; cursor: pointer;
   border: 1px solid color-mix(in srgb, var(--dz-orange) 45%, var(--dz-line)); background: transparent; color: var(--dz-ink); font: 600 11.5px var(--dz-font-body); white-space: nowrap; }
-.tl-cum .ti { font-size: 14px; }
+/* icon: frames as ticks on the time slider; off = only the current frame shown,
+   on = every frame from the start through the current one. It switches with aria-pressed. */
+.tl-cum-ic { width: 16px; height: 16px; flex: none; }
+.tl-cum[aria-pressed="true"] .tl-cum-ic[data-state="off"], .tl-cum:not([aria-pressed="true"]) .tl-cum-ic[data-state="on"] { display: none; }
 .tl-cum:hover { background: var(--dz-raise); }
 .tl-cum.on { background: var(--dz-orange); border-color: var(--dz-orange); color: var(--dz-on-accent); }
 .tl-cum:disabled { opacity: 0.4; cursor: default; background: transparent; }
