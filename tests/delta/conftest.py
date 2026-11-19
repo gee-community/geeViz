@@ -95,13 +95,24 @@ def live_map(_browser):
         Map = gv.mapper()
         Map.setSkin("delta")
         build(Map)
-        url = Map.view(open_browser=False)
+        # view() returns None; it hands the viewer URL to webbrowser.open, so
+        # capture it there (nothing opens). It uses the already-running local
+        # eeCreds proxy.
+        opened = []
+        orig = gv.webbrowser.open
+        gv.webbrowser.open = lambda u, new=0, **k: opened.append(u) or True
+        try:
+            Map.view(open_browser=True, open_iframe=False)
+        finally:
+            gv.webbrowser.open = orig
+        assert len(opened) == 1, opened
+        url = opened[0]
         ctx = _browser.new_context(viewport={"width": 1500, "height": 900})
         contexts.append(ctx)
         page = ctx.new_page()
         _collect_errors(page)
         page.goto(url)
-        page.wait_for_function("window.__delta !== undefined", timeout=60000)
+        page.wait_for_function("window.__delta !== undefined && window.__delta.ready === true", timeout=90000)
         deadline = time.time() + 60
         while time.time() < deadline:
             if not page.evaluate("window.__delta.store.get().layers.some(l => l.loading)"):

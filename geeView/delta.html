@@ -102,6 +102,20 @@
       <div class="grip" data-side="right"></div>
     </aside>
 
+    <div class="mapctl" id="mapctl">
+      <div class="ctlgrp">
+        <button class="ib" data-act="zoom-in" title="Zoom in"><i class="ti ti-plus"></i></button>
+        <button class="ib" data-act="zoom-out" title="Zoom out"><i class="ti ti-minus"></i></button>
+        <button class="ib" data-act="fullscreen" title="Full screen"><i class="ti ti-maximize"></i></button>
+        <button class="ib" id="svBtn" title="Street View: show coverage, then click where to look"><i class="ti ti-walk"></i></button>
+      </div>
+      <div class="basemaps">
+        <button class="bm on" data-bm="satellite"><i style="background-image: url(https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/9/196/98)"></i>Satellite</button>
+        <button class="bm" data-bm="map"><i style="background-image: url(https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/9/196/98)"></i>Map</button>
+        <button class="bm" data-bm="dark"><i style="background-image: url(https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/9/196/98)"></i>Dark</button>
+      </div>
+    </div>
+
     <div id="status" class="hud status"></div>
     <div id="tpl"><template></template></div>
   </body>

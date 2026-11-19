@@ -1,11 +1,17 @@
 // Delta entry point. Boots the store, the UI shell and the Map API.
-// Until the real engine lands, every run (including ?delta-test=shell) uses a
-// stub engine with no Google Maps or Earth Engine, so tests drive the shell
-// through window.__delta.store.
+//
+// Real boot: Google map, Earth Engine, then the generated runGeeViz(), then
+// the compat shim is installed with the real api and map so every call queued
+// while the page loaded replays in order. `?delta-test=shell` boots a stub
+// engine instead (no Google Maps, no Earth Engine) for the shell tests.
 import { createStore } from "./state.js";
 import { createMapApi } from "./api.js";
 import { mountShell, initialShellState } from "./ui/shell.js";
 import { mountStatus } from "./ui/status.js";
+import { mountMapControls } from "./ui/mapctl.js";
+import { mountSearch } from "./ui/search.js";
+import { createMap, whenGoogleReady } from "./engine/maps.js";
+import { initEE, describeEEFailure } from "./engine/ee.js";
 
 const store = createStore();
 store.set(initialShellState(store), "boot");
@@ -13,9 +19,66 @@ store.set(initialShellState(store), "boot");
 const shell = mountShell(store, { mapEl: document.getElementById("map") });
 const status = mountStatus(store, document.getElementById("status"), document.getElementById("loadbar"));
 
-// The stub engine has no hooks: every engine call is ignored. The real engine
-// replaces it in a later task.
-const engine = {};
-const api = createMapApi(store, engine);
+const notice = (msg) => store.update((s) => ({ ...s, notices: [...s.notices, msg] }), "notice");
 
-window.__delta = { store, api, engine, shell, status };
+function plainText(html) {
+  const doc = new DOMParser().parseFromString(String(html || ""), "text/html");
+  return (doc.body.textContent || "").trim();
+}
+
+async function boot() {
+  const delta = (window.__delta = { store, shell, status, ready: false, eeError: null });
+  try {
+    await whenGoogleReady();
+  } catch (e) {
+    delta.api = createMapApi(store, {});
+    notice(String(e.message));
+    delta.ready = true;
+    return;
+  }
+  const engine = createMap(document.getElementById("map"), store);
+  const api = createMapApi(store, engine);
+  Object.assign(delta, { api, engine });
+
+  mountMapControls(engine, shell, status);
+  mountSearch(engine, { notify: notice });
+
+  try {
+    await initEE(window.urlParams);
+  } catch (e) {
+    delta.eeError = String(e && e.message ? e.message : e);
+    notice(plainText(describeEEFailure(e, window.urlParams)));
+  }
+
+  if (!delta.eeError && typeof window.runGeeViz === "function") {
+    try {
+      window.runGeeViz();
+    } catch (e) {
+      notice("The map script failed: " + (e && e.message));
+    }
+  }
+
+  window.__deltaCompat.install({
+    Map: api,
+    map: engine.gmap,
+    areaChart: api.areaChart,
+    synchronousCenterObject: engine.synchronousCenterObject,
+    globals: (name, value) => api.setGlobal(name, value),
+    showMessage: (title, html) => {
+      const text = plainText(html);
+      if (text || (title && title !== "Loading")) notice(title ? title + (text ? ": " + text : "") : text);
+    },
+    closeLoading: () => {},
+    notify: notice,
+  });
+  delta.ready = true;
+}
+
+if (new URLSearchParams(location.search).get("delta-test") === "shell") {
+  // The stub engine has no hooks: every engine call is ignored.
+  const engine = {};
+  const api = createMapApi(store, engine);
+  window.__delta = { store, api, engine, shell, status, ready: true };
+} else {
+  boot();
+}
