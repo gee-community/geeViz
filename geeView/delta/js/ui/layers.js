@@ -43,6 +43,16 @@ export function legendsToOpen(layers, seen) {
   return open;
 }
 
+// How a row shows its tiles loading (layer.progress from engine/tiles.js):
+// the name row fills left to right while tiles on screen are still coming,
+// and tiles that failed after every retry show as a count to try again.
+export function progressView(l) {
+  const p = l && l.visible ? l.progress : null;
+  if (!p || !p.total) return { show: false, pct: 0, failed: 0 };
+  const settled = p.loaded + p.failed;
+  return { show: settled < p.total, pct: Math.round((settled / p.total) * 1000) / 10, failed: p.failed };
+}
+
 // The original keeps urlParams values JSON-encoded in the query string.
 function readStoredOrders(urlParams) {
   let v = urlParams && urlParams.layerOrders;
@@ -145,8 +155,10 @@ export function mountLayers(store, mountEl, opts = {}) {
       legbtn: el.querySelector(".legbtn"),
       swatch: el.querySelector(".lsw"),
       legendEl: el.querySelector(".legend"),
+      tileErr: el.querySelector(".tile-err"),
     };
     const id = layer.id;
+    parts.tileErr.addEventListener("click", () => opts.retryTiles && opts.retryTiles(id));
     if (layer.kind === "select") parts.name.title = "Select layer: with Chart area and Select on, click a feature to select it";
     const toggle = () => {
       const l = store.get().layers.find((x) => x.id === id);
@@ -193,7 +205,18 @@ export function mountLayers(store, mountEl, opts = {}) {
     el.classList.toggle("is-select", l.kind === "select");
     el.classList.toggle("err", !!l.error);
     el.title = l.error ? "Layer failed to load: " + l.error : "";
-    parts.spin.hidden = !(l.loading && l.visible);
+    // tile layers show their progress in the row; the spinner is for the rest
+    const pv = progressView(l);
+    el.classList.toggle("prog", pv.show);
+    if (pv.show) el.style.setProperty("--prog", pv.pct + "%");
+    parts.spin.hidden = !(l.loading && l.visible) || pv.show || !!(l.progress && l.progress.total);
+    parts.tileErr.hidden = !pv.failed;
+    if (pv.failed) {
+      const t = pv.failed + (pv.failed === 1 ? " tile" : " tiles") + " failed to load after retrying. Click to try again.";
+      parts.tileErr.title = t;
+      parts.tileErr.setAttribute("aria-label", t);
+      parts.tileErr.querySelector(".tile-err-n").textContent = String(pv.failed);
+    }
     if (last.opacity !== l.opacity) {
       if (Number(parts.range.value) / 100 !== l.opacity) parts.range.value = String(Math.round(l.opacity * 100));
       paintRange(parts.range, l.opacity);

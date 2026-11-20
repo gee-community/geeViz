@@ -12,6 +12,7 @@
 // hooks below, and sync() stacks the frames in the timelapse's list slot.
 import { prepareViz, createColorCycle, normVecStyle } from "./viz.js";
 import { createTimelapse } from "./timelapse.js";
+import { createTileOverlay, progressOf } from "./tiles.js";
 import { windQueryItem, WIND_UNIT_PROPS } from "./wind.js";
 
 const TILE_TYPES = ["geeImage", "geeImageCollection", "geeVectorImage", "tileMapService"];
@@ -164,21 +165,32 @@ export function createLayerEngine(gmap, store, deps = {}) {
   }
 
   // ---- tile layers ----
-  // A tile overlay counts the tiles it is asked for and reports loading until
-  // Google's tilesloaded. port of 2templates.js addLayer geeAltService.
+  // Tile overlays load their own tiles (engine/tiles.js), so each layer knows
+  // how many of the tiles on screen are in (layer.progress, the row's
+  // progress fill) and failed tiles are retried. port of 2templates.js addLayer
+  // geeAltService (which counted requests and waited on tilesloaded).
+  function reportProgress(r) {
+    const overlays = r.timelapse ? r.frames.map((f) => f.overlay).filter(Boolean) : r.overlay && r.overlay.stats ? [r.overlay] : [];
+    const p = progressOf(overlays.map((o) => o.stats()));
+    const shown = r.timelapse ? r.framesShown : r.visible;
+    const settled = p.loaded + p.failed;
+    if (r.timelapse) frameLoading(r, p);
+    else setLoading(r, !!shown && p.total > 0 && settled < p.total);
+    const next = { total: p.total, loaded: p.loaded, failed: p.failed };
+    const prev = r.progress || {};
+    if (prev.total === next.total && prev.loaded === next.loaded && prev.failed === next.failed) return;
+    r.progress = next;
+    patch(r.id, { progress: next }, "layer-progress");
+  }
   function tileOverlay(r, urlFor, extra = {}) {
-    const overlay = new g.ImageMapType({
-      tileSize: new g.Size(256, 256),
+    return createTileOverlay({
+      google: g,
       ...extra,
-      getTileUrl: (coord, zoom) => {
-        r.requests++;
-        if (r.visible) setLoading(r, true);
-        return urlFor(coord, zoom);
-      },
+      opacity: r.opacity,
+      urlFor,
+      onRequest: () => r.requests++,
+      onProgress: () => reportProgress(r),
     });
-    overlay.addListener("tilesloaded", () => setLoading(r, false));
-    overlay.setOpacity(r.opacity);
-    return overlay;
   }
 
   function eeTileLayer(r, item) {
@@ -268,8 +280,10 @@ export function createLayerEngine(gmap, store, deps = {}) {
   // asked for; the timelapse reports loading until its frames have map
   // services and, while shown, until every frame's tiles are in.
   // An off timelapse never reports loading, even while its frames load.
-  function frameLoading(r) {
-    setLoading(r, !!r.visible && (!r.ready || (r.framesShown && r.pending.size > 0)));
+  function frameLoading(r, p) {
+    if (!p) p = progressOf((r.frames || []).map((f) => f.overlay).filter(Boolean).map((o) => o.stats()));
+    const pending = p ? p.total > 0 && p.loaded + p.failed < p.total : false;
+    setLoading(r, !!r.visible && (!r.ready || (r.framesShown && pending)));
   }
   const frameHooks = {
     store,
@@ -285,19 +299,8 @@ export function createLayerEngine(gmap, store, deps = {}) {
       const r = recs.get(id);
       if (!r || !r.frames[i]) return;
       const tileUrl = (coord, zoom) => tilesUrl.replace("{x}", coord.x).replace("{y}", coord.y).replace("{z}", zoom);
-      const overlay = new g.ImageMapType({
-        tileSize: new g.Size(256, 256),
-        getTileUrl: (coord, zoom) => {
-          r.requests++;
-          r.pending.add(i);
-          if (r.framesShown) setLoading(r, true);
-          return tileUrl(coord, zoom);
-        },
-      });
-      overlay.addListener("tilesloaded", () => {
-        r.pending.delete(i);
-        frameLoading(r);
-      });
+      // every frame's tiles count toward the timelapse's progress
+      const overlay = tileOverlay(r, tileUrl);
       overlay.setOpacity(r.frames[i].opacity);
       r.frames[i].overlay = overlay;
       r.frames[i].tileUrl = tileUrl;
@@ -516,7 +519,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
       const frames = r.frames.map((f) => ({ onMap: !!f.overlay && omt.includes(f.overlay), opacity: f.overlay ? f.overlay.getOpacity() : 0 }));
       return { requests: r.requests, loading: r.loading, layerType: r.layerType, onMap: frames.some((f) => f.onMap), frames };
     }
-    return { requests: r.requests, loading: r.loading, layerType: r.layerType, onMap: !!(r.overlay && (r.tileType ? omt.includes(r.overlay) : r.overlay.getMap())) };
+    return { requests: r.requests, loading: r.loading, layerType: r.layerType, progress: r.overlay && r.overlay.stats ? r.overlay.stats() : null, onMap: !!(r.overlay && (r.tileType ? omt.includes(r.overlay) : r.overlay.getMap())) };
   };
   // The wind layers, for engine/wind.js: each with its stack slot, its tile
   // url function (not counted as a request: the particles fetch their own
@@ -566,5 +569,12 @@ export function createLayerEngine(gmap, store, deps = {}) {
   // The labels overlay is on the map before any layer is.
   sync();
 
-  return { sync, addLayerToMap, setLayerVisible, setLayerOpacity, applyOrder, removeLayer, zOrder, slotOrder, stats, timelapse, queryTarget, windSources, onChange, setLayerLoading };
+  // Ask again for a layer's tiles that ran out of retries; the number asked for.
+  function retryTiles(id) {
+    const r = recs.get(id);
+    if (!r) return 0;
+    const overlays = r.timelapse ? r.frames.map((f) => f.overlay).filter(Boolean) : r.overlay && r.overlay.retryFailed ? [r.overlay] : [];
+    return overlays.reduce((n, o) => n + o.retryFailed(), 0);
+  }
+  return { sync, addLayerToMap, setLayerVisible, setLayerOpacity, applyOrder, removeLayer, zOrder, slotOrder, stats, timelapse, queryTarget, windSources, onChange, setLayerLoading, retryTiles };
 }

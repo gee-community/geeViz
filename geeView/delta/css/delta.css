@@ -209,7 +209,13 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
   --op-w-inline: clamp(64px, calc(100cqw - 250px), 180px); --op-w-stack: clamp(110px, calc(100cqw - 120px), 240px); }
 .layer.off .lname { color: var(--dz-mute); }
 .layer.err .lname { color: var(--dz-orange); }
-.lrow { display: flex; align-items: center; gap: var(--lrow-gap); }
+.lrow { display: flex; align-items: center; gap: var(--lrow-gap); border-radius: 6px; }
+/* tiles loading: the name row fills left to right with the share of on-screen tiles in */
+.layer.prog > .lrow { background: linear-gradient(90deg, var(--dz-teal-soft) var(--prog, 0%), transparent var(--prog, 0%)); }
+/* tiles that failed after every retry: a count to click and try again */
+.tile-err { display: inline-flex; align-items: center; gap: 2px; flex: none; border: 0; border-radius: 6px; padding: 1px 5px; background: var(--dz-orange-soft); color: var(--dz-orange); font: 600 11px var(--dz-font-mono); cursor: pointer; }
+.tile-err[hidden] { display: none; }
+.tile-err:focus-visible { outline: 2px solid var(--dz-orange); outline-offset: 1px; }
 .tgl { width: 13px; height: 13px; border-radius: 50%; border: 1.5px solid var(--dz-mute); background: transparent; padding: 0; flex: none; cursor: pointer; }
 .layer:not(.off) .tgl { background: var(--dz-teal); border-color: var(--dz-teal); box-shadow: inset 0 0 0 2px var(--dz-solid); }
 .tgl:focus-visible, .legbtn:focus-visible { outline: 2px solid var(--dz-teal); outline-offset: 1px; }

@@ -32,7 +32,11 @@ const status = mountStatus(store, document.getElementById("status"), document.ge
 // Timelapse controllers live in the layer engine, which starts after Google loads.
 let layerEngine = null;
 const timelapseOf = (id) => (layerEngine ? layerEngine.timelapse(id) : null);
-const layersUI = mountLayers(store, document.getElementById("layers-mount"), { timelapse: timelapseOf });
+const layersUI = mountLayers(store, document.getElementById("layers-mount"), {
+  timelapse: timelapseOf,
+  // the row's failed-tiles button
+  retryTiles: (id) => (layerEngine ? layerEngine.retryTiles(id) : 0),
+});
 const timelapseHud = mountTimelapseHud(store, timelapseOf, {
   badge: document.getElementById("yearbadge"),
   player: document.getElementById("mplayer"),
