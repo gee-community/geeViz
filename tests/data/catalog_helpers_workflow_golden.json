@@ -1,0 +1,121 @@
+{
+  "artifacts": [
+    [
+      "projects_example_assets_image.jsonnet",
+      "{\n  \"gee_schema\": \"[\\n  {\\n    name: \\\"VALUE\\\",\\n    description: \\\"Value.\\\",\\n    type: ee_const.var_type.int,\\n  },\\n  {\\n    name: \\\"LABEL\\\",\\n    description: \\\"Label.\\\",\\n    type: ee_const.var_type.string,\\n  },\\n  {\\n    name: \\\"RATIO\\\",\\n    description: \\\"Ratio.\\\",\\n    type: ee_const.var_type.double,\\n  },\\n]\",\n  \"eo_bands\": \"[\\n  {\\n    name: \\\"red\\\",\\n    \\\"gee:units\\\": units.percent,\\n  },\\n]\",\n  \"gee_visualizations\": \"[\\n  {\\n    display_name: \\\"Red\\\",\\n    bands: [\\n      \\\"red\\\",\\n    ],\\n  },\\n]\"\n}"
+    ],
+    [
+      "nested/note.txt",
+      "caf\u00e9\n"
+    ]
+  ],
+  "blocks": {
+    "eo_bands": "[\n  {\n    name: \"red\",\n    \"gee:units\": units.percent,\n  },\n]",
+    "gee_schema": "[\n  {\n    name: \"VALUE\",\n    description: \"Value.\",\n    type: ee_const.var_type.int,\n  },\n  {\n    name: \"LABEL\",\n    description: \"Label.\",\n    type: ee_const.var_type.string,\n  },\n  {\n    name: \"RATIO\",\n    description: \"Ratio.\",\n    type: ee_const.var_type.double,\n  },\n]",
+    "gee_visualizations": "[\n  {\n    display_name: \"Red\",\n    bands: [\n      \"red\",\n    ],\n  },\n]"
+  },
+  "discovery": {
+    "<TMP>/delivery/Tif/item_green.tif": {
+      "bandName": "green",
+      "gcsURI": "gs://bucket/data/item_green.tif",
+      "noDataValue": 255,
+      "pyramidingPolicy": "MODE"
+    },
+    "<TMP>/delivery/Tif/item_red.tif": {
+      "bandName": "red",
+      "gcsURI": "gs://bucket/data/item_red.tif",
+      "noDataValue": 255,
+      "pyramidingPolicy": "MODE"
+    }
+  },
+  "manifest": [
+    {
+      "asset_id": "projects/example/assets/image",
+      "bands": [
+        {
+          "bandName": "red",
+          "gcsURI": "gs://bucket/data/item_red.tif",
+          "noDataValue": 255,
+          "pyramidingPolicy": "MODE",
+          "source_path": "<TMP>/delivery/Tif/item_red.tif"
+        },
+        {
+          "bandName": "green",
+          "gcsURI": "gs://bucket/data/item_green.tif",
+          "noDataValue": 255,
+          "pyramidingPolicy": "MODE",
+          "source_path": "<TMP>/delivery/Tif/item_green.tif"
+        }
+      ],
+      "image_name": "example",
+      "properties": {
+        "next": 2025,
+        "year": 2024
+      }
+    }
+  ],
+  "preview": {
+    "asset_id": "projects/example/assets/image",
+    "bands": [
+      {
+        "bandName": "red",
+        "gcsURI": "gs://bucket/data/item_red.tif",
+        "noDataValue": 255,
+        "pyramidingPolicy": "MODE",
+        "source_path": "<TMP>/delivery/Tif/item_red.tif"
+      },
+      {
+        "bandName": "green",
+        "gcsURI": "gs://bucket/data/item_green.tif",
+        "noDataValue": 255,
+        "pyramidingPolicy": "MODE",
+        "source_path": "<TMP>/delivery/Tif/item_green.tif"
+      }
+    ],
+    "image_name": "example",
+    "properties": {
+      "next": 2025,
+      "year": 2024
+    }
+  },
+  "profiles": [
+    {
+      "conversion": "round_nearest",
+      "data_type": "uint8",
+      "description": "red",
+      "name": "red",
+      "pyramiding_policy": "MODE",
+      "source_location": "root",
+      "source_suffix": "_red.tif",
+      "source_valid_values": [
+        0.0,
+        1.0
+      ],
+      "valid_max": 10.0,
+      "valid_min": 0.0,
+      "value_map": {
+        "0.0": 0,
+        "1.0": 2
+      }
+    },
+    {
+      "conversion": "round_nearest",
+      "data_type": "uint8",
+      "description": "green",
+      "name": "green",
+      "pyramiding_policy": "MODE",
+      "source_location": "root",
+      "source_suffix": "_green.tif",
+      "source_valid_values": [
+        0.0,
+        1.0
+      ],
+      "valid_max": 10.0,
+      "valid_min": 0.0,
+      "value_map": {
+        "0.0": 0,
+        "1.0": 2
+      }
+    }
+  ]
+}

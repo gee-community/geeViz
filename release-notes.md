@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### geeViz.eeCatalogHelpers — new catalog planning package; hardened asset manager
+
+- **New `geeViz.eeCatalogHelpers` package.** Offline-safe (standard library
+  only at import) helpers for text/parsing, Jsonnet rendering, image
+  properties, ingest planning (`BandProfile`, `PlannedBand`, `PlannedImage`,
+  `build_planned_bands`, `write_manifest_preview`), discovery, catalog
+  artifacts and table schemas. Optional GDAL raster helpers
+  (`convert_tif_to_cog`, `confirm_cog`, `validate_tif_for_ingest`) load GDAL
+  only when called. `ingest_planned_image` lazily submits a planned image
+  through `assetManagerLib`. See `docs/eecataloghelpers.md`.
+- **`ingestFromGCSImagesAsBands` no longer mutates its inputs.** The caller's
+  list and `properties` are copied; entries are validated (`gs://` URI,
+  band name, pyramiding policy, numeric nodata) before anything is submitted.
+  The manifest uses `tileset_id`, `pyramiding_policy` and `missing_data`
+  (camel-case input keys are unchanged), and the `startIngestion` result is
+  returned.
+- **New `assetManagerLib.upload_tif`**: strict, shell-free `gcloud` upload to
+  an explicit object URI that raises with diagnostics on failure (and
+  `FileExistsError` rather than a silent skip when the object exists and
+  `overwrite=False`).
+- **New exception-raising asset operations** in `assetManagerLib`:
+  `ensure_asset_folder/path/parent_asset_path`, `get_asset`,
+  `get_asset_if_exists`, `list_child_asset_basenames`,
+  `find_missing_collection_children`, `copy_asset`, `copy_collection`,
+  `promote_assets_to_catalog`, `normalize_asset_type`, `asset_basename`.
+- Legacy camel-case functions (`uploadTifToGCS`, `batchCopy`,
+  `ee_asset_exists`, `create_asset`, …) are unchanged.
+
 ### geeViz.esriLib — uncached services draw, feature layers load faster
 
 - **Uncached Image Services draw.** ``addEsriImageService`` used

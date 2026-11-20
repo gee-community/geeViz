@@ -62,6 +62,7 @@ Developed by [RedCastle Resources](https://www.redcastleresources.com/), geeViz 
 
 - [geeViz Documentation and API Reference](https://geeviz.org/)
 - See [`examples/`](examples) for Jupyter/Colab notebooks and scripts.
+- [`eeCatalogHelpers` guide](docs/eecataloghelpers.md): offline catalog planning, manifest previews, strict GCS upload and asset promotion.
 - Need help? Email us at [info@geeviz.org](mailto:info@geeviz.org).
 
 ---

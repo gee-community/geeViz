@@ -30,6 +30,10 @@ geeViz.assetManagerLib includes functions for copying, deleting, uploading, chan
 import geeViz.geeView
 import sys, ee, os, shutil, subprocess, datetime, calendar, json, glob
 import time, logging, pdb
+import collections.abc
+import numbers
+import re
+from pathlib import Path
 
 taskLimit = 10
 # %%
@@ -424,6 +428,59 @@ def uploadTifToGCS(tif, gcsBucket, overwrite=False):
     call.wait()
 
 
+def upload_tif(local_tif, gcs_uri, overwrite=False):
+    """
+    Uploads one TIFF to an explicit GCS object URI using the gcloud CLI (strict).
+
+    Unlike ``uploadTifToGCS`` this requires a full ``gs://bucket/object.tif``
+    destination, runs gcloud without a shell, and raises on any failure.
+
+    Args:
+        local_tif (str | Path): Path to an existing local file.
+        gcs_uri (str): Destination object URI beginning with ``gs://``.
+        overwrite (bool, optional): Replace an existing object. Defaults to False (no-clobber).
+
+    Raises:
+        FileNotFoundError: The local file or the gcloud executable is missing.
+        ValueError: The destination is not an explicit gs:// object URI.
+        FileExistsError: The object exists and ``overwrite`` is False.
+        RuntimeError: gcloud exited with a non-zero status.
+
+    Example:
+        >>> upload_tif('/tmp/image.tif', 'gs://mybucket/folder/image.tif')
+    """
+    source = Path(local_tif)
+    if not source.is_file():
+        raise FileNotFoundError(f"Input TIFF does not exist: {source}")
+    if not isinstance(gcs_uri, str) or not gcs_uri.startswith("gs://"):
+        raise ValueError(f"Expected a gs:// destination URI, received: {gcs_uri!r}")
+    if "/" not in gcs_uri[len("gs://"):].strip("/") or gcs_uri.endswith("/"):
+        raise ValueError(f"Expected an explicit gs://<bucket>/<object> destination URI, received: {gcs_uri}")
+    executable = shutil.which("gcloud") or shutil.which("gcloud.cmd") or shutil.which("gcloud.exe")
+    if executable is None:
+        raise FileNotFoundError(
+            "Could not find the Google Cloud CLI executable on PATH. "
+            "Open a shell where 'gcloud --version' works and retry."
+        )
+    if not overwrite:
+        # ``gcloud storage cp -n`` exits 0 and silently skips an existing object,
+        # so check first and fail loudly instead of leaving a stale object behind.
+        existing = subprocess.run([executable, "storage", "ls", gcs_uri], capture_output=True, text=True)
+        if existing.returncode == 0:
+            raise FileExistsError(f"Destination already exists (pass overwrite=True to replace it): {gcs_uri}")
+    command = [executable, "storage", "cp", str(source), gcs_uri]
+    if not overwrite:
+        command.append("-n")
+    result = subprocess.run(command, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(
+            "Failed to upload TIFF to GCS.\n"
+            f"Local file: {source}\nDestination: {gcs_uri}\n"
+            f"Exit code: {result.returncode}\nstdout: {result.stdout.strip()}\n"
+            f"stderr: {result.stderr.strip()}"
+        )
+
+
 def upload_to_gee(
     image_dir,
     gs_bucket,
@@ -791,6 +848,181 @@ def verify_path(path):
         sys.exit(1)
 
 
+# Earth Engine reports a missing asset as, e.g.,
+#   "Asset 'projects/p/assets/a' does not exist or doesn't allow this operation."
+# (it deliberately does not distinguish missing from unreadable). Match only that
+# shape so unrelated failures (quota, bad project, transport errors) still raise
+# and an asset path that merely contains "404" is not mistaken for a miss.
+_NOT_FOUND_PATTERN = re.compile(
+    r"^(?:requested )?asset\b(?: '[^']*')? (?:does not exist|not found)\b",
+    re.IGNORECASE,
+)
+_CONTAINER_TYPES = ("folder", "imagecollection")
+
+
+def _is_not_found_error(exc):
+    return bool(_NOT_FOUND_PATTERN.match(str(exc).strip()))
+
+
+def _require_projects_path(asset_path, min_parts, shape):
+    parts = asset_path.split("/") if isinstance(asset_path, str) else []
+    if len(parts) < min_parts or parts[0] != "projects" or parts[2] != "assets" or not all(parts):
+        raise ValueError(f"Expected an Earth Engine path like '{shape}'; received: {asset_path!r}")
+    return parts
+
+
+def normalize_asset_type(asset_type):
+    """Normalizes EE asset type values (e.g. ``IMAGE_COLLECTION`` -> ``imagecollection``)."""
+    if not asset_type or not isinstance(asset_type, str):
+        return ""
+    return asset_type.replace("_", "").lower()
+
+
+def asset_basename(asset):
+    """Returns the last path component of an asset dict's ``id`` or ``name``."""
+    asset_id = asset.get("id") or asset.get("name") or ""
+    if not isinstance(asset_id, str):
+        return ""
+    return asset_id.rsplit("/", 1)[-1]
+
+
+def get_asset(asset_path):
+    """Returns asset metadata; raises RuntimeError (chained to the EE error) on any failure."""
+    try:
+        asset = ee.data.getAsset(asset_path)
+    except ee.EEException as exc:
+        raise RuntimeError(f"Failed to get Earth Engine asset: {asset_path}") from exc
+    if not isinstance(asset, dict):
+        raise RuntimeError(f"Unexpected Earth Engine asset response for: {asset_path}")
+    return asset
+
+
+def get_asset_if_exists(asset_path):
+    """Returns asset metadata, or None only for a genuine not-found response.
+
+    Authorization, quota, network and other errors raise RuntimeError.
+    """
+    try:
+        asset = ee.data.getAsset(asset_path)
+    except ee.EEException as exc:
+        if _is_not_found_error(exc):
+            return None
+        raise RuntimeError(f"Failed to get Earth Engine asset: {asset_path}") from exc
+    if not isinstance(asset, dict):
+        raise RuntimeError(f"Unexpected Earth Engine asset response for: {asset_path}")
+    return asset
+
+
+def ensure_asset_folder(folder_path):
+    """Creates an EE folder if absent; raises if the path exists as a non-container asset."""
+    asset = get_asset_if_exists(folder_path)
+    if asset is None:
+        try:
+            ee.data.createAsset({"type": "FOLDER"}, folder_path)
+        except ee.EEException as exc:
+            raise RuntimeError(f"Failed to create Earth Engine folder: {folder_path}") from exc
+        return
+    if normalize_asset_type(asset.get("type")) not in _CONTAINER_TYPES:
+        raise RuntimeError(f"Existing asset is not a folder or collection: {folder_path} (type={asset.get('type')})")
+
+
+def ensure_asset_path(asset_path):
+    """Ensures every folder in a ``projects/<project>/assets/<folder>/...`` path exists."""
+    parts = _require_projects_path(asset_path, 4, "projects/<project>/assets/<folder>")
+    current = "/".join(parts[:3])
+    for folder in parts[3:]:
+        current = f"{current}/{folder}"
+        ensure_asset_folder(current)
+
+
+def ensure_parent_asset_path(asset_path):
+    """Ensures the parent folder path of ``projects/<project>/assets/<folder>/<asset>`` exists."""
+    parts = _require_projects_path(asset_path, 5, "projects/<project>/assets/<folder>/<asset>")
+    ensure_asset_path("/".join(parts[:-1]))
+
+
+def list_child_asset_basenames(parent_path):
+    """Returns the set of direct-child basenames under a parent (follows pagination)."""
+    basenames = set()
+    params = {"parent": parent_path}
+    while True:
+        try:
+            response = ee.data.listAssets(dict(params))
+        except ee.EEException as exc:
+            raise RuntimeError(f"Failed to list child assets under Earth Engine path: {parent_path}") from exc
+        if not isinstance(response, dict):
+            raise RuntimeError(f"Unexpected Earth Engine listAssets response for: {parent_path}")
+        assets = response.get("assets") or []
+        if not isinstance(assets, list):
+            raise RuntimeError(f"Unexpected Earth Engine listAssets 'assets' value for: {parent_path}")
+        for asset in assets:
+            if isinstance(asset, dict) and asset_basename(asset):
+                basenames.add(asset_basename(asset))
+        token = response.get("nextPageToken")
+        if not token:
+            return basenames
+        params["pageToken"] = token
+
+
+def find_missing_collection_children(source_collection_path, destination_collection_path):
+    """Returns sorted basenames present in the source collection but absent from the destination."""
+    return sorted(list_child_asset_basenames(source_collection_path) - list_child_asset_basenames(destination_collection_path))
+
+
+def copy_asset(source_path, destination_path, overwrite=False):
+    """Copies an image or table asset (not a collection; see ``copy_collection``)."""
+    try:
+        ee.data.copyAsset(source_path, destination_path, overwrite)
+    except ee.EEException as exc:
+        raise RuntimeError(f"Failed to copy Earth Engine asset from {source_path} to {destination_path}") from exc
+
+
+def copy_collection(source_collection_path, destination_collection_path, overwrite=False):
+    """Copies every child of an ImageCollection into a destination ImageCollection.
+
+    The destination is created if absent and must be an ImageCollection if it
+    exists. Existing children cause an error unless ``overwrite`` is True.
+    All child failures are collected and raised as one RuntimeError.
+    """
+    destination = get_asset_if_exists(destination_collection_path)
+    if destination is None:
+        try:
+            ee.data.createAsset({"type": "IMAGE_COLLECTION"}, destination_collection_path)
+        except ee.EEException as exc:
+            raise RuntimeError(f"Failed to create Earth Engine collection: {destination_collection_path}") from exc
+    elif normalize_asset_type(destination.get("type")) != "imagecollection":
+        raise RuntimeError(
+            f"Destination asset exists but is not an ImageCollection: {destination_collection_path} (type={destination.get('type')})"
+        )
+    children = sorted(list_child_asset_basenames(source_collection_path))
+    failures = []
+    for name in children:
+        try:
+            ee.data.copyAsset(f"{source_collection_path}/{name}", f"{destination_collection_path}/{name}", overwrite)
+        except ee.EEException as exc:
+            failures.append((name, str(exc)))
+    if failures:
+        details = "; ".join(f"{name}: {message}" for name, message in failures[:10])
+        raise RuntimeError(
+            f"Failed to copy {len(failures)} of {len(children)} assets from {source_collection_path} "
+            f"to {destination_collection_path}. First 10: {details}"
+        )
+
+
+def promote_assets_to_catalog(input_dataset_path, final_dataset_path, overwrite=False):
+    """Promotes an image, table or ImageCollection to its final catalog path, creating parent folders."""
+    asset = get_asset(input_dataset_path)
+    asset_type = normalize_asset_type(asset.get("type"))
+    if asset_type == "imagecollection":
+        ensure_parent_asset_path(final_dataset_path)
+        copy_collection(input_dataset_path, final_dataset_path, overwrite)
+    elif asset_type in ("image", "table", "featurecollection"):
+        ensure_parent_asset_path(final_dataset_path)
+        copy_asset(input_dataset_path, final_dataset_path, overwrite)
+    else:
+        raise RuntimeError(f"Unsupported Earth Engine asset type for promotion: {asset.get('type')} at {input_dataset_path}")
+
+
 def is_leap_year(year):
     """
     Determines if a year is a leap year.
@@ -988,6 +1220,45 @@ def ingestImageFromGCS(
         print(assetPath, "already exists")
 
 
+_PYRAMIDING_POLICIES = ("MEAN", "MODE", "MIN", "MAX", "SAMPLE")
+
+
+def _normalize_band_entries(gcsURIs):
+    """Validate ingestion input and return a new list of fresh entry dicts.
+
+    Never mutates the caller's list or dictionaries.
+    """
+    if isinstance(gcsURIs, (str, dict)):
+        gcsURIs = [gcsURIs]
+    elif isinstance(gcsURIs, collections.abc.Iterable) and not isinstance(gcsURIs, bytes):
+        # Accept any iterable (e.g. dict.values(), as uploadToGEEAssetImagesAsBands passes).
+        gcsURIs = list(gcsURIs)
+    if not isinstance(gcsURIs, list) or len(gcsURIs) == 0:
+        raise ValueError("The 'gcsURIs' parameter must be a gs:// string, or a non-empty list of strings or dictionaries with a key for 'gcsURI'")
+    entries = []
+    for i, item in enumerate(gcsURIs):
+        entry = dict(item) if isinstance(item, dict) else {"gcsURI": item}
+        if "gcsURI" not in entry:
+            raise ValueError(f"The 'gcsURIs' parameter must be a string, list, or list of dictionaries with a key for 'gcsURI' (entry {i})")
+        uri = entry["gcsURI"]
+        if not isinstance(uri, str) or not uri.startswith("gs://") or len(uri) <= len("gs://"):
+            raise ValueError(f"Entry {i}: 'gcsURI' must be a non-empty gs:// URI, received: {uri!r}")
+        if "bandName" in entry and not str(entry["bandName"]).strip():
+            raise ValueError(f"Entry {i}: 'bandName' must not be empty")
+        if "pyramidingPolicy" in entry and str(entry["pyramidingPolicy"]).upper() not in _PYRAMIDING_POLICIES:
+            raise ValueError(f"Entry {i}: 'pyramidingPolicy' must be one of {_PYRAMIDING_POLICIES}, received: {entry['pyramidingPolicy']!r}")
+        if "noDataValue" in entry and entry["noDataValue"] is None:
+            del entry["noDataValue"]  # None means "no nodata value"
+        if "noDataValue" in entry:
+            nd = entry["noDataValue"]
+            if isinstance(nd, bool) or not isinstance(nd, numbers.Real):
+                raise ValueError(f"Entry {i}: 'noDataValue' must be numeric, received: {nd!r}")
+            if hasattr(nd, "item"):
+                entry["noDataValue"] = nd.item()  # numpy scalar -> JSON-serializable Python number
+        entries.append(entry)
+    return entries
+
+
 def ingestFromGCSImagesAsBands(
     gcsURIs,
     assetPath,
@@ -997,61 +1268,57 @@ def ingestFromGCSImagesAsBands(
     """
     Ingests multiple images from Google Cloud Storage as bands of a single GEE image.
 
+    Inputs are validated and copied; neither ``gcsURIs`` nor ``properties`` is modified.
+    Entry dictionaries accept ``gcsURI`` (required), ``bandName``, ``pyramidingPolicy``
+    and ``noDataValue``; the manifest uses ``tileset_id``, ``pyramiding_policy`` and
+    ``missing_data``.
+
     Args:
-        gcsURIs (list): List of GCS URIs or dictionaries with band information.
+        gcsURIs (str | list): A GCS URI, or list of GCS URIs or dictionaries with band information.
         assetPath (str): The asset path in GEE.
         overwrite (bool, optional): Whether to overwrite existing assets. Defaults to False.
         properties (dict, optional): Properties for the asset. Defaults to None.
 
     Returns:
-        None
+        The result of ``ee.data.startIngestion`` (includes the task ``id``), or None
+        if the asset already exists and ``overwrite`` is False.
 
     Example:
         >>> ingestFromGCSImagesAsBands([{'gcsURI': 'gs://mybucket/band1.tif', 'bandName': 'B1'}], 'users/youruser/yourasset')
     """
-    if overwrite or not ee_asset_exists(assetPath):
-        taskID = ee.data.newTaskId(1)[0]
-        create_image_collection(os.path.dirname(assetPath))
-        if str(type(gcsURIs)).find("'str'") > -1:
-            gcsURIs = [{"gcsURI": gcsURIs}]
-        elif isinstance(gcsURIs, list):
-            for i, item in enumerate(gcsURIs):
-                if not isinstance(item, dict):
-                    gcsURIs[i] = {'gcsURI': item}
-        params = {"name": assetPath, "tilesets": [], "bands": []}
-        for i, item in enumerate(gcsURIs):
-            if "gcsURI" not in item:
-                raise ValueError(f"ERROR: The 'gcsURIs' parameter must be a string, list, or list of dictionaries with a key for 'gcsURI'")
-            tileset_entry = {"id": f"tileset_for_band{i+1}", "sources": [{"uris":[item["gcsURI"]]}]}
-            band_entry = {"tileset_id": f"tileset_for_band{i+1}"}
-            if "bandName" in item:
-                band_entry["id"] = str(item["bandName"])
-            else:
-                band_entry["id"] = f"Band{i+1}"
-            if "pyramidingPolicy" in item:
-                band_entry["pyramidingPolicy"] = item["pyramidingPolicy"]
-            if "noDataValue" in item:
-                band_entry["missing_data"] = {"values": [item["noDataValue"]]}
-            params["tilesets"].append(tileset_entry)
-            params["bands"].append(band_entry)
-
-        def fixDate(propIn, propOut):
-            if propIn in properties.keys():
-                d = properties[propIn]
-                if str(type(d)).find("ee.ee_date.Date") > -1:
-                    d = d.format("YYYY-MM-dd").cat("T").cat(d.format("HH:mm:SS")).cat("Z").getInfo()
-                params[propOut] = d
-                properties.pop(propIn)
-
-        if properties != None:
-            fixDate("system:time_start", "start_time")
-            fixDate("system:time_end", "end_time")
-            params["properties"] = properties
-        print("Ingestion manifest:", params)
-        ee.data.startIngestion(taskID, params, overwrite)
-        print("Starting ingestion task:", assetPath)
-    else:
+    entries = _normalize_band_entries(gcsURIs)
+    properties = dict(properties) if properties is not None else None
+    if not (overwrite or not ee_asset_exists(assetPath)):
         print(assetPath, "already exists")
+        return None
+    taskID = ee.data.newTaskId(1)[0]
+    create_image_collection(os.path.dirname(assetPath))
+    params = {"name": assetPath, "tilesets": [], "bands": []}
+    for i, item in enumerate(entries):
+        tileset_id = f"tileset_for_band{i+1}"
+        band_entry = {"tileset_id": tileset_id, "id": str(item["bandName"]) if "bandName" in item else f"Band{i+1}"}
+        if "pyramidingPolicy" in item:
+            band_entry["pyramiding_policy"] = str(item["pyramidingPolicy"]).upper()
+        if "noDataValue" in item:
+            band_entry["missing_data"] = {"values": [item["noDataValue"]]}
+        params["tilesets"].append({"id": tileset_id, "sources": [{"uris": [item["gcsURI"]]}]})
+        params["bands"].append(band_entry)
+
+    def fixDate(propIn, propOut):
+        if propIn in properties:
+            d = properties.pop(propIn)
+            if str(type(d)).find("ee.ee_date.Date") > -1:
+                d = d.format("YYYY-MM-dd").cat("T").cat(d.format("HH:mm:SS")).cat("Z").getInfo()
+            params[propOut] = d
+
+    if properties is not None:
+        fixDate("system:time_start", "start_time")
+        fixDate("system:time_end", "end_time")
+        params["properties"] = properties
+    print("Ingestion manifest:", params)
+    result = ee.data.startIngestion(taskID, params, overwrite)
+    print("Starting ingestion task:", assetPath)
+    return result
 
 
 def uploadToGEEImageAsset(
