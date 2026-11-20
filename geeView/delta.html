@@ -37,7 +37,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600&family=JetBrains+Mono:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;600&display=swap" />
 
     <!-- Delta styles and compatibility shim -->
     <link rel="stylesheet" href="./delta/css/tokens.css" />
@@ -150,20 +150,19 @@
         <div class="tl" title="Time lapse layers load one map layer per frame. Once loaded, play them as an animation or step through single frames. Cumulative shows this frame and all frames before it.">
           <div class="tl-body">
             <div class="tl-top">
-              <span class="tl-year mono"></span>
               <span class="tl-transport">
                 <button class="tlb" type="button" data-tl="back" title="Back one frame" aria-label="Back one frame"><i class="ti ti-player-skip-back"></i></button>
                 <button class="tlb" type="button" data-tl="pause" title="Pause" aria-label="Pause"><i class="ti ti-player-pause"></i></button>
                 <button class="tlb" type="button" data-tl="stop" title="Clear animation" aria-label="Clear animation" hidden><i class="ti ti-player-stop"></i></button>
                 <button class="tlb" type="button" data-tl="play" title="Play" aria-label="Play"><i class="ti ti-player-play"></i></button>
                 <button class="tlb" type="button" data-tl="forward" title="Forward one frame" aria-label="Forward one frame"><i class="ti ti-player-skip-forward"></i></button>
-                <button class="tlb" type="button" data-tl="refresh" title="Reload tiles that failed" aria-label="Reload tiles that failed"><i class="ti ti-refresh"></i></button>
-                <button class="tlb" type="button" data-tl="cumulative" title="Show every year up to this one stacked together" aria-label="Cumulative" aria-pressed="false"><svg class="tl-cum-ic" data-state="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16" stroke-width="1.5" opacity=".35"/><path d="M4 7v10M8 7v10M12 7v10M20 7v10" stroke-width="2" opacity=".35"/><path d="M16 7v10" stroke-width="2.25"/></svg><svg class="tl-cum-ic" data-state="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 12h4" stroke-width="1.5" opacity=".35"/><path d="M20 7v10" stroke-width="2" opacity=".35"/><path d="M4 12h12" stroke-width="2"/><path d="M4 7v10M8 7v10M12 7v10M16 7v10" stroke-width="2.25"/></svg></button>
+                <button class="tlb" type="button" data-tl="refresh" title="Load the frames that failed again" aria-label="Load the frames that failed again" hidden><i class="ti ti-refresh"></i></button>
+                <button class="tlb tlb-cum" type="button" data-tl="cumulative" title="Show every year up to this one stacked together" aria-label="Cumulative" aria-pressed="false"><svg class="tl-cum-ic" data-state="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16" stroke-width="1.5" opacity=".35"/><path d="M4 7v10M8 7v10M12 7v10M20 7v10" stroke-width="2" opacity=".35"/><path d="M16 7v10" stroke-width="2.25"/></svg><svg class="tl-cum-ic" data-state="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 12h4" stroke-width="1.5" opacity=".35"/><path d="M20 7v10" stroke-width="2" opacity=".35"/><path d="M4 12h12" stroke-width="2"/><path d="M4 7v10M8 7v10M12 7v10M16 7v10" stroke-width="2.25"/></svg></button>
                 <button class="tlb" type="button" data-tl="frames" title="Show or hide frames" aria-label="Show or hide frames" hidden><i class="ti ti-eye"></i></button>
               </span>
             </div>
             <div class="tl-sl">
-              <div class="tl-row"><span class="tl-lbl">Year</span><input class="dz orange" data-tl="year" type="range" min="0" max="0" step="1" value="0" aria-label="Frame" /></div>
+              <div class="tl-row"><span class="tl-lbl tl-year mono" aria-live="polite"></span><input class="dz orange" data-tl="year" type="range" min="0" max="0" step="1" value="0" aria-label="Frame" /></div>
               <div class="tl-row"><span class="tl-lbl mono" data-tl="speedv"></span><input class="dz orange" data-tl="speed" type="range" min="0.5" max="3" step="0.5" value="1.5" aria-label="Speed in frames per second" /></div>
             </div>
           </div>

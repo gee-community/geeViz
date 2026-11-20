@@ -23,8 +23,10 @@ export const BASEMAPS = { satellite: "satellite", map: "roadmap-base", terrain: 
 const NO_LABELS = [{ elementType: "labels", stylers: [{ visibility: "off" }] }];
 export const OWN_LABELS = new Set(["terrain", "darkterrain"]);
 export const DARK_TERRAIN_STYLE = [
-  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#26231f" }] },
-  { featureType: "landscape.natural.terrain", elementType: "geometry", stylers: [{ lightness: -70 }, { saturation: -60 }] },
+  // Darken the land relative to its own colors, not to one flat color: Google
+  // draws the hillshade over the land and ignores styles on it, so over a flat
+  // fill its lit (northwest-facing) slopes wash out to one gray.
+  { featureType: "landscape", elementType: "geometry", stylers: [{ saturation: -60 }, { lightness: -80 }] },
   { featureType: "poi", stylers: [{ visibility: "off" }] },
   // peak and park markers
   { featureType: "landscape", elementType: "labels.icon", stylers: [{ visibility: "off" }] },

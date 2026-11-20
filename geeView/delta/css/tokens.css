@@ -40,7 +40,7 @@
   --dz-right-default: 330px;
   --dz-right-folded: 64px;
   --dz-left-default: clamp(300px, 33.333vw, 560px);
-  --dz-font-body: Barlow, system-ui, sans-serif;
-  --dz-font-cond: "Barlow Semi Condensed", Barlow, sans-serif;
-  --dz-font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --dz-font-body: Roboto, system-ui, sans-serif;
+  --dz-font-cond: Roboto, system-ui, sans-serif;
+  --dz-font-mono: "Roboto Mono", ui-monospace, monospace;
 }

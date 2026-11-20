@@ -9,7 +9,7 @@ export function chartTheme(root = document.documentElement) {
     faint: t("--dz-faint", "#a2968d"),
     line: t("--dz-line", "rgba(55, 46, 44, 0.13)"),
     solid: t("--dz-solid", "#faf8f6"),
-    font: t("--dz-font-body", "Barlow, sans-serif"),
+    font: t("--dz-font-body", "Roboto, sans-serif"),
     mono: t("--dz-font-mono", "monospace"),
     // series without a class or layer palette
     series: [t("--dz-teal", "#00897b"), t("--dz-orange", "#e2602a"), t("--dz-mute", "#6f6259"), t("--dz-ink", "#231d1b")],

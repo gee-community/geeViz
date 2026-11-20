@@ -46,7 +46,9 @@ export function timelapseBlock(id, getCtl) {
   const el = tpl.content.firstElementChild.cloneNode(true);
   const q = (k) => el.querySelector(`[data-tl="${k}"]`);
   const parts = {
+    // the date of the current frame, as the frame slider's label
     year: el.querySelector(".tl-year"),
+    refresh: q("refresh"),
     play: q("play"),
     pause: q("pause"),
     cumulative: q("cumulative"),
@@ -101,6 +103,8 @@ export function timelapseBlock(id, getCtl) {
     parts.play.classList.toggle("on", !!tl.playing);
     parts.play.setAttribute("aria-pressed", String(!!tl.playing));
     parts.pause.classList.toggle("on", loaded && !tl.playing);
+    // only frames that failed to load can be loaded again
+    parts.refresh.hidden = !(tl.failed && tl.failed.length);
     parts.cumulative.classList.toggle("on", !!tl.cumulative);
     parts.cumulative.setAttribute("aria-pressed", String(!!tl.cumulative));
     if (last.n !== years.length) {

@@ -244,7 +244,7 @@ def test_terrain_basemaps_draw_their_own_labels(live_map):
         page.click("#labelsBtn")
         assert not page.evaluate(lbl_off), key
     # dark terrain darkens the land; plain terrain leaves Google's colors
-    assert "#26231f" in page.evaluate("JSON.stringify(__delta.engine.gmap.get('styles'))")
+    assert "\"lightness\":-80" in page.evaluate("JSON.stringify(__delta.engine.gmap.get('styles'))")
     page.evaluate("__delta.engine.setBasemap('terrain')")
-    assert "#26231f" not in page.evaluate("JSON.stringify(__delta.engine.gmap.get('styles'))")
+    assert "\"lightness\":-80" not in page.evaluate("JSON.stringify(__delta.engine.gmap.get('styles'))")
     assert not page.delta_errors, page.delta_errors
