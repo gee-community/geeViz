@@ -301,3 +301,40 @@ def test_controls_line_up_with_the_opacity_slider(page):
     assert abs(m["labels"][0] - m["labels"][1]) <= 1, m["labels"]  # right-justified
     assert m["tl"]["right"] <= m["leg"]["left"] + 1, (m["tl"], m["leg"])
     assert m["legend"]["right"] <= m["leg"]["left"] + 1, (m["legend"], m["leg"])
+
+
+def test_step_buttons_show_a_press_and_are_24_px(page):
+    """Back and forward have no lasting state, so a click flashes them
+    (.pressed, the same look as while held); the buttons are 24 px."""
+    sel = row_sel(page, "LCMS TL")
+    if not layer(page, "LCMS TL")["visible"]:
+        page.click(sel + " .tgl")
+    wait_for(page, "(id) => __delta.store.get().layers.find(l => l.id === id).timelapse.loaded", layer(page, "LCMS TL")["id"])
+    size = page.evaluate("(s) => { const b = document.querySelector(s + ' [data-tl=forward]').getBoundingClientRect(); return [b.width, b.height]; }", sel)
+    assert size == [24, 24], size
+    for act in ("forward", "back"):
+        f0 = layer(page, "LCMS TL")["timelapse"]["frame"]
+        got = page.evaluate(
+            """([s, act]) => { const b = document.querySelector(s + ' [data-tl=' + act + ']'); const idle = getComputedStyle(b).backgroundColor;
+                b.click(); return {pressed: b.classList.contains('pressed'), idle, now: getComputedStyle(b).backgroundColor}; }""",
+            [sel, act],
+        )
+        assert got["pressed"] and got["now"] != got["idle"], (act, got)
+        assert layer(page, "LCMS TL")["timelapse"]["frame"] != f0
+        page.wait_for_timeout(400)
+        assert not page.evaluate("([s, act]) => document.querySelector(s + ' [data-tl=' + act + ']').classList.contains('pressed')", [sel, act])
+
+
+def test_phone_shows_the_year_once(page):
+    """On a phone the floating player at the bottom carries the year, so the
+    badge at the top stays hidden while playing."""
+    sel = row_sel(page, "LCMS TL")
+    if not layer(page, "LCMS TL")["visible"]:
+        page.click(sel + " .tgl")
+    wait_for(page, "(id) => __delta.store.get().layers.find(l => l.id === id).timelapse.loaded", layer(page, "LCMS TL")["id"])
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.click("#mplayer [data-tl=play]")
+    assert layer(page, "LCMS TL")["timelapse"]["playing"] is True
+    assert page.locator("#mplayer .tl-year").is_visible()
+    assert not page.locator("#yearbadge").is_visible()
+    page.click("#mplayer [data-tl=play]")

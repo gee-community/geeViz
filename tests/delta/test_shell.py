@@ -152,6 +152,19 @@ def test_phone_logo_menu_sets_theme(delta_page):
     assert page.evaluate("localStorage.getItem('delta-theme')") is None
 
 
+def test_phone_top_bar_keeps_the_theme_switch(delta_page):
+    page = delta_page(SHELL, viewport={"width": 390, "height": 844}, color_scheme="light")
+    btn = page.locator("#mtop #mtheme-btn")
+    assert btn.is_visible()
+    box = btn.bounding_box()
+    assert box["x"] + box["width"] <= 390 - 10, box  # inside the bar
+    page.click("#mtop #mtheme-btn")
+    assert theme(page) == "dark"
+    assert page.evaluate("document.querySelector('#mtheme-btn i').className").endswith("ti-sun")
+    page.click("#mtop #mtheme-btn")
+    assert theme(page) == "light"
+
+
 def test_no_page_errors(delta_page):
     page = delta_page(SHELL)
     errs = [e for e in page.delta_errors if "Failed to load resource" not in e]
@@ -599,6 +612,8 @@ def test_tall_right_pane_pushes_controls_and_status(delta_page):
     # the map itself ends at the status bar, so Google's strip sits above it
     mb = page.evaluate("document.querySelector('#map').getBoundingClientRect().bottom")
     assert abs(mb - m["status"]["top"]) <= 1, (mb, m["status"])
+    # the basemaps sit just above Google's scale bar and shortcuts row (14 px), 4 px clear
+    assert abs((mb - m["ctl"]["bottom"]) - (14 + 4)) <= 1, (mb, m["ctl"])
     # and back when the content goes away
     page.evaluate("document.querySelector('#tall-test').remove()")
     _settle(page)

@@ -67,8 +67,8 @@ export function timelapseBlock(id, getCtl) {
     if (c) fn(c);
   };
   let last = {};
-  q("back").addEventListener("click", call((c) => c.step(-1)));
-  q("forward").addEventListener("click", call((c) => c.step(1)));
+  q("back").addEventListener("click", flashing(call((c) => c.step(-1))));
+  q("forward").addEventListener("click", flashing(call((c) => c.step(1))));
   parts.play.addEventListener("click", call((c) => c.play()));
   parts.pause.addEventListener("click", call((c) => c.pause()));
   q("stop").addEventListener("click", call((c) => c.stop()));
@@ -137,6 +137,22 @@ export function timelapseBlock(id, getCtl) {
 
 // Year badge (desktop and phone, while playing) and the phone's floating
 // player (while a timelapse is on; CSS shows it on phones with no sheet open).
+// A step button has no lasting state, so a click shows as a short flash
+// (.pressed) as well as while held (:active): a quick click or a key press
+// would otherwise show nothing.
+export const PRESS_MS = 180;
+function flashing(fn) {
+  return (e) => {
+    const b = e && e.currentTarget;
+    if (b && b.classList) {
+      b.classList.add("pressed");
+      clearTimeout(b._pressT);
+      b._pressT = setTimeout(() => b.classList.remove("pressed"), PRESS_MS);
+    }
+    fn(e);
+  };
+}
+
 export function mountTimelapseHud(store, getCtl, { badge, player }) {
   const pYear = player.querySelector(".tl-year");
   const pPlay = player.querySelector('[data-tl="play"]');
@@ -146,8 +162,8 @@ export function mountTimelapseHud(store, getCtl, { badge, player }) {
     const c = l && getCtl(l.id);
     if (c) fn(c, l);
   };
-  player.querySelector('[data-tl="back"]').addEventListener("click", call((c) => c.step(-1)));
-  player.querySelector('[data-tl="forward"]').addEventListener("click", call((c) => c.step(1)));
+  player.querySelector('[data-tl="back"]').addEventListener("click", flashing(call((c) => c.step(-1))));
+  player.querySelector('[data-tl="forward"]').addEventListener("click", flashing(call((c) => c.step(1))));
   pPlay.addEventListener("click", call((c, l) => (l.timelapse.playing ? c.pause() : c.play())));
 
   function render() {

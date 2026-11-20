@@ -278,7 +278,7 @@ input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border:
    right edge, so the block ends where that slider ends (not under the legend
    button). The buttons sit inline to their left, one row; the two sliders are
    compact, as the original's, so together they are as tall as that row. */
-.tl { margin: 8px calc(var(--leg-w) + var(--lrow-gap) - var(--tl-pad)) 0 calc(var(--op-indent) - var(--tl-pad)); padding: 6px var(--tl-pad); border-radius: 9px; background: var(--dz-orange-soft); --tl-btn: 28px; --tl-sl: 13px; }
+.tl { margin: 8px calc(var(--leg-w) + var(--lrow-gap) - var(--tl-pad)) 0 calc(var(--op-indent) - var(--tl-pad)); padding: 6px var(--tl-pad); border-radius: 9px; background: var(--dz-orange-soft); --tl-btn: 24px; --tl-sl: 11px; }
 .layer.stack .tl { margin-right: 0; }
 .layer.off .tl { display: none !important; }
 .tl-body { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
@@ -295,6 +295,10 @@ input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border:
 .tlb { width: 26px; height: 26px; border-radius: 7px; border: 0; display: grid; place-items: center; background: transparent; color: var(--dz-ink); font-size: 15px; cursor: pointer; padding: 0; flex: none; }
 .tlb:hover { background: var(--dz-raise); }
 .tlb.on { background: var(--dz-orange); color: var(--dz-on-accent); }
+/* a press shows: held (:active) and a short flash after a click or key (.pressed) */
+.tlb:not(:disabled):active, .tlb.pressed { background: var(--dz-orange); color: var(--dz-on-accent); transform: scale(0.92); }
+.tlb { transition: transform 0.08s ease; }
+@media (prefers-reduced-motion: reduce) { .tlb { transition: none; } .tlb:not(:disabled):active, .tlb.pressed { transform: none; } }
 .tlb:disabled { opacity: 0.4; cursor: default; background: transparent; }
 .tlb:focus-visible { outline: 2px solid var(--dz-orange); outline-offset: 1px; }
 /* Cumulative icon: frames as ticks on the time slider; off = only the current frame shown,
@@ -343,7 +347,7 @@ body.left-hidden .status, body.left-hidden .loadbar { left: 0; }
 .loadbar { position: absolute; z-index: 3; left: var(--lw, var(--dz-left-default)); right: var(--rw, var(--dz-right-default)); top: 0; height: 2px; overflow: hidden; pointer-events: none; }
 .loadbar::after { content: ""; position: absolute; top: 0; bottom: 0; width: 30%; background: linear-gradient(90deg, transparent, var(--dz-teal), transparent); animation: dz-lb 1.4s ease-in-out infinite; }
 @keyframes dz-lb { from { left: -30%; } to { left: 100%; } }
-.mapctl { position: absolute; z-index: 3; right: calc(var(--rw, var(--dz-right-default)) + 12px); bottom: calc(var(--dz-status-h) + var(--dz-gfoot) + 8px); display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.mapctl { position: absolute; z-index: 3; right: calc(var(--rw, var(--dz-right-default)) + 12px); bottom: calc(var(--dz-status-h) + var(--dz-gstrip) + 4px); display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
 /* desktop defaults for content-height panes: span the window and hug the right edge;
    the body.right-over-ctl rules above make room for a pane that reaches down */
 @media (min-width: 761px) {
@@ -426,8 +430,8 @@ body.left-hidden .floating-hb { display: inline-grid; }
   .mm-h { font: 700 11px var(--dz-font-cond); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dz-faint); padding: 4px 8px; }
   .mmenu button { display: flex; gap: 10px; align-items: center; border: 0; background: transparent; color: var(--dz-ink); padding: 9px 8px; border-radius: 8px; font-size: 14px; text-align: left; }
   .mmenu button.on { background: var(--dz-teal-soft); color: var(--dz-teal); }
-  .yearbadge { top: 64px; font-size: 18px; }
-  body.m-layers .yearbadge, body.m-tools .yearbadge, body.m-output .yearbadge { display: none; }
+  /* the floating player at the bottom shows the year: no second one at the top */
+  .yearbadge { display: none !important; }
   /* floating player while a timelapse is on and no sheet is open */
   body.tl-on .mplayer { display: flex; position: fixed; z-index: 6; left: 50%; transform: translateX(-50%); bottom: 76px; align-items: center; gap: 4px; padding: 4px 6px 4px 12px;
     background: var(--dz-panel); backdrop-filter: blur(14px); border: 1px solid var(--dz-line); border-radius: 999px; box-shadow: var(--dz-shadow); }

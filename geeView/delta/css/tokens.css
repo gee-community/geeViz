@@ -42,6 +42,8 @@
   /* Google's own strip along the map's bottom edge (logo, scale, data credits,
      terms): kept clear of every pane, as the Maps terms require */
   --dz-gfoot: 24px;
+  /* the scale bar, shortcuts and credits row at the right of Google's strip */
+  --dz-gstrip: 14px;
   --dz-right-default: 330px;
   --dz-right-folded: 64px;
   --dz-left-default: clamp(300px, 33.333vw, 560px);
