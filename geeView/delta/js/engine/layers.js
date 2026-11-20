@@ -529,6 +529,18 @@ export function createLayerEngine(gmap, store, deps = {}) {
     const r = recs.get(id);
     if (r) setLoading(r, !!loading);
   };
+  // A wind layer's tiles never go on the map (wind-particles.js fetches and
+  // decodes them), so its progress comes from there as a percent; it fills the
+  // row like any tile layer's, as a share of 100.
+  const setLayerProgress = (id, percent) => {
+    const r = recs.get(id);
+    if (!r) return;
+    const next = { total: 100, loaded: Math.max(0, Math.min(100, Math.round(percent))), failed: 0 };
+    const prev = r.progress || {};
+    if (prev.total === next.total && prev.loaded === next.loaded && prev.failed === 0) return;
+    r.progress = next;
+    patch(id, { progress: next }, "layer-progress");
+  };
   const timelapse = (id) => (recs.get(id) && recs.get(id).tl) || null;
   // Promise of {type, item, viz} for the Query tool, or null.
   const queryTarget = (id) => {
@@ -558,5 +570,5 @@ export function createLayerEngine(gmap, store, deps = {}) {
     const overlays = r.timelapse ? r.frames.map((f) => f.overlay).filter(Boolean) : r.overlay && r.overlay.retryFailed ? [r.overlay] : [];
     return overlays.reduce((n, o) => n + o.retryFailed(), 0);
   }
-  return { sync, addLayerToMap, setLayerVisible, setLayerOpacity, applyOrder, removeLayer, zOrder, slotOrder, stats, timelapse, queryTarget, windSources, onChange, setLayerLoading, retryTiles };
+  return { sync, addLayerToMap, setLayerVisible, setLayerOpacity, applyOrder, removeLayer, zOrder, slotOrder, stats, timelapse, queryTarget, windSources, onChange, setLayerLoading, setLayerProgress, retryTiles };
 }

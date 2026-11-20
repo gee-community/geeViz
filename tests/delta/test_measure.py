@@ -130,6 +130,9 @@ def test_crosshair_survives_switch_from_measure_to_chart_draw(page):
     assert page.evaluate(cursor) == "crosshair"
     page.evaluate("__delta.store.set({areaFrom: 'view'}, 'test')")
     assert not page.evaluate(cursor)
+    # Query shows the original's question mark
+    page.evaluate("__delta.store.set({tool: 'query'}, 'test')")
+    assert page.evaluate(cursor) == "help"
     assert page.delta_errors == []
 
 

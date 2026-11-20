@@ -199,7 +199,14 @@ async function boot() {
   if (layerEngine) {
     try {
       window.map = engine.gmap;
-      delta.wind = createWind(layerEngine, window.__deltaCompat.layerObj);
+      delta.wind = createWind(layerEngine, window.__deltaCompat.layerObj, {
+        particleOpacity: (id) => {
+          const l = store.get().layers.find((x) => x.id === id);
+          return l ? l.particleOpacity : undefined;
+        },
+      });
+      // The particle slider is state only the wind adapter reads.
+      store.on("change:layers", () => delta.wind.update());
     } catch (e) {
       notice("Wind layers could not start: " + (e && e.message));
     }

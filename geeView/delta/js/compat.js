@@ -185,13 +185,15 @@ let layerObj = {};
   // wind-particles.js looks up the original viewer's layer panel elements
   // (#<layer id>-spinner2, -layer-container, -class-container, -opacity...)
   // for the layers in layerObj. Delta has no such elements, so those lookups
-  // find nothing, quietly, as jQuery would.
+  // find nothing, quietly, as jQuery would. A timelapse's are filed under its
+  // group key, "tl:<timeLapseID>".
   function windSelector(selector) {
     if (selector === undefined) return true;
     if (typeof selector !== "string" || selector.charAt(0) !== "#") return false;
     for (var k in layerObj) {
       var L = layerObj[k];
-      var ids = [k, L && L.viz && L.viz.timeLapseID];
+      var tl = L && L.viz && L.viz.timeLapseID;
+      var ids = [k, tl, tl && "tl:" + tl];
       for (var i = 0; i < ids.length; i++) {
         if (ids[i] && selector.indexOf("#" + ids[i] + "-") === 0) return true;
       }

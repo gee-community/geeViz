@@ -127,12 +127,14 @@ py_viz_dir = os.path.dirname(__file__)
 # Specify location of files to run
 template = os.path.join(py_viz_dir, geeViewFolder, "index.html")
 
-# Viewer skins. "original" is geeView/index.html; "delta" is
-# geeView/delta.html (assets under geeView/delta/). Both load the same
-# per-session runGeeViz.js, so everything the Python side emits is
-# skin-independent. GEEVIZ_SKIN picks the default; Map.setSkin() overrides.
-SKINS = ("original", "delta")
-delta_template = os.path.join(py_viz_dir, geeViewFolder, "delta.html")
+# Viewer skins and the page export_html writes for each live in
+# viewerPages (no Earth Engine import, so a host can rebuild saved maps
+# without initializing Earth Engine). GEEVIZ_SKIN picks the default;
+# Map.setSkin() overrides.
+from geeViz.viewerPages import (  # noqa: E402
+    SKINS, DEFAULT_SKIN, delta_template, refresh_exported_html,
+    _resolve_skin, _export_page,
+)
 _SKIN_PAGES = {"original": "", "delta": "delta.html"}
 
 # A Delta Map's own run script: runGeeViz-<token>.js beside the shared one.
@@ -1273,8 +1275,7 @@ class mapper:
         # here raises NameError — which breaks `import geeViz.geeView`
         # outright.
         self._port_explicit = int(port) != int(self._DEFAULT_PORT)
-        _env_skin = os.environ.get("GEEVIZ_SKIN", "").strip().lower()
-        self.skin = _env_skin if _env_skin in SKINS else "original"
+        self.skin = _resolve_skin()
         self.layerNumber = 1
         self.idDictList = []
         self.mapCommandList = []
@@ -2584,7 +2585,7 @@ class mapper:
 
         Affects :meth:`view`, :meth:`export_html` and :meth:`testView`.
         The default comes from the ``GEEVIZ_SKIN`` environment variable
-        when it names a valid skin, else ``"original"``.
+        when it names a valid skin, else ``"delta"`` (``DEFAULT_SKIN``).
 
         Args:
             name (str): One of ``SKINS``.
@@ -2654,74 +2655,9 @@ class mapper:
 
         run_js = self._build_run_js()
 
-        with open(delta_template if self.skin == "delta" else template, "r", encoding="utf-8") as f:
-            html = f.read()
-
-        # The template hard-codes geeViz's own Google Maps key, which is
-        # HTTP-referrer-restricted to geeViz's domains (plus localhost -
-        # which is why every local test passes and every OTHER deployment
-        # fails with RefererNotAllowedMapError and a blank grey map). A
-        # deployment supplies its own BROWSER key - referrer-restricted to
-        # its sites - in GOOGLE_MAPS_BROWSER_KEY, and it is stamped in here.
-        #
-        # Never GOOGLE_MAPS_PLATFORM_API_KEY: that is the server's key for
-        # geocoding, Places, Routes and the rest, with no referrer
-        # restriction (it is called from the server, so it cannot have
-        # one). This page is served to browsers, shared and downloaded, so
-        # anything stamped into it is public. It stamped the server key
-        # from 2026-09-11 until this was changed.
-        _maps_key = os.environ.get("GOOGLE_MAPS_BROWSER_KEY", "").strip()
-        if _maps_key:
-            import re as _re_key  # self-contained: geeView has no module-level re
-            html = _re_key.sub(
-                r"(maps\.googleapis\.com/maps/api/js\?key=)AIza[\w-]+",
-                r"\g<1>" + _maps_key, html)
-
-        # Inject <base href> so any RELATIVE URLs the geeView JS injects at
-        # runtime (icons, palette images, etc.) resolve to the asset base
-        # rather than to the current page's path. Absolute URLs are unaffected.
-        base_tag = '<base href="' + asset_base.rstrip("/") + '/">\n    '
-        html = html.replace("<head>", "<head>\n    " + base_tag, 1)
-
-        # Rewrite ./src/... references to absolute under asset_base.
-        # Order matters: the inline runGeeViz must replace the script src first.
-        html = html.replace(
-            '<script type="text/javascript" src="./src/gee/gee-run/runGeeViz.js"></script>',
-            (
-                # Auth bootstrap — runs after lcms-viewer.min.js initializes
-                # urlParams, before runGeeViz triggers Map.addLayer.
-                # Either path works at runtime:
-                #   * accessToken set + non-"None" → viewer uses token directly
-                #     (legacy ``__GEEVIZ_TOKEN__`` substitution path).
-                #   * accessToken == "None" / null → viewer falls through to
-                #     ``urlParams.geeAuthProxyURL``, which routes EE API calls
-                #     through the agent's ``/ee-api`` proxy. Agent injects the
-                #     SA bearer token server-side; no EE token in the browser.
-                "<script>(function(){"
-                "  if(typeof urlParams==='undefined'){window.urlParams={};}"
-                "  urlParams.accessToken='" + token_placeholder + "';"
-                "  urlParams.accessTokenCreationTime=" + token_time_placeholder + ";"
-                "  urlParams.projectID='" + project_placeholder + "';"
-                "  urlParams.geeAuthProxyURL='" + auth_proxy_placeholder + "';"
-                "})();</script>\n"
-                # Inlined per-export runGeeViz JS
-                "<script>" + run_js + "</script>"
-            ),
-        )
-        # The Delta page's per-map run script loader (Map.view's ?run=<token>)
-        # has nothing to load here: the run script is inline above. Left in, a
-        # ?run= on a hosted page would load a stale file over it.
-        _rl_start, _rl_end = "<!-- run-loader -->", "<!-- /run-loader -->"
-        if _rl_start in html and _rl_end in html:
-            _a = html.index(_rl_start)
-            _b = html.index(_rl_end, _a) + len(_rl_end)
-            html = html[:_a] + html[_b:]
-        # Now rewrite the rest of the ./src/ asset paths
-        html = html.replace('href="./src/', 'href="' + asset_base + '/src/')
-        html = html.replace('src="./src/', 'src="' + asset_base + '/src/')
-        # Delta skin assets (no-ops for the original page).
-        html = html.replace('href="./delta/', 'href="' + asset_base + '/delta/')
-        html = html.replace('src="./delta/', 'src="' + asset_base + '/delta/')
+        html = _export_page(run_js, self.skin, asset_base, token_placeholder,
+                            token_time_placeholder, project_placeholder,
+                            auth_proxy_placeholder)
 
         # Refuse a page that can never be delivered. Checked here, before
         # the write, so an oversized map fails as an error the caller sees

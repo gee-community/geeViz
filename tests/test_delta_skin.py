@@ -60,16 +60,22 @@ def _export(m, tmp_path, name):
     return out.read_text(encoding="utf-8")
 
 
-def test_default_skin_is_original(monkeypatch):
-    _, m = _fresh(monkeypatch)
+def test_default_skin_is_delta(monkeypatch):
+    gv, m = _fresh(monkeypatch)
+    assert m.skin == "delta" == gv.DEFAULT_SKIN
+    # and the module's own Map, made at import time
+    assert gv.Map.skin in gv.SKINS
+
+
+def test_env_selects_the_skin(monkeypatch):
+    _, m = _fresh(monkeypatch, "original")
     assert m.skin == "original"
-
-
-def test_env_selects_delta(monkeypatch):
+    _, m = _fresh(monkeypatch, " Original ")
+    assert m.skin == "original"
     _, m = _fresh(monkeypatch, "delta")
     assert m.skin == "delta"
     _, m = _fresh(monkeypatch, "bogus")
-    assert m.skin == "original"
+    assert m.skin == "delta"
 
 
 def test_setSkin_rejects_unknown(monkeypatch):
@@ -77,11 +83,14 @@ def test_setSkin_rejects_unknown(monkeypatch):
     with pytest.raises(ValueError) as e:
         m.setSkin("nope")
     assert "original" in str(e.value) and "delta" in str(e.value)
-    assert m.skin == "original"
+    assert m.skin == "delta"
 
 
 def test_export_html_uses_delta_page(monkeypatch, tmp_path):
     _, m = _fresh(monkeypatch)
+    default = _export(m, tmp_path, "default.html")
+    assert "/base/delta/js/main.js" in default
+    m.setSkin("original")
     orig = _export(m, tmp_path, "o.html")
     assert "delta/js/main.js" not in orig
     m.setSkin("delta")
@@ -94,6 +103,7 @@ def test_run_js_identical_across_skins(monkeypatch):
     import ee
     _, m = _fresh(monkeypatch)
     m.addLayer(ee.Image(1), {}, "one")
+    m.setSkin("original")
     a = m._build_run_js()
     m.setSkin("delta")
     assert m._build_run_js() == a
@@ -291,3 +301,65 @@ def test_old_own_run_scripts_are_removed(tmp_path):
     gv._write_own_run_script(str(tmp_path), "cccccccccccccccc", "w", now=now)
     assert not old.exists() and keep.exists() and shared.exists()
     assert (tmp_path / "runGeeViz-cccccccccccccccc.js").read_text() == "w"
+
+
+# ---- refresh_exported_html: a saved map rebuilt on today's viewer ----
+
+def test_refresh_rebuilds_a_saved_map_as_export_would_now(monkeypatch, tmp_path):
+    gv, m = _fresh(monkeypatch)
+    m.setSkin("original")
+    saved = _export(m, tmp_path, "saved.html")
+    m.setSkin("delta")
+    want_delta = _export(m, tmp_path, "now.html")
+    # the default skin (Delta), byte for byte what export_html writes now
+    assert gv.refresh_exported_html(saved) == want_delta
+    # and back, and idempotent
+    assert gv.refresh_exported_html(want_delta, "original") == saved
+    assert gv.refresh_exported_html(want_delta, "delta") == want_delta
+    # GEEVIZ_SKIN picks the default, as for a new Map
+    monkeypatch.setenv("GEEVIZ_SKIN", "original")
+    assert gv.refresh_exported_html(want_delta) == saved
+
+
+def test_refresh_keeps_the_run_script_asset_base_and_placeholders(monkeypatch, tmp_path):
+    gv, m = _fresh(monkeypatch)
+    import ee
+    m.clearMap()
+    m.addLayer(ee.Image(1), {}, "one</b>")
+    out = tmp_path / "custom.html"
+    m.export_html(str(out), asset_base="/elsewhere/static", token_placeholder="TOK",
+                  token_time_placeholder="0", project_placeholder="PROJ",
+                  auth_proxy_placeholder="/proxy")
+    saved = out.read_text(encoding="utf-8")
+    page = gv.refresh_exported_html(saved, "delta")
+    assert _run_script(page) == _run_script(saved)
+    assert '<base href="/elsewhere/static/">' in page
+    assert "/elsewhere/static/delta/js/main.js" in page
+    assert "urlParams.accessToken='TOK';" in page and "urlParams.projectID='PROJ';" in page
+    assert "urlParams.geeAuthProxyURL='/proxy';" in page
+
+
+def test_refresh_refuses_a_page_it_did_not_write(monkeypatch):
+    gv, _ = _fresh(monkeypatch)
+    for html in ("<html><body>a chart</body></html>",
+                 '<base href="/x/"><script>function runGeeViz(){}</script>'):
+        with pytest.raises(ValueError, match="export_html"):
+            gv.refresh_exported_html(html)
+    with pytest.raises(ValueError, match="Unknown skin"):
+        gv.refresh_exported_html("", "neon")
+
+
+def test_rebuilding_a_page_needs_no_earth_engine():
+    """A host serving saved maps (askterra's server) rebuilds them without
+    initializing Earth Engine: geeViz.viewerPages imports neither ee nor
+    geeViz.geeView, and geeView re-exports the same function."""
+    import subprocess
+    import sys as _sys
+    code = ("import sys, geeViz.viewerPages as vp; "
+            "print(sorted(m for m in ('ee', 'geeViz.geeView') if m in sys.modules)); "
+            "print(vp.refresh_exported_html.__module__)")
+    out = subprocess.run([_sys.executable, "-c", code], capture_output=True, text=True, timeout=60,
+                         cwd=os.path.dirname(os.path.dirname(_gv().__file__)))
+    assert out.returncode == 0, out.stderr
+    assert out.stdout.split() == ["[]", "geeViz.viewerPages"], out.stdout
+    assert _gv().refresh_exported_html.__module__ == "geeViz.viewerPages"

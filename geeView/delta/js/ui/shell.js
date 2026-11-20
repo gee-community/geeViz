@@ -90,7 +90,7 @@ export function mountShell(store, { mapEl } = {}) {
   function renderTheme() {
     const eff = effectiveTheme();
     root.setAttribute("data-bs-theme", eff);
-    $$("#theme-btn i, #mtheme-btn i").forEach((icon) => (icon.className = "ti " + (eff === "dark" ? "ti-sun" : "ti-moon")));
+    $$("#theme-btn i").forEach((icon) => (icon.className = "ti " + (eff === "dark" ? "ti-sun" : "ti-moon")));
     $$(".logo-img").forEach((img) => (img.src = LOGO + (eff === "dark" ? "dark" : "light") + ".png"));
     $$("#mmenu [data-t]").forEach((b) => b.classList.toggle("on", b.dataset.t === store.get().theme));
   }
@@ -102,7 +102,7 @@ export function mountShell(store, { mapEl } = {}) {
     if (store.get().theme === "system") renderTheme();
   });
   // the same switch on the desktop brand bar and the phone top bar
-  $$("#theme-btn, #mtheme-btn").forEach((b) => b.addEventListener("click", () => store.set({ theme: effectiveTheme() === "dark" ? "light" : "dark" }, "theme-button")));
+  $$("#theme-btn").forEach((b) => b.addEventListener("click", () => store.set({ theme: effectiveTheme() === "dark" ? "light" : "dark" }, "theme-button")));
   $$("#mmenu [data-t]").forEach((b) => b.addEventListener("click", () => store.set({ theme: b.dataset.t }, "theme-menu")));
   $("#mlogo-btn").addEventListener("click", (e) => {
     e.stopPropagation();

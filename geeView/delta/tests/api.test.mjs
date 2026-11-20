@@ -103,6 +103,8 @@ test("wind-particles.js lookups of a wind layer's panel elements find nothing, q
     "$('#layer-1-spinner2').show(); $('#layer-1-layer-container').css('background', 'x');" +
       "if ($('#layer-2-class-container').find('li').first().length !== 0) throw new Error('not empty');" +
       "if ($('#layer-2-opacity-slider').length !== 0) throw new Error('not empty');" +
+      // a timelapse's progress, reported under its group key
+      "$('#tl:layer-2-spinner2').hide(); $('#tl:layer-2-layer-container').css('background', 'x');" +
       "$().empty();",
     ctx
   );

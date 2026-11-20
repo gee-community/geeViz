@@ -152,17 +152,16 @@ def test_phone_logo_menu_sets_theme(delta_page):
     assert page.evaluate("localStorage.getItem('delta-theme')") is None
 
 
-def test_phone_top_bar_keeps_the_theme_switch(delta_page):
-    page = delta_page(SHELL, viewport={"width": 390, "height": 844}, color_scheme="light")
-    btn = page.locator("#mtop #mtheme-btn")
-    assert btn.is_visible()
-    box = btn.bounding_box()
-    assert box["x"] + box["width"] <= 390 - 10, box  # inside the bar
-    page.click("#mtop #mtheme-btn")
+def test_phone_theme_follows_the_device(delta_page):
+    """On a phone the theme is automatic: the top bar has no light/dark
+    switch (the logo menu still overrides), and the page follows the
+    device's setting as it changes."""
+    page = delta_page(SHELL, viewport={"width": 390, "height": 844}, color_scheme="dark")
+    assert page.locator("#mtop .ti-sun, #mtop .ti-moon").count() == 0
+    assert not page.locator("#theme-btn").is_visible()
     assert theme(page) == "dark"
-    assert page.evaluate("document.querySelector('#mtheme-btn i').className").endswith("ti-sun")
-    page.click("#mtop #mtheme-btn")
-    assert theme(page) == "light"
+    page.emulate_media(color_scheme="light")
+    page.wait_for_function("document.documentElement.getAttribute('data-bs-theme') === 'light'")
 
 
 def test_no_page_errors(delta_page):

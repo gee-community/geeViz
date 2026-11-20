@@ -11,6 +11,10 @@ export function legendMarkup(legend) {
   if (legend.type === "classes") {
     return legend.items.map((it, i) => `<span class="sw" data-c="${i}"></span><span class="lbl">${escapeText(it.label)}</span>`).join("");
   }
+  if (legend.type === "ramp" && legend.wind) {
+    const labels = (legend.labels || []).map((l) => `<span>${escapeText(l)}</span>`).join("");
+    return `<span class="ramp wind-ramp" data-c="ramp"><i class="wind-comet" data-c="comet"></i></span><span class="ramp-l mono">${labels}</span>`;
+  }
   if (legend.type === "ramp") {
     const labels = (legend.labels || []).map((l) => `<span>${escapeText(l)}</span>`).join("");
     return `<span class="ramp" data-c="ramp"></span><span class="ramp-l mono">${labels}</span>`;
@@ -32,6 +36,22 @@ export function swatchColors(legend) {
 }
 
 export const gradient = (colors) => `linear-gradient(90deg, ${colors.join(", ")})`;
+
+// "#rgb" / "#rrggbb" to [r, g, b]; white for anything else (a legend is not
+// worth failing over). port of wind-particles.js hexToRgb.
+export function hexRgb(h) {
+  h = String(h || "#fff").replace("#", "");
+  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  const n = parseInt(h, 16);
+  return h.length !== 6 || isNaN(n) ? [255, 255, 255] : [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+// The wind legend's particle: a trail fading in to its head, in the particle
+// color (port of wind-particles.js restyleLegend's comet).
+export function cometGradient(color) {
+  const c = hexRgb(color).join(",");
+  return `linear-gradient(90deg, rgba(${c},0), rgba(${c},.95))`;
+}
 
 // After a drop, put each pinned layer back at the index it had when the drag
 // started, so only movable layers trade places (the mockup's onEnd, done by

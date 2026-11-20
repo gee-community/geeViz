@@ -7,6 +7,8 @@
 // setCenter, centerObject, synchronousCenterObject, showSpinner,
 // hideSpinner, populateChartLayerSelect, ...). Missing hooks are ignored.
 
+import { particleOpacityFor } from "./engine/viz.js";
+
 const UNSUPPORTED = ["addExport", "addPlot", "addFeatureView", "addREST", "addMBSankey", "addSelectLayerGroup"];
 
 // Every layer type draws in the one tile stack (vectors and dynamic map
@@ -65,6 +67,8 @@ export function createMapApi(store, engine = {}) {
       legend: null,
       timelapse: kind === "timelapse" ? {} : null,
       chartable: !!viz.canAreaChart,
+      // a grouped wind layer's second slider (see particleOpacityFor)
+      ...(particleOpacityFor(viz) === undefined ? {} : { particleOpacity: particleOpacityFor(viz) }),
       // port of 4map-manager.js addSelectLayerToMap: select layers set canQuery = false
       queryable: viz.canQuery !== false && kind !== "areaChartOnly" && kind !== "select",
       ...extra,

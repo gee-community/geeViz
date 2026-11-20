@@ -69,11 +69,19 @@ export function windQueryItem(viz, eeApi) {
 // labeled in the units the script chose (the speed is already converted).
 export const WIND_UNIT_PROPS = { speed: "wind_units", direction: "wind_direction_units" };
 
+// The key wind-particles.js files a layer's state under in _adopted: a
+// timelapse's frames are one group, "tl:<timeLapseID>".
+export const adoptedKey = (s) => (s.timelapse ? "tl:" + s.id : s.id);
+
 // registry: compat.js's layerObj (mutated in place: wind-particles.js holds the
 // binding, not a copy). particles: window.geeVizWindParticles, once loaded.
+// opts.particleOpacity(id): a grouped layer's particle slider (0..1, undefined
+// for other layers); wind-particles.js reads it as the adopted state's
+// particleDim, which its own injected slider sets in the original.
 export function createWind(layers, registry, opts = {}) {
   const particles = opts.particles || (() => window.geeVizWindParticles);
   const ours = new Set();
+  const groups = new Map(); // timelapse id -> its "tl:<id>" record
 
   // update() reaches the store (loading) and the store reaches the layer
   // engine, which may report a change again: run once more, never nested.
@@ -116,11 +124,39 @@ export function createWind(layers, registry, opts = {}) {
       delete registry[key];
       ours.delete(key);
     });
+    // wind-particles.js reports a timelapse's tile loading under its group
+    // key, "tl:<id>", where the original viewer has no record either. Give it
+    // one, non-enumerable: scan() lists the registry to find layers, and must
+    // not find this.
+    const lapses = new Map();
+    layers.windSources().forEach((s) => s.timelapse && s.ready && lapses.set(s.id, s));
+    lapses.forEach((s, id) => {
+      let g = groups.get(id);
+      if (!g) {
+        g = { visible: false };
+        reportTo(g, id);
+        groups.set(id, g);
+        Object.defineProperty(registry, "tl:" + id, { value: g, enumerable: false, configurable: true, writable: true });
+      }
+      g.visible = !!s.shown;
+    });
+    [...groups.keys()].forEach((id) => {
+      if (lapses.has(id)) return;
+      delete registry["tl:" + id];
+      groups.delete(id);
+    });
     const wp = particles();
     if (wp) {
       // Adopt new layers and apply visibility now, not on the next tick.
       try {
         wp.scan();
+        if (opts.particleOpacity && wp._adopted) {
+          layers.windSources().forEach((s) => {
+            const po = opts.particleOpacity(s.id);
+            const st = wp._adopted[adoptedKey(s)];
+            if (st && typeof po === "number") st.particleDim = po;
+          });
+        }
         wp._refreshRunState();
       } catch (e) {
         if (window.console) console.warn("wind: refresh failed", e);
@@ -128,30 +164,46 @@ export function createWind(layers, registry, opts = {}) {
     }
   }
 
-  function makeRecord(key, lapse) {
+  // wind-particles.js reports the tiles it is fetching as loading and percent
+  // (0..100, 100 once in, 0 while hidden) on a record; forward both to layer
+  // `id`'s row: its loading state and its progress fill, the share of tiles
+  // in, as for every other tile layer.
+  function reportTo(rec, id) {
     let loading = false;
-    const rec = {
-      viz: null,
-      layerId: 0,
-      visible: false,
-      opacity: 1,
-      percent: 0,
-      _tileUrl: null,
-      // A plain object, so wind-particles.js finds getTileUrl by name and
-      // fetches tiles without counting them as map requests.
-      layer: { getTileUrl: (coord, zoom) => (rec._tileUrl ? rec._tileUrl(coord, zoom) : null) },
-    };
-    // wind-particles.js reports the tiles it is fetching here; a single layer
-    // shows it as the row's loading state. (A timelapse's progress is
-    // reported under its group id, which has no record.)
+    let percent = 0;
     Object.defineProperty(rec, "loading", {
       enumerable: true,
       get: () => loading,
       set: (v) => {
         loading = !!v;
-        if (!lapse && layers.setLayerLoading) layers.setLayerLoading(key, loading);
+        if (layers.setLayerLoading) layers.setLayerLoading(id, loading);
       },
     });
+    Object.defineProperty(rec, "percent", {
+      enumerable: true,
+      get: () => percent,
+      set: (v) => {
+        percent = Number(v) || 0;
+        if (layers.setLayerProgress) layers.setLayerProgress(id, percent);
+      },
+    });
+  }
+
+  function makeRecord(key, lapse) {
+    const rec = {
+      viz: null,
+      layerId: 0,
+      visible: false,
+      opacity: 1,
+      _tileUrl: null,
+      // A plain object, so wind-particles.js finds getTileUrl by name and
+      // fetches tiles without counting them as map requests.
+      layer: { getTileUrl: (coord, zoom) => (rec._tileUrl ? rec._tileUrl(coord, zoom) : null) },
+    };
+    // A single layer's record is the one wind-particles.js reports to; a
+    // timelapse reports under its group record (above), not per frame.
+    if (!lapse) reportTo(rec, key);
+    else Object.assign(rec, { loading: false, percent: 0 });
     return rec;
   }
 

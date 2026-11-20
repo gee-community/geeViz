@@ -7,7 +7,7 @@
 // opacity paint (--v, --a), name click toggles, Sortable with pinned restore.
 // Ordering is a port of 2templates.js addLayerSortListener, getLayerIDOrder
 // and urlParams.layerOrders.
-import { legendMarkup, swatchColors, gradient, restorePinned, orderFromStored, toStoredOrder } from "./legend.js";
+import { legendMarkup, swatchColors, gradient, cometGradient, restorePinned, orderFromStored, toStoredOrder } from "./legend.js";
 import { timelapseBlock } from "./timelapse.js";
 
 const LIST_ID = "layer-list";
@@ -103,10 +103,10 @@ export function mountLayers(store, mountEl, opts = {}) {
   }
 
   // ---- rows ----
-  function paintRange(input, a) {
+  function paintRange(input, a, label = "Opacity") {
     input.style.setProperty("--v", a * 100 + "%");
     input.style.setProperty("--a", String(a));
-    input.title = "Opacity " + Math.round(a * 100) + "%";
+    input.title = label + " " + Math.round(a * 100) + "%";
   }
 
   function paintLegend(row, legend) {
@@ -115,6 +115,7 @@ export function mountLayers(store, mountEl, opts = {}) {
     legendEl.querySelectorAll("[data-c]").forEach((el) => {
       const c = el.dataset.c;
       if (c === "ramp") el.style.background = gradient(legend.palette);
+      else if (c === "comet") el.style.background = cometGradient(legend.particle);
       else if (c === "outline") {
         el.style.boxShadow = `inset 0 0 0 2px ${legend.color}`;
         el.style.background = "transparent";
@@ -174,9 +175,28 @@ export function mountLayers(store, mountEl, opts = {}) {
       legendSeen.add(id); // the user has taken over this legend
       if (l) patchLayer(store, id, { legendOpen: !l.legendOpen }, "legend-toggle");
     });
+    // A grouped wind layer has two things to fade, as in the original
+    // (wind-particles.js addParticleSlider): the particles get a slider of
+    // their own, stacked above the layer's, which fades the speed field. Above
+    // because the particles are drawn over the field.
+    const opLabel = typeof layer.particleOpacity === "number" ? "Wind speed opacity" : "Opacity";
+    if (typeof layer.particleOpacity === "number") {
+      const part = parts.range.cloneNode();
+      part.classList.add("op-part");
+      part.setAttribute("aria-label", "Particle opacity");
+      parts.range.setAttribute("aria-label", "Wind speed opacity");
+      parts.range.parentNode.insertBefore(part, parts.range);
+      parts.range.parentNode.classList.add("two");
+      parts.part = part;
+      part.addEventListener("input", () => {
+        const a = Number(part.value) / 100;
+        paintRange(part, a, "Particle opacity");
+        patchLayer(store, id, { particleOpacity: a }, "particle-opacity");
+      });
+    }
     parts.range.addEventListener("input", () => {
       const a = Number(parts.range.value) / 100;
-      paintRange(parts.range, a);
+      paintRange(parts.range, a, opLabel);
       patchLayer(store, id, { opacity: a }, "layer-opacity");
     });
     // A timelapse's controls sit between the row and its legend, as the mockup.
@@ -186,7 +206,7 @@ export function mountLayers(store, mountEl, opts = {}) {
       el.insertBefore(tl.el, parts.legendEl);
       el.classList.add("is-tl");
     }
-    const row = { el, parts, tl, last: {} };
+    const row = { el, parts, tl, opLabel, last: {} };
     nameRows.set(parts.name, row);
     nameRo.observe(parts.name);
     return row;
@@ -221,13 +241,17 @@ export function mountLayers(store, mountEl, opts = {}) {
     }
     if (last.opacity !== l.opacity) {
       if (Number(parts.range.value) / 100 !== l.opacity) parts.range.value = String(Math.round(l.opacity * 100));
-      paintRange(parts.range, l.opacity);
+      paintRange(parts.range, l.opacity, row.opLabel);
+    }
+    if (parts.part && last.particleOpacity !== l.particleOpacity) {
+      if (Number(parts.part.value) / 100 !== l.particleOpacity) parts.part.value = String(Math.round(l.particleOpacity * 100));
+      paintRange(parts.part, l.particleOpacity, "Particle opacity");
     }
     if (last.legend !== l.legend) paintLegend(row, l.legend);
     if (row.tl && last.timelapse !== l.timelapse) row.tl.update(l);
     // a new name in the same box: the name observer does not see it
     if (last.name !== undefined && last.name !== l.name && el.isConnected) fitRow(row);
-    row.last = { name: l.name, opacity: l.opacity, legend: l.legend, timelapse: l.timelapse };
+    row.last = { name: l.name, opacity: l.opacity, particleOpacity: l.particleOpacity, legend: l.legend, timelapse: l.timelapse };
   }
 
   function render() {

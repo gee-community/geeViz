@@ -172,6 +172,39 @@ export function normVecStyle(v) {
   return s;
 }
 
+// A grouped wind layer (geeViz.weather.addWindLayer: one layer, a speed field
+// under particle trails). port of wind-particles.js restyleLegend: a color bar
+// from the speed ramp with its two end values, the high one in the layer's
+// units, and a particle crossing the bar in the trail color. The viz also
+// carries a classLegendDict chip for viewers without that code; this replaces
+// it. Returns null for any other layer.
+export function windLegend(viz, name) {
+  if (!viz || !viz.windParticles || !viz.windSpeedRaster || viz.addToLegend === false) return null;
+  const pal = Array.isArray(viz.windSpeedPalette) ? viz.windSpeedPalette : [];
+  if (pal.length < 2 || isNil(viz.windRampMin) || isNil(viz.windRampMax)) return null;
+  const units = viz.windUnits ? " " + viz.windUnits : "";
+  return {
+    type: "ramp",
+    wind: true,
+    title: isNil(viz.legendTitle) ? name : viz.legendTitle,
+    min: viz.windRampMin,
+    max: viz.windRampMax,
+    palette: pal.map((c) => addColorHash(String(c).replace(/^#/, ""))),
+    labels: [String(viz.windRampMin), String(viz.windRampMax) + units],
+    particle: viz.particleColor || "#fff",
+  };
+}
+
+// Where a grouped wind layer's particle opacity slider starts. port of
+// wind-particles.js initialDim: geeViz.weather sends the particles' opacity as
+// windParticleDim (opacity is the speed field's); a hand-built viz without it
+// falls back to opacity. undefined for any other layer: it has one slider.
+export function particleOpacityFor(viz) {
+  if (!viz || !viz.windParticles || !viz.windSpeedRaster) return undefined;
+  const d = typeof viz.windParticleDim === "number" ? viz.windParticleDim : typeof viz.opacity === "number" ? viz.opacity : 1;
+  return Math.min(1, Math.max(0, d));
+}
+
 // Legend for a prepared viz. port of the legend construction at the end of
 // 4map-manager.js buildLayer (addColorRampLegendEntry and addClassLegendEntry
 // inputs). Deliberate difference: a tile or dynamic map service with no
@@ -180,6 +213,8 @@ export function normVecStyle(v) {
 export function legendFor(viz, name) {
   if (!viz) return null;
   if (viz.legend && typeof viz.legend === "object" && viz.legend.type) return viz.legend;
+  const wind = windLegend(viz, name);
+  if (wind) return wind;
   const title = isNil(viz.legendTitle) ? name : viz.legendTitle;
   const isService = viz.layerType === "tileMapService" || viz.layerType === "dynamicMapService";
   if (

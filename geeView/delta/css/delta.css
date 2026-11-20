@@ -273,6 +273,17 @@ input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border:
 .legend .lbl { overflow-wrap: anywhere; }
 .ramp { grid-column: 1 / -1; height: 10px; border-radius: 3px; }
 .ramp-l { grid-column: 1 / -1; display: flex; justify-content: space-between; font-size: 11px; }
+/* A grouped wind layer: the speed ramp with a particle crossing it on a loop
+   (port of wind-particles.js restyleLegend). It starts fully off the left edge
+   so the bar is briefly clean: a comet that never leaves reads as a gradient. */
+.ramp.wind-ramp { position: relative; overflow: hidden; height: 13px; }
+.wind-comet { position: absolute; top: 50%; left: -34px; width: 34px; height: 3px; margin-top: -1.5px; border-radius: 2px; animation: dz-wind-flow 2.6s linear infinite; }
+@keyframes dz-wind-flow { from { left: -34px; } to { left: 100%; } }
+@media (prefers-reduced-motion: reduce) { .wind-comet { animation: none; left: auto; right: 6px; } }
+/* ...and two opacity sliders, particles above the speed field, in a taller
+   row so they are not squeezed into one slider's height */
+.opacity.two { flex-direction: column; align-items: stretch; gap: 10px; }
+.lrow:has(> .opacity.two) { padding-block: 7px; }
 /* timelapse block inside the row (port of the mockup's .tl); an off timelapse folds it.
    Its content starts where the name does. Inline, it ends where the opacity slider ends (the legend toggle's
    column is left free), the sliders take the opacity slider's width at its right edge and the buttons sit to

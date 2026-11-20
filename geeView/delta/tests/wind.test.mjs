@@ -13,6 +13,8 @@ function fakeLayers(sources) {
   };
   f.fire = () => f.listeners.forEach((fn) => fn());
   f.setLayerLoading = (id, v) => f.loading.push([id, v]);
+  f.progress = [];
+  f.setLayerProgress = (id, v) => f.progress.push([id, v]);
   return f;
 }
 
@@ -90,14 +92,44 @@ test("createWind keeps the registry in step, in place, and tells wind-particles"
   assert.deepEqual(Object.keys(reg), []);
 });
 
-test("createWind: loading written by wind-particles reaches the layer row (single layers only)", () => {
+test("createWind: loading and percent written by wind-particles reach the layer row", () => {
   const layers = fakeLayers([single(), lapse()]);
   const reg = {};
   createWind(layers, reg, { particles: () => null });
   reg["layer-1"].loading = true;
+  reg["layer-1"].percent = 40;
+  // a frame's record is not where a timelapse reports
   reg[frameKey("layer-2", 0)].loading = true;
+  reg[frameKey("layer-2", 0)].percent = 10;
   assert.deepEqual(layers.loading, [["layer-1", true]]);
+  assert.deepEqual(layers.progress, [["layer-1", 40]]);
   assert.equal(reg["layer-1"].loading, true);
+  assert.equal(reg["layer-1"].percent, 40);
+});
+
+test("createWind: a timelapse reports under tl:<id>, a record scan() cannot list", () => {
+  const layers = fakeLayers([lapse({ shown: false })]);
+  const reg = {};
+  createWind(layers, reg, { particles: () => null });
+  const g = reg["tl:layer-2"];
+  assert.ok(g);
+  assert.equal(Object.keys(reg).includes("tl:layer-2"), false);
+  for (const k in reg) assert.notEqual(k, "tl:layer-2");
+  // wind-particles.js reads visible off it (hidden reports 0)
+  assert.equal(g.visible, false);
+  layers.sources = [lapse({ shown: true })];
+  layers.fire();
+  assert.equal(reg["tl:layer-2"], g);
+  assert.equal(g.visible, true);
+  g.loading = true;
+  g.percent = 65;
+  assert.deepEqual(layers.loading, [["layer-2", true]]);
+  assert.deepEqual(layers.progress, [["layer-2", 65]]);
+  assert.equal(g.percent, 65);
+  // removed with its layer
+  layers.sources = [];
+  layers.fire();
+  assert.equal(reg["tl:layer-2"], undefined);
 });
 
 test("createWind leaves records it did not make alone", () => {

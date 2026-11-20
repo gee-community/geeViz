@@ -303,8 +303,9 @@ def _served_cleanly(page, agent_server):
 
 @pytest.mark.live
 def test_export_html_original_mixed_map_with_wind_served_like_the_agent(agent_server, _browser, tmp_path):
-    """askterra's chat maps use the original skin: every layer type, wind
-    included, still loads and draws through the agent's mount and /ee-api."""
+    """The original skin, still a choice (Map.setSkin("original") or
+    GEEVIZ_SKIN=original): every layer type, wind included, still loads and
+    draws through the agent's mount and /ee-api."""
     path = _export(_mixed_map("original"), tmp_path, "orig_mixed")
     ctx, page = _open(_browser, agent_server + path)
     try:
@@ -325,6 +326,9 @@ def test_export_html_original_mixed_map_with_wind_served_like_the_agent(agent_se
 
 @pytest.mark.live
 def test_export_html_delta_mixed_map_with_wind_served_like_the_agent(agent_server, _browser, tmp_path):
+    """askterra's chat maps are Delta by default: every layer type loads, and
+    the wind layer draws with its ramp-and-particle legend and its two
+    opacity sliders."""
     path = _export(_mixed_map("delta"), tmp_path, "delta_mixed")
     ctx, page = _open(_browser, agent_server + path)
     try:
@@ -337,6 +341,11 @@ def test_export_html_delta_mixed_map_with_wind_served_like_the_agent(agent_serve
         assert all(l["loading"] is False and l["error"] is None for l in layers), layers
         _wait_wind(page)
         _served_cleanly(page, agent_server)
+        wind = page.evaluate("""() => { const l = __delta.store.get().layers.find(x => x.name === 'Wind');
+          const row = document.querySelector('#layer-list .layer[data-id="' + l.id + '"]');
+          return {wind: !!(l.legend && l.legend.wind), comet: !!row.querySelector('.legend .wind-comet'),
+                  sliders: [...row.querySelectorAll('.lrow .opacity input')].map(i => i.getAttribute('aria-label'))}; }""")
+        assert wind == {"wind": True, "comet": True, "sliders": ["Particle opacity", "Wind speed opacity"]}, wind
         assert page.delta_errors == []
     finally:
         ctx.close()
