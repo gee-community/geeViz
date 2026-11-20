@@ -676,7 +676,7 @@ def test_map_view_bakes_tenant_into_run_js_not_url():
     # ``?v=<timestamp>`` cache-buster that forces the browser to
     # actually reload on repeat ``Map.view()`` calls — added in
     # 2026.7.1 to fix the notebook stale-tab bug.
-    assert 'query = f"?v={_v}"' in proxy_branch, \
+    assert 'query = f"?v={_v}' in proxy_branch, \
         "proxy branch must build a ?v=<timestamp> cache-buster " \
         "so subsequent Map.view() calls force a browser reload"
     assert "?tenant=" not in proxy_branch, \
