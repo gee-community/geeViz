@@ -121,6 +121,9 @@ def test_live_readout_clear_and_tool_switch(page):
 
 def test_crosshair_survives_switch_from_measure_to_chart_draw(page):
     cursor = "__delta.engine.gmap.get('draggableCursor')"
+    # Chart area is offered only with a layer it can chart
+    page.evaluate("Map.addLayer(ee.Image(1), {canAreaChart: true}, 'Chartable', false)")
+    wait_for(page, "!document.querySelector('.tool[data-tool=chart]').hidden")
     page.evaluate("__delta.store.set({tool: 'distance'}, 'test')")
     assert page.evaluate(cursor) == "crosshair"
     page.evaluate("__delta.store.set({tool: 'chart', areaFrom: 'draw'}, 'test')")
@@ -138,3 +141,99 @@ def test_escape_cancels_a_measurement(page):
     time.sleep(0.4)
     page.keyboard.press("Escape")
     wait_for(page, "__delta.store.get().results.length === 0 && __delta.measure.path().length === 0")
+
+
+# ---- editing parity with the original (Task 11k part B) ----
+
+def n_points(page):
+    return page.evaluate("__delta.measure.paths().map(p => p.length)")
+
+
+def test_ctrl_z_undoes_and_ctrl_shift_z_redoes_distance_points(page):
+    page.evaluate("__delta.store.set({tool: 'distance'}, 'test')")
+    for dx, dy in LINE:
+        page.mouse.click(CX + dx, CY + dy)
+        time.sleep(0.35)
+    assert n_points(page) == [3]
+    page.keyboard.press("Control+z")
+    assert n_points(page) == [2]
+    page.keyboard.press("Control+z")
+    assert n_points(page) == [1]
+    page.keyboard.press("Control+Shift+z")
+    assert n_points(page) == [2]
+    page.keyboard.press("Control+y")
+    assert n_points(page) == [3]
+    page.mouse.dblclick(CX + LINE[-1][0], CY + LINE[-1][1])
+    wait_for(page, "__delta.store.get().results[0] && __delta.store.get().results[0].meta === '3 points'")
+    # the buttons do the same, and say so
+    assert page.get_attribute("#tool-options [data-sk=undo]", "title") == "Undo (Ctrl+Z)"
+    page.click("#tool-options [data-sk=undo]")  # un-finish
+    page.click("#tool-options [data-sk=undo]")
+    assert n_points(page) == [2]
+    page.click("#tool-options [data-sk=redo]")
+    assert n_points(page) == [3]
+    assert page.delta_errors == []
+
+
+def test_area_second_polygon_after_double_click_and_total(page):
+    page.evaluate("__delta.store.set({tool: 'area'}, 'test')")
+    small = [(-200, -60), (-120, -60), (-120, 20)]
+    other = [(80, -60), (200, -60), (200, 40), (80, 40)]
+    draw(page, small)
+    draw(page, other)
+    assert n_points(page) == [3, 4]
+    lines = page.evaluate("__delta.store.get().results[0].data.lines")
+    assert [l[0] for l in lines] == ["Total area", "Polygon 1", "Polygon 2"]
+    exp = page.evaluate(
+        """async (units) => { const u = await import('./delta/js/util.js');
+          const a = __delta.measure.paths().map(p => google.maps.geometry.spherical.computeArea(p));
+          return [u.formatArea(a[0] + a[1], units), u.formatArea(a[0], units), u.formatArea(a[1], units)]; }""",
+        page.evaluate("__delta.store.get().units"),
+    )
+    assert [l[1] for l in lines] == exp
+    # undo walks back into the second polygon, then out of it; the first stays
+    page.keyboard.press("Control+z")
+    assert page.evaluate("__delta.measure.sketch('area').state().open") is True
+    for _ in range(4):
+        page.keyboard.press("Control+z")
+    assert n_points(page) == [3]
+    # Delete clears everything, and is itself undoable
+    page.keyboard.press("Delete")
+    assert n_points(page) == []
+    page.keyboard.press("Control+z")
+    assert n_points(page) == [3]
+    assert page.delta_errors == []
+
+
+def test_dragging_a_vertex_updates_the_measurement(page):
+    page.evaluate("__delta.store.set({tool: 'area'}, 'test')")
+    draw(page, POLY)
+    before = page.evaluate("__delta.store.get().results[0].data.lines[0][1]")
+    v0 = vertices(page)[0]
+    x, y = CX + POLY[0][0], CY + POLY[0][1]
+    page.mouse.move(x, y)
+    page.mouse.down()
+    page.mouse.move(x - 60, y - 50, steps=8)
+    page.mouse.up()
+    wait_for(page, "(b) => __delta.store.get().results[0].data.lines[0][1] !== b", before)
+    v1 = vertices(page)[0]
+    assert v1 != v0 and len(vertices(page)) == 5
+    # the move is one undo step
+    page.keyboard.press("Control+z")
+    wait_for(page, "(b) => __delta.store.get().results[0].data.lines[0][1] === b", before)
+    assert page.delta_errors == []
+
+
+def test_shortcuts_only_in_the_sketching_tool(page):
+    page.evaluate("__delta.store.set({tool: 'area'}, 'test')")
+    draw(page, POLY)
+    page.evaluate("__delta.store.set({tool: 'query'}, 'test')")
+    page.evaluate("__delta.store.set({tool: 'area'}, 'test')")
+    assert n_points(page) == []  # a tool switch starts over
+    draw(page, POLY)
+    page.evaluate("__delta.store.set({tool: null}, 'test')")
+    page.keyboard.press("Control+z")
+    page.keyboard.press("Delete")
+    # nothing active: nothing heard (the area sketch was reset by the switch anyway)
+    assert page.evaluate("__delta.store.get().tool") is None
+    assert page.delta_errors == []

@@ -25,6 +25,9 @@ export function defaultState() {
     chartYears: {},
     chartChoices: {},
     selections: [],
+    // the active sketch (Distance, Area, Chart area Draw): {tool, canUndo,
+    // canRedo, shapes, drawing}, for the undo/redo/clear buttons
+    sketch: null,
     notices: [],
     theme: "system",
     panes: { left: { visible: true, width: null }, right: { width: null } },

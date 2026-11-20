@@ -372,3 +372,36 @@ def test_csv_and_png_actions(page):
     # expand opens the chart in the modal
     page.click('#results-mount .card-r[data-rid="%s"] [data-act=expand]' % sk["id"])
     wait_for(page, "document.querySelector('dialog.dz-modal[open] .sankey-wrap svg') !== null", timeout=10)
+
+
+def test_draw_second_polygon_charts_both_and_undo(page):
+    """As the original's user-defined area: a double-click finishes a polygon,
+    the next click starts another (it does not clear the first), and every
+    finished polygon is charted as one area. Ctrl+Z steps back, Delete clears."""
+    page.evaluate("__delta.api.turnOnUserDefinedAreaCharting()")
+    wait_for(page, "__delta.store.get().areaFrom === 'draw'")
+    # between the panes (the map runs under them)
+    cx, cy = page.evaluate("(() => { const l = document.querySelector('#pane-left').getBoundingClientRect().right; const r = document.querySelector('#pane-right').getBoundingClientRect().left; return [(l + r) / 2 - 40, innerHeight * 0.55]; })()")
+
+    def poly(pts):
+        for dx, dy in pts[:-1]:
+            page.mouse.click(cx + dx, cy + dy)
+            time.sleep(0.35)
+        page.mouse.dblclick(cx + pts[-1][0], cy + pts[-1][1])
+
+    poly([(-60, -40), (0, -40), (0, 20)])
+    wait_for(page, "__delta.store.get().chartArea && __delta.store.get().chartArea.label === 'Drawn area'")
+    wait_charts(page)
+    a1 = page.evaluate("__delta.store.get().chartArea.areaM2")
+    poly([(60, -40), (140, -40), (140, 40), (60, 40)])
+    wait_for(page, "__delta.store.get().chartArea && __delta.store.get().chartArea.label === 'Drawn areas (2)'")
+    wait_charts(page)
+    ca = page.evaluate("__delta.store.get().chartArea")
+    assert len(ca["rings"]) == 2 and ca["areaM2"] > a1 * 2
+    # undo the second polygon's finish: back to charting the first alone
+    page.keyboard.press("Control+z")
+    wait_for(page, "__delta.store.get().chartArea && __delta.store.get().chartArea.label === 'Drawn area'")
+    assert abs(page.evaluate("__delta.store.get().chartArea.areaM2") - a1) < 1
+    page.keyboard.press("Delete")
+    wait_for(page, "__delta.store.get().chartArea === null && __delta.store.get().results.length === 0")
+    assert page.delta_errors == []

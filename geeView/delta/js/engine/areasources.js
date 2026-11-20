@@ -10,7 +10,8 @@
 // The parsing helpers at the top are pure; createAreaSources wires the map.
 import { smartToFixed } from "../util.js";
 import { chartJobs } from "./areachart.js";
-import { sameLatLng, drawStyle, restyleShapes } from "./drawing.js";
+import { drawStyle } from "./drawing.js";
+import { createSketch } from "./sketch.js";
 
 // The original's #areaUpload types plus the other vector formats the converter reads.
 export const UPLOAD_ACCEPT = ".zip,.kml,.kmz,.gpkg,.gpx,.fgb,.geojson,.json";
@@ -115,8 +116,7 @@ export function createAreaSources(engine, store, charter, opts = {}) {
     return s.tool === "chart" && (!src || s.areaFrom === src);
   };
 
-  let path = null; // the polyline being drawn
-  let shape = null; // the finished polygon
+  let sketch = null; // the Draw source's polygons (engine/sketch.js), made below
   const uploaded = new g.Data({ map: gmap });
   let last = null; // the area last charted: {geometry, label, extra}
   // Uploads and selections wait on the network: each takes a token, and a
@@ -131,16 +131,14 @@ export function createAreaSources(engine, store, charter, opts = {}) {
 
   const lineStyle = () => drawStyle(colors().stroke);
   function restyle() {
-    restyleShapes([path, shape], colors().stroke);
+    if (sketch) sketch.restyle();
     const st = lineStyle();
     uploaded.setStyle({ strokeColor: st.strokeColor, strokeWeight: 3, fillColor: st.fillColor, fillOpacity: st.fillOpacity, clickable: false, zIndex: 3100 });
   }
   restyle();
 
   function clearShapes() {
-    if (path) path.setMap(null);
-    if (shape) shape.setMap(null);
-    path = shape = null;
+    if (sketch) sketch.reset();
     uploaded.forEach((f) => uploaded.remove(f));
   }
 
@@ -151,46 +149,69 @@ export function createAreaSources(engine, store, charter, opts = {}) {
   }
 
   // ---- Draw ----
-  const ll = (p) => [p.lng(), p.lat()];
-  gmap.addListener("click", (ev) => {
-    if (!ev.latLng || picking() || !active("draw")) return;
-    if (shape) {
-      shape.setMap(null);
-      shape = null;
-    }
-    if (!path) path = new g.Polyline({ ...lineStyle(), map: gmap });
-    const pts = path.getPath();
-    const prev = pts.getLength() ? pts.getAt(pts.getLength() - 1) : null;
-    // the second click of a double-click lands on the point just added
-    if (sameLatLng(prev, ev.latLng)) return;
-    pts.push(ev.latLng);
-  });
-  gmap.addListener("dblclick", (ev) => {
-    if (picking() || !active("draw") || !path) return;
-    if (ev && ev.stop) ev.stop();
-    finishDrawing();
-  });
-  function finishDrawing() {
-    if (!path) return null;
-    const pts = path.getPath().getArray();
-    if (pts.length < 3) {
-      notify("Please draw a polygon on the map: click to add points, double-click to finish.");
-      return null;
-    }
-    path.setMap(null);
-    path = null;
-    shape = new g.Polygon({ ...lineStyle(), paths: pts, map: gmap });
-    const ring = pts.map(ll);
-    ring.push(ring[0].slice());
-    const areaM2 = spherical() ? spherical().computeArea(pts) : null;
-    return run({ geometry: ee.Geometry.Polygon([ring]), label: "Drawn area", extra: { source: "draw", areaM2, ring } });
+  // port of startUserDefinedAreaCharting: double-click finishes a polygon,
+  // the next click starts another, and every finished polygon is charted as
+  // one area. Undo/redo, Delete and vertex editing come from the sketch; a
+  // change to the finished polygons charts again (an edit after a short rest).
+  let drawnSig = "[]";
+  let editTimer = 0;
+  const EDIT_DELAY = opts.editDelay === undefined ? 600 : opts.editDelay;
+  function drawnRings() {
+    return sketch.paths(false).map((pts) => {
+      const ring = pts.map((p) => [p.lng(), p.lat()]);
+      ring.push(ring[0].slice());
+      return ring;
+    });
   }
-  if (typeof document !== "undefined") document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && path && active("draw")) {
-      path.setMap(null);
-      path = null;
+  function chartDrawn() {
+    const paths = sketch.paths(false);
+    if (!paths.length) return null;
+    const rings = drawnRings();
+    const areaM2 = spherical() ? paths.reduce((a, p) => a + spherical().computeArea(p), 0) : null;
+    const geometry = rings.length === 1 ? ee.Geometry.Polygon([rings[0]]) : ee.Geometry.MultiPolygon(rings.map((r) => [r]));
+    const label = rings.length === 1 ? "Drawn area" : "Drawn areas (" + rings.length + ")";
+    return run({ geometry, label, extra: { source: "draw", areaM2, rings } });
+  }
+  let drawnRun = null;
+  function drawnChanged(why) {
+    const sig = JSON.stringify(sketch.state().open ? sketch.state().shapes.slice(0, -1) : sketch.state().shapes);
+    if (sig === drawnSig) return;
+    drawnSig = sig;
+    clearTimeout(editTimer);
+    if (sig === "[]") {
+      // nothing left to chart
+      charter.cancel();
+      last = null;
+      store.set({ results: [], where: "", chartArea: null }, "chart-draw-cleared");
+      return;
     }
+    if (why === "edit") editTimer = setTimeout(() => active("draw") && chartDrawn(), EDIT_DELAY);
+    else drawnRun = chartDrawn();
+  }
+  sketch = createSketch({
+    google: g,
+    gmap,
+    polygon: true,
+    multi: true,
+    active: () => active("draw"),
+    picking,
+    color: () => colors().stroke,
+    tooFew: () => notify("Please draw a polygon on the map: click to add points, double-click to finish."),
+    onChange: (state, hover, why, status) => {
+      store.set({ sketch: { tool: "chart", ...status } }, "sketch");
+      if (why === "reset") {
+        drawnSig = "[]";
+        clearTimeout(editTimer);
+        return;
+      }
+      if (why !== "hover" && why !== "point") drawnChanged(why);
+    },
   });
+  // Finish the polygon being drawn (as a double-click does); the chart run, or null.
+  function finishDrawing() {
+    drawnRun = null;
+    return sketch.finish() ? drawnRun : null;
+  }
 
   // ---- Map view ----
   function viewArea() {
@@ -357,5 +378,5 @@ export function createAreaSources(engine, store, charter, opts = {}) {
   ["change:layers", "change:order", "change:chartChoices", "change:chartPeriods"].forEach((e) => store.on(e, maybeAgain));
   if (source === "view") chartView();
 
-  return { upload, chartSelection, chartView, finishDrawing, restyle, clearShapes, last: () => last };
+  return { upload, chartSelection, chartView, finishDrawing, restyle, clearShapes, last: () => last, sketch: () => sketch };
 }

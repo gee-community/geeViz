@@ -9,8 +9,8 @@ import { UPLOAD_ACCEPT } from "../engine/areasources.js";
 import { currentDefaults, insertPeriod, removePeriod, validatePeriods, yearRange } from "../engine/areachart.js";
 
 const HINTS = {
-  distance: "Click the map to start measuring. Double-click to finish.",
-  area: "Click the map to outline an area. Double-click to finish.",
+  distance: "Click the map to start measuring. Double-click to finish. Drag a point to move it.",
+  area: "Click the map to outline an area. Double-click to finish; click again for another polygon. Drag a point to move it.",
   query: "Double-click the map to query every visible layer at that point.",
   chart: "Pick where the area comes from. Every visible chartable layer gets charted inside it.",
 };
@@ -23,7 +23,7 @@ const SOURCES = [
   ["select", "Select"],
 ];
 const SOURCE_HINTS = {
-  draw: "Click the map to outline an area. Double-click to finish.",
+  draw: "Click the map to outline an area. Double-click to finish; click again for another polygon. Every polygon is charted together.",
   view: "Charts what the map shows, and again each time the map rests after you move it.",
   upload: "A .zip shapefile, .kml, .kmz, .gpkg, .gpx, .fgb or .geojson file. Files are converted on the geeViz server that serves this map; only the area outline is sent to Earth Engine.",
   select: "Click features of a select layer on the map, then chart them.",
@@ -92,7 +92,14 @@ function seg(key, label, options, value, onPick) {
   return row;
 }
 
-export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, notify, urlParams } = {}) {
+// Undo, redo and clear for the sketching tools, with the shortcuts in their tooltips.
+const EDIT_ACTIONS = [
+  ["undo", "ti-arrow-back-up", "Undo (Ctrl+Z)"],
+  ["redo", "ti-arrow-forward-up", "Redo (Ctrl+Shift+Z or Ctrl+Y)"],
+  ["clear", "ti-trash", "Clear all (Delete)"],
+];
+
+export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, measure, notify, urlParams } = {}) {
   const say = notify || (() => {});
   // a source action that fails tells the user instead of failing silently
   const attempt = (what, fn) =>
@@ -102,6 +109,50 @@ export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, notify, 
   const phoneMq = matchMedia("(max-width: 760px)");
   const unitButtons = unitsEl ? Array.from(unitsEl.querySelectorAll("[data-u]")) : [];
   const sources = () => (typeof chart === "function" ? chart() : chart);
+  const measurer = () => (typeof measure === "function" ? measure() : measure);
+  // the sketch the active tool draws with: Distance, Area, or Chart area's Draw
+  function activeSketch() {
+    const s = store.get();
+    if (s.tool === "distance" || s.tool === "area") {
+      const m = measurer();
+      return m && m.sketch ? m.sketch(s.tool) : null;
+    }
+    if (s.tool === "chart" && s.areaFrom === "draw") {
+      const src = sources();
+      return src && src.sketch ? src.sketch() : null;
+    }
+    return null;
+  }
+  function editBar() {
+    const bar = el("div", "sk-bar");
+    bar.setAttribute("role", "group");
+    bar.setAttribute("aria-label", "Edit the drawing");
+    EDIT_ACTIONS.forEach(([act, icon, tip]) => {
+      const b = el("button", "ib");
+      b.type = "button";
+      b.dataset.sk = act;
+      b.title = tip;
+      b.setAttribute("aria-label", tip);
+      b.appendChild(el("i", "ti " + icon));
+      b.addEventListener("click", () => {
+        const sk = activeSketch();
+        if (sk) sk[act]();
+      });
+      bar.appendChild(b);
+    });
+    paintEditBar(bar);
+    return bar;
+  }
+  function paintEditBar(bar) {
+    const st = store.get().sketch;
+    const mine = !!activeSketch() && st;
+    bar.querySelector("[data-sk=undo]").disabled = !(mine && st.canUndo);
+    bar.querySelector("[data-sk=redo]").disabled = !(mine && st.canRedo);
+    bar.querySelector("[data-sk=clear]").disabled = !(mine && st.shapes > 0);
+  }
+  store.on("change:sketch", () => {
+    if (optionsEl) optionsEl.querySelectorAll(".sk-bar").forEach(paintEditBar);
+  });
   let settingsOpen = false;
   let draft = null; // transition period rows being edited
   let periodErrors = [];
@@ -294,6 +345,7 @@ export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, notify, 
     const src = s.areaFrom;
     const box = el("div", "csrc");
     box.appendChild(hintEl(SOURCE_HINTS[src] || "", "topt-hint sub"));
+    if (src === "draw") box.appendChild(editBar());
     if (src === "upload") {
       const lab = el("label", "chip file-chip");
       lab.appendChild(el("i", "ti ti-upload"));
@@ -362,7 +414,9 @@ export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, notify, 
       return;
     }
     const text = hintFor(s.tool, phoneMq.matches);
-    optionsEl.replaceChildren(...(text ? [hintEl(text)] : []));
+    const nodes = text ? [hintEl(text)] : [];
+    if (s.tool === "distance" || s.tool === "area") nodes.push(editBar());
+    optionsEl.replaceChildren(...nodes);
   }
 
   // Each tool has its own output: a new tool starts with an empty one.

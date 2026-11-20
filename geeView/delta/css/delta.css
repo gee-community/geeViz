@@ -66,6 +66,10 @@ body.resizing #map { pointer-events: none; }
 .seg { display: flex; border: 1px solid var(--dz-line); border-radius: 8px; padding: 2px; gap: 2px; margin-top: 8px; }
 .seg button { flex: 1; border: 0; background: transparent; color: var(--dz-mute); border-radius: 6px; padding: 4px 0; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
 .seg button { border: 1px solid transparent; }
+/* undo / redo / clear for the sketching tools */
+.sk-bar { display: flex; gap: 4px; margin-top: 8px; }
+.sk-bar .ib { border: 1px solid var(--dz-line); }
+.sk-bar .ib:disabled { opacity: 0.4; cursor: default; }
 .seg button.on { background: var(--dz-teal-soft); border-color: color-mix(in srgb, var(--dz-teal) 45%, transparent); color: var(--dz-teal); }
 .seg button:not(.on):hover { background: var(--dz-raise); color: var(--dz-ink); }
 .seg button:focus-visible { outline: 2px solid var(--dz-teal); outline-offset: 1px; }

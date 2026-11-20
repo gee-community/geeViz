@@ -47,6 +47,7 @@ const toolsUI = mountTools(store, {
   optionsEl: document.getElementById("tool-options"),
   unitsEl: document.querySelector("#pane-right .units"),
   chart: () => chartSources,
+  measure: () => window.__delta && window.__delta.measure,
   notify: (msg) => store.update((s) => ({ ...s, notices: [...s.notices, msg] }), "notice"),
 });
 const outputUI = mountOutput(store, {
