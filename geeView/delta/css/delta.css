@@ -43,6 +43,8 @@ body.resizing #map { pointer-events: none; }
 .brand .name b { font-weight: 700; color: var(--dz-teal); }
 .ib { width: 30px; height: 30px; display: inline-grid; place-items: center; border-radius: 8px; border: 0; background: transparent; color: var(--dz-mute); font-size: 17px; cursor: pointer; padding: 0; }
 .ib:hover { background: var(--dz-raise); color: var(--dz-ink); }
+/* nothing to do (no earlier or later view, nothing to undo): visibly inactive */
+.ib:disabled, .ib:disabled:hover { opacity: 0.32; cursor: default; background: transparent; color: var(--dz-mute); }
 .ib:focus-visible, .tool:focus-visible { outline: 2px solid var(--dz-teal); outline-offset: 1px; }
 .search { display: flex; align-items: center; margin: 0 12px 10px; height: 34px; border: 1px solid var(--dz-line); border-radius: 9px; background: var(--dz-raise); }
 .search .ib { width: 28px; height: 28px; font-size: 15px; }
@@ -51,12 +53,13 @@ body.resizing #map { pointer-events: none; }
 .search .div { width: 1px; height: 18px; background: var(--dz-line); }
 
 /* right pane: tool picker above tool output */
-.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 8px 10px 6px; }
-.tool { display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 5px; padding: 5px 4px; border-radius: 8px; white-space: nowrap; min-width: 0; border: 1px solid transparent; background: transparent;
+/* the tools are tabs: a strip on a baseline, the selected tab lifted onto it */
+.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 8px 10px 0; border-bottom: 1px solid var(--dz-line); }
+.tool { display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 5px; padding: 7px 4px 6px; margin-bottom: -1px; border-radius: 8px 8px 0 0; white-space: nowrap; min-width: 0; border: 1px solid transparent; border-bottom: 2px solid transparent; background: transparent;
   color: var(--dz-mute); font-family: var(--dz-font-cond); font-weight: 600; font-size: 12px; letter-spacing: 0.02em; cursor: pointer; }
 .tool .ti { font-size: 16px; flex: none; }
 .tool:hover { background: var(--dz-raise); color: var(--dz-ink); }
-.tool.on { background: var(--dz-teal-soft); border-color: color-mix(in srgb, var(--dz-teal) 45%, transparent); color: var(--dz-teal); }
+.tool.on { background: var(--dz-teal-soft); border-color: var(--dz-line); border-bottom-color: var(--dz-teal); color: var(--dz-teal); }
 .out-h { display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px; font-family: var(--dz-font-cond); font-weight: 700; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dz-mute); }
 .out-h .where { margin-left: auto; letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--dz-faint); font-size: 11px; }
 /* units switch, tool options, output (port of the mockup's .units, .topt, .chips, .card-r) */
@@ -69,7 +72,6 @@ body.resizing #map { pointer-events: none; }
 /* undo / redo / clear for the sketching tools */
 .sk-bar { display: flex; gap: 4px; margin-top: 8px; }
 .sk-bar .ib { border: 1px solid var(--dz-line); }
-.sk-bar .ib:disabled { opacity: 0.4; cursor: default; }
 .seg button.on { background: var(--dz-teal-soft); border-color: color-mix(in srgb, var(--dz-teal) 45%, transparent); color: var(--dz-teal); }
 .seg button:not(.on):hover { background: var(--dz-raise); color: var(--dz-ink); }
 .seg button:focus-visible { outline: 2px solid var(--dz-teal); outline-offset: 1px; }
@@ -173,7 +175,9 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
 /* desktop panes are as tall as their content, at most the window; the content area scrolls under the pinned
    header (brand and search on the left, the tool strip on the right) and the map is live below a short pane */
 @media (min-width: 761px) {
-  .pane { bottom: auto; max-height: 100%; border-bottom: 1px solid var(--dz-line); }
+  /* the map ends at the status bar, and no pane reaches Google's strip above it */
+  #map { bottom: var(--dz-status-h); }
+  .pane { bottom: auto; max-height: calc(100% - var(--dz-status-h) - var(--dz-gfoot)); border-bottom: 1px solid var(--dz-line); }
   .pane-left { border-bottom-right-radius: 12px; }
   .pane-right { border-bottom-left-radius: 12px; }
   .pane-body { flex: 0 1 auto; min-height: 0; }
@@ -187,15 +191,13 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
 @media (min-width: 761px) {
   body.no-tool .pane-right { width: var(--dz-right-folded); }
   body.no-tool .pane-right > *:not(.tools) { display: none !important; }
-  body.no-tool .tools { grid-template-columns: 1fr; padding: 10px 6px; }
-  body.no-tool .tool { flex-direction: column; gap: 3px; font-size: 10.5px; padding: 8px 0; white-space: normal; }
+  body.no-tool .tools { grid-template-columns: 1fr; padding: 10px 6px; border-bottom: 0; gap: 4px; }
+  body.no-tool .tool { flex-direction: column; gap: 3px; font-size: 10.5px; padding: 8px 0; white-space: normal; margin: 0; border-radius: 8px; border-bottom-width: 1px; }
   body.no-tool .tool .ti { font-size: 18px; }
   body.no-tool .loadbar { right: var(--dz-right-folded); }
-  /* Panes are as tall as their content, so the status bar and the map controls only
-     make room for a pane that actually reaches down to them (shell.js sets the classes). */
-  body.left-reach .status { left: var(--lw, var(--dz-left-default)); }
-  body.right-reach .status { right: var(--rw, var(--dz-right-default)); }
-  body.no-tool.right-reach .status { right: var(--dz-right-folded); }
+  /* Panes are as tall as their content, so the map controls only make room for a
+     pane that actually reaches down to them (shell.js sets the class). The status bar
+     always spans the window, below the map. */
   body.right-over-ctl .mapctl { right: calc(var(--rw, var(--dz-right-default)) + 12px); }
   body.no-tool.right-over-ctl .mapctl { right: calc(var(--dz-right-folded) + 12px); }
   .pane-right { transition: width 0.2s ease; }
@@ -212,6 +214,10 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
 .lrow { display: flex; align-items: center; gap: var(--lrow-gap); border-radius: 6px; }
 /* tiles loading: the name row fills left to right with the share of on-screen tiles in */
 .layer.prog > .lrow { background: linear-gradient(90deg, var(--dz-teal-soft) var(--prog, 0%), transparent var(--prog, 0%)); }
+/* loading with nothing to count (the map service, vectors): a sweep across the row */
+.layer.busy > .lrow { background: linear-gradient(90deg, transparent 0%, var(--dz-teal-soft) 50%, transparent 100%) 0 0 / 200% 100%; animation: dz-busy 1.4s linear infinite; }
+@keyframes dz-busy { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .layer.busy > .lrow { animation: none; background: var(--dz-teal-soft); } }
 /* tiles that failed after every retry: a count to click and try again */
 .tile-err { display: inline-flex; align-items: center; gap: 2px; flex: none; border: 0; border-radius: 6px; padding: 1px 5px; background: var(--dz-orange-soft); color: var(--dz-orange); font: 600 11px var(--dz-font-mono); cursor: pointer; }
 .tile-err[hidden] { display: none; }
@@ -321,9 +327,9 @@ body.left-hidden .status, body.left-hidden .loadbar { left: 0; }
 .loadbar { position: absolute; z-index: 3; left: var(--lw, var(--dz-left-default)); right: var(--rw, var(--dz-right-default)); top: 0; height: 2px; overflow: hidden; pointer-events: none; }
 .loadbar::after { content: ""; position: absolute; top: 0; bottom: 0; width: 30%; background: linear-gradient(90deg, transparent, var(--dz-teal), transparent); animation: dz-lb 1.4s ease-in-out infinite; }
 @keyframes dz-lb { from { left: -30%; } to { left: 100%; } }
-.mapctl { position: absolute; z-index: 3; right: calc(var(--rw, var(--dz-right-default)) + 12px); bottom: 38px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.mapctl { position: absolute; z-index: 3; right: calc(var(--rw, var(--dz-right-default)) + 12px); bottom: calc(var(--dz-status-h) + var(--dz-gfoot) + 8px); display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
 /* desktop defaults for content-height panes: span the window and hug the right edge;
-   the body.left-reach / right-reach / right-over-ctl rules above make room for a pane that reaches down */
+   the body.right-over-ctl rules above make room for a pane that reaches down */
 @media (min-width: 761px) {
   .status { left: 0; right: 0; }
   .mapctl { right: 12px; }
@@ -365,20 +371,30 @@ body.left-hidden .floating-hb { display: inline-grid; }
   .pane { position: fixed; left: 0 !important; right: 0 !important; top: auto; bottom: 64px; width: auto !important; height: 62vh; border: 0; border-top: 1px solid var(--dz-line);
     border-radius: 18px 18px 0 0; transform: translateY(calc(100% + 70px)); transition: transform 0.25s ease; z-index: 7; }
   .pane::before { content: ""; display: block; width: 38px; height: 4px; border-radius: 2px; background: var(--dz-faint); margin: 8px auto 2px; flex: none; }
-  body.m-layers .pane-left, body.m-tools .pane-right { transform: none !important; }
+  body.m-layers .pane-left, body.m-tools .pane-right, body.m-output .pane-right { transform: none !important; }
+  /* one pane, two sheets: Tools holds the tool tabs and settings, Output the results */
+  body.m-tools #pane-right .out-h, body.m-tools #chips, body.m-tools #results-mount { display: none; }
+  /* the Tools sheet is as tall as the tool tabs and settings, up to the usual sheet height */
+  body.m-tools:not(.m-full) .pane-right { height: auto; max-height: 62vh; }
+  body.m-output #pane-right .tools, body.m-output #pane-right .units, body.m-output #tool-options { display: none; }
+  .mtab-ic { position: relative; display: inline-flex; }
+  .mdot { position: absolute; top: -1px; right: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--dz-orange); box-shadow: 0 0 0 2px var(--dz-panel); }
+  .mdot[hidden] { display: none; }
   body.left-hidden .pane-left { transform: translateY(calc(100% + 70px)); }
   body.m-full .pane { height: calc(100vh - 140px); }
   .tools { padding-top: 4px; }
   .tool { padding: 10px 2px; }
   .layer { padding: 10px 14px; }
   .tgl { width: 18px; height: 18px; }
-  .mtabs { display: grid; grid-template-columns: 1fr 1fr; position: fixed; z-index: 9; left: 0; right: 0; bottom: 0; height: 64px; padding-bottom: 6px;
+  .mtabs { display: grid; grid-template-columns: 1fr 1fr 1fr; position: fixed; z-index: 9; left: 0; right: 0; bottom: 0; height: 64px; padding-bottom: 6px;
     background: var(--dz-solid); border-top: 1px solid var(--dz-line); }
   .mtabs button { border: 0; background: transparent; color: var(--dz-mute); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
     font: 600 12px var(--dz-font-cond); letter-spacing: 0.02em; position: relative; }
   .mtabs .ti { font-size: 22px; }
   .mtabs button.on { color: var(--dz-teal); }
   .mapctl { right: 10px; top: 64px; bottom: auto; }
+  /* the map ends at the tab bar, so Google's strip (logo, scale, credits) shows above it */
+  #map { bottom: 64px; }
   .mapctl .ctlgrp { display: none; }
   .basemaps { flex-direction: column; padding: 4px; }
   .basemaps .bm:not(.on), .basemaps .bm-labels { display: none; }
@@ -395,13 +411,13 @@ body.left-hidden .floating-hb { display: inline-grid; }
   .mmenu button { display: flex; gap: 10px; align-items: center; border: 0; background: transparent; color: var(--dz-ink); padding: 9px 8px; border-radius: 8px; font-size: 14px; text-align: left; }
   .mmenu button.on { background: var(--dz-teal-soft); color: var(--dz-teal); }
   .yearbadge { top: 64px; font-size: 18px; }
-  body.m-layers .yearbadge, body.m-tools .yearbadge { display: none; }
+  body.m-layers .yearbadge, body.m-tools .yearbadge, body.m-output .yearbadge { display: none; }
   /* floating player while a timelapse is on and no sheet is open */
   body.tl-on .mplayer { display: flex; position: fixed; z-index: 6; left: 50%; transform: translateX(-50%); bottom: 76px; align-items: center; gap: 4px; padding: 4px 6px 4px 12px;
     background: var(--dz-panel); backdrop-filter: blur(14px); border: 1px solid var(--dz-line); border-radius: 999px; box-shadow: var(--dz-shadow); }
   .mplayer .tl-year { font-size: 18px; margin-right: 6px; }
   .mplayer .tlb { width: 34px; height: 34px; font-size: 17px; }
-  body.m-layers .mplayer, body.m-tools .mplayer { display: none !important; }
+  body.m-layers .mplayer, body.m-tools .mplayer, body.m-output .mplayer { display: none !important; }
 }
 
 /* Street View: every pane and control steps aside (last, so it wins) */

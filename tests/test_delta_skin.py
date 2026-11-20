@@ -217,3 +217,68 @@ def test_testView_screenshots_the_page_view_built(monkeypatch, skin):
     assert shots[0].startswith("http://127.0.0.1:8123/geeView/" + gv._SKIN_PAGES[skin] + "?v=")
     assert opened == [] and frames == []
     assert res == {"error": "Screenshot failed.", "console_messages": ["stub"]}
+
+
+def test_timelapse_turn_off_default_belongs_to_each_skin(monkeypatch):
+    """Unset, the run script leaves turnOffLayersWhenTimeLapseIsOn to the skin
+    (the original turns other layers off, Delta keeps them on, stacked in
+    list order); set, it is written for either skin."""
+    import ee
+    _, m = _fresh(monkeypatch)
+    m.addLayer(ee.Image(1), {}, "one")
+    assert m.turnOffLayersWhenTimeLapseIsOn is None
+    assert "turnOffLayersWhenTimeLapseIsOn" not in m._build_run_js()
+    for v in (True, False):
+        m.turnOffLayersWhenTimeLapseIsOn = v
+        assert "Map.turnOffLayersWhenTimeLapseIsOn = %s;" % str(v).lower() in m._build_run_js()
+    # the original's own default is on
+    src = open(os.path.join(os.path.dirname(_gv().__file__), "geeView", "src", "js", "lcms-viewer.min.js"), encoding="utf-8").read()
+    assert re.search(r"turnOffLayersWhenTimeLapseIsOn\s*=\s*(!0|true)", src)
+    # Delta's is off
+    state = _page(os.path.join("delta", "js", "state.js"))
+    assert "turnOffLayersWhenTimeLapseIsOn: false" in state
+
+
+@pytest.mark.parametrize("mode", ["local", "detached"])
+def test_delta_view_loads_its_own_run_script(monkeypatch, mode):
+    """Two notebooks viewing at once both rewrite the shared runGeeViz.js; a
+    Delta page names its own Map's script (?run=<token>) so it keeps its own
+    layers. The original skin is unchanged."""
+    import ee
+    gv, m = _fresh(monkeypatch)
+    m.addLayer(ee.Image(1), {}, "mine")
+    orig = _spy_view(monkeypatch, m, mode, "original")
+    assert "run=" not in orig
+    url = _spy_view(monkeypatch, m, mode, "delta")
+    tok = re.search(r"[?&]run=([0-9a-f]+)(?:&|$)", url).group(1)
+    assert tok == m._run_token
+    own = os.path.join(gv.ee_run_dir, "runGeeViz-%s.js" % tok)
+    shared = os.path.join(gv.ee_run_dir, "runGeeViz.js")
+    assert open(own, encoding="utf-8").read() == open(shared, encoding="utf-8").read()
+    # another Map (another notebook) viewing afterwards changes only the shared file
+    _, other = _fresh(monkeypatch)
+    other.addLayer(ee.Image(2), {}, "theirs")
+    _spy_view(monkeypatch, other, mode, "delta")
+    assert '"mine"' in open(own, encoding="utf-8").read()
+    assert '"theirs"' in open(shared, encoding="utf-8").read()
+    # the page loads the named script after the shared one, and only a token
+    page = _page("delta.html")
+    assert page.index("gee-run/runGeeViz.js") < page.index("gee-run/runGeeViz-")
+    assert "run=([0-9a-f]{8,32})" in page
+    os.remove(own)
+
+
+def test_old_own_run_scripts_are_removed(tmp_path):
+    gv = _gv()
+    old = tmp_path / "runGeeViz-aaaaaaaaaaaaaaaa.js"
+    old.write_text("x")
+    keep = tmp_path / "runGeeViz-bbbbbbbbbbbbbbbb.js"
+    keep.write_text("y")
+    shared = tmp_path / "runGeeViz.js"
+    shared.write_text("z")
+    now = os.path.getmtime(keep)
+    os.utime(old, (now - 8 * 24 * 3600, now - 8 * 24 * 3600))
+    os.utime(shared, (now - 30 * 24 * 3600, now - 30 * 24 * 3600))
+    gv._write_own_run_script(str(tmp_path), "cccccccccccccccc", "w", now=now)
+    assert not old.exists() and keep.exists() and shared.exists()
+    assert (tmp_path / "runGeeViz-cccccccccccccccc.js").read_text() == "w"

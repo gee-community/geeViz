@@ -17,7 +17,7 @@ LCMS = "projects/gtac-data-publish/assets/LCMS/Product_Version/2025-11"
 SRTM = "USGS/SRTMGL1_003"
 POINT = (-111.527, 40.504)
 UNITS = ["Bear Unit", "Elk Unit", "Moose Unit"]
-MAP_CENTER = (750, 450)  # the map fills the 1500 x 900 window; panes overlay it
+MAP_CENTER = (750, 437)  # the map fills the 1500 x 900 window above the 26 px status bar; panes overlay it
 
 
 def _square(x, y, d=0.02):

@@ -150,7 +150,7 @@ def test_wind_timelapse_draws_particles_and_toggles_off(live_map):
 
 
 # ---- Query: wind layers answer from viz.windQueryItem (speed, direction) ----
-MAP_CENTER = (750, 450)  # the map fills the 1500 x 900 window; panes overlay it
+MAP_CENTER = (750, 437)  # the map fills the 1500 x 900 window above the 26 px status bar; panes overlay it
 
 
 def wait_results(page, name):

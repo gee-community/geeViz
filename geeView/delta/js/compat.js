@@ -84,7 +84,7 @@ let layerObj = {};
     "setQueryCRS", "setQueryScale", "setQueryTransform", "setQueryPrecision",
     "setQueryDateFormat", "setQueryBoxColor", "showSpinner", "hideSpinner",
   ];
-  var MAP_PROPS = { selectLayerAdded: false, canReorderLayers: true, turnOffLayersWhenTimeLapseIsOn: true };
+  var MAP_PROPS = { selectLayerAdded: false, canReorderLayers: true, turnOffLayersWhenTimeLapseIsOn: false };
 
   MAP_METHODS.forEach(function (name) {
     Object.defineProperty(w.Map, name, {

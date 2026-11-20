@@ -1,7 +1,7 @@
 """Delta layer rows: the opacity slider never cuts off the layer name. When a
-row's content changes (the loading spinner appears, the name changes), the row
-is fitted again: stacked if the name no longer fits inline, inline again once
-it does.
+row's name changes, the row is fitted again: stacked if the name no longer
+fits inline, inline again once it does. Loading shows in the row's
+background and never changes its layout.
 
 Offline: the shell stub, rows built through the store.
 """
@@ -11,9 +11,10 @@ NAME = "LCMS Land Cover timelapse"
 
 ROW = """(n) => {
   const r = Array.from(document.querySelectorAll('#layer-list .layer')).find(x => x.querySelector('.lname').textContent === n);
-  const name = r.querySelector('.lname'); const spin = r.querySelector('.spin');
+  const name = r.querySelector('.lname'); const s = r.querySelector('input.op').getBoundingClientRect();
   return {stack: r.classList.contains('stack'), cut: name.scrollWidth > name.clientWidth + 1,  // fitRows' 1px rounding allowance
-          slack: name.clientWidth - name.scrollWidth, spinner: spin.getClientRects().length > 0};
+          slack: name.clientWidth - name.scrollWidth, busy: r.classList.contains('busy'), sliderTop: Math.round(s.top),
+          spinners: r.querySelectorAll('.spin').length};
 }"""
 
 
@@ -42,21 +43,28 @@ def threshold(page, name):
     raise AssertionError("never inline")
 
 
-def test_spinner_restacks_the_row(delta_page):
+def test_loading_never_moves_the_slider(delta_page):
+    """As the user saw: a spinner appearing while tiles loaded pushed the
+    opacity slider to a new line, and it came back when the spinner went.
+    Loading is now the row's background, so the layout stays put."""
     page = delta_page(SHELL)
     page.evaluate("(n) => __delta.api.addLayer({}, {}, n)", NAME)
     settle(page)
-    w = threshold(page, NAME)
-    r = page.evaluate(ROW, NAME)
-    assert not r["cut"] and not r["spinner"] and r["slack"] < 12, (w, r)  # the spinner (12px + gap) would not fit
+    w = threshold(page, NAME)  # the name only just fits beside the slider
+    before = page.evaluate(ROW, NAME)
+    assert not before["stack"] and not before["cut"], (w, before)
     patch(page, NAME, {"loading": True})
     r = page.evaluate(ROW, NAME)
-    assert r["spinner"], r
-    assert not r["cut"], (w, r)
-    assert r["stack"], (w, r)
-    patch(page, NAME, {"loading": False})
+    assert r["busy"] and r["spinners"] == 0, r
+    assert not r["stack"] and r["sliderTop"] == before["sliderTop"], (w, before, r)
+    # tile progress: the row fills, still no layout change
+    patch(page, NAME, {"progress": {"total": 10, "loaded": 4, "failed": 0}})
     r = page.evaluate(ROW, NAME)
-    assert not r["spinner"] and not r["stack"] and not r["cut"], (w, r)
+    assert not r["busy"] and not r["stack"] and r["sliderTop"] == before["sliderTop"], r
+    assert page.evaluate("(n) => [...document.querySelectorAll('#layer-list .layer')].find(x => x.textContent.includes(n)).style.getPropertyValue('--prog')", NAME) == "40%"
+    patch(page, NAME, {"loading": False, "progress": {"total": 10, "loaded": 10, "failed": 0}})
+    r = page.evaluate(ROW, NAME)
+    assert not r["busy"] and not r["stack"], r
 
 
 def test_name_change_refits_the_row(delta_page):

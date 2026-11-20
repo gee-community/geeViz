@@ -134,6 +134,28 @@ template = os.path.join(py_viz_dir, geeViewFolder, "index.html")
 SKINS = ("original", "delta")
 delta_template = os.path.join(py_viz_dir, geeViewFolder, "delta.html")
 _SKIN_PAGES = {"original": "", "delta": "delta.html"}
+
+# A Delta Map's own run script: runGeeViz-<token>.js beside the shared one.
+# Scripts not rewritten for a week are removed (one per Map object, so a
+# long-lived folder would otherwise collect one per notebook kernel).
+_OWN_RUN_MAX_AGE_S = 7 * 24 * 3600
+
+
+def _write_own_run_script(run_dir, token, run_js, now=None):
+    import glob
+    import time as _time
+
+    now = _time.time() if now is None else now
+    for old in glob.glob(os.path.join(run_dir, "runGeeViz-*.js")):
+        try:
+            if now - os.path.getmtime(old) > _OWN_RUN_MAX_AGE_S:
+                os.remove(old)
+        except OSError:
+            pass
+    path = os.path.join(run_dir, "runGeeViz-{}.js".format(token))
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(run_js)
+    return path
 ee_run_dir = os.path.join(py_viz_dir, geeViewFolder, "src/gee/gee-run/")
 if os.path.exists(ee_run_dir) == False:
     os.makedirs(ee_run_dir)
@@ -1170,11 +1192,12 @@ class mapper:
             resolve this automatically from `ee.Initialize(project=...)`; set
             it manually if `Map.view()` logs `project=None`.
 
-        turnOffLayersWhenTimeLapseIsOn (bool, default True): Whether all
-            other layers should be turned off when a time lapse is turned
-            on. Default is True to avoid confusing layer-order rendering
-            when time lapses and non-time lapses are visible at the same
-            time. Set to False if you want them visible simultaneously.
+        turnOffLayersWhenTimeLapseIsOn (bool or None, default None): Whether
+            all other layers should be turned off when a time lapse is turned
+            on. None uses the skin's default: True in the original skin, where
+            a time lapse draws above other layers whatever their order, and
+            False in the Delta skin, where a time lapse stacks in layer-list
+            order like any other layer. Set True or False to choose.
             
         showToolTipModal (bool, default False): Whether to show the tooltip modal when the map is loaded.
     """
@@ -1256,6 +1279,12 @@ class mapper:
         self.idDictList = []
         self.mapCommandList = []
         self.ee_run_name = "runGeeViz"
+        # This Map's own run script name for the Delta skin
+        # (runGeeViz-<token>.js, named in the page url as ?run=<token>), so two
+        # notebooks viewing at once never load each other's layers. The shared
+        # runGeeViz.js is still written for the original skin and exports.
+        import secrets as _secrets
+        self._run_token = _secrets.token_hex(8)
         # The viewer URL the last view() built (None before the first).
         self.view_url = None
 
@@ -1282,7 +1311,8 @@ class mapper:
         self.serviceKeyPath = None
         self.queryWindowMode = "sidePane"
         self.project = ee.data._get_state().cloud_api_user_project
-        self.turnOffLayersWhenTimeLapseIsOn = True
+        # None: the skin's default (True for the original, False for Delta)
+        self.turnOffLayersWhenTimeLapseIsOn = None
         self.showToolTipModal = False
 
         # eeAuth mode override for Map.view() — takes precedence over
@@ -2514,9 +2544,11 @@ class mapper:
         for mapCommand in self.mapCommandList:
             lines += mapCommand + ";"
         lines += 'queryWindowMode = "{}";'.format(self.queryWindowMode)
-        lines += "Map.turnOffLayersWhenTimeLapseIsOn = {};".format(
-            str(self.turnOffLayersWhenTimeLapseIsOn).lower()
-        )
+        # Written only when set: otherwise each skin keeps its own default (the
+        # original turns other layers off; Delta stacks a time lapse in list
+        # order and leaves them on), and the run script stays the same for both.
+        if self.turnOffLayersWhenTimeLapseIsOn is not None:
+            lines += "Map.turnOffLayersWhenTimeLapseIsOn = {};".format(str(bool(self.turnOffLayersWhenTimeLapseIsOn)).lower())
         lines+=f"localStorage['showToolTipModal-geeViz']={str(self.showToolTipModal).lower()};"
         lines += "};"
         # item/viz are JSON and already valid JS, but text inside them (a
@@ -2885,6 +2917,10 @@ class mapper:
         self.ee_run = os.path.join(ee_run_dir, "{}.js".format(self.ee_run_name))
         with open(self.ee_run, "w", encoding="utf-8") as f:
             f.write(run_js)
+        run_param = ""
+        if self.skin == "delta":
+            _write_own_run_script(ee_run_dir, self._run_token, run_js)
+            run_param = "&run=" + self._run_token
 
         # Detached mode does NOT need the in-process daemon HTTP
         # server — the detached eeAuth proxy serves both ``/geeView/*``
@@ -2926,7 +2962,7 @@ class mapper:
             # displayed layers match the code the user just executed.
             import time as _t_view
             _v = int(_t_view.time() * 1000)
-            query = f"?v={_v}"
+            query = f"?v={_v}{run_param}"
             # Show the actual mode picked so the user knows whether the
             # proxy is in-process (auto), a subprocess (detached), etc.
             # Also flag WHERE the mode came from so users can trace how
@@ -2960,7 +2996,7 @@ class mapper:
             self._mint_access_token()
             query = "?projectID={}&accessToken={}&accessTokenCreationTime={}".format(
                 self.project, self.accessToken, self.accessTokenCreationTime
-            )
+            ) + run_param
 
         # Determine display mode — if user explicitly sets one, only that one fires.
         # If user explicitly disables one (e.g. open_browser=False), the other opens.

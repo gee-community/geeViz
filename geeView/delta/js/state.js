@@ -45,7 +45,8 @@ export function defaultState() {
     chartSettings: { yLabelMaxLength: 30, yLabelBreakLength: 10, yLabelMaxLines: 5, yLabelFontSize: 10 },
     canReorder: true,
     title: null,
-    turnOffLayersWhenTimeLapseIsOn: true,
+    // Delta stacks a timelapse in layer-list order: other layers stay on
+    turnOffLayersWhenTimeLapseIsOn: false,
   };
 }
 

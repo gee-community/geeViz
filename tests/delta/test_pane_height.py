@@ -8,6 +8,8 @@ import pytest
 
 SHELL = {"delta-test": "shell"}
 VH = 900
+# panes stop above the status bar (26) and Google's strip (24) below the map
+CAP = VH - 26 - 24
 
 R = "(s) => { const b = document.querySelector(s).getBoundingClientRect(); return {top: b.top, bottom: b.bottom, height: b.height, left: b.left, right: b.right}; }"
 
@@ -48,7 +50,7 @@ def test_left_pane_fits_content_then_caps_and_scrolls(delta_page, scheme):
     # capped at the window; the layer list scrolls under the pinned brand and search rows
     add_layers(page, 60, 5)
     pane = r(page, "#pane-left")
-    assert abs(pane["height"] - VH) <= 1, pane
+    assert abs(pane["height"] - CAP) <= 1, pane
     assert scrolls(page, "#layers-mount")
     page.evaluate("() => { const m = document.querySelector('#layers-mount'); m.scrollTop = m.scrollHeight; }")
     settle(page)
@@ -88,7 +90,7 @@ def test_right_pane_heights(delta_page):
     page.evaluate(add, 12)
     settle(page)
     capped = r(page, "#pane-right")
-    assert abs(capped["height"] - VH) <= 1, capped
+    assert abs(capped["height"] - CAP) <= 1, capped
     body = page.evaluate("() => document.querySelector('#results-mount').closest('.pane-body') ? '#pane-right .pane-body' : null")
     assert body and scrolls(page, body)
     page.evaluate("(s) => { const m = document.querySelector(s); m.scrollTop = m.scrollHeight; }", body)

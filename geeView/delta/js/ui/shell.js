@@ -57,6 +57,11 @@ export function initialShellState(store) {
   };
 }
 
+// Phones: a tool whose work happens in the Tools sheet keeps it open.
+export function keepToolsOpen(s) {
+  return s.tool === "chart" && (s.areaFrom === "upload" || s.areaFrom === "select");
+}
+
 export function mountShell(store, { mapEl } = {}) {
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -71,7 +76,7 @@ export function mountShell(store, { mapEl } = {}) {
   function renderInert() {
     const phone = isPhone();
     const leftShown = phone ? body.classList.contains("m-layers") : store.get().panes.left.visible !== false;
-    const rightShown = phone ? body.classList.contains("m-tools") : true;
+    const rightShown = phone ? body.classList.contains("m-tools") || body.classList.contains("m-output") : true;
     [["#pane-left", leftShown], ["#pane-right", rightShown]].forEach(([sel, shown]) => {
       const el = $(sel);
       el.inert = !shown;
@@ -326,17 +331,39 @@ export function mountShell(store, { mapEl } = {}) {
   }
   store.on("change:tool", renderTool);
   $$("#pane-right .tool").forEach((b) =>
-    b.addEventListener("click", () => store.set({ tool: store.get().tool === b.dataset.tool ? null : b.dataset.tool }, "tool-button"))
+    b.addEventListener("click", () => {
+      store.set({ tool: store.get().tool === b.dataset.tool ? null : b.dataset.tool }, "tool-button");
+      // Phones: picking a tool closes the Tools sheet so the map is free to
+      // use, unless the tool's work is in the sheet (Chart area from a file
+      // or from selected features).
+      const s = store.get();
+      if (isPhone() && s.tool && !keepToolsOpen(s)) closeSheets();
+    })
   );
 
   // ---- phones: one bottom sheet at a time ----
+  // Layers, Tools (the tool tabs and their settings) and Output (results).
+  const SHEETS = ["layers", "tools", "output"];
   function openSheet(name) {
     const was = body.classList.contains("m-" + name);
-    body.classList.remove("m-layers", "m-tools", "m-full");
+    body.classList.remove(...SHEETS.map((n) => "m-" + n), "m-full");
     if (!was) body.classList.add("m-" + name);
     $$("#mtabs [data-m]").forEach((b) => b.classList.toggle("on", body.classList.contains("m-" + b.dataset.m)));
+    if (name === "output" && !was) outputDot(false);
     renderInert();
   }
+  function closeSheets() {
+    SHEETS.forEach((n) => body.classList.contains("m-" + n) && openSheet(n));
+  }
+  // New output while the Output sheet is closed: a dot on its tab.
+  function outputDot(on) {
+    const d = $("#mtabs .mdot");
+    if (d) d.hidden = !on;
+  }
+  store.on("change:results", (v) => {
+    if (isPhone() && (v || []).length && !body.classList.contains("m-output")) outputDot(true);
+    if (!(v || []).length) outputDot(false);
+  });
   $$("#mtabs [data-m]").forEach((b) => b.addEventListener("click", () => openSheet(b.dataset.m)));
   $$(".pane").forEach((p) =>
     p.addEventListener("click", (e) => {
@@ -353,5 +380,5 @@ export function mountShell(store, { mapEl } = {}) {
   renderPanes();
   renderTitle();
   renderTool();
-  return { setStreetView, openSheet, mapEl: mapEl || null };
+  return { setStreetView, openSheet, closeSheets, mapEl: mapEl || null };
 }

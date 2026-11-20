@@ -40,7 +40,11 @@ def go(page, lng, lat, zoom=None):
 
 
 def settle(page):
-    page.evaluate("new Promise((res) => google.maps.event.addListenerOnce(__delta.engine.gmap, 'idle', () => setTimeout(res, 50)))")
+    """Wait for the map to go idle after a move; fail (not hang) if it never moves."""
+    ok = page.evaluate(
+        "new Promise((res) => { google.maps.event.addListenerOnce(__delta.engine.gmap, 'idle', () => setTimeout(() => res(true), 50)); setTimeout(() => res(false), 10000); })"
+    )
+    assert ok, "the map never went idle (no move): history %s" % page.evaluate("JSON.stringify(__delta.engine.history())")
 
 
 def test_ee_initialized(page):
@@ -60,46 +64,46 @@ def test_set_center_and_zoom(page):
     assert v["zoom"] == 11
 
 
+def click_settle(page, sel):
+    """Click, and wait for the idle that move causes; listening starts before the
+    click (a short move to a cached view can go idle before a later listener)."""
+    # (a statement, not the promise: evaluate would wait for a returned promise)
+    page.evaluate("() => { window.__idle = new Promise((res) => { google.maps.event.addListenerOnce(__delta.engine.gmap, 'idle', () => setTimeout(() => res(true), 50)); setTimeout(() => res(false), 10000); }); }")
+    page.click(sel)
+    assert page.evaluate("window.__idle"), "the map never went idle after " + sel
+
+
 def test_view_history(page):
     go(page, -111.2, 40.9)
     go(page, -110.9, 41.1)
     # Back and forward are the buttons the shell already ships.
-    page.click("#pane-left [data-act=prev-view]")
-    settle(page)
+    click_settle(page, "#pane-left [data-act=prev-view]")
     v = view(page)
     assert abs(v["lng"] + 111.2) < 1e-4 and abs(v["lat"] - 40.9) < 1e-4
-    page.click("#pane-left [data-act=next-view]")
-    settle(page)
+    click_settle(page, "#pane-left [data-act=next-view]")
     v = view(page)
     assert abs(v["lng"] + 110.9) < 1e-4 and abs(v["lat"] - 41.1) < 1e-4
     # Repeated cycles keep working (no recorded echo of a programmatic move).
     for _ in range(2):
-        page.click("#pane-left [data-act=prev-view]")
-        settle(page)
+        click_settle(page, "#pane-left [data-act=prev-view]")
         v = view(page)
         assert abs(v["lng"] + 111.2) < 1e-4
-        page.click("#pane-left [data-act=next-view]")
-        settle(page)
+        click_settle(page, "#pane-left [data-act=next-view]")
         v = view(page)
         assert abs(v["lng"] + 110.9) < 1e-4
         assert page.evaluate("__delta.engine.history().canForward") is False
     # A zoom change is its own history entry.
     go(page, -110.9, 41.1, 14)
-    page.click("#pane-left [data-act=prev-view]")
-    settle(page)
+    click_settle(page, "#pane-left [data-act=prev-view]")
     assert view(page)["zoom"] == 11
-    page.click("#pane-left [data-act=next-view]")
-    settle(page)
+    click_settle(page, "#pane-left [data-act=next-view]")
     assert view(page)["zoom"] == 14
-    page.click("#pane-left [data-act=prev-view]")
-    settle(page)
+    click_settle(page, "#pane-left [data-act=prev-view]")
     # A new pan after going back drops the forward branch.
-    page.click("#pane-left [data-act=prev-view]")
-    settle(page)
+    click_settle(page, "#pane-left [data-act=prev-view]")
     go(page, -112.0, 40.0)
     assert page.evaluate("__delta.engine.history().canForward") is False
-    page.click("#pane-left [data-act=prev-view]")
-    settle(page)
+    click_settle(page, "#pane-left [data-act=prev-view]")
     v = view(page)
     assert abs(v["lng"] + 111.2) < 1e-4
 
@@ -145,3 +149,40 @@ def test_street_view_no_imagery_notice_and_stays_picking(page):
     page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
     page.wait_for_function("__delta.store.get().notices.some(n => n.includes('No Street View imagery'))", timeout=20000)
     assert page.evaluate("document.body.classList.contains('sv-pick')")
+
+
+def arrows(page):
+    return page.evaluate(
+        "[...document.querySelectorAll('#pane-left [data-act=prev-view], #pane-left [data-act=next-view]')]"
+        ".map(b => ({act: b.dataset.act, disabled: b.disabled, opacity: Number(getComputedStyle(b).opacity)}))"
+    )
+
+
+def test_history_arrows_look_inactive_at_either_end(page):
+    """Forward is inactive until the user has gone back; back is inactive at
+    the first view recorded. Inactive shows (dimmed), not only refuses."""
+    # at load: the first view is the one the map script set, so neither arrow
+    # has anywhere to go (the page's default view before it is not recorded)
+    prev, nxt = arrows(page)
+    assert prev["disabled"] and prev["opacity"] < 0.5, prev
+    assert nxt["disabled"] and nxt["opacity"] < 0.5, nxt
+    go(page, -111.2, 40.9)
+    prev, nxt = arrows(page)
+    assert not prev["disabled"] and prev["opacity"] == 1 and nxt["disabled"], (prev, nxt)
+    click_settle(page, "#pane-left [data-act=prev-view]")
+    prev, nxt = arrows(page)
+    assert prev["disabled"] and prev["opacity"] < 0.5, prev  # the first view
+    assert not nxt["disabled"] and nxt["opacity"] == 1, nxt
+    v = view(page)
+    assert abs(v["lng"] - CENTER[0]) < 1e-4 and abs(v["lat"] - CENTER[1]) < 1e-4 and v["zoom"] == CENTER[2], v
+
+
+def test_locate_marks_your_location(live_map):
+    page = live_map(build, setup=lambda ctx: (ctx.grant_permissions(["geolocation"]), ctx.set_geolocation({"latitude": 40.76, "longitude": -111.89, "accuracy": 120})))
+    page.click("#pane-left [data-act=locate]")
+    page.wait_for_function("__delta.engine.location() !== null", timeout=15000)
+    loc = page.evaluate("__delta.engine.location()")
+    assert abs(loc["lat"] - 40.76) < 1e-6 and abs(loc["lng"] + 111.89) < 1e-6 and loc["accuracy"] == 120
+    v = view(page)
+    assert abs(v["lat"] - 40.76) < 1e-3 and v["zoom"] >= 13
+    assert page.delta_errors == []

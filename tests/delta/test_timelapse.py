@@ -20,7 +20,8 @@ def build(Map, turn_off=True):
     import geeViz.geeView as gv
 
     ee = gv.ee
-    Map.turnOffLayersWhenTimeLapseIsOn = turn_off
+    if turn_off is not None:  # None: leave it to the skin
+        Map.turnOffLayersWhenTimeLapseIsOn = turn_off
     Map.addLayer(ee.Image("USGS/SRTMGL1_003"), {"min": 0, "max": 3000}, "SRTM")
     lcms = (
         ee.ImageCollection(LCMS)
@@ -252,3 +253,21 @@ def test_turn_off_layers_when_timelapse_on(live_map):
     page2.click(row_sel(page2, "NDVI TL") + " .tgl")
     assert layer(page2, "NDVI TL")["visible"] is True
     assert layer(page2, "SRTM")["visible"] is True
+
+
+def test_unset_keeps_other_layers_on_and_stacks_in_list_order(live_map):
+    """Delta's default: a timelapse turned on leaves the other layers on, and
+    its frames take its place in the list order (below the layer listed above
+    it, above the one listed below)."""
+    page = live_map(lambda M: build(M, turn_off=None))
+    wait_tl_loaded(page, "NDVI TL")
+    assert page.evaluate("__delta.store.get().turnOffLayersWhenTimeLapseIsOn") is False
+    page.click(row_sel(page, "NDVI TL") + " .tgl")
+    wait_for(page, "(id) => __delta.engine.layers.stats(id).frames.some(f => f.onMap)", layer(page, "NDVI TL")["id"])
+    assert layer(page, "SRTM")["visible"] is True and layer(page, "SRTM top")["visible"] is True
+    z = page.evaluate("__delta.engine.layers.zOrder().tiles")
+    ids = {n: layer(page, n)["id"] for n in ("SRTM", "NDVI TL", "SRTM top")}
+    first = lambda i: z.index(i)
+    # list (top first): SRTM top, NDVI TL, LCMS TL, SRTM; the map stacks bottom to top
+    assert first(ids["SRTM"]) < first(ids["NDVI TL"]) < first(ids["SRTM top"]), z
+    assert not page.delta_errors, page.delta_errors

@@ -1,4 +1,4 @@
-// The layer list: one row per layer (round toggle, name, spinner, opacity
+// The layer list: one row per layer (round toggle, name, opacity
 // slider, legend toggle, legend inside the row), drag to reorder.
 // Rows read the store and write actions back to it; the engine reacts.
 //
@@ -150,7 +150,6 @@ export function mountLayers(store, mountEl, opts = {}) {
     const parts = {
       tgl: el.querySelector(".tgl"),
       name: el.querySelector(".lname"),
-      spin: el.querySelector(".spin"),
       range: el.querySelector("input.op"),
       legbtn: el.querySelector(".legbtn"),
       swatch: el.querySelector(".lsw"),
@@ -205,11 +204,13 @@ export function mountLayers(store, mountEl, opts = {}) {
     el.classList.toggle("is-select", l.kind === "select");
     el.classList.toggle("err", !!l.error);
     el.title = l.error ? "Layer failed to load: " + l.error : "";
-    // tile layers show their progress in the row; the spinner is for the rest
+    // Loading shows in the name row's background, never as an element that
+    // takes room (a spinner pushed the slider to a new line and back): the
+    // share of tiles in for tile layers, an animated fill for the rest.
     const pv = progressView(l);
     el.classList.toggle("prog", pv.show);
     if (pv.show) el.style.setProperty("--prog", pv.pct + "%");
-    parts.spin.hidden = !(l.loading && l.visible) || pv.show || !!(l.progress && l.progress.total);
+    el.classList.toggle("busy", !pv.show && !!(l.loading && l.visible));
     parts.tileErr.hidden = !pv.failed;
     if (pv.failed) {
       const t = pv.failed + (pv.failed === 1 ? " tile" : " tiles") + " failed to load after retrying. Click to try again.";
@@ -263,7 +264,7 @@ export function mountLayers(store, mountEl, opts = {}) {
   }
   const ro = new ResizeObserver(() => fitRows());
   ro.observe(mountEl);
-  // A row's own content can take room from its name (the loading spinner
+  // A row's own content can take room from its name (a failed-tiles count
   // appears, the timelapse block mounts) or the name itself can change: refit
   // that row when its name's box changes. ResizeObserver reports once per
   // frame and only for a final size that differs, so a row that settles into

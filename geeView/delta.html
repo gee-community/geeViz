@@ -48,6 +48,15 @@
 
     <!-- Per-session run script (same tag as index.html) -->
     <script type="text/javascript" src="./src/gee/gee-run/runGeeViz.js"></script>
+    <!-- This map's own run script, when Map.view() names it (?run=<token>): it
+         loads after the shared one and defines runGeeViz last, so another
+         notebook's Map.view() rewriting the shared file cannot change this map. -->
+    <script>
+      (function () {
+        var m = /[?&]run=([0-9a-f]{8,32})(?:&|$)/.exec(location.search);
+        if (m) document.write('<script src="./src/gee/gee-run/runGeeViz-' + m[1] + '.js"><\/script>');
+      })();
+    </script>
     <script type="module" src="./delta/js/main.js"></script>
   </head>
   <body>
@@ -58,8 +67,8 @@
       <button class="ib mlogo-btn" id="mlogo-btn" title="Theme and about"><img class="logo-img" alt="geeViz menu" /></button>
       <button class="ib" data-act="locate" title="Go to my location"><i class="ti ti-current-location"></i></button>
       <input data-role="search" placeholder="Search places" aria-label="Search places" />
-      <button class="ib" data-act="prev-view" title="Previous view"><i class="ti ti-chevron-left"></i></button>
-      <button class="ib" data-act="next-view" title="Next view"><i class="ti ti-chevron-right"></i></button>
+      <button class="ib" data-act="prev-view" title="Previous view" disabled><i class="ti ti-chevron-left"></i></button>
+      <button class="ib" data-act="next-view" title="Next view" disabled><i class="ti ti-chevron-right"></i></button>
     </div>
     <div id="mmenu" class="mmenu">
       <div class="mm-h">Theme</div>
@@ -76,6 +85,7 @@
     <nav id="mtabs" class="mtabs">
       <button data-m="layers"><i class="ti ti-stack-2"></i>Layers</button>
       <button data-m="tools"><i class="ti ti-tools"></i>Tools</button>
+      <button data-m="output"><span class="mtab-ic"><i class="ti ti-list-details"></i><span class="mdot" hidden></span></span>Output</button>
     </nav>
 
     <button id="hamburger-float" class="ib floating-hb" title="Show sidebar"><i class="ti ti-menu-2"></i></button>
@@ -91,8 +101,8 @@
         <button class="ib" data-act="locate" title="Go to my location"><i class="ti ti-current-location"></i></button>
         <input data-role="search" placeholder="Search places or coordinates" aria-label="Search places" />
         <span class="div"></span>
-        <button class="ib" data-act="prev-view" title="Previous view"><i class="ti ti-chevron-left"></i></button>
-        <button class="ib" data-act="next-view" title="Next view"><i class="ti ti-chevron-right"></i></button>
+        <button class="ib" data-act="prev-view" title="Previous view" disabled><i class="ti ti-chevron-left"></i></button>
+        <button class="ib" data-act="next-view" title="Next view" disabled><i class="ti ti-chevron-right"></i></button>
       </div>
       <div class="scroll" id="layers-mount"></div>
       <div class="grip" data-side="left"></div>
@@ -139,7 +149,6 @@
           <div class="lrow">
             <button class="tgl" type="button" aria-pressed="true"></button>
             <span class="lname"></span>
-            <span class="spin" title="Loading tiles" hidden></span>
             <button class="tile-err" type="button" hidden><i class="ti ti-alert-triangle"></i><span class="tile-err-n"></span></button>
             <div class="opacity"><input class="dz op" type="range" min="0" max="100" step="1" value="100" aria-label="Opacity" /></div>
             <button class="legbtn none" type="button" title="Show or hide legend" tabindex="-1"><span class="lsw"></span><i class="ti ti-chevron-down"></i></button>

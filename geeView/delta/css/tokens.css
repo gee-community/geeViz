@@ -7,8 +7,8 @@
   --dz-raise: #f1ede9;
   --dz-line: rgba(55, 46, 44, 0.13);
   --dz-ink: #15100e;
-  --dz-mute: #574b43;
-  --dz-faint: #877a71;
+  --dz-mute: #40362f;
+  --dz-faint: #6a5e56;
   --dz-teal: #00897b;
   --dz-teal-soft: rgba(0, 137, 123, 0.11);
   --dz-orange: #e2602a;
@@ -37,6 +37,9 @@
   --dz-swatch-edge: rgba(0, 0, 0, 0.18);
   --dz-on-accent: #fff;
   --dz-status-h: 26px;
+  /* Google's own strip along the map's bottom edge (logo, scale, data credits,
+     terms): kept clear of every pane, as the Maps terms require */
+  --dz-gfoot: 24px;
   --dz-right-default: 330px;
   --dz-right-folded: 64px;
   --dz-left-default: clamp(300px, 33.333vw, 560px);

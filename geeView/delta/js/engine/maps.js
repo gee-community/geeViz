@@ -137,6 +137,8 @@ export function createMap(el, store) {
     minZoom: 2,
     mapTypeId: "satellite",
     disableDefaultUI: true,
+    // Google's scale bar, in its strip with the logo and data credits
+    scaleControl: true,
     disableDoubleClickZoom: true,
     clickableIcons: false,
     tilt: 0,
@@ -225,6 +227,29 @@ export function createMap(el, store) {
     }
   }
 
+  // ---- your location (the locate button) ----
+  // A dot at the position and a circle for its accuracy, replaced on the
+  // next locate. Neither takes clicks, so tools work through them.
+  let here = null;
+  function showLocation(lat, lng, accuracy) {
+    const pos = { lat, lng };
+    if (!here) {
+      here = {
+        circle: new g.Circle({ map: gmap, clickable: false, strokeColor: "#1a73e8", strokeOpacity: 0.5, strokeWeight: 1, fillColor: "#1a73e8", fillOpacity: 0.12, zIndex: 3300 }),
+        marker: new g.Marker({
+          map: gmap,
+          clickable: false,
+          zIndex: 3301,
+          title: "Your location",
+          icon: { path: g.SymbolPath.CIRCLE, scale: 7, fillColor: "#1a73e8", fillOpacity: 1, strokeColor: "#ffffff", strokeWeight: 2 },
+        }),
+      };
+    }
+    here.marker.setPosition(pos);
+    here.circle.setCenter(pos);
+    here.circle.setRadius(Number.isFinite(accuracy) ? accuracy : 0);
+  }
+
   // ---- view history ----
   const hist = createViewHistory();
   const currentView = () => {
@@ -235,11 +260,20 @@ export function createMap(el, store) {
   // recorded, whatever rounding getCenter() adds. `pending` is the target; the
   // next idle at (about) that view is swallowed, any other idle is a real move.
   let pending = null;
+  // Nothing is recorded until the map script has run (startHistory): the
+  // first view is the one it set, not the default view the page opens on.
+  let recording = false;
+  function startHistory() {
+    if (recording) return;
+    recording = true;
+    hist.record(currentView());
+    emit("history", hist.state());
+  }
   gmap.addListener("idle", () => {
     const here = currentView();
     const programmatic = pending !== null && sameView(here, pending);
     pending = null;
-    if (!programmatic) hist.record(here);
+    if (!programmatic && recording) hist.record(here);
     emit("history", hist.state());
     emit("zoom", gmap.getZoom());
   });
@@ -345,11 +379,14 @@ export function createMap(el, store) {
     setLabels,
     onLabels: on("labels"),
     setCenter,
+    showLocation,
+    location: () => (here ? { lat: here.marker.getPosition().lat(), lng: here.marker.getPosition().lng(), accuracy: here.circle.getRadius() } : null),
     centerObject,
     synchronousCenterObject,
     back,
     forward,
     history: () => hist.state(),
+    startHistory,
     zoomBy: (d) => gmap.setZoom(gmap.getZoom() + d),
     streetViewPick,
     isPicking: () => picking,

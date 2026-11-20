@@ -148,7 +148,7 @@ async function boot() {
   }
 
   for (const [what, mount] of [
-    ["map controls", () => mountMapControls(engine, shell, status)],
+    ["map controls", () => mountMapControls(engine, shell, status, notice)],
     ["search", () => mountSearch(engine, { notify: notice })],
   ]) {
     try {
@@ -188,6 +188,9 @@ async function boot() {
     closeLoading: () => {},
     notify: notice,
   });
+  // View history starts at the view the map script set (its calls replay in
+  // install above), not the default view the page opened on.
+  engine.startHistory();
   // Wind layers: wind-particles.js reads the Google map as window.map. Set
   // only now, so calls the map script made while loading stay queued and
   // replay in order.

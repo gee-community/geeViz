@@ -2,7 +2,7 @@
 // The engine does the map work; this module only connects buttons and body
 // classes to it.
 
-export function mountMapControls(engine, shell, status) {
+export function mountMapControls(engine, shell, status, notify = () => {}) {
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
   const body = document.body;
@@ -66,10 +66,20 @@ export function mountMapControls(engine, shell, status) {
   // locate
   $$("[data-act=locate]").forEach((b) =>
     b.addEventListener("click", () => {
-      if (!navigator.geolocation) return;
+      if (!navigator.geolocation) return notify("This browser cannot share your location.");
+      b.classList.add("busy");
       navigator.geolocation.getCurrentPosition(
-        (p) => engine.setCenter(p.coords.longitude, p.coords.latitude, Math.max(engine.gmap.getZoom(), 13)),
-        () => {}
+        (p) => {
+          b.classList.remove("busy");
+          engine.showLocation(p.coords.latitude, p.coords.longitude, p.coords.accuracy);
+          engine.setCenter(p.coords.longitude, p.coords.latitude, Math.max(engine.gmap.getZoom(), 13));
+        },
+        (err) => {
+          b.classList.remove("busy");
+          const why = err && err.code === 1 ? "Location access is blocked for this page. Allow it in the browser's site settings to use Locate." : "Your location could not be found.";
+          notify(why);
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
       );
     })
   );

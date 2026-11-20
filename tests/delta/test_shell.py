@@ -125,8 +125,8 @@ def test_theme_choice_persists(delta_page):
 def test_phone_layout(delta_page):
     page = delta_page(SHELL, viewport={"width": 390, "height": 844})
     buttons = page.locator("#mtabs [data-m]")
-    assert buttons.count() == 2
-    assert [t.strip() for t in buttons.all_inner_texts()] == ["Layers", "Tools"]
+    assert buttons.count() == 3
+    assert [t.strip() for t in buttons.all_inner_texts()] == ["Layers", "Tools", "Output"]
     layers = page.locator("#mtabs [data-m=layers]")
     layers.click()
     assert "m-layers" in page.evaluate("document.body.className")
@@ -256,10 +256,8 @@ def test_drag_left_smaller_and_back(delta_page, scheme):
         assert abs(w - target) <= 2, (target, w)
         assert page.evaluate("localStorage.getItem('delta-left')") == str(round(w))
         assert page.evaluate("__delta.store.get().panes.left.width") == round(w)
-        # the status bar makes room for the left pane only when the pane reaches down to it
-        reach = "left-reach" in page.evaluate("document.body.className")
-        want_left = rect(page, "#pane-left")["right"] if reach else 0
-        assert abs(rect(page, "#status")["left"] - want_left) <= 1, (reach, want_left)
+        # the status bar spans the window below the map; no pane reaches it
+        assert abs(rect(page, "#status")["left"]) <= 1
         # steady state is store driven again: no live inline width left behind
         assert page.evaluate("document.querySelector('#pane-left').style.width") == ""
         assert "resizing" not in page.evaluate("document.body.className")
@@ -339,13 +337,12 @@ def test_drag_right_pane_once_on_release(delta_page):
     want = 1500 - xs[-1]
     assert abs(m["duringWidth"] - want) <= 1 and abs(m["finalWidth"] - want) <= 1, m
     assert m["afterUpdates"] == 1, m
-    # map controls and the status bar track the right pane when it reaches down to them
+    # map controls track the right pane when it reaches down to them; the status bar spans the window
     cls = page.evaluate("document.body.className")
     ctl = rect(page, "#mapctl")
     want_ctl = want + 12 if "right-over-ctl" in cls else 12
     assert abs((1500 - ctl["right"]) - want_ctl) <= 1, (cls, ctl)
-    want_status = 1500 - want if "right-reach" in cls else 1500
-    assert abs(rect(page, "#status")["right"] - want_status) <= 1, cls
+    assert abs(rect(page, "#status")["right"] - 1500) <= 1, cls
 
 
 # ---- the drag always ends (Task 11d fix round 1) ----
@@ -585,6 +582,9 @@ def test_short_panes_leave_status_and_controls_at_the_edges(delta_page):
     assert m["bg"] not in ("rgba(0, 0, 0, 0)", "transparent"), m["bg"]
 
 
+GFOOT = 26 + 24  # the status bar, then Google's strip (logo, scale, credits) above it
+
+
 def test_tall_right_pane_pushes_controls_and_status(delta_page):
     page = delta_page(SHELL)
     page.evaluate("__delta.store.set({tool: 'distance'})")
@@ -592,12 +592,57 @@ def test_tall_right_pane_pushes_controls_and_status(delta_page):
                              document.querySelector('#results-mount').appendChild(d); }""")
     _settle(page)
     m = _reach(page)
-    assert m["right"]["bottom"] >= m["vh"] - 1, m["right"]
+    # a tall pane stops above the status bar and Google's strip, which stay clear
+    assert abs(m["right"]["bottom"] - (m["vh"] - GFOOT)) <= 1, m["right"]
     assert abs(m["ctl"]["right"] - (m["right"]["left"] - 12)) <= 1, (m["ctl"], m["right"])
-    assert abs(m["status"]["right"] - m["right"]["left"]) <= 1, (m["status"], m["right"])
+    assert abs(m["status"]["right"] - m["vw"]) <= 1 and abs(m["status"]["left"]) <= 1, m["status"]
+    # the map itself ends at the status bar, so Google's strip sits above it
+    mb = page.evaluate("document.querySelector('#map').getBoundingClientRect().bottom")
+    assert abs(mb - m["status"]["top"]) <= 1, (mb, m["status"])
     # and back when the content goes away
     page.evaluate("document.querySelector('#tall-test').remove()")
     _settle(page)
     m = _reach(page)
     assert abs(m["ctl"]["right"] - (m["vw"] - 12)) <= 1, m["ctl"]
     assert abs(m["status"]["right"] - m["vw"]) <= 1, m["status"]
+
+
+PHONE = {"width": 390, "height": 844}
+SHOWN = "(s) => { const e = document.querySelector(s); return !!e && e.getClientRects().length > 0 && !e.closest('[inert]'); }"
+
+
+def test_phone_tools_and_output_are_separate_sheets(delta_page):
+    page = delta_page(SHELL, viewport=PHONE)
+    page.click("#mtabs [data-m=tools]")
+    assert page.evaluate(SHOWN, "#pane-right .tools") and page.evaluate(SHOWN, "#pane-right .units")
+    assert not page.evaluate(SHOWN, "#results-mount") and not page.evaluate(SHOWN, "#pane-right .out-h")
+    page.click("#mtabs [data-m=output]")
+    cls = page.evaluate("document.body.className")
+    assert "m-output" in cls and "m-tools" not in cls
+    assert page.evaluate(SHOWN, "#pane-right .out-h")
+    assert not page.evaluate(SHOWN, "#pane-right .tools") and not page.evaluate(SHOWN, "#pane-right .units")
+    page.click("#mtabs [data-m=output]")
+    assert not page.evaluate("document.querySelector('#pane-right').inert === false")
+
+
+def test_phone_output_dot_and_tools_close_on_pick(delta_page):
+    page = delta_page(SHELL, viewport=PHONE)
+    dot = "document.querySelector('#mtabs .mdot').hidden"
+    assert page.evaluate(dot) is True
+    # picking a map tool closes the Tools sheet, the map is free to use
+    page.click("#mtabs [data-m=tools]")
+    page.click("#pane-right .tool[data-tool=distance]")
+    assert "m-tools" not in page.evaluate("document.body.className")
+    assert page.evaluate("__delta.store.get().tool") == "distance"
+    # output arriving with the Output sheet closed shows a dot; opening it clears it
+    page.evaluate("__delta.store.set({results: [{id: 'r', title: 'R', kind: 'measure', data: {lines: [['Distance', '1 km']], text: ''}, actions: []}]}, 'measure')")
+    assert page.evaluate(dot) is False
+    page.click("#mtabs [data-m=output]")
+    assert page.evaluate(dot) is True
+    # Chart area from a file keeps Tools open: the work is in the sheet
+    page.evaluate("__delta.store.set({areaFrom: 'upload'})")
+    page.click("#mtabs [data-m=tools]")
+    page.evaluate("__delta.store.set({layers: [{id: 'c', name: 'C', kind: 'image', visible: true, chartable: true, queryable: true, viz: {}, legend: null}]})")
+    page.wait_for_function("!document.querySelector('#pane-right .tool[data-tool=chart]').hidden")
+    page.click("#pane-right .tool[data-tool=chart]")
+    assert "m-tools" in page.evaluate("document.body.className")
