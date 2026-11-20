@@ -115,7 +115,11 @@ def test_play_pause_step_speed(page):
     assert 3 <= (f1 - f0) % 9 <= 5, (f0, f1)
     page.click(sel + " [data-tl=pause]")
     assert layer(page, "LCMS TL")["timelapse"]["playing"] is False
-    assert not page.locator("#yearbadge").is_visible()
+    # the year stays on the map while paused, and follows a step
+    assert page.locator("#yearbadge").is_visible()
+    page.click(sel + " [data-tl=forward]")
+    yr = page.locator(sel + " .tl-year").inner_text()
+    assert page.locator("#yearbadge").inner_text() == yr, yr
     f2 = layer(page, "LCMS TL")["timelapse"]["frame"]
     time.sleep(1.2)
     assert layer(page, "LCMS TL")["timelapse"]["frame"] == f2

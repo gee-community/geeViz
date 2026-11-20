@@ -170,7 +170,9 @@ export function mountTimelapseHud(store, getCtl, { badge, player }) {
     const l = act();
     const tl = l && l.timelapse;
     const playing = !!(tl && tl.playing);
-    badge.hidden = !playing;
+    // the year of the timelapse on the map, playing or not (phones hide it:
+    // their floating player shows it)
+    badge.hidden = !tl;
     document.body.classList.toggle("tl-on", !!l);
     document.body.classList.toggle("tl-playing", playing);
     if (!tl) return;

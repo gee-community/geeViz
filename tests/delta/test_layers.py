@@ -194,6 +194,30 @@ def test_slider_grows_then_caps(page):
     assert abs(width(560) - 180) <= 1
 
 
+def test_loaded_fill_stays_and_ends_before_the_legend_button(page):
+    """Every layer type shows its tiles in as a fill behind the name row
+    that stays once loaded and ends just before the legend button, where a
+    timelapse's controls end."""
+    settle(page, 400)
+    got = page.evaluate("""() => [...document.querySelectorAll('#layer-list .layer:not(.off)')].map(row => {
+      const lr = row.querySelector('.lrow').getBoundingClientRect(); const be = getComputedStyle(row.querySelector('.lrow'), '::before');
+      const tl = row.querySelector('.tl');
+      return {name: row.querySelector('.lname').textContent, prog: row.classList.contains('prog'), pct: row.style.getPropertyValue('--prog'),
+              end: lr.right - parseFloat(be.right), leg: row.querySelector('.legbtn').getBoundingClientRect().left,
+              tlEnd: tl && tl.getClientRects().length ? tl.getBoundingClientRect().right : null};
+    })""")
+    assert len(got) == len(NAMES), got
+    for r in got:
+        assert r["prog"] and r["pct"] == "100%", r
+        assert abs(r["end"] - (r["leg"] - 1)) <= 1, r
+
+    # the same point as a timelapse's controls (their margin: legend button + gap - padding)
+    tl_end = page.evaluate("""() => { const row = document.querySelector('#layer-list .layer'); const lb = row.querySelector('.lrow').getBoundingClientRect();
+      const s = getComputedStyle(row); const leg = parseFloat(s.getPropertyValue('--leg-w')), gap = parseFloat(s.getPropertyValue('--lrow-gap')), pad = parseFloat(s.getPropertyValue('--tl-pad'));
+      return [lb.right - (leg + gap - pad), lb.right - parseFloat(getComputedStyle(row.querySelector('.lrow'), '::before').right)]; }""")
+    assert abs(tl_end[0] - tl_end[1]) <= 0.5, tl_end
+
+
 def test_drag_reorder_moves_every_layer_type(page):
     """Vectors, the dynamic map service and tiles all move with the list; the
     original pinned vectors and dynamic services above the tile layers."""

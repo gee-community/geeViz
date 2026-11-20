@@ -419,3 +419,36 @@ def test_line_charts_follow_the_pane_width(page):
     page.wait_for_function("(w0) => { const s = document.querySelector('#results-mount .achart-plot .main-svg'); return s && Math.abs(s.getBoundingClientRect().width - w0) > 100; }", arg=w0, timeout=5000)
     assert page.evaluate("__delta.store.get().results.length") == calls  # no new query
     assert page.delta_errors == []
+
+
+DRAG_STEPS = """async () => {
+  const p = document.getElementById('pane-right');
+  const g = document.querySelector('.grip[data-side=right]');
+  const x = p.getBoundingClientRect().left + 2, y = 300;
+  const opt = (x, b) => ({clientX: x, clientY: y, pointerId: 1, bubbles: true, isPrimary: true, button: 0, buttons: b});
+  const svgW = () => [...document.querySelectorAll('#results-mount .achart-plot')].map(c => Math.round(c.querySelector('.main-svg').getBoundingClientRect().width));
+  g.dispatchEvent(new PointerEvent('pointerdown', opt(x, 1)));
+  const out = [];
+  for (let i = 1; i <= 5; i++) {
+    window.dispatchEvent(new PointerEvent('pointermove', opt(x - i * 30, 1)));
+    // a few frames: well inside Plotly's 100 ms resize debounce
+    await new Promise(r => setTimeout(r, 60));
+    out.push({pane: p.clientWidth, charts: svgW()});
+  }
+  window.dispatchEvent(new PointerEvent('pointerup', opt(x - 150, 0)));
+  return out;
+}"""
+
+
+def test_line_charts_grow_while_the_grip_is_dragged(page):
+    """The Sankey redrew as the grip moved; the line charts waited for the
+    drag to stop (Plotly's resize waits for a 100 ms pause)."""
+    chart_view(page)
+    page.wait_for_function("document.querySelector('#results-mount .achart-plot .main-svg')")
+    steps = page.evaluate(DRAG_STEPS)
+    assert steps[-1]["pane"] > steps[0]["pane"] + 60, steps
+    # mid-drag, each chart is within one 30 px step of the pane's content width
+    for s in steps[1:]:
+        for w in s["charts"]:
+            assert abs((s["pane"] - w) - (steps[0]["pane"] - steps[0]["charts"][0])) <= 31, steps
+    assert page.delta_errors == []

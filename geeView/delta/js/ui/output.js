@@ -185,19 +185,32 @@ function seriesBody(r, settings) {
 
 // A Plotly chart follows its card's width (the pane is dragged wider or
 // narrower): Plotly's own responsive option only hears the window resizing.
+// It redraws at the new width once a frame, as the Sankey does, so it grows
+// with the pane while the grip is dragged: Plots.resize waits until resizing
+// pauses for 100 ms, so it only caught up when the drag stopped.
 // Returns the observer's disconnect.
 function followWidth(box, plotEl) {
   if (typeof ResizeObserver !== "function") return () => {};
   let width = box.clientWidth;
+  let frame = 0;
+  const redraw = () => {
+    frame = 0;
+    const p = plotEl();
+    const w = p && p.clientWidth;
+    if (!w || !window.Plotly || !p.data || !p.layout || Math.abs((p.layout.width || 0) - w) <= 1) return;
+    window.Plotly.relayout(p, { width: w });
+  };
   const ro = new ResizeObserver(() => {
     const w = box.clientWidth;
     if (!w || Math.abs(w - width) <= 1) return;
     width = w;
-    const p = plotEl();
-    if (p && window.Plotly && p.data) window.Plotly.Plots.resize(p);
+    if (!frame) frame = requestAnimationFrame(redraw);
   });
   ro.observe(box);
-  return () => ro.disconnect();
+  return () => {
+    ro.disconnect();
+    if (frame) cancelAnimationFrame(frame);
+  };
 }
 
 // Chart area cards: a Plotly chart with its legend, or a d3 Sankey drawn at

@@ -168,7 +168,7 @@ def open_editor(page, years=(2015, 2023)):
 
 def rows(page):
     return page.evaluate("""() => Array.from(document.querySelectorAll('#tool-options .cset-periods .cset-prow')).map(r =>
-      Array.from(r.querySelectorAll('input')).map(i => i.value === '' ? null : Number(i.value)))""")
+      { const i = r.querySelector('input.cset-year'); const v = i.value === '' ? null : Number(i.value); return [v, v]; })""")
 
 
 def errors(page):
@@ -194,7 +194,8 @@ def test_periods_never_default_outside_the_range(page):
     page.reload()
     page.wait_for_function("window.__delta !== undefined")
     open_editor(page)
-    assert rows(page) == [[2015, 2016], [2020, 2023]]
+    # one year per row: a range from the url shows as its start year
+    assert rows(page) == [[2015, 2015], [2020, 2020]]
 
 
 def test_plus_inserts_in_the_middle_minus_and_x_remove(page):
@@ -229,17 +230,18 @@ def test_keyboard_reorder_and_validation_messages(page):
     settle(page)
     assert rows(page) == [[2015, 2015], [2019, 2019], [2023, 2023]] and errors(page) == []
 
-    def set_year(i, j, v):
-        page.fill("#tool-options .cset-prow[data-i='%d'] input[data-j='%d']" % (i, j), v)
+    def set_year(i, v):
+        page.fill("#tool-options .cset-prow[data-i='%d'] input.cset-year" % i, v)
 
-    set_year(1, 0, "")
+    # one input per row
+    assert page.locator("#tool-options .cset-prow[data-i='1'] input").count() == 1
+    set_year(1, "")
     assert "One or more blank values found." in errors(page)
-    set_year(1, 0, "2010")
+    set_year(1, "2010")
     assert "Found years outside the available year range. Please ensure all years are >= 2015 and <= 2023." in errors(page)
-    set_year(1, 0, "2020")
-    set_year(1, 1, "2018")
-    assert "One or more rows have a first year that is greater than the last year." in errors(page)
-    set_year(1, 0, "2018")
+    set_year(1, "2024")
+    assert errors(page), errors(page)
+    set_year(1, "2018")
     assert errors(page) == []
     click(page, "remove-last-period")
     click(page, "remove-last-period")
@@ -251,11 +253,11 @@ def test_apply_charts_once_and_round_trips_the_url(page, delta_page):
     open_editor(page)
     click(page, "add-period")
     changes = page.evaluate("() => { window.__pc = 0; __delta.store.on('change:chartPeriods', () => window.__pc++); return 0; }")
-    page.fill("#tool-options .cset-prow[data-i='1'] input[data-j='1']", "2020")
+    page.fill("#tool-options .cset-prow[data-i='1'] input.cset-year", "2020")
     assert page.evaluate("window.__pc") == 0  # typing does not chart
     click(page, "apply-periods")
     assert page.evaluate("window.__pc") == 1
-    want = [[2015, 2015], [2019, 2020], [2023, 2023]]
+    want = [[2015, 2015], [2020, 2020], [2023, 2023]]
     assert st(page, "chartPeriods") == want and st(page, "chartPeriodsUser") is True
     url = page.url
     assert json.loads(page.evaluate("new URL(location.href).searchParams.get('transitionChartingYears')")) == want

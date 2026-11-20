@@ -66,3 +66,16 @@ test("a tile draws only the features that touch it, and redraws on opacity", () 
   assert.equal(o.style().strokeOpacity, 0.5);
   assert.equal(o.getOpacity(), 0.5);
 });
+
+test("tiles drawn and released report progress, so the row shows them in", async () => {
+  const got = [];
+  const geojson = { type: "Point", coordinates: [0, 0] };
+  const o = createVectorTileOverlay({ google, geojson, style: {}, dpr: 1, onProgress: (s) => got.push(s) });
+  const a = o.getTile({ x: 0, y: 0 }, 1, fakeDoc());
+  o.getTile({ x: 1, y: 0 }, 1, fakeDoc());
+  await new Promise((r) => setTimeout(r, 5));
+  assert.deepEqual(got, [{ total: 2, loaded: 2, failed: 0 }], "once for both");
+  o.releaseTile(a);
+  await new Promise((r) => setTimeout(r, 5));
+  assert.deepEqual(got.at(-1), { total: 1, loaded: 1, failed: 0 });
+});

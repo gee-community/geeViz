@@ -193,8 +193,10 @@ export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, measure,
 
   // ---- Sankey transition periods: port of 2templates.js setupTransitionPeriodUI,
   // addRow, addTransitionRow, removeLastTransitionRow, removeRow and
-  // getTransitionRowData. One row per period; single-year defaults at the ends
-  // of the valid year range; "+" adds in the middle; rows drag to reorder.
+  // getTransitionRowData. One row per year (a period of one year: the url and
+  // the store keep the original's [start, end] pairs, with start = end; a range
+  // read from the url shows as its start year); single-year defaults at the
+  // ends of the valid year range; "+" adds in the middle; rows drag to reorder.
   let sortable = null;
   function moveRow(from, to) {
     if (to < 0 || to >= draft.length || from === to) return;
@@ -215,29 +217,29 @@ export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, measure,
     const range = yearRange(s);
     if (!draft) {
       const start = s.chartPeriods || currentDefaults(s);
-      if (start) draft = start.map((r) => r.slice());
+      if (start) draft = start.map((r) => [r[0], r[0]]);
     }
     const box = el("div", "cset-sec");
     box.dataset.role = "periods";
     box.title =
-      "Define periods for transition area charting. Each row is a period (start year to end year). Periods should not overlap. The most common value for each period is used in the Sankey chart. Add or remove rows as needed.";
-    box.appendChild(el("div", "cset-h", "Transition periods"));
+      "Define the years for transition area charting. Each row is a year, in order. The Sankey chart shows the change from each year to the next. Add or remove rows as needed.";
+    box.appendChild(el("div", "cset-h", "Transition years"));
     if (!draft || !range) {
       box.appendChild(el("div", "val-code", "Reading the years of the Sankey layers."));
       return box;
     }
-    box.appendChild(el("div", "val-code", `Each row is a period, start year to end year, from ${range[0]} to ${range[1]}. Drag a row by its handle to reorder.`));
+    box.appendChild(el("div", "val-code", `Each row is a year from ${range[0]} to ${range[1]}, in order. Drag a row by its handle to reorder.`));
     const rangeTitle = `Enter a year within the valid range (${range[0]} - ${range[1]})`;
     const head = el("div", "cset-prow cset-phead");
-    head.append(el("span"), el("span", "cset-ph", "Start year"), el("span"), el("span", "cset-ph", "End year"));
+    head.append(el("span"), el("span", "cset-ph", "Year"));
     const table = el("div", "cset-periods");
     draft.forEach((row, i) => {
       const r = el("div", "cset-prow");
       r.dataset.i = String(i);
       const grip = el("button", "ib cset-grip");
       grip.type = "button";
-      grip.title = "Drag to reorder. The up and down arrow keys move this period.";
-      grip.setAttribute("aria-label", `Move period ${i + 1} (up and down arrow keys)`);
+      grip.title = "Drag to reorder. The up and down arrow keys move this year.";
+      grip.setAttribute("aria-label", `Move year ${i + 1} (up and down arrow keys)`);
       grip.appendChild(el("i", "ti ti-grip-vertical"));
       grip.addEventListener("keydown", (e) => {
         const to = e.key === "ArrowUp" ? i - 1 : e.key === "ArrowDown" ? i + 1 : null;
@@ -250,7 +252,7 @@ export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, measure,
         if (g) g.focus();
       });
       r.appendChild(grip);
-      [0, 1].forEach((j) => {
+      {
         const inp = el("input", "cset-year mono");
         inp.type = "number";
         inp.step = "1";
@@ -258,21 +260,20 @@ export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, measure,
         inp.max = String(range[1]);
         inp.title = rangeTitle;
         inp.placeholder = "Year";
-        inp.value = Number.isFinite(row[j]) ? String(row[j]) : "";
-        inp.dataset.j = String(j);
-        inp.setAttribute("aria-label", (j ? "End year of period " : "Start year of period ") + (i + 1));
+        inp.value = Number.isFinite(row[0]) ? String(row[0]) : "";
+        inp.setAttribute("aria-label", "Year " + (i + 1));
         inp.addEventListener("input", () => {
-          draft[i][j] = Number.parseInt(inp.value, 10);
+          const y = Number.parseInt(inp.value, 10);
+          draft[i] = [y, y];
           showErrors();
         });
         r.appendChild(inp);
-        if (!j) r.appendChild(el("span", "val-code", "to"));
-      });
+      }
       const x = el("button", "ib");
       x.type = "button";
       x.dataset.act = "remove-period";
-      x.title = "Remove this transition period";
-      x.setAttribute("aria-label", `Remove period ${i + 1}`);
+      x.title = "Remove this year";
+      x.setAttribute("aria-label", `Remove year ${i + 1}`);
       x.appendChild(el("i", "ti ti-x"));
       x.addEventListener("click", () => {
         draft.splice(i, 1);
@@ -306,11 +307,11 @@ export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, measure,
       b.addEventListener("click", fn);
       return b;
     };
-    const add = button("add-period", "ti-plus", "Add a transition period in the middle", () => {
+    const add = button("add-period", "ti-plus", "Add a year in the middle", () => {
       draft = insertPeriod(draft, yearRange(store.get())).rows;
       renderOptions();
     });
-    const rm = button("remove-last-period", "ti-minus", "Remove the second to last transition period", () => {
+    const rm = button("remove-last-period", "ti-minus", "Remove the second to last year", () => {
       draft = removePeriod(draft);
       renderOptions();
     });

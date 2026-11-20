@@ -153,7 +153,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
   // the layer order instead of Google's Data pane above every tile layer.
   function addGeoJson(r, v) {
     r.style = normVecStyle(r.viz);
-    r.overlay = createVectorTileOverlay({ google: g, geojson: v, style: r.style, opacity: r.opacity, opacityRatio: r.viz.opacityRatio, name: r.id });
+    r.overlay = createVectorTileOverlay({ google: g, geojson: v, style: r.style, opacity: r.opacity, opacityRatio: r.viz.opacityRatio, name: r.id, onProgress: () => reportProgress(r) });
     if (r.opacity !== 1) r.overlay.setOpacity(r.opacity);
     r.tileType = true;
     r.dataType = false;

@@ -79,13 +79,25 @@ export function effectiveStyle(style, opacity, touched, opacityRatio) {
   return st;
 }
 
-// opts: google, geojson, style, opacity, opacityRatio, dpr
+// opts: google, geojson, style, opacity, opacityRatio, dpr, onProgress(stats)
+// (once a frame as tiles come and go, so the layer row shows them in)
 export function createVectorTileOverlay(opts) {
   const g = opts.google || globalThis.google.maps;
   const parts = flatten(opts.geojson);
   let style = effectiveStyle(opts.style || {}, opts.opacity === undefined ? 1 : opts.opacity, false, opts.opacityRatio);
   let opacity = opts.opacity === undefined ? 1 : opts.opacity;
   const tiles = new Map(); // canvas -> {coord, zoom}
+  let queued = false;
+  function report() {
+    if (queued || !opts.onProgress) return;
+    queued = true;
+    const run = () => {
+      queued = false;
+      opts.onProgress({ total: tiles.size, loaded: tiles.size, failed: 0 });
+    };
+    if (typeof requestAnimationFrame === "function") requestAnimationFrame(run);
+    else setTimeout(run, 0);
+  }
   const dpr = () => opts.dpr || (typeof devicePixelRatio === "number" ? Math.min(devicePixelRatio, 2) : 1);
 
   function draw(canvas, coord, zoom) {
@@ -163,10 +175,12 @@ export function createVectorTileOverlay(opts) {
       const c = { x: ((coord.x % n) + n) % n, y: coord.y };
       tiles.set(canvas, { coord: c, zoom });
       draw(canvas, c, zoom);
+      report();
       return canvas;
     },
     releaseTile(canvas) {
       tiles.delete(canvas);
+      report();
     },
     // the opacity slider: redraw with the stroke at the opacity, the fill at its ratio
     setOpacity(a, touched = true) {
