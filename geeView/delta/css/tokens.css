@@ -11,6 +11,7 @@
   --dz-faint: #6a5e56;
   --dz-teal: #00897b;
   --dz-teal-soft: rgba(0, 137, 123, 0.11);
+  --dz-prog: rgba(0, 137, 123, 0.2);
   --dz-orange: #e2602a;
   --dz-orange-soft: rgba(226, 96, 42, 0.12);
   --dz-shadow: 0 10px 30px rgba(35, 29, 27, 0.18);
@@ -26,6 +27,7 @@
   --dz-faint: #8f847d;
   --dz-teal: #1fd1b4;
   --dz-teal-soft: rgba(31, 209, 180, 0.12);
+  --dz-prog: rgba(31, 209, 180, 0.2);
   --dz-orange: #ff834c;
   --dz-orange-soft: rgba(255, 131, 76, 0.14);
   --dz-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);

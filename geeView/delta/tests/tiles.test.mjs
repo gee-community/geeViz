@@ -16,13 +16,14 @@ function fakeDoc() {
 }
 const google = { Size: function (w, h) { this.width = w; this.height = h; } };
 
-function setup(delays = [10, 20]) {
+function setup(delays = [10, 20], autoRetry = 30) {
   const reports = [];
   let requests = 0;
   const o = createTileOverlay({
     google,
     urlFor: (c, z) => `t/${z}/${c.x}/${c.y}`,
     delays,
+    autoRetry,
     random: () => 0.5, // no jitter
     onRequest: () => requests++,
     onProgress: (s) => reports.push(s),
@@ -65,14 +66,33 @@ test("a failed tile is asked for again with backoff, then counted as failed", as
   assert.equal(requests(), 2, "second retry waits for the longer delay");
   await tick(25);
   assert.equal(requests(), 3);
-  doc.imgs[2].onerror(); // out of retries
-  await tick(40);
-  assert.equal(requests(), 3);
+  doc.imgs[2].onerror(); // out of backoff: one late try after a pause
+  await tick(15);
+  assert.equal(requests(), 3, "the late try waits for its pause");
+  assert.deepEqual(o.stats(), { total: 1, loaded: 0, failed: 0 }, "not failed while the late try is pending");
+  await tick(25);
+  assert.equal(requests(), 4);
+  doc.imgs[3].onerror(); // the late try failed too
+  await tick(60);
+  assert.equal(requests(), 4, "only once");
   assert.deepEqual(o.stats(), { total: 1, loaded: 0, failed: 1 });
   // retryFailed asks again; a load then counts
   assert.equal(o.retryFailed(), 1);
-  assert.equal(requests(), 4);
-  doc.imgs[3].onload();
+  assert.equal(requests(), 5);
+  doc.imgs[4].onload();
+  assert.deepEqual(o.stats(), { total: 1, loaded: 1, failed: 0 });
+});
+
+test("the late try loads a tile the backoff gave up on", async () => {
+  const { o, requests } = setup([5], 20);
+  const doc = fakeDoc();
+  o.getTile({ x: 0, y: 0 }, 1, doc);
+  doc.imgs[0].onerror();
+  await tick(10);
+  doc.imgs[1].onerror();
+  await tick(30);
+  assert.equal(requests(), 3);
+  doc.imgs[2].onload();
   assert.deepEqual(o.stats(), { total: 1, loaded: 1, failed: 0 });
 });
 
@@ -110,7 +130,9 @@ test("opacity applies to every tile, now and later", () => {
 
 test("the row: fills while tiles load, shows failures, nothing for hidden layers", () => {
   assert.deepEqual(progressView({ visible: true, progress: { total: 8, loaded: 2, failed: 0 } }), { show: true, pct: 25, failed: 0 });
-  assert.deepEqual(progressView({ visible: true, progress: { total: 8, loaded: 6, failed: 2 } }), { show: false, pct: 100, failed: 2 });
+  assert.deepEqual(progressView({ visible: true, progress: { total: 8, loaded: 6, failed: 2 } }), { show: true, pct: 100, failed: 2 });
+  // the fill stays once every tile is in
+  assert.deepEqual(progressView({ visible: true, progress: { total: 8, loaded: 8, failed: 0 } }), { show: true, pct: 100, failed: 0 });
   assert.deepEqual(progressView({ visible: false, progress: { total: 8, loaded: 2, failed: 0 } }), { show: false, pct: 0, failed: 0 });
   assert.deepEqual(progressView({ visible: true, progress: null }), { show: false, pct: 0, failed: 0 });
 });

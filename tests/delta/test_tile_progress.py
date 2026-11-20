@@ -49,7 +49,9 @@ def test_progress_reaches_every_tile_on_screen(live_map):
     # the store's count is the overlay's own: every tile Google shows now
     st = page.evaluate("(id) => __delta.engine.layers.stats(id).progress", srtm(page)["id"])
     assert p == st and p["failed"] == 0
-    assert not page.evaluate("(s) => document.querySelector(s).classList.contains('prog')", row(page))
+    # the fill stays, full, once every tile is in
+    got = page.evaluate("(s) => { const r = document.querySelector(s); return [r.classList.contains('prog'), r.style.getPropertyValue('--prog')]; }", row(page))
+    assert got == [True, "100%"], got
     assert not page.delta_errors, page.delta_errors
 
 
@@ -85,8 +87,13 @@ def test_tiles_that_keep_failing_are_counted_and_can_be_tried_again(live_map):
     page.route(TILE, lambda route, request: route.fulfill(status=404, body="no"))
     page.evaluate("Map.addLayer(ee.Image(3).visualize({palette: ['00aaff']}), {}, 'Broken', true)")
     sel = "(() => [...document.querySelectorAll('#layer-list .layer')].find(x => x.textContent.includes('Broken')))()"
-    # every retry runs out (0.5 + 1 + 2 + 4 s, with jitter)
-    wait_for(page, "(() => { const l = __delta.store.get().layers.find(x => x.name === 'Broken'); return l && l.progress && l.progress.total > 0 && l.progress.failed === l.progress.total; })()", timeout=60)
+    # every retry runs out (0.5 + 1 + 2 + 4 s with jitter, then one late try 8 s on)
+    seen = {}
+    page.on("request", lambda r: TILE.search(r.url) and seen.__setitem__(TILE.search(r.url).group(0), seen.get(TILE.search(r.url).group(0), 0) + 1))
+    wait_for(page, "(() => { const l = __delta.store.get().layers.find(x => x.name === 'Broken'); return l && l.progress && l.progress.total > 0 && l.progress.failed === l.progress.total; })()", timeout=90)
+    # first request, four backoff retries, one late try (the engine test
+    # pins the exact count; a tile Google re-asks for starts over)
+    assert seen and max(seen.values()) >= 6, seen
     n = page.evaluate("__delta.store.get().layers.find(x => x.name === 'Broken').progress.failed")
     btn = page.evaluate("(() => { const b = " + sel + ".querySelector('.tile-err'); return {hidden: b.hidden, text: b.textContent, title: b.title}; })()")
     assert not btn["hidden"] and btn["text"] == str(n), btn

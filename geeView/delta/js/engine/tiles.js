@@ -6,9 +6,12 @@
 // that has not been released. Panning or zooming releases the old tiles and
 // asks for new ones, so the count follows the view. Retries are the only
 // requests added: a failed tile is asked for again after 0.5, 1, 2 and 4 s
-// (with jitter), then counted as failed; retryFailed() asks again for those.
+// (with jitter), then once more after a pause of 8 s (a service that was
+// briefly overloaded has usually recovered), then counted as failed;
+// retryFailed() asks again for those.
 
 export const RETRY_DELAYS = [500, 1000, 2000, 4000];
+export const AUTO_RETRY_MS = 8000;
 
 // Earth Engine and tile services number x around the world; Google asks for
 // tiles past the antimeridian and above or below the poles.
@@ -28,11 +31,13 @@ export function progressOf(stats) {
 }
 
 // opts: google, urlFor(coord, zoom) -> url or null, maxZoom, minZoom,
-// opacity, onRequest(), onProgress({total, loaded, failed}), delays, random()
+// opacity, onRequest(), onProgress({total, loaded, failed}), delays, autoRetry
+// (ms before the one late retry), random()
 export function createTileOverlay(opts) {
   const g = opts.google || globalThis.google.maps;
   const delays = opts.delays || RETRY_DELAYS;
   const random = opts.random || Math.random;
+  const autoRetry = opts.autoRetry === undefined ? AUTO_RETRY_MS : opts.autoRetry;
   const size = 256;
   let opacity = opts.opacity === undefined ? 1 : opts.opacity;
   const tiles = new Map(); // div -> {div, url, state, tries, timer, released}
@@ -78,6 +83,10 @@ export function createTileOverlay(opts) {
         const wait = delays[t.tries] * (0.75 + random() * 0.5);
         t.tries++;
         t.timer = setTimeout(() => !t.released && load(t), wait);
+      } else if (!t.late) {
+        // the backoff ran out: one more try after a pause, once per tile
+        t.late = true;
+        t.timer = setTimeout(() => !t.released && load(t), autoRetry);
       } else {
         t.state = "failed";
         report();
@@ -98,7 +107,7 @@ export function createTileOverlay(opts) {
       const c = wrapTile(coord, zoom);
       const url = c ? opts.urlFor(c, zoom) : null;
       if (!url) return div; // nothing to load: not counted
-      const t = { div, url, state: "loading", tries: 0, timer: 0, released: false };
+      const t = { div, url, state: "loading", tries: 0, late: false, timer: 0, released: false };
       tiles.set(div, t);
       load(t);
       report();

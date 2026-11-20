@@ -44,13 +44,14 @@ export function legendsToOpen(layers, seen) {
 }
 
 // How a row shows its tiles loading (layer.progress from engine/tiles.js):
-// the name row fills left to right while tiles on screen are still coming,
-// and tiles that failed after every retry show as a count to try again.
+// the name row fills left to right as tiles on screen come in and stays
+// full once they have, and tiles that failed after every retry show as a
+// count to try again.
 export function progressView(l) {
   const p = l && l.visible ? l.progress : null;
   if (!p || !p.total) return { show: false, pct: 0, failed: 0 };
   const settled = p.loaded + p.failed;
-  return { show: settled < p.total, pct: Math.round((settled / p.total) * 1000) / 10, failed: p.failed };
+  return { show: true, pct: Math.round((settled / p.total) * 1000) / 10, failed: p.failed };
 }
 
 // The original keeps urlParams values JSON-encoded in the query string.
