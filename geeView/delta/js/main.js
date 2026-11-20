@@ -188,9 +188,11 @@ async function boot() {
     closeLoading: () => {},
     notify: notice,
   });
-  // View history starts at the view the map script set (its calls replay in
-  // install above), not the default view the page opened on.
-  engine.startHistory();
+  // View history starts once the map has fully loaded: the map script's calls
+  // replayed (install above), every visible layer's first load done and the
+  // map at rest. Where the script and its layers settle (centerObject resolves
+  // later) is the first view, not a step back.
+  startHistoryWhenLoaded(engine, store);
   // Wind layers: wind-particles.js reads the Google map as window.map. Set
   // only now, so calls the map script made while loading stay queued and
   // replay in order.
@@ -213,4 +215,24 @@ if (new URLSearchParams(location.search).get("delta-test") === "shell") {
   window.__delta = { store, api, engine, shell, status, layersUI, toolsUI, outputUI, ready: true };
 } else {
   boot();
+}
+
+// Polls until no visible layer is loading and the map has not moved for a
+// moment, then starts the view history (after 60 s it starts regardless).
+function startHistoryWhenLoaded(engine, store, { rest = 400, cap = 60000 } = {}) {
+  const t0 = Date.now();
+  let lastMove = Date.now();
+  const g = window.google.maps;
+  const moved = g.event.addListener(engine.gmap, "bounds_changed", () => (lastMove = Date.now()));
+  const tick = () => {
+    const busy = store.get().layers.some((l) => l.visible && l.loading);
+    const still = Date.now() - lastMove >= rest;
+    if ((!busy && still) || Date.now() - t0 > cap) {
+      g.event.removeListener(moved);
+      engine.startHistory();
+      return;
+    }
+    setTimeout(tick, 150);
+  };
+  tick();
 }

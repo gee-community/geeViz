@@ -161,6 +161,7 @@ def arrows(page):
 def test_history_arrows_look_inactive_at_either_end(page):
     """Forward is inactive until the user has gone back; back is inactive at
     the first view recorded. Inactive shows (dimmed), not only refuses."""
+    page.wait_for_function("__delta.engine.history().length === 1")  # recording starts once the map has loaded
     # at load: the first view is the one the map script set, so neither arrow
     # has anywhere to go (the page's default view before it is not recorded)
     prev, nxt = arrows(page)

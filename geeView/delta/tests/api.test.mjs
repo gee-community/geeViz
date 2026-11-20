@@ -137,7 +137,8 @@ test("removeLayer, query setters and engine hooks", () => {
   const store = createStore();
   const api = createMapApi(store, { setCenter: (...a) => calls.push(["setCenter", a]) });
   api.addLayer({}, { layerType: "geeVector" }, "V", true);
-  assert.equal(store.get().layers[0].pinned, true);
+  // vectors draw in the tile stack, so they move with the list like any layer
+  assert.equal(store.get().layers[0].pinned, false);
   const id = store.get().layers[0].id;
   assert.deepEqual(store.get().order, [id]);
   api.removeLayer(id);

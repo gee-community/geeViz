@@ -112,12 +112,12 @@ def test_order_matches_original(page, live_map):
     orig.wait_for_function("document.querySelectorAll('#layer-list > li .layer-span').length >= %d" % len(NAMES), timeout=120000)
     orig_names = orig.evaluate("Array.from(document.querySelectorAll('#layer-list > li .layer-span')).map(s => s.textContent.trim())")
     assert delta_names == orig_names
-    # z-order equals row order: tiles by overlayMapTypes index, vectors by zIndex (bottom to top).
+    # z-order equals row order: every layer type is in the one tile stack
+    # (vectors and the dynamic service draw as tiles), bottom to top.
     ids = [r["id"] for r in rows(page)]
     z = page.evaluate("__delta.engine.layers.zOrder()")
-    assert z["tiles"] == [i for i in reversed(ids) if i in z["tiles"]]
-    assert len(z["tiles"]) == 4 and len(z["vectors"]) == 2
-    assert z["vectors"] == [i for i in reversed(ids) if i in z["vectors"]]
+    assert z["tiles"] == list(reversed(ids)), (z, ids)
+    assert z["vectors"] == []
 
 
 def test_name_click_toggles(page):
@@ -194,19 +194,24 @@ def test_slider_grows_then_caps(page):
     assert abs(width(560) - 180) <= 1
 
 
-def test_drag_reorder_keeps_pinned(page):
+def test_drag_reorder_moves_every_layer_type(page):
+    """Vectors, the dynamic map service and tiles all move with the list; the
+    original pinned vectors and dynamic services above the tile layers."""
     before = rows(page)
     names = [r["name"] for r in before]
-    geo_index = names.index("GeoJSON")
+    assert not any(layer(page, n)["pinned"] for n in names)
     z0 = page.evaluate("__delta.engine.layers.zOrder()")["tiles"]
-    page.locator(row_sel(page, "SRTM") + " .lname").drag_to(page.locator(row_sel(page, "Topo tiles") + " .lname"), target_position={"x": 5, "y": 2})
+    # a true vector (GeoJSON) dragged below the SRTM image
+    page.locator(row_sel(page, "GeoJSON") + " .lname").drag_to(page.locator(row_sel(page, "SRTM") + " .lname"), target_position={"x": 5, "y": 14})
     settle(page, 400)
     after = [r["name"] for r in rows(page)]
     assert after != names
-    assert after.index("SRTM") < after.index("Topo tiles")
-    for pinned in ("Forest boundaries", "GeoJSON", "Polygons vector"):
-        assert after.index(pinned) == names.index(pinned), (pinned, names, after)
-    assert after.index("GeoJSON") == geo_index
+    assert after.index("GeoJSON") > after.index("SRTM"), after
+    # and the dynamic service to the top
+    page.locator(row_sel(page, "Forest boundaries") + " .lname").drag_to(page.locator(row_sel(page, after[0]) + " .lname"), target_position={"x": 5, "y": 2})
+    settle(page, 400)
+    after = [r["name"] for r in rows(page)]
+    assert after[0] == "Forest boundaries", after
     z1 = page.evaluate("__delta.engine.layers.zOrder()")["tiles"]
     assert z1 != z0
     ids = [r["id"] for r in rows(page)]

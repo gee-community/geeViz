@@ -271,3 +271,28 @@ def test_unset_keeps_other_layers_on_and_stacks_in_list_order(live_map):
     # list (top first): SRTM top, NDVI TL, LCMS TL, SRTM; the map stacks bottom to top
     assert first(ids["SRTM"]) < first(ids["NDVI TL"]) < first(ids["SRTM top"]), z
     assert not page.delta_errors, page.delta_errors
+
+
+def test_controls_line_up_with_the_opacity_slider(page):
+    """The frame and speed sliders share the opacity slider's left and right
+    edges; the buttons sit to their left, as tall as both slider rows; neither
+    the block nor the legend reaches under the legend button."""
+    page.evaluate("__delta.store.update(s => ({...s, panes: {...s.panes, left: {...s.panes.left, width: 560}}}), 'test')")
+    sel = row_sel(page, "LCMS TL")
+    if not layer(page, "LCMS TL")["visible"]:
+        page.click(sel + " .tgl")
+    wait_for(page, "(id) => __delta.store.get().layers.find(l => l.id === id).timelapse.loaded", layer(page, "LCMS TL")["id"])
+    page.wait_for_timeout(300)
+    m = page.evaluate(
+        """(s) => { const row = document.querySelector(s); const r = (q) => row.querySelector(q).getBoundingClientRect();
+          return {op: r('input.op'), year: r('input[data-tl=year]'), speed: r('input[data-tl=speed]'), btns: r('.tl-transport'),
+                  sl: r('.tl-sl'), tl: r('.tl'), leg: r('.legbtn'), legend: r('.legend'), stack: row.classList.contains('stack')}; }""",
+        sel,
+    )
+    assert not m["stack"], m
+    for k in ("year", "speed"):
+        assert abs(m[k]["left"] - m["op"]["left"]) <= 1 and abs(m[k]["right"] - m["op"]["right"]) <= 1, (k, m[k], m["op"])
+    assert m["btns"]["right"] <= m["sl"]["left"], m
+    assert abs(m["btns"]["height"] - m["sl"]["height"]) <= 1 and abs(m["btns"]["top"] - m["sl"]["top"]) <= 1, m
+    assert m["tl"]["right"] <= m["leg"]["left"] + 1, (m["tl"], m["leg"])
+    assert m["legend"]["right"] <= m["leg"]["left"] + 1, (m["legend"], m["leg"])

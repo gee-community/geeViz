@@ -9,12 +9,12 @@
 
 const UNSUPPORTED = ["addExport", "addPlot", "addFeatureView", "addREST", "addMBSankey", "addSelectLayerGroup"];
 
-const PINNED_LAYER_TYPES = ["geeVector", "geoJSONVector", "dynamicMapService"];
-
+// Every layer type draws in the one tile stack (vectors and dynamic map
+// services as tiles, a timelapse frame by frame), so any layer can be dragged.
+// The original pinned vectors, dynamic services and timelapses, which it drew
+// above the tile layers. Only Map.canReorderLayers = false pins them all.
 function isPinned(layer, canReorder) {
-  if (!canReorder) return true;
-  if (layer.kind === "timelapse") return true;
-  return PINNED_LAYER_TYPES.includes(layer.viz && layer.viz.layerType);
+  return !canReorder;
 }
 
 function kindFor(item, viz) {

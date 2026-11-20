@@ -13,6 +13,7 @@
 import { prepareViz, createColorCycle, normVecStyle } from "./viz.js";
 import { createTimelapse } from "./timelapse.js";
 import { createTileOverlay, progressOf } from "./tiles.js";
+import { createVectorTileOverlay, tileBounds } from "./vectortiles.js";
 import { windQueryItem, WIND_UNIT_PROPS } from "./wind.js";
 
 const TILE_TYPES = ["geeImage", "geeImageCollection", "geeVectorImage", "tileMapService"];
@@ -135,7 +136,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
 
   // ---- Data (vector) layers ----
   function applyDataStyle(r) {
-    if (!r.overlay) return;
+    if (!r.overlay || typeof r.overlay.setStyle !== "function") return;
     // Vectors pass clicks to the map unless the viz asks for clickable
     // features, so the Query tool's double-click works over them.
     const style = { clickable: false, ...r.style, zIndex: r.zIndex || 1000 };
@@ -147,19 +148,16 @@ export function createLayerEngine(gmap, store, deps = {}) {
     r.overlay.setStyle(style);
   }
 
+  // port of 2templates.js addLayer addGeoJsonToMap. Drawn as canvas tiles
+  // (engine/vectortiles.js) in the tile stack, so a vector takes its place in
+  // the layer order instead of Google's Data pane above every tile layer.
   function addGeoJson(r, v) {
-    // port of 2templates.js addLayer addGeoJsonToMap
-    const data = new g.Data();
     r.style = normVecStyle(r.viz);
-    r.overlay = data;
-    applyDataStyle(r);
-    try {
-      data.addGeoJson(v);
-    } catch (err) {
-      data.addGeoJson({ type: "Feature", geometry: v, id: "0", properties: {} });
-    }
+    r.overlay = createVectorTileOverlay({ google: g, geojson: v, style: r.style, opacity: r.opacity, opacityRatio: r.viz.opacityRatio, name: r.id });
+    if (r.opacity !== 1) r.overlay.setOpacity(r.opacity);
+    r.tileType = true;
+    r.dataType = false;
     r.requests++;
-    if (r.visible) data.setMap(gmap);
     sync();
     setLoading(r, false);
   }
@@ -249,31 +247,8 @@ export function createLayerEngine(gmap, store, deps = {}) {
   }
 
   // ---- dynamic map services ----
-  // port of 2templates.js addLayer groundOverlayWrapper and updateGroundOverlay.
-  // A preloading Image replaces the original's HEAD request and 1 s retries;
-  // the overlay refreshes on idle (after both zooms and drags).
-  function refreshGround(r) {
-    if (r.overlay) r.overlay.setMap(null);
-    r.overlay = null;
-    if (!r.visible) return setLoading(r, false);
-    const b = gmap.getBounds();
-    if (!b) return;
-    const zoom = gmap.getZoom();
-    const svc = zoom > r.item[1].minZoom ? r.item[1] : r.item[0];
-    const div = gmap.getDiv();
-    const url = groundOverlayUrl(svc.baseURL, svc.minZoom, svc.ending, zoom, b.toJSON(), div.clientWidth, div.clientHeight);
-    if (!url) return setLoading(r, false);
-    const reqId = ++r.groundRequest;
-    setLoading(r, true);
-    r.requests++;
-    const overlay = new g.GroundOverlay(url, b, { opacity: r.opacity, clickable: false });
-    overlay.setMap(gmap);
-    r.overlay = overlay;
-    const img = new Image();
-    img.onload = () => reqId === r.groundRequest && setLoading(r, false);
-    img.onerror = () => reqId === r.groundRequest && fail(r, "The map service did not return an image");
-    img.src = url;
-  }
+  // port of 2templates.js addLayer groundOverlayWrapper: now one export image
+  // per map tile (addLayerToMap), through the tile overlay's progress and retry.
 
   // ---- timelapses ----
   // Frame hooks for engine/timelapse.js. Each frame counts the tiles it is
@@ -386,7 +361,6 @@ export function createLayerEngine(gmap, store, deps = {}) {
       overlay: null,
       loading: false,
       requests: 0,
-      groundRequest: 0,
       viz: null,
       item: layer.item,
       target: null,
@@ -444,8 +418,17 @@ export function createLayerEngine(gmap, store, deps = {}) {
       } else if (r.layerType === "geoJSONVector") {
         addGeoJson(r, item);
       } else if (r.layerType === "dynamicMapService") {
-        r.listener = gmap.addListener("idle", () => r.visible && refreshGround(r));
-        refreshGround(r);
+        // one export image per map tile, in the tile stack like any layer (the
+        // original drew one image per view above the tiles); below a service's
+        // minZoom there is no image
+        const svcs = r.item;
+        r.overlay = tileOverlay(r, (coord, zoom) => {
+          const svc = zoom > svcs[1].minZoom ? svcs[1] : svcs[0];
+          return groundOverlayUrl(svc.baseURL, svc.minZoom, svc.ending, zoom, tileBounds(coord.x, coord.y, zoom), 256, 256);
+        });
+        r.tileType = true;
+        setLoading(r, false);
+        sync();
       } else {
         fail(r, "Unknown layer type: " + r.layerType);
       }
@@ -466,7 +449,6 @@ export function createLayerEngine(gmap, store, deps = {}) {
     }
     if (r.tileType) sync();
     else if (r.dataType) r.overlay && r.overlay.setMap(on ? gmap : null);
-    else if (r.layerType === "dynamicMapService") refreshGround(r);
     if (!on) setLoading(r, false);
     changed();
   }
@@ -489,7 +471,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
     recs.delete(layer.id);
     if (r.tl) r.tl.dispose();
     if (r.listener) r.listener.remove();
-    if (r.overlay && (r.dataType || r.layerType === "dynamicMapService")) r.overlay.setMap(null);
+    if (r.overlay && typeof r.overlay.setMap === "function") r.overlay.setMap(null);
     order = order.filter((id) => id !== layer.id);
     sync();
   }
