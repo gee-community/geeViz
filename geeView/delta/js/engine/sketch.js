@@ -115,6 +115,7 @@ export function createSketch(opts) {
   let hover = null;
   let objs = []; // one Google shape per state shape
   let syncing = false; // our own setPath calls must not read back as edits
+  let dragging = false; // a whole polygon being dragged: one edit, at its end
 
   const style = () => drawStyle(color());
 
@@ -135,8 +136,10 @@ export function createSketch(opts) {
   }
   function makeShape(path, isOpen) {
     const asPoly = polygon && (!isOpen || path.length >= 3);
+    // A finished polygon can be pressed and dragged to move it; a press and
+    // release without moving is a click, which starts another polygon.
     const o = asPoly
-      ? new g.Polygon({ ...style(), paths: path, map: gmap, editable: !isOpen, clickable: true })
+      ? new g.Polygon({ ...style(), paths: path, map: gmap, editable: !isOpen, draggable: !isOpen, clickable: true })
       : new g.Polyline({ ...style(), path, map: gmap, editable: !isOpen, clickable: true });
     o.isPoly = asPoly;
     o.isOpen = isOpen;
@@ -152,8 +155,14 @@ export function createSketch(opts) {
     // the map hears no mouse moves over a shape: keep the rubber band going
     o.addListener("mousemove", (ev) => onMove(ev));
     if (!isOpen) {
-      const paths = asPoly ? [o.getPath()] : [o.getPath()];
-      paths.forEach((p) => ["set_at", "insert_at", "remove_at"].forEach((t) => p.addListener(t, () => !syncing && edited())));
+      o.getPath && ["set_at", "insert_at", "remove_at"].forEach((t) => o.getPath().addListener(t, () => !syncing && !dragging && edited()));
+      if (asPoly) {
+        o.addListener("dragstart", () => (dragging = true));
+        o.addListener("dragend", () => {
+          dragging = false;
+          edited();
+        });
+      }
     }
     return o;
   }

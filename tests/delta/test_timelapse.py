@@ -275,8 +275,9 @@ def test_unset_keeps_other_layers_on_and_stacks_in_list_order(live_map):
 
 def test_controls_line_up_with_the_opacity_slider(page):
     """The frame and speed sliders share the opacity slider's left and right
-    edges; the buttons sit to their left, as tall as both slider rows; neither
-    the block nor the legend reaches under the legend button."""
+    edges; the buttons sit inline to their left in one row, as tall as the two
+    compact sliders together; the labels are right-justified; neither the block
+    nor the legend reaches under the legend button."""
     page.evaluate("__delta.store.update(s => ({...s, panes: {...s.panes, left: {...s.panes.left, width: 560}}}), 'test')")
     sel = row_sel(page, "LCMS TL")
     if not layer(page, "LCMS TL")["visible"]:
@@ -286,7 +287,9 @@ def test_controls_line_up_with_the_opacity_slider(page):
     m = page.evaluate(
         """(s) => { const row = document.querySelector(s); const r = (q) => row.querySelector(q).getBoundingClientRect();
           return {op: r('input.op'), year: r('input[data-tl=year]'), speed: r('input[data-tl=speed]'), btns: r('.tl-transport'),
-                  sl: r('.tl-sl'), tl: r('.tl'), leg: r('.legbtn'), legend: r('.legend'), stack: row.classList.contains('stack')}; }""",
+                  sl: r('.tl-sl'), tl: r('.tl'), leg: r('.legbtn'), legend: r('.legend'), stack: row.classList.contains('stack'),
+                  labels: [r('.tl-year').right, r('[data-tl=speedv]').right],
+                  tops: [...row.querySelectorAll('.tl-transport .tlb')].filter(b => b.getClientRects().length).map(b => Math.round(b.getBoundingClientRect().top))}; }""",
         sel,
     )
     assert not m["stack"], m
@@ -294,5 +297,7 @@ def test_controls_line_up_with_the_opacity_slider(page):
         assert abs(m[k]["left"] - m["op"]["left"]) <= 1 and abs(m[k]["right"] - m["op"]["right"]) <= 1, (k, m[k], m["op"])
     assert m["btns"]["right"] <= m["sl"]["left"], m
     assert abs(m["btns"]["height"] - m["sl"]["height"]) <= 1 and abs(m["btns"]["top"] - m["sl"]["top"]) <= 1, m
+    assert len(set(m["tops"])) == 1, m["tops"]  # one row
+    assert abs(m["labels"][0] - m["labels"][1]) <= 1, m["labels"]  # right-justified
     assert m["tl"]["right"] <= m["leg"]["left"] + 1, (m["tl"], m["leg"])
     assert m["legend"]["right"] <= m["leg"]["left"] + 1, (m["legend"], m["leg"])

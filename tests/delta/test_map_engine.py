@@ -73,6 +73,15 @@ def click_settle(page, sel):
     assert page.evaluate("window.__idle"), "the map never went idle after " + sel
 
 
+def test_elevation_is_read_at_30_m(page):
+    """It read 1861 m everywhere near Salt Lake City: the mosaic was sampled at
+    its 1 degree default. Downtown is about 1290 m, near Alta about 2940 m."""
+    vals = page.evaluate(
+        "Promise.all([[40.76, -111.9], [40.6, -111.6]].map(([lat, lng]) => __delta.engine.elevationAt({lat, lng})))"
+    )
+    assert 1200 < vals[0] < 1400 and 2700 < vals[1] < 3100, vals
+
+
 def test_view_history(page):
     go(page, -111.2, 40.9)
     go(page, -110.9, 41.1)

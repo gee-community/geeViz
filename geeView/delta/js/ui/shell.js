@@ -2,7 +2,8 @@
 // The static markup lives in delta.html; this module only wires it to the store.
 
 const LEFT_MIN = 240;
-const RIGHT_MIN = 280;
+// wide enough for the four tool tabs with their labels
+const RIGHT_MIN = 330;
 const LOGO = "./src/assets/images/geeviz-logo-";
 
 function lsGet(key) {
@@ -55,11 +56,6 @@ export function initialShellState(store) {
       right: { ...panes.right, width: clampStored("right") },
     },
   };
-}
-
-// Phones: a tool whose work happens in the Tools sheet keeps it open.
-export function keepToolsOpen(s) {
-  return s.tool === "chart" && (s.areaFrom === "upload" || s.areaFrom === "select");
 }
 
 export function mountShell(store, { mapEl } = {}) {
@@ -331,14 +327,9 @@ export function mountShell(store, { mapEl } = {}) {
   }
   store.on("change:tool", renderTool);
   $$("#pane-right .tool").forEach((b) =>
-    b.addEventListener("click", () => {
-      store.set({ tool: store.get().tool === b.dataset.tool ? null : b.dataset.tool }, "tool-button");
-      // Phones: picking a tool closes the Tools sheet so the map is free to
-      // use, unless the tool's work is in the sheet (Chart area from a file
-      // or from selected features).
-      const s = store.get();
-      if (isPhone() && s.tool && !keepToolsOpen(s)) closeSheets();
-    })
+    // Phones: the Tools sheet stays open on a pick (its settings are there);
+    // the tab bar closes it.
+    b.addEventListener("click", () => store.set({ tool: store.get().tool === b.dataset.tool ? null : b.dataset.tool }, "tool-button"))
   );
 
   // ---- phones: one bottom sheet at a time ----

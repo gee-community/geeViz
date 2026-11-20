@@ -237,3 +237,33 @@ def test_shortcuts_only_in_the_sketching_tool(page):
     # nothing active: nothing heard (the area sketch was reset by the switch anyway)
     assert page.evaluate("__delta.store.get().tool") is None
     assert page.delta_errors == []
+
+
+def test_area_polygon_drags_whole_and_a_click_inside_starts_another(page):
+    page.evaluate("__delta.store.set({tool: 'area'}, 'test')")
+    draw(page, POLY)
+    v0 = vertices(page)
+    area0 = page.evaluate("__delta.store.get().results[0].data.lines[0][1]")
+    # press inside, drag, release: the whole polygon moves
+    x, y = CX + 10, CY + 10
+    page.mouse.move(x, y)
+    page.mouse.down()
+    page.mouse.move(x + 60, y + 40, steps=10)
+    page.mouse.up()
+    wait_for(page, "(v) => JSON.stringify(__delta.measure.paths()[0].map(p => [p.lat(), p.lng()])) !== JSON.stringify(v)", v0)
+    v1 = vertices(page)
+    assert len(v1) == len(v0)
+    dlat = [b[0] - a[0] for a, b in zip(v0, v1)]
+    dlng = [b[1] - a[1] for a, b in zip(v0, v1)]
+    # moved east and south, together (a geodesic shape moves over the sphere, so not to the last digit)
+    assert max(dlng) - min(dlng) < 1e-3 and max(dlat) - min(dlat) < 1e-3 and dlng[0] > 0 and dlat[0] < 0, (dlat, dlng)
+    assert n_points(page) == [5]  # no new polygon from the press
+    # the move is one undo step
+    page.keyboard.press("Control+z")
+    wait_for(page, "(v) => JSON.stringify(__delta.measure.paths()[0].map(p => [p.lat(), p.lng()])) === JSON.stringify(v)", v0)
+    assert page.evaluate("__delta.store.get().results[0].data.lines[0][1]") == area0
+    # a click inside (no drag) starts another, overlapping polygon
+    page.mouse.click(CX + 10, CY + 10)
+    wait_for(page, "__delta.measure.sketch('area').state().open === true")
+    assert n_points(page) == [5, 1]
+    assert page.delta_errors == []

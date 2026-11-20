@@ -178,8 +178,26 @@ function seriesBody(r, settings) {
     b.appendChild(chart);
     b._plot = () => plot(chart, r, settings, false);
     b._chart = chart;
+    b._dispose = followWidth(chart, () => chart);
   }
   return b;
+}
+
+// A Plotly chart follows its card's width (the pane is dragged wider or
+// narrower): Plotly's own responsive option only hears the window resizing.
+// Returns the observer's disconnect.
+function followWidth(box, plotEl) {
+  if (typeof ResizeObserver !== "function") return () => {};
+  let width = box.clientWidth;
+  const ro = new ResizeObserver(() => {
+    const w = box.clientWidth;
+    if (!w || Math.abs(w - width) <= 1) return;
+    width = w;
+    const p = plotEl();
+    if (p && window.Plotly && p.data) window.Plotly.Plots.resize(p);
+  });
+  ro.observe(box);
+  return () => ro.disconnect();
 }
 
 // Chart area cards: a Plotly chart with its legend, or a d3 Sankey drawn at
@@ -204,6 +222,7 @@ function areaChartBody(r, settings) {
     }
   } else {
     b._plot = () => renderChart(chart, r, chartTheme(), settings);
+    b._dispose = followWidth(chart, () => chart.querySelector(".achart-plot"));
   }
   return b;
 }

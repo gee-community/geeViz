@@ -405,3 +405,17 @@ def test_draw_second_polygon_charts_both_and_undo(page):
     page.keyboard.press("Delete")
     wait_for(page, "__delta.store.get().chartArea === null && __delta.store.get().results.length === 0")
     assert page.delta_errors == []
+
+
+def test_line_charts_follow_the_pane_width(page):
+    """As the user saw: Sankey charts redrew when the tool pane was resized,
+    the Plotly line charts only on the next query."""
+    chart_view(page)
+    width = "(() => { const s = document.querySelector('#results-mount .achart-plot .main-svg'); return s ? s.getBoundingClientRect().width : 0; })()"
+    page.wait_for_function(width + " > 0")
+    w0 = page.evaluate(width)
+    calls = page.evaluate("__delta.store.get().results.length")
+    page.evaluate("__delta.store.update(s => ({...s, panes: {...s.panes, right: {...s.panes.right, width: 560}}}), 'test')")
+    page.wait_for_function("(w0) => { const s = document.querySelector('#results-mount .achart-plot .main-svg'); return s && Math.abs(s.getBoundingClientRect().width - w0) > 100; }", arg=w0, timeout=5000)
+    assert page.evaluate("__delta.store.get().results.length") == calls  # no new query
+    assert page.delta_errors == []

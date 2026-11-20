@@ -54,7 +54,9 @@ body.resizing #map { pointer-events: none; }
 
 /* right pane: tool picker above tool output */
 /* the tools are tabs: a strip on a baseline, the selected tab lifted onto it */
-.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 8px 10px 0; border-bottom: 1px solid var(--dz-line); }
+/* tabs as wide as their labels, sharing the spare room (equal columns cut "Chart area") */
+.tools { display: flex; gap: 2px; padding: 8px 10px 0; border-bottom: 1px solid var(--dz-line); }
+.tools .tool { flex: 1 1 auto; }
 .tool { display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 5px; padding: 7px 4px 6px; margin-bottom: -1px; border-radius: 8px 8px 0 0; white-space: nowrap; min-width: 0; border: 1px solid transparent; border-bottom: 2px solid transparent; background: transparent;
   color: var(--dz-mute); font-family: var(--dz-font-cond); font-weight: 600; font-size: 12px; letter-spacing: 0.02em; cursor: pointer; }
 .tool .ti { font-size: 16px; flex: none; }
@@ -191,7 +193,7 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
 @media (min-width: 761px) {
   body.no-tool .pane-right { width: var(--dz-right-folded); }
   body.no-tool .pane-right > *:not(.tools) { display: none !important; }
-  body.no-tool .tools { grid-template-columns: 1fr; padding: 10px 6px; border-bottom: 0; gap: 4px; }
+  body.no-tool .tools { flex-direction: column; padding: 10px 6px; border-bottom: 0; gap: 4px; }
   body.no-tool .tool { flex-direction: column; gap: 3px; font-size: 10.5px; padding: 8px 0; white-space: normal; margin: 0; border-radius: 8px; border-bottom-width: 1px; }
   body.no-tool .tool .ti { font-size: 18px; }
   body.no-tool .loadbar { right: var(--dz-right-folded); }
@@ -274,23 +276,18 @@ input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border:
    at the stacked opacity slider's width and left edge, labels to their right. Wrapping, never clipping. */
 /* The frame and speed sliders line up with the opacity slider: same width, same
    right edge, so the block ends where that slider ends (not under the legend
-   button). The buttons sit to their left, two rows as tall as the two sliders. */
-.tl { margin: 8px calc(var(--leg-w) + var(--lrow-gap) - var(--tl-pad)) 0 calc(var(--op-indent) - var(--tl-pad)); padding: var(--tl-pad); border-radius: 9px; background: var(--dz-orange-soft); --tl-rowh: 26px; }
+   button). The buttons sit inline to their left, one row; the two sliders are
+   compact, as the original's, so together they are as tall as that row. */
+.tl { margin: 8px calc(var(--leg-w) + var(--lrow-gap) - var(--tl-pad)) 0 calc(var(--op-indent) - var(--tl-pad)); padding: 6px var(--tl-pad); border-radius: 9px; background: var(--dz-orange-soft); --tl-btn: 28px; --tl-sl: 13px; }
 .layer.stack .tl { margin-right: 0; }
 .layer.off .tl { display: none !important; }
 .tl-body { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
 .tl-top { display: flex; align-items: center; flex: none; }
-/* two rows: back / forward over pause / play; Cumulative spans both, the frame
-   reload (only after a failure) beside it */
-.tl-transport { display: grid; grid-template-rows: var(--tl-rowh) var(--tl-rowh); grid-auto-columns: var(--tl-rowh); grid-auto-flow: column; gap: 6px 2px; }
-.tl-transport [data-tl="back"] { grid-area: 1 / 1; }
-.tl-transport [data-tl="forward"] { grid-area: 1 / 2; }
-.tl-transport [data-tl="pause"] { grid-area: 2 / 1; }
-.tl-transport [data-tl="play"] { grid-area: 2 / 2; }
-.tl-transport [data-tl="cumulative"] { grid-area: 1 / 3 / 3 / 4; }
-.tl-transport [data-tl="refresh"] { grid-area: 1 / 4; }
+/* one row of buttons, inline */
+.tl-transport { display: flex; align-items: center; gap: 1px; height: var(--tl-btn); }
 .tl-transport [hidden] { display: none; }
-.tlb.tlb-cum { width: var(--tl-rowh); height: 100%; font-size: 22px; }
+.tl .tlb { width: var(--tl-btn); height: var(--tl-btn); }
+.tl .tlb.tlb-cum { width: 32px; font-size: 22px; }
 .tl-year { font-family: var(--dz-font-mono); font-weight: 600; font-size: 20px; color: var(--dz-orange); line-height: 1; white-space: nowrap; }
 /* in the block, the frame's date is the slider label, sized as the speed label */
 .tl .tl-row .tl-year { font-size: 11px; line-height: inherit; }
@@ -304,16 +301,17 @@ input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border:
    on = every frame from the start through the current one. It switches with aria-pressed, at the other buttons' icon size. */
 .tl-cum-ic { width: 1em; height: 1em; flex: none; }
 .tlb[aria-pressed="true"] .tl-cum-ic[data-state="off"], .tlb:not([aria-pressed="true"]) .tl-cum-ic[data-state="on"] { display: none; }
-.tl-sl { display: flex; flex-direction: column; gap: 6px; flex: none; margin-left: auto; }
-.tl-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; height: var(--tl-rowh); font-size: 11px; color: var(--dz-mute); }
-.tl-row input[type="range"].dz { flex: none; width: var(--op-w-inline); min-width: 0; }
+.tl-sl { display: flex; flex-direction: column; justify-content: center; gap: 2px; flex: none; margin-left: auto; height: var(--tl-btn); }
+.tl-row { display: flex; align-items: center; justify-content: flex-end; gap: 8px; height: var(--tl-sl); font-size: 11px; line-height: var(--tl-sl); color: var(--dz-mute); }
+.tl-row input[type="range"].dz { flex: none; width: var(--op-w-inline); min-width: 0; height: var(--tl-sl); }
 /* stacked rows: the opacity slider has its own line from the indent, so these
    start there too (label after), below the buttons */
-.layer.stack .tl-sl { flex-basis: 100%; margin-left: 0; }
+.layer.stack .tl-sl { flex-basis: 100%; margin-left: 0; height: auto; }
+.layer.stack .tl-lbl { text-align: left; }
 .layer.stack .tl-row { flex-direction: row-reverse; justify-content: flex-end; }
 .layer.stack .tl-row input[type="range"].dz { width: var(--op-w-stack); }
 /* one label column for both sliders, wide enough for a full date */
-.tl-lbl { white-space: nowrap; flex: none; min-width: 7ch; font-family: var(--dz-font-mono); font-size: 11px; font-weight: 600; }
+.tl-lbl { white-space: nowrap; flex: none; min-width: 7ch; text-align: right; font-family: var(--dz-font-mono); font-size: 11px; font-weight: 600; }
 .tl-frames { display: none; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .tl.frames-open .tl-frames { display: flex; }
 .tlf { border: 1px solid var(--dz-line); background: transparent; color: var(--dz-mute); border-radius: 6px; font-size: 11px; padding: 1px 6px; cursor: pointer; }

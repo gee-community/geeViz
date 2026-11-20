@@ -625,21 +625,23 @@ def test_phone_tools_and_output_are_separate_sheets(delta_page):
     assert not page.evaluate("document.querySelector('#pane-right').inert === false")
 
 
-def test_phone_output_dot_and_tools_close_on_pick(delta_page):
+def test_phone_output_dot_and_tools_stay_open_on_pick(delta_page):
     page = delta_page(SHELL, viewport=PHONE)
     dot = "document.querySelector('#mtabs .mdot').hidden"
     assert page.evaluate(dot) is True
-    # picking a map tool closes the Tools sheet, the map is free to use
+    # picking a tool keeps the Tools sheet (and the tool tabs) open
     page.click("#mtabs [data-m=tools]")
     page.click("#pane-right .tool[data-tool=distance]")
-    assert "m-tools" not in page.evaluate("document.body.className")
+    assert "m-tools" in page.evaluate("document.body.className")
+    assert page.evaluate(SHOWN, "#pane-right .tools")
     assert page.evaluate("__delta.store.get().tool") == "distance"
+    page.click("#mtabs [data-m=tools]")  # the tab bar closes it
     # output arriving with the Output sheet closed shows a dot; opening it clears it
     page.evaluate("__delta.store.set({results: [{id: 'r', title: 'R', kind: 'measure', data: {lines: [['Distance', '1 km']], text: ''}, actions: []}]}, 'measure')")
     assert page.evaluate(dot) is False
     page.click("#mtabs [data-m=output]")
     assert page.evaluate(dot) is True
-    # Chart area from a file keeps Tools open: the work is in the sheet
+    # Chart area keeps it open too
     page.evaluate("__delta.store.set({areaFrom: 'upload'})")
     page.click("#mtabs [data-m=tools]")
     page.evaluate("__delta.store.set({layers: [{id: 'c', name: 'C', kind: 'image', visible: true, chartable: true, queryable: true, viz: {}, legend: null}]})")

@@ -86,6 +86,20 @@ export function whenGoogleReady(timeoutMs = 30000) {
   });
 }
 
+// The elevation at a point: the GLO-30 mosaic at its own 30 m. port of
+// 4map-manager.js getElevation, which leaves out the scale: a mosaic has no
+// projection of its own (1 degree pixels), so every point within the same
+// degree read one value (1861 m all over the Wasatch).
+export const ELEVATION_SCALE = 30;
+export function elevationValue(ee, lng, lat) {
+  return ee
+    .ImageCollection("projects/sat-io/open-datasets/GLO-30")
+    .mosaic()
+    .int16()
+    .reduceRegion(ee.Reducer.first(), ee.Geometry.Point([lng, lat]), ELEVATION_SCALE)
+    .get("b1");
+}
+
 // True when two views are the same to within `px` screen pixels at their zoom.
 export function sameView(a, b, px = 2) {
   if (a.zoom !== b.zoom) return false;
@@ -296,12 +310,7 @@ export function createMap(el, store) {
       try {
         const lat = typeof latLng.lat === "function" ? latLng.lat() : latLng.lat;
         const lng = typeof latLng.lng === "function" ? latLng.lng() : latLng.lng;
-        ee.ImageCollection("projects/sat-io/open-datasets/GLO-30")
-          .mosaic()
-          .int16()
-          .reduceRegion(ee.Reducer.first(), ee.Geometry.Point([lng, lat]))
-          .get("b1")
-          .evaluate((v) => resolve(v === undefined || v === null ? null : Number(v)));
+        elevationValue(ee, lng, lat).evaluate((v) => resolve(v === undefined || v === null ? null : Number(v)));
       } catch (e) {
         resolve(null);
       }
