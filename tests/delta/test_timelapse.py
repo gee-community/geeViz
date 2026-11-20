@@ -148,7 +148,7 @@ def test_cumulative(page):
 
 def test_off_folds_and_pauses(page):
     sel = row_sel(page, "LCMS TL")
-    page.click(sel + " .legbtn")
+    # the timelapse is on: its legend opened the first time
     assert page.locator(sel + " .legend").is_visible()
     page.click(sel + " [data-tl=play]")
     assert layer(page, "LCMS TL")["timelapse"]["playing"] is True

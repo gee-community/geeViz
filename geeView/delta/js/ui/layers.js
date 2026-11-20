@@ -26,6 +26,23 @@ export function setAllVisible(store, visible, reason) {
   );
 }
 
+// A layer's legend opens the first time the layer is on and has a legend to
+// show. A layer drawn with addToLegend: false has none (legendFor returns
+// null), so it stays closed. Each layer gets this once: after that the legend
+// is the user's to open and close. `seen` holds the ids already handled;
+// returns the ids to open now.
+export function legendsToOpen(layers, seen) {
+  const open = [];
+  for (const l of layers) {
+    if (seen.has(l.id) || !l.visible) continue;
+    const sw = swatchColors(l.legend);
+    if (!sw || !sw.colors.length) continue;
+    seen.add(l.id);
+    if (!l.legendOpen) open.push(l.id);
+  }
+  return open;
+}
+
 // The original keeps urlParams values JSON-encoded in the query string.
 function readStoredOrders(urlParams) {
   let v = urlParams && urlParams.layerOrders;
@@ -48,6 +65,7 @@ export function mountLayers(store, mountEl, opts = {}) {
   mountEl.appendChild(list);
 
   const rows = new Map(); // id -> {el, parts, last}
+  const legendSeen = new Set(); // layers whose legend has had its first-on opening
   let dragging = false;
 
   // ---- ordering ----
@@ -141,6 +159,7 @@ export function mountLayers(store, mountEl, opts = {}) {
     });
     parts.legbtn.addEventListener("click", () => {
       const l = store.get().layers.find((x) => x.id === id);
+      legendSeen.add(id); // the user has taken over this legend
       if (l) patchLayer(store, id, { legendOpen: !l.legendOpen }, "legend-toggle");
     });
     parts.range.addEventListener("input", () => {
@@ -268,9 +287,19 @@ export function mountLayers(store, mountEl, opts = {}) {
   }
   store.on("change:canReorder", (v) => sortable && sortable.option("disabled", !v));
 
+  // Open each layer's legend the first time it is on with a legend (the
+  // legend arrives with the map service, after the layer is added).
+  function openFirstLegends() {
+    const ids = legendsToOpen(store.get().layers, legendSeen);
+    if (!ids.length) return;
+    store.update((s) => ({ ...s, layers: s.layers.map((l) => (ids.indexOf(l.id) > -1 ? { ...l, legendOpen: true } : l)) }), "legend-first-on");
+  }
+  store.on("change:layers", () => queueMicrotask(openFirstLegends));
+
   store.on("change:layers", render);
   store.on("change:order", render);
   render();
+  openFirstLegends();
 
   return {
     list,

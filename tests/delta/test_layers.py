@@ -139,6 +139,9 @@ def test_name_click_toggles(page):
 def test_off_folds_legend_and_restores(page):
     sel = row_sel(page, "LCMS Land Cover")
     legend = page.locator(sel + " .legend")
+    # on with a legend: its legend opened the first time, unasked
+    assert legend.is_visible()
+    page.click(sel + " .legbtn")
     assert not legend.is_visible()
     page.click(sel + " .legbtn")
     assert legend.is_visible()
