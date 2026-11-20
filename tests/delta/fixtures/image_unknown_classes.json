@@ -1,0 +1,226 @@
+{
+ "name": "image_unknown_classes",
+ "kind": "thematic",
+ "raw": {
+  "landcover": {
+   "11": 10,
+   "41": 70.5,
+   "42": 19.5,
+   "99": 1
+  }
+ },
+ "objInfoPy": {
+  "obj_type": "Image",
+  "band_names": [
+   "landcover"
+  ],
+  "is_thematic": true,
+  "class_info": {
+   "landcover": {
+    "class_values": [
+     11,
+     41,
+     42
+    ],
+    "class_names": [
+     "Open Water",
+     "Deciduous Forest",
+     "Evergreen Forest"
+    ],
+    "class_palette": [
+     "466b9f",
+     "68ab5f",
+     "1c5f2c"
+    ]
+   }
+  },
+  "size": 1
+ },
+ "labels": [],
+ "scales": [
+  30,
+  120
+ ],
+ "stripSentinel": true,
+ "objInfo": {
+  "objType": "Image",
+  "bandNames": [
+   "landcover"
+  ],
+  "isThematic": true,
+  "classInfo": {
+   "landcover": {
+    "classValues": [
+     11,
+     41,
+     42
+    ],
+    "classNames": [
+     "Open Water",
+     "Deciduous Forest",
+     "Evergreen Forest"
+    ],
+    "classPalette": [
+     "466b9f",
+     "68ab5f",
+     "1c5f2c"
+    ]
+   }
+  },
+  "size": 1
+ },
+ "expected": {
+  "Percentage@30": {
+   "columns": [
+    "Open Water",
+    "Deciduous Forest",
+    "Evergreen Forest",
+    "99"
+   ],
+   "rows": [
+    {
+     "x": null,
+     "values": [
+      9.9,
+      69.8,
+      19.31,
+      0.99
+     ]
+    }
+   ]
+  },
+  "Hectares@30": {
+   "columns": [
+    "Open Water",
+    "Deciduous Forest",
+    "Evergreen Forest",
+    "99"
+   ],
+   "rows": [
+    {
+     "x": null,
+     "values": [
+      1.0,
+      6.0,
+      2.0,
+      0.0
+     ]
+    }
+   ]
+  },
+  "Acres@30": {
+   "columns": [
+    "Open Water",
+    "Deciduous Forest",
+    "Evergreen Forest",
+    "99"
+   ],
+   "rows": [
+    {
+     "x": null,
+     "values": [
+      2.0,
+      16.0,
+      4.0,
+      0.0
+     ]
+    }
+   ]
+  },
+  "Pixels@30": {
+   "columns": [
+    "Open Water",
+    "Deciduous Forest",
+    "Evergreen Forest",
+    "99"
+   ],
+   "rows": [
+    {
+     "x": null,
+     "values": [
+      10.0,
+      70.5,
+      19.5,
+      1.0
+     ]
+    }
+   ]
+  },
+  "Percentage@120": {
+   "columns": [
+    "Open Water",
+    "Deciduous Forest",
+    "Evergreen Forest",
+    "99"
+   ],
+   "rows": [
+    {
+     "x": null,
+     "values": [
+      9.9,
+      69.8,
+      19.31,
+      0.99
+     ]
+    }
+   ]
+  },
+  "Hectares@120": {
+   "columns": [
+    "Open Water",
+    "Deciduous Forest",
+    "Evergreen Forest",
+    "99"
+   ],
+   "rows": [
+    {
+     "x": null,
+     "values": [
+      14.0,
+      102.0,
+      28.0,
+      1.0
+     ]
+    }
+   ]
+  },
+  "Acres@120": {
+   "columns": [
+    "Open Water",
+    "Deciduous Forest",
+    "Evergreen Forest",
+    "99"
+   ],
+   "rows": [
+    {
+     "x": null,
+     "values": [
+      36.0,
+      251.0,
+      69.0,
+      4.0
+     ]
+    }
+   ]
+  },
+  "Pixels@120": {
+   "columns": [
+    "Open Water",
+    "Deciduous Forest",
+    "Evergreen Forest",
+    "99"
+   ],
+   "rows": [
+    {
+     "x": null,
+     "values": [
+      10.0,
+      70.5,
+      19.5,
+      1.0
+     ]
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>geeViz Delta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+/* geeViz lineage: charcoal + warm brown neutrals, teal primary, orange for what you are drawing or playing */
+:root,[data-bs-theme="light"]{
+  --dz-ground:#ece8e4; --dz-panel:rgba(250,248,246,.90); --dz-solid:#faf8f6; --dz-raise:#f1ede9;
+  --dz-line:rgba(55,46,44,.13); --dz-ink:#231d1b; --dz-mute:#6f6259; --dz-faint:#a2968d;
+  --dz-teal:#00897b; --dz-teal-soft:rgba(0,137,123,.11); --dz-orange:#e2602a; --dz-orange-soft:rgba(226,96,42,.12);
+  --dz-shadow:0 10px 30px rgba(35,29,27,.18);
+}
+[data-bs-theme="dark"]{
+  --dz-ground:#141211; --dz-panel:rgba(24,21,20,.86); --dz-solid:#1a1716; --dz-raise:#24201e;
+  --dz-line:rgba(236,232,228,.09); --dz-ink:#ece8e4; --dz-mute:#a39a93; --dz-faint:#6f6560;
+  --dz-teal:#1fd1b4; --dz-teal-soft:rgba(31,209,180,.12); --dz-orange:#ff834c; --dz-orange-soft:rgba(255,131,76,.14);
+  --dz-shadow:0 12px 34px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--dz-ground);color:var(--dz-ink);font:13px/1.45 Barlow,system-ui,sans-serif;overflow:hidden}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.cond{font-family:"Barlow Semi Condensed",Barlow,sans-serif}
+#map{position:absolute;inset:0;z-index:0;background:#2a2624}
+.leaflet-control-container{display:none}
+
+/* panes: full height, overlay the map so it never resizes, glass so the map still reads through */
+.pane{position:absolute;top:0;bottom:0;z-index:5;display:flex;flex-direction:column;background:var(--dz-panel);
+  backdrop-filter:blur(14px) saturate(1.2);-webkit-backdrop-filter:blur(14px) saturate(1.2);box-shadow:var(--dz-shadow)}
+.pane-left{left:0;width:var(--lw,300px);border-right:1px solid var(--dz-line)}
+.pane-right{right:0;width:var(--rw,330px);border-left:1px solid var(--dz-line)}
+.grip{position:absolute;top:0;bottom:0;width:9px;cursor:col-resize;z-index:6}
+.pane-left .grip{right:-5px}.pane-right .grip{left:-5px}
+.grip::after{content:"";position:absolute;left:4px;top:0;bottom:0;width:1px;background:transparent;transition:background .15s}
+.grip:hover::after,.grip.drag::after{background:var(--dz-teal)}
+.scroll{overflow-y:auto;flex:1;min-height:0;scrollbar-width:thin;scrollbar-color:var(--dz-faint) transparent}
+body.left-hidden .pane-left{transform:translateX(-100%)}
+.pane-left{transition:transform .22s ease}
+.floating-hb{position:absolute;left:12px;top:12px;z-index:4}
+
+/* brand + search */
+.brand{display:flex;align-items:center;gap:10px;padding:12px 12px 8px}
+.brand img{height:26px}
+.brand .name{font-family:"Barlow Semi Condensed";font-weight:600;font-size:19px;letter-spacing:.01em}
+.brand .name b{font-weight:700;color:var(--dz-teal)}
+.ib{width:30px;height:30px;display:inline-grid;place-items:center;border-radius:8px;border:0;background:transparent;color:var(--dz-mute);font-size:17px;cursor:pointer}
+.ib:hover{background:var(--dz-raise);color:var(--dz-ink)}
+.ib:focus-visible,.tool:focus-visible,.chip:focus-visible{outline:2px solid var(--dz-teal);outline-offset:1px}
+.search{display:flex;align-items:center;margin:0 12px 10px;height:34px;border:1px solid var(--dz-line);border-radius:9px;background:var(--dz-raise)}
+.search .ib{width:28px;height:28px;font-size:15px}
+.search input{flex:1;min-width:0;border:0;background:transparent;color:var(--dz-ink);outline:0;font-size:13px}
+.search input::placeholder{color:var(--dz-faint)}
+.search .div{width:1px;height:18px;background:var(--dz-line)}
+
+/* section headers keep the current UPPERCASE condensed voice */
+.sec-h{display:flex;align-items:center;gap:8px;padding:9px 12px;border-top:1px solid var(--dz-line);cursor:pointer;user-select:none;
+  font-family:"Barlow Semi Condensed";font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dz-mute)}
+.sec-h .count{font-family:"JetBrains Mono";letter-spacing:0;font-weight:400;color:var(--dz-faint)}
+.sec-h .ti-chevron-down{margin-left:auto;transition:transform .2s}
+.collapsed>.sec-h .ti-chevron-down{transform:rotate(-90deg)}
+.collapsed>.sec-b{display:none}
+
+/* layer row: same parts as today */
+.layer{padding:8px 12px 10px;border-bottom:1px solid var(--dz-line)}
+.layer.off .lname{color:var(--dz-mute)}
+.lrow{display:flex;align-items:center;gap:9px}
+.tgl{width:28px;height:16px;border-radius:9px;background:var(--dz-faint);position:relative;flex:none;cursor:pointer;transition:background .15s;border:0}
+.tgl::after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .15s}
+.layer:not(.off) .tgl{background:var(--dz-teal)}
+.layer:not(.off) .tgl::after{left:14px}
+.lname{flex:1;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ltype{font-size:15px;color:var(--dz-faint)}
+.spin{width:12px;height:12px;border-radius:50%;border:2px solid var(--dz-line);border-top-color:var(--dz-teal);animation:sp 0.9s linear infinite;flex:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+.legbtn{border:0;background:transparent;color:var(--dz-mute);font-size:11px;font-weight:600;display:flex;align-items:center;gap:2px;padding:2px 4px;border-radius:5px;cursor:pointer}
+.legbtn:hover{background:var(--dz-raise);color:var(--dz-ink)}
+.legbtn .ti{transition:transform .2s}
+.layer.leg-open .legbtn .ti{transform:rotate(180deg)}
+.opacity{display:flex;align-items:center;gap:8px;margin:6px 0 0 37px}
+input[type=range].dz{flex:1;height:16px;-webkit-appearance:none;appearance:none;background:transparent}
+input[type=range].dz::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:linear-gradient(90deg,var(--dz-teal) var(--v,75%),var(--dz-line) var(--v,75%))}
+input[type=range].dz::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;margin-top:-4.5px;border-radius:50%;background:var(--dz-solid);border:2px solid var(--dz-teal)}
+input[type=range].dz.orange::-webkit-slider-runnable-track{background:linear-gradient(90deg,var(--dz-orange) var(--v,50%),var(--dz-line) var(--v,50%))}
+input[type=range].dz.orange::-webkit-slider-thumb{border-color:var(--dz-orange)}
+.opacity .val{width:32px;text-align:right;color:var(--dz-faint);font-size:11px}
+.legend{margin:8px 0 0 37px;display:none;gap:3px 8px;grid-template-columns:12px 1fr;font-size:12px;color:var(--dz-mute)}
+.layer.leg-open .legend{display:grid}
+.sw{width:12px;height:12px;border-radius:3px;margin-top:2px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.ramp{grid-column:1/-1;height:10px;border-radius:3px}
+.ramp-l{grid-column:1/-1;display:flex;justify-content:space-between;font-size:11px}
+
+/* timelapse block */
+.tl{margin:8px 0 0 0;padding:8px;border-radius:9px;background:var(--dz-orange-soft)}
+.tl-top{display:flex;align-items:center;gap:6px}
+.tl-year{font-family:"JetBrains Mono";font-weight:600;font-size:20px;color:var(--dz-orange);margin-right:auto;line-height:1}
+.tlb{width:26px;height:26px;border-radius:7px;border:0;display:grid;place-items:center;background:transparent;color:var(--dz-ink);font-size:15px;cursor:pointer}
+.tlb:hover{background:var(--dz-raise)}
+.tlb.on{background:var(--dz-orange);color:#fff}
+.tl-row{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:11px;color:var(--dz-mute)}
+.tl-row label{width:38px}
+.tl-row .val{width:52px;white-space:nowrap;text-align:right}
+.ticks{display:flex;justify-content:space-between;margin:0 44px 0 46px;font-size:10px;color:var(--dz-faint)}
+
+/* right pane: tool picker above tool output */
+.tools{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:12px 12px 8px}
+.tool{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px 7px;border-radius:10px;border:1px solid transparent;background:transparent;
+  color:var(--dz-mute);font-family:"Barlow Semi Condensed";font-weight:600;font-size:12px;letter-spacing:.02em;cursor:pointer}
+.tool .ti{font-size:20px}
+.tool:hover{background:var(--dz-raise);color:var(--dz-ink)}
+.tool.on{background:var(--dz-teal-soft);border-color:color-mix(in srgb,var(--dz-teal) 45%,transparent);color:var(--dz-teal)}
+.topt{padding:0 12px 10px;border-bottom:1px solid var(--dz-line)}
+.topt-hint{font-size:12px;color:var(--dz-mute);display:flex;gap:6px;align-items:flex-start}
+.topt-hint .ti{color:var(--dz-teal);margin-top:2px}
+.seg{display:flex;border:1px solid var(--dz-line);border-radius:8px;padding:2px;gap:2px;margin-top:8px}
+.seg button{flex:1;border:0;background:transparent;color:var(--dz-mute);border-radius:6px;padding:4px 0;font-size:12px;font-weight:600;cursor:pointer}
+.seg button.on{background:var(--dz-raise);color:var(--dz-ink);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.out-h{display:flex;align-items:center;gap:8px;padding:10px 12px 6px;font-family:"Barlow Semi Condensed";font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dz-mute)}
+.out-h .where{margin-left:auto;letter-spacing:0;text-transform:none;font-weight:400;color:var(--dz-faint);font-size:11px}
+.chips{display:flex;flex-wrap:wrap;gap:4px;padding:0 12px 8px}
+.chip{border:1px solid var(--dz-line);background:transparent;color:var(--dz-ink);border-radius:999px;padding:1px 9px;font-size:11.5px;cursor:pointer}
+.chip:hover{border-color:var(--dz-teal);color:var(--dz-teal)}
+.card-r{margin:0 12px 8px;border:1px solid var(--dz-line);border-radius:12px;background:color-mix(in srgb,var(--dz-solid) 70%,transparent)}
+.card-r .h{display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer}
+.card-r .h b{flex:1;font-weight:600}
+.card-r .h .ti-chevron-down{color:var(--dz-faint);transition:transform .2s}
+.card-r.closed .h .ti-chevron-down{transform:rotate(-90deg)}
+.card-r.closed .b{display:none}
+.card-r .b{padding:0 10px 10px}
+.val-big{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600}
+.val-big .sw{width:14px;height:14px}
+.val-code{color:var(--dz-faint);font-size:11px}
+.acts{display:flex;gap:2px;margin-top:6px}
+.acts .ib{width:26px;height:26px;font-size:14px}
+svg.ts{width:100%;height:96px;display:block}
+svg.ts .grid{stroke:var(--dz-line)}
+svg.ts text{fill:var(--dz-faint);font:10px "JetBrains Mono"}
+
+/* map chrome */
+.hud{position:absolute;z-index:3;pointer-events:none}
+.yearbadge{left:50%;top:14px;transform:translateX(-50%);padding:4px 14px;border-radius:999px;background:var(--dz-panel);backdrop-filter:blur(10px);
+  border:1px solid var(--dz-line);font:600 22px "JetBrains Mono";color:var(--dz-orange);box-shadow:var(--dz-shadow)}
+.status{left:var(--lw,300px);right:var(--rw,330px);bottom:0;height:26px;display:flex;align-items:center;gap:16px;padding:0 12px;
+  background:linear-gradient(transparent,rgba(0,0,0,.55));color:#f3efeb;font:11px "JetBrains Mono";pointer-events:auto}
+body.left-hidden .status{left:0}
+.status .sep{opacity:.35}
+.status .grow{flex:1}
+.loadbar{position:absolute;z-index:3;left:var(--lw,300px);right:var(--rw,330px);top:0;height:2px;overflow:hidden}
+body.left-hidden .loadbar{left:0}
+.loadbar::after{content:"";position:absolute;top:0;bottom:0;width:30%;background:linear-gradient(90deg,transparent,var(--dz-teal),transparent);animation:lb 1.4s ease-in-out infinite}
+@keyframes lb{from{left:-30%}to{left:100%}}
+.mapctl{position:absolute;z-index:3;right:calc(var(--rw,330px) + 12px);bottom:38px;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.ctlgrp{display:flex;flex-direction:column;background:var(--dz-panel);backdrop-filter:blur(10px);border:1px solid var(--dz-line);border-radius:10px;overflow:hidden;box-shadow:var(--dz-shadow)}
+.ctlgrp .ib{border-radius:0;color:var(--dz-ink)}
+.basemaps{display:flex;gap:6px;padding:5px;background:var(--dz-panel);backdrop-filter:blur(10px);border:1px solid var(--dz-line);border-radius:12px;box-shadow:var(--dz-shadow)}
+.bm{width:46px;border:0;background:transparent;padding:0;color:var(--dz-mute);font-size:10px;cursor:pointer;text-align:center}
+.bm i{display:block;height:34px;border-radius:7px;margin-bottom:2px;background-size:cover;box-shadow:inset 0 0 0 1px var(--dz-line)}
+.bm.on{color:var(--dz-teal)}.bm.on i{box-shadow:0 0 0 2px var(--dz-teal)}
+.qpin{width:16px;height:16px;border-radius:50%;background:var(--dz-orange);border:3px solid #fff;box-shadow:0 0 0 6px rgba(255,131,76,.3)}
+@media (prefers-reduced-motion:reduce){.spin,.loadbar::after{animation:none}}
+
+/* v7: off layers fold away their legend and timelapse controls */
+.layer.off .legend,.layer.off .tl{display:none!important}
+.layer.off .legbtn{opacity:.45;pointer-events:none}
+.layer.off .spin{display:none}
+/* drag to reorder: grip on hover for movable layers, pin for fixed ones */
+.layer.sortable-ghost{opacity:.35;background:var(--dz-teal-soft)}
+.layer.sortable-chosen{background:var(--dz-raise)}
+.layer.sortable-drag{box-shadow:var(--dz-shadow);border-radius:10px}
+.opacity,.legend{margin-left:45px}
+.droptip{margin:8px 12px;padding:6px 8px;border-radius:8px;background:var(--dz-raise);color:var(--dz-mute);font-size:11.5px;display:flex;gap:6px}
+.droptip .ti{color:var(--dz-teal);margin-top:2px}
+.order{font-size:11px;color:var(--dz-faint);padding:0 12px 10px}
+.order b{color:var(--dz-mute);font-weight:600}
+/* units */
+.units{display:flex;align-items:center;gap:8px;padding:0 12px 10px;font-size:12px;color:var(--dz-mute)}
+.units .seg{margin:0;flex:1}
+.lbl{width:52px;font-size:12px;color:var(--dz-mute)}
+.row2{display:flex;align-items:center;gap:8px;margin-top:8px}
+.row2 .seg{margin:0;flex:1}
+/* sankey */
+.sankey-wrap{position:relative}
+.sankey-wrap svg{width:100%;height:auto;display:block}
+.sankey-wrap .node-label{fill:var(--dz-ink);font:600 10px Barlow,sans-serif;stroke:var(--dz-solid);stroke-width:3px;paint-order:stroke}
+.sankey-wrap .col-label{fill:var(--dz-faint);font:10px "JetBrains Mono"}
+.sankey-wrap .link{transition:stroke-opacity .12s}
+.tip{position:fixed;z-index:50;pointer-events:none;opacity:0;transition:opacity .12s;background:var(--dz-solid);color:var(--dz-ink);border:1px solid var(--dz-line);
+  border-radius:8px;padding:5px 9px;font-size:12px;box-shadow:var(--dz-shadow);white-space:nowrap}
+.legend-mini{display:flex;flex-wrap:wrap;gap:3px 10px;font-size:11px;color:var(--dz-mute);margin-top:6px}
+.legend-mini span{display:flex;align-items:center;gap:4px}
+.legend-mini i{width:9px;height:9px;border-radius:2px;display:inline-block}
+
+/* v8: round toggles in line with the section icon, as in the original */
+.tgl{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--dz-mute);background:transparent;padding:0;flex:none;cursor:pointer}
+.tgl::after{display:none}
+.layer:not(.off) .tgl{background:var(--dz-teal);border-color:var(--dz-teal);box-shadow:inset 0 0 0 2px var(--dz-solid)}
+.layer{padding:7px 12px 8px;container-type:inline-size}
+.lrow{gap:9px}
+.lname.handle{cursor:grab}
+.grip-i,.pin-i{font-size:14px;color:var(--dz-faint);flex:none}
+.grip-i{cursor:grab;opacity:0;transition:opacity .12s}
+.layer:hover .grip-i{opacity:1}
+.pin-i{opacity:.5}
+/* opacity sits inline, short; drops under the name only when the pane is narrow */
+.lrow .opacity{margin:0;flex:0 0 84px;gap:5px}
+.lrow .opacity .val{width:30px;font-size:10.5px}
+.legend,.tl{margin-left:22px!important}
+@container (max-width:330px){
+  .lrow{flex-wrap:wrap;row-gap:4px}
+  .lrow .lname{flex:1 1 0}
+  .lrow .opacity{order:10;flex:1 1 100%;margin-left:22px}.lrow .opacity input{flex:0 0 100px}
+}
+.mtop,.mtabs,.mplayer,.mmenu{display:none}
+#layersSec{border-top:1px solid var(--dz-line)}
+
+/* ---------- phones ---------- */
+@media (max-width:760px){
+  body{font-size:14px}
+  .brand,.search,.floating-hb,.grip,.status,.loadbar,.droptip,.order{display:none!important}
+  .mtop{display:flex;position:fixed;z-index:8;left:10px;right:10px;top:10px;height:44px;align-items:center;gap:2px;padding:0 4px;
+    background:var(--dz-panel);backdrop-filter:blur(14px);border:1px solid var(--dz-line);border-radius:14px;box-shadow:var(--dz-shadow)}
+  .mtop input{flex:1;min-width:0;border:0;background:transparent;color:var(--dz-ink);outline:0;font-size:15px}
+  .mtop .ib{width:36px;height:36px}
+  .mtop img{height:22px;margin:0 4px}
+  .pane{position:fixed;left:0!important;right:0!important;top:auto;bottom:64px;width:auto!important;height:62vh;border:0;border-top:1px solid var(--dz-line);
+    border-radius:18px 18px 0 0;transform:translateY(calc(100% + 70px));transition:transform .25s ease;z-index:7}
+  .pane::before{content:"";display:block;width:38px;height:4px;border-radius:2px;background:var(--dz-faint);margin:8px auto 2px;flex:none}
+  body.m-layers .pane-left,body.m-tools .pane-right{transform:none}
+  body.m-full .pane{height:calc(100vh - 140px)}
+  .tools{padding-top:4px}
+  .tool{padding:10px 2px}
+  .layer{padding:10px 14px}
+  .tgl{width:18px;height:18px}
+  .lrow{flex-wrap:wrap;row-gap:6px}.lrow .lname{flex:1 1 0}.lrow .opacity{order:10;flex:1 1 100%;margin-left:27px}.lrow .opacity input{flex:0 0 120px}
+  .mtabs{display:grid;grid-template-columns:1fr 1fr;position:fixed;z-index:9;left:0;right:0;bottom:0;height:64px;padding-bottom:6px;
+    background:var(--dz-solid);border-top:1px solid var(--dz-line)}
+  .mtabs button{border:0;background:transparent;color:var(--dz-mute);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    font:600 12px "Barlow Semi Condensed";letter-spacing:.02em}
+  .mtabs .ti{font-size:22px}
+  .mtabs button.on{color:var(--dz-teal)}
+  .mapctl{right:10px!important;top:64px;bottom:auto}
+  .mapctl .ctlgrp{display:none}
+  .basemaps{flex-direction:column;padding:4px}
+  .basemaps .bm:not(.on){display:none}
+  body.bm-open .basemaps .bm{display:block}
+  .bm{width:40px}.bm i{height:30px}
+  .yearbadge{top:64px;font-size:18px}
+  body.m-layers .yearbadge,body.m-tools .yearbadge{display:none}
+  .mplayer{display:flex;position:fixed;z-index:6;left:50%;transform:translateX(-50%);bottom:76px;align-items:center;gap:4px;padding:4px 6px 4px 12px;
+    background:var(--dz-panel);backdrop-filter:blur(14px);border:1px solid var(--dz-line);border-radius:999px;box-shadow:var(--dz-shadow)}
+  .mplayer .tl-year{font-size:18px;margin-right:6px}
+  .mlogo-btn{width:38px!important}.mlogo-btn img{height:22px;margin:0}
+  .mmenu{position:fixed;z-index:10;left:10px;top:60px;min-width:180px;padding:6px;background:var(--dz-solid);border:1px solid var(--dz-line);border-radius:12px;box-shadow:var(--dz-shadow);flex-direction:column}
+  body.menu-open .mmenu{display:flex}
+  .mm-h{font:700 11px 'Barlow Semi Condensed';letter-spacing:.12em;text-transform:uppercase;color:var(--dz-faint);padding:4px 8px}
+  .mmenu button{display:flex;gap:10px;align-items:center;border:0;background:transparent;color:var(--dz-ink);padding:9px 8px;border-radius:8px;font-size:14px;text-align:left}
+  .mmenu button.on{background:var(--dz-teal-soft);color:var(--dz-teal)}
+  .mtabs button{position:relative}
+  .mdot{position:absolute;top:10px;left:calc(50% + 10px);width:7px;height:7px;border-radius:50%;background:var(--dz-orange)}
+  .mdot:empty{display:block}
+  body.m-layers .mplayer,body.m-tools .mplayer,body.tl-off .mplayer{display:none}
+}
+
+/* v10: no active tool -> the right pane folds to a strip of tool buttons */
+@media (min-width:761px){
+  body.no-tool .pane-right{width:64px}
+  body.no-tool .pane-right>*:not(.tools){display:none!important}
+  body.no-tool .tools{grid-template-columns:1fr;padding:10px 6px}
+  body.no-tool .tool{font-size:10.5px;padding:8px 0}
+  body.no-tool .status,body.no-tool .loadbar{right:64px}
+  body.no-tool .mapctl{right:76px!important}
+  .pane-right{transition:width .2s ease}
+}
+
+/* v11: compact legend toggle (a swatch of the layer's own colors), drag by the row */
+.legbtn{gap:1px;padding:3px 2px 3px 4px;border-radius:6px;flex:none}
+.legbtn .ti{font-size:11px}
+.lsw{display:flex;width:16px;height:12px;border-radius:3px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.lsw i{flex:1}
+.layer.leg-open .legbtn{background:var(--dz-raise)}
+.layer:not(.pinned) .lname{cursor:grab}
+.layer.pinned .lname{cursor:default}
+.lrow .opacity{flex:0 0 80px;min-width:0}
+.lrow .opacity input{flex:1 1 0;width:0;min-width:0}
+/* opacity inline only when the name still fits; JS sets .stack per row (replaces the width rule) */
+@container (max-width:330px){.lrow{flex-wrap:nowrap}.lrow .opacity{order:0;flex:0 0 80px;margin-left:0}.lrow .opacity input{flex:1 1 0;width:0}}
+#layerList .layer.stack .lrow{flex-wrap:wrap;row-gap:4px}
+#layerList .layer.stack .lrow .lname{flex:1 1 0}
+#layerList .layer.stack .lrow .opacity{order:10;flex:1 1 100%;margin-left:22px}
+#layerList .layer.stack .lrow .opacity input{flex:0 0 110px;width:110px}
+#layerList .layer.stack .lrow .opacity{flex:1 1 100%}
+/* Google's own map controls are off (disableDefaultUI); ours sit in their place */
+.ctlgrp .ib.on{background:var(--dz-teal-soft);color:var(--dz-teal)}
+body.sv-pick #map{cursor:crosshair}
+/* Street View: every pane and control steps aside, like the original */
+body.sv .pane,body.sv .mapctl,body.sv .status,body.sv .loadbar,body.sv .yearbadge,body.sv .floating-hb,body.sv .mtop,body.sv .mtabs,body.sv .mplayer{display:none!important}
+.pane,.floating-hb,.mapctl,.status{transition:opacity .2s}
+
+/* v12: wider left pane by default, a third of the window on large screens (Bootstrap col-lg-4) */
+.pane-left{width:var(--lw,clamp(300px,33.333vw,560px))}
+.status,.loadbar{left:var(--lw,clamp(300px,33.333vw,560px))}
+/* the name toggles the layer too */
+.lname{cursor:pointer;user-select:none}
+.layer:not(.pinned) .lname{cursor:pointer}
+/* sliders grow with the pane (container units of the layer row) */
+.lrow .opacity{flex:0 1 clamp(80px,26cqw,200px)}
+#layerList .layer.stack .lrow .opacity input{flex:0 0 clamp(110px,48cqw,300px);width:auto}
+/* opacity slider: the track's filled part and the handle's center take the layer's opacity */
+input[type=range].dz.op{--a:1}
+input[type=range].dz.op::-webkit-slider-runnable-track{height:6px;border-radius:4px;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--dz-teal) 55%,var(--dz-line));
+  background:linear-gradient(90deg,color-mix(in srgb,var(--dz-teal) calc(var(--a)*100%),transparent) var(--v),transparent var(--v))}
+input[type=range].dz.op::-webkit-slider-thumb{width:13px;height:13px;margin-top:-3.5px;border:2px solid var(--dz-teal);
+  background:color-mix(in srgb,var(--dz-teal) calc(var(--a)*100%),var(--dz-solid))}
+input[type=range].dz.op::-moz-range-track{height:6px;border-radius:4px;border:1px solid color-mix(in srgb,var(--dz-teal) 55%,var(--dz-line));background:transparent}
+input[type=range].dz.op::-moz-range-progress{height:6px;border-radius:4px;background:color-mix(in srgb,var(--dz-teal) calc(var(--a)*100%),transparent)}
+input[type=range].dz.op::-moz-range-thumb{width:11px;height:11px;border:2px solid var(--dz-teal);border-radius:50%;background:color-mix(in srgb,var(--dz-teal) calc(var(--a)*100%),var(--dz-solid))}
+
+/* v13: inline slider has a minimum, grows 1:1 with the row (pane) width, then stops at a maximum.
+   100cqw is the layer row's width; 250px is what the toggle, a name and the legend toggle need. */
+.lrow .opacity{flex:0 0 auto;width:clamp(64px,calc(100cqw - 250px),180px)}
+.lrow .opacity input{flex:1 1 auto;width:100%}
+#layerList .layer.stack .lrow .opacity{flex:0 0 100%;width:auto}
+#layerList .layer.stack .lrow .opacity input{flex:0 0 auto;width:clamp(110px,calc(100cqw - 120px),240px)}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="loadbar"></div>
+<div class="hud yearbadge" id="yearBadge">2016</div>
+<div class="tip" id="tip"></div>
+<div class="mtop">
+  <button class="ib mlogo-btn" id="mlogoBtn" title="Theme and about"><img id="mlogo" src="../../../geeView/src/assets/images/geeviz-logo-dark.png" alt="geeViz menu"></button>
+  <button class="ib" title="Go to my location"><i class="ti ti-current-location"></i></button>
+  <input placeholder="Search places" aria-label="Search places">
+  <button class="ib" title="Previous view"><i class="ti ti-chevron-left"></i></button>
+  <button class="ib" title="Next view"><i class="ti ti-chevron-right"></i></button>
+</div>
+<div class="mmenu" id="mmenu"><div class="mm-h">Theme</div><button data-t="system" class="on"><i class="ti ti-device-mobile"></i>Match phone</button><button data-t="light"><i class="ti ti-sun"></i>Light</button><button data-t="dark"><i class="ti ti-moon"></i>Dark</button></div>
+<div class="mplayer">
+  <span class="tl-year" id="mYear">2016</span>
+  <button class="tlb" onclick="step(-1)" title="Back one frame"><i class="ti ti-player-skip-back"></i></button>
+  <button class="tlb on" id="mPlay" onclick="timer?pause():play()" title="Play or pause"><i class="ti ti-player-pause"></i></button>
+  <button class="tlb" onclick="step(1)" title="Forward one frame"><i class="ti ti-player-skip-forward"></i></button>
+</div>
+<nav class="mtabs">
+  <button data-m="layers"><i class="ti ti-stack-2"></i>Layers</button>
+  <button data-m="tools"><i class="ti ti-tools"></i>Tools</button>
+</nav>
+
+
+<button class="ib floating-hb" style="background:var(--dz-panel);backdrop-filter:blur(10px)" onclick="document.body.classList.remove('left-hidden')" title="Show sidebar"><i class="ti ti-menu-2"></i></button>
+
+<aside class="pane pane-left" id="left">
+  <div class="brand">
+    <button class="ib" onclick="document.body.classList.add('left-hidden')" title="Hide sidebar"><i class="ti ti-menu-2"></i></button>
+    <img id="logo" src="../../../geeView/src/assets/images/geeviz-logo-dark.png" alt="">
+    <span class="name">geeViz <b>Delta</b></span>
+    <button class="ib ms-auto" id="themeBtn" title="Switch light or dark"><i class="ti ti-sun"></i></button>
+  </div>
+  <div class="search">
+    <button class="ib" title="Go to my location"><i class="ti ti-current-location"></i></button>
+    <input placeholder="Search places or coordinates" aria-label="Search places">
+    <span class="div"></span>
+    <button class="ib" title="Previous view"><i class="ti ti-chevron-left"></i></button>
+    <button class="ib" title="Next view"><i class="ti ti-chevron-right"></i></button>
+  </div>
+
+  <div class="scroll">
+  <section id="layersSec">
+    <div class="sec-b">
+    <div id="layerList">
+
+      <div class="layer pinned leg-open" data-name="Landsat NBR timelapse">
+        <div class="lrow">
+          <button class="tgl" aria-label="Show layer"></button>
+          <span class="lname">Landsat NBR timelapse</span>
+          <span class="spin" title="Loading tiles"></span>
+          
+          <div class="opacity"><input class="dz op" type="range" value="80"></div>
+          <button class="legbtn" title="Show or hide legend"><span class="lsw"></span><i class="ti ti-chevron-down"></i></button>
+        </div>
+        <div class="tl">
+          <div class="tl-top">
+            <span class="tl-year" id="tlYear">2016</span>
+            <button class="tlb" title="Back one frame" onclick="step(-1)"><i class="ti ti-player-skip-back"></i></button>
+            <button class="tlb" id="pauseBtn" title="Pause" onclick="pause()"><i class="ti ti-player-pause"></i></button>
+            <button class="tlb on" id="playBtn" title="Play" onclick="play()"><i class="ti ti-player-play"></i></button>
+            <button class="tlb" title="Forward one frame" onclick="step(1)"><i class="ti ti-player-skip-forward"></i></button>
+            <button class="tlb" title="Reload tiles that failed"><i class="ti ti-refresh"></i></button>
+            <button class="tlb" title="Cumulative: show this year and all before it"><i class="ti ti-stack-3"></i></button>
+          </div>
+          <div class="tl-row"><label>Year</label><input id="yr" class="dz orange" type="range" min="1985" max="2023" value="2016"><span class="val mono" id="yrv">2016</span></div>
+          <div class="tl-row"><label>Speed</label><input id="spd" class="dz orange" type="range" min="0.5" max="5" step="0.5" value="2"><span class="val mono" id="spdv">2.0 fps</span></div>
+        </div>
+        <div class="legend">
+          <span class="ramp" style="background:linear-gradient(90deg,#7a2a0c,#d8582a,#f4c56a,#e8eebd,#7fbf6a,#1f6b3a)"></span>
+          <span class="ramp-l mono"><span>-0.2</span><span>0.3</span><span>0.8</span></span>
+        </div>
+      </div>
+
+      <div class="layer leg-open" data-name="LCMS Land Cover">
+        <div class="lrow">
+          <button class="tgl" aria-label="Show layer"></button>
+          <span class="lname handle">LCMS Land Cover</span>
+          
+          <div class="opacity"><input class="dz op" type="range" value="70"></div>
+          <button class="legbtn" title="Show or hide legend"><span class="lsw"></span><i class="ti ti-chevron-down"></i></button>
+        </div>
+        <div class="legend">
+          <span class="sw" style="background:#005e00"></span>Trees
+          <span class="sw" style="background:#008000"></span>Tall Shrubs &amp; Trees Mix
+          <span class="sw" style="background:#00cc00"></span>Shrubs &amp; Trees Mix
+          <span class="sw" style="background:#b3ff1a"></span>Grass/Forb/Herb &amp; Trees Mix
+          <span class="sw" style="background:#99ff99"></span>Barren &amp; Trees Mix
+          <span class="sw" style="background:#e68a00"></span>Shrubs
+          <span class="sw" style="background:#ffff00"></span>Grass/Forb/Herb
+          <span class="sw" style="background:#a1323e"></span>Barren or Impervious
+          <span class="sw" style="background:#e6e6e6"></span>Snow or Ice
+          <span class="sw" style="background:#1ab2ff"></span>Water
+        </div>
+      </div>
+
+      <div class="layer off" data-name="LCMS Land Use">
+        <div class="lrow">
+          <button class="tgl" aria-label="Show layer"></button>
+          <span class="lname handle">LCMS Land Use</span>
+          
+          <div class="opacity"><input class="dz op" type="range" value="100"></div>
+          <button class="legbtn" title="Show or hide legend"><span class="lsw"></span><i class="ti ti-chevron-down"></i></button>
+        </div>
+        <div class="legend">
+          <span class="sw" style="background:#efff6b"></span>Agriculture
+          <span class="sw" style="background:#ff2ff8"></span>Developed
+          <span class="sw" style="background:#1b9d0c"></span>Forest
+          <span class="sw" style="background:#97ffff"></span>Non-Forest Wetland
+          <span class="sw" style="background:#a1a1a1"></span>Other
+          <span class="sw" style="background:#c2b34a"></span>Rangeland or Pasture
+        </div>
+      </div>
+
+      <div class="layer off" data-name="NAIP 2022">
+        <div class="lrow">
+          <button class="tgl" aria-label="Show layer"></button>
+          <span class="lname handle">NAIP 2022</span>
+          
+          <div class="opacity"><input class="dz op" type="range" value="100"></div>
+          <button class="legbtn" title="Show or hide legend"><span class="lsw"></span><i class="ti ti-chevron-down"></i></button>
+        </div>
+        <div class="legend"><span class="ramp" style="background:linear-gradient(90deg,#000,#fff)"></span><span class="ramp-l mono"><span>0</span><span>255</span></span></div>
+      </div>
+
+      <div class="layer pinned off" data-name="Wasatch study area">
+        <div class="lrow">
+          <button class="tgl" aria-label="Show layer"></button>
+          <span class="lname">Wasatch study area</span>
+          <i class="ti ti-polygon ltype" title="Vector layer"></i>
+          
+          <div class="opacity"><input class="dz op" type="range" value="100"></div>
+          <button class="legbtn" title="Show or hide legend"><span class="lsw"></span><i class="ti ti-chevron-down"></i></button>
+        </div>
+        <div class="legend"><span class="sw" style="background:transparent;box-shadow:inset 0 0 0 2px #ff834c"></span>Boundary</div>
+      </div>
+
+    </div>
+    <div class="droptip"><i class="ti ti-arrows-sort"></i><span>Drag a layer by its grip to change what draws on top. Its legend moves with it. Pinned layers (timelapses, vectors, map services) keep their place, as now.</span></div>
+    <div class="order" id="order"></div>
+    </div>
+  </section>
+  </div>
+  <div class="grip" data-side="left"></div>
+</aside>
+
+<aside class="pane pane-right" id="right">
+  <div class="tools" role="radiogroup" aria-label="Tools" title="Click the active tool again to turn it off">
+    <button class="tool" data-tool="distance"><i class="ti ti-ruler-measure"></i>Distance</button>
+    <button class="tool" data-tool="area"><i class="ti ti-ruler-2"></i>Area</button>
+    <button class="tool on" data-tool="query"><i class="ti ti-crosshair"></i>Query</button>
+    <button class="tool" data-tool="chart"><i class="ti ti-chart-area-line"></i>Chart area</button>
+  </div>
+  <div class="units"><span class="lbl">Units</span><div class="seg" id="unitSeg"><button class="on" data-u="metric">Metric</button><button data-u="imperial">Imperial</button></div></div>
+  <div class="topt" id="topt"></div>
+  <div class="out-h"><i class="ti ti-list-details"></i>Output <span class="where mono" id="where"></span></div>
+  <div class="chips" id="chips"></div>
+  <div class="scroll" id="results"></div>
+  <div class="grip" data-side="right"></div>
+</aside>
+
+<div class="mapctl">
+  <div class="ctlgrp"><button class="ib" title="Zoom in"><i class="ti ti-plus"></i></button><button class="ib" title="Zoom out"><i class="ti ti-minus"></i></button><button class="ib" title="Full screen"><i class="ti ti-maximize"></i></button><button class="ib" id="svBtn" title="Street View: show coverage, then click where to look"><i class="ti ti-walk"></i></button></div>
+  <div class="basemaps">
+    <button class="bm on" data-bm="img"><i style="background-image:url(https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/9/196/98)"></i>Satellite</button>
+    <button class="bm" data-bm="topo"><i style="background-image:url(https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/9/196/98)"></i>Map</button>
+    <button class="bm" data-bm="dark"><i style="background-image:url(https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/9/196/98)"></i>Dark</button>
+  </div>
+</div>
+
+<div class="hud status">
+  <span id="stTool"></span><span class="sep">|</span>
+  <span id="coords">-111.5265, 40.5040</span><span class="sep">|</span>
+  <span id="elev"></span><span class="sep">|</span>
+  <span>z11</span><span class="grow"></span>
+  <span>loading 3 layers</span>
+</div>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBGYMetcutixj0RwQG838jzqnS4ZK-6jeQ"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const tip=$('#tip');
+function showTip(e,h){tip.innerHTML=h;tip.style.opacity=1;tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY-28)+'px'}
+function hideTip(){tip.style.opacity=0}
+
+// ---------- map: Google Maps, as in the original ----------
+const darkStyle=[{elementType:'geometry',stylers:[{color:'#1d1b1a'}]},{elementType:'labels.text.fill',stylers:[{color:'#a39a93'}]},{elementType:'labels.text.stroke',stylers:[{color:'#141211'}]},
+ {featureType:'road',elementType:'geometry',stylers:[{color:'#34302d'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#0f1a1c'}]},{featureType:'poi',stylers:[{visibility:'off'}]}];
+const gmap=new google.maps.Map(document.getElementById('map'),{center:{lat:40.56,lng:-111.62},zoom:11,mapTypeId:'hybrid',disableDefaultUI:true,
+  disableDoubleClickZoom:true,clickableIcons:false,tilt:0,streetViewControl:false,gestureHandling:'greedy'});
+gmap.mapTypes.set('dark',new google.maps.StyledMapType(darkStyle,{name:'Dark'}));
+const map={removeLayer:o=>o&&o.setMap(null),invalidateSize:()=>{}};
+const BM={img:'hybrid',topo:'roadmap',dark:'dark'};
+$$('.bm').forEach(b=>b.onclick=()=>{$$('.bm').forEach(x=>x.classList.remove('on'));b.classList.add('on');gmap.setMapTypeId(BM[b.dataset.bm])});
+const pin=new google.maps.Marker({position:{lat:40.504,lng:-111.527},icon:{path:google.maps.SymbolPath.CIRCLE,scale:7,fillColor:'#ff834c',fillOpacity:1,strokeColor:'#fff',strokeWeight:3}});
+pin.addTo=()=>pin.setMap(gmap);
+const poly=new google.maps.Polygon({paths:[{lat:40.62,lng:-111.70},{lat:40.66,lng:-111.58},{lat:40.60,lng:-111.49},{lat:40.52,lng:-111.53},{lat:40.53,lng:-111.66}],
+  strokeColor:'#ff834c',strokeWeight:2,fillColor:'#ff834c',fillOpacity:.12});
+poly.addTo=()=>poly.setMap(gmap);
+gmap.addListener('mousemove',e=>$('#coords').textContent=e.latLng.lng().toFixed(4)+', '+e.latLng.lat().toFixed(4));
+gmap.addListener('zoom_changed',()=>{const z=$$('.status span').find(x=>/^z\d+/.test(x.textContent));if(z)z.textContent='z'+gmap.getZoom()});
+// zoom buttons drive the Google map
+$$('.ctlgrp .ib')[0].onclick=()=>gmap.setZoom(gmap.getZoom()+1);
+$$('.ctlgrp .ib')[1].onclick=()=>gmap.setZoom(gmap.getZoom()-1);
+// Street View: the button shows where coverage exists; click a blue line to go in
+const pano=gmap.getStreetView(), svCover=new google.maps.StreetViewCoverageLayer(), svSvc=new google.maps.StreetViewService();
+pano.setOptions({addressControl:true,fullscreenControl:false,enableCloseButton:true,motionTracking:false,panControl:true,zoomControl:true});
+function svPick(on){document.body.classList.toggle('sv-pick',on);svCover.setMap(on?gmap:null);$('#svBtn').classList.toggle('on',on);
+  if(on)$('#stTool').innerHTML='<i class="ti ti-walk"></i> Street View: click a blue line'; else setTool&&curTool&&setTool(curTool)}
+$('#svBtn').onclick=()=>svPick(!document.body.classList.contains('sv-pick'));
+gmap.addListener('click',e=>{if(!document.body.classList.contains('sv-pick'))return;
+  svSvc.getPanorama({location:e.latLng,radius:80,source:google.maps.StreetViewSource.OUTDOOR},(d,st)=>{
+    if(st===google.maps.StreetViewStatus.OK){pano.setPano(d.location.pano);pano.setPov({heading:0,pitch:0});pano.setVisible(true)}})});
+pano.addListener('visible_changed',()=>{const v=pano.getVisible();document.body.classList.toggle('sv',v);if(v)svPick(false)});
+
+// ---------- theme ----------
+function setTheme(t){document.documentElement.setAttribute('data-bs-theme',t);$('#themeBtn i').className='ti '+(t==='dark'?'ti-sun':'ti-moon');
+  $('#logo').src='../../../geeView/src/assets/images/geeviz-logo-'+(t==='dark'?'dark':'light')+'.png';renderResults()}
+$('#themeBtn').onclick=()=>setTheme(document.documentElement.getAttribute('data-bs-theme')==='dark'?'light':'dark');
+
+// ---------- sliders ----------
+function paintRange(r){const mn=+r.min||0,mx=+(r.max||100);r.style.setProperty('--v',((r.value-mn)/(mx-mn)*100)+'%')}
+$$('input[type=range].dz').forEach(r=>{paintRange(r);r.addEventListener('input',()=>{paintRange(r);
+  if(r.closest('.opacity'))r.title='Opacity '+r.value+'%'})});
+$('#spd').addEventListener('input',e=>{$('#spdv').textContent=(+e.target.value).toFixed(1)+' fps';if(timer){pause();play()}});
+
+// ---------- layers: off folds legend + timelapse controls; legend state is remembered ----------
+$$('.layer').forEach(l=>{
+  l.querySelector('.tgl').onclick=()=>{l.classList.toggle('off');
+    if(l.querySelector('.tl')){ if(l.classList.contains('off')){pause();$('#yearBadge').style.display='none'} else {$('#yearBadge').style.display='';} }
+    renderResults()};
+  l.querySelector('.legbtn').onclick=()=>l.classList.toggle('leg-open');
+});
+
+// ---------- drag to reorder; pinned layers keep their index ----------
+function showOrder(){const names=$$('#layerList .layer').map(l=>l.dataset.name);
+  $('#order').innerHTML='Map draws top to bottom: <b>'+names.join('</b> &rsaquo; <b>')+'</b>'}
+let pinnedAt=[];
+Sortable.create($('#layerList'),{handle:'.lname',filter:'.pinned',draggable:'.layer',animation:160,
+  ghostClass:'sortable-ghost',chosenClass:'sortable-chosen',dragClass:'sortable-drag',
+  onStart(){pinnedAt=$$('#layerList .layer').map((l,i)=>[i,l]).filter(([i,l])=>l.classList.contains('pinned'))},
+  onEnd(){const list=$('#layerList');
+    // put each pinned layer back at the index it had, so only movable layers trade places
+    pinnedAt.forEach(([i,l])=>{const kids=[...list.children];if(kids[i]!==l)list.insertBefore(l,kids[i]||null)});
+    showOrder()}});
+showOrder();
+
+// ---------- units ----------
+let units='metric';
+$$('#unitSeg button').forEach(b=>b.onclick=()=>{units=b.dataset.u;$$('#unitSeg button').forEach(x=>x.classList.toggle('on',x===b));setTool(curTool)});
+const U={metric:{dist:'4.82 km',area:'412 ha',big:'ha',elev:'1861 m'},imperial:{dist:'3.00 mi',area:'1,018 acres',big:'acres',elev:'6105 ft'}};
+
+// ---------- timelapse ----------
+let timer=null;
+function setYear(y){const r=$('#yr');r.value=y;paintRange(r);$('#yrv').textContent=y;$('#tlYear').textContent=y;$('#yearBadge').textContent=y}
+$('#yr').addEventListener('input',()=>setYear($('#yr').value));
+function step(d){let y=+$('#yr').value+d;if(y>2023)y=1985;if(y<1985)y=2023;setYear(y)}
+function play(){if(timer)return;timer=setInterval(()=>step(1),1000/ +$('#spd').value);$('#playBtn').classList.add('on');$('#pauseBtn').classList.remove('on')}
+function pause(){clearInterval(timer);timer=null;$('#playBtn').classList.remove('on');$('#pauseBtn').classList.add('on')}
+play();
+
+// ---------- tools: one at a time ----------
+let curTool='query', showAs='area';
+function opts(t){const u=units==='metric';
+ return {
+ distance:`<div class="topt-hint"><i class="ti ti-info-circle"></i>Click the map to start measuring. Double-click to finish.</div>`,
+ area:`<div class="topt-hint"><i class="ti ti-info-circle"></i>Click the map to outline an area. Double-click to finish.</div>`,
+ query:`<div class="topt-hint"><i class="ti ti-info-circle"></i>Double-click the map to query every visible layer at that point.</div>`,
+ chart:`<div class="topt-hint"><i class="ti ti-info-circle"></i>Pick where the area comes from. Every visible chartable layer gets charted inside it.</div>
+   <div class="row2"><span class="lbl">Area from</span><div class="seg" data-k="src"><button class="on">Draw</button><button>Map view</button><button>Upload</button><button>Select</button></div></div>
+   <div class="row2"><span class="lbl">Show as</span><div class="seg" data-k="showas"><button data-v="area" class="${showAs==='area'?'on':''}">${u?'Hectares':'Acres'}</button><button data-v="pct" class="${showAs==='pct'?'on':''}">% of area</button></div>
+   <button class="ib" title="Choose layers to chart, and transition periods for Sankey charts"><i class="ti ti-adjustments-horizontal"></i></button></div>`}[t]}
+function setTool(t){curTool=t;$$('.tool').forEach(b=>b.classList.toggle('on',b.dataset.tool===t));$('#topt').innerHTML=opts(t);
+  $$('#topt .seg').forEach(s=>s.querySelectorAll('button').forEach(b=>b.onclick=()=>{s.querySelectorAll('button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+    if(s.dataset.k==='showas'){showAs=b.dataset.v;renderResults()}}));
+  const on=$('.tool.on');$('#stTool').innerHTML=on.querySelector('i').outerHTML+' '+on.textContent.trim();
+  $('#elev').textContent=U[units].elev;
+  map.removeLayer(pin);map.removeLayer(poly);
+  if(t==='query')pin.addTo(map); if(t==='chart'||t==='area')poly.addTo(map);
+  renderResults()}
+$$('.tool').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+
+// ---------- results ----------
+const visible=n=>{const l=$$('.layer').find(x=>x.dataset.name===n);return l&&!l.classList.contains('off')};
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function card(title,meta,body,acts){return `<div class="card-r"><div class="h"><b>${title}</b><span class="val-code mono">${meta}</span><i class="ti ti-chevron-down"></i></div><div class="b">${body}<div class="acts">${acts}</div></div></div>`}
+const A_CHART='<button class="ib" title="Download CSV"><i class="ti ti-file-spreadsheet"></i></button><button class="ib" title="Save PNG"><i class="ti ti-photo-down"></i></button><button class="ib" title="Expand"><i class="ti ti-arrows-maximize"></i></button>';
+const LC=[['Trees','#005e00',[48,47,47,45,44,40,33,31]],['Shrubs','#e68a00',[18,18,19,19,20,21,22,22]],['Grass/Forb/Herb','#ffff00',[17,18,18,20,21,24,31,34]],['Barren or Impervious','#a1323e',[9,9,9,9,9,9,8,8]]];
+const YRS=[1985,1990,1995,2000,2005,2010,2015,2023];
+function lineSVG(){const W=300,H=110,tot=412,max=showAs==='pct'?60:tot*0.6;
+  const x=i=>i/(YRS.length-1)*W, y=v=>H-14-(v/max)*(H-24);
+  let s=`<svg class="ts" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="height:110px">`;
+  [0.25,0.5,0.75].forEach(f=>s+=`<line class="grid" x1="0" x2="${W}" y1="${(H-14)*f}" y2="${(H-14)*f}"/>`);
+  LC.forEach(([n,c,vals])=>{const pts=vals.map((v,i)=>[x(i),y(showAs==='pct'?v:v/100*tot)]);
+    s+=`<polyline fill="none" stroke="${c}" stroke-width="2" points="${pts.map(p=>p.join(',')).join(' ')}"/>`});
+  s+=`<text x="2" y="${H-2}">1985</text><text x="${W-30}" y="${H-2}">2023</text><text x="2" y="10">${showAs==='pct'?'% of area':(units==='metric'?'ha':'acres')}</text></svg>`;
+  s+='<div class="legend-mini">'+LC.map(([n,c])=>`<span><i style="background:${c}"></i>${n}</span>`).join('')+'</div>';return s}
+function sankeyHTML(){return '<div class="sankey-wrap" id="sk"></div>'}
+function drawSankey(){const el=$('#sk');if(!el)return;el.innerHTML='';
+  const cls=[['Trees','#005e00'],['Shrubs','#e68a00'],['Grass/Forb/Herb','#ffff00'],['Barren or Impervious','#a1323e']];
+  const periods=['1985-1990','2000-2005','2018-2023'];
+  const nodes=[];periods.forEach((p,pi)=>cls.forEach(([n,c])=>nodes.push({name:n,period:p,color:c,pi})));
+  const idx=(pi,ci)=>pi*cls.length+ci;
+  const M=[[[180,8,10,0],[4,70,4,0],[6,3,60,1],[0,0,1,37]],[[140,12,40,0],[2,76,10,0],[3,4,64,1],[0,0,0,37]]];
+  const links=[];M.forEach((m,pi)=>m.forEach((row,a)=>row.forEach((v,b)=>{if(v>0)links.push({source:idx(pi,a),target:idx(pi+1,b),value:v,sc:cls[a][1],tc:cls[b][1]})})));
+  const W=Math.max(240,el.clientWidth||300),H=Math.round(W*0.72),top=16;
+  const svg=d3.select(el).append('svg').attr('viewBox',`0 0 ${W} ${H}`);
+  const g=svg.append('g').attr('transform',`translate(0,${top})`);
+  const sk=d3.sankey().nodeWidth(9).nodePadding(7).nodeSort(null).extent([[0,0],[W,H-top-4]]);
+  const gr=sk({nodes:nodes.map(d=>Object.assign({},d)),links:links.map(d=>Object.assign({},d))});
+  const defs=svg.append('defs');const op=0.55;
+  gr.links.forEach((l,i)=>{const gd=defs.append('linearGradient').attr('id','skg'+i).attr('gradientUnits','userSpaceOnUse').attr('x1',l.source.x1).attr('x2',l.target.x0).attr('y1',0).attr('y2',0);
+    gd.append('stop').attr('offset','0%').attr('stop-color',l.sc);gd.append('stop').attr('offset','100%').attr('stop-color',l.tc)});
+  const fmt=v=>showAs==='pct'?(v/412*100).toFixed(1)+'%':(units==='metric'?v+' ha':Math.round(v*2.471).toLocaleString()+' acres');
+  g.append('g').attr('fill','none').selectAll('path').data(gr.links).join('path').attr('class','link').attr('d',d3.sankeyLinkHorizontal())
+    .attr('stroke',(d,i)=>`url(#skg${i})`).attr('stroke-width',d=>Math.max(1,d.width)).attr('stroke-opacity',op)
+    .on('mouseover',function(e,d){d3.select(this).attr('stroke-opacity',.9);showTip(e,`${d.source.name} (${d.source.period}) &rarr; ${d.target.name} (${d.target.period})<br><b>${fmt(d.value)}</b>`)})
+    .on('mousemove',(e)=>{tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY-28)+'px'})
+    .on('mouseout',function(){d3.select(this).attr('stroke-opacity',op);hideTip()});
+  const ng=g.append('g').selectAll('g').data(gr.nodes).join('g');
+  ng.append('rect').attr('x',d=>d.x0).attr('y',d=>d.y0).attr('width',d=>d.x1-d.x0).attr('height',d=>Math.max(1,d.y1-d.y0)).attr('fill',d=>d.color).attr('rx',2)
+    .on('mouseover',(e,d)=>showTip(e,`${d.name} (${d.period})<br><b>${fmt(d.value)}</b>`)).on('mouseout',hideTip);
+  ng.filter(d=>d.pi!==1&&d.y1-d.y0>12).append('text').attr('class','node-label').attr('x',d=>d.pi===2?d.x0-4:d.x1+4).attr('y',d=>(d.y0+d.y1)/2).attr('dy','.35em')
+    .attr('text-anchor',d=>d.pi===2?'end':'start').text(d=>d.name);
+  periods.forEach((p,pi)=>{const n=gr.nodes.find(d=>d.pi===pi);svg.append('text').attr('class','col-label').attr('x',pi===0?0:pi===2?W:(n.x0+n.x1)/2).attr('y',9)
+    .attr('text-anchor',pi===0?'start':pi===2?'end':'middle').text(p)})}
+function renderResults(){const r=$('#results');let html='',chips=[],where='';
+  if(curTool==='query'){where='-111.527, 40.504';
+    if(visible('Landsat NBR timelapse')){chips.push('Landsat NBR');html+=card('Landsat NBR timelapse','1985-2023',`<svg class="ts" viewBox="0 0 300 96" preserveAspectRatio="none">
+      <line class="grid" x1="0" y1="24" x2="300" y2="24"/><line class="grid" x1="0" y1="48" x2="300" y2="48"/><line class="grid" x1="0" y1="72" x2="300" y2="72"/>
+      <path d="M0,30 L20,28 40,31 60,27 80,29 100,26 120,30 140,28 160,62 180,55 200,48 220,44 240,40 260,37 280,35 300,33 L300,96 L0,96Z" fill="var(--dz-teal-soft)"/>
+      <polyline fill="none" stroke="var(--dz-teal)" stroke-width="2" points="0,30 20,28 40,31 60,27 80,29 100,26 120,30 140,28 160,62 180,55 200,48 220,44 240,40 260,37 280,35 300,33"/>
+      <circle cx="160" cy="62" r="4" fill="var(--dz-orange)"/><text x="2" y="92">1985</text><text x="262" y="92">2023</text></svg>`,A_CHART)}
+    if(visible('LCMS Land Cover')){chips.push('LCMS Land Cover');html+=card('LCMS Land Cover','2023','<div class="val-big"><span class="sw" style="background:#005e00"></span>Trees <span class="val-code mono">value 1</span></div>','<button class="ib" title="Copy"><i class="ti ti-copy"></i></button>')}
+    if(visible('LCMS Land Use')){chips.push('LCMS Land Use');html+=card('LCMS Land Use','2023','<div class="val-big"><span class="sw" style="background:#1b9d0c"></span>Forest <span class="val-code mono">value 3</span></div>','<button class="ib" title="Copy"><i class="ti ti-copy"></i></button>')}
+  } else if(curTool==='chart'){where='Drawn area &middot; '+U[units].area;
+    if(visible('LCMS Land Cover')){chips.push('Land Cover over time','Land Cover transitions');
+      html+=card('LCMS Land Cover over time','1985-2023',lineSVG(),A_CHART);
+      html+=card('LCMS Land Cover transitions','Sankey',sankeyHTML(),A_CHART)}
+    if(visible('Landsat NBR timelapse')){chips.push('Landsat NBR');html+=card('Landsat NBR mean','1985-2023','<svg class="ts" viewBox="0 0 300 70" preserveAspectRatio="none" style="height:70px"><polyline fill="none" stroke="var(--dz-teal)" stroke-width="2" points="0,20 40,22 80,19 120,24 160,46 200,38 240,30 300,26"/></svg>',A_CHART)}
+  } else if(curTool==='distance'){where='3 points';html=card('Distance','',`<div class="val-big mono">${U[units].dist}</div>`,'<button class="ib" title="Copy"><i class="ti ti-copy"></i></button><button class="ib" title="Clear"><i class="ti ti-eraser"></i></button>')}
+  else if(curTool==='area'){where='5 points';html=card('Area','',`<div class="val-big mono">${U[units].area}</div><div class="val-code mono">perimeter ${units==='metric'?'8.9 km':'5.5 mi'}</div>`,'<button class="ib" title="Copy"><i class="ti ti-copy"></i></button><button class="ib" title="Clear"><i class="ti ti-eraser"></i></button>')}
+  if(!html)html='<div class="droptip"><i class="ti ti-info-circle"></i><span>No visible layer can be used by this tool. Turn one on in Layers.</span></div>';
+  r.innerHTML=html;$('#where').innerHTML=where;
+  $('#chips').innerHTML=chips.length>1?chips.map(c=>`<button class="chip">${c}</button>`).join(''):'';
+  $$('#chips .chip').forEach((c,i)=>c.onclick=()=>$$('#results .card-r')[i].scrollIntoView({behavior:'smooth',block:'start'}));
+  $$('#results .card-r .h').forEach(h=>h.onclick=()=>h.parentElement.classList.toggle('closed'));
+  drawSankey()}
+setTool('query');
+
+// ---------- resizable panes, remembered ----------
+function applyW(side,w){document.documentElement.style.setProperty(side==='left'?'--lw':'--rw',w+'px')}
+try{['left','right'].forEach(s=>{const w=localStorage.getItem('delta-'+s);if(w)applyW(s,w)})}catch(e){}
+$$('.grip').forEach(g=>{const side=g.dataset.side;
+  g.onmousedown=e=>{e.preventDefault();g.classList.add('drag');
+    const mv=ev=>{let w=side==='left'?ev.clientX:innerWidth-ev.clientX;w=Math.max(side==='left'?240:280,Math.min(innerWidth*0.5,w));applyW(side,Math.round(w));map.invalidateSize()};
+    const up=()=>{g.classList.remove('drag');removeEventListener('mousemove',mv);removeEventListener('mouseup',up);drawSankey();
+      try{localStorage.setItem('delta-'+side,getComputedStyle(document.documentElement).getPropertyValue(side==='left'?'--lw':'--rw').replace('px',''))}catch(e){}};
+    addEventListener('mousemove',mv);addEventListener('mouseup',up)};
+  g.ondblclick=()=>{applyW(side,side==='left'?300:330);try{localStorage.removeItem('delta-'+side)}catch(e){}}});
+
+// ---------- phones: bottom sheets, one at a time ----------
+function mOpen(k){const was=document.body.classList.contains('m-'+k);document.body.classList.remove('m-layers','m-tools','m-full');
+  if(!was)document.body.classList.add('m-'+k);$$('.mtabs button').forEach(b=>b.classList.toggle('on',document.body.classList.contains('m-'+b.dataset.m)))}
+$$('.mtabs button').forEach(b=>b.onclick=()=>{const m=b.dataset.m;
+  if(m==='layers'||m==='tools')mOpen(m);
+});
+$('#mlogoBtn').onclick=e=>{e.stopPropagation();document.body.classList.toggle('menu-open')};
+document.addEventListener('click',()=>document.body.classList.remove('menu-open'));
+const sysDark=matchMedia('(prefers-color-scheme: dark)');
+let themePref='system';
+function applyPref(){setTheme(themePref==='system'?(sysDark.matches?'dark':'light'):themePref);$$('#mmenu button').forEach(b=>b.classList.toggle('on',b.dataset.t===themePref))}
+sysDark.addEventListener('change',()=>{if(themePref==='system')applyPref()});
+$$('#mmenu button').forEach(b=>b.onclick=()=>{themePref=b.dataset.t;applyPref()});
+// on phones the basemap thumbnail on the map opens the other choices
+$$('.bm').forEach(b=>b.addEventListener('click',e=>{if(matchMedia('(max-width:760px)').matches&&b.classList.contains('on')&&!document.body.classList.contains('bm-open')){e.stopImmediatePropagation();document.body.classList.add('bm-open')}else document.body.classList.remove('bm-open')},true));
+$$('.pane').forEach(p=>p.addEventListener('click',e=>{const r=p.getBoundingClientRect();if(matchMedia('(max-width:760px)').matches&&e.clientY-r.top<16)document.body.classList.toggle('m-full')}));
+const _setYear=setYear;setYear=y=>{_setYear(y);const m=$('#mYear');if(m)m.textContent=y};
+const _play=play,_pause=pause;play=()=>{_play();$('#mPlay i').className='ti ti-player-pause'};pause=()=>{_pause();$('#mPlay i').className='ti ti-player-play'};
+const _setTool=setTool;setTool=t=>{_setTool(t);
+  if(matchMedia('(max-width:760px)').matches&&t==='query'){const h=$('#topt .topt-hint');if(h)h.lastChild.textContent='Tap the map to query every visible layer at that point.'}};
+$$('.tool').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+const _setTheme=setTheme;setTheme=t=>{_setTheme(t);$('#mlogo').src=$('#logo').src;};
+$('#themeBtn').onclick=()=>setTheme(document.documentElement.getAttribute('data-bs-theme')==='dark'?'light':'dark');
+// a timelapse layer that is off hides the floating player too
+$$('.layer').forEach(l=>{if(l.querySelector('.tl'))l.querySelector('.tgl').addEventListener('click',()=>document.body.classList.toggle('tl-off',l.classList.contains('off')))});
+// preview hooks: #theme=light&m=tools&tool=chart
+(()=>{const h=new URLSearchParams(location.hash.slice(1));if(h.get('theme'))setTheme(h.get('theme'));if(h.get('tool'))setTool(h.get('tool'));if(h.get('m'))mOpen(h.get('m'))})();
+setTool(curTool);
+if(!location.hash.includes('theme='))applyPref();
+
+// clicking the active tool turns it off; with no tool on, the pane folds to the tool strip
+function noTool(){curTool=null;$$('.tool').forEach(b=>b.classList.remove('on'));document.body.classList.add('no-tool');
+  map.removeLayer(pin);map.removeLayer(poly);$('#stTool').innerHTML='<i class="ti ti-hand-finger"></i> No tool'}
+$$('.tool').forEach(b=>b.onclick=()=>{if(b.classList.contains('on')&&!matchMedia('(max-width:760px)').matches){noTool();return}
+  document.body.classList.remove('no-tool');setTool(b.dataset.tool)});
+
+// legend toggle shows the layer's own colors
+$$('.layer').forEach(l=>{const sw=l.querySelector('.lsw');const cols=$$('.legend .sw',l).map(x=>x.style.background).filter(c=>c&&c!=='transparent').slice(0,4);
+  const ramp=l.querySelector('.legend .ramp');
+  sw.innerHTML=ramp?`<i style="background:${ramp.style.background}"></i>`:(cols.length?cols.map(c=>`<i style="background:${c}"></i>`).join(''):'<i style="box-shadow:inset 0 0 0 2px #ff834c"></i>')});
+// inline opacity only if the name is not cut off; otherwise it drops under the name
+function fitRows(){$$('.layer').forEach(l=>{l.classList.remove('stack');const n=l.querySelector('.lname');if(n.scrollWidth>n.clientWidth+1)l.classList.add('stack')})}
+new ResizeObserver(fitRows).observe($('#left'));fitRows();
+// web fonts arrive after first layout and widen names; re-check then
+if(document.fonts)document.fonts.ready.then(fitRows);
+
+// opacity sliders: carry the value into the handle and track fill
+$$('input.dz.op').forEach(r=>{const f=()=>r.style.setProperty('--a',r.value/100);r.addEventListener('input',f);f()});
+// clicking the name toggles the layer, but not at the end of a drag
+let dragging=false;
+const sl=Sortable.get($('#layerList'));sl.option('onStart',(o=>function(e){dragging=true;o&&o.call(this,e)})(sl.option('onStart')));
+sl.option('onEnd',(o=>function(e){o&&o.call(this,e);setTimeout(()=>dragging=false,0)})(sl.option('onEnd')));
+$$('.layer .lname').forEach(n=>n.addEventListener('click',()=>{if(!dragging)n.closest('.layer').querySelector('.tgl').click()}));
+// widths: double-click on the grip returns to the default third
+$$('.grip').forEach(g=>{if(g.dataset.side==='left')g.ondblclick=()=>{document.documentElement.style.removeProperty('--lw');try{localStorage.removeItem('delta-left')}catch(e){}}});
+</script>
+</body>
+</html>

@@ -126,6 +126,36 @@ py_viz_dir = os.path.dirname(__file__)
 
 # Specify location of files to run
 template = os.path.join(py_viz_dir, geeViewFolder, "index.html")
+
+# Viewer skins. "original" is geeView/index.html; "delta" is
+# geeView/delta.html (assets under geeView/delta/). Both load the same
+# per-session runGeeViz.js, so everything the Python side emits is
+# skin-independent. GEEVIZ_SKIN picks the default; Map.setSkin() overrides.
+SKINS = ("original", "delta")
+delta_template = os.path.join(py_viz_dir, geeViewFolder, "delta.html")
+_SKIN_PAGES = {"original": "", "delta": "delta.html"}
+
+# A Delta Map's own run script: runGeeViz-<token>.js beside the shared one.
+# Scripts not rewritten for a week are removed (one per Map object, so a
+# long-lived folder would otherwise collect one per notebook kernel).
+_OWN_RUN_MAX_AGE_S = 7 * 24 * 3600
+
+
+def _write_own_run_script(run_dir, token, run_js, now=None):
+    import glob
+    import time as _time
+
+    now = _time.time() if now is None else now
+    for old in glob.glob(os.path.join(run_dir, "runGeeViz-*.js")):
+        try:
+            if now - os.path.getmtime(old) > _OWN_RUN_MAX_AGE_S:
+                os.remove(old)
+        except OSError:
+            pass
+    path = os.path.join(run_dir, "runGeeViz-{}.js".format(token))
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(run_js)
+    return path
 ee_run_dir = os.path.join(py_viz_dir, geeViewFolder, "src/gee/gee-run/")
 if os.path.exists(ee_run_dir) == False:
     os.makedirs(ee_run_dir)
@@ -788,10 +818,43 @@ class _GeeVizRequestHandler(http.server.SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_POST(self):  # noqa: N802 - stdlib API
-        """Proxy ``/ee-api/*`` POSTs; anything else → 405."""
+        """Convert ``/ee-api[/t/<tenant>]/convert/vector`` here; proxy
+        other ``/ee-api/*`` POSTs; anything else → 405."""
+        from geeViz.eeAuth import vector_convert as _vc
+        if _vc.is_convert_path(self.path):
+            return self._convert_vector()
         if self._is_ee_api():
             return self._proxy_ee_api()
         self.send_error(405, "Method Not Allowed")
+
+    def _convert_vector(self) -> None:
+        """Vector upload conversion (``geeViz.eeAuth.vector_convert``),
+        answered by this server itself so direct-token mode, with no
+        eeAuth proxy behind it, converts too. Same code as the proxy's
+        ``/ee-api/convert/vector``; no CORS headers, like the rest of
+        this server."""
+        from geeViz.eeAuth import vector_convert as _vc
+        headers = dict(self.headers.items())
+        rejected = _vc.request_rejection(headers)
+        if rejected:
+            status, body = rejected
+            # The body is unread; do not reuse the connection.
+            self.close_connection = True
+        else:
+            try:
+                n = int(self.headers.get("Content-Length", "0") or 0)
+            except ValueError:
+                n = 0
+            body = self.rfile.read(n) if n > 0 else b""
+            status, body = _vc.handle_upload(headers, body)
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        try:
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            return
 
     def do_PUT(self):  # noqa: N802 - stdlib API
         """Proxy ``/ee-api/*`` PUTs; anything else → 405."""
@@ -1129,11 +1192,12 @@ class mapper:
             resolve this automatically from `ee.Initialize(project=...)`; set
             it manually if `Map.view()` logs `project=None`.
 
-        turnOffLayersWhenTimeLapseIsOn (bool, default True): Whether all
-            other layers should be turned off when a time lapse is turned
-            on. Default is True to avoid confusing layer-order rendering
-            when time lapses and non-time lapses are visible at the same
-            time. Set to False if you want them visible simultaneously.
+        turnOffLayersWhenTimeLapseIsOn (bool or None, default None): Whether
+            all other layers should be turned off when a time lapse is turned
+            on. None uses the skin's default: True in the original skin, where
+            a time lapse draws above other layers whatever their order, and
+            False in the Delta skin, where a time lapse stacks in layer-list
+            order like any other layer. Set True or False to choose.
             
         showToolTipModal (bool, default False): Whether to show the tooltip modal when the map is loaded.
     """
@@ -1209,10 +1273,20 @@ class mapper:
         # here raises NameError — which breaks `import geeViz.geeView`
         # outright.
         self._port_explicit = int(port) != int(self._DEFAULT_PORT)
+        _env_skin = os.environ.get("GEEVIZ_SKIN", "").strip().lower()
+        self.skin = _env_skin if _env_skin in SKINS else "original"
         self.layerNumber = 1
         self.idDictList = []
         self.mapCommandList = []
         self.ee_run_name = "runGeeViz"
+        # This Map's own run script name for the Delta skin
+        # (runGeeViz-<token>.js, named in the page url as ?run=<token>), so two
+        # notebooks viewing at once never load each other's layers. The shared
+        # runGeeViz.js is still written for the original skin and exports.
+        import secrets as _secrets
+        self._run_token = _secrets.token_hex(8)
+        # The viewer URL the last view() built (None before the first).
+        self.view_url = None
 
         self.typeLookup = {
             "Image": "geeImage",
@@ -1237,7 +1311,8 @@ class mapper:
         self.serviceKeyPath = None
         self.queryWindowMode = "sidePane"
         self.project = ee.data._get_state().cloud_api_user_project
-        self.turnOffLayersWhenTimeLapseIsOn = True
+        # None: the skin's default (True for the original, False for Delta)
+        self.turnOffLayersWhenTimeLapseIsOn = None
         self.showToolTipModal = False
 
         # eeAuth mode override for Map.view() — takes precedence over
@@ -2469,9 +2544,11 @@ class mapper:
         for mapCommand in self.mapCommandList:
             lines += mapCommand + ";"
         lines += 'queryWindowMode = "{}";'.format(self.queryWindowMode)
-        lines += "Map.turnOffLayersWhenTimeLapseIsOn = {};".format(
-            str(self.turnOffLayersWhenTimeLapseIsOn).lower()
-        )
+        # Written only when set: otherwise each skin keeps its own default (the
+        # original turns other layers off; Delta stacks a time lapse in list
+        # order and leaves them on), and the run script stays the same for both.
+        if self.turnOffLayersWhenTimeLapseIsOn is not None:
+            lines += "Map.turnOffLayersWhenTimeLapseIsOn = {};".format(str(bool(self.turnOffLayersWhenTimeLapseIsOn)).lower())
         lines+=f"localStorage['showToolTipModal-geeViz']={str(self.showToolTipModal).lower()};"
         lines += "};"
         # item/viz are JSON and already valid JS, but text inside them (a
@@ -2501,6 +2578,25 @@ class mapper:
                 self.accessTokenCreationTime = int(datetime.datetime.now().timestamp() * 1000)
             else:
                 self.accessTokenCreationTime = None
+
+    def setSkin(self, name: str) -> None:
+        """Choose the viewer page: ``"original"`` or ``"delta"``.
+
+        Affects :meth:`view`, :meth:`export_html` and :meth:`testView`.
+        The default comes from the ``GEEVIZ_SKIN`` environment variable
+        when it names a valid skin, else ``"original"``.
+
+        Args:
+            name (str): One of ``SKINS``.
+
+        Raises:
+            ValueError: If ``name`` is not a known skin.
+        """
+        if name not in SKINS:
+            raise ValueError(
+                "Unknown skin {!r}; choose one of: {}".format(name, ", ".join(SKINS))
+            )
+        self.skin = name
 
     ######################################################################
     # Standalone HTML export for embedding in chat UIs / cloud-hosted viewers
@@ -2558,7 +2654,7 @@ class mapper:
 
         run_js = self._build_run_js()
 
-        with open(template, "r", encoding="utf-8") as f:
+        with open(delta_template if self.skin == "delta" else template, "r", encoding="utf-8") as f:
             html = f.read()
 
         # The template hard-codes geeViz's own Google Maps key, which is
@@ -2615,6 +2711,9 @@ class mapper:
         # Now rewrite the rest of the ./src/ asset paths
         html = html.replace('href="./src/', 'href="' + asset_base + '/src/')
         html = html.replace('src="./src/', 'src="' + asset_base + '/src/')
+        # Delta skin assets (no-ops for the original page).
+        html = html.replace('href="./delta/', 'href="' + asset_base + '/delta/')
+        html = html.replace('src="./delta/', 'src="' + asset_base + '/delta/')
 
         # Refuse a page that can never be delivered. Checked here, before
         # the write, so an oversized map fails as an error the caller sees
@@ -2681,6 +2780,9 @@ class mapper:
         ``open_browser=False``), the other opens instead. Both can be
         set to ``True`` to get both.
 
+        The page opened follows the skin (``Map.setSkin``). The viewer URL
+        is kept on ``Map.view_url`` (``testView`` screenshots it).
+
         Args:
             open_browser (bool | None): Open in the default browser.
                 Default ``None`` (auto: ``True`` outside notebooks,
@@ -2702,6 +2804,7 @@ class mapper:
             "open_iframe": open_iframe,
             "iframe_height": iframe_height,
         }
+        self.view_url = None
 
         # Auto-enable inspector if no turnOn commands have been set.
         if not any("turnOn" in c for c in self.mapCommandList):
@@ -2814,6 +2917,10 @@ class mapper:
         self.ee_run = os.path.join(ee_run_dir, "{}.js".format(self.ee_run_name))
         with open(self.ee_run, "w", encoding="utf-8") as f:
             f.write(run_js)
+        run_param = ""
+        if self.skin == "delta":
+            _write_own_run_script(ee_run_dir, self._run_token, run_js)
+            run_param = "&run=" + self._run_token
 
         # Detached mode does NOT need the in-process daemon HTTP
         # server — the detached eeAuth proxy serves both ``/geeView/*``
@@ -2855,7 +2962,7 @@ class mapper:
             # displayed layers match the code the user just executed.
             import time as _t_view
             _v = int(_t_view.time() * 1000)
-            query = f"?v={_v}"
+            query = f"?v={_v}{run_param}"
             # Show the actual mode picked so the user knows whether the
             # proxy is in-process (auto), a subprocess (detached), etc.
             # Also flag WHERE the mode came from so users can trace how
@@ -2889,7 +2996,7 @@ class mapper:
             self._mint_access_token()
             query = "?projectID={}&accessToken={}&accessTokenCreationTime={}".format(
                 self.project, self.accessToken, self.accessTokenCreationTime
-            )
+            ) + run_param
 
         # Determine display mode — if user explicitly sets one, only that one fires.
         # If user explicitly disables one (e.g. open_browser=False), the other opens.
@@ -2923,8 +3030,9 @@ class mapper:
                     pass
             proxy_js = "google.colab.kernel.proxyPort({})".format(colab_port)
             proxy_url = eval_js(proxy_js)
-            geeView_url = "{}/geeView/{}".format(proxy_url, query)
+            geeView_url = "{}/geeView/{}{}".format(proxy_url, _SKIN_PAGES[self.skin], query)
             print("Colab Proxy URL:", geeView_url)
+            self.view_url = geeView_url
             self.IFrame = IFrame(src=geeView_url, width="100%", height="{}px".format(iframe_height))
             display(self.IFrame)
         elif IS_WORKBENCH or (self.proxy_url is not None):
@@ -2932,10 +3040,11 @@ class mapper:
             if self.proxy_url is None:
                 self.proxy_url = _detect_proxy_url()
             self.proxy_url = baseDomain(self.proxy_url)
-            geeView_url = "{}/proxy/{}/geeView/{}".format(
-                self.proxy_url, self.port, query
+            geeView_url = "{}/proxy/{}/geeView/{}{}".format(
+                self.proxy_url, self.port, _SKIN_PAGES[self.skin], query
             )
             print("Proxy URL:", geeView_url)
+            self.view_url = geeView_url
             self.IFrame = IFrame(src=geeView_url, width="100%", height="{}px".format(iframe_height))
             display(self.IFrame)
         elif ee_proxy_mode == "detached" and ee_proxy_url:
@@ -2948,8 +3057,9 @@ class mapper:
             base = ee_proxy_url.rstrip("/")
             if base.endswith("/ee-api"):
                 base = base[: -len("/ee-api")]
-            url = f"{base}/geeView/{query}"
+            url = f"{base}/geeView/{_SKIN_PAGES[self.skin]}{query}"
             print("geeView URL:", url)
+            self.view_url = url
             if want_iframe:
                 self.IFrame = IFrame(src=url, width="100%", height="{}px".format(iframe_height))
                 display(self.IFrame)
@@ -2967,8 +3077,9 @@ class mapper:
             # first, the http.server only binds IPv4, and naive tools
             # (older Python `requests`, curl without Happy Eyeballs)
             # fail with "connection refused" even though 127.0.0.1 works.
-            url = "http://127.0.0.1:{}/geeView/{}".format(self.port, query)
+            url = "http://127.0.0.1:{}/geeView/{}{}".format(self.port, _SKIN_PAGES[self.skin], query)
             print("geeView URL:", url)
+            self.view_url = url
             if want_iframe:
                 self.IFrame = IFrame(src=url, width="100%", height="{}px".format(iframe_height))
                 display(self.IFrame)
@@ -4156,10 +4267,13 @@ class mapper:
         from geeViz.outputLib import charts as _cl
         import datetime as _dt
 
-        # Get the viewer URL without opening a browser
-        url = self.view(open_browser=False)
+        # Build the viewer page without opening a browser or an inline
+        # frame, then screenshot the URL view() built. view() returns
+        # nothing; it records the URL on ``self.view_url``.
+        self.view(open_browser=False, open_iframe=False)
+        url = self.view_url
         if not url:
-            return {"error": "No viewer URL available — add layers first."}
+            return {"error": "No viewer URL available. Add layers first."}
 
         png_bytes, console_msgs = _cl.screenshot_url(url, width=width, height=height, wait_seconds=wait_seconds)
 

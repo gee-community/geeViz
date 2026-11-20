@@ -1,0 +1,95 @@
+{
+ "name": "ndvi_mean",
+ "raw": {
+  "2019----NDVI": 634.761276907995,
+  "2020----NDVI": 959.8936965586846,
+  "2021----NDVI": 541.3261607565213
+ },
+ "objInfoPy": {
+  "obj_type": "ImageCollection",
+  "band_names": [
+   "NDVI"
+  ],
+  "is_thematic": false,
+  "class_info": {},
+  "size": 69
+ },
+ "props": {
+  "google:max_source_file_timestamp": 1628552349000,
+  "num_tiles": 286
+ },
+ "objInfo": {
+  "objType": "ImageCollection",
+  "bandNames": [
+   "NDVI"
+  ],
+  "isThematic": false,
+  "classInfo": {},
+  "size": 69
+ },
+ "labels": [
+  "2019",
+  "2020",
+  "2021"
+ ],
+ "stackBandNames": [
+  "2019----NDVI",
+  "2020----NDVI",
+  "2021----NDVI"
+ ],
+ "scales": [
+  30,
+  60
+ ],
+ "kind": "continuous",
+ "summarize": {
+  "columns": [
+   "NDVI"
+  ],
+  "rows": [
+   {
+    "x": "2019",
+    "values": [
+     634.761276907995
+    ]
+   },
+   {
+    "x": "2020",
+    "values": [
+     959.8936965586846
+    ]
+   },
+   {
+    "x": "2021",
+    "values": [
+     541.3261607565213
+    ]
+   }
+  ]
+ },
+ "expected": {
+  "columns": [
+   "NDVI"
+  ],
+  "rows": [
+   {
+    "x": "2019",
+    "values": [
+     634.761276907995
+    ]
+   },
+   {
+    "x": "2020",
+    "values": [
+     959.8936965586846
+    ]
+   },
+   {
+    "x": "2021",
+    "values": [
+     541.3261607565213
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,53 @@
+/* Delta design tokens. Teal marks what is on; orange marks what moves or is drawn. */
+:root,
+[data-bs-theme="light"] {
+  --dz-ground: #ece8e4;
+  --dz-panel: rgba(250, 248, 246, 0.9);
+  --dz-solid: #faf8f6;
+  --dz-raise: #f1ede9;
+  --dz-line: rgba(55, 46, 44, 0.13);
+  --dz-ink: #15100e;
+  --dz-mute: #40362f;
+  --dz-faint: #6a5e56;
+  --dz-teal: #00897b;
+  --dz-teal-soft: rgba(0, 137, 123, 0.11);
+  --dz-prog: rgba(0, 137, 123, 0.2);
+  --dz-orange: #e2602a;
+  --dz-orange-soft: rgba(226, 96, 42, 0.12);
+  --dz-shadow: 0 10px 30px rgba(35, 29, 27, 0.18);
+}
+[data-bs-theme="dark"] {
+  --dz-ground: #141211;
+  --dz-panel: rgba(24, 21, 20, 0.86);
+  --dz-solid: #1a1716;
+  --dz-raise: #24201e;
+  --dz-line: rgba(236, 232, 228, 0.09);
+  --dz-ink: #f7f4f1;
+  --dz-mute: #c2b9b2;
+  --dz-faint: #8f847d;
+  --dz-teal: #1fd1b4;
+  --dz-teal-soft: rgba(31, 209, 180, 0.12);
+  --dz-prog: rgba(31, 209, 180, 0.2);
+  --dz-orange: #ff834c;
+  --dz-orange-soft: rgba(255, 131, 76, 0.14);
+  --dz-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
+}
+:root {
+  --dz-map-bg: #2a2624;
+  --dz-on-media: #f3efeb;
+  --dz-scrim: rgba(0, 0, 0, 0.55);
+  --dz-swatch-edge: rgba(0, 0, 0, 0.18);
+  --dz-on-accent: #fff;
+  --dz-status-h: 26px;
+  /* Google's own strip along the map's bottom edge (logo, scale, data credits,
+     terms): kept clear of every pane, as the Maps terms require */
+  --dz-gfoot: 24px;
+  /* the scale bar, shortcuts and credits row at the right of Google's strip */
+  --dz-gstrip: 14px;
+  --dz-right-default: 330px;
+  --dz-right-folded: 64px;
+  --dz-left-default: clamp(300px, 33.333vw, 560px);
+  --dz-font-body: Roboto, system-ui, sans-serif;
+  --dz-font-cond: Roboto, system-ui, sans-serif;
+  --dz-font-mono: "Roboto Mono", ui-monospace, monospace;
+}

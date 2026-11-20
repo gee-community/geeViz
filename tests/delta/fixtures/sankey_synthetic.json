@@ -1,0 +1,1625 @@
+{
+ "name": "sankey_synthetic",
+ "kind": "sankey",
+ "raw": {
+  "2016-2018---2020-2022": {
+   "19901": 700,
+   "19902": 3,
+   "29902": 200.5,
+   "39901": 96.5,
+   "99901": 4
+  },
+  "2020-2022---2023": {
+   "19901": 600,
+   "29903": 5,
+   "39903": 395
+  }
+ },
+ "band": "Land_Cover",
+ "periods": [
+  [
+   2016,
+   2018
+  ],
+  [
+   2020,
+   2022
+  ],
+  2023
+ ],
+ "classInfoPy": {
+  "Land_Cover": {
+   "class_values": [
+    1,
+    2,
+    3
+   ],
+   "class_names": [
+    "Trees",
+    "Shrubs",
+    "Barren"
+   ],
+   "class_palette": [
+    "004e2b",
+    "#f4ae38",
+    "b3a397"
+   ]
+  }
+ },
+ "scale": 30,
+ "minPercentages": [
+  0.5,
+  0.2,
+  0
+ ],
+ "expected": {
+  "Percentage@0.5": {
+   "links": [
+    {
+     "source": 0,
+     "target": 3,
+     "value": 69.72,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 1,
+     "target": 4,
+     "value": 19.97,
+     "source_name": "2016-2018 Shrubs",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#f4ae38",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 2,
+     "target": 3,
+     "value": 9.61,
+     "source_name": "2016-2018 Barren",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#b3a397",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 3,
+     "target": 6,
+     "value": 60.0,
+     "source_name": "2020-2022 Trees",
+     "target_name": "2023 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 4,
+     "target": 8,
+     "value": 0.5,
+     "source_name": "2020-2022 Shrubs",
+     "target_name": "2023 Barren",
+     "source_color": "#f4ae38",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 5,
+     "target": 8,
+     "value": 39.5,
+     "source_name": "2020-2022 Barren",
+     "target_name": "2023 Barren",
+     "source_color": "#b3a397",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    }
+   ],
+   "matrix": {
+    "2016-2018 → 2020-2022": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       69.72,
+       0.3,
+       0.0
+      ],
+      [
+       0.0,
+       19.97,
+       0.0
+      ],
+      [
+       9.61,
+       0.0,
+       0.0
+      ]
+     ]
+    },
+    "2020-2022 → 2023": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       60.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       0.5
+      ],
+      [
+       0.0,
+       0.0,
+       39.5
+      ]
+     ]
+    }
+   }
+  },
+  "Percentage@0.2": {
+   "links": [
+    {
+     "source": 0,
+     "target": 3,
+     "value": 69.72,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 0,
+     "target": 4,
+     "value": 0.3,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#004e2b",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 1,
+     "target": 4,
+     "value": 19.97,
+     "source_name": "2016-2018 Shrubs",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#f4ae38",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 2,
+     "target": 3,
+     "value": 9.61,
+     "source_name": "2016-2018 Barren",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#b3a397",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 3,
+     "target": 6,
+     "value": 60.0,
+     "source_name": "2020-2022 Trees",
+     "target_name": "2023 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 4,
+     "target": 8,
+     "value": 0.5,
+     "source_name": "2020-2022 Shrubs",
+     "target_name": "2023 Barren",
+     "source_color": "#f4ae38",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 5,
+     "target": 8,
+     "value": 39.5,
+     "source_name": "2020-2022 Barren",
+     "target_name": "2023 Barren",
+     "source_color": "#b3a397",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    }
+   ],
+   "matrix": {
+    "2016-2018 → 2020-2022": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       69.72,
+       0.3,
+       0.0
+      ],
+      [
+       0.0,
+       19.97,
+       0.0
+      ],
+      [
+       9.61,
+       0.0,
+       0.0
+      ]
+     ]
+    },
+    "2020-2022 → 2023": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       60.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       0.5
+      ],
+      [
+       0.0,
+       0.0,
+       39.5
+      ]
+     ]
+    }
+   }
+  },
+  "Percentage@0": {
+   "links": [
+    {
+     "source": 0,
+     "target": 3,
+     "value": 69.72,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 0,
+     "target": 4,
+     "value": 0.3,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#004e2b",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 1,
+     "target": 4,
+     "value": 19.97,
+     "source_name": "2016-2018 Shrubs",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#f4ae38",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 2,
+     "target": 3,
+     "value": 9.61,
+     "source_name": "2016-2018 Barren",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#b3a397",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 3,
+     "target": 6,
+     "value": 60.0,
+     "source_name": "2020-2022 Trees",
+     "target_name": "2023 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 4,
+     "target": 8,
+     "value": 0.5,
+     "source_name": "2020-2022 Shrubs",
+     "target_name": "2023 Barren",
+     "source_color": "#f4ae38",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 5,
+     "target": 8,
+     "value": 39.5,
+     "source_name": "2020-2022 Barren",
+     "target_name": "2023 Barren",
+     "source_color": "#b3a397",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    }
+   ],
+   "matrix": {
+    "2016-2018 → 2020-2022": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       69.72,
+       0.3,
+       0.0
+      ],
+      [
+       0.0,
+       19.97,
+       0.0
+      ],
+      [
+       9.61,
+       0.0,
+       0.0
+      ]
+     ]
+    },
+    "2020-2022 → 2023": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       60.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       0.5
+      ],
+      [
+       0.0,
+       0.0,
+       39.5
+      ]
+     ]
+    }
+   }
+  },
+  "Hectares@0.5": {
+   "links": [
+    {
+     "source": 0,
+     "target": 3,
+     "value": 63.0,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 1,
+     "target": 4,
+     "value": 18.0,
+     "source_name": "2016-2018 Shrubs",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#f4ae38",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 2,
+     "target": 3,
+     "value": 9.0,
+     "source_name": "2016-2018 Barren",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#b3a397",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 3,
+     "target": 6,
+     "value": 54.0,
+     "source_name": "2020-2022 Trees",
+     "target_name": "2023 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 4,
+     "target": 8,
+     "value": 0.0,
+     "source_name": "2020-2022 Shrubs",
+     "target_name": "2023 Barren",
+     "source_color": "#f4ae38",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 5,
+     "target": 8,
+     "value": 36.0,
+     "source_name": "2020-2022 Barren",
+     "target_name": "2023 Barren",
+     "source_color": "#b3a397",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    }
+   ],
+   "matrix": {
+    "2016-2018 → 2020-2022": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       63.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       18.0,
+       0.0
+      ],
+      [
+       9.0,
+       0.0,
+       0.0
+      ]
+     ]
+    },
+    "2020-2022 → 2023": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       54.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       36.0
+      ]
+     ]
+    }
+   }
+  },
+  "Hectares@0.2": {
+   "links": [
+    {
+     "source": 0,
+     "target": 3,
+     "value": 63.0,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 0,
+     "target": 4,
+     "value": 0.0,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#004e2b",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 1,
+     "target": 4,
+     "value": 18.0,
+     "source_name": "2016-2018 Shrubs",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#f4ae38",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 2,
+     "target": 3,
+     "value": 9.0,
+     "source_name": "2016-2018 Barren",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#b3a397",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 3,
+     "target": 6,
+     "value": 54.0,
+     "source_name": "2020-2022 Trees",
+     "target_name": "2023 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 4,
+     "target": 8,
+     "value": 0.0,
+     "source_name": "2020-2022 Shrubs",
+     "target_name": "2023 Barren",
+     "source_color": "#f4ae38",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 5,
+     "target": 8,
+     "value": 36.0,
+     "source_name": "2020-2022 Barren",
+     "target_name": "2023 Barren",
+     "source_color": "#b3a397",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    }
+   ],
+   "matrix": {
+    "2016-2018 → 2020-2022": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       63.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       18.0,
+       0.0
+      ],
+      [
+       9.0,
+       0.0,
+       0.0
+      ]
+     ]
+    },
+    "2020-2022 → 2023": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       54.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       36.0
+      ]
+     ]
+    }
+   }
+  },
+  "Hectares@0": {
+   "links": [
+    {
+     "source": 0,
+     "target": 3,
+     "value": 63.0,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 0,
+     "target": 4,
+     "value": 0.0,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#004e2b",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 1,
+     "target": 4,
+     "value": 18.0,
+     "source_name": "2016-2018 Shrubs",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#f4ae38",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 2,
+     "target": 3,
+     "value": 9.0,
+     "source_name": "2016-2018 Barren",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#b3a397",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 3,
+     "target": 6,
+     "value": 54.0,
+     "source_name": "2020-2022 Trees",
+     "target_name": "2023 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 4,
+     "target": 8,
+     "value": 0.0,
+     "source_name": "2020-2022 Shrubs",
+     "target_name": "2023 Barren",
+     "source_color": "#f4ae38",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 5,
+     "target": 8,
+     "value": 36.0,
+     "source_name": "2020-2022 Barren",
+     "target_name": "2023 Barren",
+     "source_color": "#b3a397",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    }
+   ],
+   "matrix": {
+    "2016-2018 → 2020-2022": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       63.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       18.0,
+       0.0
+      ],
+      [
+       9.0,
+       0.0,
+       0.0
+      ]
+     ]
+    },
+    "2020-2022 → 2023": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       54.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       36.0
+      ]
+     ]
+    }
+   }
+  },
+  "Acres@0.5": {
+   "links": [
+    {
+     "source": 0,
+     "target": 3,
+     "value": 156.0,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 1,
+     "target": 4,
+     "value": 45.0,
+     "source_name": "2016-2018 Shrubs",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#f4ae38",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 2,
+     "target": 3,
+     "value": 21.0,
+     "source_name": "2016-2018 Barren",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#b3a397",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 3,
+     "target": 6,
+     "value": 133.0,
+     "source_name": "2020-2022 Trees",
+     "target_name": "2023 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 4,
+     "target": 8,
+     "value": 1.0,
+     "source_name": "2020-2022 Shrubs",
+     "target_name": "2023 Barren",
+     "source_color": "#f4ae38",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 5,
+     "target": 8,
+     "value": 88.0,
+     "source_name": "2020-2022 Barren",
+     "target_name": "2023 Barren",
+     "source_color": "#b3a397",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    }
+   ],
+   "matrix": {
+    "2016-2018 → 2020-2022": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       156.0,
+       1.0,
+       0.0
+      ],
+      [
+       0.0,
+       45.0,
+       0.0
+      ],
+      [
+       21.0,
+       0.0,
+       0.0
+      ]
+     ]
+    },
+    "2020-2022 → 2023": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       133.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       1.0
+      ],
+      [
+       0.0,
+       0.0,
+       88.0
+      ]
+     ]
+    }
+   }
+  },
+  "Acres@0.2": {
+   "links": [
+    {
+     "source": 0,
+     "target": 3,
+     "value": 156.0,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 0,
+     "target": 4,
+     "value": 1.0,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#004e2b",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 1,
+     "target": 4,
+     "value": 45.0,
+     "source_name": "2016-2018 Shrubs",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#f4ae38",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 2,
+     "target": 3,
+     "value": 21.0,
+     "source_name": "2016-2018 Barren",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#b3a397",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 3,
+     "target": 6,
+     "value": 133.0,
+     "source_name": "2020-2022 Trees",
+     "target_name": "2023 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 4,
+     "target": 8,
+     "value": 1.0,
+     "source_name": "2020-2022 Shrubs",
+     "target_name": "2023 Barren",
+     "source_color": "#f4ae38",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 5,
+     "target": 8,
+     "value": 88.0,
+     "source_name": "2020-2022 Barren",
+     "target_name": "2023 Barren",
+     "source_color": "#b3a397",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    }
+   ],
+   "matrix": {
+    "2016-2018 → 2020-2022": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       156.0,
+       1.0,
+       0.0
+      ],
+      [
+       0.0,
+       45.0,
+       0.0
+      ],
+      [
+       21.0,
+       0.0,
+       0.0
+      ]
+     ]
+    },
+    "2020-2022 → 2023": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       133.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       1.0
+      ],
+      [
+       0.0,
+       0.0,
+       88.0
+      ]
+     ]
+    }
+   }
+  },
+  "Acres@0": {
+   "links": [
+    {
+     "source": 0,
+     "target": 3,
+     "value": 156.0,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 0,
+     "target": 4,
+     "value": 1.0,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#004e2b",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 1,
+     "target": 4,
+     "value": 45.0,
+     "source_name": "2016-2018 Shrubs",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#f4ae38",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 2,
+     "target": 3,
+     "value": 21.0,
+     "source_name": "2016-2018 Barren",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#b3a397",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 3,
+     "target": 6,
+     "value": 133.0,
+     "source_name": "2020-2022 Trees",
+     "target_name": "2023 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 4,
+     "target": 8,
+     "value": 1.0,
+     "source_name": "2020-2022 Shrubs",
+     "target_name": "2023 Barren",
+     "source_color": "#f4ae38",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 5,
+     "target": 8,
+     "value": 88.0,
+     "source_name": "2020-2022 Barren",
+     "target_name": "2023 Barren",
+     "source_color": "#b3a397",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    }
+   ],
+   "matrix": {
+    "2016-2018 → 2020-2022": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       156.0,
+       1.0,
+       0.0
+      ],
+      [
+       0.0,
+       45.0,
+       0.0
+      ],
+      [
+       21.0,
+       0.0,
+       0.0
+      ]
+     ]
+    },
+    "2020-2022 → 2023": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       133.0,
+       0.0,
+       0.0
+      ],
+      [
+       0.0,
+       0.0,
+       1.0
+      ],
+      [
+       0.0,
+       0.0,
+       88.0
+      ]
+     ]
+    }
+   }
+  },
+  "Pixels@0.5": {
+   "links": [
+    {
+     "source": 0,
+     "target": 3,
+     "value": 700.0,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 1,
+     "target": 4,
+     "value": 200.5,
+     "source_name": "2016-2018 Shrubs",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#f4ae38",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 2,
+     "target": 3,
+     "value": 96.5,
+     "source_name": "2016-2018 Barren",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#b3a397",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 3,
+     "target": 6,
+     "value": 600.0,
+     "source_name": "2020-2022 Trees",
+     "target_name": "2023 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 4,
+     "target": 8,
+     "value": 5.0,
+     "source_name": "2020-2022 Shrubs",
+     "target_name": "2023 Barren",
+     "source_color": "#f4ae38",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 5,
+     "target": 8,
+     "value": 395.0,
+     "source_name": "2020-2022 Barren",
+     "target_name": "2023 Barren",
+     "source_color": "#b3a397",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    }
+   ],
+   "matrix": {
+    "2016-2018 → 2020-2022": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       700.0,
+       3.0,
+       0.0
+      ],
+      [
+       0.0,
+       200.5,
+       0.0
+      ],
+      [
+       96.5,
+       0.0,
+       0.0
+      ]
+     ]
+    },
+    "2020-2022 → 2023": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       600,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       5
+      ],
+      [
+       0,
+       0,
+       395
+      ]
+     ]
+    }
+   }
+  },
+  "Pixels@0.2": {
+   "links": [
+    {
+     "source": 0,
+     "target": 3,
+     "value": 700.0,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 0,
+     "target": 4,
+     "value": 3.0,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#004e2b",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 1,
+     "target": 4,
+     "value": 200.5,
+     "source_name": "2016-2018 Shrubs",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#f4ae38",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 2,
+     "target": 3,
+     "value": 96.5,
+     "source_name": "2016-2018 Barren",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#b3a397",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 3,
+     "target": 6,
+     "value": 600.0,
+     "source_name": "2020-2022 Trees",
+     "target_name": "2023 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 4,
+     "target": 8,
+     "value": 5.0,
+     "source_name": "2020-2022 Shrubs",
+     "target_name": "2023 Barren",
+     "source_color": "#f4ae38",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 5,
+     "target": 8,
+     "value": 395.0,
+     "source_name": "2020-2022 Barren",
+     "target_name": "2023 Barren",
+     "source_color": "#b3a397",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    }
+   ],
+   "matrix": {
+    "2016-2018 → 2020-2022": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       700.0,
+       3.0,
+       0.0
+      ],
+      [
+       0.0,
+       200.5,
+       0.0
+      ],
+      [
+       96.5,
+       0.0,
+       0.0
+      ]
+     ]
+    },
+    "2020-2022 → 2023": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       600,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       5
+      ],
+      [
+       0,
+       0,
+       395
+      ]
+     ]
+    }
+   }
+  },
+  "Pixels@0": {
+   "links": [
+    {
+     "source": 0,
+     "target": 3,
+     "value": 700.0,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 0,
+     "target": 4,
+     "value": 3.0,
+     "source_name": "2016-2018 Trees",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#004e2b",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 1,
+     "target": 4,
+     "value": 200.5,
+     "source_name": "2016-2018 Shrubs",
+     "target_name": "2020-2022 Shrubs",
+     "source_color": "#f4ae38",
+     "target_color": "#f4ae38",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 2,
+     "target": 3,
+     "value": 96.5,
+     "source_name": "2016-2018 Barren",
+     "target_name": "2020-2022 Trees",
+     "source_color": "#b3a397",
+     "target_color": "#004e2b",
+     "period": "2016-2018 -> 2020-2022"
+    },
+    {
+     "source": 3,
+     "target": 6,
+     "value": 600.0,
+     "source_name": "2020-2022 Trees",
+     "target_name": "2023 Trees",
+     "source_color": "#004e2b",
+     "target_color": "#004e2b",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 4,
+     "target": 8,
+     "value": 5.0,
+     "source_name": "2020-2022 Shrubs",
+     "target_name": "2023 Barren",
+     "source_color": "#f4ae38",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    },
+    {
+     "source": 5,
+     "target": 8,
+     "value": 395.0,
+     "source_name": "2020-2022 Barren",
+     "target_name": "2023 Barren",
+     "source_color": "#b3a397",
+     "target_color": "#b3a397",
+     "period": "2020-2022 -> 2023"
+    }
+   ],
+   "matrix": {
+    "2016-2018 → 2020-2022": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       700.0,
+       3.0,
+       0.0
+      ],
+      [
+       0.0,
+       200.5,
+       0.0
+      ],
+      [
+       96.5,
+       0.0,
+       0.0
+      ]
+     ]
+    },
+    "2020-2022 → 2023": {
+     "index": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "columns": [
+      "Trees",
+      "Shrubs",
+      "Barren"
+     ],
+     "values": [
+      [
+       600,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       5
+      ],
+      [
+       0,
+       0,
+       395
+      ]
+     ]
+    }
+   }
+  }
+ }
+}

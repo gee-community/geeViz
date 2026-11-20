@@ -104,8 +104,7 @@ def main(argv=None) -> int:
     _ee_creds_singleton.discover()
     tenants = _ee_creds_singleton.list()
     from fastapi import FastAPI
-    from fastapi.staticfiles import StaticFiles
-    import os as _os
+    from .server import mount_geeview
     app = FastAPI()
     app.include_router(
         _ee_creds_singleton.router(
@@ -121,14 +120,7 @@ def main(argv=None) -> int:
     # ``<package>/geeView/src/gee/gee-run/`` and opens the browser to
     # this server's ``/geeView/src/gee/gee-run/<file>`` URL; everything
     # else (frontend JS, CSS, EE tile fetches) is same-origin.
-    _PKG_DIR = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
-    _GEEVIEW_DIR = _os.path.join(_PKG_DIR, "geeView")
-    if _os.path.isdir(_GEEVIEW_DIR):
-        app.mount(
-            "/geeView",
-            StaticFiles(directory=_GEEVIEW_DIR, html=True),
-            name="geeview-static",
-        )
+    mount_geeview(app)
     if not tenants:
         print(
             "WARNING: no tenants discovered — set GEE_SERVICE_ACCOUNT_B64, "

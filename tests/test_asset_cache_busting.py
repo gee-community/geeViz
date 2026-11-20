@@ -126,24 +126,29 @@ def test_the_proxy_serves_geeview_with_no_store():
         last-modified: ...
         etag: ...
         (no Cache-Control)
+
+    The proxy runs two ways, create_app() and ``python -m geeViz.eeAuth``
+    (__main__.py); the second once mounted plain StaticFiles, so the fix
+    held on one path only. Both now mount through mount_geeview, checked
+    here by asking for a real file.
     """
     import re
     from pathlib import Path
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from geeViz.eeAuth.server import mount_geeview
+
+    app = mount_geeview(FastAPI())
+    r = TestClient(app).get("/geeView/delta.html")
+    assert r.status_code == 200
+    assert "no-store" in r.headers.get("cache-control", ""), dict(r.headers)
 
     root = Path(__file__).resolve().parents[2]
-    src = (root / "geeViz" / "eeAuth" / "server.py").read_text(encoding="utf-8")
-    code = "\n".join(ln for ln in src.splitlines()
-                     if not ln.strip().startswith("#"))
-
-    assert "class _NoStoreStatic(StaticFiles):" in code, (
-        "the /geeView mount is plain StaticFiles again; a regenerated "
-        "map can be served from cache")
-    assert '_NoStoreStatic(directory=_GEEVIEW_DIR' in code, (
-        "the no-store subclass exists but the mount does not use it")
-    assert re.search(r'Cache-Control"\]\s*=\s*"no-store', code), (
-        "the subclass does not actually set no-store")
-    # The bare class must not be what gets mounted.
-    assert re.search(r'\n\s+StaticFiles\(directory=_GEEVIEW_DIR', code) is None
+    for rel in ("server.py", "__main__.py"):
+        src = (root / "geeViz" / "eeAuth" / rel).read_text(encoding="utf-8")
+        code = "\n".join(ln for ln in src.splitlines() if not ln.strip().startswith("#"))
+        assert re.search(r"\bmount_geeview\(app\)", code), rel + " does not mount the viewer through mount_geeview"
+        assert re.search(r"\bStaticFiles\(directory=", code) is None, rel + " mounts plain StaticFiles"
 
 
 def test_both_servers_agree_on_no_store():

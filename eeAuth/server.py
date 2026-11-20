@@ -95,6 +95,47 @@ _STRIPPED_HEADERS = frozenset({
 })
 
 
+
+def no_store_static_files_class():
+    """StaticFiles that refuses to be cached (fastapi is imported lazily).
+
+    ``Map.view()`` REWRITES ``runGeeViz.js`` in place on every call, so the
+    URL never changes while the content does. Starlette's StaticFiles sends
+    ``last-modified`` and ``etag`` but no ``Cache-Control``, and with no
+    explicit directive a browser is free to serve a heuristically-fresh copy
+    without revalidating -- which shows the PREVIOUS map (or an old viewer
+    script), with no error and nothing in the console.
+
+    geeViz's own request handler already forces no-store for exactly this
+    reason (see ``geeView._GeeVizRequestHandler``). Both ways of running the
+    proxy mount ``/geeView`` with this class: ``create_app`` here and
+    ``python -m geeViz.eeAuth`` (``__main__.py``), which once used plain
+    StaticFiles and so served the viewer cacheable.
+    """
+    from fastapi.staticfiles import StaticFiles
+
+    class NoStoreStaticFiles(StaticFiles):
+        async def get_response(self, path, scope):
+            resp = await super().get_response(path, scope)
+            resp.headers["Cache-Control"] = "no-store, must-revalidate"
+            resp.headers["Pragma"] = "no-cache"
+            resp.headers["Expires"] = "0"
+            return resp
+
+    return NoStoreStaticFiles
+
+
+def mount_geeview(app):
+    """Serve the geeViz viewer (``<package>/geeView``) at ``/geeView``, never
+    cacheable. Every way of running the proxy mounts it through here."""
+    import os as _os
+
+    pkg_dir = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    geeview_dir = _os.path.join(pkg_dir, "geeView")
+    if _os.path.isdir(geeview_dir):
+        app.mount("/geeView", no_store_static_files_class()(directory=geeview_dir, html=True), name="geeview-static")
+    return app
+
 def _default_tenant_resolver(
     request: Request, tenant_header: str
 ) -> str:
@@ -704,6 +745,54 @@ ee.initialize(authProxyAPIURL, null, onReady, onError);</pre>
             "started_at": _PROCESS_STARTED_AT,
         }
 
+    # Vector file conversion for the viewer's Upload (see
+    # ``vector_convert``). Registered before the catch-all so it is never
+    # forwarded to Earth Engine, and on both spellings the viewer can use:
+    # ``authProxyAPIURL`` carries a ``/t/<tenant>`` prefix. The tenant is
+    # irrelevant here (no token is minted), and no CORS headers are added,
+    # same as every other route on this router.
+    @router.api_route(
+        "/convert/vector",
+        methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
+        include_in_schema=False,
+    )
+    @router.api_route(
+        "/t/{tenant}/convert/vector",
+        methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
+        include_in_schema=False,
+    )
+    async def convert_vector(request: Request) -> Response:
+        """POST one vector file as multipart/form-data; get GeoJSON in
+        EPSG:4326, or ``{error, hint}`` JSON with a 4xx/5xx status."""
+        from . import vector_convert as vc
+
+        if request.method != "POST":
+            return Response(
+                content=json.dumps({"error": "Method not allowed", "hint": "POST the file."}),
+                status_code=405, media_type="application/json",
+                headers={"Allow": "POST"},
+            )
+        headers = dict(request.headers)
+        rejected = vc.request_rejection(headers)
+        if rejected:
+            status, body = rejected
+            return Response(content=body, status_code=status, media_type="application/json")
+        limit = vc.max_body_bytes()
+        chunks, total = [], 0
+        try:
+            async for chunk in request.stream():
+                total += len(chunk)
+                if total > limit:
+                    break
+                chunks.append(chunk)
+        except ClientDisconnect:
+            return Response(status_code=499)
+        if total > limit:
+            status, body = vc.oversize_reply()
+        else:
+            status, body = await asyncio.to_thread(vc.handle_upload, headers, b"".join(chunks))
+        return Response(content=body, status_code=status, media_type="application/json")
+
     @router.api_route(
         "/{path:path}",
         methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
@@ -966,41 +1055,8 @@ def create_proxy_app(
         # ``src/css/...``, ``src/gee/...``) resolve under the same
         # ``/geeView/`` root, matching what the legacy in-script
         # ``_GeeVizRequestHandler`` served.
-        from fastapi.staticfiles import StaticFiles
-        import os as _os
 
-        class _NoStoreStatic(StaticFiles):
-            """StaticFiles that refuses to be cached.
-
-            ``Map.view()`` REWRITES ``runGeeViz.js`` in place on every
-            call, so the URL never changes while the content does.
-            Starlette's StaticFiles sends ``last-modified`` and ``etag``
-            but no ``Cache-Control``, and with no explicit directive a
-            browser is free to serve a heuristically-fresh copy without
-            revalidating -- which shows the PREVIOUS map, with no error
-            and nothing in the console.
-
-            geeViz's own request handler already forces no-store for
-            exactly this reason (see ``geeView._GeeVizRequestHandler``);
-            running behind this proxy quietly lost it, and the proxy is
-            the default path.
-            """
-
-            async def get_response(self, path, scope):
-                resp = await super().get_response(path, scope)
-                resp.headers["Cache-Control"] = "no-store, must-revalidate"
-                resp.headers["Pragma"] = "no-cache"
-                resp.headers["Expires"] = "0"
-                return resp
-
-        _PKG_DIR = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
-        _GEEVIEW_DIR = _os.path.join(_PKG_DIR, "geeView")
-        if _os.path.isdir(_GEEVIEW_DIR):
-            app.mount(
-                "/geeView",
-                _NoStoreStatic(directory=_GEEVIEW_DIR, html=True),
-                name="geeview-static",
-            )
+        mount_geeview(app)
 
     def _list_tenants() -> list:
         if creds is None:

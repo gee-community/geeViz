@@ -1,0 +1,199 @@
+{
+ "name": "sentinel_masked_year",
+ "kind": "thematic",
+ "sentinelCase": true,
+ "raw": {
+  "2002----Land_Cover": {
+   "0": 10,
+   "1": 60,
+   "3": 30
+  },
+  "2003----Land_Cover": {
+   "0": 100
+  },
+  "2004----Land_Cover": {
+   "1": 49.5,
+   "3": 50.5
+  }
+ },
+ "objInfoPy": {
+  "obj_type": "ImageCollection",
+  "band_names": [
+   "Land_Cover"
+  ],
+  "is_thematic": true,
+  "class_info": {
+   "Land_Cover": {
+    "class_values": [
+     1,
+     3
+    ],
+    "class_names": [
+     "Trees",
+     "Shrubs"
+    ],
+    "class_palette": [
+     "004e2b",
+     "f4ae38"
+    ]
+   }
+  },
+  "size": 3
+ },
+ "labels": [
+  "2002",
+  "2003",
+  "2004"
+ ],
+ "scales": [
+  30
+ ],
+ "stripSentinel": true,
+ "objInfo": {
+  "objType": "ImageCollection",
+  "bandNames": [
+   "Land_Cover"
+  ],
+  "isThematic": true,
+  "classInfo": {
+   "Land_Cover": {
+    "classValues": [
+     1,
+     3
+    ],
+    "classNames": [
+     "Trees",
+     "Shrubs"
+    ],
+    "classPalette": [
+     "004e2b",
+     "f4ae38"
+    ]
+   }
+  },
+  "size": 3
+ },
+ "expected": {
+  "Percentage@30": {
+   "columns": [
+    "Trees",
+    "Shrubs"
+   ],
+   "rows": [
+    {
+     "x": "2002",
+     "values": [
+      60.0,
+      30.0
+     ]
+    },
+    {
+     "x": "2003",
+     "values": [
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "x": "2004",
+     "values": [
+      49.5,
+      50.5
+     ]
+    }
+   ]
+  },
+  "Hectares@30": {
+   "columns": [
+    "Trees",
+    "Shrubs"
+   ],
+   "rows": [
+    {
+     "x": "2002",
+     "values": [
+      5.0,
+      3.0
+     ]
+    },
+    {
+     "x": "2003",
+     "values": [
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "x": "2004",
+     "values": [
+      4.0,
+      5.0
+     ]
+    }
+   ]
+  },
+  "Acres@30": {
+   "columns": [
+    "Trees",
+    "Shrubs"
+   ],
+   "rows": [
+    {
+     "x": "2002",
+     "values": [
+      13.0,
+      7.0
+     ]
+    },
+    {
+     "x": "2003",
+     "values": [
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "x": "2004",
+     "values": [
+      11.0,
+      11.0
+     ]
+    }
+   ]
+  },
+  "Pixels@30": {
+   "columns": [
+    "Trees",
+    "Shrubs"
+   ],
+   "rows": [
+    {
+     "x": "2002",
+     "values": [
+      60.0,
+      30.0
+     ]
+    },
+    {
+     "x": "2003",
+     "values": [
+      0.0,
+      0.0
+     ]
+    },
+    {
+     "x": "2004",
+     "values": [
+      49.5,
+      50.5
+     ]
+    }
+   ]
+  }
+ },
+ "stackBandNames": [
+  "2002----Land_Cover",
+  "2003----Land_Cover",
+  "2004----Land_Cover"
+ ]
+}

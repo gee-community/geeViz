@@ -950,7 +950,7 @@ def test_proxy_mode_url_registers_upstream_and_keeps_url_clean():
     # real browser reload instead of Chrome silently focusing the
     # existing tab (which showed layers from the previous cell).
     # 2026.7.1 release-notes entry: "Map.view() cache-buster".
-    assert 'query = f"?v={_v}"' in proxy_branch, \
+    assert 'query = f"?v={_v}' in proxy_branch, \
         "proxy branch must build a ?v=<timestamp> cache-buster so " \
         "each Map.view() triggers a fresh browser navigation"
     assert "?tenant=" not in proxy_branch, \
