@@ -399,7 +399,7 @@ def test_drag_ends_however_the_pointer_is_released(delta_page, how):
 
 def test_drag_ignores_other_pointers(delta_page):
     page = delta_page(SHELL)
-    m = page.evaluate(END_DRAG, {"how": "other-pointer-up", "xs": [480, 450]})
+    m = page.evaluate(END_DRAG, {"how": "other-pointer-up", "xs": [500, 450]})
     assert m["resizing"] and m["drag"] and m["updates"] == 0, m
     page.evaluate("document.dispatchEvent(new PointerEvent('pointerup', {bubbles: true, pointerId: 9, clientX: 450}))")
     frames(page)
@@ -454,6 +454,34 @@ def test_real_drag_released_over_the_map(delta_page):
     assert page.evaluate("localStorage.getItem('delta-left')") == "750"
     assert "resizing" not in page.evaluate("document.body.className")
     assert page.evaluate("document.querySelector('.grip[data-side=left]').classList.contains('drag')") is False
+
+
+@pytest.mark.parametrize("side", ["left", "right"])
+def test_press_just_outside_the_grip_resizes_and_never_reaches_the_map(delta_page, side):
+    """As the user saw: a press a few pixels out on the map panned the map
+    instead of resizing. The edge zone claims it before the map hears it."""
+    page = delta_page(SHELL)
+    page.evaluate("__delta.store.set({tool: 'distance'})")
+    page.wait_for_timeout(350)  # the right pane's width transition
+    page.evaluate("window.__mapHeard = []; ['pointerdown', 'pointermove', 'mousedown'].forEach(t => document.querySelector('#map').addEventListener(t, () => __mapHeard.push(t)))")
+    box = page.locator(".grip[data-side=%s]" % side).bounding_box()
+    y = box["y"] + min(100, box["height"] / 2)
+    x = box["x"] + box["width"] + 4 if side == "left" else box["x"] - 4
+    assert page.evaluate("(p) => document.elementFromPoint(p[0], p[1]).id", [x, y]) == "map"
+    w0 = page.evaluate("(s) => document.querySelector('#pane-' + s).getBoundingClientRect().width", side)
+    to = x + 80 if side == "left" else x - 80
+    page.mouse.move(x, y)
+    page.evaluate("__mapHeard.length = 0")  # hovering there is the map's; the press is not
+    page.mouse.down()
+    page.mouse.move(to, y, steps=10)
+    page.mouse.up()
+    frames(page)
+    w1 = page.evaluate("(s) => document.querySelector('#pane-' + s).getBoundingClientRect().width", side)
+    assert abs((w1 - w0) - 80) <= 2, (w0, w1)  # follows the pointer, no jump
+    assert page.evaluate("__mapHeard") == []
+    # a press well out on the map is the map's
+    page.mouse.click(700, 400)
+    assert "pointerdown" in page.evaluate("__mapHeard")
 
 
 # ---- grips are easy to grab (Task 11f) ----

@@ -106,7 +106,7 @@ def test_view_history(page):
 
 def test_basemaps(page):
     # Basemaps carry no labels of their own; the labels overlay draws them above every layer.
-    for key, type_id in (("map", "roadmap-base"), ("terrain", "terrain"), ("dark", "dark"), ("satellite", "satellite")):
+    for key, type_id in (("map", "roadmap-base"), ("terrain", "terrain"), ("darkterrain", "terrain"), ("dark", "dark"), ("satellite", "satellite")):
         page.click("#mapctl .bm[data-bm=%s]" % key)
         assert page.evaluate("__delta.engine.gmap.getMapTypeId()") == type_id
         assert "on" in page.get_attribute("#mapctl .bm[data-bm=%s]" % key, "class").split()

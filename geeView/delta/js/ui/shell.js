@@ -180,9 +180,42 @@ export function mountShell(store, { mapEl } = {}) {
   // filtered by pointer id, and the drag also ends on lostpointercapture,
   // window blur, Escape, or a new pointerdown on a grip.
   let endDrag = null;
+  // A press near a pane edge belongs to that edge's grip even when it lands a
+  // few pixels out on the map: heard on window in the capture phase and
+  // stopped there, so Google Maps never sees it and never starts a pan.
+  const GRIP_SLOP = 6;
+  function gripAt(x, y) {
+    for (const grip of $$(".grip")) {
+      if (grip.offsetParent === null) continue;
+      const r = grip.getBoundingClientRect();
+      if (r.width && x >= r.left - GRIP_SLOP && x <= r.right + GRIP_SLOP && y >= r.top && y <= r.bottom) return grip;
+    }
+    return null;
+  }
+  addEventListener(
+    "pointerdown",
+    (e) => {
+      if (e.button !== 0 || e.pointerType === "touch") return;
+      const grip = gripAt(e.clientX, e.clientY);
+      if (!grip) return;
+      e.stopPropagation();
+      startDrag(grip, e);
+    },
+    { capture: true }
+  );
   $$(".grip").forEach((grip) => {
     const side = grip.dataset.side;
-    grip.addEventListener("pointerdown", (e) => {
+    // touch presses, and any press the window listener did not claim (a
+    // claimed press is stopped on window, so it never reaches the grip)
+    grip.addEventListener("pointerdown", (e) => startDrag(grip, e));
+    grip.addEventListener("dblclick", () => {
+      setWidth(side, null);
+      lsSet("delta-" + side, null);
+    });
+  });
+  function startDrag(grip, e) {
+    const side = grip.dataset.side;
+    {
       e.preventDefault();
       if (endDrag) endDrag();
       const pid = e.pointerId;
@@ -196,13 +229,20 @@ export function mountShell(store, { mapEl } = {}) {
       // One update per animation frame, from the latest pointer x.
       let latest = null;
       let raf = 0;
-      const widthAt = (x) => clampWidth(side, side === "left" ? x : innerWidth - x, innerWidth);
+      // Relative to where the press landed, so grabbing a few pixels off the
+      // edge does not make the pane jump to the pointer.
+      const edgeOf = (x) => (side === "left" ? x : innerWidth - x);
+      const paneEl = $("#pane-" + side);
+      const offset = paneEl ? edgeOf(e.clientX) - paneEl.getBoundingClientRect().width : 0;
+      const widthAt = (x) => clampWidth(side, Math.round(edgeOf(x) - offset), innerWidth);
       const frame = () => {
         raf = 0;
         if (latest !== null) applyLive(side, latest);
       };
       const move = (ev) => {
         if (ev.pointerId !== pid) return;
+        // the map below never hears a resize drag
+        ev.stopPropagation();
         latest = widthAt(ev.clientX);
         if (!raf) raf = requestAnimationFrame(frame);
       };
@@ -230,11 +270,14 @@ export function mountShell(store, { mapEl } = {}) {
         lsSet("delta-" + side, store.get().panes[side].width);
       };
       const onPointerEnd = (ev) => {
-        if (ev.pointerId === pid) end();
+        if (ev.pointerId !== pid) return;
+        if (ev.type !== "lostpointercapture") ev.stopPropagation();
+        end();
       };
       const onKey = (ev) => {
         if (ev.key === "Escape") end();
       };
+      end.grip = grip;
       endDrag = end;
       addEventListener("pointermove", move, opts);
       addEventListener("pointerup", onPointerEnd, opts);
@@ -242,12 +285,8 @@ export function mountShell(store, { mapEl } = {}) {
       addEventListener("blur", end);
       addEventListener("keydown", onKey, opts);
       grip.addEventListener("lostpointercapture", onPointerEnd);
-    });
-    grip.addEventListener("dblclick", () => {
-      setWidth(side, null);
-      lsSet("delta-" + side, null);
-    });
-  });
+    }
+  }
 
   // Stored or earlier widths can exceed the window after it shrinks: clamp what is shown.
   function reclamp() {

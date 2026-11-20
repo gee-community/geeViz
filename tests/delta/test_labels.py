@@ -112,13 +112,23 @@ def test_labels_stay_on_top(live_map):
     on_map(page, "SRTM")
     assert_last(page, "turning a layer on")
 
-    # Every basemap; dark uses DARK_STYLE's label colors.
-    for key, name in (("map", "Labels"), ("terrain", "Labels"), ("dark", "Dark labels"), ("satellite", "Satellite labels")):
+    # Every overlay basemap; dark uses DARK_STYLE's label colors. No map-wide
+    # styles on these: while the map has any, Google draws the overlay's tiles
+    # unstyled (the satellite labels lost their white text). The terrain types
+    # draw their own labels and are covered by test_terrain_basemaps_draw_their_own_labels.
+    for key, name in (("map", "Labels"), ("dark", "Dark labels"), ("satellite", "Satellite labels")):
         page.evaluate("(k) => __delta.engine.setBasemap(k)", key)
         assert_last(page, "basemap " + key)
         assert page.evaluate("__delta.engine.labelsOverlay().name") == name
+        assert page.evaluate("__delta.engine.gmap.get('styles') || null") is None, key
         if key == "dark":
             labels_loaded(page, "p.c:#a39a93")
+    # back on satellite after a terrain basemap: the overlay is styled again
+    page.evaluate("__delta.engine.setBasemap('darkterrain')")
+    page.evaluate("__delta.engine.setBasemap('satellite')")
+    assert page.evaluate("__delta.engine.gmap.get('styles') || null") is None
+    page.evaluate("__delta.engine.gmap.panBy(300, 0)")
+    labels_loaded(page, "p.c:#ffffff")
 
     # Removing every layer and adding again (clearMap's effect).
     page.evaluate("__delta.store.get().layers.map(l => l.id).forEach(id => Map.removeLayer(id))")
@@ -212,4 +222,29 @@ def test_labels_toggle(live_map):
     styles = page.evaluate("['roadmap-base', 'dark'].map(id => JSON.stringify(__delta.engine.gmap.mapTypes.get(id).styles || []))")
     for st in styles:
         assert '"elementType":"labels"' in st and '"visibility":"off"' in st, st
+    assert not page.delta_errors, page.delta_errors
+
+
+def test_terrain_basemaps_draw_their_own_labels(live_map):
+    """Google's terrain type can only be restyled map-wide, and map-wide styles
+    unstyle overlays, so Terrain and Dark terrain draw their own labels (no
+    overlay) and the toggle switches those."""
+    page = live_map(build)
+    on_map(page, "Opaque")
+    lbl_off = "() => (__delta.engine.gmap.get('styles') || []).some(s => s.elementType === 'labels' && !s.featureType && s.stylers.some(x => x.visibility === 'off'))"
+    for key in ("terrain", "darkterrain"):
+        page.evaluate("(k) => __delta.engine.setBasemap(k)", key)
+        assert page.evaluate("__delta.engine.gmap.getMapTypeId()") == "terrain"
+        assert page.evaluate("__delta.engine.labelsOverlay()") is None
+        assert page.evaluate("__delta.engine.gmap.overlayMapTypes.getArray().filter(o => o && /abels/.test(o.name || '')).length") == 0
+        assert page.evaluate("__delta.engine.gmap.get('styles') !== null")
+        assert not page.evaluate(lbl_off), key
+        page.click("#labelsBtn")
+        assert page.evaluate(lbl_off), key
+        page.click("#labelsBtn")
+        assert not page.evaluate(lbl_off), key
+    # dark terrain darkens the land; plain terrain leaves Google's colors
+    assert "#26231f" in page.evaluate("JSON.stringify(__delta.engine.gmap.get('styles'))")
+    page.evaluate("__delta.engine.setBasemap('terrain')")
+    assert "#26231f" not in page.evaluate("JSON.stringify(__delta.engine.gmap.get('styles'))")
     assert not page.delta_errors, page.delta_errors

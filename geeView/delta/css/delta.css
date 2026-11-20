@@ -51,10 +51,10 @@ body.resizing #map { pointer-events: none; }
 .search .div { width: 1px; height: 18px; background: var(--dz-line); }
 
 /* right pane: tool picker above tool output */
-.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 12px 12px 8px; }
-.tool { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 2px 7px; border-radius: 10px; border: 1px solid transparent; background: transparent;
+.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 8px 10px 6px; }
+.tool { display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 5px; padding: 5px 4px; border-radius: 8px; white-space: nowrap; min-width: 0; border: 1px solid transparent; background: transparent;
   color: var(--dz-mute); font-family: var(--dz-font-cond); font-weight: 600; font-size: 12px; letter-spacing: 0.02em; cursor: pointer; }
-.tool .ti { font-size: 20px; }
+.tool .ti { font-size: 16px; flex: none; }
 .tool:hover { background: var(--dz-raise); color: var(--dz-ink); }
 .tool.on { background: var(--dz-teal-soft); border-color: color-mix(in srgb, var(--dz-teal) 45%, transparent); color: var(--dz-teal); }
 .out-h { display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px; font-family: var(--dz-font-cond); font-weight: 700; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dz-mute); }
@@ -65,7 +65,9 @@ body.resizing #map { pointer-events: none; }
 .units .lbl { width: 52px; font-size: 12px; color: var(--dz-mute); }
 .seg { display: flex; border: 1px solid var(--dz-line); border-radius: 8px; padding: 2px; gap: 2px; margin-top: 8px; }
 .seg button { flex: 1; border: 0; background: transparent; color: var(--dz-mute); border-radius: 6px; padding: 4px 0; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
-.seg button.on { background: var(--dz-raise); color: var(--dz-ink); box-shadow: 0 1px 2px var(--dz-swatch-edge); }
+.seg button { border: 1px solid transparent; }
+.seg button.on { background: var(--dz-teal-soft); border-color: color-mix(in srgb, var(--dz-teal) 45%, transparent); color: var(--dz-teal); }
+.seg button:not(.on):hover { background: var(--dz-raise); color: var(--dz-ink); }
 .seg button:focus-visible { outline: 2px solid var(--dz-teal); outline-offset: 1px; }
 .topt { padding: 0 12px 10px; border-bottom: 1px solid var(--dz-line); }
 .topt:empty { display: none; }
@@ -182,7 +184,8 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
   body.no-tool .pane-right { width: var(--dz-right-folded); }
   body.no-tool .pane-right > *:not(.tools) { display: none !important; }
   body.no-tool .tools { grid-template-columns: 1fr; padding: 10px 6px; }
-  body.no-tool .tool { font-size: 10.5px; padding: 8px 0; }
+  body.no-tool .tool { flex-direction: column; gap: 3px; font-size: 10.5px; padding: 8px 0; white-space: normal; }
+  body.no-tool .tool .ti { font-size: 18px; }
   body.no-tool .loadbar { right: var(--dz-right-folded); }
   /* Panes are as tall as their content, so the status bar and the map controls only
      make room for a pane that actually reaches down to them (shell.js sets the classes). */
@@ -317,8 +320,9 @@ body.left-hidden .status, body.left-hidden .loadbar { left: 0; }
 .ctlgrp .ib { border-radius: 0; color: var(--dz-ink); }
 .ctlgrp .ib.on { background: var(--dz-teal-soft); color: var(--dz-teal); }
 .basemaps { display: flex; gap: 4px; padding: 4px; background: var(--dz-panel); backdrop-filter: blur(10px); border: 1px solid var(--dz-line); border-radius: 12px; box-shadow: var(--dz-shadow); }
-.bm { width: 36px; border: 0; background: transparent; padding: 0; color: var(--dz-mute); font-size: 9.5px; cursor: pointer; text-align: center; }
-.bm i { display: block; height: 26px; border-radius: 6px; margin-bottom: 2px; background-size: cover; box-shadow: inset 0 0 0 1px var(--dz-line); }
+.bm { width: 36px; border: 0; background: transparent; padding: 0; color: var(--dz-mute); font-size: 9.5px; line-height: 1.1; cursor: pointer; text-align: center; align-self: flex-start; }
+/* a zoomed crop of the tile: bay, city and hills, so each basemap reads differently */
+.bm i { display: block; height: 26px; border-radius: 6px; margin-bottom: 2px; background-size: 220%; background-position: 45% 40%; box-shadow: inset 0 0 0 1px var(--dz-line); }
 .bm.on { color: var(--dz-teal); }
 .bm.on i { box-shadow: 0 0 0 2px var(--dz-teal); }
 /* labels toggle beside the basemaps: a tile-sized button that lights while labels are on */

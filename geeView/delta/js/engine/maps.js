@@ -10,11 +10,41 @@ export const DARK_STYLE = [
   { featureType: "poi", stylers: [{ visibility: "off" }] },
 ];
 
-// Basemaps carry no labels of their own: labels come only from the labels
-// overlay above every layer, so they are never hidden by a layer, never drawn
-// twice, and can be turned off with one toggle.
-export const BASEMAPS = { satellite: "satellite", map: "roadmap-base", terrain: "terrain", dark: "dark" };
+// Satellite, Map and Dark carry no labels of their own: labels come from the
+// labels overlay above every layer, so a layer never hides them, they are
+// never drawn twice, and one toggle turns them off.
+//
+// Terrain and Dark terrain are Google's terrain type, whose hillshade only
+// map-wide styles can restyle. While map-wide styles are set, Google draws
+// every StyledMapType overlay unstyled (seen in Chrome: the satellite labels
+// lost their white text), so those two basemaps draw their own labels,
+// under the layers, and get no overlay. The other basemaps set no map styles.
+export const BASEMAPS = { satellite: "satellite", map: "roadmap-base", terrain: "terrain", darkterrain: "terrain", dark: "dark" };
 const NO_LABELS = [{ elementType: "labels", stylers: [{ visibility: "off" }] }];
+export const OWN_LABELS = new Set(["terrain", "darkterrain"]);
+export const DARK_TERRAIN_STYLE = [
+  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#26231f" }] },
+  { featureType: "landscape.natural.terrain", elementType: "geometry", stylers: [{ lightness: -70 }, { saturation: -60 }] },
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  // peak and park markers
+  { featureType: "landscape", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#3a3531" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f1a1c" }] },
+  { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#c9c0b8" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#141211" }] },
+];
+const TERRAIN_STYLE = [
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "landscape", elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+];
+// The map-wide styles for a basemap: null (none) except on the terrain types.
+export function mapStylesFor(key, labelsOn) {
+  if (!OWN_LABELS.has(key)) return null;
+  const base = key === "darkterrain" ? DARK_TERRAIN_STYLE : TERRAIN_STYLE;
+  return labelsOn ? base : [...base, ...NO_LABELS];
+}
 
 // The labels overlay: a labels-only map drawn above every layer, so opaque
 // layers do not hide place names. port of 4map-manager.js labelsMapType
@@ -110,9 +140,6 @@ export function createMap(el, store) {
     tilt: 0,
     streetViewControl: false,
     gestureHandling: "greedy",
-    // Google's own roadmap and terrain types draw no labels either (map-wide
-    // styles apply to them); labels come from the overlay.
-    styles: NO_LABELS,
   });
   gmap.mapTypes.set("dark", new g.StyledMapType([...DARK_STYLE, ...NO_LABELS], { name: "Dark" }));
   gmap.mapTypes.set("roadmap-base", new g.StyledMapType(NO_LABELS, { name: "Map" }));
@@ -123,7 +150,6 @@ export function createMap(el, store) {
   const labels = {
     satellite: new g.StyledMapType(SATELLITE_LABELS_STYLE, { name: "Satellite labels" }),
     map: new g.StyledMapType(LABELS_STYLE, { name: "Labels" }),
-    terrain: null,
     dark: new g.StyledMapType(labelsStyleFor(DARK_STYLE), { name: "Dark labels" }),
   };
 
@@ -138,6 +164,7 @@ export function createMap(el, store) {
   function setBasemap(key) {
     if (!BASEMAPS[key]) return;
     basemap = key;
+    gmap.setOptions({ styles: mapStylesFor(key, labelsOn) });
     gmap.setMapTypeId(BASEMAPS[key]);
     emit("basemap", key);
   }
@@ -145,6 +172,7 @@ export function createMap(el, store) {
     on = !!on;
     if (on === labelsOn) return;
     labelsOn = on;
+    if (OWN_LABELS.has(basemap)) gmap.setOptions({ styles: mapStylesFor(basemap, on) });
     // Remembered the way the original reads it: addLabelOverlay=false in the URL.
     try {
       const url = new URL(location.href);
@@ -308,8 +336,9 @@ export function createMap(el, store) {
     gmap,
     setBasemap,
     basemap: () => basemap,
-    // The labels map type for the current basemap, or null while labels are off.
-    labelsOverlay: () => (labelsOn ? labels[basemap] || labels.map : null),
+    // The labels map type for the current basemap; null while labels are off
+    // or on a basemap that draws its own (OWN_LABELS).
+    labelsOverlay: () => (labelsOn && labels[basemap]) || null,
     labelsOn: () => labelsOn,
     setLabels,
     onLabels: on("labels"),
