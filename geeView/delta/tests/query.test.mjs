@@ -106,7 +106,9 @@ test("seriesResult: values are matched to images by name, not position", () => {
   assert.deepEqual(r.data.series[0].y, [1, null, 3]);
   assert.deepEqual(r.data.series[0].labels, ["Trees", null, "Shrubs & Trees Mix"]);
   assert.equal(r.meta, "1985-06-01 to 1987-06-01");
-  assert.deepEqual(r.data.latest, { x: "1987-06-01", band: "Land_Cover", value: 3, label: "Shrubs & Trees Mix", color: "#008000" });
+  assert.deepEqual(r.data.latest, { x: "1987-06-01", band: "Land_Cover", value: 3, how: "latest", label: "Shrubs & Trees Mix", color: "#008000" });
+  // each point carries its class color (none where there is no data)
+  assert.deepEqual(r.data.series[0].classColors, ["#005e00", null, "#008000"]);
 });
 
 test("seriesResult: no images gives an empty series card", () => {

@@ -53,16 +53,26 @@ function chartFigure(r, settings, big) {
   const mute = token("--dz-mute");
   const line = token("--dz-line");
   const fontSize = settings.yLabelFontSize || 10;
-  const traces = d.series.map((s) => ({
-    x: d.x,
-    y: s.y.map(round),
-    customdata: s.labels.map((l) => (l === null ? "" : l)),
-    hovertemplate: s.labels.some((l) => l !== null) ? "%{x}<br>%{customdata} (%{y})<extra></extra>" : "%{x}<br>%{y}<extra></extra>",
-    mode: "lines+markers",
-    name: (String(s.name).slice(0, 50).match(/.{1,15}/g) || [s.name]).join("<br>"),
-    line: { color: s.color || undefined, width: 1 },
-    marker: { size: 6 },
-  }));
+  const traces = [];
+  d.series.forEach((s) => {
+    const name = (String(s.name).slice(0, 50).match(/.{1,15}/g) || [s.name]).join("<br>");
+    const y = s.y.map(round);
+    const base = {
+      x: d.x,
+      y,
+      customdata: s.labels.map((l) => (l === null ? "" : l)),
+      hovertemplate: s.labels.some((l) => l !== null) ? "%{x}<br>%{customdata} (%{y})<extra></extra>" : "%{x}<br>%{y}<extra></extra>",
+      name,
+    };
+    if (!s.classColors) {
+      traces.push({ ...base, mode: "lines+markers", line: { color: s.color || undefined, width: 1 }, marker: { size: 6 } });
+      return;
+    }
+    // Thematic: each point in its class's color, and the line held as a step in
+    // the class of the year it starts from, so the line's color is the class.
+    traces.push(...classSegments(d.x, y, s.classColors, mute));
+    traces.push({ ...base, mode: "markers", marker: { size: 7, color: s.classColors.map((c) => c || mute), line: { width: 1, color: token("--dz-solid") } } });
+  });
   let yaxis = { tickfont: { size: fontSize, color: mute }, gridcolor: line, zerolinecolor: line, automargin: true, title: d.yLabel ? { text: d.yLabel, font: { size: 12 } } : undefined };
   if (d.queryDict && d.series.length) {
     // Only the values present get a label; the rest of the range stays blank (as the original).
@@ -88,6 +98,29 @@ function chartFigure(r, settings, big) {
     yaxis,
   };
   return { traces, layout };
+}
+
+// Step-line traces for a thematic series: one trace per run of points that
+// share a class color, each held level until the next point (hv), drawn under
+// the markers, without hover or legend entries.
+export function classSegments(x, y, colors, fallback) {
+  const out = [];
+  let run = null;
+  for (let i = 0; i < y.length - 1; i++) {
+    if (y[i] === null || y[i + 1] === null) {
+      run = null;
+      continue;
+    }
+    const c = colors[i] || fallback;
+    if (!run || run.color !== c || run.end !== i) {
+      run = { color: c, xs: [x[i]], ys: [y[i]], end: i };
+      out.push(run);
+    }
+    run.xs.push(x[i + 1]);
+    run.ys.push(y[i + 1]);
+    run.end = i + 1;
+  }
+  return out.map((r) => ({ x: r.xs, y: r.ys, mode: "lines", line: { color: r.color, width: 2, shape: "hv" }, hoverinfo: "skip", showlegend: false }));
 }
 
 function plot(chartEl, r, settings, big) {
@@ -130,8 +163,12 @@ function seriesBody(r, settings) {
   if (last) {
     const row = el("div", "val-big");
     if (last.color) row.appendChild(swatch(last.color));
-    row.appendChild(el("span", "val-main", last.label !== null ? last.label : String(last.value)));
-    row.appendChild(el("span", "val-code mono", (last.label !== null ? "value " + last.value + ", " : "") + last.x));
+    const shown = last.label !== null ? last.label : Number.isInteger(last.value) ? String(last.value) : smartToFixed(last.value, 0.25, 3);
+    row.appendChild(el("span", "val-main", shown));
+    // say which value this is: the map draws a collection with its reducer
+    const how = last.how && last.how !== "latest" ? last.how + ", " : "";
+    row.appendChild(el("span", "val-code mono", how + (last.label !== null ? "value " + last.value + ", " : "") + last.x));
+    row.title = last.how === "latest" ? "The latest value, as the map shows this layer" : "The " + last.how + " over the series, as the map shows this layer";
     b.appendChild(row);
   } else {
     b.appendChild(el("div", "val-code", "No data at this point"));

@@ -123,6 +123,74 @@ export function imageResult(layer, viz, values, point, precision, units) {
   };
 }
 
+// The reducer a collection layer is drawn with (viz.reducer, serialized by
+// geeView.py; lastNonNull when not given, as engine/layers.js eeTileLayer).
+// Returns the Earth Engine name without "Reducer.", or null when it cannot be
+// read (a combined or custom reducer).
+export function displayReducer(viz) {
+  const r = viz && viz.reducer;
+  if (r === null || r === undefined || r === "") return "lastNonNull";
+  if (typeof r === "string") {
+    const m = /"functionName"\s*:\s*"Reducer\.(\w+)"/.exec(r);
+    return m ? m[1] : null;
+  }
+  try {
+    const sig = r.func && r.func.getSignature && r.func.getSignature();
+    if (sig && sig.name) return String(sig.name).replace(/^Reducer\./, "");
+  } catch (e) {
+    /* unreadable */
+  }
+  return null;
+}
+
+// What the map shows at this point for a collection layer: its series reduced
+// with the layer's own reducer, so the headline above the chart matches the
+// pixel on the map. Earth Engine reduces each pixel over the images that have
+// data there, as here over the non-null values. Unknown reducers fall back to
+// the latest value and say so.
+const SUMMARY = {
+  lastNonNull: { how: "latest", pick: (v) => v.length - 1 },
+  firstNonNull: { how: "first", pick: () => 0 },
+  mode: { how: "most common" },
+  mean: { how: "mean", calc: (v) => v.reduce((a, b) => a + b, 0) / v.length },
+  median: {
+    how: "median",
+    calc: (v) => {
+      const s = [...v].sort((a, b) => a - b);
+      const m = Math.floor(s.length / 2);
+      return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+    },
+  },
+  min: { how: "minimum", calc: (v) => Math.min(...v) },
+  max: { how: "maximum", calc: (v) => Math.max(...v) },
+  sum: { how: "sum", calc: (v) => v.reduce((a, b) => a + b, 0) },
+  count: { how: "count", calc: (v) => v.length },
+};
+// mode: the most frequent value; a tie goes to the smallest value
+export function modeOf(values) {
+  const n = new Map();
+  values.forEach((v) => n.set(v, (n.get(v) || 0) + 1));
+  let best = null;
+  n.forEach((c, v) => {
+    if (best === null || c > n.get(best) || (c === n.get(best) && v < best)) best = v;
+  });
+  return best;
+}
+export function summarize(reducer, x, y) {
+  const idx = [];
+  y.forEach((v, i) => v !== null && v !== undefined && idx.push(i));
+  if (!idx.length) return null;
+  const vals = idx.map((i) => y[i]);
+  const span = x.length ? (idx.length > 1 ? x[idx[0]] + " to " + x[idx[idx.length - 1]] : String(x[idx[0]])) : "";
+  const rule = SUMMARY[reducer] || null;
+  if (!rule || rule.pick) {
+    const i = idx[rule ? rule.pick(vals) : vals.length - 1];
+    return { value: y[i], x: x[i], how: rule ? rule.how : reducer ? "latest; the map shows " + reducer : "latest", reducer: rule ? reducer : null };
+  }
+  const value = rule.calc ? rule.calc(vals) : modeOf(vals);
+  return { value, x: span, how: rule.how, reducer };
+}
+
 // port of getCollectionValues: one trace per band over the collection's
 // images. `out` is {ids, labels, bands, values, hasTime} where values holds
 // the stacked image's reduceRegion answer keyed `${id}_${band}`.
@@ -139,22 +207,33 @@ export function seriesResult(layer, viz, out, point, precision, dateFormat, unit
           return v === undefined ? null : v;
         });
         const unit = units && units[band];
+        // a thematic band: each value's class color (null where it has none)
+        const classColors = y.map((v) => (v === null ? null : colorOf(viz, band, v)));
         return {
           name: unit ? band + " (" + unit + ")" : band,
+          band,
           y,
           labels: y.map((v) => labelOf(viz, band, v)),
           color: palette[i] !== undefined ? addColorHash(String(palette[i]).replace(/^#/, "")) : null,
+          classColors: classColors.some((c) => c !== null) ? classColors : null,
         };
       })
     : [];
+  // The headline: the first band reduced the way the map draws this layer.
   let latest = null;
   if (series.length) {
     const s = series[0];
-    for (let i = s.y.length - 1; i >= 0; i--) {
-      if (s.y[i] !== null) {
-        latest = { x: x[i], band: s.name, value: s.y[i], label: s.labels[i], color: colorOf(viz, s.name, s.y[i]) };
-        break;
-      }
+    const sum = summarize(displayReducer(viz), x, s.y);
+    if (sum) {
+      const isInt = Number.isInteger(sum.value);
+      latest = {
+        x: sum.x,
+        band: s.name,
+        value: sum.value,
+        how: sum.how,
+        label: isInt ? labelOf(viz, s.band, sum.value) : null,
+        color: isInt ? colorOf(viz, s.band, sum.value) : null,
+      };
     }
   }
   // port of getQueryImages: the layer's queryDateFormat, else the default (setQueryDateFormat)
