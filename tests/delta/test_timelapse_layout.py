@@ -1,6 +1,7 @@
 """Delta timelapse block layout: the Year and Speed sliders line up with the
-row's opacity slider, the buttons sit beside or above them, nothing is cut
-off at any left-pane width, and the Cumulative chip.
+row's opacity slider, the buttons sit inline to their left (above them when
+the row stacks or they cannot fit), the frame's year is the year slider's
+label, nothing is cut off at any left-pane width, and the Cumulative button.
 
 Offline: the shell stub (no Earth Engine) with a timelapse row built from the
 store, as Python's Map.addTimeLapse would leave it once loaded.
@@ -27,7 +28,8 @@ MEASURE = """() => {
   const shown = (el) => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
   const name = row.querySelector('.lname');
   const chip = row.querySelector('[data-tl=cumulative]');
-  const readout = row.querySelector('.tl-year');
+  // the frame's year: the year slider's own label (no separate readout)
+  const readout = row.querySelector('.tl-lbl.tl-year');
   return {
     stack: row.classList.contains('stack'),
     pane: r(document.querySelector('#pane-left')),
@@ -90,7 +92,7 @@ def check_not_clipped(w, m):
     assert not m["name"]["cut"], (w, m["name"])
     assert not m["chip"]["cut"], (w, m["chip"])
     assert not m["readout"]["cut"], (w, m["readout"])
-    controls = [b["rect"] for b in m["buttons"]] + [m["readout"]["rect"]] + [l["rect"] for l in m["labels"]]
+    controls = [b["rect"] for b in m["buttons"]] + [l["rect"] for l in m["labels"]]  # the readout is a label
     for l in m["labels"]:
         assert not l["cut"], (w, l)
     # Everything sits inside the row (and so inside the pane), never past its edge.
@@ -135,7 +137,7 @@ def test_every_width_aligned_and_unclipped(page):
 def test_buttons_beside_sliders_when_wide(page):
     m = at(page, LEFT_MAX)
     assert not m["stack"]
-    left, right, top, bottom = band([b["rect"] for b in m["buttons"]] + [m["readout"]["rect"]])
+    left, right, top, bottom = band([b["rect"] for b in m["buttons"]])
     assert right < m["year"]["left"], (right, m["year"])
     # labels sit left of their sliders, after the buttons
     for l in m["labels"]:
@@ -144,17 +146,23 @@ def test_buttons_beside_sliders_when_wide(page):
     assert top < m["speed"]["bottom"] and m["year"]["top"] < bottom, (top, bottom, m["year"], m["speed"])
 
 
-def test_sliders_under_buttons_when_narrow_inline(page):
+def test_buttons_inline_in_one_row_at_the_default_width(page):
+    """The buttons stay in one row to the left of the two sliders, and the
+    row is as tall as the two compact sliders together."""
     m = at(page, LEFT_DEFAULT)
     assert not m["stack"]
-    _, _, _, bottom = band([b["rect"] for b in m["buttons"]] + [m["readout"]["rect"]])
-    assert m["year"]["top"] > bottom and m["speed"]["top"] > bottom, (bottom, m["year"], m["speed"])
+    rects = [b["rect"] for b in m["buttons"]]
+    assert len({round(r["top"]) for r in rects}) == 1, rects
+    left, right, top, bottom = band(rects)
+    assert right < min(l["rect"]["left"] for l in m["labels"]), (right, m["labels"])
+    assert abs(top - m["year"]["top"]) <= 1.5 and abs(bottom - m["speed"]["bottom"]) <= 1.5, (top, bottom, m["year"], m["speed"])
+    assert all(r["height"] == 24 for r in rects), rects
 
 
 def test_stacked_buttons_then_sliders(page):
     m = at(page, LEFT_MIN)
     assert m["stack"]
-    _, _, _, bottom = band([b["rect"] for b in m["buttons"]] + [m["readout"]["rect"]])
+    _, _, _, bottom = band([b["rect"] for b in m["buttons"]])
     assert m["year"]["top"] > bottom and m["speed"]["top"] > bottom
     assert m["year"]["top"] > m["op"]["bottom"]
 
@@ -162,18 +170,20 @@ def test_stacked_buttons_then_sliders(page):
 def test_labels_and_no_year_value(page):
     at(page, LEFT_DEFAULT)
     row = "#layer-list .layer.is-tl"
-    # the big readout is the year; the slider has no value of its own
+    # the year slider's label is the frame's year; no separate value
     assert page.locator(row + " [data-tl=yearv]").count() == 0
-    assert page.locator(row + " .tl-year").inner_text() == "2018"
+    assert page.locator(row + " .tl-year").count() == 1
+    assert page.locator(row + " .tl-lbl.tl-year").inner_text() == "2018"
     assert page.locator(row + " [data-tl=speedv]").inner_text() == "1.5 fps"
     m = page.evaluate(MEASURE)
     labels = {l["text"]: l["rect"] for l in m["labels"]}
-    assert set(labels) == {"Year", "1.5 fps"}
-    # immediately left of their slider, on its line
-    for text, s in (("Year", m["year"]), ("1.5 fps", m["speed"])):
+    assert set(labels) == {"2018", "1.5 fps"}
+    # immediately left of their slider, on its line, right edges flush (right-justified)
+    for text, s in (("2018", m["year"]), ("1.5 fps", m["speed"])):
         lr = labels[text]
         assert lr["right"] <= s["left"] and s["left"] - lr["right"] <= 10, (text, lr, s)
         assert lr["top"] < s["bottom"] and s["top"] < lr["bottom"], (text, lr, s)
+    assert abs(labels["2018"]["right"] - labels["1.5 fps"]["right"]) <= 0.5, labels
     # the speed label follows the slider without moving it
     before = page.evaluate(MEASURE)["speed"]
     page.locator(row + " input[data-tl=speed]").fill("3")
@@ -186,7 +196,7 @@ def test_cumulative_button(page):
     at(page, LEFT_DEFAULT)
     sel = "#layer-list .layer.is-tl [data-tl=cumulative]"
     btn = page.locator(sel)
-    # an icon-only transport button, right after refresh
+    # an icon-only transport button, right after the last step button
     assert btn.inner_text().strip() == ""
     assert btn.get_attribute("title") == "Show every year up to this one stacked together"
     assert btn.get_attribute("aria-label") == "Cumulative"
@@ -194,7 +204,8 @@ def test_cumulative_button(page):
     assert btn.locator("svg").count() == 2  # one icon per state; CSS shows one
     geo = page.evaluate("""(s) => {
       const c = document.querySelector(s);
-      const r = c.closest('.tl').querySelector('[data-tl=refresh]');
+      // refresh shows only when frames failed, so the neighbor is forward
+      const r = c.closest('.tl').querySelector('[data-tl=forward]');
       const vis = Array.from(c.parentElement.children).filter(e => e.getClientRects().length);
       const cr = c.getBoundingClientRect(), rr = r.getBoundingClientRect();
       return {same: c.className === r.className || c.classList.contains('tlb') && r.classList.contains('tlb'),
@@ -204,7 +215,8 @@ def test_cumulative_button(page):
               border: getComputedStyle(c).borderStyle === getComputedStyle(r).borderStyle};
     }""", sel)
     assert geo["same"] and geo["parentSame"] and geo["next"], geo
-    assert geo["w"] == geo["rw"] and geo["h"] == geo["rh"] and geo["radius"] and geo["border"], geo
+    # as tall as its neighbors, a little wider for its bigger icon
+    assert geo["h"] == geo["rh"] and geo["w"] > geo["rw"] and geo["radius"] and geo["border"], geo
     assert 0 <= geo["gap"] <= 6 and geo["dy"] < 0.5, geo
     assert page.locator("#layer-list .layer.is-tl .tl-cum").count() == 0
     off = page.evaluate("(s) => getComputedStyle(document.querySelector(s)).backgroundColor", sel)
@@ -244,9 +256,9 @@ def test_cumulative_icon_switches_with_state(delta_page, scheme, w):
     set_left_width(page, w)
     off = page.evaluate(ICON, CHIP)
     assert [i["state"] for i in off] == ["off"] and not off[0]["joined"], off
-    # the size of the neighbors' icons (the transport buttons' font size)
-    size = page.evaluate("(s) => parseFloat(getComputedStyle(document.querySelector(s).closest('.tl').querySelector('[data-tl=refresh]')).fontSize)", CHIP)
-    assert abs(off[0]["w"] - size) <= 0.5 and abs(off[0]["h"] - size) <= 0.5, (off, size)
+    # one em of the button's own font, larger than its neighbors' icons
+    size, near = page.evaluate("(s) => { const c = document.querySelector(s); return [parseFloat(getComputedStyle(c).fontSize), parseFloat(getComputedStyle(c.closest('.tl').querySelector('[data-tl=forward]')).fontSize)]; }", CHIP)
+    assert abs(off[0]["w"] - size) <= 0.5 and abs(off[0]["h"] - size) <= 0.5 and size > near, (off, size, near)
     assert off[0]["stroke"] == "currentColor" and off[0]["fill"] == "none", off
     set_cumulative(page, True)
     assert page.get_attribute(CHIP, "aria-pressed") == "true"

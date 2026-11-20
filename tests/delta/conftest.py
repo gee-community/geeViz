@@ -36,7 +36,12 @@ def delta_server():
     srv.shutdown()
 
 
-@pytest.fixture(scope="session")
+# Per test file, not per session: Playwright's sync API runs an asyncio
+# event loop in the main thread while it is open, and a session-long browser
+# kept it running through the rest of the suite, so every later test calling
+# asyncio.run (the MCP server tests) failed with "cannot be called from a
+# running event loop".
+@pytest.fixture(scope="module")
 def _browser():
     sync_api = pytest.importorskip("playwright.sync_api")
     with sync_api.sync_playwright() as p:

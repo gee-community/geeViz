@@ -50,13 +50,17 @@
     <script type="text/javascript" src="./src/gee/gee-run/runGeeViz.js"></script>
     <!-- This map's own run script, when Map.view() names it (?run=<token>): it
          loads after the shared one and defines runGeeViz last, so another
-         notebook's Map.view() rewriting the shared file cannot change this map. -->
+         notebook's Map.view() rewriting the shared file cannot change this map.
+         export_html removes it (between the markers): an exported page
+         carries its run script inline. -->
+    <!-- run-loader -->
     <script>
       (function () {
         var m = /[?&]run=([0-9a-f]{8,32})(?:&|$)/.exec(location.search);
         if (m) document.write('<script src="./src/gee/gee-run/runGeeViz-' + m[1] + '.js"><\/script>');
       })();
     </script>
+    <!-- /run-loader -->
     <script type="module" src="./delta/js/main.js"></script>
   </head>
   <body>

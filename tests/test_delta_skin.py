@@ -127,9 +127,12 @@ def _spy_view(monkeypatch, m, mode, skin):
         m.setAuthMode("legacy")
     else:
         m.setAuthMode(None)
-        from geeViz.eeAuth import eeCreds as ec_mod
+        # the default mode, whatever the session set (eeAuth/tests' conftest
+        # forces legacy for every test in the run when it is collected)
+        monkeypatch.delenv("GEEVIZ_EEAUTH_MODE", raising=False)
+        import importlib  # the singleton itself: see the testView test below
         monkeypatch.setattr(
-            ec_mod, "ensure_started",
+            importlib.import_module("geeViz.eeAuth.eeCreds").eeCreds, "ensure_started",
             lambda **kw: {"proxy_url": "http://127.0.0.1:8123", "current": "t",
                           "tenants": ["t"], "mode": "detached"})
     m.setSkin(skin)
@@ -202,12 +205,18 @@ def test_testView_screenshots_the_page_view_built(monkeypatch, skin):
     monkeypatch.setattr(gv.time, "sleep", lambda *_a: None)
     monkeypatch.setattr(gv, "_ensure_server", lambda port: port)
     monkeypatch.setattr(gv, "_set_ee_api_upstream", lambda *_a: None)
-    from geeViz.eeAuth import eeCreds as ec_mod
+    # The singleton view() imports (from geeViz.eeAuth.eeCreds import eeCreds).
+    # Not "from geeViz.eeAuth import eeCreds": once any test imports the
+    # submodule geeViz.eeAuth.eeCreds, that package attribute is the MODULE,
+    # the patch misses the singleton, and view() falls back to a legacy URL.
+    import importlib
+    ec_inst = importlib.import_module("geeViz.eeAuth.eeCreds").eeCreds
     monkeypatch.setattr(
-        ec_mod, "ensure_started",
+        ec_inst, "ensure_started",
         lambda **kw: {"proxy_url": "http://127.0.0.1:8123", "current": "t",
                       "tenants": ["t"], "mode": "detached"})
     m.setAuthMode(None)
+    monkeypatch.delenv("GEEVIZ_EEAUTH_MODE", raising=False)  # as above
     m.setSkin(skin)
     res = m.testView()
     # It screenshots the page view() built, without opening a browser or

@@ -192,6 +192,10 @@ def test_export_html_delta_assets_resolve_under_mount(tmp_path):
     # No relative ./ path survived the rewrite (it would resolve against
     # wherever the host serves the page, not the mount).
     assert '"./' not in html
+    # The per-map run script loader is gone: the run script is inline, and a
+    # ?run= on a hosted page must not load a file over it.
+    assert "runGeeViz-" not in html and "run-loader" not in html
+    assert html.count("function runGeeViz") == 1, html.count("function runGeeViz")
     for ph in ("__GEEVIZ_TOKEN__", "__GEEVIZ_TOKEN_TIME__", "__GEEVIZ_PROJECT__", "__GEEVIZ_AUTH_PROXY__"):
         assert ph in html, ph
 
@@ -237,3 +241,102 @@ def test_testView_delta_screenshot_no_tile_errors(monkeypatch):
     finally:
         if p.is_file():
             p.unlink()
+
+
+# ---- askterra parity: a mixed map, wind included, exported and served the
+# way the agent serves its chat maps, in each skin ----
+
+GFS = "NOAA/GFS0P25"
+WIND_UV = ["u_component_of_wind_10m_above_ground", "v_component_of_wind_10m_above_ground"]
+
+# Painted pixels on a wind overlay's particle canvas (geeView/src/js/wind-particles.js,
+# shared by both skins): {key: [particles, running]} for every adopted overlay.
+WIND_PAINT = """() => {
+  const wp = window.geeVizWindParticles;
+  if (!wp) return null;
+  const out = {};
+  for (const [k, st] of Object.entries(wp._adopted)) {
+    const c = st.canvas; let n = 0;
+    if (c && c.width && c.height) {
+      const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+      for (let i = 3; i < d.length; i += 4) if (d[i] > 0) n++;
+    }
+    out[k] = [n, !!st.running];
+  }
+  return out;
+}"""
+
+
+def _mixed_map(skin):
+    gv = _gv()
+    ee = gv.ee
+    Map = gv.mapper()
+    Map.setSkin(skin)
+    Map.addLayer(ee.Image("USGS/SRTMGL1_003"), {"min": 0, "max": 3000}, "SRTM")
+    lcms = ee.ImageCollection("projects/gtac-data-publish/assets/LCMS/Product_Version/2025-11").filter('study_area=="CONUS"').select(["Land_Cover"])
+    Map.addLayer(lcms, {"autoViz": True}, "LCMS Land Cover")
+    Map.addLayer(ee.FeatureCollection([ee.Feature(ee.Geometry.Point([-105.5, 39.5]).buffer(20000))]), {}, "Buffer")
+    run = ee.ImageCollection(GFS).filterDate("2026-11-10T00:00", "2026-11-10T01:00").filter(ee.Filter.eq("forecast_hours", 0))
+    Map.addWindLayer(ee.Image(run.first()).select(WIND_UV), {"units": "mi/hr"}, "Wind")
+    Map.setCenter(-105.5, 39.5, 6)
+    return Map
+
+
+def _wait_wind(page, timeout=90):
+    deadline = time.time() + timeout
+    last = None
+    while time.time() < deadline:
+        last = page.evaluate(WIND_PAINT)
+        if last and any(n > 0 and run for n, run in last.values()):
+            return last
+        time.sleep(0.5)
+    raise AssertionError("no wind particles drawn: %r" % (last,))
+
+
+def _served_cleanly(page, agent_server):
+    assert page.ee_api, "no Earth Engine call went through /ee-api"
+    assert all(u.startswith(agent_server + "/ee-api/") and s == 200 for s, u in page.ee_api), [x for x in page.ee_api if x[0] != 200]
+    assert page.tiles, "no Earth Engine map tile was loaded"
+    assert all(s == 200 and t.startswith("image/") for s, t in page.tiles), [t for t in page.tiles if t[0] != 200]
+    assert [b for b in page.bad if b[1].startswith(agent_server)] == []
+
+
+@pytest.mark.live
+def test_export_html_original_mixed_map_with_wind_served_like_the_agent(agent_server, _browser, tmp_path):
+    """askterra's chat maps use the original skin: every layer type, wind
+    included, still loads and draws through the agent's mount and /ee-api."""
+    path = _export(_mixed_map("original"), tmp_path, "orig_mixed")
+    ctx, page = _open(_browser, agent_server + path)
+    try:
+        page.wait_for_function("document.querySelectorAll('#layer-list > li .layer-span').length >= 4", timeout=120000)
+        names = page.evaluate("Array.from(document.querySelectorAll('#layer-list > li .layer-span')).map(s => s.textContent.trim())")
+        assert sorted(names) == sorted(["SRTM", "LCMS Land Cover", "Buffer", "Wind"]), names
+        _wait_wind(page)
+        # the image tiles keep arriving after the wind starts; give them a moment
+        deadline = time.time() + 60
+        while time.time() < deadline and len(page.tiles) < 4:
+            time.sleep(0.5)
+        _served_cleanly(page, agent_server)
+        assert page.evaluate("Map.turnOffLayersWhenTimeLapseIsOn") is True  # the original's own default, unset by Python
+        assert page.delta_errors == []
+    finally:
+        ctx.close()
+
+
+@pytest.mark.live
+def test_export_html_delta_mixed_map_with_wind_served_like_the_agent(agent_server, _browser, tmp_path):
+    path = _export(_mixed_map("delta"), tmp_path, "delta_mixed")
+    ctx, page = _open(_browser, agent_server + path)
+    try:
+        page.wait_for_function("window.__delta !== undefined && window.__delta.ready === true", timeout=90000)
+        deadline = time.time() + 90
+        while time.time() < deadline and page.evaluate("__delta.store.get().layers.some(l => l.loading)"):
+            time.sleep(0.5)
+        layers = page.evaluate("__delta.store.get().layers.map(l => ({name: l.name, loading: l.loading, error: l.error}))")
+        assert sorted(l["name"] for l in layers) == sorted(["SRTM", "LCMS Land Cover", "Buffer", "Wind"]), layers
+        assert all(l["loading"] is False and l["error"] is None for l in layers), layers
+        _wait_wind(page)
+        _served_cleanly(page, agent_server)
+        assert page.delta_errors == []
+    finally:
+        ctx.close()

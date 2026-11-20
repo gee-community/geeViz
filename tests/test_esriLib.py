@@ -37,27 +37,28 @@ _mock_map = MagicMock()
 _mock_gv = types.ModuleType("geeViz.geeView")
 _mock_gv.Map = _mock_map
 
-# Remember whatever was there so teardown_module can put it back. The
-# stub used to be installed permanently, which is invisible when this
-# file runs alone but leaks into any suite sharing the process: running
-# ``pytest geeViz/tests geeViz/eeAuth/tests`` left the eeAuth tests
-# importing this MagicMock instead of the real module, and 6 of them
-# failed on ``geeViz.geeView has no attribute _set_ee_api_upstream``.
-_PREV_GEEVIEW = sys.modules.get("geeViz.geeView", None)
+# The stub is in place only while this file's tests run (setup_module to
+# teardown_module): esriLib imports geeViz.geeView inside its functions, so
+# they find it then. It used to be installed when pytest IMPORTED this file,
+# which is during collection, before any test of the run: every test that
+# ran earlier and imported geeViz.geeView got this stub instead ("module
+# 'geeViz.geeView' has no attribute 'mapper'" across the live viewer tests
+# in tests/delta, which sort first). Before that it was never removed, and
+# the eeAuth tests failed on "no attribute _set_ee_api_upstream".
+_PREV_GEEVIEW = None
 
-# Pre-install the stub before esriLib is imported
-sys.modules["geeViz.geeView"] = _mock_gv
+import geeViz.esriLib as el  # noqa: E402  (no module-level geeView import)
 
-import geeViz.esriLib as el  # noqa: E402  (after stubs are installed)
+
+def setup_module(module):
+    global _PREV_GEEVIEW
+    _PREV_GEEVIEW = sys.modules.get("geeViz.geeView", None)
+    sys.modules["geeViz.geeView"] = _mock_gv
 
 
 def teardown_module(module):
-    """Undo the module-level ``sys.modules`` stub.
-
-    ``esriLib`` keeps its own reference to the stub from import time, so
-    the tests above are unaffected; this only stops the stub leaking to
-    whatever imports ``geeViz.geeView`` next.
-    """
+    """Undo the ``sys.modules`` stub, so it never reaches whatever
+    imports ``geeViz.geeView`` next."""
     if _PREV_GEEVIEW is not None:
         sys.modules["geeViz.geeView"] = _PREV_GEEVIEW
     else:

@@ -126,6 +126,41 @@ def test_the_agent_still_installs_the_extra():
         "loses scipy/sklearn/statsmodels/seaborn/tabulate/geopandas")
 
 
+# Modules that use an extra package as an OPTIONAL feature: imported only
+# inside the function that needs it, never at module level, and refused with
+# an install hint when it is missing, so a plain 'pip install geeviz' still
+# imports and runs. eeAuth/vector_convert.py converts uploaded vector files
+# (the viewer's Chart area Upload) and answers 501 "Install geopandas and
+# pyogrio (pip install geeViz[mcp])" without them.
+OPTIONAL_USERS = {
+    "vector_convert.py": ({"geopandas", "pyogrio"}, "pip install geeViz[mcp]"),
+}
+
+
+def test_optional_users_stay_optional():
+    """The allowance above holds only while the module keeps its side of
+    it: no module-level import of the package, and an ImportError guard
+    that tells the user what to install."""
+    for name, (pkgs, hint) in OPTIONAL_USERS.items():
+        [f] = [p for p in (ROOT / "geeViz").rglob(name) if "/tests/" not in str(p).replace("\\", "/")]
+        src = f.read_text(encoding="utf-8")
+        tree = ast.parse(src)
+        top = set()
+        for n in tree.body:
+            if isinstance(n, ast.Import):
+                top |= {a.name.split(".")[0] for a in n.names}
+            elif isinstance(n, ast.ImportFrom) and n.module and n.level == 0:
+                top.add(n.module.split(".")[0])
+        assert not (top & pkgs), (name, top & pkgs)
+        guarded = any(
+            isinstance(h, ast.ExceptHandler) and isinstance(h.type, ast.Name) and h.type.id == "ImportError"
+            and {a.name.split(".")[0] for t in n.body if isinstance(t, ast.Import) for a in t.names} >= pkgs
+            for n in ast.walk(tree) if isinstance(n, ast.Try) for h in n.handlers
+        )
+        assert guarded, f"{name} no longer guards {pkgs} with an ImportError handler"
+        assert hint in src, f"{name} no longer tells the user to run {hint!r}"
+
+
 def test_nothing_in_geeviz_imports_the_repl_packages():
     """They are an extra, not a core dependency, precisely because the
     library does not need them. If geeViz starts importing one it must
@@ -152,6 +187,8 @@ def test_nothing_in_geeviz_imports_the_repl_packages():
                 mods = [n.module.split(".")[0]]
             for m in mods:
                 key = "scikit-learn" if m == "sklearn" else m
+                if f.name in OPTIONAL_USERS and key in OPTIONAL_USERS[f.name][0]:
+                    continue  # optional and guarded: see test_optional_users_stay_optional
                 if key in REPL_CONTRACT:
                     offenders.setdefault(key, set()).add(f.name)
     assert not offenders, (

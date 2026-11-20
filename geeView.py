@@ -2708,6 +2708,14 @@ class mapper:
                 "<script>" + run_js + "</script>"
             ),
         )
+        # The Delta page's per-map run script loader (Map.view's ?run=<token>)
+        # has nothing to load here: the run script is inline above. Left in, a
+        # ?run= on a hosted page would load a stale file over it.
+        _rl_start, _rl_end = "<!-- run-loader -->", "<!-- /run-loader -->"
+        if _rl_start in html and _rl_end in html:
+            _a = html.index(_rl_start)
+            _b = html.index(_rl_end, _a) + len(_rl_end)
+            html = html[:_a] + html[_b:]
         # Now rewrite the rest of the ./src/ asset paths
         html = html.replace('href="./src/', 'href="' + asset_base + '/src/')
         html = html.replace('src="./src/', 'src="' + asset_base + '/src/')
