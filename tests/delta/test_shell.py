@@ -59,8 +59,11 @@ def test_hamburger_hides_and_shows(delta_page):
     page.reload()
     booted(page)
     assert page.evaluate("__delta.store.get().panes.left.visible") is False
+    # after a reload under load the float button can still be settling:
+    # wait for it, then for the store, rather than reading at once
+    page.locator("#hamburger-float").wait_for(state="visible")
     page.click("#hamburger-float")
-    assert page.evaluate("__delta.store.get().panes.left.visible") is True
+    page.wait_for_function("__delta.store.get().panes.left.visible === true", timeout=5000)
     assert "showSidebar=false" not in page.url
     page.wait_for_function("document.querySelector('#pane-left').getBoundingClientRect().right > 499")
 
