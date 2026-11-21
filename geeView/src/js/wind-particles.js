@@ -956,7 +956,7 @@
     var nwTx = lonToTileX(nw.lng(), z);
     var nwTy = latToTileY(Math.min(85, Math.max(-85, nw.lat())), z);
     return {
-      side: side, nwTx: nwTx, nwTy: nwTy,
+      nw: nw, side: side, nwTx: nwTx, nwTy: nwTy,
       x0: Math.floor(nwTx), y0: Math.floor(nwTy),
       // +1 for the partial tile the corner starts inside of, +1 for the
       // partial tile at the far edge.
@@ -1044,6 +1044,11 @@
     if (!tile) return false;
     var side = tile.side, nwTx = tile.nwTx, nwTy = tile.nwTy;
 
+    // This paint is laid out from st.origin, so the canvas goes there,
+    // and remembers the place it was painted for (see draw()).
+    st.speedNw = tile.nw;
+    st.speedCanvas.style.left = st.origin.x + "px";
+    st.speedCanvas.style.top = st.origin.y + "px";
     ctx.clearRect(0, 0, st.w, st.h);
 
     // One tile's worth of scratch, reused. A fresh ImageData per tile
@@ -1133,6 +1138,26 @@
         ? 0
         : nowMs() + Math.max(REBUILD_MS, (nowMs() - paintStart) * REBUILD_DUTY);
     return any;
+  }
+
+  /**
+   * Where, in div pixels, the speed canvas belongs for a paint made with
+   * its NW corner at ``nw``, given the view's own corner ``p``.
+   *
+   * fromLatLngToDivPixel may answer with any copy of the world, because
+   * google.maps normalizes longitude; the right one is the copy nearest
+   * the view, so x is moved by whole world widths toward ``p``.
+   */
+  function speedCanvasAt(proj, nw, p) {
+    var q = proj.fromLatLngToDivPixel(nw);
+    if (!q) return p;
+    var world = proj.getWorldWidth ? proj.getWorldWidth() : 0;
+    var x = q.x;
+    if (world > 0) {
+      while (x - p.x > world / 2) x -= world;
+      while (p.x - x > world / 2) x += world;
+    }
+    return { x: x, y: q.y };
   }
 
   /** Repaint only when the view, the hour or the size moved. */
@@ -1238,14 +1263,23 @@
         st.particles = null;
       }
       if (st.speedCanvas) {
-        st.speedCanvas.style.left = p.x + "px";
-        st.speedCanvas.style.top = p.y + "px";
         if (st.speedCanvas.width !== w || st.speedCanvas.height !== h) {
           st.speedCanvas.width = w; st.speedCanvas.height = h;
           st.speedKey = null;            // a resize invalidates the paint
+          st.speedNw = null;
         }
+        // The raster stays where its PAINT belongs, not where the view
+        // is now: placed at the NW corner it was painted for, so until
+        // the next paint lands it moves with the map instead of
+        // carrying old pixels to a new place. See speedCanvasAt.
+        var q = st.speedNw ? speedCanvasAt(proj, st.speedNw, p) : p;
+        st.speedCanvas.style.left = q.x + "px";
+        st.speedCanvas.style.top = q.y + "px";
       }
       st.origin = p; st.proj = proj; st.w = w; st.h = h;
+      st.viewGeom = [global.map.getZoom(),
+                     originLatLng.lat().toFixed(6),
+                     originLatLng.lng().toFixed(6), w, h].join("|");
       // Tiles track the map, so Earth Engine's bicubic is evaluated at
       // roughly the resolution it will be shown at and the client can
       // sample the nearest pixel and be done.
@@ -1444,14 +1478,23 @@
 
   /** What the field was built for. Changes on pan, zoom or resize. */
   function viewKey(st) {
-    var c = global.map && global.map.getCenter();
+    // The view the canvases are POSITIONED for (st.viewGeom, written by
+    // draw() together with st.origin and st.proj), not map.getCenter().
+    //
+    // The center moves ahead of draw() during a fast pan with momentum:
+    // a repaint between the two used the old origin but was keyed with
+    // the new center, so when draw() then moved the canvas to the new
+    // origin the key still matched and nothing repainted. The speed
+    // raster sat offset from the map, showing the wind of the wrong
+    // place, until the next zoom or hour. Keying on draw()'s own
+    // geometry means a paint can only be reused at the exact position
+    // it was made for.
+    //
     // st.frameId is part of the key: the field is a resample of the
     // decoded tiles, and advancing a frame changes the data under an
     // unchanged view. Without it the lapse would play with frame 1's
     // vectors forever.
-    return [global.map && global.map.getZoom(),
-            c ? c.lat().toFixed(5) : "?", c ? c.lng().toFixed(5) : "?",
-            st.w, st.h, st.frameId || "_"].join("|");
+    return [st.viewGeom || "?", st.frameId || "_"].join("|");
   }
 
   /**
@@ -2052,6 +2095,8 @@
         // Drop the KEY, not the arrays: buildField refills them in
         // place unless the canvas itself changed size.
         adopted[id].fieldKey = null;
+        adopted[id].speedKey = null;      // and the raster, likewise
+        adopted[id].paintAgainAt = 0;
         adopted[id].buildAgainAt = 0;
         adopted[id].particles = null;     // reseed into the new view
         // A pan or zoom invalidates every frame's warmed tiles, not
@@ -2436,6 +2481,11 @@
     _ensureField: ensureField,
     _renderSpeedRaster: renderSpeedRaster,
     _ensureSpeedRaster: ensureSpeedRaster,
+    // The overlay's draw(), which places both canvases. Where the raster
+    // sits against where it was painted for is the whole of the
+    // fast-pan offset bug, and only running draw() can show it.
+    _makeOverlay: makeOverlay,
+    _speedCanvasAt: speedCanvasAt,
     _range: [TILE_MIN, TILE_MAX],
   };
 })(typeof window !== "undefined" ? window : this);

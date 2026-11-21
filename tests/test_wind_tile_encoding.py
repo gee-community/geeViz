@@ -1014,9 +1014,14 @@ def test_the_field_is_rebuilt_when_the_view_moves():
     rather than during the drag."""
     src = _strip_js_comments(JS.read_text(encoding="utf-8"))
     key = _strip_js_comments(_js_fn_body("viewKey"))
-    for part in ("getZoom()", "lat()", "lng()", "st.w", "st.h"):
-        assert part in key, (
-            f"viewKey ignores {part}; the field will go stale without "
+    # The key is the geometry draw() positioned the canvases for, not
+    # map.getCenter(), which runs ahead of draw() during a pan with
+    # momentum (see test_wind_raster_anchor.py).
+    assert "st.viewGeom" in key and "getCenter" not in key
+    geom = src[src.index("st.viewGeom = ["):][:200]
+    for part in ("getZoom()", "lat()", "lng()", " w,", " h]"):
+        assert part in geom, (
+            f"the view key ignores {part}; the field will go stale without "
             f"anything noticing")
     ensure = _strip_js_comments(_js_fn_body("ensureField"))
     assert "st.fieldKey === viewKey(st)" in ensure
