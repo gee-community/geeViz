@@ -93,6 +93,21 @@ def rate_of_spread(fuels, terrain, *,
         ``ee.Image`` band ``ros_ft_min``, masked where the fuel model is
         not in the parameter table and forced to zero on non-burnable
         models.
+
+    Display:
+        Use a fixed stretch, not ``tl.auto_viz``: rate of spread has a
+        known physical range, and a fixed one keeps maps of different
+        days or places comparable. Typical magnitudes (1 chain/h is
+        about 1.1 ft/min): timber litter 1-10 ft/min, shrub 10-50, grass
+        in wind 50-300 and more.
+
+        * mixed fuels: ``{"min": 0, "max": 100}``
+        * timber-dominated: ``{"min": 0, "max": 20}``
+        * grass or shrub under strong wind: ``{"min": 0, "max": 200}``
+
+        with a low-to-high fire palette, for example
+        ``["ffffb2", "fecc5c", "fd8d3c", "f03b20", "bd0026"]``. Values
+        above ``max`` show as the top color, which is the right reading.
     """
     import ee
 

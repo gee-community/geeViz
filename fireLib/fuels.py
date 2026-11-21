@@ -140,6 +140,21 @@ def terrain_layers(dem_asset: str = "USGS/3DEP/10m", *, region: Any = None):
         ``slope_tan`` (tangent of slope, which is the form Rothermel's
         slope factor actually consumes).
 
+    Display:
+        Every band has a known range, so use a fixed stretch, not
+        ``tl.auto_viz`` (which spends a ``reduceRegion`` to learn it):
+
+        * ``slope`` (degrees): ``{"min": 0, "max": 30}`` for most
+          terrain; ``{"min": 0, "max": 60}`` for steep mountains.
+        * ``aspect`` (degrees): ``{"min": 0, "max": 360}`` with a
+          palette that starts and ends on the same color, since 0 and
+          360 are both north.
+        * ``northness`` / ``eastness``: ``{"min": -1, "max": 1}`` with a
+          diverging palette.
+        * ``slope_tan``: ``{"min": 0, "max": 1}`` (0 to 45 degrees).
+        * ``elevation`` depends on the place: here ``tl.auto_viz`` is
+          the right call, or a known local range.
+
     Note:
         ``northness`` / ``eastness`` exist because **raw aspect must
         never be fed to a model or a statistic.** 359 degrees and 1

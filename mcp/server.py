@@ -97,6 +97,10 @@ if _SANDBOX_ENABLED:
         "pickle", "shelve", "dbm", "sqlite3",
         # ── Misc high-risk ──
         "pty", "pipes", "webbrowser", "getpass",
+        # Browser automation: a browser it launches is a separate process, so
+        # its requests never pass the socket audit hook. geeViz prints report
+        # PDFs through playwright itself (outputLib.pdf, a trusted frame).
+        "playwright", "selenium", "pyppeteer",
     })
     # Safe dotted submodules under otherwise-blocked top-levels. These are
     # stdlib housekeeping imports (locks, cleanup callbacks, event contexts)
@@ -1358,6 +1362,63 @@ async def _tool_manager_call_tool_with_usage(
 
 app._tool_manager.call_tool = _tool_manager_call_tool_with_usage
 
+# Sync tools run on worker threads (see ``logged_fn_threaded`` below), so
+# calls from different sessions overlap instead of queueing behind one
+# another on the event loop. The pool is sized for a Cloud Run instance's
+# request concurrency (20) with room for parallel calls within a session.
+import asyncio
+import contextlib
+import threading
+
+_TOOL_POOL = None
+_TOOL_POOL_LOCK = threading.Lock()
+
+
+def _tool_pool():
+    """The shared worker pool for sync tools, created on first use."""
+    global _TOOL_POOL
+    if _TOOL_POOL is None:
+        import concurrent.futures as _cf
+        with _TOOL_POOL_LOCK:
+            if _TOOL_POOL is None:
+                _TOOL_POOL = _cf.ThreadPoolExecutor(
+                    max_workers=int(os.environ.get("GEEVIZ_MCP_TOOL_THREADS", "32")),
+                    thread_name_prefix="geeviz-tool")
+    return _TOOL_POOL
+
+
+# Tools that read or change a session's map, namespace or outputs. Two of
+# these in one session run one at a time, in the order they arrived, the
+# way they did when every sync tool ran on the event loop. Lookups
+# (inspect_asset, search_codebase, search_datasets, ...) are not in the
+# set: a step that asks for three datasets at once gets them in parallel.
+_SESSION_SERIAL_TOOLS = frozenset({
+    "run_code", "map_control", "save_session", "view_output", "export_image",
+})
+_SESSION_TURN_LOCKS: dict = {}
+
+
+@contextlib.asynccontextmanager
+async def _session_turn(tool_name, kwargs):
+    """Hold this session's turn for a state-touching tool; no-op otherwise.
+
+    A lock per session id, made on first use. Locks are tiny and a
+    session's id is reused across its whole conversation, so the map is
+    left to grow with the process (a Cloud Run instance lives hours, not
+    months); dropping an idle lock would let two calls hold different
+    locks for the same session.
+    """
+    if tool_name not in _SESSION_SERIAL_TOOLS:
+        yield
+        return
+    sid = (kwargs or {}).get("session_id") or ""
+    lock = _SESSION_TURN_LOCKS.get(sid)
+    if lock is None:
+        lock = _SESSION_TURN_LOCKS.setdefault(sid, asyncio.Lock())
+    async with lock:
+        yield
+
+
 # Wrap app.tool() to auto-log every tool invocation
 _original_app_tool = app.tool
 
@@ -1374,10 +1435,11 @@ def _logging_tool_decorator(*dec_args, **dec_kwargs):
         async def logged_fn(*args, **kwargs):
             _log_tool_call(fn.__name__, kwargs)
             try:
-                result = fn(*args, **kwargs)
-                # Handle both sync and async tool functions
-                if _insp.isawaitable(result):
-                    result = await result
+                async with _session_turn(fn.__name__, kwargs):
+                    result = fn(*args, **kwargs)
+                    # Handle both sync and async tool functions
+                    if _insp.isawaitable(result):
+                        result = await result
                 _log_tool_call(fn.__name__, kwargs, result=result)
                 return result
             except Exception as exc:
@@ -1398,7 +1460,6 @@ def _logging_tool_decorator(*dec_args, **dec_kwargs):
         except Exception:
             pass
 
-        # If original fn is not async, keep it sync for FastMCP
         if not _insp.iscoroutinefunction(fn):
             @functools.wraps(fn)
             def logged_fn_sync(*args, **kwargs):
@@ -1410,7 +1471,25 @@ def _logging_tool_decorator(*dec_args, **dec_kwargs):
                 except Exception as exc:
                     _log_tool_call(fn.__name__, kwargs, error=exc)
                     raise
-            return original_decorator(logged_fn_sync)
+
+            # FastMCP runs a sync tool inline on its one event loop, so a
+            # slow one (an EE metadata fetch, a map build, an FIA
+            # estimate) stalled every other session's tool calls and the
+            # agent's per-step list_tools. Register an async front that
+            # runs the sync body on a worker thread instead. The module
+            # name stays the sync function, so in-process callers and
+            # tests that call ``inspect_asset(...)`` directly still get a
+            # value, not a coroutine.
+            @functools.wraps(fn)
+            async def logged_fn_threaded(*args, **kwargs):
+                from geeViz.eeAuth.threadctx import run_in_context as _ric
+                call = functools.partial(_ric(logged_fn_sync), *args, **kwargs)
+                async with _session_turn(fn.__name__, kwargs):
+                    return await asyncio.get_running_loop().run_in_executor(
+                        _tool_pool(), call)
+
+            original_decorator(logged_fn_threaded)
+            return logged_fn_sync
 
         return original_decorator(logged_fn)
 
@@ -2933,6 +3012,10 @@ _BLOCKED_MODULES = frozenset({
     "pickle", "shelve", "dbm", "sqlite3",
     # ── Misc ──
     "pty", "pipes", "webbrowser", "getpass",
+    # Browser automation: a browser it launches is a separate process, so
+    # its requests never pass the socket audit hook. geeViz prints report
+    # PDFs through playwright itself (outputLib.pdf, a trusted frame).
+    "playwright", "selenium", "pyppeteer",
 })
 # Note: ``io`` is NOT blocked. ``io.BytesIO`` / ``io.StringIO`` are
 # essential for the matplotlib → PIL → ``save_file`` flow and are pure
@@ -3302,6 +3385,8 @@ def _check_code_patterns(code: str) -> list[str]:
         "pydoc":      "pydoc is blocked. Use the MCP tool search_codebase(module='<lib>', name='<fn>') to look up functions and docstrings.",
         "pkgutil":    "pkgutil is blocked. Import modules with a plain `import` statement; use search_codebase(module='<lib>') to list what a module has.",
         "dis":        "dis is blocked. Bytecode introspection isn't available in the sandbox — use search_codebase to read source.",
+        "tempfile":   "tempfile is blocked. For a Shapefile, KML or GeoPackage, save the data as GeoJSON with save_file('name.geojson', gdf.to_json()); the user picks Shapefile, KML or GeoPackage from that file's download button, converted on the server. Tell the user that; do not say the format is unavailable.",
+        "zipfile":    "zipfile is blocked. For a zipped Shapefile, save the data as GeoJSON with save_file('name.geojson', gdf.to_json()); the user picks Shapefile from that file's download button, converted on the server. Tell the user that; do not say the format is unavailable.",
         "importlib":  "importlib is blocked (dynamic import escape). All modules must be imported statically via a top-level `import` statement; if the module isn't in the allowed list, no runtime import path will unblock it.",
     }
     def _hint_for(name: str) -> str:
@@ -4094,6 +4179,9 @@ def _lost_state_hint(error_text: str, sess: "_SessionState") -> str:
 # bypassing this proxy via ``__getattr__``. Protocol bytes go to the real
 # stdout pipe, ``print()`` strings go to stderr — clean separation.
 # ---------------------------------------------------------------------------
+import contextvars as _cv_capture
+
+
 class _ThreadLocalStreamProxy:
     """Per-thread write router for sys.stdout / sys.stderr.
 
@@ -4109,7 +4197,14 @@ class _ThreadLocalStreamProxy:
         # on ``.buffer`` resolving to the original raw byte buffer.
         self._real = real_stream
         self._by_thread: dict[int, object] = {}
-        self._unregistered = None  # None → sys.__stderr__
+        # This call's capture target (``capture_unregistered``); one per
+        # stream, so capturing stdout leaves stderr alone.
+        self._capture = _cv_capture.ContextVar("geeviz_mcp_capture_%x" % id(self), default=None)
+        # Captures currently open, by id. A thread inherits the capture of
+        # the thread that started it (see _thread_start_with_capture), but
+        # only while that capture is still open: a thread that outlives the
+        # call falls back to stderr instead of writing into a dead buffer.
+        self._open: set = set()
 
     def register(self, target) -> None:
         """Route the calling thread's writes to ``target`` until unregistered.
@@ -4127,27 +4222,44 @@ class _ThreadLocalStreamProxy:
 
     @contextlib.contextmanager
     def capture_unregistered(self, target):
-        """Route every UNREGISTERED thread's writes to ``target`` for the block.
+        """Route this CALL's unregistered writes to ``target`` for the block.
 
-        For tools that capture their own prints (``map_control``, exports):
-        their thread and any pool threads they start are unregistered, so
-        their output lands in ``target``, while a ``run_code`` exec thread
-        in another session keeps writing to its own buffer. Assigning
-        ``sys.stdout`` instead (or ``contextlib.redirect_stdout``) is
-        process-wide and took that session's output. Nests.
+        For tools that capture their own prints (``map_control``, exports).
+        Scoped to the call, not the process: the calling thread writes to
+        ``target``, and so does every thread it starts (a bare Thread or a
+        ThreadPoolExecutor worker: map validation prints auto-viz warnings
+        from pool threads) while the block is open. It used to be
+        process-wide, which was safe only while sync tools ran one at a
+        time on the event loop; with tools on worker threads, two sessions
+        exporting maps at once would each have captured the other's
+        output. Nests.
         """
-        prev = self._unregistered
-        self._unregistered = target
+        token = self._capture.set(target)
+        self._open.add(id(target))
         try:
             yield target
         finally:
-            self._unregistered = prev
+            self._capture.reset(token)
+            self._open.discard(id(target))
+
+    def _unregistered_target(self):
+        """This thread's capture: its context's, else the one it inherited
+        from the thread that started it, if that is still open."""
+        target = self._capture.get()
+        if target is not None:
+            return target
+        inherited = getattr(threading.current_thread(), "_geeviz_captures", None)
+        if inherited:
+            target = inherited.get(id(self))
+            if target is not None and id(target) in self._open:
+                return target
+        return None
 
     def _resolve(self):
-        # Non-registered → stderr, NEVER the captured stdout (which would
-        # corrupt JSON-RPC).
+        # Non-registered → this call's capture, else stderr; NEVER the
+        # captured stdout (which would corrupt JSON-RPC).
         return self._by_thread.get(threading.get_ident(),
-                                   self._unregistered or sys.__stderr__)
+                                   self._unregistered_target() or sys.__stderr__)
 
     def write(self, s):
         """Route ``s`` to this thread's registered sink (or ``sys.__stderr__``)."""
@@ -4180,6 +4292,32 @@ _TL_STDOUT = _ThreadLocalStreamProxy(sys.stdout)
 _TL_STDERR = _ThreadLocalStreamProxy(sys.stderr)
 sys.stdout = _TL_STDOUT
 sys.stderr = _TL_STDERR
+
+# A new thread starts with an empty context, so the capture a tool opened
+# would not reach the threads it starts. Record the starting thread's
+# capture on each new thread instead, the way a child inherits a parent's
+# stdout. Only the starting thread's own capture is passed on, never
+# another call's.
+_thread_start_original = threading.Thread.start
+
+
+def _thread_start_with_capture(self, *args, **kwargs):
+    try:
+        caps = {}
+        for proxy in (_TL_STDOUT, _TL_STDERR):
+            t = proxy._unregistered_target()
+            if t is not None:
+                caps[id(proxy)] = t
+        if caps:
+            self._geeviz_captures = caps
+    except Exception:
+        pass
+    return _thread_start_original(self, *args, **kwargs)
+
+
+if not getattr(threading.Thread.start, "_geeviz_capture_aware", False):
+    _thread_start_with_capture._geeviz_capture_aware = True
+    threading.Thread.start = _thread_start_with_capture
 
 
 # ---------------------------------------------------------------------------
@@ -4485,6 +4623,20 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
     # gets the full traceback and output as printed.
     _for_person = _SAVED_SCRIPT_RUN.get()
 
+    # Set by the exec thread as its last act, so the wait below wakes the
+    # moment the code finishes instead of on the next once-a-second poll
+    # (that poll cost every call ~0.5 s on average). The thread can still
+    # read as alive for a few microseconds after this is set, so "done"
+    # is judged by the event from here on, not by ``thread.is_alive()``.
+    _done_loop = asyncio.get_running_loop()
+    _done = asyncio.Event()
+
+    def _signal_done():
+        try:
+            _done_loop.call_soon_threadsafe(_done.set)
+        except RuntimeError:
+            pass  # loop already closed: nobody is waiting
+
     def _exec():
         global _audit_user_code_active
         # Route THIS thread's stdout/stderr to the per-call buffers via the
@@ -4534,7 +4686,16 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
     # workload tag, so run_code compute (the bulk of EE spend) was billed
     # to nobody. See geeViz.eeAuth.threadctx.
     from geeViz.eeAuth.threadctx import run_in_context as _ric
-    thread = threading.Thread(target=_ric(_exec), daemon=True)
+    def _exec_then_signal():
+        # Signal even if _exec dies before its own try (registering the
+        # buffers, numpy print options): a lost signal would leave the
+        # call waiting out the whole idle timeout.
+        try:
+            _exec()
+        finally:
+            _signal_done()
+
+    thread = threading.Thread(target=_ric(_exec_then_signal), daemon=True)
     thread.start()
 
     # Heartbeat loop: poll every 1s, timeout only after `timeout` seconds
@@ -4547,8 +4708,14 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
     next_report = report_interval
     last_stdout_len = 0
     last_stderr_len = 0
-    while thread.is_alive() and idle_time < timeout:
-        await asyncio.sleep(min(poll_interval, timeout - idle_time))
+    while not _done.is_set() and idle_time < timeout:
+        step = min(poll_interval, timeout - idle_time)
+        try:
+            await asyncio.wait_for(_done.wait(), step)
+        except asyncio.TimeoutError:
+            pass
+        if _done.is_set():
+            break
         elapsed += poll_interval
 
         # Check for new output activity
@@ -4561,7 +4728,7 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
         else:
             idle_time += poll_interval
 
-        if thread.is_alive() and ctx and elapsed >= next_report:
+        if not _done.is_set() and ctx and elapsed >= next_report:
             next_report += report_interval
             try:
                 await ctx.report_progress(elapsed, timeout)
@@ -4592,7 +4759,7 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
         warning_block = "\n".join(code_warnings) + "\n"
         stderr_val = warning_block + stderr_val
 
-    if thread.is_alive():
+    if not _done.is_set():
         timeout_hints = (
             f"Execution timed out after {int(idle_time)}s of inactivity ({int(elapsed)}s total). Common causes:\n"
             "- .getInfo() on a large ImageCollection -- use .limit(N) or inspect_asset with date/region filters\n"
@@ -4728,6 +4895,110 @@ async def run_code(code: str, timeout: int = 120, reset: bool = False,
 # Tool 2: inspect_asset
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# inspect_asset cache
+#
+# Metadata for a catalog dataset changes rarely, and the same few datasets
+# are looked up constantly (LCMS, Sentinel-2, Landsat, NAIP). An uncached
+# Sentinel-2 lookup takes ~10 s every time: its image count always runs
+# into the 10 s timeout. Results are kept in this process for 24 hours
+# (GEEVIZ_INSPECT_CACHE_TTL seconds). In memory only: a restart or a new
+# Cloud Run instance starts empty and fills again on first use.
+#
+# Who may share an entry: public catalog ids are the same for everyone,
+# so one entry serves every user. Anything that could be private (a
+# ``projects/...`` or ``users/...`` asset, a non-public BigQuery table) is
+# keyed by tenant and user too, so one user's private asset is never
+# served to another. A ``region_var`` result depends on that session's
+# variables and is never cached.
+# ---------------------------------------------------------------------------
+import collections as _ia_collections
+import time as _ia_time
+
+_INSPECT_CACHE_TTL = float(os.environ.get("GEEVIZ_INSPECT_CACHE_TTL", 24 * 3600))
+# A count that timed out is usually a stable fact about a huge collection,
+# but it can also be a slow moment: keep it a shorter while.
+_INSPECT_CACHE_TTL_PARTIAL = min(_INSPECT_CACHE_TTL, 3600.0)
+_INSPECT_CACHE_MAX = 2000
+_INSPECT_CACHE: "_ia_collections.OrderedDict" = _ia_collections.OrderedDict()
+_INSPECT_CACHE_LOCK = threading.Lock()
+
+
+def _inspect_is_public(asset_id: str) -> bool:
+    """True for ids that name the same public data for every caller."""
+    aid = (asset_id or "").strip()
+    if aid.startswith("projects/earthengine-public/"):
+        return True
+    if aid.startswith("bigquery-public-data."):
+        return True
+    if aid.startswith(("projects/", "users/")):
+        return False
+    if aid.count(".") >= 2 and "/" not in aid:  # some other BigQuery table
+        return False
+    return bool(aid)
+
+
+def _inspect_cache_key(asset_id, start_date, end_date, region_var, session_id):
+    """Cache key for one call, or None when it must not be cached."""
+    if region_var or not asset_id:
+        return None
+    if _inspect_is_public(asset_id):
+        who = ("*",)
+    else:
+        try:
+            from geeViz.eeAuth.client import CURRENT_USER_EMAIL, CURRENT_TENANT
+            user, tenant = CURRENT_USER_EMAIL.get() or "", CURRENT_TENANT.get() or ""
+        except Exception:
+            user, tenant = "", ""
+        # No identity (a local run): fall back to the session, which is
+        # never shared between people.
+        who = (tenant, user) if user else ("session", session_id or "")
+    return (asset_id.strip(), start_date or "", end_date or "") + who
+
+
+def _inspect_cache_ttl(out: str):
+    """How long to keep a result: None for errors, shorter for partial ones."""
+    try:
+        d = json.loads(out)
+    except Exception:
+        return None
+    if not isinstance(d, dict):
+        return None
+    if any(k in d for k in ("error", "detail_error", "image_count_error")):
+        return None
+    if d.get("image_count") == "timeout (large collection)":
+        return _INSPECT_CACHE_TTL_PARTIAL
+    return _INSPECT_CACHE_TTL
+
+
+def _inspect_cache_get(key):
+    if key is None or _INSPECT_CACHE_TTL <= 0:
+        return None
+    with _INSPECT_CACHE_LOCK:
+        hit = _INSPECT_CACHE.get(key)
+        if hit is None:
+            return None
+        expires, out = hit
+        if _ia_time.monotonic() >= expires:
+            del _INSPECT_CACHE[key]
+            return None
+        _INSPECT_CACHE.move_to_end(key)
+        return out
+
+
+def _inspect_cache_put(key, out):
+    if key is None or _INSPECT_CACHE_TTL <= 0 or not isinstance(out, str):
+        return
+    ttl = _inspect_cache_ttl(out)
+    if not ttl:
+        return
+    with _INSPECT_CACHE_LOCK:
+        _INSPECT_CACHE[key] = (_ia_time.monotonic() + ttl, out)
+        _INSPECT_CACHE.move_to_end(key)
+        while len(_INSPECT_CACHE) > _INSPECT_CACHE_MAX:
+            _INSPECT_CACHE.popitem(last=False)
+
+
 @app.tool(annotations=_READ_ONLY_OPEN)
 def inspect_asset(
     asset_id: str,
@@ -4764,6 +5035,17 @@ def inspect_asset(
         is set so the caller knows to use ``ee.FeatureCollection.loadBigQueryTable``
         (not ``ee.FeatureCollection``) when constructing the FC.
     """
+    key = _inspect_cache_key(asset_id, start_date, end_date, region_var, session_id)
+    hit = _inspect_cache_get(key)
+    if hit is not None:
+        return hit
+    out = _inspect_asset_uncached(asset_id, start_date, end_date, region_var, session_id)
+    _inspect_cache_put(key, out)
+    return out
+
+
+def _inspect_asset_uncached(asset_id, start_date, end_date, region_var, session_id):
+    """The lookup behind ``inspect_asset``, without the cache."""
     import concurrent.futures
     import datetime as _dt
 

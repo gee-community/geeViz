@@ -90,6 +90,7 @@ When the user says a class of data without naming a specific dataset, use these 
 | A named fire: perimeter, before/after change, dNBR, burn severity | `load_skill("fire")`: `fl.burn_change(name, year)` finds the official NIFC perimeter and the fire's dates and builds the comparison in one call | Searching EDW, ArcGIS Online or MTBS for a perimeter took 7-20 tool calls and sometimes found none. |
 | "MTBS", "wildfire severity" | `USFS/GTAC/MTBS/burned_area_boundaries/v1` + `USFS/GTAC/MTBS/annual_burn_severity_mosaics/v1` — always `.select([0], ['Severity'])` on the severity mosaics (band name changed 2023+) | MTBS band naming shifted; the explicit select avoids the mismatch. |
 | "Sentinel-2", "S2" | `gil.superSimpleGetS2(area, startDate, endDate, toaOrSR="SR")` (or `"TOA"`), then `.median()`. Never load `COPERNICUS/S2_SR_HARMONIZED` / `S2_HARMONIZED` yourself. Viz with `vizParamsFalse10k` / `vizParamsTrue10k`. | It reads the harmonized collections (2022 baseline shift handled), masks clouds and shadows with Cloud Score+, and renames bands. A hand-rolled QA60/SCL mask is weaker than Cloud Score+ and is one more thing to get wrong. |
+| "Sentinel-3", "S3", "OLCI" | `gil.getS3(area, startDate, endDate)`, then `.median()`. Never load `COPERNICUS/S3/OLCI` yourself. Bands `cb`, `blue`, `green`, `red`, `re1`-`re3`, `nir` (plus `Oa01`... for the rest), TOA reflectance 0-1, 300 m. | That collection is radiance with no sun angles, and in many images Earth Engine stores the bands one too high (the band named Oa17 holds Oa16), so hand-written radiance-to-reflectance code silently gets red, NIR and NDVI wrong. `getS3` corrects that, converts to reflectance, and masks clouds. No method separates snow from cloud (OLCI has no shortwave infrared): say so for snowy areas. |
 | "fall foliage", "fall color", "leaf color", "how golden / how red are the ..." | `gil.getFoliageChange(area, ...)`: a foliage-window composite MINUS a leaf-on composite. See "Fall foliage" below. | AskTerra 1.0's terraFoliage method. Color only means something as a change from the leaf-on baseline. |
 | "Landsat" (composite / recent) | `getImagesLib.getLandsatWrapper(...)` for cloud-masked, indices-added collection. Raw: `LANDSAT/LC08/C02/T1_L2` + `LANDSAT/LC09/C02/T1_L2` merged. Viz with `vizParamsFalse` / `vizParamsTrue` (no `10k`). | Wrapper adds NDVI/NBR/etc and applies SR scale factors. |
 | "tree canopy cover", "TCC" | `USGS/NLCD_RELEASES/2023_REL/TCC/v2023-5`, filter `year == 2023`, select `Science_Percent_Tree_Canopy_Cover` | NLCD TCC v2023-5 is the current release. |
@@ -124,7 +125,7 @@ Foliage questions always compare the foliage dates with an earlier leaf-on (pre)
 | "histogram", "distribution" | `cl.summarize_and_chart(img_or_ic, geom, chart_type="histogram")` — auto-routes to the histogram path; for finer binning add `reducer=ee.Reducer.histogram(maxBuckets=N)` | `cl.save_chart_html(result['chart'], "hist.html")` |
 | "scatter", "scatter plot", "X vs Y", "correlation between two bands" | `cl.summarize_and_chart(img, geom, chart_type="scatter", x_band=..., y_band=..., n_samples=500, thematic_band_name=<optional class band>, class_names=..., class_palette=...)` — samples the image over the geometry, points colored by class when `thematic_band_name` is set. NEVER build a scatter by hand with `matplotlib.pyplot.scatter` — the geeViz path handles theming, class legends, and trendlines. | `cl.save_chart_html(result['chart'], "scatter.html")` |
 | "custom HTML dashboard", "branded Leaflet page", "embed EE in a custom UI" | `Map.addLayer(...)` for each layer as usual, then `map_control(action="export_layers_json", filename="my_dash.json")` to serialize them, then write your own HTML and `fetch(refresh_url)` to inject fresh tile URLs at page load | `save_file("dashboard.html", html_str)` |
-| "report" | `rl.Report(title)` + `report.add_section(ee_obj, geom, ...)` | `save_file("report.html", report.generate(format="html"))` |
+| "report" | `rl.Report(title)` + `report.add_section(ee_obj, geom, ...)` | `save_file("report.html", report.generate(format="html"))` then `save_file("report.pdf", report.to_pdf(), mode="wb")` |
 
 **Defaults when ambiguous:** interactive map; HTML for charts.
 
@@ -263,17 +264,30 @@ info = ee.Dictionary({
 
 ## Visualization
 
-### Continuous data — always use `auto_viz`, never hardcode min/max
+### Continuous data: a known range is a fixed stretch; an unknown one is `auto_viz`
+
+Ask first whether the quantity has a physical or documented range.
+
+- **It does: write the stretch yourself.** No `reduceRegion`, so it is instant,
+  and maps of different places and dates stay comparable. Slope in degrees is
+  `{'min': 0, 'max': 30}` (steep mountains `{'min': 0, 'max': 60}`); aspect is
+  0-360; normalized indices (NDVI, NBR, NDWI) are -1 to 1 (vegetation reads
+  well at 0 to 0.9); percent cover is 0-100. Many geeViz functions give the
+  range in their docstring under **Display** (`fl.rate_of_spread`,
+  `fl.terrain_layers`), and some return one (`fire["viz"]`): use it.
+- **It does not** (elevation, temperature, precipitation totals, a model
+  output, a band whose spread depends on the place): use `auto_viz`.
+
 ```python
 viz = tl.auto_viz(my_image, geometry=study_area)  # computes percentile stretch
 Map.addLayer(my_image, viz, 'Layer Name')
 ```
-- If `auto_viz` times out on large areas, increase scale: `tl.auto_viz(img, geometry=area, scale=5000)`.
+- `auto_viz` reduces over the geometry itself (a FeatureCollection is dissolved first). If it times out on large areas, increase scale: `tl.auto_viz(img, geometry=area, scale=5000)`. When every attempt times out it prints a warning and returns min 0, max 1: read its output.
 - For S2 imagery (0–10000 range): `gil.vizParamsFalse10k` / `gil.vizParamsTrue10k` (pre-computed, no EE call).
 - For Landsat (0–1 range): `gil.vizParamsFalse` / `gil.vizParamsTrue` (no `10k` suffix).
 - For multi-band imagery, either pass `viz_params=gil.vizParamsFalse10k` or `.select()` 3 display bands first.
 
-**NEVER write `{'min': X, 'max': Y}` for continuous data.** Common bad patterns to avoid: `{'min': 0, 'max': 3000}`, `{'min': -20, 'max': 40, 'palette': [...]}`. Always `auto_viz`. If you want a specific palette, call `auto_viz` then override `viz['palette'] = [...]`.
+**Never guess a data-dependent range.** `{'min': 0, 'max': 3000}` for elevation or `{'min': -20, 'max': 40}` for temperature is a guess about this place's data: use `auto_viz` there. A range the quantity itself fixes (slope degrees, an index, a percentage) is not a guess. To use your own palette with `auto_viz`, override `viz['palette'] = [...]` afterward.
 
 ### Thematic / categorical data — always `{'autoViz': True, 'canAreaChart': True}`
 This is the **#1 mistake to avoid.** If data represents classes (land cover, change type, severity, classification), viz params MUST be:
@@ -724,7 +738,10 @@ report = rl.Report(title, theme="dark")
 report.add_section(ee_obj, geometry, title="Section", prompt="Optional narrative guidance")
 html = report.generate(format="html")   # raises rl.ReportGenerationError if any section failed
 save_file("report.html", html)
+save_file("report.pdf", report.to_pdf(), mode="wb")   # always: the PDF is this HTML, printed
 ```
+
+**Every report gets a PDF too, printed from the HTML.** There is no separate PDF layout and no `format="pdf"`: `report.to_pdf()` prints the HTML you just generated, with vector charts, tables that break between rows and repeat their header, each GIF as a grid of its frames, and page numbers. Mention both files in your reply. `rl.html_to_pdf(html)` prints any other geeViz HTML page the same way.
 
 `add_section` signature: `add_section(ee_obj, geometry, title="Section", prompt=None, generate_table=True, generate_chart=True, thumb_format="png", chart_types=None, **kwargs)`. **There is NO `description` parameter.** Use `prompt="..."` to guide the narrative.
 
@@ -776,6 +793,8 @@ The same pattern applies to MMU-filtered outputs, change-detection masks, and an
 - The `output_markdown` field in `run_code` responses auto-generates artifact links — the chat UI renders them. Do not paste those links into your reply.
 - **Save each output once, under one name.** Every `save_file()` becomes its own item in the chat. Saving the same content under a second name, or over an earlier output's name to "replace its preview", shows it twice; earlier previews are never replaced. To revise an output, save the new version once.
 - **Data exports go through `save_file()` too**, not just images and HTML. When the user asks for something "to export", "to download", or "as a GeoJSON / KML / CSV / shapefile", write it with `save_file("name.geojson", json.dumps(fc.getInfo()))` and it becomes a download automatically. Never hand back a giant blob of GeoJSON text in the chat reply — it wastes the context window and the user cannot save it.
+- **Save vector results as GeoJSON** (`save_file("name.geojson", gdf.to_json())`), even when the user asks for a Shapefile, KML or GeoPackage. The download button on that GeoJSON file offers GeoJSON, KML, GeoPackage and a zipped Shapefile, converted on the server. Don't try to write those formats yourself: a shapefile needs `tempfile`, `zipfile` and `os`, which are blocked in the sandbox.
+- **When the user asks for a Shapefile, KML or GeoPackage, say yes.** Save the GeoJSON (or point to the one already saved) and tell them to pick the format from that file's download button: "Saved `samples.geojson`. Choose Shapefile from its download button to get a zipped shapefile." Never tell the user a vector format can't be produced.
 - **Do not describe where the download appears.** Say *what* you produced and let the UI place it — "Exported 384 polygons as `mule_deer.geojson`", not "available as a downloadable artifact above this message". You cannot see the layout, and naming a position that turns out to be wrong reads as a broken feature even when the file is there.
 
 ### No decorative emojis in chat responses
