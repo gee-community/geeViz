@@ -1,0 +1,24 @@
+<svg xmlns="http://w3.org" viewBox="0 0 64 24" width="128" height="48" fill="none">
+  <defs>
+    <linearGradient id="cumulGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6366F1" stop-opacity="0.65" />
+      <stop offset="100%" stop-color="#6366F1" stop-opacity="0.05" />
+    </linearGradient>
+  </defs>
+
+  <!-- LEFT: Non-Cumulative (Periodic Line Chart) -->
+  <g stroke="#1E293B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Baseline -->
+    <path d="M4 20H24" />
+    <!-- Fluctuating Period Line -->
+    <path d="M5 15L10 9L15 14L23 6" />
+  </g>
+
+  <!-- RIGHT: Cumulative (Filled Area Curve) -->
+  <g>
+    <!-- Gradient Fill -->
+    <path d="M40 20C42 13 46 13 50 13C54 13 57 9 60 4V20H40Z" fill="url(#cumulGrad)" />
+    <!-- Stroke Outline -->
+    <path d="M40 20C42 13 46 13 50 13C54 13 57 9 60 4M40 20H60" stroke="#1E293B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

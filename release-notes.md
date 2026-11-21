@@ -1,6 +1,6 @@
 # geeViz Release Notes
 
-## 2026.11.1 (November 2, 2026)
+## 2026.11.1 (November 20, 2026)
 
 The first release on PyPI since 2026.8.1. 2026.9.4 was built but never
 uploaded, so this release carries everything since August,
@@ -43,6 +43,22 @@ north (unrotated they were off by up to 25 degrees against ERA5).
 ``pip install "geeViz[hrrr]"`` adds rasterio and tqdm. See
 ``examples/hrrr_examples.ipynb``.
 
+### Maps: Delta, a new viewer skin, is the default
+
+- **Delta** is a redesigned map viewer: one left pane for layers and
+  legends, a right pane for tools and results, a top bar with search and
+  the basemap, and light and dark themes that follow the device. Phones
+  get their own layout. The original skin is still available.
+- ``Map.setSkin("delta")`` or ``Map.setSkin("original")`` picks the skin for
+  ``Map.view()`` and exported maps; the ``GEEVIZ_SKIN`` environment
+  variable sets the default. A new ``Map`` uses Delta.
+- Wind layers in Delta keep the original's color ramp legend with a moving
+  particle, and two opacity sliders (particles above the speed field).
+- With Query on, the cursor shows a question mark.
+- ``geeViz.viewerPages.refresh_exported_html`` rebuilds a saved map page on
+  today's viewer, in either skin, from the layers the page carries. It needs
+  no Earth Engine call.
+
 ### Maps
 
 - The map check points a hand-styled single-class layer to ``autoViz``, a
@@ -52,6 +68,30 @@ north (unrotated they were off by up to 25 degrees against ERA5).
 - ``Map.addLayer`` takes Earth Engine's ``opacity`` argument.
 - A quote in a layer name no longer blanks the whole map.
 - Exported maps carry a browser Maps key, never the server key.
+
+### Reports print to PDF from their HTML
+
+- ``Report.generate(format="html", output_path=...)`` also writes a PDF
+  beside the HTML (``report.html`` gives ``report.pdf``, at
+  ``report.pdf_path``); ``pdf=False`` skips it. ``Report.to_pdf()`` prints
+  on demand, and ``rl.html_to_pdf(html)`` prints any other geeViz page.
+- The PDF is the HTML, printed by Chrome, Edge or Chromium through
+  Playwright: charts stay vector, tables break between rows and repeat
+  their header, each GIF becomes a grid of its frames, and every page gets
+  a page number. Without Playwright the browser's own print is used, with
+  no page numbers. Playwright is part of ``geeViz[mcp]``.
+- ``generate(format="pdf")`` is deprecated, along with its separate static
+  layout (kaleido images, pdfkit and wkhtmltopdf).
+
+### Sentinel-3 OLCI
+
+- ``gil.getS3(area, startDate, endDate)`` returns Sentinel-3 OLCI as
+  top-of-atmosphere reflectance (0-1), cloud masked, with the bands other
+  geeViz functions look for (``blue``, ``green``, ``red``, ``re1``-``re3``,
+  ``nir``). ``COPERNICUS/S3/OLCI`` is radiance with no sun angles, and in
+  many images Earth Engine stores its bands one too high (the band named
+  Oa17 holds Oa16); ``s3OLCIFixBandShift`` detects that pixel by pixel and
+  relabels, so red, NIR and NDVI come out right.
 
 ### Esri services
 
@@ -92,6 +132,24 @@ north (unrotated they were off by up to 25 degrees against ERA5).
   or CARTO's vector styles), pixel-unit operations change with zoom, and
   sketches are not data.
 
+- Tools from different sessions run at the same time instead of queueing
+  behind one another; within one session, the tools that read or change the
+  map, namespace or outputs still run one at a time, in order.
+- ``inspect_asset`` keeps results for 24 hours (``GEEVIZ_INSPECT_CACHE_TTL``
+  seconds), so a repeat Sentinel-2 lookup no longer takes 10 s. Private
+  assets are cached per user.
+- Vector results are saved as GeoJSON, and the chat's download button
+  offers KML, GeoPackage and a zipped Shapefile from it.
+- Instructions: a quantity with a known range (slope, an index, a
+  percentage) gets a fixed stretch; ``auto_viz`` is for ranges that depend
+  on the place.
+
+### Wind
+
+- The speed raster stays where it was painted while the map pans, and
+  moves with the map until the next paint lands, instead of showing old
+  pixels in a new place.
+
 ### eeAuth
 
 - An impersonation config that carries its own source credentials is used
@@ -100,7 +158,7 @@ north (unrotated they were off by up to 25 degrees against ERA5).
   Engine refuses on operation calls; every cancel through the proxy used
   to fail and the export kept running.
 
-### geeViz.eeCatalogHelpers — new catalog planning package; hardened asset manager
+### geeViz.eeCatalogHelpers: publishing data to the Earth Engine catalog
 
 - **New `geeViz.eeCatalogHelpers` package.** Offline-safe (standard library
   only at import) helpers for text/parsing, Jsonnet rendering, image
@@ -126,13 +184,13 @@ north (unrotated they were off by up to 25 degrees against ERA5).
   `find_missing_collection_children`, `copy_asset`, `copy_collection`,
   `promote_assets_to_catalog`, `normalize_asset_type`, `asset_basename`.
 - Legacy camel-case functions (`uploadTifToGCS`, `batchCopy`,
-  `ee_asset_exists`, `create_asset`, …) are unchanged.
+  `ee_asset_exists`, `create_asset` and the rest) are unchanged.
 
-### geeViz.esriLib — uncached services draw, feature layers load faster
+### geeViz.esriLib: uncached services draw, feature layers load faster
 
 - **Uncached Image Services draw.** ``addEsriImageService`` used
-  ``<url>/tile/{z}/{y}/{x}`` for every service, and an uncached one —
-  every NAIP service on IIPP — answers 404 for every tile, so the layer
+  ``<url>/tile/{z}/{y}/{x}`` for every service, and an uncached one
+  (every NAIP service on IIPP) answers 404 for every tile, so the layer
   was blank. It now reads the service metadata and draws services with no
   tile cache through ``exportImage``, re-rendered for the viewport.
 - **Dynamic Map Services draw.** ``Map.addDynamicMapService`` (and so
@@ -148,7 +206,7 @@ north (unrotated they were off by up to 25 degrees against ERA5).
   ``queryFeatureService(max_allowable_offset=...)``; with an older georest
   the fetch is exact, as before.
 - The ``esri_integration`` example uses georest for search and metadata
-  (the ``esriLib`` wrappers are deprecated) and NAIP_plus — NAIP2023_CONUS
+  (the ``esriLib`` wrappers are deprecated) and NAIP_plus, because NAIP2023_CONUS
   has no Utah, so it drew nothing over Salt Lake City.
 
 ## 2026.9.4 — September 24, 2026
