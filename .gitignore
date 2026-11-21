@@ -283,3 +283,5 @@ template/ee/run.js
 gee-py-viz/ee/run2.js
 # brainstorming companion scratch
 .superpowers/
+# local virtual environment
+.venv/
