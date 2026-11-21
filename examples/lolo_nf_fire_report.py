@@ -180,14 +180,10 @@ html_light_path = report.generate(
 )
 print(f"HTML (light) generated in {time.time() - start:.1f}s")
 
-# PDF report
-start = time.time()
-report.theme = "light"
-pdf_path = report.generate(
-    format="pdf",
-    output_path=os.path.join(output_dir, "lolo_nf_fire_report.pdf"),
-)
-print(f"PDF generated in {time.time() - start:.1f}s")
+# Each generate(output_path=...) above also printed a PDF beside its
+# HTML (same name, .pdf): the PDF is the HTML, printed.
+pdf_path = report.pdf_path
+print(f"PDF: {pdf_path}")
 
 # ---------------------------------------------------------------------------
 #  Summary

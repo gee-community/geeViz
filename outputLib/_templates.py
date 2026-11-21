@@ -320,9 +320,17 @@ D3_SANKEY_TEMPLATE = r"""<!DOCTYPE html>
     var w = cfg.width - margin.left - margin.right;
     var h = cfg.height - margin.top - margin.bottom - 40; // 40 for title
 
+    // Drawn in cfg.width x cfg.height units but scaled to the frame
+    // through the viewBox: a fixed 800px drawing in a 720px PDF column
+    // had its last column (the final year) clipped off the right edge.
     var svg = d3.select('#sankey')
         .attr('width', cfg.width)
         .attr('height', cfg.height - 36)
+        .attr('viewBox', '0 0 ' + cfg.width + ' ' + (cfg.height - 36))
+        .attr('preserveAspectRatio', 'xMidYMin meet')
+        .style('width', '100%')
+        .style('max-width', cfg.width + 'px')
+        .style('height', 'auto')
         .append('g')
         .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
@@ -694,7 +702,7 @@ _LAYOUT_CSS = {
         .report-footer { margin-top: 8px; padding-top: 6px; font-size: 9px; }
         .report-footer img { height: 16px; width: 16px; }
         @media print {
-            @page { size: 48in 36in landscape; margin: 0.4in; }
+            @page { size: 48in 36in; margin: 0.4in; }  /* lengths, no keyword: "48in 36in landscape" is invalid and printed Letter */
             html, body { height: 100%; overflow: hidden; }
         }
         @media screen {
@@ -724,29 +732,6 @@ HTML_TEMPLATE = textwrap.dedent("""\
     {sections_html}
     {footer_html}
     </div>
-    </body>
-    </html>
-""")
-
-# PDF template — no Plotly JS, charts are static images
-PDF_HTML_TEMPLATE = textwrap.dedent("""\
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-    <meta charset="utf-8">
-    <title>{title}</title>
-    <style>{css}</style>
-    </head>
-    <body>
-    <div class="report">
-    {header_block}
-    {header_text_html}
-    <p class="timestamp">Generated {timestamp}</p>
-    {summary_html}
-    {sections_html}
-    {footer_html}
-    </div>
-    {pdf_footer_html}
     </body>
     </html>
 """)

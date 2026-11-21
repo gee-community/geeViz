@@ -178,7 +178,7 @@ def test_the_message_says_build_time_for_containers(R):
 
 # ── every rasterizing site goes through the helper ─────────────────────
 
-@pytest.mark.parametrize("mod", ["charts.py", "reports.py", "thumbs.py"])
+@pytest.mark.parametrize("mod", ["charts.py", "thumbs.py"])
 def test_no_module_calls_to_image_directly(mod):
     """Four sites failed identically because each called to_image bare.
     One helper means one place to fix the next such change.
@@ -246,3 +246,12 @@ def test_the_container_installs_a_browser():
     df = (ROOT.parent / "geeViz_agent" / "Dockerfile").read_text(encoding="utf-8")
     install = df[df.index("apt-get install"):df.index("rm -rf /var/lib/apt/lists")]
     assert "chromium" in install
+
+
+def test_reports_do_not_rasterize_charts_at_all():
+    """Since 2026-11-17 a report PDF is its HTML printed by Chromium, so
+    charts stay vector Plotly and reports.py has no rasterizing site
+    left (the old PDF path rendered every chart through kaleido)."""
+    src = (ROOT / "outputLib" / "reports.py").read_text(encoding="utf-8")
+    code = "\n".join(ln for ln in src.splitlines() if not ln.lstrip().startswith("#"))
+    assert not re.search(r"\bto_image\(|figs?_to_pngs?\(|html_to_png\(", code)

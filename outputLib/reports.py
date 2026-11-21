@@ -45,11 +45,12 @@ Example::
         scale=60,
     )
 
-    # PDF with static chart images
-    report.generate(format="pdf", output_path="report.pdf")
-
-    # HTML (interactive charts)
+    # HTML (interactive charts), and report.pdf printed from it
     report.generate(format="html", output_path="report.html")
+
+    # Or keep the HTML in memory and print it yourself
+    html = report.generate(format="html")
+    pdf_bytes = report.to_pdf()
 """
 
 """
@@ -70,6 +71,7 @@ Example::
 
 import base64
 import concurrent.futures
+import re
 import os
 import textwrap
 import threading
@@ -81,10 +83,12 @@ import ee
 from geeViz.outputLib import charts as cl
 from geeViz.outputLib import thumbs as tl
 from geeViz.outputLib import themes as _themeLib
+from geeViz.outputLib import pdf as _pdf
+from geeViz.outputLib.pdf import html_to_pdf  # noqa: F401  (rl.html_to_pdf)
+from html import escape as _html_escape
 from geeViz.outputLib._templates import (
     render_report_css as _render_report_css,
     HTML_TEMPLATE as _HTML_TEMPLATE,
-    PDF_HTML_TEMPLATE as _PDF_HTML_TEMPLATE,
 )
 
 # LLM usage reporting. Imported at module scope on purpose: a call-time
@@ -97,7 +101,7 @@ from geeViz import llmUsage as _lu
 # ---------------------------------------------------------------------------
 #  Constants
 # ---------------------------------------------------------------------------
-_DEFAULT_MODEL = _lu.DEFAULT_MODEL   # see geeViz.llmUsage
+_DEFAULT_MODEL = _lu.REPORT_MODEL    # see geeViz.llmUsage
 
 _SECTION_PROMPT_TEMPLATE = textwrap.dedent("""\
     You are a geospatial data analyst writing a section of a technical report.
@@ -272,6 +276,38 @@ _THUMB_KEYS = frozenset({
 _REPORT_KEYS = frozenset({"chart_types"}) | _THUMB_KEYS
 
 
+def _is_default_dark(t):
+    d = _themeLib.get_theme("dark")
+    return t.bg_hex.lower() == d.bg_hex.lower() and t.text_hex.lower() == d.text_hex.lower()
+
+
+def _retheme_d3_html(html, theme):
+    """Re-color a D3 Sankey page drawn in the default dark theme.
+
+    The page carries its colors as literal strings (page background, label
+    text and halo, tooltip, button) both in its CSS and in its config JSON,
+    so swapping the default dark theme's strings for ``theme``'s re-themes
+    it without recomputing the transitions.
+    """
+    src = _themeLib.get_theme("dark")
+    if _is_default_dark(theme):
+        return html
+    pairs = [
+        (src.tooltip_bg_rgba, theme.tooltip_bg_rgba),
+        (src.button_hover_rgba, theme.button_hover_rgba),
+        (src.button_border_rgba, theme.button_border_rgba),
+        (src.button_bg_rgba, theme.button_bg_rgba),
+        (src.bg_hex, theme.bg_hex),
+        (src.text_hex, theme.text_hex),
+    ]
+    # Placeholders first so one swap cannot feed the next.
+    for i, (a, _b) in enumerate(pairs):
+        html = re.sub(re.escape(a), f"\x00{i}\x00", html, flags=re.IGNORECASE)
+    for i, (_a, b) in enumerate(pairs):
+        html = html.replace(f"\x00{i}\x00", b)
+    return html
+
+
 class _Section:
     """Holds config and results for one report section."""
 
@@ -280,7 +316,7 @@ class _Section:
         "generate_table", "generate_chart", "thumb_format",
         "chart_types",
         "df", "fig", "sankey_fig", "extra_figs", "narrative",
-        "thumb_html", "thumb_bytes", "thumb_filmstrip_html", "error",
+        "thumb_html", "thumb_bytes", "error",
     )
 
     def __init__(self, ee_obj, geometry, title, prompt, kwargs,
@@ -303,7 +339,6 @@ class _Section:
         self.narrative = None
         self.thumb_html = None
         self.thumb_bytes = None
-        self.thumb_filmstrip_html = None
         self.error = None
 
 
@@ -316,7 +351,7 @@ class Report:
     Args:
         title (str): Report title.
         model (str): Gemini model name. Default
-            :data:`geeViz.llmUsage.DEFAULT_MODEL`.
+            :data:`geeViz.llmUsage.REPORT_MODEL` (Gemini 4 Hydrogen).
         api_key (str, optional): Google API key. If not provided, loaded from
             the ``GEMINI_API_KEY`` environment variable (via ``.env``).
         prompt (str, optional): Additional guidance for the executive summary.
@@ -360,6 +395,8 @@ class Report:
         self._api_key = api_key
         self._client = None
         self._computed_theme = None  # tracks theme used during thumbnail computation
+        self._last_html = None  # what to_pdf() prints
+        self.pdf_path = None    # set by generate(output_path=...) when the PDF prints
 
     # -- Public API --------------------------------------------------------
 
@@ -389,7 +426,8 @@ class Report:
                 * ``"gif"`` — animated GIF with per-frame date labels
                   (``ee.ImageCollection`` only).
                 * ``"filmstrip"`` — grid of individual time-step frames
-                  (``ee.ImageCollection`` only). Used by PDF export.
+                  (``ee.ImageCollection`` only). In the PDF a GIF
+                  prints as a grid of its frames too.
                 * ``None`` or ``False`` — no thumbnail.
 
             chart_types (list[str] | str | None): Which charts to render.
@@ -668,7 +706,7 @@ class Report:
         df = pd.concat([df, pd.DataFrame([summary_row])], ignore_index=True)
         return df
 
-    def generate(self, format="html", output_path=None, strict=True):
+    def generate(self, format="html", output_path=None, strict=True, pdf=True):
         """Generate the report.
 
         All section data (charts, tables, thumbnails, GIFs) and LLM
@@ -676,15 +714,18 @@ class Report:
         waits for all sections to finish first.
 
         Args:
-            format (str): Output format — ``"html"``, ``"md"``, or ``"pdf"``.
-                PDF uses ``kaleido`` to render charts as static PNG images
-                and ``pdfkit``/``wkhtmltopdf`` for the final conversion.
-                If wkhtmltopdf is not installed, a print-ready HTML file
-                with ``@page`` CSS directives is generated instead (open
-                in a browser and Print → Save as PDF).
+            format (str): ``"html"`` (default) or ``"md"``. There is no
+                separate PDF layout: the PDF is the HTML, printed (see
+                :meth:`to_pdf`). ``"pdf"`` is still accepted for old code:
+                it writes the HTML and the PDF and returns the PDF path.
             output_path (str, optional): File path to write. If None, returns
-                the content as a string (except for PDF which always requires
-                a path).
+                the content as a string.
+            pdf (bool, default True): With ``format="html"`` and an
+                ``output_path``, also print the HTML to a PDF of the same
+                name (``report.html`` -> ``report.pdf``), whose path is
+                then ``report.pdf_path``. A failed print is reported and
+                leaves ``pdf_path`` None; the HTML is still written.
+                Without an ``output_path``, call :meth:`to_pdf`.
             strict (bool, default True): When True, raise
                 :class:`ReportGenerationError` if any section (or the
                 executive summary) recorded an error during compute.
@@ -722,6 +763,13 @@ class Report:
             self._generate_executive_summary()
         else:
             print(f"Re-rendering report: {self.title}", flush=True)
+            # Thumbnails and GIF frames have the background baked in.
+            # Charts and the Sankey are re-themed as they render, but a
+            # raster must be drawn again. This method existed and was
+            # never called: a second generate() in another theme kept the
+            # first theme's frames.
+            if self._computed_theme is not None and self._computed_theme != self.theme:
+                self._recompute_thumbs_for_theme()
 
         # Collect per-section errors + successes before rendering. We
         # still render the partial content so the caller (or the
@@ -742,32 +790,38 @@ class Report:
         if format == "md":
             content = self._render_md()
         elif format == "pdf":
-            # PDF path renders + writes internally and returns a path,
-            # not content. Still raise if strict and errors exist.
-            path = self._render_pdf(output_path)
-            if strict and section_errors:
-                # Read back so ``.html`` on the exception is populated
-                # for parity with html/md paths. Best-effort — skip if
-                # readback fails (e.g., wkhtmltopdf wrote a binary PDF).
-                try:
-                    with open(path, "rb") as _f:
-                        content_readback = _f.read()
-                except Exception:
-                    content_readback = None
-                raise ReportGenerationError(
-                    section_errors,
-                    succeeded_sections=succeeded_sections,
-                    html=content_readback,
-                )
-            return path
+            import warnings
+            warnings.warn(
+                'Report.generate(format="pdf") is deprecated: use format="html" '
+                "with an output_path (the PDF is written beside it) or to_pdf().",
+                DeprecationWarning, stacklevel=2,
+            )
+            pdf_out = output_path or (self.title.replace(" ", "_") + ".pdf")
+            html_out = os.path.splitext(pdf_out)[0] + ".html"
+            try:
+                self.generate(format="html", output_path=html_out,
+                              strict=strict, pdf=False)
+            finally:
+                if self._last_html is not None:
+                    self.to_pdf(pdf_out)
+            return pdf_out
         else:
             content = self._render_html()
+            self._last_html = content
 
         if output_path:
             os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write(content)
             print(f"Report saved to: {output_path}", flush=True)
+            self.pdf_path = None
+            if pdf and format != "md":
+                pdf_out = os.path.splitext(output_path)[0] + ".pdf"
+                try:
+                    self.pdf_path = self.to_pdf(pdf_out)
+                except Exception as e:
+                    print(f"PDF not written ({type(e).__name__}: {e}). "
+                          f"The HTML report is at {output_path}.", flush=True)
             if strict and section_errors:
                 raise ReportGenerationError(
                     section_errors,
@@ -783,6 +837,42 @@ class Report:
                 html=content,
             )
         return content
+
+    def to_pdf(self, output_path=None, html=None):
+        """Print the report to PDF.
+
+        Prints the HTML that :meth:`generate` produced, adapted for paper
+        by :func:`geeViz.outputLib.pdf.html_to_pdf`: charts stay vector,
+        tables break between rows and repeat their header row, each GIF
+        becomes a grid of its frames, and every page has a footer with
+        the page number.
+
+        Args:
+            output_path (str, optional): Where to write the PDF. If None,
+                the PDF bytes are returned (for ``save_file``).
+            html (str, optional): HTML to print instead of the last one
+                generated.
+
+        Returns:
+            str | bytes: ``output_path`` if given, otherwise the PDF bytes.
+
+        Raises:
+            RuntimeError: Nothing generated yet, or no browser to print with.
+        """
+        html = html if html is not None else self._last_html
+        if html is None:
+            raise RuntimeError('Call generate(format="html") before to_pdf().')
+        _t = _themeLib.get_theme(self.theme)
+        icon_uri = self._get_icon_uri()
+        icon = (f'<img src="{icon_uri}" style="height:12px;width:auto;border-radius:2px;">'
+                if icon_uri and icon_uri.startswith("data:") else "")
+        footer = _pdf.page_footer(
+            f'{icon}<span>{_html_escape(self.title)} &middot; geeViz.reportLib &middot; '
+            f'{_html_escape(str(self.model))} &middot; Earth Engine</span>',
+            color=_t.muted_text_hex, bg=_t.bg_hex,
+        )
+        return _pdf.html_to_pdf(html, output_path, layout=self.layout,
+                                footer_template=footer)
 
     # -- Private: fully parallel computation -------------------------------
 
@@ -1033,23 +1123,6 @@ class Report:
                     **shared,
                 )
                 sec.thumb_bytes = result.get("bytes") or _extract_image_bytes(result["html"])
-
-                # Also generate a filmstrip for PDF (GIFs don't work in static PDF)
-                try:
-                    print(f"  [{idx+1}/{len(self._sections)}] Computing filmstrip (PDF fallback): {sec.title}", flush=True)
-                    has_legend = kw.get("burn_in_legend", True)
-                    default_cols = 3 if has_legend else 4
-                    fs_result = tl.generate_filmstrip(
-                        sec.ee_obj, geom,
-                        columns=kw.get("thumb_columns", default_cols),
-                        date_format=kw.get("thumb_date_format", "YYYY"),
-                        max_frames=kw.get("thumb_max_frames", 50),
-                        legend_position=kw.get("legend_position", "bottom"),
-                        **shared,
-                    )
-                    sec.thumb_filmstrip_html = fs_result["html"]
-                except Exception as e:
-                    print(f"    Filmstrip fallback failed: {e}", flush=True)
 
             elif fmt == "filmstrip":
                 import geeViz.geeView as gv
@@ -1466,12 +1539,15 @@ class Report:
     def _themed_figure(self, fig):
         """Return a theme-appropriate copy of a Plotly figure.
 
-        Charts from ``chartingLib`` are dark-themed by default.  For light
-        reports this returns a deep copy with ``_apply_light_theme`` applied.
-        For dark reports the original figure is returned unchanged.
+        Charts from ``chartingLib`` are drawn in the default dark theme.
+        For any other theme (light, teal, a custom background, dark or
+        not) this returns a deep copy with the report's theme applied; for
+        the default dark theme the original figure is returned unchanged.
+        Checking ``is_dark`` instead left every dark custom theme with the
+        default's olive-black chart background.
         """
         _t = _themeLib.get_theme(self.theme)
-        if _t.is_dark:
+        if _is_default_dark(_t):
             return fig
         import copy
         fig_copy = copy.deepcopy(fig)
@@ -1483,172 +1559,13 @@ class Report:
         _themeLib.apply_plotly_theme(fig_copy, _t)
         return fig_copy
 
-    # -- Private: chart to static image ------------------------------------
+    # -- Private: section HTML builder --------------------------------------
 
-    def _render_subplot_images(self, fig, n_subplots, width, parts):
-        """Render a multi-subplot figure as separate per-row images.
-
-        Each subplot gets its own static PNG so it can page-break
-        independently in PDFs instead of being squished into one image.
-        """
-        import plotly.graph_objects as go
-
-        # Get all traces and their subplot assignments
-        traces_by_row = {}
-        for trace in fig.data:
-            # Subplot row is encoded in yaxis: "y", "y2", "y3", etc.
-            yaxis = getattr(trace, "yaxis", "y") or "y"
-            row = int(yaxis.replace("y", "") or "1")
-            traces_by_row.setdefault(row, []).append(trace)
-
-        # Get layout info for title
-        title = ""
-        if fig.layout.title and fig.layout.title.text:
-            title = fig.layout.title.text
-
-        per_h = 300  # height per subplot row
-        sorted_rows = sorted(traces_by_row.keys())
-
-        for i, row_key in enumerate(sorted_rows):
-            traces = traces_by_row[row_key]
-            # Build a standalone figure for this subplot
-            sub_fig = go.Figure()
-            for trace in traces:
-                # Reset yaxis/xaxis to default for standalone figure
-                new_trace = trace.to_plotly_json()
-                new_trace.pop("xaxis", None)
-                new_trace.pop("yaxis", None)
-                sub_fig.add_trace(go.Scatter(**{
-                    k: v for k, v in new_trace.items()
-                    if k != "type" and v is not None
-                }))
-
-            # Get subplot title from annotations
-            sub_title = ""
-            for ann in (fig.layout.annotations or []):
-                ann_dict = ann.to_plotly_json()
-                # Subplot titles are positioned by yref
-                if ann_dict.get("text"):
-                    # Check if this annotation belongs to this row
-                    y = ann_dict.get("y", 0)
-                    expected_y_range = (1 - (i + 0.5) / n_subplots)
-                    if abs(y - expected_y_range) < 0.5 / n_subplots:
-                        sub_title = ann_dict["text"]
-                        break
-
-            # Apply theme
-            _t = _themeLib.get_theme(self.theme)
-            chart_title = sub_title or (title if i == 0 else "")
-            sub_fig.update_layout(
-                title=dict(text=chart_title, x=0.5) if chart_title else None,
-                height=per_h, width=width,
-                paper_bgcolor=_t.bg_hex,
-                plot_bgcolor=_t.bg_hex,
-                font=dict(color=_t.text_hex),
-                margin=dict(l=60, r=20, t=40 if chart_title else 20, b=40),
-                showlegend=(i == 0),
-            )
-            if i == 0 and fig.layout.legend:
-                sub_fig.update_layout(legend=fig.layout.legend.to_plotly_json())
-
-            img_uri = self._fig_to_static_img(sub_fig, width=width, height=per_h)
-            if img_uri:
-                parts.append(
-                    f'<div class="chart"><img src="{img_uri}" '
-                    f'style="max-width:100%;border-radius:6px;"></div>'
-                )
-
-    @staticmethod
-    def _fig_to_static_img(fig, width=900, height=500):
-        """Render a Plotly figure to a base64 PNG data URI using kaleido.
-
-        Returns None if kaleido is not available.
-        """
-        if fig is None:
-            return None
-        try:
-            import plotly.io as pio
-            from geeViz.outputLib._render import fig_to_png as _fig_to_png
-            img_bytes = _fig_to_png(fig, width=width, height=height)
-            b64 = base64.b64encode(img_bytes).decode()
-            return f"data:image/png;base64,{b64}"
-        except Exception as e:
-            print(f"    Static chart export failed: {e}", flush=True)
-            return None
-
-    def _sankey_to_static_img(self, fig, width=900, height=600):
-        """Render a Sankey figure to a base64 PNG via headless browser screenshot.
-
-        Delegates to :func:`~geeViz.outputLib.charts.html_to_png`.
-        Falls back to kaleido if no browser is available.
-
-        Returns a ``data:image/png;base64,...`` URI or None.
-        """
-        try:
-            _t = _themeLib.get_theme(self.theme)
-            sankey_html = cl.sankey_to_html(
-                fig, bg_color=_t.bg_hex, font_color=_t.text_hex,
-                renderer="d3", hide_toolbar=True,
-            )
-            img_bytes = cl.html_to_png(sankey_html, width=width, height=height)
-            if img_bytes is not None:
-                b64 = base64.b64encode(img_bytes).decode()
-                return f"data:image/png;base64,{b64}"
-            else:
-                print(f"    Sankey screenshot failed (no browser), falling back to kaleido", flush=True)
-                return self._fig_to_static_img(fig, width=width, height=height)
-        except Exception as e:
-            print(f"    Sankey screenshot error: {e}, falling back to kaleido", flush=True)
-            return self._fig_to_static_img(fig, width=width, height=height)
-
-    def _gif_to_filmstrip_html(self, sec):
-        """Render a GIF section as a filmstrip grid for PDF output.
-
-        GIFs don't render in static PDFs, so we generate a filmstrip
-        (grid of PNG thumbnails) on the fly using the same parameters.
-        """
-        import geeViz.geeView as gv
-        ee_mod = gv.ee
-
-        if not isinstance(sec.ee_obj, ee_mod.ImageCollection):
-            return sec.thumb_html  # fallback to original
-
-        kw = sec.kwargs
-        geom = kw.get("thumb_geometry", sec.geometry)
-        shared = dict(
-            viz_params=kw.get("thumb_viz_params"),
-            band_name=kw.get("thumb_band_name"),
-            dimensions=kw.get("thumb_dimensions", 512),
-            burn_in_legend=kw.get("burn_in_legend", True),
-            legend_scale=kw.get("legend_scale", 1.0),
-            bg_color=kw.get("thumb_bg_color", "black"),
-            basemap=kw.get("basemap"),
-        )
-
-        try:
-            result = tl.generate_filmstrip(
-                sec.ee_obj, geom,
-                columns=kw.get("thumb_columns", 4),
-                date_format=kw.get("thumb_date_format", "YYYY"),
-                max_frames=kw.get("thumb_max_frames", 50),
-                crs=kw.get("thumb_crs"),
-                transform=kw.get("thumb_transform"),
-                **shared,
-            )
-            return result["html"]
-        except Exception as e:
-            print(f"    GIF-to-filmstrip fallback failed: {e}", flush=True)
-            return sec.thumb_html  # fallback to original GIF HTML
-
-    # -- Private: section HTML builder (shared by HTML and PDF) ------------
-
-    def _render_section_html(self, sec, static_charts=False):
+    def _render_section_html(self, sec):
         """Render a single section to an HTML fragment.
 
-        Args:
-            sec: _Section instance.
-            static_charts: If True, render charts as static PNG images
-                (for PDF). If False, use interactive Plotly JS (for HTML).
+        The PDF is printed from this same HTML (see :meth:`to_pdf`), so
+        there is one rendering, with interactive Plotly charts.
         """
         import markdown
 
@@ -1664,11 +1581,7 @@ class Report:
 
         # Thumbnail / GIF / filmstrip image
         if sec.thumb_format and sec.thumb_html:
-            if static_charts and sec.thumb_format == "gif":
-                # GIFs don't work in PDF — use pre-computed filmstrip grid
-                parts.append(sec.thumb_filmstrip_html or sec.thumb_html)
-            else:
-                parts.append(sec.thumb_html)
+            parts.append(sec.thumb_html)
 
         # Charts — render sankey_fig, fig, and any extra_figs
         figs_to_render = []
@@ -1680,8 +1593,10 @@ class Report:
             figs_to_render.append(extra)
 
         for fig_obj in figs_to_render:
-            # D3 sankey: already an HTML string (from chart_sankey_d3)
+            # D3 sankey: already an HTML string (from chart_sankey_d3),
+            # drawn in the charts' default dark theme.
             if isinstance(fig_obj, str):
+                fig_obj = _retheme_d3_html(fig_obj, _themeLib.get_theme(self.theme))
                 parts.append(
                     f'<div class="chart"><iframe srcdoc="{_escape_attr(fig_obj)}" '
                     f'style="width:100%;height:{sec.kwargs.get("height", 600) + 50}px;border:none;overflow:hidden;"></iframe></div>'
@@ -1691,71 +1606,44 @@ class Report:
             fig_to_render = self._themed_figure(fig_obj)
             is_sankey = hasattr(fig_to_render, "_gradient_color_map")
 
-            if static_charts:
-                w = sec.kwargs.get("width", 900)
-                if is_sankey:
-                    h = sec.kwargs.get("height", 650)
-                    img_uri = self._sankey_to_static_img(
-                        fig_to_render, width=w, height=h,
-                    )
-                    if img_uri:
-                        parts.append(
-                            f'<div class="chart"><img src="{img_uri}" '
-                            f'style="max-width:100%;border-radius:6px;"></div>'
-                        )
-                else:
-                    # Use figure's own height for multi-subplot charts
-                    fig_h = fig_to_render.layout.height or 500
-                    h = sec.kwargs.get("height", fig_h)
-                    img_uri = self._fig_to_static_img(
-                        fig_to_render, width=w, height=h,
-                    )
-                    if img_uri:
-                        # For tall charts, don't constrain width (let it scroll/flow)
-                        style = 'width:100%;border-radius:6px;' if h > 800 else 'max-width:100%;border-radius:6px;'
-                        parts.append(
-                            f'<div class="chart"><img src="{img_uri}" '
-                            f'style="{style}"></div>'
-                        )
+            if is_sankey:
+                _th = _themeLib.get_theme(self.theme)
+                chart_html = cl.sankey_to_html(
+                    fig_to_render,
+                    bg_color=_th.bg_hex,
+                    font_color=_th.text_hex,
+                    theme=self.theme,
+                )
+                parts.append(
+                    f'<div class="chart"><iframe srcdoc="{_escape_attr(chart_html)}" '
+                    f'style="width:100%;height:{sec.kwargs.get("height", 600) + 50}px;border:none;overflow:hidden;"></iframe></div>'
+                )
             else:
-                if is_sankey:
-                    _th = _themeLib.get_theme(self.theme)
-                    chart_html = cl.sankey_to_html(
-                        fig_to_render,
-                        bg_color=_th.bg_hex,
-                        font_color=_th.text_hex,
-                        theme=self.theme,
-                    )
-                    parts.append(
-                        f'<div class="chart"><iframe srcdoc="{_escape_attr(chart_html)}" '
-                        f'style="width:100%;height:{sec.kwargs.get("height", 600) + 50}px;border:none;overflow:hidden;"></iframe></div>'
-                    )
-                else:
-                    # Scale height for multi-subplot figures
-                    n_rows = sum(1 for k in fig_to_render.layout.to_plotly_json()
-                                 if k.startswith("yaxis"))
-                    if n_rows > 1 and (fig_to_render.layout.height or 0) < 200 * n_rows:
-                        fig_to_render.update_layout(height=200 * n_rows)
-                    # Multi-feature charts (e.g., per-feature time-series
-                    # subplots) bake in a fixed ``layout.width`` like 1800px
-                    # which overflows the report container and forces a
-                    # horizontal scrollbar. Render a copy with the width
-                    # cleared and Plotly's responsive flag set so the chart
-                    # scales to its containing div. Original figure object
-                    # is untouched in case the caller reuses it.
-                    import copy as _copy
-                    fig_responsive = _copy.copy(fig_to_render)
-                    fig_responsive.layout = _copy.deepcopy(fig_to_render.layout)
-                    fig_responsive.update_layout(width=None, autosize=True)
-                    config = dict(cl._plotly_download_config(fig_responsive))
-                    config["responsive"] = True
-                    chart_div = fig_responsive.to_html(
-                        full_html=False, include_plotlyjs=False,
-                        config=config,
-                    )
-                    parts.append(
-                        f'<div class="chart" style="width:100%;">{chart_div}</div>'
-                    )
+                # Scale height for multi-subplot figures
+                n_rows = sum(1 for k in fig_to_render.layout.to_plotly_json()
+                             if k.startswith("yaxis"))
+                if n_rows > 1 and (fig_to_render.layout.height or 0) < 200 * n_rows:
+                    fig_to_render.update_layout(height=200 * n_rows)
+                # Multi-feature charts (e.g., per-feature time-series
+                # subplots) bake in a fixed ``layout.width`` like 1800px
+                # which overflows the report container and forces a
+                # horizontal scrollbar. Render a copy with the width
+                # cleared and Plotly's responsive flag set so the chart
+                # scales to its containing div. Original figure object
+                # is untouched in case the caller reuses it.
+                import copy as _copy
+                fig_responsive = _copy.copy(fig_to_render)
+                fig_responsive.layout = _copy.deepcopy(fig_to_render.layout)
+                fig_responsive.update_layout(width=None, autosize=True)
+                config = dict(cl._plotly_download_config(fig_responsive))
+                config["responsive"] = True
+                chart_div = fig_responsive.to_html(
+                    full_html=False, include_plotlyjs=False,
+                    config=config,
+                )
+                parts.append(
+                    f'<div class="chart" style="width:100%;">{chart_div}</div>'
+                )
 
         # Table
         if sec.generate_table and sec.df is not None:
@@ -1881,7 +1769,7 @@ class Report:
         )
 
         section_parts = [
-            self._render_section_html(sec, static_charts=False)
+            self._render_section_html(sec)
             for sec in self._sections
         ]
 
@@ -1936,229 +1824,6 @@ class Report:
             f" and {self.model} for output summaries.*"
         )
         return "\n".join(lines)
-
-    def _render_pdf(self, output_path):
-        """Render the report as PDF.
-
-        Uses kaleido to render Plotly charts as static PNG images, then
-        converts to PDF using (in order of preference):
-
-        1. Edge/Chrome headless ``--print-to-pdf`` (available on most systems)
-        2. ``pdfkit`` + ``wkhtmltopdf``
-        3. Fallback: saves a print-ready HTML with ``@page`` CSS directives
-        """
-        import shutil
-        import subprocess
-        import tempfile
-
-        if not output_path:
-            output_path = self.title.replace(" ", "_") + ".pdf"
-
-        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-
-        # Use the theme that was active when thumbnails/GIFs were computed so
-        # the CSS background matches the baked-in raster backgrounds.
-        render_theme = self._computed_theme or self.theme
-        saved_theme = self.theme
-        self.theme = render_theme
-
-        try:
-            return self._render_pdf_inner(output_path)
-        finally:
-            self.theme = saved_theme
-
-    def _render_pdf_inner(self, output_path):
-        """Internal PDF rendering (called by _render_pdf with theme set)."""
-        import shutil
-        import subprocess
-        import tempfile
-
-        # Build HTML with static chart images (no JS needed)
-        _t = _themeLib.get_theme(self.theme)
-        css = self._get_css()
-        # PDF overrides: full-bleed background, proper page breaks
-        css += textwrap.dedent(f"""
-            html, body {{
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }}
-            @page {{
-                margin: 0;
-                size: letter portrait;
-            }}
-            body {{
-                padding: 0.4in 0.5in 0.4in 0.5in;
-            }}
-            .report-header {{
-                margin: -0.4in -0.5in 16px -0.5in;
-                padding: 12px 0.5in;
-            }}
-            .table-wrapper {{
-                max-height: none !important;
-                overflow-y: visible !important;
-                overflow-x: visible !important;
-            }}
-            table {{ font-size: 9px; }}
-            thead {{ display: table-header-group; }}
-            tfoot {{ display: table-footer-group; }}
-            /* Both the legacy (``page-break-*``) AND modern (``break-*``)
-               properties are set — WeasyPrint honors different subsets
-               across versions, and covering both maximizes the odds a
-               given release respects the intent. */
-            tr, tr th, tr td {{
-                page-break-inside: avoid;
-                break-inside: avoid;
-            }}
-            h2, h3 {{ page-break-after: avoid; break-after: avoid; }}
-            .narrative {{ page-break-before: avoid; break-before: avoid; }}
-            /* Keep individual thumbnail cells intact — never cut a
-               single frame across a page boundary. */
-            .filmstrip img,
-            .filmstrip-cell,
-            .thumbnail,
-            .section-thumbnail,
-            .thumb-cell {{
-                page-break-inside: avoid;
-                break-inside: avoid;
-            }}
-            .matrix-title {{ page-break-after: avoid; break-after: avoid; }}
-            .table-units {{ page-break-after: avoid; break-after: avoid; }}
-            .table-wrapper {{ page-break-before: auto; break-before: auto; }}
-            /* A table's rows are already `avoid`-broken above; also add
-               a soft rule on the wrapper so the header + first row stay
-               together, and the last row isn't orphaned on a new page. */
-            .data-table {{
-                page-break-inside: auto;
-                break-inside: auto;
-            }}
-            .report-footer {{ display: none; }}
-            .pdf-footer-tpl {{ display: none; }}
-            .pdf-page-footer {{
-                display: flex; align-items: center; gap: 8px;
-                position: fixed; bottom: 0; left: 0.5in; right: 0.5in;
-                padding: 4px 0;
-                border-top: 1px solid {_t.border_hex};
-                color: {_t.muted_text_hex}; font-size: 9px;
-                background: {_t.bg_hex};
-                z-index: 100;
-            }}
-            .pdf-page-footer a {{ color: {_t.accent_hex}; text-decoration: none; }}
-            .pdf-page-footer img {{ height: 16px; width: auto; max-width: 80px;
-                border-radius: 3px; opacity: 0.7; }}
-            .pdf-page-footer .page-num {{ margin-left: auto; }}
-            /* Ensure content doesn't get hidden behind fixed footer */
-            body {{ padding-bottom: 40px; }}
-        """)
-
-        header_block, header_text_html, summary_html, footer_html = (
-            self._build_header_footer()
-        )
-
-        section_parts = [
-            self._render_section_html(sec, static_charts=True)
-            for sec in self._sections
-        ]
-
-        if self.layout == "poster":
-            sections_html = (
-                '<div class="poster-grid">\n'
-                + "\n\n".join(section_parts)
-                + '\n</div>'
-            )
-        else:
-            sections_html = "\n\n".join(section_parts)
-
-        # Build PDF footer template (hidden) + JS to clone per page
-        icon_uri = self._get_icon_uri()
-        icon_img = f'<img src="{icon_uri}" alt="geeViz"> ' if icon_uri else ''
-        footer_content = (
-            f'{icon_img}'
-            f'Powered by: '
-            f'<a href="https://geeviz.org/">geeViz.reportLib</a> | '
-            f'<a href="https://gemini.google.com/">Gemini</a> {self.model} | '
-            f'<a href="https://earthengine.google.com/">Earth Engine</a>'
-            f'<span class="page-num"></span>'
-        )
-        # Fixed footer: position:fixed repeats on every printed page
-        pdf_footer_html = (
-            f'<div class="pdf-page-footer">{footer_content}</div>'
-        )
-
-        html = _PDF_HTML_TEMPLATE.format(
-            title=self.title,
-            css=css,
-            header_block=header_block,
-            header_text_html=header_text_html,
-            timestamp=datetime.now().strftime("%B %d, %Y at %I:%M %p"),
-            summary_html=summary_html,
-            sections_html=sections_html,
-            footer_html=footer_html,
-            pdf_footer_html=pdf_footer_html,
-        )
-
-        # Strategy 1: Edge or Chrome headless --print-to-pdf
-        browser = _find_browser()
-        if browser:
-            try:
-                tmp_html = os.path.join(tempfile.gettempdir(), "geeviz_report_tmp.html")
-                with open(tmp_html, "w", encoding="utf-8") as f:
-                    f.write(html)
-
-                # Build the command
-                abs_pdf = os.path.abspath(output_path)
-                cmd = [
-                    browser, "--headless", "--disable-gpu",
-                    f"--print-to-pdf={abs_pdf}",
-                    "--no-pdf-header-footer",
-                    "--virtual-time-budget=3000",
-                ]
-                if self.layout == "poster":
-                    # 48x36 inch poster
-                    cmd.append("--print-to-pdf-no-header")
-                cmd.append(tmp_html)
-
-                result = subprocess.run(cmd, capture_output=True, timeout=120)
-                os.remove(tmp_html)
-
-                if result.returncode == 0 and os.path.exists(abs_pdf):
-                    print(f"PDF saved to: {output_path}", flush=True)
-                    return output_path
-                else:
-                    stderr = result.stderr.decode(errors="replace")
-                    print(f"  Browser PDF failed: {stderr}", flush=True)
-            except Exception as e:
-                print(f"  Browser PDF failed: {e}", flush=True)
-
-        # Strategy 2: pdfkit + wkhtmltopdf
-        try:
-            import pdfkit
-            orientation = "Landscape" if self.layout == "poster" else "Portrait"
-            options = {
-                "page-size": "Letter",
-                "orientation": orientation,
-                "margin-top": "0.4in",
-                "margin-right": "0.4in",
-                "margin-bottom": "0.4in",
-                "margin-left": "0.4in",
-                "encoding": "UTF-8",
-                "enable-local-file-access": "",
-            }
-            pdfkit.from_string(html, output_path, options=options)
-            print(f"PDF saved to: {output_path}", flush=True)
-            return output_path
-        except ImportError:
-            pass
-        except Exception as e:
-            print(f"  pdfkit failed: {e}", flush=True)
-
-        # Strategy 3: Fallback — return print-ready HTML content
-        # (caller is responsible for saving via save_file or open)
-        print(
-            "PDF conversion not available (Chrome/wkhtmltopdf not found).\n"
-            "Returning print-ready HTML instead. Download and open in browser -> Print -> Save as PDF."
-        , flush=True)
-        return html
-
 
 # ---------------------------------------------------------------------------
 #  Helpers

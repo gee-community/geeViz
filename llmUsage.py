@@ -54,6 +54,12 @@ from typing import Any, Callable, Optional
 #: Callers may still pass any model explicitly; this is only the default.
 DEFAULT_MODEL = "gemini-3.8-flash"
 
+#: The model :class:`geeViz.outputLib.reports.Report` writes with unless
+#: told otherwise. Reports are the one surface where the model writes
+#: long prose a reader keeps (summaries, per-section narrative), so they
+#: get the stronger Gemini 4 Hydrogen rather than the flash default.
+REPORT_MODEL = "gemini-4-hydrogen"
+
 
 # ── A client and a config without the log noise ──────────────────────
 #
@@ -105,6 +111,7 @@ def genai_config(**kwargs):
 
 __all__ = [
     "DEFAULT_MODEL",
+    "REPORT_MODEL",
     "CANONICAL_FIELDS",
     "usage_from_response",
     "report",

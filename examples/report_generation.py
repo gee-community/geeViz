@@ -9,12 +9,14 @@ Demonstrates building a multi-section report with:
   - LLM-generated narratives (via Gemini)
   - Fully parallel EE data + narrative requests
   - Dark and light themes
-  - HTML, PDF, and Markdown output formats
+  - HTML and Markdown output; every HTML also prints to a PDF beside it
 
 Requirements:
   - geeViz with outputLib (reports, thumbnails, charting)
   - GOOGLE_API_KEY in environment or geeViz/.env
-  - For PDF: pip install pdfkit + wkhtmltopdf installed
+  - For PDF: Chrome, Edge or Chromium, and pip install playwright
+    (included in geeViz[mcp]); without playwright the PDF still prints,
+    without page numbers
 
 Copyright 2026 Ian Housman
 
@@ -222,27 +224,17 @@ md_path = report.generate(
 print(f"Markdown generated in {time.time() - start:.1f}s")
 
 # ---------------------------------------------------------------------------
-#  Generate PDF — report layout (static charts via kaleido)
+#  PDFs
 # ---------------------------------------------------------------------------
-start = time.time()
-report.theme = "light"
-report.layout = "report"
-pdf_path = report.generate(
-    format="pdf",
-    output_path=os.path.join(output_dir, f"{name}_report.pdf"),
-)
-print(f"PDF (report) generated in {time.time() - start:.1f}s")
+# Every generate(format="html", output_path=...) above also printed a PDF
+# beside its HTML: same name, .pdf. The PDF is that HTML, printed: vector
+# charts, tables that break between rows and repeat their header, each GIF
+# as a grid of its frames, and page numbers. report.pdf_path is the last one.
+pdf_path = os.path.splitext(html_light_path)[0] + ".pdf"
+pdf_poster_path = os.path.splitext(poster_path)[0] + ".pdf"
 
-# ---------------------------------------------------------------------------
-#  Generate PDF — poster layout (landscape)
-# ---------------------------------------------------------------------------
-start = time.time()
-report.layout = "poster"
-pdf_poster_path = report.generate(
-    format="pdf",
-    output_path=os.path.join(output_dir, f"{name}_poster.pdf"),
-)
-print(f"PDF (poster) generated in {time.time() - start:.1f}s")
+# To print HTML you already have (or to get the PDF as bytes), use
+# report.to_pdf() or rl.html_to_pdf(html, "out.pdf").
 
 # ---------------------------------------------------------------------------
 #  Summary
@@ -258,5 +250,5 @@ print(f"  Dark HTML (report): {html_path}")
 print(f"  Dark HTML (poster): {poster_path}")
 print(f"  Light HTML:         {html_light_path}")
 print(f"  Markdown:           {md_path}")
-print(f"  PDF (report):       {pdf_path}")
-print(f"  PDF (poster):       {pdf_poster_path}")
+print(f"  PDF (light report): {pdf_path}")
+print(f"  PDF (dark poster):  {pdf_poster_path}")
