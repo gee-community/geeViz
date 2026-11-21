@@ -461,6 +461,19 @@ def test_copy_collection_aggregates_child_failures(runtime):
     assert runtime.data.copyAsset.call_count == 3
 
 
+def test_copy_collection_reports_every_failed_child(runtime):
+    # every failure is named, not the first ten
+    runtime.data.getAsset.return_value = {"type": "IMAGE_COLLECTION"}
+    names = [f"img{i:02d}" for i in range(15)]
+    runtime.data.listAssets.return_value = {"assets": [{"id": f"s/{n}"} for n in names]}
+    runtime.data.copyAsset.side_effect = _raiser("boom")
+    with pytest.raises(RuntimeError) as info:
+        runtime.module.copy_collection("s", "d")
+    assert "Failed to copy 15 of 15" in str(info.value)
+    for n in names:
+        assert f"{n}: boom" in str(info.value), n
+
+
 @pytest.mark.parametrize("asset_type", ["IMAGE", "TABLE", "FEATURE_COLLECTION"])
 def test_promote_copies_single_assets(runtime, asset_type):
     def get(path):

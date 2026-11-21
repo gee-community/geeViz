@@ -1002,10 +1002,10 @@ def copy_collection(source_collection_path, destination_collection_path, overwri
         except ee.EEException as exc:
             failures.append((name, str(exc)))
     if failures:
-        details = "; ".join(f"{name}: {message}" for name, message in failures[:10])
+        details = "; ".join(f"{name}: {message}" for name, message in failures)
         raise RuntimeError(
             f"Failed to copy {len(failures)} of {len(children)} assets from {source_collection_path} "
-            f"to {destination_collection_path}. First 10: {details}"
+            f"to {destination_collection_path}: {details}"
         )
 
 
