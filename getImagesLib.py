@@ -7491,6 +7491,307 @@ def superSimpleGetS2(
 
 #########################################################################
 #########################################################################
+# Sentinel-3 OLCI: radiance to TOA reflectance, with cloud masking
+#
+# COPERNICUS/S3/OLCI is Level-1 top-of-atmosphere radiance (mW m-2 sr-1
+# nm-1) with no sun-angle bands and no cloud mask. getS3 converts it to
+# TOA reflectance and masks clouds.
+#
+# Band shift in the Earth Engine collection (checked 2026-11-17). In
+# many images the radiance bands are stored one band too high: the band
+# named OaN holds OaN-1's data, the band named Oa01 holds a fill value
+# (about -2.0e9) and the band named Oa10 holds fill or 0, so true Oa09
+# and Oa21 are missing. It is per image, not per date range: shifted and
+# correct images alternate from 2018 to at least October 2026 (most of
+# 2021 through July 2026 is shifted). The signature is in the spectra:
+# read as labeled, the O2-A absorption dip appears in "Oa14" instead of
+# Oa13 and the 940 nm water vapor dip in "Oa21" instead of Oa20, and
+# Oa17 reads about 1.2x its neighbors. Relabeled, shifted and correct
+# images of the same site agree within about 2% in every band.
+# s3OLCIFixBandShift detects the fill in Oa01 pixel by pixel and
+# relabels.
+
+s3OLCIRadianceBands = ["Oa%02d_radiance" % i for i in range(1, 22)]
+s3OLCIBandNames = ["Oa%02d" % i for i in range(1, 22)]
+
+# Band center wavelengths (nm), from the Earth Engine catalog.
+s3OLCIWavelengths = [400, 412.5, 442.5, 490, 510, 560, 620, 665, 673.75, 681.25, 708.75, 753.75, 761.25, 764.375, 767.5, 778.75, 865, 885, 900, 940, 1020]
+
+# In-band solar irradiance (mW m-2 nm-1) for each band, Thuillier-2003
+# spectrum over each instrument's mean spectral response: Table 1 of
+# ESA/ACRI-ST OMPC.ACR.MEM.018 i1.2 (2023), "Impact of the use of the
+# TSIS solar spectrum on Sentinel-3 products", given there in W m-2 nm-1.
+s3OLCISolarIrradiance = {
+    "S3A": [1513, 1704, 1889, 1935, 1926, 1796, 1649, 1530, 1495, 1469, 1403, 1266, 1247, 1239, 1230, 1174, 960, 931, 896, 826, 700],
+    "S3B": [1535, 1706, 1890, 1933, 1927, 1797, 1649, 1531, 1495, 1470, 1404, 1266, 1247, 1240, 1230, 1175, 960, 931, 896, 827, 700],
+}
+
+# Common names given to the bands other geeViz functions look for. The
+# rest keep their OLCI names (Oa01, Oa02, ...).
+s3OLCICommonBandNames = {"Oa03": "cb", "Oa04": "blue", "Oa06": "green", "Oa08": "red", "Oa11": "re1", "Oa12": "re2", "Oa16": "re3", "Oa17": "nir"}
+
+# quality_flags bits used here (Earth Engine catalog).
+s3OLCIQualityBits = {"invalid": 25, "bright": 27, "land": 31}
+
+
+def s3OLCIFixBandShift(img: ee.Image) -> ee.Image:
+    """Relabel an OLCI radiance image whose bands are stored one band too high.
+
+    In many ``COPERNICUS/S3/OLCI`` images the band named ``OaN_radiance``
+    holds band N-1's data and ``Oa01_radiance`` holds a fill value (see the
+    note above :data:`s3OLCIRadianceBands`). Where ``Oa01_radiance`` is that
+    fill, each band takes the next band's data, and Oa09 and Oa21 (which
+    the shifted images do not have) are masked. Correct pixels pass through.
+    Fill values and zeros (a second missing-data marker) are masked in
+    every band.
+
+    Args:
+        img (ee.Image): An image from ``COPERNICUS/S3/OLCI``.
+
+    Returns:
+        ee.Image: The image with its 21 radiance bands relabeled where needed.
+    """
+    shifted = img.select(["Oa01_radiance"]).lt(-1e6)
+    bands = []
+    for i, name in enumerate(s3OLCIRadianceBands):
+        orig = img.select([name])
+        nxt = img.select([s3OLCIRadianceBands[i + 1]]) if i < 20 else orig
+        band = orig.where(shifted, nxt)
+        if i in (8, 20):  # Oa09 and Oa21: not in a shifted image
+            band = band.updateMask(shifted.Not())
+        bands.append(band.rename([name]))
+    fixed = ee.Image.cat(bands)
+    fixed = fixed.updateMask(fixed.gt(0))
+    return img.addBands(fixed, None, True)
+
+
+def s3OLCISolarZenithCos(img: ee.Image) -> ee.Image:
+    """Cosine of the solar zenith angle for each pixel of an OLCI image.
+
+    OLCI in Earth Engine carries no sun-angle bands, so this computes the
+    sun position from the image time (``system:time_start``, the granule's
+    first scan line) and each pixel's latitude and longitude, with the
+    NOAA declination and equation-of-time series. A granule spans about
+    three minutes, so the hour angle is within about 0.75 degrees.
+
+    Args:
+        img (ee.Image): An image with ``system:time_start``.
+
+    Returns:
+        ee.Image: Single band ``cosSZA``.
+    """
+    t = ee.Date(img.get("system:time_start"))
+    doy = t.getRelative("day", "year").add(1)
+    gamma = doy.subtract(1).multiply(2 * math.pi / 365.0)
+    decl = (
+        ee.Number(0.006918)
+        .subtract(gamma.cos().multiply(0.399912))
+        .add(gamma.sin().multiply(0.070257))
+        .subtract(gamma.multiply(2).cos().multiply(0.006758))
+        .add(gamma.multiply(2).sin().multiply(0.000907))
+        .subtract(gamma.multiply(3).cos().multiply(0.002697))
+        .add(gamma.multiply(3).sin().multiply(0.00148))
+    )
+    eqTime = (
+        ee.Number(0.000075)
+        .add(gamma.cos().multiply(0.001868))
+        .subtract(gamma.sin().multiply(0.032077))
+        .subtract(gamma.multiply(2).cos().multiply(0.014615))
+        .subtract(gamma.multiply(2).sin().multiply(0.040849))
+    ).multiply(229.18)
+    hourUTC = t.get("hour").add(t.get("minute").divide(60)).add(t.get("second").divide(3600))
+    lonLat = ee.Image.pixelLonLat()
+    lat = lonLat.select(["latitude"]).multiply(math.pi / 180)
+    hourAngle = lonLat.select(["longitude"]).multiply(4).add(hourUTC.multiply(60)).add(eqTime).divide(4).subtract(180).multiply(math.pi / 180)
+    cosSZA = lat.sin().multiply(decl.sin()).add(lat.cos().multiply(decl.cos()).multiply(hourAngle.cos()))
+    return cosSZA.rename(["cosSZA"])
+
+
+def s3OLCIToTOA(img: ee.Image, minCosSZA: float = 0.1) -> ee.Image:
+    """Convert an OLCI radiance image to top-of-atmosphere reflectance (0-1).
+
+    ``reflectance = pi * L * d^2 / (E0 * cos(SZA))``, with ``L`` the band
+    radiance, ``d`` the Earth-Sun distance in AU, ``E0`` the band's solar
+    irradiance for that spacecraft (:data:`s3OLCISolarIrradiance`) and the
+    solar zenith from :func:`s3OLCISolarZenithCos`. Fixes the band shift
+    first (:func:`s3OLCIFixBandShift`). Pixels with the sun low (cosine
+    under ``minCosSZA``, about 84 degrees) are masked, as are pixels flagged
+    invalid.
+
+    No view-angle correction is possible (the collection has no view
+    angles), so the same surface reads up to about 10% differently from one
+    overpass to the next across the swath.
+
+    Args:
+        img (ee.Image): An image from ``COPERNICUS/S3/OLCI``.
+        minCosSZA (float, optional): Mask pixels whose sun is lower than
+            this. Defaults to 0.1.
+
+    Returns:
+        ee.Image: The 21 bands as TOA reflectance, with common names where
+        they have one (:data:`s3OLCICommonBandNames`), plus ``quality_flags``.
+        The image's properties are kept.
+    """
+    img = s3OLCIFixBandShift(img)
+    t = ee.Date(img.get("system:time_start"))
+    doy = t.getRelative("day", "year").add(1)
+    d = ee.Number(1).subtract(ee.Number(0.01672).multiply(doy.subtract(4).multiply(0.9856 * math.pi / 180).cos()))
+    cosSZA = s3OLCISolarZenithCos(img)
+    e0 = ee.Image(
+        ee.Algorithms.If(
+            ee.String(img.get("spacecraft")).equals("S3B"),
+            ee.Image.constant(s3OLCISolarIrradiance["S3B"]),
+            ee.Image.constant(s3OLCISolarIrradiance["S3A"]),
+        )
+    )
+    q = img.select(["quality_flags"])
+    refl = img.select(s3OLCIRadianceBands).multiply(math.pi).multiply(d.pow(2)).divide(e0.multiply(cosSZA))
+    refl = refl.updateMask(cosSZA.gt(minCosSZA)).updateMask(q.bitwiseAnd(1 << s3OLCIQualityBits["invalid"]).eq(0))
+    names = [s3OLCICommonBandNames.get(b, b) for b in s3OLCIBandNames]
+    return ee.Image(refl.rename(names).addBands(q).copyProperties(img, img.propertyNames()))
+
+
+def s3OLCICloudScore(img: ee.Image) -> ee.Image:
+    """Cloud score (0-100) for an OLCI TOA reflectance image from :func:`s3OLCIToTOA`.
+
+    The Landsat and Sentinel-2 cloud scores without their shortwave
+    infrared and thermal tests, which OLCI cannot do: clouds are bright in
+    the blue or coastal blue band, bright across the visible, and bright in
+    the near infrared. Without shortwave infrared it cannot tell snow, salt
+    flats or white sand from cloud. Use it through
+    :func:`applyCloudScoreAlgorithm`, whose per-pixel offset (a low
+    percentile of the score over time) removes surfaces that are always
+    bright, as :func:`getS3` does.
+
+    Args:
+        img (ee.Image): Image with bands ``cb``, ``blue``, ``green``, ``red``,
+            ``nir`` and ``Oa18`` as 0-1 reflectance.
+
+    Returns:
+        ee.Image: Single band ``cloudScore``, 0-100.
+    """
+    score = rescale(img.select(["blue"]), [0.1, 0.5]).max(rescale(img.select(["cb"]), [0.1, 0.5]))
+    score = score.min(rescale(img.select(["red", "green", "blue"]).reduce(ee.Reducer.sum()), [0.2, 0.8]))
+    score = score.min(rescale(img.select(["nir", "Oa18"]).reduce(ee.Reducer.sum()), [0.3, 0.8]))
+    return score.clamp(0, 1).multiply(100).byte().rename(["cloudScore"])
+
+
+def getS3(
+    studyArea: ee.Geometry | ee.Feature | ee.FeatureCollection | None,
+    startDate: ee.Date | datetime.datetime | str,
+    endDate: ee.Date | datetime.datetime | str,
+    startJulian: int = 1,
+    endJulian: int = 365,
+    cloudMaskMethod: str | None = "cloudScore",
+    cloudScoreThresh: float = 20,
+    cloudScorePctl: float = 10,
+    performCloudScoreOffset: bool = True,
+    preComputedCloudScoreOffset: ee.Image = None,
+    contractPixels: float = 1.5,
+    dilatePixels: float = 2.5,
+    landOnly: bool = False,
+) -> ee.ImageCollection:
+    """Get Sentinel-3 OLCI as top-of-atmosphere reflectance (0-1), cloud masked.
+
+    Sentinel-3A and 3B OLCI (``COPERNICUS/S3/OLCI``, 2016 to present): 21
+    bands from 400 to 1020 nm at 300 m, near-daily with both satellites.
+    Each image is converted from radiance to TOA reflectance
+    (:func:`s3OLCIToTOA`), with the Earth Engine collection's band shift
+    corrected (:func:`s3OLCIFixBandShift`). Returns individual scenes; use
+    ``.median()`` for a composite.
+
+    Bands: ``cb`` (443 nm), ``blue`` (490), ``green`` (560), ``red`` (665),
+    ``re1`` (709), ``re2`` (754), ``re3`` (779), ``nir`` (865), and the rest
+    under their OLCI names (``Oa01``, ``Oa02``, ``Oa05``, ``Oa07``, ``Oa09``,
+    ``Oa10``, ``Oa13``-``Oa15``, ``Oa18``-``Oa21``), plus ``quality_flags``.
+    ``Oa13``-``Oa15`` and ``Oa19``-``Oa20`` sit in oxygen and water vapor
+    absorption bands. ``Oa09`` and ``Oa21`` are masked in images whose
+    bands Earth Engine stored shifted, so a composite of them has fewer
+    observations than the other bands.
+
+    Cloud masking (``cloudMaskMethod``). OLCI in Earth Engine has no cloud
+    mask, only a coarse "bright" flag. Checked against Sentinel-2 Cloud
+    Score+ on same-day overpasses (2025, five areas, about 7,500 samples):
+
+    * ``"cloudScore"`` (default): :func:`s3OLCICloudScore` through
+      :func:`applyCloudScoreAlgorithm`, with the per-pixel temporal offset.
+      Snow-free land: about 75-80% of clouds caught over cropland with
+      4-14% of clear pixels lost, about 55-60% caught over desert with 3-4%
+      lost. The offset needs a date range of several weeks (it reads a low
+      percentile of each pixel's score over the collection), or pass
+      ``preComputedCloudScoreOffset``.
+    * ``"bright"``: masks pixels with the quality_flags bright bit. Catches
+      45-65% of clouds over snow-free land with 0-11% false alarms, and
+      masks nearly all snow, salt flats and white sand.
+    * ``None``: no cloud masking.
+
+    Neither method works over snow: there is no shortwave infrared band to
+    tell snow from cloud. Neither detects cloud shadows. A median of many
+    near-daily scenes removes much of what the mask misses.
+
+    Args:
+        studyArea (ee.Geometry, ee.Feature, ee.FeatureCollection, or None): Area of interest. If None, startJulian and endJulian are not applied.
+        startDate (ee.Date, datetime.datetime, or str): Start date, YYYY-MM-DD.
+        endDate (ee.Date, datetime.datetime, or str): End date, YYYY-MM-DD (inclusive).
+        startJulian (int, optional): Start day of year. Defaults to 1.
+        endJulian (int, optional): End day of year. Defaults to 365.
+        cloudMaskMethod (str or None, optional): ``"cloudScore"``, ``"bright"`` or None. Defaults to "cloudScore".
+        cloudScoreThresh (float, optional): Cloud score (after the offset) above which a pixel is masked. Defaults to 20.
+        cloudScorePctl (float, optional): Percentile of each pixel's score over the collection used as its offset. Defaults to 10.
+        performCloudScoreOffset (bool, optional): Subtract the per-pixel offset. Defaults to True.
+        preComputedCloudScoreOffset (ee.Image, optional): An offset image to use instead of computing one. Defaults to None.
+        contractPixels (float, optional): Erode the cloud mask by this many 300 m pixels first, dropping isolated flagged pixels. Defaults to 1.5.
+        dilatePixels (float, optional): Then dilate it by this many pixels to cover cloud edges. Defaults to 2.5.
+        landOnly (bool, optional): Keep only pixels with the quality_flags land bit. Defaults to False.
+
+    Returns:
+        ee.ImageCollection: OLCI scenes as TOA reflectance, 0-1.
+
+    >>> import geeViz.getImagesLib as gil
+    >>> Map = gil.Map
+    >>> ee = gil.ee
+    >>> studyArea = gil.testAreas["CA"]
+    >>> s3 = gil.getS3(studyArea, "2025-06-01", "2025-08-31")
+    >>> composite = s3.median()
+    >>> Map.addLayer(composite, {"bands": "red,green,blue", "min": 0.02, "max": 0.3}, "Sentinel-3 OLCI TOA")
+    >>> ndvi = composite.normalizedDifference(["nir", "red"]).rename("NDVI")
+    >>> Map.addLayer(ndvi, {"min": 0.1, "max": 0.8, "palette": "8B4513,FFFFCC,99CC33,006600"}, "OLCI NDVI")
+    >>> Map.centerObject(studyArea)
+    >>> Map.view()
+    """
+    startDate = ee.Date(startDate)
+    endDate = ee.Date(endDate)
+    s3s = ee.ImageCollection("COPERNICUS/S3/OLCI").filterDate(startDate, endDate.advance(1, "day"))
+    if studyArea != None:
+        s3s = s3s.filterBounds(studyArea)
+        if startJulian != 1 or endJulian != 365:
+            s3s = s3s.filter(ee.Filter.calendarRange(startJulian, endJulian))
+
+    s3s = s3s.map(s3OLCIToTOA)
+
+    if landOnly:
+        s3s = s3s.map(lambda img: img.updateMask(img.select(["quality_flags"]).bitwiseAnd(1 << s3OLCIQualityBits["land"]).neq(0)))
+
+    if cloudMaskMethod == "cloudScore":
+        s3s = applyCloudScoreAlgorithm(
+            s3s,
+            s3OLCICloudScore,
+            cloudScoreThresh,
+            cloudScorePctl,
+            contractPixels,
+            dilatePixels,
+            performCloudScoreOffset,
+            preComputedCloudScoreOffset,
+        )
+    elif cloudMaskMethod == "bright":
+        s3s = s3s.map(lambda img: img.updateMask(img.select(["quality_flags"]).bitwiseAnd(1 << s3OLCIQualityBits["bright"]).eq(0)))
+    elif cloudMaskMethod is not None:
+        raise ValueError('cloudMaskMethod must be "cloudScore", "bright" or None, not %r' % (cloudMaskMethod,))
+    return s3s
+
+
+#########################################################################
+#########################################################################
 # Fall foliage: color indices and change from a leaf-on baseline
 # Ported from AskTerra 1.0's terraFoliage (rcr_services ee_services
 # foliageIndices / getFoliageService).
