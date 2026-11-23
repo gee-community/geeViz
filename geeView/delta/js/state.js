@@ -6,7 +6,9 @@ export function defaultState() {
     order: [],
     tool: null,
     units: "metric",
-    showAs: "area",
+    // Chart area's Show as: % of area unless the user picks the area unit
+    // (remembered in that map's url, tools.js SHOW_AS_PARAM)
+    showAs: "pct",
     areaFrom: "view",
     results: [],
     where: "",

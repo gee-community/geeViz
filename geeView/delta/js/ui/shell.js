@@ -2,7 +2,7 @@
 // The static markup lives in delta.html; this module only wires it to the store.
 
 const LEFT_MIN = 240;
-// wide enough for the four tool tabs with their labels
+// wide enough for the tool tabs with their labels
 const RIGHT_MIN = 330;
 const LOGO = "./src/assets/images/geeviz-logo-";
 
@@ -320,16 +320,27 @@ export function mountShell(store, { mapEl } = {}) {
   store.on("change:title", renderTitle);
 
   // ---- tools: one active at a time, none folds the right pane ----
+  // A button can stand for several tools (Measure: data-tools="distance area",
+  // toggled in its options); it reopens the one last used.
+  const toolsOf = (b) => (b.dataset.tools || b.dataset.tool).split(" ");
   function renderTool() {
     const tool = store.get().tool;
     body.classList.toggle("no-tool", !tool);
-    $$("#pane-right .tool").forEach((b) => b.classList.toggle("on", b.dataset.tool === tool));
+    $$("#pane-right .tool").forEach((b) => {
+      const mine = toolsOf(b).includes(tool);
+      if (mine) b.dataset.last = tool;
+      b.classList.toggle("on", mine);
+    });
   }
   store.on("change:tool", renderTool);
   $$("#pane-right .tool").forEach((b) =>
     // Phones: the Tools sheet stays open on a pick (its settings are there);
     // the tab bar closes it.
-    b.addEventListener("click", () => store.set({ tool: store.get().tool === b.dataset.tool ? null : b.dataset.tool }, "tool-button"))
+    b.addEventListener("click", () => {
+      const ts = toolsOf(b);
+      const on = ts.includes(store.get().tool);
+      store.set({ tool: on ? null : b.dataset.last || ts[0] }, "tool-button");
+    })
   );
 
   // ---- phones: one bottom sheet at a time ----

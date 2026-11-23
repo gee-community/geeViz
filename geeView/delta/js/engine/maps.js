@@ -1,16 +1,7 @@
 // The Google map engine. The only DOM it touches is the map element it is
 // given. UI chrome (buttons, body classes, the search input) lives in ui/.
 
-export const DARK_STYLE = [
-  { elementType: "geometry", stylers: [{ color: "#1d1b1a" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#a39a93" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#141211" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#34302d" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f1a1c" }] },
-  { featureType: "poi", stylers: [{ visibility: "off" }] },
-];
-
-// Satellite, Map and Dark carry no labels of their own: labels come from the
+// Satellite and Map carry no labels of their own: labels come from the
 // labels overlay above every layer, so a layer never hides them, they are
 // never drawn twice, and one toggle turns them off.
 //
@@ -19,7 +10,7 @@ export const DARK_STYLE = [
 // every StyledMapType overlay unstyled (seen in Chrome: the satellite labels
 // lost their white text), so those two basemaps draw their own labels,
 // under the layers, and get no overlay. The other basemaps set no map styles.
-export const BASEMAPS = { satellite: "satellite", map: "roadmap-base", terrain: "terrain", darkterrain: "terrain", dark: "dark" };
+export const BASEMAPS = { satellite: "satellite", map: "roadmap-base", terrain: "terrain", darkterrain: "terrain" };
 const NO_LABELS = [{ elementType: "labels", stylers: [{ visibility: "off" }] }];
 export const OWN_LABELS = new Set(["terrain", "darkterrain"]);
 export const DARK_TERRAIN_STYLE = [
@@ -50,16 +41,11 @@ export function mapStylesFor(key, labelsOn) {
 
 // The labels overlay: a labels-only map drawn above every layer, so opaque
 // layers do not hide place names. port of 4map-manager.js labelsMapType
-// (geometry fill off, strokes as hairlines). The dark basemap's labels keep
-// DARK_STYLE's colors, so they stay light on dark.
+// (geometry fill off, strokes as hairlines).
 export const LABELS_STYLE = [
   { elementType: "geometry.fill", stylers: [{ visibility: "off" }] },
   { elementType: "geometry.stroke", stylers: [{ weight: 0.01 }] },
 ];
-export function labelsStyleFor(baseStyle) {
-  const keep = (s) => (s.elementType && s.elementType.indexOf("labels") === 0) || (s.featureType && !s.elementType && s.stylers.some((x) => x.visibility === "off"));
-  return [...LABELS_STYLE, ...(baseStyle || []).filter(keep)];
-}
 // Labels for the satellite basemap look like Google's hybrid labels: light
 // text with a dark halo, readable on imagery.
 export const SATELLITE_LABELS_STYLE = [
@@ -159,7 +145,6 @@ export function createMap(el, store) {
     streetViewControl: false,
     gestureHandling: "greedy",
   });
-  gmap.mapTypes.set("dark", new g.StyledMapType([...DARK_STYLE, ...NO_LABELS], { name: "Dark" }));
   gmap.mapTypes.set("roadmap-base", new g.StyledMapType(NO_LABELS, { name: "Map" }));
   // One labels map type per basemap style, made once; the layer engine stacks
   // the current one above every layer (engine/layers.js sync). The toggle
@@ -168,7 +153,6 @@ export function createMap(el, store) {
   const labels = {
     satellite: new g.StyledMapType(SATELLITE_LABELS_STYLE, { name: "Satellite labels" }),
     map: new g.StyledMapType(LABELS_STYLE, { name: "Labels" }),
-    dark: new g.StyledMapType(labelsStyleFor(DARK_STYLE), { name: "Dark labels" }),
   };
 
   const listeners = { history: [], streetView: [], pick: [], cursor: [], zoom: [], basemap: [], labels: [] };

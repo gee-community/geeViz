@@ -189,6 +189,8 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
 /* phones: the wrapper steps aside and the sheet keeps its layout (results scroll) */
 @media (max-width: 760px) {
   .pane-body { display: contents; }
+  /* the gap under the tool tabs that the wrapper's margin gives on desktop */
+  .units { margin-top: 0.5rem; }
 }
 @media (min-width: 761px) {
   body.no-tool .pane-right { width: var(--dz-right-folded); }
@@ -210,10 +212,11 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
 /* row geometry shared by the opacity slider and a timelapse's Year and Speed sliders, so the three line up;
    unregistered properties, so 100cqw resolves where they are used (inside the row, against the row) */
 .layer { --lrow-gap: 9px; --leg-w: 34px; --op-indent: 22px; --tl-pad: 8px;
-  --op-w-inline: clamp(64px, calc(100cqw - 250px), 180px); --op-w-stack: clamp(110px, calc(100cqw - 120px), 240px); }
+  --op-w-inline: 180px; --op-w-stack: clamp(110px, calc(100cqw - 120px), 240px); }
 .layer.off .lname { color: var(--dz-mute); }
 .layer.err .lname { color: var(--dz-orange); }
-.lrow { position: relative; isolation: isolate; display: flex; align-items: center; gap: var(--lrow-gap); border-radius: 6px; }
+/* the progress bar runs --tl-pad past the slider on the right; the same room on the left of the toggle */
+.lrow { position: relative; isolation: isolate; display: flex; align-items: center; gap: var(--lrow-gap); border-radius: 6px; padding-left: var(--tl-pad); }
 /* tiles loading: the name row fills left to right with the share of on-screen
    tiles in, ending where a timelapse's controls end, just before the legend
    button (on every layer, legend or not) */
@@ -243,7 +246,7 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
 .layer.leg-open .legbtn .ti { transform: rotate(180deg); }
 .lsw { display: flex; width: 16px; height: 12px; border-radius: 3px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--dz-swatch-edge); }
 .lsw i { flex: 1; }
-/* opacity: inline it starts at 64px, grows 1:1 with the row, stops at 180px; 250px is what toggle, name and legend toggle need */
+/* opacity: inline it is 180px, narrowed by fitRow (layers.js) only when it would nearly meet the name's text */
 .opacity { display: flex; align-items: center; }
 .lrow .opacity { margin: 0; flex: 0 0 auto; width: var(--op-w-inline); min-width: 0; }
 .lrow .opacity input { flex: 1 1 auto; width: 100%; min-width: 0; }
@@ -256,15 +259,15 @@ input[type="range"].dz { flex: 1; height: 16px; margin: 0; -webkit-appearance: n
 input[type="range"].dz::-webkit-slider-thumb { -webkit-appearance: none; border-radius: 50%; }
 /* the track's filled part and the handle's center take the layer's opacity (--a) */
 input[type="range"].dz.op { --a: 1; --v: 100%; }
-input[type="range"].dz.op::-webkit-slider-runnable-track { height: 6px; border-radius: 4px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dz-teal) 55%, var(--dz-line));
+input[type="range"].dz.op::-webkit-slider-runnable-track { height: 3.5px; border-radius: 2px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dz-teal) 55%, var(--dz-line));
   background: linear-gradient(90deg, color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), transparent) var(--v), transparent var(--v)); }
-input[type="range"].dz.op::-webkit-slider-thumb { width: 13px; height: 13px; margin-top: -3.5px; border: 2px solid var(--dz-teal); background: color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), var(--dz-solid)); }
-input[type="range"].dz.op::-moz-range-track { height: 6px; border-radius: 4px; border: 1px solid color-mix(in srgb, var(--dz-teal) 55%, var(--dz-line)); background: transparent; }
-input[type="range"].dz.op::-moz-range-progress { height: 6px; border-radius: 4px; background: color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), transparent); }
+input[type="range"].dz.op::-webkit-slider-thumb { width: 13px; height: 13px; margin-top: -4.75px; border: 2px solid var(--dz-teal); background: color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), var(--dz-solid)); }
+input[type="range"].dz.op::-moz-range-track { height: 3.5px; border-radius: 2px; border: 1px solid color-mix(in srgb, var(--dz-teal) 55%, var(--dz-line)); background: transparent; }
+input[type="range"].dz.op::-moz-range-progress { height: 3.5px; border-radius: 2px; background: color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), transparent); }
 input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border: 2px solid var(--dz-teal); border-radius: 50%; background: color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), var(--dz-solid)); }
 /* legend inside the row; an off layer folds it and keeps its open state */
 /* the legend stops where the opacity slider ends, never under the legend button */
-.legend { margin: 8px calc(var(--leg-w) + var(--lrow-gap)) 0 22px; display: none; gap: 3px 8px; grid-template-columns: 12px 1fr; font-size: 12px; color: var(--dz-mute); }
+.legend { margin: 8px calc(var(--leg-w) + var(--lrow-gap)) 0 calc(var(--op-indent) + var(--tl-pad)); display: none; gap: 3px 8px; grid-template-columns: 12px 1fr; font-size: 12px; color: var(--dz-mute); }
 .layer.leg-open .legend { display: grid; }
 .layer.off .legend { display: none !important; }
 .layer.off .legbtn { opacity: 0.45; pointer-events: none; }
@@ -283,6 +286,8 @@ input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border:
 /* ...and two opacity sliders, particles above the speed field, in a taller
    row so they are not squeezed into one slider's height */
 .opacity.two { flex-direction: column; align-items: stretch; gap: 10px; }
+/* a column flex would shrink each slider to its track; keep the 16 px input height */
+.lrow .opacity.two input { flex: none; }
 .lrow:has(> .opacity.two) { padding-block: 7px; }
 /* timelapse block inside the row (port of the mockup's .tl); an off timelapse folds it.
    Its content starts where the name does. Inline, it ends where the opacity slider ends (the legend toggle's
@@ -293,7 +298,7 @@ input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border:
    right edge, so the block ends where that slider ends (not under the legend
    button). The buttons sit inline to their left, one row; the two sliders are
    compact, as the original's, so together they are as tall as that row. */
-.tl { margin: 8px calc(var(--leg-w) + var(--lrow-gap) - var(--tl-pad)) 0 calc(var(--op-indent) - var(--tl-pad)); padding: 6px var(--tl-pad); border-radius: 9px; background: var(--dz-orange-soft); --tl-btn: 24px; --tl-sl: 11px; }
+.tl { margin: 8px calc(var(--leg-w) + var(--lrow-gap) - var(--tl-pad)) 0 var(--op-indent); padding: 6px var(--tl-pad); border-radius: 9px; background: var(--dz-orange-soft); --tl-btn: 24px; --tl-sl: 11px; }
 .layer.stack .tl { margin-right: 0; }
 .layer.off .tl { display: none !important; }
 .tl-body { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; }
@@ -379,7 +384,8 @@ body.left-hidden .status, body.left-hidden .loadbar { left: 0; }
 .bm.on { color: var(--dz-teal); }
 .bm.on i { box-shadow: 0 0 0 2px var(--dz-teal); }
 /* labels toggle beside the basemaps: a tile-sized button that lights while labels are on */
-.bm-labels { width: 36px; border: 0; background: transparent; padding: 0; color: var(--dz-mute); font-size: 9.5px; cursor: pointer; text-align: center; }
+/* top-aligned like the tiles: a two-line name ("Dark terrain") makes the row taller, and a stretched button centers its icon lower */
+.bm-labels { width: 36px; border: 0; background: transparent; padding: 0; color: var(--dz-mute); font-size: 9.5px; line-height: 1.1; cursor: pointer; text-align: center; align-self: flex-start; }
 .bm-labels i { display: flex; align-items: center; justify-content: center; height: 26px; border-radius: 6px; margin-bottom: 2px; font-size: 15px;
   box-shadow: inset 0 0 0 1px var(--dz-line); color: var(--dz-mute); }
 .bm-labels[aria-pressed="true"] { color: var(--dz-teal); }

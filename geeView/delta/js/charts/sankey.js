@@ -213,19 +213,83 @@ export function renderSankey(el, r, theme) {
   return svg.node();
 }
 
+// The saved image's title, as the line charts' (plotly.js pngTitle): the card
+// title, then the area, the periods and the unit. Plain text.
+const UNIT_NAME = { Percentage: "% Area", Hectares: "Hectares", Acres: "Acres", Pixels: "Pixels" };
+export function sankeyTitle(r) {
+  const d = (r && r.data) || {};
+  const title = String((r && r.title) || d.layerName || "").trim();
+  if (!title) return null;
+  const p = d.periods || [];
+  const span = p.length > 1 ? `${p[0]} to ${p[p.length - 1]}` : p.length ? String(p[0]) : "";
+  const sub = [d.areaLabel, span, UNIT_NAME[d.areaFormat] || d.unitText, d.nominalScale ? `${d.nominalScale} m grid` : ""].filter((x) => x !== undefined && x !== null && String(x).trim() !== "");
+  return { title, sub: sub.join(", ") };
+}
+// Words to lines no wider than maxW, measured in the font they are drawn in
+// (the chart can be narrow: a card's width).
+export function wrapText(text, maxW, measure) {
+  const lines = [];
+  let cur = "";
+  String(text).split(/\s+/).filter(Boolean).forEach((w) => {
+    const next = cur ? cur + " " + w : w;
+    if (cur && measure(next) > maxW) {
+      lines.push(cur);
+      cur = w;
+    } else cur = next;
+  });
+  if (cur) lines.push(cur);
+  return lines;
+}
+const TITLE = { size: 16, lead: 20 };
+const SUB = { size: 11, lead: 15 };
+
 // port of D3_SANKEY_TEMPLATE's PNG download: serialize the SVG over a
-// background rect, draw it on a 2x canvas, save the PNG.
-export function sankeyPng(el, filename, theme) {
+// background rect, draw it on a 2x canvas, save the PNG. A title band goes
+// above the chart (the original saved it untitled).
+export function sankeyPng(el, filename, theme, r) {
   const svgEl = el && el.querySelector("svg");
   if (!svgEl) return Promise.resolve(null);
+  const NS = "http://www.w3.org/2000/svg";
   const W = Number(svgEl.getAttribute("width"));
-  const H = Number(svgEl.getAttribute("height"));
-  const clone = svgEl.cloneNode(true);
-  const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  const chartH = Number(svgEl.getAttribute("height"));
+  const t = sankeyTitle(r);
+  // the title band: the title, then the smaller line, each wrapped to the width
+  const meas = document.createElement("canvas").getContext("2d");
+  const wrapped = (text, size) => {
+    meas.font = `${size}px ${theme.font}`;
+    return wrapText(text, W - 16, (x) => meas.measureText(x).width);
+  };
+  const titleLines = t ? wrapped(t.title, TITLE.size) : [];
+  const subLines = t && t.sub ? wrapped(t.sub, SUB.size) : [];
+  const head = t ? 10 + titleLines.length * TITLE.lead + subLines.length * SUB.lead + 12 : 0;
+  const H = chartH + head;
+  const clone = document.createElementNS(NS, "svg");
+  clone.setAttribute("xmlns", NS);
+  clone.setAttribute("width", W);
+  clone.setAttribute("height", H);
+  const bg = document.createElementNS(NS, "rect");
   bg.setAttribute("width", W);
   bg.setAttribute("height", H);
   bg.setAttribute("fill", theme.solid);
-  clone.insertBefore(bg, clone.firstChild);
+  clone.appendChild(bg);
+  if (t) {
+    const line = (text, y, size, color) => {
+      const e = document.createElementNS(NS, "text");
+      e.setAttribute("x", 8);
+      e.setAttribute("y", y);
+      e.setAttribute("font-size", size);
+      e.setAttribute("font-family", theme.font);
+      e.setAttribute("fill", color);
+      e.textContent = text;
+      clone.appendChild(e);
+    };
+    let y = 10;
+    titleLines.forEach((x) => line(x, (y += TITLE.lead) - 4, TITLE.size, theme.ink));
+    subLines.forEach((x) => line(x, (y += SUB.lead) - 3, SUB.size, theme.mute));
+  }
+  const chart = svgEl.cloneNode(true);
+  chart.setAttribute("y", head);
+  clone.appendChild(chart);
   const data = new XMLSerializer().serializeToString(clone);
   const scale = 2;
   const canvas = document.createElement("canvas");

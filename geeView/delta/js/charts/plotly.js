@@ -152,14 +152,44 @@ export function renderChart(el, r, theme, chartSettings = {}, opts = {}) {
   return plotEl;
 }
 
-// Save a chart as PNG (Plotly toImage), on the theme's solid background.
-export async function chartPng(el, filename, theme) {
+// The saved image's legend. On screen the legend is HTML under the chart
+// (legendEl), which a Plotly image does not include, so the image draws
+// Plotly's own, under the plot. Charts over time have one trace per class
+// (with a mode); a single date's bar chart names its classes on the axis.
+export function pngLegend(data, theme) {
+  if (!data.some((t) => t.mode)) return { showlegend: false };
+  return {
+    showlegend: true,
+    legend: { orientation: "h", x: 0, xanchor: "left", y: -0.18, yanchor: "top", font: { color: theme.ink, size: 11 }, bgcolor: "rgba(0,0,0,0)" },
+  };
+}
+
+// The saved image's title. The original (area-charting.js makeChart) titled
+// it "layer<br>area"; on screen the card heading says what the chart is, so
+// the image carries it too: the card's title, then a smaller line with what
+// the image cannot otherwise say (the area, the years, the unit, the grid).
+export function pngTitle(r, theme) {
+  const d = (r && r.data) || {};
+  const span = d.isCollection && d.rows && d.rows.length ? (d.rows.length > 1 ? `${d.rows[0].x}-${d.rows[d.rows.length - 1].x}` : String(d.rows[0].x)) : "";
+  const sub = [d.areaLabel, span, d.yLabel, d.nominalScale ? `${d.nominalScale} m grid` : ""].filter((x) => x !== undefined && x !== null && String(x).trim() !== "");
+  const head = esc((r && r.title) || d.layerName || "");
+  if (!head) return null;
+  const text = sub.length ? `${head}<br><span style="font-size:12px;color:${theme.mute}">${esc(sub.join(", "))}</span>` : head;
+  return { text, x: 0.01, xanchor: "left", y: 0.97, yanchor: "top", font: { size: 17, color: theme.ink, family: theme.font } };
+}
+
+// Save a chart as PNG (Plotly toImage), on the theme's solid background, at
+// twice the pixels (the original scaled fonts, lines and margins by 2 for the
+// same crispness; Plotly's own scale does it in one step).
+export async function chartPng(el, filename, theme, r) {
   const plotEl = el && (el.classList.contains("achart-plot") ? el : el.querySelector(".achart-plot"));
   if (!window.Plotly || !plotEl || !plotEl.data) return null;
   const width = 900;
   const height = 600;
-  const layout = { ...plotEl.layout, paper_bgcolor: theme.solid, plot_bgcolor: theme.solid, width, height };
-  const url = await window.Plotly.toImage({ data: plotEl.data, layout }, { format: "png", width, height });
+  const title = pngTitle(r, theme);
+  const margin = { ...(plotEl.layout.margin || {}), t: title ? 72 : 20, l: 60, r: 24 };
+  const layout = { ...plotEl.layout, ...pngLegend(plotEl.data, theme), title: title || undefined, margin, paper_bgcolor: theme.solid, plot_bgcolor: theme.solid, width, height };
+  const url = await window.Plotly.toImage({ data: plotEl.data, layout }, { format: "png", width, height, scale: 2 });
   downloadUrl(url, filename + ".png");
   return url;
 }

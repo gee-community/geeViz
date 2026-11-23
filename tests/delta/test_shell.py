@@ -79,10 +79,35 @@ def test_right_pane_folds_without_tool(delta_page):
 
 def test_tool_buttons_drive_the_store(delta_page):
     page = delta_page(SHELL)
-    page.click("#pane-right .tool[data-tool=area]")
-    assert page.evaluate("__delta.store.get().tool") == "area"
-    page.click("#pane-right .tool[data-tool=area]")
+    page.click("#pane-right .tool[data-tool=measure]")
+    assert page.evaluate("__delta.store.get().tool") == "distance"
+    page.click("#pane-right .tool[data-tool=measure]")
     assert page.evaluate("__delta.store.get().tool") is None
+
+
+def test_measure_button_toggles_distance_and_area(delta_page):
+    page = delta_page(SHELL)
+    tool = "__delta.store.get().tool"
+    measure = "#pane-right .tool[data-tool=measure]"
+    # one Measure button, no separate Distance or Area buttons
+    assert page.evaluate("document.querySelectorAll('#pane-right .tool[data-tool=distance], #pane-right .tool[data-tool=area]').length") == 0
+    page.click(measure)
+    assert page.evaluate(tool) == "distance"
+    assert "on" in page.get_attribute(measure, "class")
+    # its options switch between Distance and Area
+    page.click("#tool-options .seg[data-k=measure] [data-v=area]")
+    assert page.evaluate(tool) == "area"
+    assert page.get_attribute("#tool-options .seg[data-k=measure] [data-v=area]", "aria-pressed") == "true"
+    assert "on" in page.get_attribute(measure, "class")
+    # clicking Measure again turns it off; once more reopens the last mode
+    page.click(measure)
+    assert page.evaluate(tool) is None
+    page.click(measure)
+    assert page.evaluate(tool) == "area"
+    # a script turning on distance lights the Measure button too
+    page.evaluate("__delta.store.set({tool: 'distance'}, 'test')")
+    assert "on" in page.get_attribute(measure, "class")
+    assert page.get_attribute("#tool-options .seg[data-k=measure] [data-v=distance]", "aria-pressed") == "true"
 
 
 def test_streetview_hides_everything(delta_page):
@@ -642,13 +667,26 @@ def test_phone_tools_and_output_are_separate_sheets(delta_page):
     assert not page.evaluate("document.querySelector('#pane-right').inert === false")
 
 
+def test_units_sit_a_little_below_the_tool_tabs(delta_page):
+    # desktop gets the gap from the pane body's margin; phones, whose pane body
+    # steps aside (display: contents), get the same gap on the units row
+    gap = "() => document.querySelector('#pane-right .units').getBoundingClientRect().top - document.querySelector('#pane-right .tools').getBoundingClientRect().bottom"
+    page = delta_page(SHELL)
+    page.evaluate("__delta.store.set({tool: 'distance'})")
+    desk = page.evaluate(gap)
+    page = delta_page(SHELL, viewport=PHONE)
+    page.click("#mtabs [data-m=tools]")
+    phone = page.evaluate(gap)
+    assert desk >= 7 and abs(phone - desk) < 1, (desk, phone)
+
+
 def test_phone_output_dot_and_tools_stay_open_on_pick(delta_page):
     page = delta_page(SHELL, viewport=PHONE)
     dot = "document.querySelector('#mtabs .mdot').hidden"
     assert page.evaluate(dot) is True
     # picking a tool keeps the Tools sheet (and the tool tabs) open
     page.click("#mtabs [data-m=tools]")
-    page.click("#pane-right .tool[data-tool=distance]")
+    page.click("#pane-right .tool[data-tool=measure]")
     assert "m-tools" in page.evaluate("document.body.className")
     assert page.evaluate(SHOWN, "#pane-right .tools")
     assert page.evaluate("__delta.store.get().tool") == "distance"

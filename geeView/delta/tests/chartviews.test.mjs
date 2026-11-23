@@ -7,8 +7,8 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chartParams, lineResult, sankeyResult } from "../js/engine/areachart.js";
-import { chartFigure, barData, quantile } from "../js/charts/plotly.js";
-import { sankeyGraph, nodeLabelShown, linkTip } from "../js/charts/sankey.js";
+import { chartFigure, barData, quantile, pngTitle, pngLegend } from "../js/charts/plotly.js";
+import { sankeyGraph, nodeLabelShown, linkTip, sankeyTitle, wrapText } from "../js/charts/sankey.js";
 
 const FIX = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "tests", "delta", "fixtures");
 const load = (n) => JSON.parse(readFileSync(join(FIX, n), "utf-8"));
@@ -141,4 +141,36 @@ test("sankeyGraph: classes per column come from the class values (charts.py offs
   assert.deepEqual(g.nodes.map((n) => [n.period, n.col]), [["2000", 0], ["2010", 1]]);
   assert.equal(g.nodes[1].name, "A");
   assert.equal(g.nodes[0].color, "#333333");
+});
+
+test("saved image: titled with the card title, then area, years, unit and grid", () => {
+  const theme = { ink: "#111", mute: "#777", font: "Roboto" };
+  const r = { title: "LCMS <Land> over time", data: { isCollection: true, rows: [{ x: "2015" }, { x: "2016" }, { x: "2023" }], areaLabel: "Map view", yLabel: "% Area", nominalScale: 30 } };
+  const t = pngTitle(r, theme);
+  assert.ok(t.text.startsWith("LCMS &lt;Land&gt; over time<br>"), t.text); // names are text
+  assert.match(t.text, /Map view, 2015-2023, % Area, 30 m grid<\/span>$/);
+  // a single date has no year span
+  const one = pngTitle({ title: "NLCD", data: { isCollection: false, rows: [{ x: "Trees" }], areaLabel: "a", yLabel: "ha", nominalScale: 30 } }, theme);
+  assert.match(one.text, /a, ha, 30 m grid/);
+  assert.equal(pngTitle({ data: {} }, theme), null);
+});
+
+test("saved image: a legend for charts over time only", () => {
+  const theme = { ink: "#111" };
+  assert.equal(pngLegend([{ mode: "lines+markers" }, { mode: "lines+markers" }], theme).showlegend, true);
+  assert.equal(pngLegend([{ type: "bar" }], theme).showlegend, false);
+});
+
+test("saved Sankey image: titled with the card title, then area, periods, unit and grid", () => {
+  const r = { title: "LCMS Land Cover transitions", data: { periods: ["2016-2018", "2018-2020", "2020-2022"], areaLabel: "Map view", areaFormat: "Hectares", unitText: "ha", nominalScale: 30 } };
+  assert.deepEqual(sankeyTitle(r), { title: "LCMS Land Cover transitions", sub: "Map view, 2016-2018 to 2020-2022, Hectares, 30 m grid" });
+  assert.equal(sankeyTitle({ data: {} }), null);
+});
+
+test("saved Sankey image: title lines wrap to the chart width", () => {
+  const measure = (x) => x.length * 10; // 10 px a character
+  assert.deepEqual(wrapText("Map view (1, 2), 2016 to 2022, Hectares", 160, measure), ["Map view (1, 2),", "2016 to 2022,", "Hectares"]);
+  assert.deepEqual(wrapText("short", 160, measure), ["short"]);
+  // a word longer than the width gets its own line rather than vanishing
+  assert.deepEqual(wrapText("a verylongwordthatoverflows b", 100, measure), ["a", "verylongwordthatoverflows", "b"]);
 });

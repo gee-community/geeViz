@@ -14,7 +14,11 @@ const HINTS = {
   query: "Double-click the map to query every visible layer at that point.",
   chart: "Pick where the area comes from. Every visible chartable layer gets charted inside it.",
 };
-const PHONE_HINTS = { query: "Tap the map to query every visible layer at that point." };
+const MEASURE_MODES = [
+  ["distance", "Distance"],
+  ["area", "Area"],
+];
+const PHONE_HINTS ={ query: "Tap the map to query every visible layer at that point." };
 
 const SOURCES = [
   ["draw", "Draw"],
@@ -53,6 +57,17 @@ export function readPeriodsParam(urlParams) {
   if (!Array.isArray(v)) return null;
   const rows = v.filter((r) => Array.isArray(r) && r.length === 2).map((r) => [Number.parseInt(r[0], 10), Number.parseInt(r[1], 10)]);
   return rows.length ? rows : null;
+}
+
+// Show as in the url, by the original's name for it (urlParams.areaChartFormat:
+// Percentage, Acres or Hectares). Only the user's pick is written, so a map
+// opens on % of area until its user changes it.
+export const SHOW_AS_PARAM = "areaChartFormat";
+export function readShowAsParam(urlParams) {
+  const v = urlParams && urlParams[SHOW_AS_PARAM];
+  if (v === "Percentage") return "pct";
+  if (v === "Acres" || v === "Hectares") return "area";
+  return null;
 }
 
 export function hintFor(tool, phone) {
@@ -159,6 +174,8 @@ export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, measure,
   const params = urlParams || window.urlParams || (window.urlParams = {});
   const fromUrl = readPeriodsParam(params);
   if (fromUrl) store.set({ chartPeriodsGiven: fromUrl }, "chart-periods-url");
+  const showAsGiven = readShowAsParam(params);
+  if (showAsGiven) store.set({ showAs: showAsGiven }, "showAs-url");
 
   function renderUnits() {
     const u = store.get().units;
@@ -203,16 +220,17 @@ export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, measure,
     const [row] = draft.splice(from, 1);
     draft.splice(to, 0, row);
   }
-  function storePeriodsParam(rows) {
-    params[PERIODS_PARAM] = JSON.stringify(rows);
+  function storeParam(key, value) {
+    params[key] = value;
     try {
       const url = new URL(location.href);
-      url.searchParams.set(PERIODS_PARAM, JSON.stringify(rows));
+      url.searchParams.set(key, value);
       history.replaceState(history.state, "", url);
     } catch (e) {
       /* history can be unavailable */
     }
   }
+  const storePeriodsParam = (rows) => storeParam(PERIODS_PARAM, JSON.stringify(rows));
   function periodEditor(s) {
     const range = yearRange(s);
     if (!draft) {
@@ -414,9 +432,13 @@ export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, measure,
       optionsEl.replaceChildren(...chartOptions(s));
       return;
     }
+    const measuring = s.tool === "distance" || s.tool === "area";
+    const nodes = [];
+    // the Measure button's two modes
+    if (measuring) nodes.push(seg("measure", "Measure", MEASURE_MODES, s.tool, (v) => store.set({ tool: v }, "tool-button")));
     const text = hintFor(s.tool, phoneMq.matches);
-    const nodes = text ? [hintEl(text)] : [];
-    if (s.tool === "distance" || s.tool === "area") nodes.push(editBar());
+    if (text) nodes.push(hintEl(text));
+    if (measuring) nodes.push(editBar());
     optionsEl.replaceChildren(...nodes);
   }
 
@@ -425,7 +447,14 @@ export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, measure,
     store.set({ results: [], where: "" }, "tool-output-reset");
     renderOptions();
   });
+  // the user's Show as pick, kept in the url (by the unit it shows, as the original did)
+  const showAsParamValue = (s) => (s.showAs === "pct" ? "Percentage" : s.units === "imperial" ? "Acres" : "Hectares");
+  store.on("change:showAs", (v, s, reason) => {
+    if (reason === "showAs") storeParam(SHOW_AS_PARAM, showAsParamValue(s));
+  });
   store.on("change:units", () => {
+    const s = store.get();
+    if (readShowAsParam(params) === "area") storeParam(SHOW_AS_PARAM, showAsParamValue(s));
     renderUnits();
     if (store.get().tool === "chart") renderOptions();
   });

@@ -11,6 +11,7 @@ Needs Earth Engine, the local eeCreds proxy and a network: every test is live.
 Run serially (view() rewrites a shared runGeeViz.js).
 """
 import json
+import os
 import math
 import re
 import time
@@ -123,6 +124,10 @@ def assert_tables_equal(js, py):
 
 def test_chart_numbers_equal_python(page):
     chart_view(page)
+    # % of area is the default; the area unit is a click away
+    assert result(page, "LCMS Land Cover", "chart")["data"]["areaFormat"] == "Percentage"
+    page.click("#tool-options .seg[data-k=showas] [data-v=area]")
+    wait_for(page, "__delta.store.get().results.every(r => r.data.areaFormat === 'Hectares')")
     lc = result(page, "LCMS Land Cover", "chart")
     nl = result(page, "NLCD 2021", "chart")
     sk = result(page, "LCMS Land Cover", "sankey")
@@ -161,6 +166,7 @@ def test_chart_numbers_equal_python(page):
 
 def test_units_and_show_as_rerender_without_ee(page):
     chart_view(page)
+    page.click("#tool-options .seg[data-k=showas] [data-v=area]")
     page.wait_for_timeout(1500)
     before = len(page.ee_calls)
     assert before > 0, "the Earth Engine request filter matched nothing"
@@ -204,6 +210,7 @@ def test_single_image_is_bar(page):
 
 
 def test_sankey_card_renders(page):
+    page.evaluate("__delta.store.set({showAs: 'area'}, 'test')")  # these numbers are in hectares
     chart_view(page)
     sk = result(page, "LCMS Land Cover", "sankey")
     card = '#results-mount .card-r[data-rid="%s"]' % sk["id"]
@@ -274,6 +281,7 @@ def test_stale_chart_results_are_dropped(page):
 
 
 def test_upload_geojson_source(page):
+    page.evaluate("__delta.store.set({showAs: 'area'}, 'test')")  # these numbers are in hectares
     page.evaluate("__delta.api.turnOnUserDefinedAreaCharting()")
     page.click("#tool-options .seg[data-k=src] [data-v=upload]")
     assert page.evaluate("__delta.store.get().areaFrom") == "upload"
@@ -353,6 +361,8 @@ def test_csv_and_png_actions(page):
     chart_view(page)
     lc = result(page, "LCMS Land Cover", "chart")
     sk = result(page, "LCMS Land Cover", "sankey")
+    # the layouts the saved images are drawn with
+    page.evaluate("() => { window.__pngLayouts = []; const t = Plotly.toImage; Plotly.toImage = (fig, o) => { __pngLayouts.push(fig.layout); return t(fig, o); }; }")
     for r, ext in [(lc, "csv"), (lc, "png"), (sk, "csv"), (sk, "png")]:
         card = '#results-mount .card-r[data-rid="%s"]' % r["id"]
         page.locator(card).scroll_into_view_if_needed()
@@ -364,6 +374,23 @@ def test_csv_and_png_actions(page):
         assert dl.value.suggested_filename.endswith("." + ext)
         if ext == "png":
             assert data[:8] == b"\x89PNG\r\n\x1a\n"
+            if r["kind"] == "chart":
+                # the on-screen legend is HTML, so the image draws Plotly's own
+                lay = page.evaluate("__pngLayouts[__pngLayouts.length - 1]")
+                assert lay["showlegend"] is True and lay["legend"]["orientation"] == "h", lay.get("legend")
+                # titled with the card title, then the area, years and unit
+                title = lay["title"]["text"]
+                assert title.startswith(r["title"]), title
+                assert r["data"]["areaLabel"] in title and "2015-2023" in title and r["data"]["yLabel"] in title, title
+                if os.environ.get("DELTA_PNG_OUT"):
+                    open(os.environ["DELTA_PNG_OUT"], "wb").write(data)
+            else:
+                # the Sankey image: a title band above the chart, at 2x
+                w, h = int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+                svg_h = page.evaluate("(sel) => +document.querySelector(sel + ' .sankey-wrap svg').getAttribute('height')", card)
+                assert h >= 2 * (svg_h + 40), (w, h, svg_h)
+                if os.environ.get("DELTA_SANKEY_OUT"):
+                    open(os.environ["DELTA_SANKEY_OUT"], "wb").write(data)
         elif r["kind"] == "chart":
             first = data.decode().splitlines()[0]
             assert first.startswith("Year,") and "Trees" in first

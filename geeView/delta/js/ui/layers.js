@@ -279,16 +279,55 @@ export function mountLayers(store, mountEl, opts = {}) {
     if (added) fitRows();
   }
 
-  // ---- fit: inline opacity only if the name is not cut off ----
+  // ---- fit: the opacity slider keeps its full width until it nearly meets the name ----
+  // Inline, the slider takes the room the name's text leaves, up to OP_MAX, so
+  // the text and the slider end up 12 px apart (the row's 9 px gap plus
+  // NAME_GAP); a timelapse's sliders follow it through --op-w-inline. Below
+  // OP_MIN it drops under the name instead (.stack).
+  const OP_MAX = 180;
+  const OP_MIN = 64;
+  const NAME_GAP = 3;
+  const nameRange = document.createRange();
+  function nameTextWidth(name) {
+    nameRange.selectNodeContents(name);
+    return Math.ceil(nameRange.getBoundingClientRect().width);
+  }
   function fitRow({ el, parts }) {
-    el.classList.remove("stack");
-    if (parts.name.scrollWidth > parts.name.clientWidth + 1) el.classList.add("stack");
+    const lrow = parts.name.parentNode;
+    const opacity = parts.range.parentNode;
+    const cs = getComputedStyle(lrow);
+  const gap = parseFloat(cs.columnGap) || 0;
+  // clientWidth includes the row's padding (room for the progress bar)
+  const pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+    let others = 0;
+    let shown = 0;
+    for (const c of lrow.children) {
+      if (c.getClientRects().length === 0) continue;
+      shown += 1;
+      if (c === parts.name || c === opacity) continue;
+      others += c.getBoundingClientRect().width;
+    }
+    const room = lrow.clientWidth - pad - others - gap * Math.max(0, shown - 1) - nameTextWidth(parts.name) - NAME_GAP;
+    const w = Math.min(OP_MAX, Math.floor(room));
+    if (w >= OP_MIN) {
+      el.style.setProperty("--op-w-inline", w + "px");
+      el.classList.remove("stack");
+    } else {
+      el.style.removeProperty("--op-w-inline");
+      el.classList.add("stack");
+    }
   }
   function fitRows() {
     rows.forEach(fitRow);
   }
   const ro = new ResizeObserver(() => fitRows());
   ro.observe(mountEl);
+  // The name's text changes width when the web font arrives, while its box
+  // (which fills the row) does not: refit then.
+  if (document.fonts) {
+    document.fonts.ready.then(fitRows);
+    document.fonts.addEventListener("loadingdone", fitRows);
+  }
   // A row's own content can take room from its name (a failed-tiles count
   // appears, the timelapse block mounts) or the name itself can change: refit
   // that row when its name's box changes. ResizeObserver reports once per

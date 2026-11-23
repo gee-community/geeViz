@@ -124,7 +124,23 @@ export function createSketch(opts) {
     const cur = state.shapes[state.shapes.length - 1] || [];
     return hover ? cur.concat([hover]) : cur;
   }
+  // Dots on the points placed so far. The shape being drawn is not editable
+  // (its handles would catch the clicks), so Google shows no vertices on it
+  // until it is finished; a lone first point would show nothing at all.
+  // Not clickable: clicks and the finishing double-click reach the map.
+  let dots = [];
+  function paintDots() {
+    const cur = state.open ? state.shapes[state.shapes.length - 1] : [];
+    while (dots.length > cur.length) dots.pop().setMap(null);
+    if (!cur.length) return;
+    const icon = { path: g.SymbolPath.CIRCLE, scale: 4.5, fillColor: "#ffffff", fillOpacity: 1, strokeColor: color(), strokeWeight: 2.5 };
+    cur.forEach((p, i) => {
+      if (!dots[i]) dots[i] = new g.Marker({ clickable: false, zIndex: 3101 });
+      dots[i].setOptions({ position: p, icon, map: gmap });
+    });
+  }
   function render() {
+    paintDots();
     syncing = true;
     objs.forEach((o) => o.setMap(null));
     objs = state.shapes.map((pts, i) => {
@@ -274,12 +290,15 @@ export function createSketch(opts) {
     },
     finish,
     state: () => clone(state),
+    // how many placed points show a dot (the shape being drawn)
+    dotsShown: () => dots.filter((d) => d.getMap()).length,
     status,
     // Google LatLngs, for the spherical math
     paths: (all = true) => (all ? state.shapes : finished(state)).map((pts) => pts.map((p) => new g.LatLng(p.lat, p.lng))),
     pathWithHover: () => (state.open ? openPath() : []).map((p) => new g.LatLng(p.lat, p.lng)),
     restyle() {
       objs.forEach((o) => o.setOptions(style()));
+      paintDots();
     },
   };
   return api;

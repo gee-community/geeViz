@@ -267,7 +267,7 @@ def test_tool_toggle_off_folds_pane(page):
     assert results(page) == []
     assert page.evaluate("__delta.store.get().querying") is False
     # The other tools show their one-line hints.
-    page.click("#pane-right .tool[data-tool=distance]")
+    page.click("#pane-right .tool[data-tool=measure]")
     assert "Click the map to start measuring" in page.inner_text("#tool-options")
     # No layer on this map can be area charted, so Chart area is not offered.
     assert page.locator("#pane-right .tool[data-tool=chart]").is_hidden()

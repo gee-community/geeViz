@@ -180,18 +180,36 @@ def test_opacity_inline_only_when_fits(page):
     assert seen_stack and seen_inline
 
 
-def test_slider_grows_then_caps(page):
-    def width(w):
-        set_left_width(page, w)
-        r = [x for x in page.evaluate(FIT) if x["name"] == "SRTM"][0]
-        assert not r["stack"], (w, r)
-        return r["sliderWidth"]
+GAP = """(n) => {
+  const r = [...document.querySelectorAll('#layer-list .layer')].find(x => x.querySelector('.lname').textContent === n);
+  const name = r.querySelector('.lname'); const rg = document.createRange(); rg.selectNodeContents(name);
+  const s = r.querySelector('input.op').getBoundingClientRect();
+  return {stack: r.classList.contains('stack'), w: s.width, gap: s.left - rg.getBoundingClientRect().right};
+}"""
 
-    assert abs(width(300) - 64) <= 1
-    a, b = width(340), width(420)
-    assert abs((b - a) - 80) <= 2, (a, b)
-    assert abs(width(480) - 180) <= 1
-    assert abs(width(560) - 180) <= 1
+
+def test_slider_keeps_full_width_until_it_nearly_meets_the_name(page):
+    """Inline, the opacity slider is 180 px wide and narrows only when it would
+    come within 12 px of the name's text; a short name keeps a full slider in a
+    narrow pane."""
+    seen_full = seen_narrowed = False
+    for w in range(240, 561, 20):
+        set_left_width(page, w)
+        r = page.evaluate(GAP, "SRTM")
+        if r["stack"]:
+            continue
+        assert r["w"] <= 180.5 and r["w"] >= 63.5, (w, r)
+        if r["w"] >= 179.5:
+            seen_full = True
+            assert r["gap"] >= 11, (w, r)
+        else:
+            seen_narrowed = True
+            assert abs(r["gap"] - 12) <= 1.5, (w, r)
+    assert seen_full and seen_narrowed
+    # A short name in a 300 px pane: the slider has nearly all the room the name leaves.
+    set_left_width(page, 300)
+    r = page.evaluate(GAP, "SRTM")
+    assert not r["stack"] and r["w"] > 130, r
 
 
 def test_loaded_fill_stays_and_ends_before_the_legend_button(page):

@@ -36,14 +36,23 @@ export function measureResult(tool, paths, units) {
   let points;
   if (tool === "distance") {
     const path = all[all.length - 1] || [];
-    if (path.length < 2) return null;
+    // from the first point on, so a click always shows a readout
+    if (!path.length) return null;
     lines = [["Distance", formatLength(distanceMeters(path), units)]];
     points = path.length;
   } else {
     const polys = all.filter((p) => p.length >= 3);
-    if (!polys.length) return null;
+    const started = all[all.length - 1] || [];
+    if (!polys.length && !started.length) return null;
     points = polys.reduce((a, p) => a + p.length, 0);
-    if (polys.length === 1) {
+    if (!polys.length) {
+      // the first one or two points: no area yet, but the readout starts
+      points = started.length;
+      lines = [
+        ["Area", formatArea(0, units)],
+        ["Perimeter", formatLength(perimeterMeters(started), units)],
+      ];
+    } else if (polys.length === 1) {
       lines = [
         ["Area", formatArea(areaSquareMeters(polys[0]), units)],
         ["Perimeter", formatLength(perimeterMeters(polys[0]), units)],
@@ -61,7 +70,7 @@ export function measureResult(tool, paths, units) {
     id: MEASURE_ID,
     layerId: null,
     title,
-    meta: (polyCount > 1 ? polyCount + " polygons, " : "") + points + " points",
+    meta: (polyCount > 1 ? polyCount + " polygons, " : "") + points + (points === 1 ? " point" : " points"),
     kind: "measure",
     data: { tool, lines, text: lines.map((l) => l.join(": ")).join("\n") },
     actions: ["copy", "clear"],

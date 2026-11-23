@@ -119,10 +119,24 @@ def test_view_history(page):
 
 def test_basemaps(page):
     # Basemaps carry no labels of their own; the labels overlay draws them above every layer.
-    for key, type_id in (("map", "roadmap-base"), ("terrain", "terrain"), ("darkterrain", "terrain"), ("dark", "dark"), ("satellite", "satellite")):
+    for key, type_id in (("map", "roadmap-base"), ("terrain", "terrain"), ("darkterrain", "terrain"), ("satellite", "satellite")):
         page.click("#mapctl .bm[data-bm=%s]" % key)
         assert page.evaluate("__delta.engine.gmap.getMapTypeId()") == type_id
         assert "on" in page.get_attribute("#mapctl .bm[data-bm=%s]" % key, "class").split()
+
+
+def test_no_plain_dark_basemap(page):
+    assert page.locator("#mapctl .bm[data-bm=dark]").count() == 0
+    page.evaluate("__delta.engine.setBasemap('dark')")  # not a basemap: ignored
+    assert page.evaluate("__delta.engine.basemap()") != "dark"
+    assert page.evaluate("__delta.engine.gmap.mapTypes.get('dark') || null") is None
+
+
+def test_labels_button_lines_up_with_the_basemap_tiles(page):
+    # "Dark terrain" wraps to two lines; the Labels icon still sits level with the tiles
+    tops = page.evaluate("[...document.querySelectorAll('#mapctl .bm i, #mapctl .bm-labels i')].map(i => i.getBoundingClientRect().top)")
+    assert len(tops) == 5
+    assert max(tops) - min(tops) < 0.5, tops
 
 
 def test_street_view_round_trip(page):

@@ -82,7 +82,14 @@ test("measureResult: area card also shows perimeter", () => {
   assert.match(i.data.lines[1][1], /mi$/);
 });
 
-test("measureResult: too few points gives no result", () => {
-  assert.equal(M.measureResult("distance", [SLC], "metric"), null);
-  assert.equal(M.measureResult("area", SQ.slice(0, 2), "metric"), null);
+test("measureResult: a readout from the first point; nothing before it", () => {
+  assert.equal(M.measureResult("distance", [], "metric"), null);
+  assert.equal(M.measureResult("area", [], "metric"), null);
+  const d = M.measureResult("distance", [SLC], "metric");
+  assert.equal(d.meta, "1 point");
+  assert.deepEqual(d.data.lines.map((l) => l[0]), ["Distance"]);
+  const a = M.measureResult("area", SQ.slice(0, 2), "metric");
+  assert.equal(a.meta, "2 points");
+  assert.deepEqual(a.data.lines.map((l) => l[0]), ["Area", "Perimeter"]);
+  assert.match(a.data.lines[0][1], /^0 /); // no area until a third point
 });

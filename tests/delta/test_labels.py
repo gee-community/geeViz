@@ -112,17 +112,15 @@ def test_labels_stay_on_top(live_map):
     on_map(page, "SRTM")
     assert_last(page, "turning a layer on")
 
-    # Every overlay basemap; dark uses DARK_STYLE's label colors. No map-wide
+    # Every overlay basemap. No map-wide
     # styles on these: while the map has any, Google draws the overlay's tiles
     # unstyled (the satellite labels lost their white text). The terrain types
     # draw their own labels and are covered by test_terrain_basemaps_draw_their_own_labels.
-    for key, name in (("map", "Labels"), ("dark", "Dark labels"), ("satellite", "Satellite labels")):
+    for key, name in (("map", "Labels"), ("satellite", "Satellite labels")):
         page.evaluate("(k) => __delta.engine.setBasemap(k)", key)
         assert_last(page, "basemap " + key)
         assert page.evaluate("__delta.engine.labelsOverlay().name") == name
         assert page.evaluate("__delta.engine.gmap.get('styles') || null") is None, key
-        if key == "dark":
-            labels_loaded(page, "p.c:#a39a93")
     # back on satellite after a terrain basemap: the overlay is styled again
     page.evaluate("__delta.engine.setBasemap('darkterrain')")
     page.evaluate("__delta.engine.setBasemap('satellite')")
@@ -219,7 +217,7 @@ def test_labels_toggle(live_map):
     assert_last(page, "labels back on")
     assert "addLabelOverlay" not in page.url
     # The basemaps themselves carry no labels, so labels are never drawn twice.
-    styles = page.evaluate("['roadmap-base', 'dark'].map(id => JSON.stringify(__delta.engine.gmap.mapTypes.get(id).styles || []))")
+    styles = page.evaluate("['roadmap-base'].map(id => JSON.stringify(__delta.engine.gmap.mapTypes.get(id).styles || []))")
     for st in styles:
         assert '"elementType":"labels"' in st and '"visibility":"off"' in st, st
     assert not page.delta_errors, page.delta_errors

@@ -305,7 +305,7 @@ export function mountOutput(store, { mountEl, whereEl, chipsEl, busyEl, notify, 
       download(safeName(r.title + nameEnd(r)) + ".csv", resultCsv(r), "text/csv");
     } else if (name === "png" && isAreaChart(r)) {
       const save = r.kind === "sankey" ? sankeyPng : chartPng;
-      Promise.resolve(body && body._chart ? save(body._chart, chartFileName(r), chartTheme()) : null).catch((e) => say(String(e && e.message ? e.message : e)));
+      Promise.resolve(body && body._chart ? save(body._chart, chartFileName(r), chartTheme(), r) : null).catch((e) => say(String(e && e.message ? e.message : e)));
     } else if (name === "png") {
       if (window.Plotly && body && body._chart) {
         window.Plotly.downloadImage(body._chart, { format: "png", width: 900, height: 600, filename: safeName(r.title + nameEnd(r)) });

@@ -42,6 +42,36 @@ def page(delta_page):
     return delta_page(SHELL)
 
 
+def show_as(page):
+    return page.evaluate("() => document.querySelector('#tool-options [data-k=showas] button.on').dataset.v")
+
+
+def url_show_as(page):
+    return page.evaluate("new URL(location.href).searchParams.get('areaChartFormat')")
+
+
+def test_show_as_defaults_to_percent_and_remembers_the_users_pick(page):
+    add(page, CHARTABLE)
+    page.click("#pane-right .tool[data-tool=chart]")
+    settle(page)
+    assert st(page, "showAs") == "pct" and show_as(page) == "pct"
+    assert url_show_as(page) is None  # the default is not written
+    page.click("#tool-options [data-k=showas] [data-v=area]")
+    settle(page)
+    assert url_show_as(page) == "Hectares"
+    # the unit it shows follows the Units switch
+    page.click("#pane-right .units [data-u=imperial]")
+    settle(page)
+    assert url_show_as(page) == "Acres"
+    # this map, reloaded: the user's pick stays
+    page.reload()
+    page.wait_for_function("window.__delta !== undefined")
+    assert st(page, "showAs") == "area"
+    page.evaluate("__delta.store.set({showAs: 'pct'}, 'showAs')")
+    settle(page)
+    assert url_show_as(page) == "Percentage"
+
+
 def test_area_from_defaults_to_map_view(page):
     assert st(page, "areaFrom") == "view"
     add(page, CHARTABLE)
@@ -95,13 +125,13 @@ def test_select_only_with_select_layers(page):
 
 
 def test_tool_strip_shows_tools_with_layers_to_use(page):
-    assert shown_tools(page) == ["distance", "area"]
+    assert shown_tools(page) == ["measure"]
     add(page, "__delta.api.addLayer({}, {canQuery: false}, 'Basemap', true);")
-    assert shown_tools(page) == ["distance", "area"]
+    assert shown_tools(page) == ["measure"]
     add(page, "__delta.api.addLayer({}, {canQuery: false, canAreaChart: true}, 'Cover', true);")
-    assert shown_tools(page) == ["distance", "area", "chart"]
+    assert shown_tools(page) == ["measure", "chart"]
     add(page, "__delta.api.addLayer({}, {}, 'Elevation', true);")
-    assert shown_tools(page) == ["distance", "area", "query", "chart"]
+    assert shown_tools(page) == ["measure", "query", "chart"]
     # the active tool's layers go: no tool, the right pane folds
     page.click("#pane-right .tool[data-tool=query]")
     settle(page)

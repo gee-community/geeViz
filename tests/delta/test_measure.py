@@ -136,6 +136,40 @@ def test_crosshair_survives_switch_from_measure_to_chart_draw(page):
     assert page.delta_errors == []
 
 
+def test_the_first_click_shows_a_readout(page):
+    # one point is not a line or a polygon, but the click must show something
+    for tool, label in (("area", "Area"), ("distance", "Distance")):
+        page.evaluate("t => __delta.store.set({tool: t}, 'test')", tool)
+        page.mouse.click(CX - 100, CY)
+        wait_for(page, "__delta.store.get().results.length === 1")
+        r = page.evaluate("__delta.store.get().results[0]")
+        assert r["title"] == label
+        assert r["meta"] == "1 point"
+        assert r["data"]["lines"][0][0] == label
+        page.keyboard.press("Escape")
+        wait_for(page, "__delta.store.get().results.length === 0")
+        time.sleep(0.6)  # the next click at this spot must not read as a double-click
+    assert page.delta_errors == []
+
+
+def test_every_placed_point_shows_while_drawing(page):
+    # the shape being drawn is not editable, so Google shows no vertex handles
+    # on it; each placed point gets a dot until the shape is finished
+    dots = "t => __delta.measure.sketch(t).dotsShown()"
+    for tool, pts in (("area", POLY), ("distance", LINE)):
+        page.evaluate("t => __delta.store.set({tool: t}, 'test')", tool)
+        for n, (dx, dy) in enumerate(pts[:-1], 1):
+            page.mouse.click(CX + dx, CY + dy)
+            time.sleep(0.35)
+            assert page.evaluate(dots, tool) == n
+        page.mouse.dblclick(CX + pts[-1][0], CY + pts[-1][1])
+        wait_for(page, "t => !__delta.store.get().sketch.drawing", tool)
+        assert page.evaluate(dots, tool) == 0  # finished: Google's handles take over
+        assert n_points(page) == [len(pts)]
+        time.sleep(0.6)
+    assert page.delta_errors == []
+
+
 def test_escape_cancels_a_measurement(page):
     page.evaluate("__delta.store.set({tool: 'area'}, 'test')")
     page.mouse.click(CX - 100, CY)
