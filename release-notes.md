@@ -1,5 +1,33 @@
 # geeViz Release Notes
 
+## 2026.11.2 (November 23, 2026)
+
+2026.11.1 was not uploaded to PyPI, so this release also carries everything
+in the 2026.11.1 notes below.
+
+### Delta map viewer
+
+- **One Measure tool.** Distance and Area are one tool button, with a
+  Distance | Area switch in its options. The button reopens whichever you
+  used last.
+- **Points show while you draw.** Each point placed for Distance, Area or
+  Chart area's Draw shows a dot until the shape is finished (Google shows
+  no vertices on a shape still being drawn), and the readout starts from the
+  first click.
+- **Chart area shows % of area by default.** Switch to hectares or acres with
+  Show as; the choice is kept in that map's URL (``areaChartFormat``, as the
+  original viewer named it), so reloading the map keeps it.
+- **Saved chart images are titled.** A line chart's PNG has the chart title,
+  a line with the area, years, unit and grid, and the legend, at twice the
+  pixels. A Sankey chart's PNG has the same title above it, wrapped to fit.
+- **Opacity sliders** are thinner and stay full width until they nearly meet
+  the layer name, then narrow, and drop under the name only when there is no
+  room.
+- The plain Dark basemap is gone; Dark terrain stays. The Labels button lines
+  up with the basemap tiles.
+- On phones, the Units switch has the same small gap below the tool tabs as
+  on desktop, and layer rows have room on both sides of the loading bar.
+
 ## 2026.11.1 (November 20, 2026)
 
 The first release on PyPI since 2026.8.1. 2026.9.4 was built but never
