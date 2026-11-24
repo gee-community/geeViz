@@ -122,6 +122,8 @@ def test_live_readout_clear_and_tool_switch(page):
 def test_crosshair_survives_switch_from_measure_to_chart_draw(page):
     cursor = "__delta.engine.gmap.get('draggableCursor')"
     # Chart area is offered only with a layer it can chart
+    # no Earth Engine layers yet, so Earth Engine is not loaded: ask for it
+    page.evaluate("__delta.eeLoader.ensure()")
     page.evaluate("Map.addLayer(ee.Image(1), {canAreaChart: true}, 'Chartable', false)")
     wait_for(page, "!document.querySelector('.tool[data-tool=chart]').hidden")
     page.evaluate("__delta.store.set({tool: 'distance'}, 'test')")
@@ -325,6 +327,7 @@ def test_measure_options_spacing(page):
 
 def test_units_hidden_for_query_only(page):
     # Query reports values, never a length or an area: Units has nothing to do there
+    page.evaluate("__delta.eeLoader.ensure()")
     page.evaluate("Map.addLayer(ee.Image(1), {}, 'Queryable')")
     wait_for(page, "!document.querySelector('.tool[data-tool=query]').hidden")
     shown = "!document.querySelector('#pane-right .units').hidden && document.querySelector('#pane-right .units').offsetHeight > 0"

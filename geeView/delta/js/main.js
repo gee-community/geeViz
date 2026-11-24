@@ -11,7 +11,7 @@ import { mountStatus } from "./ui/status.js";
 import { mountMapControls } from "./ui/mapctl.js";
 import { mountSearch } from "./ui/search.js";
 import { createMap, whenGoogleReady } from "./engine/maps.js";
-import { initEE, describeEEFailure } from "./engine/ee.js";
+import { createEELoader } from "./engine/ee.js";
 import { createLayerEngine } from "./engine/layers.js";
 import { mountLayers } from "./ui/layers.js";
 import { mountTimelapseHud } from "./ui/timelapse.js";
@@ -89,8 +89,35 @@ async function boot() {
     delta.ready = true;
     return;
   }
+  // Earth Engine loads only for a map with Earth Engine layers: the first one
+  // added asks for it (engine/layers.js). Whoever asks first, the result sets
+  // the map's Earth Engine state, and a failure is reported once.
+  // authProxyAPIURL is compat.js's top-level `let`, which runGeeViz.js reassigns.
+  const eeLoader = createEELoader({ urlParams: window.urlParams, proxyUrl: () => authProxyAPIURL });
+  const firstEnsure = eeLoader.ensure;
+  let eeAsked = false;
+  eeLoader.ensure = () => {
+    const attempt = firstEnsure();
+    if (!eeAsked) {
+      eeAsked = true;
+      attempt.then(
+        () => {
+          // geeViz's tag for this map replaces the viewer's own default
+          const tag = store.get().eeWorkloadTag;
+          if (tag !== null) window.ee.data.setDefaultWorkloadTag(tag);
+          engine.setEEReady(true);
+        },
+        (e) => {
+          delta.eeError = String(e && e.message ? e.message : e);
+          notice("Earth Engine could not start, so its layers are not shown. " + plainText(delta.eeError));
+        }
+      );
+    }
+    return attempt;
+  };
+  delta.eeLoader = eeLoader;
   try {
-    const layers = createLayerEngine(engine.gmap, store, { labels: () => engine.labelsOverlay() });
+    const layers = createLayerEngine(engine.gmap, store, { labels: () => engine.labelsOverlay(), eeLoader });
     layerEngine = layers;
     // A basemap switch swaps the labels overlay's style.
     engine.onBasemap(() => layers.sync());
@@ -158,16 +185,8 @@ async function boot() {
     }
   }
 
-  try {
-    // authProxyAPIURL is compat.js's top-level `let`, which runGeeViz.js reassigns.
-    await initEE(window.urlParams, () => authProxyAPIURL);
-    engine.setEEReady(true);
-  } catch (e) {
-    delta.eeError = String(e && e.message ? e.message : e);
-    notice(plainText(describeEEFailure(e, window.urlParams)));
-  }
-
-  if (!delta.eeError && typeof window.runGeeViz === "function") {
+  // The map script runs at once: its layers that need Earth Engine wait for it.
+  if (typeof window.runGeeViz === "function") {
     try {
       window.runGeeViz();
     } catch (e) {

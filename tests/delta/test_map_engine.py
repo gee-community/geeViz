@@ -48,6 +48,10 @@ def settle(page):
 
 
 def test_ee_initialized(page):
+    # this map has no Earth Engine layers: Earth Engine loads when asked
+    assert page.evaluate("__delta.eeLoader.isReady()") is False
+    page.evaluate("__delta.eeLoader.ensure()")
+    assert page.evaluate("__delta.eeLoader.isReady()") is True
     assert page.evaluate("ee.data.getAuthToken() !== null || !!authProxyAPIURL")
     # Neither of those tells success from failure: check the boot outcome and a round trip.
     assert page.evaluate("__delta.ready === true")
@@ -76,6 +80,8 @@ def click_settle(page, sel):
 def test_elevation_is_read_at_30_m(page):
     """It read 1861 m everywhere near Salt Lake City: the mosaic was sampled at
     its 1 degree default. Downtown is about 1290 m, near Alta about 2940 m."""
+    # elevation reads Earth Engine, loaded on a map without Earth Engine layers only when asked
+    page.evaluate("__delta.eeLoader.ensure()")
     vals = page.evaluate(
         "Promise.all([[40.76, -111.9], [40.6, -111.6]].map(([lat, lng]) => __delta.engine.elevationAt({lat, lng})))"
     )

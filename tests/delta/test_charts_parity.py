@@ -68,7 +68,10 @@ def build(Map):
 
 @pytest.fixture
 def page(live_map):
-    return live_map(build, wait_layers=False)
+    p = live_map(build, wait_layers=False)
+    # the map has no Earth Engine layers, so Earth Engine loads only when asked
+    p.evaluate("__delta.eeLoader.ensure()")
+    return p
 
 
 def js_zonal(page, key):

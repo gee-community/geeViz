@@ -268,11 +268,19 @@ export function createLayerEngine(gmap, store, deps = {}) {
     let tries = 0;
     const request = () => {
       tries++;
-      eeApi.Image(mapItem).getMap(usedViz, (eeLayer, failure) => {
-        if (eeLayer === undefined && tries <= 1) return request();
-        if (eeLayer === undefined || failure !== undefined) return cb(null, failure || "Earth Engine did not return a map service");
-        cb(eeLayer.urlFormat);
-      });
+      // the layer's own workload tag (geeViz puts it in the viz) for this
+      // request: Earth Engine reads it as the request is built
+      const tag = viz.workloadTag;
+      if (tag) eeApi.data.setWorkloadTag(tag);
+      try {
+        eeApi.Image(mapItem).getMap(usedViz, (eeLayer, failure) => {
+          if (eeLayer === undefined && tries <= 1) return request();
+          if (eeLayer === undefined || failure !== undefined) return cb(null, failure || "Earth Engine did not return a map service");
+          cb(eeLayer.urlFormat);
+        });
+      } finally {
+        if (tag) eeApi.data.resetWorkloadTag();
+      }
     };
     request();
   }
@@ -401,7 +409,13 @@ export function createLayerEngine(gmap, store, deps = {}) {
     const plugin = pluginFor(layer.kind);
     // Earth Engine is loaded and signed in for the first layer that needs it,
     // and only then; a failure is that layer's error, the others draw.
-    if (plugin.needsEE && deps.eeLoader) {
+    if (plugin.needsEE && deps.eeLoader && !deps.eeLoader.isReady()) {
+      // A visible layer the plug-in draws shows loading while Earth Engine
+      // loads. Not one that is off, nor one a plug-in starts itself (a
+      // timelapse reports its own frames; an area-chart-only layer is never
+      // drawn): those would show loading with nothing to load.
+      const shows = layer.visible && !["timelapse", "areaChartOnly"].includes(layer.kind);
+      if (shows) store.update((s) => ({ ...s, layers: s.layers.map((l) => (l.id === layer.id ? { ...l, loading: true } : l)) }), "layer-loading");
       try {
         await deps.eeLoader.ensure();
       } catch (e) {

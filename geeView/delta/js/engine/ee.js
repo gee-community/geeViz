@@ -72,6 +72,8 @@ export function describeEEFailure(failure, urlParams = {}) {
 // Earth Engine layers never needs it. The first Earth Engine layer asks for
 // it through a loader, which loads the script and signs in once.
 export const EE_SCRIPT_URL = "https://cdn.jsdelivr.net/gh/google/earthengine-api@0.1.384/javascript/build/ee_api_js.js";
+// Subresource integrity for that exact file, as the page's script tag had it.
+export const EE_SCRIPT_INTEGRITY = "sha384-tVeKMyegigBNslCtw6N8XPV6d0lspVooP+BNun6SrZw5uy4aLRu2ihAeA129D5Lo";
 
 // The Earth Engine library, read when used rather than when a module starts
 // (it may load later). Reading it before it has loaded is an error that says so.
@@ -89,6 +91,10 @@ function loadScriptTag(url) {
   return new Promise((resolve, reject) => {
     const s = document.createElement("script");
     s.src = url;
+    if (url === EE_SCRIPT_URL) {
+      s.integrity = EE_SCRIPT_INTEGRITY;
+      s.crossOrigin = "anonymous";
+    }
     s.async = true;
     s.onload = () => resolve();
     s.onerror = () => reject(new Error("The Earth Engine library could not be loaded from " + url));

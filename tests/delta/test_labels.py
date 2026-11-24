@@ -84,7 +84,8 @@ def labels_loaded(page, color=None):
 
 
 def on_map(page, name):
-    wait_for(page, "(n) => { const l = __delta.store.get().layers.find(x => x.name === n); return l && __delta.engine.layers.stats(l.id).onMap; }", name)
+    # an Earth Engine layer has no record until Earth Engine has loaded
+    wait_for(page, "(n) => { const l = __delta.store.get().layers.find(x => x.name === n); const st = l && __delta.engine.layers.stats(l.id); return !!(st && st.onMap); }", name)
 
 
 def test_labels_stay_on_top(live_map):
