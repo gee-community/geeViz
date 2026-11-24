@@ -29,7 +29,7 @@ const SOURCES = [
 const SOURCE_HINTS = {
   draw: "Click the map to outline an area. Double-click to finish; click again for another polygon. Every polygon is charted together.",
   view: "Charts what the map shows, and again each time the map rests after you move it.",
-  upload: "A .zip shapefile, .kml, .kmz, .gpkg, .gpx, .fgb or .geojson file. Files are converted on the geeViz server that serves this map; only the area outline is sent to Earth Engine.",
+  upload: "A shapefile (a .zip, or its .shp, .shx, .dbf and .prj chosen together), or a .kml, .kmz, .gpkg, .gpx, .fgb or .geojson file. Files are converted on the geeViz server that serves this map; only the area outline is sent to Earth Engine.",
   select: "Click features of a select layer on the map, then chart them.",
 };
 
@@ -374,11 +374,13 @@ export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, measure,
       const inp = el("input");
       inp.type = "file";
       inp.accept = UPLOAD_ACCEPT;
+      // several files: a shapefile's .shp, .shx, .dbf and .prj picked together
+      inp.multiple = true;
       inp.dataset.role = "area-upload";
       inp.addEventListener("change", () => {
-        const f = inp.files && inp.files[0];
+        const files = inp.files ? Array.from(inp.files) : [];
         const src = sources();
-        if (f && src) attempt("Charting the uploaded area", () => src.upload(f));
+        if (files.length && src) attempt("Charting the uploaded area", () => src.upload(files));
         inp.value = "";
       });
       lab.appendChild(inp);

@@ -8,7 +8,8 @@ import { UPLOAD_ACCEPT, uploadKind, convertUrl, featuresFromGeoJSON, featuresFro
 const SQUARE = [[[-111.6, 40.6], [-111.58, 40.6], [-111.58, 40.62], [-111.6, 40.62], [-111.6, 40.6]]];
 
 test("the upload accepts the original's types plus the converter's; only GeoJSON stays in the browser", () => {
-  assert.equal(UPLOAD_ACCEPT, ".zip,.kml,.kmz,.gpkg,.gpx,.fgb,.geojson,.json");
+  // a shapefile as a .zip, or its parts chosen together
+  assert.equal(UPLOAD_ACCEPT, ".zip,.shp,.shx,.dbf,.prj,.cpg,.kml,.kmz,.gpkg,.gpx,.fgb,.geojson,.json");
   assert.equal(uploadKind("a.GeoJSON"), "geojson");
   assert.equal(uploadKind("a.json"), "geojson");
   ["a.kml", "a.zip", "a.kmz", "a.gpkg", "a.gpx", "a.FGB"].forEach((n) => assert.equal(uploadKind(n), "convert", n));

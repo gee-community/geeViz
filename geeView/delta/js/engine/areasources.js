@@ -9,13 +9,48 @@
 //
 // The parsing helpers at the top are pure; createAreaSources wires the map.
 import { smartToFixed } from "../util.js";
+import { zipStore } from "./zip.js";
 import { lazyEE } from "./ee.js";
 import { chartJobs } from "./areachart.js";
 import { drawStyle } from "./drawing.js";
 import { createSketch } from "./sketch.js";
 
 // The original's #areaUpload types plus the other vector formats the converter reads.
-export const UPLOAD_ACCEPT = ".zip,.kml,.kmz,.gpkg,.gpx,.fgb,.geojson,.json";
+// A shapefile can also be picked as its parts, without a .zip: they are
+// zipped here and sent like a .zip.
+export const UPLOAD_ACCEPT = ".zip,.shp,.shx,.dbf,.prj,.cpg,.kml,.kmz,.gpkg,.gpx,.fgb,.geojson,.json";
+// The parts a shapefile may come with (as the converter's sidecars).
+export const SHAPEFILE_PARTS = [".shp", ".shx", ".dbf", ".prj", ".cpg", ".sbn", ".sbx", ".qix", ".xml"];
+
+const extOf = (n) => {
+  const i = String(n).lastIndexOf(".");
+  return i < 0 ? "" : String(n).slice(i).toLowerCase();
+};
+const stemOf = (n) => {
+  const i = String(n).lastIndexOf(".");
+  return i < 0 ? String(n) : String(n).slice(0, i);
+};
+
+// shapefileSets(names): the shapefiles among picked file names, by their
+// .shp's name without extension, or the reason they cannot be sent: a part
+// missing (named), a part with no .shp, or a file that is not a shapefile part.
+export function shapefileSets(names) {
+  const list = names.map(String);
+  const other = list.find((n) => SHAPEFILE_PARTS.indexOf(extOf(n)) < 0);
+  if (other) return { sets: [], error: `${other} is not part of a shapefile. Choose one file at a time, or a shapefile's .shp with its .shx, .dbf and .prj.` };
+  const shps = list.filter((n) => extOf(n) === ".shp").map(stemOf);
+  if (!shps.length) return { sets: [], error: "Choose the shapefile's .shp along with its .shx, .dbf and .prj." };
+  const have = new Set(list.map((n) => n.toLowerCase()));
+  for (const s of shps) {
+    for (const side of [".shx", ".dbf"]) {
+      if (!have.has((s + side).toLowerCase())) return { sets: [], error: `${s}${side} is missing. Choose ${s}.shp with its .shx, .dbf and .prj.` };
+    }
+  }
+  const stems = new Set(shps.map((s) => s.toLowerCase()));
+  const stray = list.find((n) => !stems.has(stemOf(n).toLowerCase()));
+  if (stray) return { sets: [], error: `${stray} has no ${stemOf(stray)}.shp among the files chosen.` };
+  return { sets: shps, error: null };
+}
 // Files that are not GeoJSON are converted by the geeViz server that serves
 // this page (geeViz.eeAuth.vector_convert, at <proxy>/convert/vector), never
 // by a third party. The original sent them to ogre.adc4gis.com.
@@ -273,7 +308,14 @@ export function createAreaSources(engine, store, charter, opts = {}) {
       }
       return featuresFromGeoJSON(body);
     }
-    throw new Error("Please select a .zip shapefile, .kml, .kmz, .gpkg, .gpx, .fgb, .geojson or .json file to summarize across");
+    throw new Error("Please select a shapefile (a .zip, or its .shp, .shx, .dbf and .prj together), .kml, .kmz, .gpkg, .gpx, .fgb, .geojson or .json file to summarize across");
+  }
+  // A shapefile picked as its parts, zipped into one .zip named for it.
+  async function zipShapefile(files) {
+    const { sets, error } = shapefileSets(files.map((f) => f.name));
+    if (error) throw new Error(error);
+    const entries = await Promise.all(files.map(async (f) => ({ name: f.name, bytes: new Uint8Array(await f.arrayBuffer()) })));
+    return new File([zipStore(entries)], sets[0] + ".zip", { type: "application/zip" });
   }
   function ringArea(r) {
     return spherical() ? spherical().computeArea(r.map((c) => new g.LatLng(c[1], c[0]))) : 0;
@@ -282,11 +324,15 @@ export function createAreaSources(engine, store, charter, opts = {}) {
     const polys = f.geometry.type === "MultiPolygon" ? f.geometry.coordinates : [f.geometry.coordinates];
     return polys.reduce((a, p) => a + ringArea(p[0]) - p.slice(1).reduce((b, h) => b + ringArea(h), 0), 0);
   }
-  async function upload(file) {
-    if (!file) return null;
+  // upload(file or [files]): one file, or a shapefile's parts picked together.
+  async function upload(picked) {
+    const files = (Array.isArray(picked) ? picked : [picked]).filter(Boolean);
+    if (!files.length) return null;
     const still = opToken("upload");
+    let file = files[0];
     let features;
     try {
+      if (files.length > 1 || extOf(file.name) === ".shp") file = await zipShapefile(files);
       features = (await readFeatures(file)).map(dropZ);
       if (!still()) return null;
     } catch (e) {

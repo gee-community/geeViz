@@ -357,6 +357,64 @@ def test_upload_zip_is_converted_by_our_server(page, tmp_path):
     assert abs(min(lons) + 111.62) < 1e-4 and abs(max(lats) - 40.615) < 1e-4, ring
 
 
+def _shapefile_parts(tmp_path, poly_lonlat, stem="parts unit", crs="EPSG:5070"):
+    """The files of a one-polygon shapefile, as set_input_files payloads."""
+    import geopandas as gpd
+    from shapely.geometry import Polygon
+    gdf = gpd.GeoDataFrame({"name": ["Parts unit"]}, geometry=[Polygon(poly_lonlat)], crs="EPSG:4326").to_crs(crs)
+    gdf.to_file(tmp_path / (stem + ".shp"))
+    return [{"name": f.name, "mimeType": "application/octet-stream", "buffer": f.read_bytes()}
+            for f in sorted(tmp_path.glob(stem + ".*"))]
+
+
+def _route_converter(page, seen):
+    from geeViz.eeAuth import vector_convert as vc
+
+    def answer(route, request):
+        seen.append(request.url)
+        status, body = vc.handle_upload(request.headers, request.post_data_buffer)
+        route.fulfill(status=status, body=body, content_type="application/json")
+    page.route("**/convert/vector", answer)
+
+
+def test_upload_shapefile_parts_without_a_zip(page, tmp_path):
+    """A shapefile's .shp, .shx, .dbf and .prj picked together (no .zip) are
+    zipped in the browser and converted like a .zip upload."""
+    seen = []
+    _route_converter(page, seen)
+    try:
+        page.evaluate("__delta.api.turnOnUserDefinedAreaCharting()")
+        page.click("#tool-options .seg[data-k=src] [data-v=upload]")
+        assert page.evaluate("document.querySelector('#tool-options input[data-role=area-upload]').multiple") is True
+        poly = [(-111.62, 40.59), (-111.59, 40.59), (-111.59, 40.615), (-111.62, 40.615), (-111.62, 40.59)]
+        parts = _shapefile_parts(tmp_path, poly)
+        assert {p["name"].rsplit(".", 1)[1] for p in parts} >= {"shp", "shx", "dbf", "prj"}
+        page.set_input_files("#tool-options input[data-role=area-upload]", files=parts)
+        wait_for(page, "__delta.store.get().where === 'parts unit'")
+        wait_charts(page)
+    finally:
+        page.unroute("**/convert/vector")
+    assert len(seen) == 1, seen
+    assert page.evaluate("__delta.store.get().chartArea.source") == "upload"
+    ring = page.evaluate("(() => { const f = __delta.store.get().chartArea.features[0].geometry; return f.type === 'MultiPolygon' ? f.coordinates[0][0] : f.coordinates[0]; })()")
+    assert abs(min(c[0] for c in ring) + 111.62) < 1e-4 and abs(max(c[1] for c in ring) - 40.615) < 1e-4, ring
+
+
+def test_upload_shapefile_parts_missing_one_says_which(page, tmp_path):
+    seen = []
+    _route_converter(page, seen)
+    try:
+        page.evaluate("__delta.api.turnOnUserDefinedAreaCharting()")
+        page.click("#tool-options .seg[data-k=src] [data-v=upload]")
+        poly = [(-111.62, 40.59), (-111.59, 40.59), (-111.59, 40.615), (-111.62, 40.615), (-111.62, 40.59)]
+        parts = [p for p in _shapefile_parts(tmp_path, poly) if not p["name"].endswith(".dbf")]
+        page.set_input_files("#tool-options input[data-role=area-upload]", files=parts)
+        wait_for(page, "__delta.store.get().notices.some(n => /parts unit\.dbf/.test(String(n)))", timeout=30)
+    finally:
+        page.unroute("**/convert/vector")
+    assert seen == []  # refused in the browser, nothing sent
+
+
 def test_csv_and_png_actions(page):
     chart_view(page)
     lc = result(page, "LCMS Land Cover", "chart")

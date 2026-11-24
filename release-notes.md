@@ -39,6 +39,10 @@ in the 2026.11.1 notes below.
   viewer loads Earth Engine when the first Earth Engine layer is added, and a
   sign-in failure leaves the other layers drawn, with one notice. Each layer's
   Earth Engine requests carry that layer's own workload tag.
+- **Chart area uploads take a shapefile's parts.** Choose the .shp, .shx,
+  .dbf and .prj together, no .zip needed; they are zipped in the browser and
+  converted like a .zip. A missing .shx or .dbf is named before anything is
+  sent.
 - **Tips can be turned off** with the lightbulb at the end of the tool tabs;
   the choice is remembered in that browser.
 - Query hides the Units switch (it has nothing to measure), the Measure
