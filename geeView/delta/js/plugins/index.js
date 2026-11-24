@@ -9,13 +9,17 @@
 //     (a timelapse, an area-chart-only layer); returns true when it did,
 //   draw(rec, item, ctx): puts a prepared layer on the map,
 //   query?(target, layer, point, qctx): Promise<results>, for the Query tool,
+//   legend?(rec, ctx): Promise<legend | null>, asked once the layer is drawn,
+//   chart?(layer, area, cctx): Promise<results>, for Chart area,
+//   ownsViz: true when its viz is its own (no Earth Engine viz preparation),
 // }
 // ctx is the layer engine's own helpers (engine/layers.js).
 import { eePlugin } from "./ee.js";
 import { tilesPlugin } from "./tiles.js";
 import { geojsonPlugin } from "./geojson.js";
+import { esriPlugin } from "./esri.js";
 
-export const PLUGINS = [eePlugin, tilesPlugin, geojsonPlugin];
+export const PLUGINS = [eePlugin, tilesPlugin, geojsonPlugin, esriPlugin];
 
 export function pluginFor(kind) {
   const p = PLUGINS.find((x) => x.kinds.indexOf(kind) > -1);

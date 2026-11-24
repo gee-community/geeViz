@@ -195,6 +195,14 @@ export function mountLayers(store, mountEl, opts = {}) {
       const i = document.createElement("i");
       i.style.boxShadow = `inset 0 0 0 2px ${sw.colors[0]}`;
       swatch.appendChild(i);
+    } else if (sw.kind === "images") {
+      // a service legend's own swatch images
+      sw.srcs.forEach((src) => {
+        const i = document.createElement("i");
+        i.style.backgroundImage = `url("${src}")`;
+        i.style.backgroundSize = "cover";
+        swatch.appendChild(i);
+      });
     } else {
       sw.colors.forEach((c) => {
         const i = document.createElement("i");

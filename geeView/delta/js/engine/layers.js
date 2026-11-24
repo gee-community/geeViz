@@ -38,6 +38,7 @@ function layerTypeOf(layer) {
   if (layer.kind === "geojson") return "geoJSONVector";
   if (layer.kind === "tile") return "tileMapService";
   if (layer.kind === "dynamic") return "dynamicMapService";
+  if (String(layer.kind).startsWith("esri.")) return layer.kind;
   return layer.viz && layer.viz.layerType;
 }
 
@@ -86,6 +87,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
   }
   function fail(rec, err) {
     rec.loading = false;
+    rec.failed = true;
     patch(rec.id, { loading: false, error: String((err && err.message) || err) }, "layer-error");
   }
   // A layer that failed before it had a record (Earth Engine did not load).
@@ -403,6 +405,18 @@ export function createLayerEngine(gmap, store, deps = {}) {
     patch,
     groundOverlayUrl,
     tileBounds,
+    // a plug-in that learns a layer's real kind (an Esri service's metadata)
+    setKind(r, kind) {
+      r.kind = kind;
+      r.layerType = kind;
+      patch(r.id, { kind }, "layer-kind");
+    },
+    setLegend(r, legend) {
+      if (!recs.has(r.id)) return;
+      r.legend = legend;
+      patch(r.id, { legend }, "layer-legend");
+    },
+    fetch: deps.fetch,
   };
 
   async function addLayerToMap(layer) {
@@ -428,6 +442,8 @@ export function createLayerEngine(gmap, store, deps = {}) {
     const layerType = layerTypeOf(layer);
     const r = {
       id: layer.id,
+      kind: layer.kind,
+      name: layer.name,
       layerType,
       tileType: TILE_TYPES.indexOf(layerType) > -1,
       dataType: DATA_TYPES.indexOf(layerType) > -1,
@@ -450,11 +466,11 @@ export function createLayerEngine(gmap, store, deps = {}) {
       let item = layer.item;
       const vizIn = { ...(layer.viz || {}) };
       if (layerType) vizIn.layerType = layerType;
-      if (vizIn.serialized === true && ["geoJSONVector", "tileMapService", "dynamicMapService"].indexOf(layerType) === -1) {
+      if (!plugin.ownsViz && vizIn.serialized === true && ["geoJSONVector", "tileMapService", "dynamicMapService"].indexOf(layerType) === -1) {
         item = eeApi.Deserializer.decode(item);
       }
       if (layerType === "geoJSONVector" && typeof item === "string") item = JSON.parse(item);
-      const prepared = await prepareViz(item, vizIn, { name: layer.name, nextColor, ee: eeApi });
+      const prepared = plugin.ownsViz ? { viz: vizIn, legend: null, item } : await prepareViz(item, vizIn, { name: layer.name, nextColor, ee: eeApi });
       if (!recs.has(r.id)) return resolveTarget(null);
       r.viz = prepared.viz;
       item = prepared.item;
@@ -476,7 +492,15 @@ export function createLayerEngine(gmap, store, deps = {}) {
       r.legend = prepared.legend;
       patch(r.id, { legend: prepared.legend }, "layer-legend");
 
-      plugin.draw(r, item, ctx);
+      const drawn = plugin.draw(r, item, ctx);
+      if (drawn && typeof drawn.then === "function") drawn.catch((e) => fail(r, e));
+      // A plug-in's own legend (an Esri service's /legend), once it is drawn.
+      if (plugin.legend) {
+        Promise.resolve(drawn)
+          .then(() => (recs.has(r.id) && !r.failed ? plugin.legend(r, ctx) : null))
+          .then((lg) => lg && ctx.setLegend(r, lg))
+          .catch(() => {});
+      }
     } catch (e) {
       resolveTarget(null);
       fail(r, e);

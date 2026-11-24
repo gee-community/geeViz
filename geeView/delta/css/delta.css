@@ -288,6 +288,11 @@ input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border:
 /* the legend stops where the opacity slider ends, never under the legend button */
 .legend { margin: 8px calc(var(--leg-w) + var(--lrow-gap)) 0 calc(var(--op-indent) + var(--tl-pad)); display: none; gap: 3px 8px; grid-template-columns: 12px 1fr; font-size: 12px; color: var(--dz-mute); }
 .layer.leg-open .legend { display: grid; }
+/* a service's own legend swatches (ArcGIS /legend), and its sublayer titles */
+.legend .lgimg { width: 16px; height: 16px; margin-top: 0; object-fit: contain; image-rendering: auto; }
+.legend .lgsec { grid-column: 1 / -1; font-weight: 600; color: var(--dz-ink); margin-top: 4px; }
+.legend .lgsec:first-child { margin-top: 0; }
+.legend:has(.lgimg) { grid-template-columns: 16px 1fr; }
 .layer.off .legend { display: none !important; }
 .layer.off .legbtn { opacity: 0.45; pointer-events: none; }
 .layer.off .spin { display: none; }

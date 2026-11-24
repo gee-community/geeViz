@@ -22,8 +22,25 @@ export function legendMarkup(legend) {
   if (legend.type === "outline") {
     return `<span class="sw outline" data-c="outline"></span><span class="lbl">${escapeText(legend.label || "")}</span>`;
   }
+  // a service's own swatches (ArcGIS /legend): images the server drew
+  if (legend.type === "images") return imageItems(legend.items);
+  if (legend.type === "sections") {
+    return (legend.sections || [])
+      .map((s) => `<span class="lgsec">${escapeText(s.title || "")}</span>${imageItems(s.items)}`)
+      .join("");
+  }
   return "";
 }
+
+// Only data: images are written (a legend comes from a service's JSON).
+const isDataImage = (src) => /^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]*$/i.test(String(src || ""));
+const imageItems = (items) =>
+  (items || [])
+    .filter((it) => isDataImage(it.src))
+    .map((it) => `<img class="lgimg" src="${escapeText(it.src)}" alt=""><span class="lbl">${escapeText(it.label)}</span>`)
+    .join("");
+const legendImages = (legend) =>
+  (legend.type === "images" ? legend.items || [] : (legend.sections || []).flatMap((s) => s.items || [])).filter((it) => isDataImage(it.src));
 
 // Colors for the small legend-toggle swatch: up to four class colors, the
 // ramp, or the outline color.
@@ -32,6 +49,10 @@ export function swatchColors(legend) {
   if (legend.type === "classes") return { kind: "classes", colors: legend.items.slice(0, 4).map((it) => it.color) };
   if (legend.type === "ramp") return { kind: "ramp", colors: legend.palette.slice() };
   if (legend.type === "outline") return { kind: "outline", colors: [legend.color] };
+  if (legend.type === "images" || legend.type === "sections") {
+    const srcs = legendImages(legend).slice(0, 4).map((it) => it.src);
+    return srcs.length ? { kind: "images", srcs, colors: srcs } : null;
+  }
   return null;
 }
 
