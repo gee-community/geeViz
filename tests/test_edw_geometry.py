@@ -13,7 +13,7 @@ import json
 import pytest
 
 import geeViz.edwLib as edw
-from georest.esri import edw as georest_edw
+from georest.esri import services as georest_services
 
 UTAH_BOX = {"type": "Polygon", "coordinates": [[[-114.05, 37.0], [-109.04, 37.0],
                                                 [-109.04, 42.0], [-114.05, 42.0],
@@ -24,11 +24,12 @@ UTAH_BOX = {"type": "Polygon", "coordinates": [[[-114.05, 37.0], [-109.04, 37.0]
 def sent(monkeypatch):
     box = {}
 
-    def fake_post(url, params):
+    def fake_post(url, params, timeout=None):
         box.update(params)
         return {"type": "FeatureCollection", "features": []}
-    # edwLib delegates to georest; the request is built there.
-    monkeypatch.setattr(georest_edw, "post_json", fake_post)
+    # edwLib delegates to georest.usfs.edw, whose queries are
+    # georest.esri.services: the request is built and sent there.
+    monkeypatch.setattr(georest_services, "post_json", fake_post)
     return box
 
 
@@ -73,7 +74,7 @@ def test_an_explicit_type_is_kept(sent):
 
 
 def test_an_empty_error_message_still_says_something(monkeypatch):
-    monkeypatch.setattr(georest_edw, "post_json", lambda url, params: {
+    monkeypatch.setattr(georest_services, "post_json", lambda url, params, timeout=None: {
         "error": {"code": 400, "message": "", "details": ["Invalid geometry."]}})
     # georest's shared format_esri_error: "<code> (<details>)".
     with pytest.raises(RuntimeError, match=r"400 \(Invalid geometry\.\)$"):

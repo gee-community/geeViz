@@ -1,5 +1,5 @@
 """
-USFS Enterprise Data Warehouse (EDW) REST API client: now :mod:`georest.esri.edw`.
+USFS Enterprise Data Warehouse (EDW) REST API client: now :mod:`georest.usfs.edw`.
 
 Search, metadata and spatial feature queries against the ArcGIS REST
 services at https://apps.fs.usda.gov/arcx/rest/services/EDW. The client
@@ -45,7 +45,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from georest.esri import edw as _edw
+from georest.usfs import edw as _edw
 
 EDW_BASE_URL = _edw.EDW_BASE_URL
 
@@ -55,7 +55,7 @@ def search_services(query: str = "", theme: str = "") -> list[dict[str, str]]:
 
     Matches service names and their curated descriptions, and expands
     common terms ("riparian", "wildfire", "ownership") to the themes and
-    services they imply. See :func:`georest.esri.edw.search_edw_services`.
+    services they imply. See :func:`georest.usfs.edw.search_edw_services`.
 
     Args:
         query: Keyword(s), e.g. ``"fire"`` or ``"roads"``. Empty lists all.
@@ -71,7 +71,7 @@ def search_services(query: str = "", theme: str = "") -> list[dict[str, str]]:
 def get_service_info(service_name: str) -> dict[str, Any]:
     """A service's description and layers, e.g. ``"EDW_MTBS_01"``.
 
-    See :func:`georest.esri.edw.get_service_info`.
+    See :func:`georest.usfs.edw.get_service_info`.
     """
     return _edw.get_service_info(service_name)
 
@@ -79,7 +79,7 @@ def get_service_info(service_name: str) -> dict[str, Any]:
 def get_layer_info(service_name: str, layer_id: int) -> dict[str, Any]:
     """A layer's fields, extent and record limit.
 
-    See :func:`georest.esri.edw.get_layer_info`.
+    See :func:`georest.usfs.edw.get_layer_info`.
     """
     return _edw.get_layer_info(service_name, layer_id)
 

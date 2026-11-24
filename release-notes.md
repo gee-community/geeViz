@@ -27,6 +27,27 @@ in the 2026.11.1 notes below.
   up with the basemap tiles.
 - On phones, the Units switch has the same small gap below the tool tabs as
   on desktop, and layer rows have room on both sides of the loading bar.
+- **Vector layers show their symbol.** A vector row has no legend to open;
+  its swatch is the layer as drawn: a dot, a line or a square for each
+  geometry type it holds, filled only when the layer is filled, in its stroke
+  color, width and dash. Earth Engine vectors, painted on the server, are
+  asked once for their geometry types.
+- **Points and lines are easy to query.** The Query tool finds a point within
+  8 pixels of the click and a line within 5, at any zoom; polygons are still
+  found from inside them.
+- **Tips can be turned off** with the lightbulb at the end of the tool tabs;
+  the choice is remembered in that browser.
+- Query hides the Units switch (it has nothing to measure), the Measure
+  options sit closer under Units with a gap above the hint, and the opacity
+  slider track is thinner.
+
+### georest 0.5.2
+
+geeViz now requires ``georest>=0.5.2,<0.6``. georest 0.5.2 files EDW under
+the Forest Service, as ``georest.usfs.edw``, and builds its queries on
+``georest.esri.services``; ``geeViz.edwLib`` uses the new name and works as
+before. ``georest.esri.edw`` still imports the same module, with a
+deprecation warning.
 
 ## 2026.11.1 (November 20, 2026)
 
