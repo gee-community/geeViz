@@ -1,0 +1,140 @@
+{
+ "request": {
+  "url": "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Rivers_and_Streams/FeatureServer/0/query",
+  "params": {
+   "where": "1=1",
+   "outFields": "*",
+   "resultRecordCount": "1",
+   "outSR": "4326",
+   "maxAllowableOffset": "0.01",
+   "f": "json"
+  },
+  "method": "GET"
+ },
+ "response": {
+  "objectIdFieldName": "OBJECTID",
+  "uniqueIdField": {
+   "name": "OBJECTID",
+   "isSystemMaintained": true
+  },
+  "globalIdFieldName": "",
+  "geometryProperties": {
+   "shapeLengthFieldName": "Shape__Length",
+   "units": "esriDecimalDegrees"
+  },
+  "geometryType": "esriGeometryPolyline",
+  "spatialReference": {
+   "wkid": 4326,
+   "latestWkid": 4326
+  },
+  "fields": [
+   {
+    "name": "OBJECTID",
+    "type": "esriFieldTypeOID",
+    "alias": "OBJECTID",
+    "sqlType": "sqlTypeOther",
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Name",
+    "type": "esriFieldTypeString",
+    "alias": "Name",
+    "sqlType": "sqlTypeOther",
+    "length": 150,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Feature",
+    "type": "esriFieldTypeString",
+    "alias": "Feature",
+    "sqlType": "sqlTypeOther",
+    "length": 50,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "State",
+    "type": "esriFieldTypeString",
+    "alias": "State",
+    "sqlType": "sqlTypeOther",
+    "length": 30,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Region",
+    "type": "esriFieldTypeSmallInteger",
+    "alias": "Region",
+    "sqlType": "sqlTypeOther",
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Miles",
+    "type": "esriFieldTypeDouble",
+    "alias": "Miles",
+    "sqlType": "sqlTypeOther",
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Shape__Length",
+    "type": "esriFieldTypeDouble",
+    "alias": "Shape__Length",
+    "sqlType": "sqlTypeDouble",
+    "domain": null,
+    "defaultValue": null
+   }
+  ],
+  "exceededTransferLimit": true,
+  "features": [
+   {
+    "attributes": {
+     "OBJECTID": 1,
+     "Name": " ",
+     "Feature": "Stream",
+     "State": "AK",
+     "Region": 19,
+     "Miles": 2.41,
+     "Shape__Length": 0.07275243764518251
+    },
+    "geometry": {
+     "paths": [
+      [
+       [
+        -142.154,
+        68.534
+       ],
+       [
+        -142.161,
+        68.536
+       ],
+       [
+        -142.171,
+        68.535
+       ],
+       [
+        -142.181,
+        68.531
+       ],
+       [
+        -142.191,
+        68.532
+       ],
+       [
+        -142.203,
+        68.525
+       ],
+       [
+        -142.217,
+        68.526
+       ]
+      ]
+     ]
+    }
+   }
+  ]
+ }
+}

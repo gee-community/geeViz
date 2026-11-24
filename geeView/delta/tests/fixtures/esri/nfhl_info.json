@@ -1,0 +1,524 @@
+{
+ "request": {
+  "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer",
+  "params": {
+   "f": "json"
+  },
+  "method": "GET"
+ },
+ "response": {
+  "currentVersion": 11.1,
+  "cimVersion": "3.1.0",
+  "serviceDescription": "",
+  "mapName": "NFHL",
+  "description": "",
+  "copyrightText": "",
+  "supportsDynamicLayers": true,
+  "layers": [
+   {
+    "id": 0,
+    "name": "NFHL Availability",
+    "parentLayerId": -1,
+    "defaultVisibility": true,
+    "subLayerIds": null,
+    "minScale": 0,
+    "maxScale": 72225,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolygon",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 3,
+    "name": "FIRM Panels",
+    "parentLayerId": -1,
+    "defaultVisibility": true,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolygon",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 1,
+    "name": "LOMRs",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolygon",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 34,
+    "name": "LOMAs",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPoint",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 22,
+    "name": "Political Jurisdictions",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 72223.819286,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolygon",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 17,
+    "name": "Profile Baselines",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolyline",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 20,
+    "name": "Water Lines",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolyline",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 14,
+    "name": "Cross-Sections",
+    "parentLayerId": -1,
+    "defaultVisibility": true,
+    "subLayerIds": null,
+    "minScale": 18055.954822,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolyline",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 16,
+    "name": "Base Flood Elevations",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 18055.954822,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolyline",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 23,
+    "name": "Levees",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolyline",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 29,
+    "name": "Seclusion Boundaries",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolygon",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 15,
+    "name": "Coastal Transects",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolyline",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 18,
+    "name": "Transect Baselines",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolyline",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 24,
+    "name": "General Structures",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 18055.954822,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolyline",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 7,
+    "name": "River Mile Markers",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 18055.954822,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPoint",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 32,
+    "name": "Water Areas",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolygon",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 5,
+    "name": "PLSS",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolygon",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 19,
+    "name": "Limit of Moderate Wave Action",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolyline",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 27,
+    "name": "Flood Hazard Boundaries",
+    "parentLayerId": -1,
+    "defaultVisibility": true,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolyline",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 28,
+    "name": "Flood Hazard Zones",
+    "parentLayerId": -1,
+    "defaultVisibility": true,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolygon",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 25,
+    "name": "Primary Frontal Dunes",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolyline",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 4,
+    "name": "Base Index",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolygon",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 6,
+    "name": "Topographic Low Confidence Areas",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolygon",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 8,
+    "name": "Datum Conversion Points",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPoint",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 9,
+    "name": "Coastal Gages",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPoint",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 10,
+    "name": "Gages",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPoint",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 11,
+    "name": "Nodes",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPoint",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 12,
+    "name": "High Water Marks",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPoint",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 13,
+    "name": "Station Start Points",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPoint",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 26,
+    "name": "Hydrologic Reaches",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolyline",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 30,
+    "name": "Alluvial Fans",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolygon",
+    "supportsDynamicLegends": true
+   },
+   {
+    "id": 31,
+    "name": "Subbasins",
+    "parentLayerId": -1,
+    "defaultVisibility": false,
+    "subLayerIds": null,
+    "minScale": 36111.909643,
+    "maxScale": 0,
+    "type": "Feature Layer",
+    "geometryType": "esriGeometryPolygon",
+    "supportsDynamicLegends": true
+   }
+  ],
+  "tables": [
+   {
+    "id": 41,
+    "name": "Study_Info",
+    "type": "Table"
+   }
+  ],
+  "spatialReference": {
+   "wkid": 4269,
+   "latestWkid": 4269,
+   "xyTolerance": 8.983152841195215e-09,
+   "zTolerance": 0.001,
+   "mTolerance": 0.001,
+   "falseX": -400,
+   "falseY": -400,
+   "xyUnits": 999999999.9999999,
+   "falseZ": -100000,
+   "zUnits": 10000,
+   "falseM": -100000,
+   "mUnits": 10000
+  },
+  "singleFusedMapCache": false,
+  "initialExtent": {
+   "xmin": -160.6904942477303,
+   "ymin": -298.0511349538408,
+   "xmax": -47.87955741011522,
+   "ymax": 367.419441946838,
+   "spatialReference": {
+    "wkid": 4269,
+    "latestWkid": 4269,
+    "xyTolerance": 8.983152841195215e-09,
+    "zTolerance": 0.001,
+    "mTolerance": 0.001,
+    "falseX": -400,
+    "falseY": -400,
+    "xyUnits": 999999999.9999999,
+    "falseZ": -100000,
+    "zUnits": 10000,
+    "falseM": -100000,
+    "mUnits": 10000
+   }
+  },
+  "fullExtent": {
+   "xmin": -305.0788612945911,
+   "ymin": -125.69290611810862,
+   "xmax": 2761.6811641840727,
+   "ymax": 2253.8486798599915,
+   "spatialReference": {
+    "wkid": 4269,
+    "latestWkid": 4269,
+    "xyTolerance": 8.983152841195215e-09,
+    "zTolerance": 0.001,
+    "mTolerance": 0.001,
+    "falseX": -400,
+    "falseY": -400,
+    "xyUnits": 999999999.9999999,
+    "falseZ": -100000,
+    "zUnits": 10000,
+    "falseM": -100000,
+    "mUnits": 10000
+   }
+  },
+  "datesInUnknownTimezone": false,
+  "minScale": 0,
+  "maxScale": 0,
+  "units": "esriDecimalDegrees",
+  "supportedImageFormatTypes": "PNG32,PNG24,PNG,JPG,DIB,TIFF,EMF,PS,PDF,GIF,SVG,SVGZ,BMP",
+  "documentInfo": {
+   "Title": "NFHL",
+   "Author": "",
+   "Comments": "",
+   "Subject": "",
+   "Category": "",
+   "Version": "2.9.0",
+   "AntialiasingMode": "Fast",
+   "TextAntialiasingMode": "Force",
+   "Keywords": ""
+  },
+  "capabilities": "Map,Query,Data",
+  "supportedQueryFormats": "JSON, geoJSON, PBF",
+  "exportTilesAllowed": false,
+  "referenceScale": 0.0,
+  "datumTransformations": [
+   {
+    "geoTransforms": [
+     {
+      "wkid": 108190,
+      "latestWkid": 108190,
+      "transformForward": false,
+      "name": "WGS_1984_(ITRF00)_To_NAD_1983"
+     }
+    ]
+   },
+   {
+    "geoTransforms": [
+     {
+      "wkid": 108190,
+      "latestWkid": 108190,
+      "transformForward": true,
+      "name": "WGS_1984_(ITRF00)_To_NAD_1983"
+     }
+    ]
+   }
+  ],
+  "supportsDatumTransformation": true,
+  "archivingInfo": {
+   "supportsHistoricMoment": false
+  },
+  "supportsClipping": true,
+  "supportsSpatialFilter": true,
+  "supportsTimeRelation": true,
+  "supportsQueryDataElements": true,
+  "mapUnits": {
+   "uwkid": 9102
+  },
+  "maxRecordCount": 2000,
+  "maxImageHeight": 4096,
+  "maxImageWidth": 4096,
+  "supportedExtensions": "WFSServer",
+  "resampling": false
+ }
+}

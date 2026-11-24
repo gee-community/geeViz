@@ -1,0 +1,1175 @@
+{
+ "request": {
+  "url": "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/legend",
+  "params": {
+   "f": "json"
+  },
+  "method": "GET"
+ },
+ "response": {
+  "layers": [
+   {
+    "layerId": 0,
+    "layerName": "NFHL Availability",
+    "layerType": "Feature Layer",
+    "minScale": 0,
+    "maxScale": 72225,
+    "legend": [
+     {
+      "label": "NFHL Data Available",
+      "url": "b99314b21701baec88c26b13977f7dbb",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAASklEQVQ4jWP5f/KkIsOLFwIM1AASEh9YwIb5+/NTxcCNGxlYGKgMWEYNpBiwUG4EKhg1kHLAQgUzUMCogSMjDCUkPoBKWqoAoFkAoeoNlClFZSMAAAAASUVORK5CYII=",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 3,
+    "layerName": "FIRM Panels",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "13768eb1d4cc0ee56bd63919708eb6c3",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAATElEQVQ4je3UIQ4AIAxD0YoeDE4ON4NUQDbdyX1FEC8EUQI4KIzhvE1rRFDYNMElNL6wJDZoR5/INejHAiPVoN/7Q42j9swpDey/cLsNrQXPp9cQngAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 1,
+    "layerName": "LOMRs",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "Effective",
+      "url": "d23c2d1c8757aa203da73b937749cc86",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAVUlEQVQ4jWNhiHn2n4GKgAXBZDxAmVH/HZAMZDzAsETSkSLzYp7vBxmK5ELqAJZRAykGLJQbgQpGDaQcsFDBDBQwaiDlABqG/x0g5RklAKWARQhQCgARPA9RpHTMQQAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "Effective"
+      ]
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": "Status"
+     }
+    ]
+   },
+   {
+    "layerId": 34,
+    "layerName": "LOMAs",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "Valid",
+      "url": "f902bac3ec848c2a06cd49a62ec5a619",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAx0lEQVQ4je2UbxKCIBTEF4dLWIeJLmHjadLTNHCJvExxC2mW/mAGJunH9stTcH6s7+0gsbLkHxiVxqVh7VF0rDVKX7N7qD1IHJ/vBZx/NrBdhXKfBTSwZwenYntc534MKnNhQyj/4IBtMwk8wapvsCDBFkwDc6VHLj+ABXoFiJ8PkFio/hGlJJD2Na6vqKzk0LXD/KUkILpxyKNAujSwu6lpEzY7hxQ/TufRtRU2b3GZNRRCmcsw/bv7RVOuQ4+SF0IWMFerA287fUa78W3UWwAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "Valid"
+      ]
+     },
+     {
+      "label": "Incorporated",
+      "url": "2d26d6a785cc570ca0dbef4975aea6a7",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAvklEQVQ4je2UYQ7CIAyF24VDsNMIejDZwSbcBk5hDaDOTcA1kvjH96cEyJeX9oGAzhJ/YFE0e5MWA7hYUI+psntIEYR4XjYgrckGh1pqFpBssECgyoeg4nkJKtiwV+jsDZ5G0wSS9eoj7KHcjjaQK9q4fAdeQQH+8qUMOUpVYLRPl7BEpYtDommVv5oQ3DbkRWByacOhOe0Ek/tymO5rqat5JJrwuM7frqFkqFfP6d/dfzVlXHpU/RBYQK66A28Xq0yqgi5bugAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "Incorporated"
+      ]
+     },
+     {
+      "label": "Superseded",
+      "url": "e1b6bd2858b12432277dda723ad6b11d",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAxklEQVQ4je2UURKDIAxEDcO9igcAj1R6pJgD6MlMJw50KBWQ1s/uTxSc55LsoIeLpf/AQyGil6qUWqVaa/fa3UNE9ABwj+/MvD8T0WqtHbuARLQwsznak3XZP4LqXlgKlRNM0+SrQCIyLVhUaIdvOuwRZi4/gNu2GQD4+gd6+FEqRKkIFPvzPL+icolDZn6k+SsJACSPdYfRJRHdatMOsPGUQ5F8XMqjnMA59xaXU0MJUBOnLzUP8pCpOeWkR8ULoQvYq8uBT0FxYy8+ipp/AAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "Superseded"
+      ]
+     },
+     {
+      "label": "Reevaluation Needed",
+      "url": "e80f7255a91f15140fbcbb6ec4e7b1cd",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAuElEQVQ4je2UUQ6DIBBEZw33KhzC9jjV41gOUU/mNghVqUDdSNKfzg8bNnmZ7A4oVJb6A5PiAd1cNBjdQa0/xTNkByLc1wtfs8VILYwIyBZPMHS6Ce36KagSw7bQAR3dwjhyQLbQX2Fv+XGUgVLxh8s9cIIG/fKlNHGEdkBnnx+bqFRxyOij/OVEcx7LDheXFpfitj3MHHPon5fJ5pHR0zWOy6GlBKheth/cn9oyrTPKfggioFTVgS949z2iWY8Y7AAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "Reevaluation Needed"
+      ]
+     },
+     {
+      "label": "Contact Community",
+      "url": "21f2ef69c88c74ef83adab945ba43b38",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAyElEQVQ4je2UQQ7CIBBFpw33siZziuI5aly1XRk4h/UUJHIyMGOrQQSEyNK/mRaalynzAoPKYX9gMKLHiappQVM9XdSjFp+hWEHj870167PkqIdF7YuAkuPNWuhCe7RO+yEoK4W5UPqD41VNSeD5gJ01aZiTEQDSwNIIr8sPYJvfXTAMfozZVIoCqX3R40uVWh3Orn+xNA1oX/IgkLqUHHcpdQiW7SGFPk74OA/Lu39ZQyEoeelO3xcZvHydsnNG0QuhCFia6sA7EA5THGW9tQkAAAAASUVORK5CYII=",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "Contact Community"
+      ]
+     },
+     {
+      "label": "Denied",
+      "url": "104d6350befca83a627c14b69ba1d904",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAh0lEQVQ4je2UUQoAIQhE/fBemyfLTrYdbQkKRLJ0t8+dHwnpMUxDCIeFP9AS91nVDGfYQFmcswBSFHgDQDJ2qe/JC1zBJJRFHCYwOWAyAvY4jIgl1HL4WgjfVXdAXZUjDosTWj0Oh8trk+e03Li4QIs+Fl0X76OQAI45BYET2LT9EKLAkI4DH5E/F05pVLyPAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "Denied"
+      ]
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": "Custom"
+     }
+    ]
+   },
+   {
+    "layerId": 22,
+    "layerName": "Political Jurisdictions",
+    "layerType": "Feature Layer",
+    "minScale": 72223,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "23da0765d105104b197485bebdb65502",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAVklEQVQ4je3UIQ4AIAxD0S7pjeBMnJadaWQCEnQn9w3BPDFRroVwR0ljAExs7xpwToD3YwZTsAhEvg+sig3KUSf+GtRjgfHVoN674d0zGczZzqWtKK0DoHgO5zCH6R8AAAAASUVORK5CYII=",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 17,
+    "layerName": "Profile Baselines",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "0b44eb49c23779be2f48ad59b1345b36",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAOklEQVQ4jWNhoDJgGTWQYsBCuRGoYEQb6LNiP0UmbYlwRDWQSoAF3QbqGUglwEItg2Bg1EDKweAPQwC0FwSeomZRdwAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 20,
+    "layerName": "Water Lines",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "8e55fcabbc21cb3db8c9f6bc54493b79",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAQUlEQVQ4jWNhoDJgGTWQYsBCuRGoYMQa6Le8geE/oz1FJjH+P8iwKbKBRi7cFNlAXQOpCFioaRgIjBpIORj8YQgAOHMH3GPiDSgAAAAASUVORK5CYII=",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 14,
+    "layerName": "Cross-Sections",
+    "layerType": "Feature Layer",
+    "minScale": 18055,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "eea7546739139a68b71b5163b183fb97",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAANklEQVQ4jWNhoDJgGTWQYsBCuRGoYAQb2MDAwGBPoVkHQebQ1IUjLFKoBlioZxQEjBrIQDEAAAbjAtF+zRnWAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 16,
+    "layerName": "Base Flood Elevations",
+    "layerType": "Feature Layer",
+    "minScale": 18055,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "6957819d9cbedfc3e194ce64680d0671",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAeUlEQVQ4jWNhoDJgGTVwBIehAxL7ALkGNjAwMNijGQYz0BGPxfVIfEeYgf+xKD4A1eCAJO+I5OL9WCxnwOblRqimA1BXI7tgP5JF6JY3IhvIiMNLDVAM8xrMxciWNxByITYAczHByGIh0kC8hgyPhE02YCFf61A1EABvHBYQB2sLPAAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 23,
+    "layerName": "Levees",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "cd37f00d1ab857b429423adbe038b5cb",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAARklEQVQ4jWNhoDJgGTVw6IVhAxoNAw5QfACKiTawHoeBMDl7Ug0kGbCMGkjzMGzEIX4AlxwLAQMbSJVjYaAyYBk1kIFSAACz1wiQF3zEnAAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 29,
+    "layerName": "Seclusion Boundaries",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "73e4c5dcc463764080fec25fa4a11bf1",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAtUlEQVQ4jb2TawrEIAyEZ8F7NXsy9WR1T+b+SSCExFhWdqDUlvHLw1gATBxUOQn7C/DFbwIwHnBmBGwALgX8qP+eWpZhVWviBwz3Mq4ZsHumhbr1eyXbyFF2rr9sZOD1rzGkq3UKzGCuivkm3hCd6q0Oagt4c7/ejlefuqjymIXAVZYSqBowZUCJjAA6VqWXACjQtln6crDBfZFrZzWUTxSOjfSOFkDxbQGnMT25hi7wZx0HfgFO0CqEoNmiAQAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 15,
+    "layerName": "Coastal Transects",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "a795d5b113f1c7752cb0d098388827d0",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAARUlEQVQ4jWNhoDJgGTWQYsBCuRGoYIQb+B9KH2BgYHDEoX4/AwODA5rYAWT1NHUhIxHqHUkxkCqAhTrGIMCogZSDwR+GABWPBJPL39F3AAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 18,
+    "layerName": "Transect Baselines",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "1a107823804cfa776a68bc3e17299866",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAANklEQVQ4jWNhoDJgGTWQYsBCuRGoYIQb+J9CsxjRDaQKYEG3gZoGUgWwUMcYBBg1kHIw+MMQAIHlAVL3rFKpAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 24,
+    "layerName": "General Structures",
+    "layerType": "Feature Layer",
+    "minScale": 18055,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "Flood Structure",
+      "url": "a0b765958279e08cbb294ea9df0afa35",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAR0lEQVQ4jWNhoDJgGTWQYsBCuRGoYIQbuB+LfCOUrsci58jAwNDAwMBgj8SnrQsd8ag7gEO8AZ+BVAEsowZSDFgoN2KoGQgACRoE0gMKtAYAAAAASUVORK5CYII=",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "Aqueduct",
+       "Channel",
+       "Culvert",
+       "Storm Sewer",
+       "Floodway Contained In Structure",
+       "1 PCT Annual Chance Flood Discharge Contained In Structure",
+       "0.2 PCT Annual Chance Flood Discharge Contained In Structure",
+       "0.2 Pct Annual Chance Flood Discharge Contained In Structure",
+       "1 Pct Annual Chance Flood Discharge Contained In Structure",
+       "0.2-Percent-Annual-Chance Flood Discharge Contained in Structure",
+       "1-Percent-Annual-Chance Flood Discharge Contained in Structure"
+      ]
+     },
+     {
+      "label": "Bridge",
+      "url": "2083b3440b4ee41bc53d58010b0f7324",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAA60lEQVQ4ja3UPwrCMBTH8a8YzOpZvIRuOrn75wKuOruJNxBnNx29hOABdHYVFxX8w5PXUtu0aJrfEpoXPiEvoYbAMYAFboE8K+Aa6ARALbARsBUAtYIBTQGXQK8EaiNMLAGHWvBBbRIDBgI+PdEMBrwExAN1YuizoQDtApdfsTQ40fEI7PT2T8AMuGutCoyAuq45AGOtTdNglHg3hR6JbwFrjnVxkqDsUAEWQAPYAm1HH+fASo+81zY5jxxhvQJMctYLkx73dS5GzZ9YlGseajywQtR4YrmoKYE5UVMSy6AClsW+UAFD/a0/6Bv/mF2kMf+r5QAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "Bridge"
+      ]
+     },
+     {
+      "label": "Dam, Weir, Jetty",
+      "url": "9d257c8b7a8582be05a2b83675791cf6",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAPElEQVQ4jWNhoDJgGTWQYsBCuRGoYAQbaMvAwGBHoVmHGBgYDtPMhYehmGoGUg2wUM8oCBg1kHIw+MMQANLDA9cUVdXqAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "Dam",
+       "Weir",
+       "Jetty"
+      ]
+     },
+     {
+      "label": "Other Structures",
+      "url": "9d257c8b7a8582be05a2b83675791cf6",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAPElEQVQ4jWNhoDJgGTWQYsBCuRGoYAQbaMvAwGBHoVmHGBgYDtPMhYehmGoGUg2wUM8oCBg1kHIw+MMQANLDA9cUVdXqAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "Canal",
+       "Control Structure",
+       "Dock",
+       "Drop Structure",
+       "Flume",
+       "Footbridge",
+       "Gate",
+       "Lock",
+       "Np",
+       "Pier",
+       "Pump Station",
+       "Seawall",
+       "Side Weir Structure",
+       "Utility Crossing",
+       "Wing Wall",
+       "Dike",
+       "Energy Dissipater",
+       "Fish Ladder",
+       "Levee",
+       "Lock",
+       "Penstock",
+       "NP",
+       "Dike",
+       "Energy Dissipater",
+       "Fish Ladder",
+       "Levee",
+       "Lock",
+       "Penstock",
+       "Pipeline",
+       "Retaining Wall",
+       "Siphon",
+       "Other / Misc Structure"
+      ]
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": "Structure Type"
+     }
+    ]
+   },
+   {
+    "layerId": 7,
+    "layerName": "River Mile Markers",
+    "layerType": "Feature Layer",
+    "minScale": 18055,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "6b63f3e5622efcf0a0f789607f83693a",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAABKklEQVQ4je3SsUrDUBQG4P8PSRwilAQRd3EUBF9A3yAguLaUEFyNTyDBwSljwdvFSTOVgGOgq9LNV8jikEWCYErJkUgFCxaSUpz6w+VyD/d+cA5Xx5qjb8D/maGI7ACwAGQkq5VBETkQkbuiKE5M04Rpmm8icknysTUoIrtZlr14nmenaQrDMNDv9/eiKHoQkS2S963Aqqquu92uPR6Pv89lWWIwGMBxHIRhGIlITPKzMZjn+ekP9jtxHNegDeAIwHNj0DCMKcm69YV6Pct5pn+905eBnU7nyXXdw9FotFDv9Xr1lgF4bQVqmnajlDq3bXs/SRJYlgXf9xEEwYykR3LWCiT5ISLHSqnb4XB4BmAbwITkFcnJSv+Q5DuAi/lqFL3pxQ24NGuf4Rc5NWR+7FA7ZQAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 32,
+    "layerName": "Water Areas",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "db24e125dd334b826e8a72f4a181360e",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAASklEQVQ4je3UsREAIQwDwcOjwijq8y+KBlwZMITEdoavgA0USN9YnUknI8N1sNX4M7w2QSSnAsMpTtwVGE8JxlWBb2xo+HnalAzfPZIK9kuF9wUAAAAASUVORK5CYII=",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 5,
+    "layerName": "PLSS",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "175b420f29b4951a8bf39e1d24c3a07e",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAQUlEQVQ4jWNhYGCYxMDAYMBAHXCBBWqYHZUMPAQykKqAZdRAigEL5UagglEDKQcsVDADBYwaOFLC8AKopKWSeRcAFzwFdbiLzcgAAAAASUVORK5CYII=",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 19,
+    "layerName": "Limit of Moderate Wave Action",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "0f888a34f20291833def0f9e508717bb",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAkklEQVQ4je3QsQpBYRgG4If+slmVzegaDG7CDbgEi1nKYjEqZbG4DlfA7hLMbCJF6XQc5XyLOu/09f79T19fEpxUgZ8yxAZXATfsYIk61hHgHA1MscWlDNjD4Dm3McLsV7CGRaYbY4XTN3CCfuathW6ma2KPY461ezhFG55xyOlvBX+8bxiSFAW9UoHlkwKMPwPvus4RvuCo+6cAAAAASUVORK5CYII=",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 27,
+    "layerName": "Flood Hazard Boundaries",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "Limit Lines",
+      "url": "d8e379b3acde87afe8903672c654bd0e",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAATUlEQVQ4jWNhoDJgGTWQYsAygg38bSK4nxKDWM+8d0QxkHnGZgeKnGZig+pCagEWGONvhu8BqhrICg0DqhlILcBCNZOgYNRAygHVwxAAL/wKwqsKKnEAAAAASUVORK5CYII=",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "Limit Lines"
+      ]
+     },
+     {
+      "label": "NP",
+      "url": "25fcf389453ae40d4ca6c6a7b29918f2",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAQklEQVQ4jWNhoDJgGTWQYsBCuRGoYKQauPvvzwYGRkZ7ikz6//+gKzN7A21c6MrM3kBVA6kJWKhqGsOogdQAgz9SAJGFCCCBx5vUAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "NP"
+      ]
+     },
+     {
+      "label": "SFHA / Flood Zone Boundary",
+      "url": "81eb0dd0f08289d7a0aa63d76ee9c812",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAPElEQVQ4jWNhoDJgGTWQYsBCuRGoYCQb+P////2UGMTIyOiIYiC1AAu6DVQzkFqAhWomQcGogZSDwR+GAIB3BJWpsPJcAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "SFHA / Flood Zone Boundary"
+      ]
+     },
+     {
+      "label": "Flowage Easement Boundary",
+      "url": "c11878c55a7b6108a7f2c549edea018a",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAb0lEQVQ4je2TUQqAIBAF58N7ZSdzvVmdrBA2EHGFtCCk+VFXd5AnOh7G/cJh3BRCAYLONyDq2CX0mexae5VKSyjAYghrhMr5PXley1CM/cOopwzXltAiFhnmdXqEorcJWZ5Dr4w2m4I5f8otvi88AV+UEVDE8FLzAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "Flowage Easement Boundary"
+      ]
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": "LN_TYP"
+     }
+    ]
+   },
+   {
+    "layerId": 28,
+    "layerName": "Flood Hazard Zones",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "1% Annual Chance Flood Hazard",
+      "url": "29cfb87d650f973d45dd9531b1e73962",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAASElEQVQ4jWNhePJfmIGRQYSBGuA/wxsWqGFqVDGQkYGBhYHKgGXUQIoBC+VGoIJRAykHLFQwAwWMGjgywvA/wxtQSUsVADQLAIYFCFpGQeQIAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "A,<Null>",
+       "A,1 PCT ANNUAL CHANCE FLOOD HAZARD CONTAINED IN CHANNEL",
+       "A,1 PCT ANNUAL CHANCE FLOOD HAZARD CONTAINED IN STRUCTURE",
+       "A,1 PERCENT ANNUAL CHANCE FLOOD HAZARD CONTAINED IN CHANNEL",
+       "A,1 PERCENT ANNUAL CHANCE FLOOD HAZARD CONTAINED IN STRUCTURE",
+       "A,1-PCT-ANNUAL-CHANCE FLOOD HAZARD CONTAINED IN CHANNEL",
+       "A,1-PCT-ANNUAL-CHANCE FLOOD HAZARD CONTAINED IN STRUCTURE",
+       "A,AREA WITH FLOOD HAZARD DUE TO LEVEE SYSTEM",
+       "A,AREA WITH FLOOD HAZARD DUE TO NON-ACCREDITED LEVEE SYSTEM",
+       "A,AREA WITH UNDETERMINED FLOOD HAZARD DUE TO NON-ACCREDITED LEVEE SYSTEM",
+       "A,COASTAL FLOODPLAIN",
+       "A,COMBINED RIVERINE AND COASTAL FLOODPLAIN",
+       "A,RIVERINE FLOODPLAIN IN COASTAL AREA",
+       "A,RIVERINE FLOODPLAIN IN COASTAL ZONE",
+       "A99,<Null>",
+       "A99,AREA WITH REDUCED FLOOD HAZARD DUE TO LEVEE SYSTEM",
+       "A99,AREA WITH REDUCED FLOOD HAZARD DUE TO NON-ACCREDITED LEVEE SYSTEM",
+       "A99,AREA WITH REDUCED FLOOD RISK DUE TO LEVEE",
+       "AE,<Null>",
+       "AE,1 PCT ANNUAL CHANCE FLOOD HAZARD CONTAINED IN CHANNEL",
+       "AE,1 PCT ANNUAL CHANCE FLOOD HAZARD CONTAINED IN STRUCTURE",
+       "AE,1 PERCENT ANNUAL CHANCE FLOOD HAZARD CONTAINED IN CHANNEL",
+       "AE,1 PERCENT ANNUAL CHANCE FLOOD HAZARD CONTAINED IN STRUCTURE",
+       "AE,1-PCT-ANNUAL-CHANCE FLOOD HAZARD CONTAINED IN CHANNEL",
+       "AE,1-PCT-ANNUAL-CHANCE FLOOD HAZARD CONTAINED IN STRUCTURE",
+       "AE,AREA WITH FLOOD HAZARD DUE TO LEVEE SYSTEM",
+       "AE,AREA WITH FLOOD HAZARD DUE TO NON_ACCREDITED LEVEE SYSTEM",
+       "AE,AREA WITH UNDETERMINED FLOOD HAZARD DUE TO NON-ACCREDITED LEVEE SYSTEM",
+       "AE,COASTAL FLOODPLAIN",
+       "AE,COMBINED RIVERINE AND COASTAL FLOODPLAIN",
+       "AE,RIVERINE FLOODPLAIN IN COASTAL AREA",
+       "AE,RIVERINE FLOODPLAIN IN COASTAL ZONE",
+       "AE,RIVERINE FLOODPLAIN SHOWN IN COASTAL ZONE",
+       "AH,<Null>",
+       "AH,AREA WITH FLOOD HAZARD DUE TO LEVEE SYSTEM",
+       "AH,AREA WITH FLOOD HAZARD DUE TO NON-ACCREDITED LEVEE SYSTEM",
+       "AH,AREA WITH UNDETERMINED FLOOD HAZARD DUE TO NON-ACCREDITED LEVEE SYSTEM",
+       "AH,COASTAL FLOODPLAIN",
+       "AH,COMBINED RIVERINE AND COASTAL FLOODPLAIN",
+       "AH,RIVERINE FLOODPLAIN IN COASTAL AREA",
+       "AH,RIVERINE FLOODPLAIN IN COASTAL ZONE",
+       "AO,<Null>",
+       "AO,AREA WITH FLOOD HAZARD DUE TO LEVEE SYSTEM",
+       "AO,AREA WITH FLOOD HAZARD DUE TO NON-ACCREDITED LEVEE SYSTEM",
+       "AO,AREA WITH UNDETERMINED FLOOD HAZARD DUE TO NON-ACCREDITED LEVEE SYSTEM",
+       "AO,COASTAL FLOODPLAIN",
+       "AO,COMBINED RIVERINE AND COASTAL FLOODPLAIN",
+       "AO,RIVERINE FLOODPLAIN IN COASTAL AREA",
+       "AO,RIVERINE FLOODPLAIN IN COASTAL ZONE",
+       "AR,<Null>",
+       "AR,AREA WITH REDUCED FLOOD HAZARD DUE TO LEVEE SYSTEM",
+       "AR,AREA WITH REDUCED FLOOD HAZARD DUE TO NON-ACCREDITED LEVEE SYSTEM",
+       "AR,AREA WITH REDUCED FLOOD RISK DUE TO LEVEE",
+       "V,<Null>",
+       "V,COASTAL FLOODPLAIN",
+       "V,COMBINED RIVERINE AND COASTAL FLOODPLAIN",
+       "V,RIVERINE FLOODPLAIN IN COASTAL AREA",
+       "V,RIVERINE FLOODPLAIN IN COASTAL ZONE",
+       "V,RIVERINE FLOODPLAIN SHOWN IN COASTAL ZONE",
+       "VE,<Null>",
+       "VE,COASTAL FLOODPLAIN",
+       "VE,COMBINED RIVERINE AND COASTAL FLOODPLAIN",
+       "VE,RIVERINE FLOODPLAIN IN COASTAL AREA",
+       "VE,RIVERINE FLOODPLAIN IN COASTAL ZONE",
+       "VE,RIVERINE FLOODPLAIN IN COASTAL ZONE2",
+       "VE,RIVERINE FLOODPLAIN SHOWN IN COASTAL ZONE"
+      ]
+     },
+     {
+      "label": "Regulatory Floodway",
+      "url": "3478bb8c180de686768f5eb78cb12d70",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAuUlEQVQ4ja3UQQ6CMBAF0N9kbqA7914D7qD3ICbEFUhADgYrPYjuuENxFAmk1jbt/F2nyWunbUp46A0UtlhE7xRcUU9tFjUGmrD9t9YdUifW5LVlFYCWY8aSe+/EqtPFOk+S2AxKYRzyuQAfLLn16I7p+gxjMQ5JYn/BEMwKhmI/wRjMAGOxFSiBzaAUxqEyK9AKYWVWgNrzVQRr8vq9MZLCqqlLKxiCWcFQ7ANqDPzTLuODcYyX8bJGMKJ64fm6rYgAAAAASUVORK5CYII=",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "A,ADMINISTRATIVE FLOODWAY",
+       "A,FLOODWAY",
+       "A,FLOWAGE EASEMENT AREA",
+       "AE,ADMINISTRATIVE FLOODWAY",
+       "AE,COMMUNITY ENCROACHMENT AREA",
+       "AE,FLOODWAY",
+       "AE,FLOODWAY CONTAINED IN CHANNEL",
+       "AE,FLOODWAY CONTAINED IN STRUCTURE",
+       "AE,FLOWAGE EASEMENT AREA",
+       "AE,NARROW FLOODWAY",
+       "AE,RIVERINE FLOODWAY IN COMBINED RIVERINE AND COASTAL ZONE",
+       "AE,RIVERINE FLOODWAY SHOWN IN COASTAL ZONE",
+       "AE,STATE ENCROACHMENT AREA",
+       "AH,FLOODWAY",
+       "AO,FLOODWAY",
+       "V,RIVERINE FLOODWAY IN COMBINED RIVERINE AND COASTAL ZONE",
+       "V,RIVERINE FLOODWAY SHOWN IN COASTAL ZONE",
+       "VE,RIVERINE FLOODWAY IN COMBINED RIVERINE AND COASTAL ZONE",
+       "VE,RIVERINE FLOODWAY SHOWN IN COASTAL ZONE"
+      ]
+     },
+     {
+      "label": "Special Floodway",
+      "url": "ff5934a44f8a2cd04a32947341482624",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAA+UlEQVQ4jZXVMQ6CMBQG4J/k3UA3d8/AVgZvoBcxcVQI6GRMjAfxCgbiIN5DN2/AUG0CpuhrX/kXEl7zlaZ9hfDQI0QYw8p6v8H2tIMr0VPzBY0XtdjUfj+7X+FLOU+QnEtmJoC4waquvKCpu1AaikkohWBVrNgah5KEFasc2TJFfiyQHjIRJT2JnMvqMJPu6UNVXf1vCod1kVATCsVCUBb0YSEouQZLucQK3EgK7gIr6lahXCRsjYZ0gYQ5N8WFSpiJ89j8ohJWtJtJ5iqSuiBb5UHY9wvFLgjEYC9ZOrAhWA8ciroagMy1bW5aG22axvsLsCfv5WO9AQXlp5NbK5ndAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "AE,AREA OF SPECIAL CONSIDERATION",
+       "AE,COLORADO RIVER",
+       "AE,COLORADO RIVER FLOODWAY",
+       "AE,DENSITY FRINGE AREA"
+      ]
+     },
+     {
+      "label": "Area of Undetermined Flood Hazard",
+      "url": "2adecd0bb2b5b9f5f8b395a994e22643",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAASUlEQVQ4jWP59KRSmIHxrwgDNcB/5jcsEMP+qVHFQEYGBhYGKgOWUQMpBiyUG4EKRg2kHLBQwQwUMGrgyAjD/8xvQCUtVQDQLABecAvHjN/G9AAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "D,<Null>"
+      ]
+     },
+     {
+      "label": "0.2% Annual Chance Flood Hazard",
+      "url": "85e8c6aeccb1c180c0b0ea5933fee22e",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAASElEQVQ4jWP538YgzPCXQYSBGoCZ4Q0L2LB/DGpUMZCBgYGFWgbBwKiBlAMWKpiBAkYNpBywUMEMFDBq4MgIQ2aGN1QzDWgWAACnB/xE+yREAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "X,0.2 PCT ANNUAL CHANCE FLOOD HAZARD",
+       "X,0.2 PCT ANNUAL CHANCE FLOOD HAZARD CONTAINED IN CHANNEL",
+       "X,0.2 PCT ANNUAL CHANCE FLOOD HAZARD CONTAINED IN STRUCTURE",
+       "X,0.2 PCT ANNUAL CHANCE FLOOD HAZARD IN COASTAL ZONE",
+       "X,0.2 PCT ANNUAL CHANCE FLOOD HAZARD IN COMBINED RIVERINE AND COASTAL ZONE",
+       "X,0.2 PERCENT ANNUAL CHANCE FLOOD HAZARD",
+       "X,0.2 PERCENT ANNUAL CHANCE FLOOD HAZARD CONTAINED IN CHANNEL",
+       "X,0.2 PERCENT ANNUAL CHANCE FLOOD HAZARD CONTAINED IN STRUCTURE",
+       "X,0.2 PERCENT ANNUAL CHANCE FLOOD HAZARD IN COASTAL ZONE",
+       "X,0.2 PERCENT ANNUAL CHANCE FLOOD HAZARD IN COMBINED RIVERINE AND COASTAL ZONE",
+       "X,0.2-PCT-ANNUAL-CHANCE FLOOD HAZARD",
+       "X,0.2-PCT-ANNUAL-CHANCE FLOOD HAZARD CONTAINED IN CHANNEL",
+       "X,0.2-PCT-ANNUAL-CHANCE FLOOD HAZARD CONTAINED IN STRUCTURE",
+       "X,0.2-PCT-ANNUAL-CHANCE FLOOD HAZARD IN COASTAL ZONE",
+       "X,0.2-PCT-ANNUAL-CHANCE FLOOD HAZARD IN COMBINED RIVERINE AND COASTAL ZONE",
+       "X,1 PCT DEPTH LESS THAN 1 FOOT",
+       "X,1 PCT DRAINAGE AREA LESS THAN 1 SQUARE MILE",
+       "X,1 PERCENT DEPTH LESS THAN 1 FOOT",
+       "X,1 PERCENT DRAINAGE AREA LESS THAN 1 SQUARE MILE",
+       "X,1-PCT DEPTH LESS THAN 1 FOOT",
+       "X,1-PCT DRAINAGE AREA LESS THAN 1 SQUARE MILE",
+       "X,1-PERCENT DRAINAGE AREA LESS THAN 1 SQUARE MILE",
+       "X,AREA WITH FLOOD HAZARD DUE TO NON-ACCREDITED LEVEE SYSTEM"
+      ]
+     },
+     {
+      "label": "Future Conditions 1% Annual Chance Flood Hazard",
+      "url": "d38076d0faee59e835c848afa809eb30",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAABDklEQVQ4ja3UPQqDMBQA4AcGBNfcwAuIHkFwEboIjoKDq3cSPIbgBQRBcFU3N38mg1t5FtNS1NTqg4hJnh9JDI+EYfiAG4PgQ1EUkGWZDxZF0WVZRkUfB0HA3+d5hmmaXiBikiTxScMwaFVVXVmWh2gcx+D7PqwGB7fCdV3EDtGmaSCKIo7yLd+Bep4nBs+gaZqCruti8Fe0rus3iLplWZdRDLLq34f7L0qO/tg/KPns3IGS74GrKNlKvoKSveSzaN/3C3p4D8+geZ53AECFF/tXVNM0OgzDa4WqqkLbtpdRWLdsmiaM43i6suyCWBwdx6GMsY4xtotiXpIkywK25jiIhRGbbdvCKo2BZ7UXT5jIzDcKZwskAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "X,1 PCT FUTURE CONDITIONS",
+       "X,1 PCT FUTURE CONDITIONS CONTAINED IN STRUCTURE",
+       "X,1 PCT FUTURE CONDITIONS, FLOODWAY",
+       "X,1 PCT FUTURE CONDITONS, COMMUNITY ENCROACHMENT",
+       "X,1 PERCENT FUTURE CONDITIONS",
+       "X,1 PERCENT FUTURE CONDITIONS CONTAINED IN STRUCTURE",
+       "X,1-PCT FUTURE CONDITIONS",
+       "X,1-PCT FUTURE CONDITIONS CONTAINED IN STRUCTURE"
+      ]
+     },
+     {
+      "label": "Area with Reduced Risk Due to Levee",
+      "url": "633ce14a73ad9be422e0a0972866fc06",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAABA0lEQVQ4jWPJzc31ZaAiYAERnlynGVTZH4EFmvYxMOy9h19Toinn2wT978LIYrd/yjFs/2YKMRBkmArzMwaHBQwMB+/jNyxEh+FtixEDimFgwM6AMBAEiDVsdSgWw5AA2ED7OQwMz54xUGwYCMBdSA3DiDKQGMMO3mdgiNrFwBAcTMBAYg1zWMDAICUF4bNQwzBkwEJNw7AaSIlhGAZSahiKgdQwDG4gKG9izU4kGgY3ED2jk2sYUQmbWMOclYgwkFjDGp0YGKJsGBgmvcdjICmG1dkzMNz5i+RCUOEIKs+QDavbi8hOuADImyCXgQwDmwEzEFQwgjAcCEAyOjEA5E1kAADxPm4j14ZSEAAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "X,AREA WITH REDUCED FLOOD HAZARD DUE TO ACCREDITED LEVEE SYSTEM",
+       "X,AREA WITH REDUCED FLOOD HAZARD DUE TO LEVEE SYSTEM",
+       "X,AREA WITH REDUCED FLOOD HAZARD DUE TO PROVISIONALLY ACCREDITED LEVEE SYSTEM",
+       "X,AREA WITH REDUCED FLOOD RISK DUE TO LEVEE"
+      ]
+     },
+     {
+      "label": "Area with Risk Due to Levee",
+      "url": "288edf2c6d76ef9793dcc66e2d43b249",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAA1klEQVQ4jWP59KRSmIHxrwgDEuCT7mIgBD49qXyDro/hP/MbFojgPzWYmFfwKoKG+XtrvGVg/A3XAweMDAwsCB7EsCMnHjEQMmzxLB9hXPIs1DQMbiC1DAMBFmIigBjDjhx/xOAVsgo1DCk1DARYqGkYXgPJMQyngeQahtVASgzDMJBSw1AMpIZhcAOpZRgIsJTlWzPUlFlSxbCyfGsGlpoyawYGhn8UG1ZdYsNQXmiFP2GTZpgFmI3TQHIMw2kguYZBDPzP/AZU0iIDYgwDAVCYoQCgWQBXCY1c66C26QAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20,
+      "values": [
+       "D,AREA WITH FLOOD RISK DUE TO LEVEE",
+       "D,AREA WITH UNDETERMINED FLOOD HAZARD DUE TO NONACCREDITED LEVEE SYSTEM",
+       "D,AREA WITH UNDETERMINED FLOOD HAZARD DUE TO NON-ACCREDITED LEVEE SYSTEM"
+      ]
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": "Zone Type"
+     }
+    ]
+   },
+   {
+    "layerId": 25,
+    "layerName": "Primary Frontal Dunes",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "a1205af550cdb984ade04ca93503fd70",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAcElEQVQ4jWNhoDJgGTWQYsAygg38H8IQwcDE8Iagjn8MItjUMa5i2IPqQkaGUIZ/DKsJGGrHwASmDxF0IQMDw0sGRgZxBgYiXIkHsMBZ/xkOEfTyP4ZrhNSwwBiMaxhWUOKyIZhsqAVYqGYSw4g1EABU+RLzjByloAAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 4,
+    "layerName": "Base Index",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "e461eac7640da2bf9bddf7c8385b51c2",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAaElEQVQ4je3VsRGAIBBE0cW5LixGC6AoirIALUbLEGZRAuK98H5A+IILFnsyKhwzPgk4X+BSoAXYKrB3kNh6oCjgnVHSAD2zAOVMJ+YC1DMHYypAvX5DjiP3TIH+gf1ALi3HUQHHP9IARkcRM3eOyukAAAAASUVORK5CYII=",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 6,
+    "layerName": "Topographic Low Confidence Areas",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "7fb43a0a87ca4a676cfdea81e3ac2e06",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAABrUlEQVQ4jYWUP2vDMBDFn2xh4pLQduiQDBkKLZQM+XiBDEbYYPD36tA1Q5eOGdohQ9omxMRgq5xjy458ogch/84/dO89ndRJ8gRAwlVaBwBGEOL3n54AQnxLaH0jomjj7FVqBs+7R1n+CKU+2Z4smyDPF/C8u/pkOk2fxXr9wcIAiCh6p8/0sqGaYGU5FUq96SR5kRCigO9/2VADawD0bkMNbN09V59QrFYHnWXmpDasrT4UYXiwYeibYaBxvERV7Vx6NdA5zudHTnt59S3PJwD2CIIxHNWMOUJR7DhNpWnsxtzSQ5xRtmacUZI1wNKUg/XGn/Whsgnl0IAelFLAGWBDoXVwcdllAEGVIl2XQqlXl66CoHG8oBtFwIATtzfmGL6/cYWfqj5dVe3h+xUF+9j+2IcODLA0NX2q018nya3kxGUN4IxiLkAX7BZKJpQlWAP6RhVFPZlw5bAuuk55PgewtWFX0DSdApjTQoBVkt0ajs1ixqTTheFgocAE29KMCyynGWfUJdhMaAdGMQZwRlFsTihLScuRFU3rQMfxQ7PijxSNq/+Lou1ZAjj9AZlnjt9SK37KAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 8,
+    "layerName": "Datum Conversion Points",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "466ee57749b946a356c3daae8345e774",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAA+UlEQVQ4jWNhoDJgGdoG/v//X4uBgSENTbiJkZHxHVkGMjAwKHV0dOTDOUpKDGFhYRMYGBjINpChsrISznZ3dwcZOIBh+P//fwkGBgYOJCExLHpk/v//j8z/yMjI+B6XC1eUlZXZX7p0CavtZ8+eZfDw8DgM46empjIEBwf3MjAwlOAykOHUqVMMBw8exGrgmzdvGHbu3Annu7i4DIOEXXngwAFhJL4pIyNjHXKy2bFjRzIDA8MrJDV3cRrIyMh4HJmPFpswsI+RkfEBsS6kGLAQUuDs7AxnGxoaUmzg6z179uxFE/tOtoGMjIwnQcmNoLOINZAcQHUDAR/0QWcp2XhXAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 9,
+    "layerName": "Coastal Gages",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "e0223dd1eb62487444cdca3a7037142b",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAABLklEQVQ4je3SzyuEQRwG8OcZ7/5qd22vJFcJOZDipGz8B0q5kja54i+QHJz2qKyLE3uSclTkRHtzcBP1Rg4ua6N339b7aGMLpd5325z2qWmmmekz03fGQotjtcH/qaGkbgBJAA5Jv2lQ0oCkXd+rTKMjCprok6RVkoehQUk9tYpz9XKRs6sPp6CJIDG01JuezB9IipHcDwX6vr9RPl+wvcezzwPeq3i72YGJdyE1sZmXVCTpBgerzzMN7Hvc22IdtAGMAbgMDBoT8QDW7/ZrIdoYeeEeJZI5iffNjrh3Rz+mE4OL9c4BcB0KNMZsZbKFeROz+937Y9BKIjG8jOToWo1kjmQtFEjyVdJ4eqqw3ZndmwOQAlAiuU6y1NQ/JFkGsPLVAsUKurEN/pmW1/ADHHxfcF1h7BoAAAAASUVORK5CYII=",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 10,
+    "layerName": "Gages",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "62f82cd7c43b53d6d1948cf2e9fa29b9",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAABMElEQVQ4je3SMUvDQBgG4Pc9ktiY1BIRcRdHQXBxVFBcC4KToEgQhzqov0DEwangIlgXJ+0kgjgJDg5Wukj/QhaHLlHUNIZ8ErSggpCU4tQXjjuOu+e4705Dl6P1wP+poYgMAbAAeCTjjkERGRORo/jteRqaAWrGo4hskjzLDIrIcNT07p8OXKf1cA1qOsy51ZG8Wz4VkT6SJ5nAOI53/PKyEzZuPg94b+H16hDKHoS9tFsWkSrJID3oN2fa2PcEt9UEdABMAKilBpWuhyCTu//aYbRHYbZH6S9c5qaK48Hd+Y9pc3Yl6TwAjUygUmqvUKosKtsZDWoXYM6COb8Gq7gVkXRJRplAki8iMpkvVfYHNo4XANgA6iS3SdY7+ockfQDrXy1VtLQLe+Cf6XoNPwAbeGEJtWcx1gAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 11,
+    "layerName": "Nodes",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "d2803fcc95bd4c97e7fff32c9dee7a28",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAABMklEQVQ4je3SsUtCURgF8HMeV9N8Ji8i2qMxCFoaC4pWIWgKipBosKH6CyIamoSWIFuayimCaAoaGjJcwn/BpcHlFdXT5J0wEioS3hNp8sDlfvdyv9/wcQ26HNMD/2eGkoYAJABUSPodg5LGJB29+c/TBlEYRh8lbZI8Cw1KGq42KvcHTxnnoXYNwwjm4qsjmWTuVFIfyZNQoO/7Ozl32SnXbz7P76rh6vUQtjWIJXs3J6lA0gsMun51poV9z61XaIIOgAkAxcBgxIrUCULQr4Zoq6z/1Wfagf1IXU7F0uN33vmP+9n4SnOrACiHAi3L2sum8ou25YwWvQvEmMB8fA3pxFaDZIZkIxRI8kXSZDaZ398YOF4AYAMokdwmWeroH5J0Aax/rUAxQR/2wLbp+gw/AB2xYQkVpJj2AAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 12,
+    "layerName": "High Water Marks",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "f39de7ec7414aa379dfc59cca35d6cdc",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAABN0lEQVQ4je3RTygEYRgG8OedGbVNUbIHcdvi4KKU1sVBHLYUDg5yUA5bKI6uUpSGWvLnplY57EVkU9aZCzUldzalHPzdxhpNzaORpBi7a/a4z+X7et++X2/vp6HM0SrgryEZ9g4RuUc5dnh66Sw31io5ABOBQZItfYnH4eZ61SW5KCJXgcCdMzuZNm0JVYk62qknAAz8G7QdxqIzd+2fdxgHVj/JNhExSwZJqiuZl83za+ertn3yiniXvgGgo2Tw5sGdXEhbDd9rLoG5PStKMiYih0WDJGumU7n522f3Ry9z8YZ9014n2SQiblGgmXWM1aO87jf97K4V6W0NjQBIFgRJRobWnuLeJ/jFzDrYOs4vkUyJiF0AhDHeoytj3b4DfiRcrdQBmAJg/AkqigwiQLQgjysgvLwDxk54Z7thVjMAAAAASUVORK5CYII=",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 13,
+    "layerName": "Station Start Points",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "1989c38fb452065dbba484348fdc2f9d",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAABKklEQVQ4je3RP0vDQBzG8eeXdggOLmayW8EOjoLEl1AoVAeH4CB0CLSCjtkDEUoUtBTdhBYyuGRpFvsWMhz0FXQKZHFxypRHCiKC9p/p2O9yxx334bgrY8OVt+CfkTRmg4i8YxNvGMfxY6VS+QBwVRgkedhsNi9qtVpO8k5EpoXAMAwHURSJruulVqv1AODs32CWZXXTNI+/5vB9/5TkkYiotUGSpV6v9zKZTL7XgiCAbdvPAE7WBpMkue52u/s/1/I8h+d5Jsm6iLytDJLcdRznNk3TX3vj8Rij0eiJ5IGI5CuBSim/3+/vzLu967rVRqNxCWCwFCRZtSzLnn3CvJRSGA6H9yRfRSRbBvqdTkdrt9tYlGEYewBuAPgLQU3TzlGgcpHDWxCzPgF/7XKNb79PhAAAAABJRU5ErkJggg==",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 26,
+    "layerName": "Hydrologic Reaches",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "09e13746bac34cb11cdea9b5ac8e04b0",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAeElEQVQ4jWNhoDJgGTVwhIXhfgrNckQ30AGbKiEhIQZra2sGFhYWhufPnzOcOHGCaBfiBP///2f4+/cvmCYEWAgpePfuHcOWLVsIGoRhYPEmwrbjA71+jKgGbukKO8BABcACY9w8stqRqgZSC7BQzSQoGDWQgWIAALcJHUWwtyqMAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 30,
+    "layerName": "Alluvial Fans",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "49d3e7626ffb47edbb42736690a0c77b",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAABUElEQVQ4ja3VMUvDQBQH8P/pmxykYKngkEn6JeyQ7+Dk4iLtR3ASzODg5Jqh4tY1S9eCwRC6iIMIDlHRogFLS20tLUmTnjxr1Ebp0N6b3vD4cXf55462jdYRIPX2C24A+YZUbWwuF5Lev4+fIfGYnsnkhLayuqQFQ2kTY4Cw7XL2ID1oel0DEFvcN25j17+Tp3Y5W5ueedcBec59rRKAeGUzsMMEq1djYxb2+jRGv4MG/bfNeTDvKt4LBjJPqrDK/tqZXmwekyoMX0UqsW9QFcZFnCFA7KjAMjmhEQdSBWZ6XcOxIo1UYZgcmUv9zrhXr8oTBRjYol4bDRXY9UXksvXnT5kX8y5Hu4AokSqsZq4/6MXm72AvhmE62Gow/ARbDfYJJsFeFONdOlZYIL62HWuElh/3wgHyfAWlQceK+Blwg+EYk6dClPgDTM+EBbY+AP038BrGCQqxAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   },
+   {
+    "layerId": 31,
+    "layerName": "Subbasins",
+    "layerType": "Feature Layer",
+    "minScale": 36111,
+    "maxScale": 0,
+    "legend": [
+     {
+      "label": "",
+      "url": "cc3ec022545ac8a0446351eab7a0000b",
+      "imageData": "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAbElEQVQ4jWNpZViV9o/hvxIDFQATA+M9FpBhtQzhFdQwsJlhZQcLjNPCsOJ/DUMEIyX8/wwMnXADkSXJ5Tcju5BagIVmBraMhiG5gAXGGA1DsgELjDEahmQD6ochqNgGlWMgDoiGKSCHDzILAFpfgeZ6cxPcAAAAAElFTkSuQmCC",
+      "contentType": "image/png",
+      "groupId": "0",
+      "height": 20,
+      "width": 20
+     }
+    ],
+    "legendGroups": [
+     {
+      "id": "0",
+      "heading": ""
+     }
+    ]
+   }
+  ]
+ }
+}

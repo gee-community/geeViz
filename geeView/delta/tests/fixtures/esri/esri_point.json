@@ -1,0 +1,50 @@
+{
+ "request": {
+  "url": "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Major_Cities_/FeatureServer/0/query",
+  "params": {
+   "where": "1=1",
+   "outFields": "NAME",
+   "resultRecordCount": "1",
+   "outSR": "4326",
+   "f": "json"
+  },
+  "method": "GET"
+ },
+ "response": {
+  "objectIdFieldName": "OBJECTID",
+  "uniqueIdField": {
+   "name": "OBJECTID",
+   "isSystemMaintained": true
+  },
+  "globalIdFieldName": "",
+  "geometryType": "esriGeometryPoint",
+  "spatialReference": {
+   "wkid": 4326,
+   "latestWkid": 4326
+  },
+  "fields": [
+   {
+    "name": "NAME",
+    "type": "esriFieldTypeString",
+    "alias": "Name",
+    "sqlType": "sqlTypeOther",
+    "length": 75,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The city name.\",\"fieldValueType\":\"nameOrTitle\"}"
+   }
+  ],
+  "exceededTransferLimit": true,
+  "features": [
+   {
+    "attributes": {
+     "NAME": "Alabaster"
+    },
+    "geometry": {
+     "x": -86.81782028299995,
+     "y": 33.24449770600006
+    }
+   }
+  ]
+ }
+}

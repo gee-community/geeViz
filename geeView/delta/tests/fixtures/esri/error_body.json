@@ -1,0 +1,19 @@
+{
+ "request": {
+  "url": "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_States_Generalized_Boundaries/FeatureServer/999/query",
+  "params": {
+   "where": "1=1",
+   "f": "json"
+  },
+  "method": "GET"
+ },
+ "response": {
+  "error": {
+   "code": 400,
+   "message": "Invalid URL",
+   "details": [
+    "Invalid URL"
+   ]
+  }
+ }
+}

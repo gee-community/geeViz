@@ -1,0 +1,232 @@
+{
+ "request": {
+  "url": "https://imagery.geoplatform.gov/iipp/rest/services/Vegetation/USFS_EDW_LCMS_AnnualChange_CONUS/ImageServer/query",
+  "params": {
+   "where": "1=1",
+   "outFields": "year",
+   "returnDistinctValues": "true",
+   "returnGeometry": "false",
+   "orderByFields": "year",
+   "f": "json"
+  },
+  "method": "GET"
+ },
+ "response": {
+  "objectIdFieldName": "objectid",
+  "fields": [
+   {
+    "name": "year",
+    "type": "esriFieldTypeSmallInteger",
+    "alias": "year",
+    "domain": null
+   }
+  ],
+  "features": [
+   {
+    "attributes": {
+     "year": 1985
+    }
+   },
+   {
+    "attributes": {
+     "year": 1986
+    }
+   },
+   {
+    "attributes": {
+     "year": 1987
+    }
+   },
+   {
+    "attributes": {
+     "year": 1988
+    }
+   },
+   {
+    "attributes": {
+     "year": 1989
+    }
+   },
+   {
+    "attributes": {
+     "year": 1990
+    }
+   },
+   {
+    "attributes": {
+     "year": 1991
+    }
+   },
+   {
+    "attributes": {
+     "year": 1992
+    }
+   },
+   {
+    "attributes": {
+     "year": 1993
+    }
+   },
+   {
+    "attributes": {
+     "year": 1994
+    }
+   },
+   {
+    "attributes": {
+     "year": 1995
+    }
+   },
+   {
+    "attributes": {
+     "year": 1996
+    }
+   },
+   {
+    "attributes": {
+     "year": 1997
+    }
+   },
+   {
+    "attributes": {
+     "year": 1998
+    }
+   },
+   {
+    "attributes": {
+     "year": 1999
+    }
+   },
+   {
+    "attributes": {
+     "year": 2000
+    }
+   },
+   {
+    "attributes": {
+     "year": 2001
+    }
+   },
+   {
+    "attributes": {
+     "year": 2002
+    }
+   },
+   {
+    "attributes": {
+     "year": 2003
+    }
+   },
+   {
+    "attributes": {
+     "year": 2004
+    }
+   },
+   {
+    "attributes": {
+     "year": 2005
+    }
+   },
+   {
+    "attributes": {
+     "year": 2006
+    }
+   },
+   {
+    "attributes": {
+     "year": 2007
+    }
+   },
+   {
+    "attributes": {
+     "year": 2008
+    }
+   },
+   {
+    "attributes": {
+     "year": 2009
+    }
+   },
+   {
+    "attributes": {
+     "year": 2010
+    }
+   },
+   {
+    "attributes": {
+     "year": 2011
+    }
+   },
+   {
+    "attributes": {
+     "year": 2012
+    }
+   },
+   {
+    "attributes": {
+     "year": 2013
+    }
+   },
+   {
+    "attributes": {
+     "year": 2014
+    }
+   },
+   {
+    "attributes": {
+     "year": 2015
+    }
+   },
+   {
+    "attributes": {
+     "year": 2016
+    }
+   },
+   {
+    "attributes": {
+     "year": 2017
+    }
+   },
+   {
+    "attributes": {
+     "year": 2018
+    }
+   },
+   {
+    "attributes": {
+     "year": 2019
+    }
+   },
+   {
+    "attributes": {
+     "year": 2020
+    }
+   },
+   {
+    "attributes": {
+     "year": 2021
+    }
+   },
+   {
+    "attributes": {
+     "year": 2022
+    }
+   },
+   {
+    "attributes": {
+     "year": 2023
+    }
+   },
+   {
+    "attributes": {
+     "year": 2024
+    }
+   },
+   {
+    "attributes": {
+     "year": 2025
+    }
+   }
+  ]
+ }
+}
