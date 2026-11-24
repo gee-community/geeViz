@@ -35,6 +35,10 @@ in the 2026.11.1 notes below.
 - **Points and lines are easy to query.** The Query tool finds a point within
   8 pixels of the click and a line within 5, at any zoom; polygons are still
   found from inside them.
+- **Maps without Earth Engine layers start without Earth Engine.** The
+  viewer loads Earth Engine when the first Earth Engine layer is added, and a
+  sign-in failure leaves the other layers drawn, with one notice. Each layer's
+  Earth Engine requests carry that layer's own workload tag.
 - **Tips can be turned off** with the lightbulb at the end of the tool tabs;
   the choice is remembered in that browser.
 - Query hides the Units switch (it has nothing to measure), the Measure
