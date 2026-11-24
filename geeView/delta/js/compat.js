@@ -73,7 +73,7 @@ let layerObj = {};
   }
 
   var MAP_METHODS = [
-    "addLayer", "removeLayer", "addSerializedLayer", "hideSelectLayerAreaCharting",
+    "addLayer", "removeLayer", "addSerializedLayer", "hideSelectLayerAreaCharting", "setDefaultWorkloadTag",
     "showSelectLayerAreaCharting", "addSelectLayer", "addSelectLayerGroup",
     "addSerializedSelectLayer", "addTimeLapse", "addSerializedTimeLapse", "addREST",
     "addExport", "addPlot", "addFeatureView", "addMBSankey", "centerObject", "setCenter",

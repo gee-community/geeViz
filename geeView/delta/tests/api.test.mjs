@@ -239,3 +239,24 @@ test("timelapses start off whatever visible says (4map-manager.js addTimeLapseTo
   const vis = Object.fromEntries(store.get().layers.map((l) => [l.name, l.visible]));
   assert.deepEqual(vis, { T1: false, T2: false, T3: false, L: true });
 });
+
+test("setDefaultWorkloadTag stores the tag for the Earth Engine plug-in", () => {
+  const store = createStore();
+  const api = createMapApi(store);
+  assert.equal(store.get().eeWorkloadTag, null);
+  api.setDefaultWorkloadTag("geeviz__t");
+  assert.equal(store.get().eeWorkloadTag, "geeviz__t");
+  api.setDefaultWorkloadTag(""); // "" clears the viewer's own default, and is kept
+  assert.equal(store.get().eeWorkloadTag, "");
+});
+
+test("a Delta map script sets its workload tag through the page's Map", () => {
+  // geeView._build_run_js (Delta skin) emits Map.setDefaultWorkloadTag(...)
+  // instead of ee.data calls: it must reach the API through compat.js
+  const { ctx } = makeContext();
+  vm.runInContext(`function runGeeViz(){Map.setDefaultWorkloadTag("geeviz__t");}`, ctx);
+  const store = createStore();
+  vm.runInContext("runGeeViz()", ctx);
+  installApi(ctx, store);
+  assert.equal(store.get().eeWorkloadTag, "geeviz__t");
+});

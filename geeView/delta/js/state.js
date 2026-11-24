@@ -31,6 +31,9 @@ export function defaultState() {
     // canRedo, shapes, drawing}, for the undo/redo/clear buttons
     sketch: null,
     notices: [],
+    // the Earth Engine workload tag geeViz set for this map (Map.setDefaultWorkloadTag),
+    // applied when Earth Engine signs in; null when none was set
+    eeWorkloadTag: null,
     theme: "system",
     panes: { left: { visible: true, width: null }, right: { width: null } },
     // port of 1variables.js crs, transform and scale: the query grid is the

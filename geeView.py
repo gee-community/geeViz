@@ -2369,6 +2369,13 @@ class mapper:
                 f"'/ee-api/t/{t_enc}';}}catch(e){{}}"
             )
         lines = prefix + "var layerLoadErrorMessages=[];showMessage('Loading',staticTemplates.loadingModal[mode]);function runGeeViz(){"
+        # Delta loads Earth Engine only when a map needs it, after this
+        # script has run, so the script cannot call ``ee.data`` itself: a
+        # call made before Earth Engine loads is lost. Its tags travel as
+        # data instead: the default through Map.setDefaultWorkloadTag, each
+        # layer's in its viz (``workloadTag``), applied by the viewer when it
+        # signs in and around each layer's Earth Engine requests.
+        delta = self.skin == "delta"
         # If the Python side has a DEFAULT workload tag installed (via
         # ``ee.data.setDefaultWorkloadTag`` — including the sensible
         # one eeCreds installs at proxy start, ``geeviz__<tenant>``),
@@ -2419,7 +2426,9 @@ class mapper:
                     _py_default = _py_cur
             except Exception:
                 pass
-        if _py_default:
+        if delta:
+            lines += "Map.setDefaultWorkloadTag(" + _js_str(_py_default) + ");"
+        elif _py_default:
             lines += "try{ee.data.setDefaultWorkloadTag(" + _js_str(_py_default) + ");}catch(e){}"
         else:
             # No Python-side default to push. Explicitly clear the JS
@@ -2435,7 +2444,8 @@ class mapper:
         # (no arg) resets CURRENT back to whichever default is now in
         # effect — the Python one we just pushed, or the empty string
         # we just installed above. Either way, no ``viewer-exports``.
-        lines += "try{ee.data.resetWorkloadTag();}catch(e){}"
+        if not delta:
+            lines += "try{ee.data.resetWorkloadTag();}catch(e){}"
         for idDict in self.idDictList:
             # Per-layer workload tag replay. If addLayer was called under
             # eeCreds.setWorkloadTag(<X>), emit an SDK setter here so the
@@ -2455,7 +2465,9 @@ class mapper:
             # Standalone geeViz keeps emitting it — with no proxy to
             # substitute one, this IS the only tagging mechanism.
             _wt = "" if _EE_API_UPSTREAM else idDict.get("workloadTag", "")
-            if _wt:
+            if delta:
+                pass  # the tag goes in the viz, below
+            elif _wt:
                 lines += "try{ee.data.setWorkloadTag(" + _js_str(_wt) + ");}catch(e){}"
             else:
                 lines += "try{ee.data.resetWorkloadTag();}catch(e){}"
@@ -2524,11 +2536,14 @@ class mapper:
                 )
                 continue
 
+            viz_js = idDict["viz"]
+            if delta and _wt:
+                viz_js = json.dumps({**json.loads(viz_js), "workloadTag": _wt}, sort_keys=False)
             lines += "{}.{}({},{},{},{});".format(
                 idDict["objectName"],
                 idDict["function"],
                 idDict["item"],
-                idDict["viz"],
+                viz_js,
                 _js_str(idDict["name"]),
                 str(idDict["visible"]).lower(),
             )
@@ -2539,7 +2554,8 @@ class mapper:
         # rather than inheriting the last layer's tag. Notably: never
         # falls back to the JS viewer's built-in
         # ``${mode}---viewer-exports`` — that was overridden at eeInit.
-        lines += "try{ee.data.resetWorkloadTag();}catch(e){}"
+        if not delta:
+            lines += "try{ee.data.resetWorkloadTag();}catch(e){}"
         lines += 'if(layerLoadErrorMessages.length>0){showMessage("Map.addLayer Error List",layerLoadErrorMessages.join("<br>"));};'
         lines += "setTimeout(function(){if(layerLoadErrorMessages.length===0){$('#close-modal-button').click();}}, 2500);"
         for mapCommand in self.mapCommandList:

@@ -99,6 +99,10 @@ export function createMapApi(store, engine = {}) {
 
   const api = {};
 
+  // geeViz's default Earth Engine workload tag, kept for when Earth Engine
+  // signs in (it may load after the map script has run). "" clears the
+  // viewer's own default.
+  api.setDefaultWorkloadTag = (tag) => store.set({ eeWorkloadTag: tag == null ? null : String(tag) }, "ee-workload-tag");
   api.addLayer = (item, viz, name, visible) => {
     viz = viz || {};
     push(makeLayer(kindFor(item, viz), item, viz, name, visible));
