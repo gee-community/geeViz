@@ -2,6 +2,8 @@
 // vectors painted by Earth Engine or pulled down as GeoJSON, select layers,
 // timelapses and area-chart-only layers. Earth Engine is loaded and signed in
 // only for these.
+import { queryEE } from "../engine/query.js";
+
 export const eePlugin = {
   kinds: ["ee", "select", "timelapse", "areaChartOnly"],
   needsEE: true,
@@ -25,5 +27,9 @@ export const eePlugin = {
       return;
     }
     ctx.fail(r, "Unknown layer type: " + r.layerType);
+  },
+  // the value, series or attribute table at a point (engine/query.js)
+  query(target, layer, point, qctx) {
+    return queryEE(qctx.ee, target, layer, point, qctx.query, qctx);
   },
 };

@@ -9,6 +9,7 @@
 //
 // The parsing helpers at the top are pure; createAreaSources wires the map.
 import { smartToFixed } from "../util.js";
+import { lazyEE } from "./ee.js";
 import { chartJobs } from "./areachart.js";
 import { drawStyle } from "./drawing.js";
 import { createSketch } from "./sketch.js";
@@ -104,7 +105,7 @@ export function viewLabel(b, proportion = 0.25, precision = 3) {
 // query() -> the query tool (for selections), idleDelay.
 export function createAreaSources(engine, store, charter, opts = {}) {
   const g = opts.google || window.google.maps;
-  const ee = opts.ee || window.ee;
+  const ee = opts.ee || lazyEE;
   const gmap = engine.gmap;
   const notify = opts.notify || (() => {});
   const colors = opts.colors || (() => ({ stroke: "#e2602a" }));

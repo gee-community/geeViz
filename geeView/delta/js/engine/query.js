@@ -13,6 +13,8 @@
 // rectangles, Data layers and the InfoWindow, whose content the UI builds).
 import { smartToFixed, tokenSource } from "../util.js";
 import { addColorHash } from "./viz.js";
+import { lazyEE } from "./ee.js";
+import { pluginFor } from "../plugins/index.js";
 
 // port of 1variables.js plotRadius default
 const DEFAULT_PLOT_RADIUS = 15;
@@ -366,8 +368,8 @@ export function pickNameProperty(viz, props) {
 const evaluate = (obj) =>
   new Promise((resolve, reject) => obj.evaluate((v, err) => (err ? reject(new Error(String(err))) : resolve(v))));
 
-// One Earth Engine request per layer.
-function queryOne(eeApi, target, layer, point, query, opts) {
+// One Earth Engine request per layer: the Earth Engine plug-in's query.
+export function queryEE(eeApi, target, layer, point, query, opts) {
   const viz = target.viz || {};
   const pt = eeApi.Geometry.Point([point.lng, point.lat]);
   const { crs, scale, crsTransform } = queryInputs(query);
@@ -449,7 +451,16 @@ function errorResult(layer, point, err) {
 // port of 4map-manager.js addSelectLayerToMap (viz.canQuery = false): select
 // layers are never point queried; their selections feed Chart area.
 export function queryableLayers(layers) {
-  return layers.filter((l) => l.visible && l.queryable && l.kind !== "areaChartOnly" && l.kind !== "select");
+  return layers.filter((l) => l.visible && l.queryable && l.kind !== "areaChartOnly" && l.kind !== "select" && canQuery(l.kind));
+}
+
+// A layer kind the Query tool can ask: its plug-in has a query.
+function canQuery(kind) {
+  try {
+    return typeof pluginFor(kind).query === "function";
+  } catch (e) {
+    return false;
+  }
 }
 
 // One click on a select layer becomes one selection (port of
@@ -510,7 +521,9 @@ export async function queryPoint(engine, layers, latLng, query, opts = {}) {
       try {
         const target = await engine.layers.queryTarget(layer.id);
         if (!target) return;
-        rs = await queryOne(eeApi, target, layer, point, query, {
+        rs = await pluginFor(layer.kind).query(target, layer, point, {
+          ee: eeApi,
+          query,
           zoom: opts.zoom,
           onVectors: (v) => isCurrent() && opts.onVectors && opts.onVectors(v),
         });
@@ -535,7 +548,7 @@ const metersPerPixel = (lat, zoom) => (156543.03392 * Math.cos((lat * Math.PI) /
 // colors() -> {pin, pinEdge, selection}, notify(msg).
 export function createQueryTool(engine, store, opts = {}) {
   const g = opts.google || window.google.maps;
-  const eeApi = opts.ee || window.ee;
+  const eeApi = opts.ee || lazyEE;
   const gmap = engine.gmap;
   const tokens = tokenSource();
   const colors = () => (opts.colors ? opts.colors() : { pin: "#ff834c", pinEdge: "#fff", selection: "#ff834c" });

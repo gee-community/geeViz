@@ -16,6 +16,7 @@ import { createTileOverlay, progressOf } from "./tiles.js";
 import { createVectorTileOverlay, tileBounds, flatten } from "./vectortiles.js";
 import { geomKinds } from "../ui/legend.js";
 import { pluginFor } from "../plugins/index.js";
+import { lazyEE } from "./ee.js";
 import { windQueryItem, WIND_UNIT_PROPS } from "./wind.js";
 
 const TILE_TYPES = ["geeImage", "geeImageCollection", "geeVectorImage", "tileMapService"];
@@ -63,7 +64,7 @@ export function stackOrder(orderTopFirst, has) {
 
 export function createLayerEngine(gmap, store, deps = {}) {
   const g = deps.google || window.google.maps;
-  const eeApi = deps.ee || window.ee;
+  const eeApi = deps.ee || lazyEE;
   const recs = new Map();
   const nextColor = createColorCycle();
   let order = store.get().order.slice();
@@ -86,6 +87,11 @@ export function createLayerEngine(gmap, store, deps = {}) {
   function fail(rec, err) {
     rec.loading = false;
     patch(rec.id, { loading: false, error: String((err && err.message) || err) }, "layer-error");
+  }
+  // A layer that failed before it had a record (Earth Engine did not load).
+  function failLayer(id, err) {
+    const error = String((err && err.message) || err);
+    store.update((s) => ({ ...s, layers: s.layers.map((l) => (l.id === id ? { ...l, loading: false, error } : l)) }), "layer-error");
   }
 
   // ---- stacking ----
@@ -393,6 +399,17 @@ export function createLayerEngine(gmap, store, deps = {}) {
 
   async function addLayerToMap(layer) {
     const plugin = pluginFor(layer.kind);
+    // Earth Engine is loaded and signed in for the first layer that needs it,
+    // and only then; a failure is that layer's error, the others draw.
+    if (plugin.needsEE && deps.eeLoader) {
+      try {
+        await deps.eeLoader.ensure();
+      } catch (e) {
+        failLayer(layer.id, e);
+        return;
+      }
+      if (!store.get().layers.some((l) => l.id === layer.id)) return; // removed while loading
+    }
     if (plugin.start && plugin.start(layer, ctx)) return;
     const layerType = layerTypeOf(layer);
     const r = {

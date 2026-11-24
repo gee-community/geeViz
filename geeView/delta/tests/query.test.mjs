@@ -322,3 +322,20 @@ test("queryPoint: a target with unitProps reads values and units in one request"
   const [r] = await p;
   assert.deepEqual(r.data.bands.map((b) => b.display), ["5 kt", "90 degrees"]);
 });
+
+test("queryPoint dispatches by kind: a kind with no query is never asked for a target", async () => {
+  const { ee, pending, calls } = fakeEE();
+  const layers = [
+    { id: "g", name: "G", visible: true, queryable: true, kind: "geojson" },
+    { id: "a", name: "A", visible: true, queryable: true, kind: "ee" },
+  ];
+  const asked = [];
+  const engine = { layers: { queryTarget: (id) => (asked.push(id), Promise.resolve(TARGETS[id] || null)) } };
+  const p = queryPoint(engine, layers, PT, defaultState().query, { ee, token: tokenSource()() });
+  await flush();
+  // the GeoJSON plug-in has no query (yet): only the Earth Engine layer is asked and queried
+  assert.deepEqual(asked, ["a"]);
+  assert.deepEqual(calls.map((c) => c.img), ["imgA"]);
+  pending[0].cb({ v: 1 });
+  assert.deepEqual((await p).map((r) => r.layerId), ["a"]);
+});

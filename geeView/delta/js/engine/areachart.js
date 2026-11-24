@@ -12,6 +12,7 @@ import { AREA_FORMAT_DICT, SPLIT_STR, areaChartInputs, getObjInfo, parseReductio
 import { SANKEY_MIN_PERCENTAGE, buildSankeyFromHistogram, ensureHexColor, formatPeriod, prepareSankeyData } from "./sankey.js";
 import { evaluateAsync, getObjType } from "./viz.js";
 import { smartToFixed, tokenSource } from "../util.js";
+import { lazyEE } from "./ee.js";
 
 // port of 2templates.js addTransitionRow's two default rows (activeStartYear
 // 1985, activeEndYear 2024, two-year periods)
@@ -517,7 +518,7 @@ export function eeCompute(ee) {
 // key(geometry) -> area key (default: hash of the serialized geometry),
 // notify(msg).
 export function createAreaCharter(store, deps = {}) {
-  const ee = deps.ee || globalThis.ee;
+  const ee = deps.ee || lazyEE;
   const compute = deps.compute || eeCompute(ee);
   const itemOf = deps.item || makeItemOf(ee);
   const zoom = deps.zoom || (() => 11);
