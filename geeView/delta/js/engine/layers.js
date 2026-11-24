@@ -15,6 +15,7 @@ import { createTimelapse } from "./timelapse.js";
 import { createTileOverlay, progressOf } from "./tiles.js";
 import { createVectorTileOverlay, tileBounds, flatten } from "./vectortiles.js";
 import { geomKinds } from "../ui/legend.js";
+import { pluginFor } from "../plugins/index.js";
 import { windQueryItem, WIND_UNIT_PROPS } from "./wind.js";
 
 const TILE_TYPES = ["geeImage", "geeImageCollection", "geeVectorImage", "tileMapService"];
@@ -23,7 +24,6 @@ const VIZ_KEYS = ["bands", "min", "max", "gain", "bias", "gamma", "palette", "fo
 // the original's possibleVizKeys
 const POSSIBLE_VIZ_KEYS = ["bands", "min", "max", "gain", "bias", "gamma", "palette", "color"];
 // Select layers draw like any vector (port of 4map-manager.js addSelectLayerToMap).
-const SKIP_KINDS = ["areaChartOnly"];
 const NOT_QUERYABLE = ["geoJSONVector", "tileMapService", "dynamicMapService"];
 
 // A wind layer (geeViz.weather addWindLayer / addWindTimeLapse): its tiles
@@ -372,9 +372,28 @@ export function createLayerEngine(gmap, store, deps = {}) {
   }
 
   // ---- public ----
+  // What a plug-in (plugins/) draws with: this engine's own helpers.
+  const ctx = {
+    g,
+    gmap,
+    ee: eeApi,
+    store,
+    recs,
+    tileOverlay,
+    eeTileLayer,
+    addGeoJson,
+    addTimelapse,
+    setLoading,
+    sync,
+    fail,
+    patch,
+    groundOverlayUrl,
+    tileBounds,
+  };
+
   async function addLayerToMap(layer) {
-    if (SKIP_KINDS.indexOf(layer.kind) > -1) return;
-    if (layer.kind === "timelapse") return addTimelapse(layer);
+    const plugin = pluginFor(layer.kind);
+    if (plugin.start && plugin.start(layer, ctx)) return;
     const layerType = layerTypeOf(layer);
     const r = {
       id: layer.id,
@@ -426,38 +445,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
       r.legend = prepared.legend;
       patch(r.id, { legend: prepared.legend }, "layer-legend");
 
-      if (r.layerType === "tileMapService") {
-        const maxZoom = Number.isFinite(Number(r.viz.maxZoom)) ? Number(r.viz.maxZoom) : 15;
-        r.overlay = tileOverlay(r, (coord, zoom) => item(coord, zoom), { maxZoom });
-        // LOCAL PATCH tile legend v3 is carried by the row: the legend is the row's own, shown whenever the layer is on.
-        setLoading(r, false);
-        sync();
-      } else if (r.tileType) {
-        eeTileLayer(r, item);
-      } else if (r.layerType === "geeVector") {
-        r.requests++;
-        item.evaluate((v, err) => {
-          if (!recs.has(r.id)) return;
-          if (v === undefined || err) return fail(r, err || "The features could not be loaded");
-          addGeoJson(r, v);
-        });
-      } else if (r.layerType === "geoJSONVector") {
-        addGeoJson(r, item);
-      } else if (r.layerType === "dynamicMapService") {
-        // one export image per map tile, in the tile stack like any layer (the
-        // original drew one image per view above the tiles); below a service's
-        // minZoom there is no image
-        const svcs = r.item;
-        r.overlay = tileOverlay(r, (coord, zoom) => {
-          const svc = zoom > svcs[1].minZoom ? svcs[1] : svcs[0];
-          return groundOverlayUrl(svc.baseURL, svc.minZoom, svc.ending, zoom, tileBounds(coord.x, coord.y, zoom), 256, 256);
-        });
-        r.tileType = true;
-        setLoading(r, false);
-        sync();
-      } else {
-        fail(r, "Unknown layer type: " + r.layerType);
-      }
+      plugin.draw(r, item, ctx);
     } catch (e) {
       resolveTarget(null);
       fail(r, e);
