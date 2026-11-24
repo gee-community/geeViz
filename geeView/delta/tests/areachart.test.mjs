@@ -531,3 +531,33 @@ test("charter: the reduction cache keeps at most cacheMax entries", async () => 
   await charter.chartArea({ id: "A" }, "A");
   assert.equal(calls, 5, "the least recently used area was dropped");
 });
+
+test("charter: charting waits for Earth Engine to be ready instead of failing", async () => {
+  // auto area charting can fire as soon as the map rests, before Earth Engine
+  // has loaded (it loads on demand)
+  const store = createStore();
+  const api = createMapApi(store, {});
+  api.addLayer({ tag: "nlcd" }, { canAreaChart: true }, "NLCD", true);
+  let release;
+  const ready = new Promise((r) => (release = r));
+  const order = [];
+  const charter = createAreaCharter(store, {
+    ready: () => ready,
+    compute: {
+      line: () => (order.push("compute"), Promise.resolve({ raw: NLCD.raw, objInfo: NLCD.objInfo, labels: [], isHistogram: true, sentinel: false, scale: 30 })),
+      sankey: () => Promise.reject(new Error("no")),
+    },
+    item: (l) => l.item,
+    zoom: () => 12,
+    key: (g) => g.id,
+  });
+  store.set({ tool: "chart" });
+  const p = charter.chartArea({ id: "A" }, "a");
+  await new Promise((r) => setTimeout(r, 20));
+  assert.deepEqual(order, []); // nothing computed before Earth Engine is ready
+  order.push("ready");
+  release();
+  await p;
+  assert.deepEqual(order, ["ready", "compute"]);
+  assert.deepEqual(store.get().results.map((r) => r.title), ["NLCD"]);
+});

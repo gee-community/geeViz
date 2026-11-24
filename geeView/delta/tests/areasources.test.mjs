@@ -141,3 +141,30 @@ test("select: selections collected after the source changed chart nothing", asyn
   assert.equal(await done, null);
   assert.deepEqual(charted, []);
 });
+
+test("view: the map resting before Earth Engine is ready charts once it is, without touching Earth Engine first", async () => {
+  // auto area charting starts on the map's idle event, which can come before
+  // Earth Engine has loaded (it loads on demand)
+  const store = createStore();
+  const f = fakes();
+  const made = [];
+  f.ee.Geometry = { Rectangle: (c) => (made.push(c), { rect: c }) };
+  f.gmap.getBounds = () => ({ toJSON: () => ({ west: -112, south: 40, east: -111, north: 41 }) });
+  f.google.LatLng = class {
+    constructor(lat, lng) { this.lat = lat; this.lng = lng; }
+  };
+  const charted = [];
+  const charter = { chartArea: (g, label) => (charted.push([g, label]), Promise.resolve()), cancel: () => {} };
+  const ee = deferred();
+  const sources = createAreaSources({ gmap: f.gmap }, store, charter, { google: f.google, ee: f.ee, ready: () => ee.p, idleDelay: 0 });
+  store.set({ tool: "chart", areaFrom: "view" });
+  await new Promise((r) => setTimeout(r, 20));
+  assert.deepEqual(made, []); // no Earth Engine object before it is ready
+  assert.deepEqual(charted, []);
+  ee.resolve();
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(charted.length, 1);
+  assert.deepEqual(charted[0][0], { rect: [-112, 40, -111, 41] });
+  assert.match(charted[0][1], /^Map view/);
+  assert.ok(sources);
+});

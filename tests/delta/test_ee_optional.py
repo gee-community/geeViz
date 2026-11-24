@@ -97,3 +97,27 @@ def test_a_layer_added_later_loads_earth_engine(live_map):
     wait_for(page, "() => { const l = __delta.store.get().layers.find(x => x.name === 'SRTM'); const st = l && __delta.engine.layers.stats(l.id); return l && !l.loading && !l.error && st && st.onMap; }", timeout=120)
     assert len([u for u in seen if "ee_api_js" in u]) == 1, [u for u in seen if "ee_api_js" in u]
     assert page.delta_errors == []
+
+
+def build_auto_chart(Map):
+    import geeViz.geeView as gv
+
+    nlcd = gv.ee.ImageCollection("USGS/NLCD_RELEASES/2021_REL/NLCD").select(["landcover"]).first()
+    Map.addLayer(nlcd, {"autoViz": True, "canAreaChart": True}, "NLCD")
+    Map.turnOnAutoAreaCharting()
+    Map.setCenter(-111.9, 40.7, 12)
+
+
+def test_auto_area_charting_at_load_waits_for_earth_engine(live_map):
+    # the map rests, and auto charting starts, while Earth Engine is still
+    # loading: the library is held back past the first rest and idle delay
+    def setup(ctx):
+        def slow(route):
+            time.sleep(5)
+            route.continue_()
+        ctx.route("**/ee_api_js.js", slow)
+    page = live_map(build_auto_chart, setup=setup, wait_layers=False)
+    wait_for(page, "() => __delta.store.get().results.some(r => r.title === 'NLCD') && !__delta.store.get().charting", timeout=150)
+    notices = page.evaluate("__delta.store.get().notices")
+    assert not [n for n in notices if "not loaded" in str(n)], notices
+    assert page.delta_errors == []

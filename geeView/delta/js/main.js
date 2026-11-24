@@ -147,9 +147,12 @@ async function boot() {
   }
   try {
     // Chart area: the charter computes and caches, the sources supply areas.
-    const charter = createAreaCharter(store, { ee: window.ee, zoom: () => engine.gmap.getZoom(), notify: notice });
+    // Earth Engine loads on demand: charting waits for it rather than failing
+    const eeReady = () => (eeLoader.isReady() ? null : eeLoader.ensure());
+    const charter = createAreaCharter(store, { ready: eeReady, zoom: () => engine.gmap.getZoom(), notify: notice });
     engine.charter = charter;
     chartSources = createAreaSources(engine, store, charter, {
+      ready: eeReady,
       notify: notice,
       query: () => queryTool,
       // uploads are converted by the geeViz server behind this page (compat.js's authProxyAPIURL)

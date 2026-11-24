@@ -2427,7 +2427,10 @@ class mapper:
             except Exception:
                 pass
         if delta:
-            lines += "Map.setDefaultWorkloadTag(" + _js_str(_py_default) + ");"
+            # Guarded: the original viewer's Map has no such method, and this
+            # script also reaches it (Map.view() rewrites the shared
+            # runGeeViz.js; a saved map can be refreshed into the original skin).
+            lines += "try{Map.setDefaultWorkloadTag(" + _js_str(_py_default) + ");}catch(e){}"
         elif _py_default:
             lines += "try{ee.data.setDefaultWorkloadTag(" + _js_str(_py_default) + ");}catch(e){}"
         else:

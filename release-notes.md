@@ -37,8 +37,9 @@ in the 2026.11.1 notes below.
   found from inside them.
 - **Maps without Earth Engine layers start without Earth Engine.** The
   viewer loads Earth Engine when the first Earth Engine layer is added, and a
-  sign-in failure leaves the other layers drawn, with one notice. Each layer's
-  Earth Engine requests carry that layer's own workload tag.
+  sign-in failure leaves the other layers drawn, with one notice. An Earth
+  Engine tile layer's map request carries that layer's own workload tag; Chart
+  area waits for Earth Engine instead of failing while it loads.
 - **Chart area uploads take a shapefile's parts.** Choose the .shp, .shx,
   .dbf and .prj together, no .zip needed; they are zipped in the browser and
   converted like a .zip. A missing .shx or .dbf is named before anything is

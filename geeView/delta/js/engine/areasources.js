@@ -141,6 +141,20 @@ export function viewLabel(b, proportion = 0.25, precision = 3) {
 export function createAreaSources(engine, store, charter, opts = {}) {
   const g = opts.google || window.google.maps;
   const ee = opts.ee || lazyEE;
+  // Earth Engine loads on demand: an area waits for it before its Earth
+  // Engine geometry is made (the map can rest, and auto charting start,
+  // before it has loaded). ready() returns a promise, or nothing when ready.
+  const ready = opts.ready || (() => null);
+  async function eeWait() {
+    const wait = ready();
+    if (!wait) return true;
+    try {
+      await wait;
+      return true;
+    } catch (e) {
+      return false; // Earth Engine did not start; that was reported
+    }
+  }
   const gmap = engine.gmap;
   const notify = opts.notify || (() => {});
   const colors = opts.colors || (() => ({ stroke: "#e2602a" }));
@@ -178,10 +192,16 @@ export function createAreaSources(engine, store, charter, opts = {}) {
     uploaded.forEach((f) => uploaded.remove(f));
   }
 
+  // area.geometry may be a function that makes it: called once Earth Engine is ready.
   function run(area) {
     if (!area) return null;
-    last = area;
-    return charter.chartArea(area.geometry, area.label, area.extra);
+    const go = () => {
+      const geometry = typeof area.geometry === "function" ? area.geometry() : area.geometry;
+      last = { ...area, geometry };
+      return charter.chartArea(geometry, area.label, area.extra);
+    };
+    if (!ready()) return go();
+    return eeWait().then((ok) => (ok ? go() : null));
   }
 
   // ---- Draw ----
@@ -204,7 +224,7 @@ export function createAreaSources(engine, store, charter, opts = {}) {
     if (!paths.length) return null;
     const rings = drawnRings();
     const areaM2 = spherical() ? paths.reduce((a, p) => a + spherical().computeArea(p), 0) : null;
-    const geometry = rings.length === 1 ? ee.Geometry.Polygon([rings[0]]) : ee.Geometry.MultiPolygon(rings.map((r) => [r]));
+    const geometry = () => (rings.length === 1 ? ee.Geometry.Polygon([rings[0]]) : ee.Geometry.MultiPolygon(rings.map((r) => [r])));
     const label = rings.length === 1 ? "Drawn area" : "Drawn areas (" + rings.length + ")";
     return run({ geometry, label, extra: { source: "draw", areaM2, rings } });
   }
@@ -262,7 +282,7 @@ export function createAreaSources(engine, store, charter, opts = {}) {
       { lat: j.north, lng: j.west },
     ].map((p) => new g.LatLng(p.lat, p.lng));
     return {
-      geometry: ee.Geometry.Rectangle([j.west, j.south, j.east, j.north], null, false),
+      geometry: () => ee.Geometry.Rectangle([j.west, j.south, j.east, j.north], null, false),
       label: viewLabel(bounds),
       extra: { source: "view", bounds, areaM2: spherical() ? spherical().computeArea(corners) : null },
     };
@@ -348,7 +368,7 @@ export function createAreaSources(engine, store, charter, opts = {}) {
     uploaded.addGeoJson({ type: "FeatureCollection", features });
     // port of runShpDefinedCharting: each feature dissolved, then charted as one area
     // only the geometry goes to Earth Engine, not the file's properties
-    const fc = ee.FeatureCollection(features.map((f) => ee.Feature(f.geometry).dissolve(100, ee.Projection("EPSG:4326"))));
+    const fc = () => ee.FeatureCollection(features.map((f) => ee.Feature(f.geometry).dissolve(100, ee.Projection("EPSG:4326"))));
     const b = ringBounds(features);
     await new Promise((resolve) => {
       let done = false;

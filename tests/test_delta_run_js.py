@@ -59,3 +59,30 @@ def test_no_layer_tag_under_a_proxy(tagged_map):
     js = tagged_map("delta", upstream="https://proxy.example/ee-api")
     assert "wl_test" not in js
     assert "ee.data." not in js
+
+
+def test_a_delta_script_still_runs_in_the_original_viewer(tagged_map, tmp_path):
+    """Map.view() rewrites the shared runGeeViz.js the original viewer loads,
+    and a saved map can be refreshed into the original skin: a Delta-built
+    script must still add its layers where Map has no setDefaultWorkloadTag."""
+    import shutil
+    import subprocess
+
+    node = shutil.which("node")
+    if not node:
+        pytest.skip("node not found")
+    js = tagged_map("delta")
+    harness = tmp_path / "run.js"
+    harness.write_text(
+        "var added = []; var mode = 'geeViz'; var staticTemplates = {loadingModal: {}};"
+        "function showMessage(){} function $(){return {click(){}};} var localStorage = {};"
+        "var window = {location: {origin: 'http://x'}}; var authProxyAPIURL = '';"
+        "var Map = {addSerializedLayer: function(i, v, n){ added.push(n); }, setCenter(){}, turnOnInspector(){}};"
+        "global.setTimeout = function(){};"
+        + js
+        + "\nrunGeeViz(); console.log(JSON.stringify(added));",
+        encoding="utf-8",
+    )
+    out = subprocess.run([node, str(harness)], capture_output=True, text=True, timeout=60)
+    assert out.returncode == 0, out.stderr
+    assert out.stdout.strip() == '["One"]', (out.stdout, out.stderr)

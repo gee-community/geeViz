@@ -524,6 +524,21 @@ export function createAreaCharter(store, deps = {}) {
   const zoom = deps.zoom || (() => 11);
   const keyOf = deps.key || ((g) => hashString(ee.Serializer.toJSON(g)));
   const notify = deps.notify || (() => {});
+  // Earth Engine loads on demand: charting waits for it (auto area charting
+  // can fire as soon as the map rests). ready() returns a promise to wait on,
+  // or nothing when Earth Engine is ready (no wait: charting starts at once).
+  // A failure was already reported.
+  const ready = deps.ready || (() => null);
+  async function eeReady() {
+    const wait = ready();
+    if (!wait) return true;
+    try {
+      await wait;
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
   // reductions kept, least recently used dropped first
   const cacheMax = deps.cacheMax || 50;
   const tokens = tokenSource();
@@ -583,6 +598,7 @@ export function createAreaCharter(store, deps = {}) {
     return years.get(layer.id);
   }
   async function loadYears(layers = sankeyLayers(store.get())) {
+    if (ready() && !(await eeReady())) return;
     const ys = await Promise.all(layers.map((l) => yearsOf(l).then((y) => [l.id, y])));
     const known = { ...(store.get().chartYears || {}) };
     let changed = false;
@@ -619,6 +635,9 @@ export function createAreaCharter(store, deps = {}) {
 
   async function chartArea(geometry, label, extra = {}) {
     const token = tokens();
+    if (ready()) {
+      if (!(await eeReady()) || !token.isCurrent()) return;
+    }
     const s = store.get();
     const areaKey = keyOf(geometry);
     const z = zoom();

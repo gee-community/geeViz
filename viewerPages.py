@@ -13,8 +13,9 @@ template = os.path.join(_here, "geeView", "index.html")
 
 # Viewer skins. "original" is geeView/index.html; "delta" is
 # geeView/delta.html (assets under geeView/delta/). Both load the same
-# per-session runGeeViz.js, so everything the Python side emits is
-# skin-independent.
+# per-session runGeeViz.js. A Delta-skin script differs only in carrying
+# Earth Engine workload tags as data (a guarded Map.setDefaultWorkloadTag and
+# a workloadTag in each viz), and still runs in the original viewer.
 SKINS = ("original", "delta")
 # The skin a Map starts with when GEEVIZ_SKIN does not name one.
 DEFAULT_SKIN = "delta"
@@ -113,7 +114,7 @@ def refresh_exported_html(html: str, skin: str | None = None) -> str:
     """Rebuild a page :meth:`mapper.export_html` wrote, on today's viewer.
 
     An exported map freezes two things: its layers and map calls (the run
-    script, the same in every skin) and the page around them (which skin,
+    script, which runs in every skin) and the page around them (which skin,
     and that skin's markup as it was then). This keeps the first and
     rebuilds the second, as ``export_html`` would write it now: no Earth
     Engine call is made and no Python session is needed, so a map saved
