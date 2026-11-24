@@ -333,6 +333,26 @@ export function mountShell(store, { mapEl } = {}) {
     });
   }
   store.on("change:tool", renderTool);
+
+  // ---- tips: the how-to line under each tool, on unless turned off in this browser ----
+  const tipsBtn = $("#pane-right [data-act=tips]");
+  let tipsOn = lsGet("delta-tips") !== "off";
+  function renderTips() {
+    body.classList.toggle("no-tips", !tipsOn);
+    if (!tipsBtn) return;
+    const label = tipsOn ? "Hide tips" : "Show tips";
+    tipsBtn.setAttribute("aria-pressed", String(tipsOn));
+    tipsBtn.title = label;
+    tipsBtn.setAttribute("aria-label", label);
+    tipsBtn.querySelector("i").className = "ti " + (tipsOn ? "ti-bulb" : "ti-bulb-off");
+  }
+  if (tipsBtn)
+    tipsBtn.addEventListener("click", () => {
+      tipsOn = !tipsOn;
+      lsSet("delta-tips", tipsOn ? null : "off");
+      renderTips();
+    });
+  renderTips();
   $$("#pane-right .tool").forEach((b) =>
     // Phones: the Tools sheet stays open on a pick (its settings are there);
     // the tab bar closes it.

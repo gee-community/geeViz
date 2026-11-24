@@ -304,3 +304,54 @@ def test_area_polygon_drags_whole_and_a_click_inside_starts_another(page):
     wait_for(page, "__delta.measure.sketch('area').state().open === true")
     assert n_points(page) == [5, 1]
     assert page.delta_errors == []
+
+
+GAPS_JS = """() => {
+  const u = document.querySelector('#pane-right .units').getBoundingClientRect();
+  const kids = [...document.querySelectorAll('#tool-options > *')].map(e => e.getBoundingClientRect());
+  return {top: kids[0].top - u.bottom, between: kids.length > 1 ? kids[1].top - kids[0].bottom : null};
+}"""
+
+
+def test_measure_options_spacing(page):
+    # the Measure toggle sits right under Units like any tool's first option
+    # (Units' own bottom padding is the gap), and its hint does not touch it
+    page.evaluate("__delta.store.set({tool: 'distance'}, 'test')")
+    time.sleep(0.3)
+    measure = page.evaluate(GAPS_JS)
+    assert abs(measure["top"]) <= 1, measure
+    assert measure["between"] >= 6, measure
+
+
+def test_units_hidden_for_query_only(page):
+    # Query reports values, never a length or an area: Units has nothing to do there
+    page.evaluate("Map.addLayer(ee.Image(1), {}, 'Queryable')")
+    wait_for(page, "!document.querySelector('.tool[data-tool=query]').hidden")
+    shown = "!document.querySelector('#pane-right .units').hidden && document.querySelector('#pane-right .units').offsetHeight > 0"
+    for tool, visible in (("query", False), ("distance", True), ("query", False), ("area", True)):
+        page.evaluate("t => __delta.store.set({tool: t}, 'test')", tool)
+        assert page.evaluate("__delta.store.get().tool") == tool
+        assert page.evaluate(shown) == visible, tool
+    assert page.delta_errors == []
+
+
+def test_tips_button_hides_and_shows_the_tool_hints(page):
+    hint_shown = "(() => { const h = document.querySelector('#tool-options .topt-hint'); return !!h && h.offsetHeight > 0; })()"
+    btn = "#pane-right .tools [data-act=tips]"
+    page.evaluate("__delta.store.set({tool: 'distance'}, 'test')")
+    assert page.evaluate(hint_shown)
+    assert page.get_attribute(btn, "aria-pressed") == "true"
+    page.click(btn)
+    assert not page.evaluate(hint_shown)
+    assert page.get_attribute(btn, "aria-pressed") == "false"
+    assert page.get_attribute(btn, "title") == "Show tips"
+    # the choice holds across tools and is remembered in this browser
+    page.evaluate("__delta.store.set({tool: 'area'}, 'test')")
+    assert not page.evaluate(hint_shown)
+    assert page.evaluate("localStorage.getItem('delta-tips')") == "off"
+    # the Measure toggle still shows, and nothing is left under it but its own gap
+    assert page.evaluate("document.querySelector('#tool-options .row2').offsetHeight > 0")
+    page.click(btn)
+    assert page.evaluate(hint_shown)
+    assert page.evaluate("localStorage.getItem('delta-tips')") is None
+    assert page.delta_errors == []

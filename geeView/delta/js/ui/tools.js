@@ -178,7 +178,9 @@ export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, measure,
   if (showAsGiven) store.set({ showAs: showAsGiven }, "showAs-url");
 
   function renderUnits() {
-    const u = store.get().units;
+    const { units: u, tool } = store.get();
+    // Query reports values, never a length or an area
+    if (unitsEl) unitsEl.hidden = tool === "query";
     unitButtons.forEach((b) => {
       b.classList.toggle("on", b.dataset.u === u);
       b.setAttribute("aria-pressed", String(b.dataset.u === u));
@@ -446,6 +448,7 @@ export function mountTools(store, { optionsEl, unitsEl, toolsEl, chart, measure,
   store.on("change:tool", () => {
     store.set({ results: [], where: "" }, "tool-output-reset");
     renderOptions();
+    renderUnits();
   });
   // the user's Show as pick, kept in the url (by the unit it shows, as the original did)
   const showAsParamValue = (s) => (s.showAs === "pct" ? "Percentage" : s.units === "imperial" ? "Acres" : "Hectares");

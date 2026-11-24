@@ -88,7 +88,7 @@ test("a vector viz with strokeColor gives an outline legend", async () => {
   assert.equal(viz.fillOpacity, 0.2);
   assert.equal(viz.strokeWeight, 3);
   assert.equal(viz.opacityRatio, 5);
-  assert.deepEqual(legend, { type: "outline", title: "Boundary", label: "Boundary", color: "#ff834c", fill: "#222222", fillOpacity: 0.2, weight: 3 });
+  assert.deepEqual(legend, { type: "outline", title: "Boundary", label: "Boundary", color: "#ff834c", fill: "#222222", fillOpacity: 0.2, weight: 3, strokeOpacity: 1, lineType: "solid", paint: "canvas", geoms: null });
 });
 
 test("a default vector image takes the next color of the original's list", async () => {

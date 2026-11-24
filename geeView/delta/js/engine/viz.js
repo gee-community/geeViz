@@ -259,6 +259,14 @@ export function legendFor(viz, name) {
       fill: viz.fillColor,
       fillOpacity: viz.fillOpacity,
       weight: viz.strokeWeight,
+      strokeOpacity: isNil(viz.strokeOpacity) ? 1 : viz.strokeOpacity,
+      // styleParams lineType: "solid", "dashed" or "dotted"
+      lineType: isNil(viz.lineType) ? "solid" : viz.lineType,
+      // who draws it, so the swatch matches: GeoJSON on a canvas, or Earth
+      // Engine's paint (outlines) or style (styleParams)
+      paint: viz.layerType !== "geeVectorImage" ? "canvas" : isNil(viz.styleParams) ? "paint" : "style",
+      // the geometry types present, once the layer has loaded (point, line, polygon)
+      geoms: null,
     };
   }
   return null;

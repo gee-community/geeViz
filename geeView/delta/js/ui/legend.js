@@ -37,6 +37,66 @@ export function swatchColors(legend) {
 
 export const gradient = (colors) => `linear-gradient(90deg, ${colors.join(", ")})`;
 
+// ---- vector symbols ----
+// A vector layer's legend is its symbol, one glyph per geometry type it holds,
+// drawn as the map draws it, so there is nothing more to open below the row.
+export const isSymbolLegend = (legend) => !!legend && legend.type === "outline";
+
+const GEOM_OF = {
+  Point: "point", MultiPoint: "point", point: "point",
+  LineString: "line", MultiLineString: "line", LinearRing: "line", line: "line",
+  Polygon: "polygon", MultiPolygon: "polygon", polygon: "polygon",
+};
+export const GEOMS = ["point", "line", "polygon"];
+
+// GeoJSON or Earth Engine geometry type names (or vectortiles kinds) to the
+// kinds present, in point, line, polygon order.
+export function geomKinds(types) {
+  const seen = new Set((types || []).map((t) => GEOM_OF[t]).filter(Boolean));
+  return GEOMS.filter((k) => seen.has(k));
+}
+
+// "#rgb", "#rgba", "#rrggbb", "#rrggbbaa" (with or without #) to the color
+// and its alpha; a color name is opaque.
+export function splitAlpha(c) {
+  const s = String(c || "#000");
+  const h = s.replace(/^#/, "");
+  if (!/^[0-9a-fA-F]+$/.test(h) || [3, 4, 6, 8].indexOf(h.length) === -1) return { color: s, alpha: 1 };
+  const full = h.length <= 4 ? h.split("").map((x) => x + x).join("") : h;
+  return { color: "#" + full.slice(0, 6).toLowerCase(), alpha: full.length === 8 ? parseInt(full.slice(6), 16) / 255 : 1 };
+}
+
+// The glyphs for an outline legend: [{geom, fill, fillOpacity, stroke,
+// strokeOpacity, width}], fill or stroke null when the map draws none.
+// legend.paint says who draws the layer: "canvas" (GeoJSON, engine/
+// vectortiles.js), "paint" (Earth Engine Image.paint: outlines only, points
+// a solid dot) or "style" (FeatureCollection.style: colors carry their alpha).
+export function vectorGlyphs(legend) {
+  const kinds = legend.geoms && legend.geoms.length ? legend.geoms : ["polygon"];
+  const st = splitAlpha(legend.color);
+  const fl = splitAlpha(legend.fill || legend.color);
+  const strokeOpacity = st.alpha * (legend.strokeOpacity === undefined || legend.strokeOpacity === null ? 1 : Number(legend.strokeOpacity));
+  const weight = Number(legend.weight === undefined || legend.weight === null ? 2 : legend.weight);
+  const width = weight > 0 ? Math.min(Math.max(weight, 1), 2.5) : 0;
+  let fillOpacity;
+  if (legend.paint === "paint") fillOpacity = 0;
+  else if (legend.paint === "style") fillOpacity = fl.alpha;
+  else fillOpacity = Number(legend.fillOpacity || 0) * fl.alpha;
+  const stroke = width > 0 && strokeOpacity > 0 ? st.color : null;
+  // Earth Engine draws styleParams lineType dashed or dotted; the swatch does too
+  const dash = legend.paint === "style" && (legend.lineType === "dashed" || legend.lineType === "dotted") ? legend.lineType : null;
+  return kinds.map((geom) => glyph(geom)).map((g) => (g.geom !== "point" && g.stroke ? { ...g, dash } : { ...g, dash: null }));
+  function glyph(geom) {
+    if (geom === "point") {
+      if (legend.paint === "canvas") return { geom, fill: st.color, fillOpacity: strokeOpacity, stroke: "#ffffff", strokeOpacity, width: 1 };
+      if (legend.paint === "paint") return { geom, fill: st.color, fillOpacity: strokeOpacity, stroke: null, strokeOpacity, width: 0 };
+      return { geom, fill: fillOpacity > 0 ? fl.color : null, fillOpacity, stroke, strokeOpacity, width };
+    }
+    if (geom === "line") return { geom, fill: null, fillOpacity: 0, stroke: st.color, strokeOpacity, width: Math.max(width, 1.5) };
+    return { geom, fill: fillOpacity > 0 ? fl.color : null, fillOpacity, stroke, strokeOpacity, width };
+  }
+}
+
 // "#rgb" / "#rrggbb" to [r, g, b]; white for anything else (a legend is not
 // worth failing over). port of wind-particles.js hexToRgb.
 export function hexRgb(h) {

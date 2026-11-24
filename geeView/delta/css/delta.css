@@ -57,6 +57,13 @@ body.resizing #map { pointer-events: none; }
 /* tabs as wide as their labels, sharing the spare room (equal columns cut "Chart area") */
 .tools { display: flex; gap: 2px; padding: 8px 10px 0; border-bottom: 1px solid var(--dz-line); }
 .tools .tool { flex: 1 1 auto; }
+/* tips on/off: a small icon at the end of the tab row */
+.tools .tips-btn { flex: none; align-self: center; width: 26px; height: 26px; font-size: 15px; margin-bottom: 2px; }
+.tips-btn[aria-pressed="true"] { color: var(--dz-teal); }
+body.no-tool .tools .tips-btn { display: none; }
+body.no-tips #tool-options .topt-hint { display: none; }
+/* options that were only a tip take no room */
+body.no-tips #tool-options:not(:has(> :not(.topt-hint))) { display: none; }
 .tool { display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 5px; padding: 7px 4px 6px; margin-bottom: -1px; border-radius: 8px 8px 0 0; white-space: nowrap; min-width: 0; border: 1px solid transparent; border-bottom: 2px solid transparent; background: transparent;
   color: var(--dz-mute); font-family: var(--dz-font-cond); font-weight: 600; font-size: 12px; letter-spacing: 0.02em; cursor: pointer; }
 .tool .ti { font-size: 16px; flex: none; }
@@ -128,6 +135,9 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
 /* Chart area options (port of the mockup's .row2, .lbl, settings button) */
 .row2 { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 .row2 .seg { margin: 0; flex: 1; }
+/* a toggle that opens the options sits right under Units; a hint after a toggle gets a gap */
+.topt > .row2:first-child { margin-top: 0; }
+.topt > .row2 + .topt-hint { margin-top: 8px; }
 .row2 .lbl { width: 52px; flex: none; font-size: 12px; color: var(--dz-mute); }
 .ib.on { background: var(--dz-teal-soft); color: var(--dz-teal); }
 .csrc { margin-top: 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
@@ -246,6 +256,15 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
 .layer.leg-open .legbtn .ti { transform: rotate(180deg); }
 .lsw { display: flex; width: 16px; height: 12px; border-radius: 3px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--dz-swatch-edge); }
 .lsw i { flex: 1; }
+/* a vector's symbol in place of the legend toggle: one glyph per geometry type, no arrow */
+.legbtn.symbol { cursor: default; pointer-events: none; justify-content: center; padding: 3px 0; }
+.legbtn.symbol .ti { display: none; }
+.lsw.vec { width: auto; height: 14px; gap: 1px; box-shadow: none; border-radius: 0; overflow: visible; }
+.lsw.vec svg { width: 14px; height: 14px; flex: none; }
+/* three glyphs share the toggle's width */
+.lsw.vec svg:first-child:nth-last-child(3), .lsw.vec svg:first-child:nth-last-child(3) ~ svg { width: 11px; height: 11px; }
+/* two or three glyphs: clear of the row's progress fill on the left */
+.legbtn.symbol:has(svg + svg) { margin-left: 6px; }
 /* opacity: inline it is 180px, narrowed by fitRow (layers.js) only when it would nearly meet the name's text */
 .opacity { display: flex; align-items: center; }
 .lrow .opacity { margin: 0; flex: 0 0 auto; width: var(--op-w-inline); min-width: 0; }
@@ -259,11 +278,11 @@ input[type="range"].dz { flex: 1; height: 16px; margin: 0; -webkit-appearance: n
 input[type="range"].dz::-webkit-slider-thumb { -webkit-appearance: none; border-radius: 50%; }
 /* the track's filled part and the handle's center take the layer's opacity (--a) */
 input[type="range"].dz.op { --a: 1; --v: 100%; }
-input[type="range"].dz.op::-webkit-slider-runnable-track { height: 3.5px; border-radius: 2px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dz-teal) 55%, var(--dz-line));
+input[type="range"].dz.op::-webkit-slider-runnable-track { height: 2.5px; border-radius: 2px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dz-teal) 55%, var(--dz-line));
   background: linear-gradient(90deg, color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), transparent) var(--v), transparent var(--v)); }
-input[type="range"].dz.op::-webkit-slider-thumb { width: 13px; height: 13px; margin-top: -4.75px; border: 2px solid var(--dz-teal); background: color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), var(--dz-solid)); }
-input[type="range"].dz.op::-moz-range-track { height: 3.5px; border-radius: 2px; border: 1px solid color-mix(in srgb, var(--dz-teal) 55%, var(--dz-line)); background: transparent; }
-input[type="range"].dz.op::-moz-range-progress { height: 3.5px; border-radius: 2px; background: color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), transparent); }
+input[type="range"].dz.op::-webkit-slider-thumb { width: 13px; height: 13px; margin-top: -5.25px; border: 2px solid var(--dz-teal); background: color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), var(--dz-solid)); }
+input[type="range"].dz.op::-moz-range-track { height: 2.5px; border-radius: 2px; border: 1px solid color-mix(in srgb, var(--dz-teal) 55%, var(--dz-line)); background: transparent; }
+input[type="range"].dz.op::-moz-range-progress { height: 2.5px; border-radius: 2px; background: color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), transparent); }
 input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border: 2px solid var(--dz-teal); border-radius: 50%; background: color-mix(in srgb, var(--dz-teal) calc(var(--a) * 100%), var(--dz-solid)); }
 /* legend inside the row; an off layer folds it and keeps its open state */
 /* the legend stops where the opacity slider ends, never under the legend button */

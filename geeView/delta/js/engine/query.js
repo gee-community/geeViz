@@ -52,6 +52,21 @@ export function plotRadius(q) {
   return DEFAULT_PLOT_RADIUS;
 }
 
+// Points and lines are drawn a few pixels wide, so a click has to land within
+// a few pixels of one, not within plotRadius meters (15 m by default, under a
+// pixel once zoomed out). As ArcGIS identify's `tolerance`: a radius in screen
+// pixels, in meters at this zoom and latitude. Polygons keep plotRadius: a
+// click inside one finds it, and a wider net would pick its neighbors too.
+export const POINT_TOLERANCE_PX = 8;
+export const LINE_TOLERANCE_PX = 5;
+export function vectorQueryRadius(q, geoms, lat, zoom) {
+  const base = plotRadius(q);
+  const kinds = geoms || [];
+  const px = kinds.indexOf("point") > -1 ? POINT_TOLERANCE_PX : kinds.indexOf("line") > -1 ? LINE_TOLERANCE_PX : 0;
+  if (!px || !Number.isFinite(zoom)) return base;
+  return Math.max(base, px * metersPerPixel(lat, zoom));
+}
+
 const precisionArgs = (precision) => {
   const p = precision || {};
   return [isNil(p.chartDecimalProportion) ? 0.25 : p.chartDecimalProportion, isNil(p.chartPrecision) ? 3 : p.chartPrecision];
@@ -410,7 +425,8 @@ function queryOne(eeApi, target, layer, point, query, opts) {
   if (VECTOR_TYPES.indexOf(target.type) > -1) {
     const item = target.item;
     const fc = typeof item.filterBounds === "function" ? item : eeApi.FeatureCollection([item]);
-    return evaluate(fc.filterBounds(pt.buffer(plotRadius(query)))).then((v) => {
+    const geoms = layer.legend && layer.legend.geoms;
+    return evaluate(fc.filterBounds(pt.buffer(vectorQueryRadius(query, geoms, point.lat, opts.zoom)))).then((v) => {
       if (opts.onVectors) opts.onVectors(v);
       return tableResults(layer, v, point, precision);
     });
@@ -495,6 +511,7 @@ export async function queryPoint(engine, layers, latLng, query, opts = {}) {
         const target = await engine.layers.queryTarget(layer.id);
         if (!target) return;
         rs = await queryOne(eeApi, target, layer, point, query, {
+          zoom: opts.zoom,
           onVectors: (v) => isCurrent() && opts.onVectors && opts.onVectors(v),
         });
       } catch (e) {
@@ -590,6 +607,7 @@ export function createQueryTool(engine, store, opts = {}) {
     const results = await queryPoint(engine, layers, point, s.query, {
       ee: eeApi,
       token,
+      zoom: gmap.getZoom(),
       onVectors: (v) => queried.addGeoJson(v),
       onResult: (r) =>
         store.update((st) => {

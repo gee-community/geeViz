@@ -13,7 +13,8 @@
 import { prepareViz, createColorCycle, normVecStyle } from "./viz.js";
 import { createTimelapse } from "./timelapse.js";
 import { createTileOverlay, progressOf } from "./tiles.js";
-import { createVectorTileOverlay, tileBounds } from "./vectortiles.js";
+import { createVectorTileOverlay, tileBounds, flatten } from "./vectortiles.js";
+import { geomKinds } from "../ui/legend.js";
 import { windQueryItem, WIND_UNIT_PROPS } from "./wind.js";
 
 const TILE_TYPES = ["geeImage", "geeImageCollection", "geeVectorImage", "tileMapService"];
@@ -151,7 +152,15 @@ export function createLayerEngine(gmap, store, deps = {}) {
   // port of 2templates.js addLayer addGeoJsonToMap. Drawn as canvas tiles
   // (engine/vectortiles.js) in the tile stack, so a vector takes its place in
   // the layer order instead of Google's Data pane above every tile layer.
+  // The geometry types a vector holds, for its legend symbol.
+  function setGeoms(r, geoms) {
+    if (!recs.has(r.id) || !r.legend || r.legend.type !== "outline" || !geoms.length) return;
+    r.legend = { ...r.legend, geoms };
+    patch(r.id, { legend: r.legend }, "layer-legend");
+  }
+
   function addGeoJson(r, v) {
+    setGeoms(r, geomKinds(flatten(v).map((p) => p.kind)));
     r.style = normVecStyle(r.viz);
     r.overlay = createVectorTileOverlay({ google: g, geojson: v, style: r.style, opacity: r.opacity, opacityRatio: r.viz.opacityRatio, name: r.id, onProgress: () => reportProgress(r) });
     if (r.opacity !== 1) r.overlay.setOpacity(r.opacity);
@@ -207,6 +216,22 @@ export function createLayerEngine(gmap, store, deps = {}) {
         viz.asyncBounds = item.geometry().bounds(100, "EPSG:4326");
       } catch (err) {
         viz.asyncBounds = item.bounds(100, "EPSG:4326");
+      }
+      // Painted on the server, so ask what it holds: the geometry types of
+      // up to 500 features, enough for the legend symbol. A failure leaves
+      // the plain polygon swatch.
+      try {
+        eeApi
+          .FeatureCollection(item)
+          .limit(500)
+          .map((f) => eeApi.Feature(f).set("dz_geom", eeApi.Feature(f).geometry().type()))
+          .aggregate_array("dz_geom")
+          .distinct()
+          .evaluate((types, err) => {
+            if (!err && Array.isArray(types)) setGeoms(r, geomKinds(types));
+          });
+      } catch (err) {
+        /* the legend keeps its polygon swatch */
       }
       item = viz.styleParams !== undefined ? item.style(viz.styleParams) : eeApi.Image().paint(item, null, viz.strokeWeight);
       viz.palette = viz.strokeColor;
@@ -398,6 +423,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
         r.tileType = TILE_TYPES.indexOf(r.layerType) > -1;
         r.dataType = DATA_TYPES.indexOf(r.layerType) > -1;
       }
+      r.legend = prepared.legend;
       patch(r.id, { legend: prepared.legend }, "layer-legend");
 
       if (r.layerType === "tileMapService") {

@@ -7,7 +7,7 @@
 // opacity paint (--v, --a), name click toggles, Sortable with pinned restore.
 // Ordering is a port of 2templates.js addLayerSortListener, getLayerIDOrder
 // and urlParams.layerOrders.
-import { legendMarkup, swatchColors, gradient, cometGradient, restorePinned, orderFromStored, toStoredOrder } from "./legend.js";
+import { legendMarkup, swatchColors, gradient, cometGradient, restorePinned, orderFromStored, toStoredOrder, isSymbolLegend, vectorGlyphs } from "./legend.js";
 import { timelapseBlock } from "./timelapse.js";
 
 const LIST_ID = "layer-list";
@@ -31,10 +31,52 @@ export function setAllVisible(store, visible, reason) {
 // null), so it stays closed. Each layer gets this once: after that the legend
 // is the user's to open and close. `seen` holds the ids already handled;
 // returns the ids to open now.
+const GEOM_LABEL = { point: "Points", line: "Lines", polygon: "Polygons" };
+const SVGNS = "http://www.w3.org/2000/svg";
+
+// One legend glyph (legend.js vectorGlyphs) as a small SVG: a dot, a stroke
+// or a square, filled and stroked only as the map draws the layer.
+function glyphSvg(g) {
+  const svg = document.createElementNS(SVGNS, "svg");
+  svg.setAttribute("viewBox", "0 0 14 14");
+  svg.dataset.geom = g.geom;
+  let el;
+  if (g.geom === "point") {
+    el = document.createElementNS(SVGNS, "circle");
+    el.setAttribute("cx", "7");
+    el.setAttribute("cy", "7");
+    el.setAttribute("r", "4");
+  } else if (g.geom === "line") {
+    el = document.createElementNS(SVGNS, "polyline");
+    el.setAttribute("points", "1.5,11.5 5,5 9,9 12.5,2.5");
+  } else {
+    el = document.createElementNS(SVGNS, "rect");
+    el.setAttribute("x", "2");
+    el.setAttribute("y", "2");
+    el.setAttribute("width", "10");
+    el.setAttribute("height", "10");
+    el.setAttribute("rx", "1.5");
+  }
+  el.setAttribute("fill", g.fill || "none");
+  if (g.fill) el.setAttribute("fill-opacity", String(g.fillOpacity));
+  el.setAttribute("stroke", g.stroke || "none");
+  if (g.stroke) {
+    el.setAttribute("stroke-opacity", String(g.strokeOpacity));
+    el.setAttribute("stroke-width", String(g.width));
+    el.setAttribute("stroke-linejoin", "round");
+    el.setAttribute("stroke-linecap", g.dash ? "butt" : "round");
+    if (g.dash) el.setAttribute("stroke-dasharray", g.dash === "dotted" ? "1.2 1.8" : "3 2");
+  }
+  svg.appendChild(el);
+  return svg;
+}
+
 export function legendsToOpen(layers, seen) {
   const open = [];
   for (const l of layers) {
     if (seen.has(l.id) || !l.visible) continue;
+    // a vector's symbol is shown in the row itself: nothing to open
+    if (isSymbolLegend(l.legend)) continue;
     const sw = swatchColors(l.legend);
     if (!sw || !sw.colors.length) continue;
     seen.add(l.id);
@@ -124,6 +166,22 @@ export function mountLayers(store, mountEl, opts = {}) {
     legendEl.classList.toggle("ramped", !!legend && legend.type === "ramp");
     const sw = swatchColors(legend);
     swatch.replaceChildren();
+    // A vector's legend is its symbol, shown in place of the toggle: one glyph
+    // per geometry type, drawn as the map draws it.
+    const symbol = isSymbolLegend(legend);
+    legbtn.classList.toggle("symbol", symbol);
+    swatch.classList.toggle("vec", symbol);
+    if (symbol) {
+      legbtn.classList.remove("none");
+      legbtn.setAttribute("tabindex", "-1");
+      legbtn.setAttribute("aria-hidden", "true");
+      const glyphs = vectorGlyphs(legend);
+      legbtn.title = glyphs.map((g) => GEOM_LABEL[g.geom]).join(", ");
+      glyphs.forEach((g) => swatch.appendChild(glyphSvg(g)));
+      return;
+    }
+    legbtn.removeAttribute("aria-hidden");
+    legbtn.title = "Show or hide legend";
     // No legend: the toggle keeps its place (sliders stay aligned) but is not shown or focusable.
     legbtn.classList.toggle("none", !sw);
     if (sw) legbtn.removeAttribute("tabindex");
@@ -172,6 +230,7 @@ export function mountLayers(store, mountEl, opts = {}) {
     });
     parts.legbtn.addEventListener("click", () => {
       const l = store.get().layers.find((x) => x.id === id);
+      if (l && isSymbolLegend(l.legend)) return; // a symbol, not a toggle
       legendSeen.add(id); // the user has taken over this legend
       if (l) patchLayer(store, id, { legendOpen: !l.legendOpen }, "legend-toggle");
     });
