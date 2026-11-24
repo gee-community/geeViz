@@ -19,10 +19,16 @@ import { tilesPlugin } from "./tiles.js";
 import { geojsonPlugin } from "./geojson.js";
 import { esriPlugin } from "./esri.js";
 
-export const PLUGINS = [eePlugin, tilesPlugin, geojsonPlugin, esriPlugin];
+// Filled on first use: the plug-ins import engine modules that import this
+// registry, so the list cannot be built while those modules load.
+export const PLUGINS = [];
+function plugins() {
+  if (!PLUGINS.length) PLUGINS.push(eePlugin, tilesPlugin, geojsonPlugin, esriPlugin);
+  return PLUGINS;
+}
 
 export function pluginFor(kind) {
-  const p = PLUGINS.find((x) => x.kinds.indexOf(kind) > -1);
+  const p = plugins().find((x) => x.kinds.indexOf(kind) > -1);
   if (!p) throw new Error("No plug-in for layer kind: " + kind);
   return p;
 }

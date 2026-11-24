@@ -436,7 +436,7 @@ export function queryEE(eeApi, target, layer, point, query, opts) {
   return Promise.resolve([]);
 }
 
-function errorResult(layer, point, err) {
+export function errorResult(layer, point, err) {
   return {
     id: layer.id + "-e",
     layerId: layer.id,
@@ -525,6 +525,8 @@ export async function queryPoint(engine, layers, latLng, query, opts = {}) {
           ee: eeApi,
           query,
           zoom: opts.zoom,
+          view: opts.view,
+          fetch: opts.fetch,
           onVectors: (v) => isCurrent() && opts.onVectors && opts.onVectors(v),
         });
       } catch (e) {
@@ -539,6 +541,16 @@ export async function queryPoint(engine, layers, latLng, query, opts = {}) {
   const all = [];
   targets.forEach((l) => byLayer.has(l.id) && all.push(...byLayer.get(l.id)));
   return all;
+}
+
+// The map's view as ArcGIS identify takes it: bounds in degrees and size in pixels.
+function viewOf(gmap) {
+  const b = gmap.getBounds && gmap.getBounds();
+  const div = gmap.getDiv && gmap.getDiv();
+  if (!b || !div) return null;
+  const sw = b.getSouthWest();
+  const ne = b.getNorthEast();
+  return { bounds: { west: sw.lng(), south: sw.lat(), east: ne.lng(), north: ne.lat() }, width: div.clientWidth, height: div.clientHeight };
 }
 
 // Pixel size in meters at a latitude and zoom: the simplify tolerance for drawn selections.
@@ -621,6 +633,7 @@ export function createQueryTool(engine, store, opts = {}) {
       ee: eeApi,
       token,
       zoom: gmap.getZoom(),
+      view: viewOf(gmap),
       onVectors: (v) => queried.addGeoJson(v),
       onResult: (r) =>
         store.update((st) => {

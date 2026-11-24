@@ -1,0 +1,940 @@
+{
+ "request": {
+  "url": "https://imagery.geoplatform.gov/iipp/rest/services/Vegetation/USFS_EDW_LCMS_AnnualChange_CONUS/ImageServer/identify",
+  "params": {
+   "geometry": "{\"x\": -105.65, \"y\": 40.6, \"spatialReference\": {\"wkid\": 4326}}",
+   "geometryType": "esriGeometryPoint",
+   "returnGeometry": "false",
+   "returnCatalogItems": "true",
+   "returnPixelValues": "true",
+   "f": "json"
+  },
+  "method": "GET"
+ },
+ "response": {
+  "objectId": 0,
+  "name": "Pixel",
+  "value": "15",
+  "location": {
+   "x": -11760904.202309353,
+   "y": 4953519.5867918,
+   "spatialReference": {
+    "wkid": 102100,
+    "latestWkid": 3857
+   }
+  },
+  "properties": {
+   "Values": [
+    "15",
+    "15",
+    "14",
+    "15",
+    "14",
+    "15",
+    "15",
+    "15",
+    "15",
+    "15",
+    "15",
+    "15",
+    "15",
+    "15",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "12",
+    "7",
+    "14",
+    "14"
+   ]
+  },
+  "catalogItems": {
+   "objectIdFieldName": "objectid",
+   "features": [
+    {
+     "attributes": {
+      "objectid": 46,
+      "name": "LCMS_CONUS_v2025-11_Change_1990",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 1990,
+      "start_time": "19900101",
+      "end_time": "19901231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 54,
+      "name": "LCMS_CONUS_v2025-11_Change_1998",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 1998,
+      "start_time": "19980101",
+      "end_time": "19981231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 81,
+      "name": "LCMS_CONUS_v2025-11_Change_2025",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2025,
+      "start_time": "20250101",
+      "end_time": "20251231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 45,
+      "name": "LCMS_CONUS_v2025-11_Change_1989",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 1989,
+      "start_time": "19890101",
+      "end_time": "19891231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 80,
+      "name": "LCMS_CONUS_v2025-11_Change_2024",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2024,
+      "start_time": "20240101",
+      "end_time": "20241231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 41,
+      "name": "LCMS_CONUS_v2025-11_Change_1985",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 1985,
+      "start_time": "19850101",
+      "end_time": "19851231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 42,
+      "name": "LCMS_CONUS_v2025-11_Change_1986",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 1986,
+      "start_time": "19860101",
+      "end_time": "19861231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 43,
+      "name": "LCMS_CONUS_v2025-11_Change_1987",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 1987,
+      "start_time": "19870101",
+      "end_time": "19871231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 44,
+      "name": "LCMS_CONUS_v2025-11_Change_1988",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 1988,
+      "start_time": "19880101",
+      "end_time": "19881231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 47,
+      "name": "LCMS_CONUS_v2025-11_Change_1991",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 1991,
+      "start_time": "19910101",
+      "end_time": "19911231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 48,
+      "name": "LCMS_CONUS_v2025-11_Change_1992",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 1992,
+      "start_time": "19920101",
+      "end_time": "19921231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 49,
+      "name": "LCMS_CONUS_v2025-11_Change_1993",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 1993,
+      "start_time": "19930101",
+      "end_time": "19931231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 50,
+      "name": "LCMS_CONUS_v2025-11_Change_1994",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 1994,
+      "start_time": "19940101",
+      "end_time": "19941231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 51,
+      "name": "LCMS_CONUS_v2025-11_Change_1995",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 1995,
+      "start_time": "19950101",
+      "end_time": "19951231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 52,
+      "name": "LCMS_CONUS_v2025-11_Change_1996",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 1996,
+      "start_time": "19960101",
+      "end_time": "19961231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 53,
+      "name": "LCMS_CONUS_v2025-11_Change_1997",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 1997,
+      "start_time": "19970101",
+      "end_time": "19971231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 55,
+      "name": "LCMS_CONUS_v2025-11_Change_1999",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 1999,
+      "start_time": "19990101",
+      "end_time": "19991231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 56,
+      "name": "LCMS_CONUS_v2025-11_Change_2000",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2000,
+      "start_time": "20000101",
+      "end_time": "20001231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 57,
+      "name": "LCMS_CONUS_v2025-11_Change_2001",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2001,
+      "start_time": "20010101",
+      "end_time": "20011231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 58,
+      "name": "LCMS_CONUS_v2025-11_Change_2002",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2002,
+      "start_time": "20020101",
+      "end_time": "20021231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 59,
+      "name": "LCMS_CONUS_v2025-11_Change_2003",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2003,
+      "start_time": "20030101",
+      "end_time": "20031231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 60,
+      "name": "LCMS_CONUS_v2025-11_Change_2004",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2004,
+      "start_time": "20040101",
+      "end_time": "20041231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 61,
+      "name": "LCMS_CONUS_v2025-11_Change_2005",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2005,
+      "start_time": "20050101",
+      "end_time": "20051231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 62,
+      "name": "LCMS_CONUS_v2025-11_Change_2006",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2006,
+      "start_time": "20060101",
+      "end_time": "20061231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 63,
+      "name": "LCMS_CONUS_v2025-11_Change_2007",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2007,
+      "start_time": "20070101",
+      "end_time": "20071231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 64,
+      "name": "LCMS_CONUS_v2025-11_Change_2008",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2008,
+      "start_time": "20080101",
+      "end_time": "20081231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 65,
+      "name": "LCMS_CONUS_v2025-11_Change_2009",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2009,
+      "start_time": "20090101",
+      "end_time": "20091231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 66,
+      "name": "LCMS_CONUS_v2025-11_Change_2010",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2010,
+      "start_time": "20100101",
+      "end_time": "20101231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 67,
+      "name": "LCMS_CONUS_v2025-11_Change_2011",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2011,
+      "start_time": "20110101",
+      "end_time": "20111231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 68,
+      "name": "LCMS_CONUS_v2025-11_Change_2012",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2012,
+      "start_time": "20120101",
+      "end_time": "20121231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 69,
+      "name": "LCMS_CONUS_v2025-11_Change_2013",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2013,
+      "start_time": "20130101",
+      "end_time": "20131231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 70,
+      "name": "LCMS_CONUS_v2025-11_Change_2014",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2014,
+      "start_time": "20140101",
+      "end_time": "20141231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 71,
+      "name": "LCMS_CONUS_v2025-11_Change_2015",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2015,
+      "start_time": "20150101",
+      "end_time": "20151231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 72,
+      "name": "LCMS_CONUS_v2025-11_Change_2016",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2016,
+      "start_time": "20160101",
+      "end_time": "20161231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 73,
+      "name": "LCMS_CONUS_v2025-11_Change_2017",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2017,
+      "start_time": "20170101",
+      "end_time": "20171231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 74,
+      "name": "LCMS_CONUS_v2025-11_Change_2018",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2018,
+      "start_time": "20180101",
+      "end_time": "20181231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 75,
+      "name": "LCMS_CONUS_v2025-11_Change_2019",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2019,
+      "start_time": "20190101",
+      "end_time": "20191231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 76,
+      "name": "LCMS_CONUS_v2025-11_Change_2020",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2020,
+      "start_time": "20200101",
+      "end_time": "20201231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 77,
+      "name": "LCMS_CONUS_v2025-11_Change_2021",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2021,
+      "start_time": "20210101",
+      "end_time": "20211231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 78,
+      "name": "LCMS_CONUS_v2025-11_Change_2022",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2022,
+      "start_time": "20220101",
+      "end_time": "20221231"
+     }
+    },
+    {
+     "attributes": {
+      "objectid": 79,
+      "name": "LCMS_CONUS_v2025-11_Change_2023",
+      "minps": 0,
+      "maxps": 307200,
+      "lowps": 30,
+      "highps": 30720,
+      "category": 1,
+      "tag": "Dataset",
+      "groupname": "",
+      "productname": "",
+      "centerx": -10746304.4748863,
+      "centery": 4788208.55509629,
+      "zorder": null,
+      "year": 2023,
+      "start_time": "20230101",
+      "end_time": "20231231"
+     }
+    }
+   ]
+  },
+  "catalogItemVisibilities": [
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ]
+ }
+}

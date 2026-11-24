@@ -27,6 +27,7 @@ DEP3 = "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/Ima
 
 # Fort Collins, Colorado, and a square around Cameron Peak
 FOCO = {"x": -105.08, "y": 40.58, "spatialReference": {"wkid": 4326}}
+ZONE = {"x": -105.068, "y": 40.59, "spatialReference": {"wkid": 4326}}
 SQUARE = {"rings": [[[-105.7, 40.55], [-105.7, 40.65], [-105.6, 40.65], [-105.6, 40.55], [-105.7, 40.55]]],
           "spatialReference": {"wkid": 4326}}
 
@@ -48,6 +49,19 @@ FIXTURES = {
                                           "outSR": "4326", "maxAllowableOffset": "0.01", "f": "json"}, "GET"),
     "esri_polygon": (STATES + "/query", {"where": "STATE_ABBR='HI'", "outFields": "STATE_NAME",
                                          "outSR": "4326", "maxAllowableOffset": "0.05", "f": "json"}, "GET"),
+    # identify at Fort Collins, in an 800 by 600 view
+    # a zone AE on the Cache la Poudre, zoomed in past layer 28's minScale (1:36,111)
+    "nfhl_identify": (NFHL + "/identify", {"geometry": ZONE, "geometryType": "esriGeometryPoint", "sr": "4326",
+                                            "layers": "visible:28", "tolerance": "8",
+                                            "mapExtent": "-105.08,40.58,-105.056,40.596", "imageDisplay": "800,600,96",
+                                            "returnGeometry": "false", "f": "json"}, "GET"),
+    "topo_identify": (TOPO + "/identify", {"geometry": FOCO, "geometryType": "esriGeometryPoint", "sr": "4326",
+                                           "layers": "visible", "tolerance": "8",
+                                           "mapExtent": "-105.2,40.5,-104.96,40.66", "imageDisplay": "800,600,96",
+                                           "returnGeometry": "false", "f": "json"}, "GET"),
+    "lcms_identify": (LCMS + "/identify", {"geometry": {"x": -105.65, "y": 40.6, "spatialReference": {"wkid": 4326}},
+                                           "geometryType": "esriGeometryPoint", "returnGeometry": "false",
+                                           "returnCatalogItems": "true", "returnPixelValues": "true", "f": "json"}, "GET"),
 }
 
 

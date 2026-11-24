@@ -7,8 +7,12 @@
 import { serviceInfo, serviceKind, normalizeUrl } from "../esri/rest.js";
 import { exportUrl, tileUrl, tile3857, maxTileZoom } from "../esri/draw.js";
 import { serviceLegend } from "../esri/legend.js";
+import { identifyMap, identifyImage } from "../esri/identify.js";
 
 export const esriOptsOf = (r) => (r && r.viz && r.viz.esri) || {};
+
+// A view to identify in when the map gives none: a small box around the point.
+const viewAround = (p) => ({ bounds: { west: p.lng - 0.01, south: p.lat - 0.01, east: p.lng + 0.01, north: p.lat + 0.01 }, width: 256, height: 256 });
 
 export const esriPlugin = {
   kinds: ["esri.feature", "esri.map", "esri.tile", "esri.image", "esri.timelapse"],
@@ -38,6 +42,17 @@ export const esriPlugin = {
     r.tileType = true;
     ctx.setLoading(r, false);
     ctx.sync();
+  },
+  // The Query tool: identify on the service (a tile service asks the
+  // service behind its tiles).
+  async query(target, layer, point, qctx) {
+    const url = normalizeUrl(layer.item);
+    const info = await serviceInfo(url, { fetch: qctx.fetch });
+    const opts = esriOptsOf(layer);
+    const common = { fetch: qctx.fetch, info, layer, precision: qctx.query && qctx.query.precision };
+    if (serviceKind(url, info, opts) === "esri.feature") return [];
+    if (/\/ImageServer$/i.test(url)) return identifyImage(url, point, opts, layer.legend, common);
+    return identifyMap(url, point, qctx.view || viewAround(point), opts, common);
   },
   // The service's legend (/legend), once it is drawn.
   async legend(r, ctx) {
