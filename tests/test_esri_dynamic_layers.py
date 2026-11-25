@@ -174,3 +174,22 @@ def test_an_older_georest_still_works(monkeypatch):
     seen = _patch_query(monkeypatch, supports=False)
     _esri().addEsriFeatureService(FEAT, target_map=_mapper())
     assert seen == {"called": True}
+
+
+def test_the_query_fits_the_installed_georest(monkeypatch):
+    # the fakes above take whatever esriLib sends; this one takes only what
+    # the installed georest's queryFeatureService takes (esri_integration.ipynb
+    # failed with "unexpected keyword argument 'geometry_precision'")
+    import inspect
+    from georest.esri import services
+    real = inspect.signature(services.queryFeatureService)
+    sent = {}
+
+    def strict(*a, **k):
+        sent.update(real.bind(*a, **k).arguments)
+        return GEOJSON
+    strict.__signature__ = real  # esriLib reads the signature to pick its keywords
+    monkeypatch.setattr(services, "queryFeatureService", strict)
+    _esri().addEsriFeatureService(FEAT, target_map=_mapper())
+    if "max_allowable_offset" in real.parameters:
+        assert sent["max_allowable_offset"] == pytest.approx(5 / 111_320, rel=1e-3)

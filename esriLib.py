@@ -641,15 +641,19 @@ _AUTO_TOLERANCES_M = (1, 5, 10, 20, 30, 50, 100)
 _SERVER_OFFSET_M_AUTO = 5
 
 
+def _georest_takes(services_module, name) -> bool:
+    """Whether this georest's queryFeatureService takes keyword ``name``."""
+    import inspect
+    try:
+        return name in inspect.signature(services_module.queryFeatureService).parameters
+    except (TypeError, ValueError):
+        return False
+
+
 def _georest_generalizes(services_module) -> bool:
     """Whether this georest's queryFeatureService takes server-side
     generalization (added after 0.4.0)."""
-    import inspect
-    try:
-        return "max_allowable_offset" in inspect.signature(
-            services_module.queryFeatureService).parameters
-    except (TypeError, ValueError):
-        return False
+    return _georest_takes(services_module, "max_allowable_offset")
 
 
 #: Default per-layer budget. Several layers share one page, and the page as
@@ -906,8 +910,10 @@ def addEsriFeatureService(
     elif isinstance(simplify, (int, float)) and not isinstance(simplify, bool):
         _offset_m = float(simplify)
     if _offset_m is not None and _georest_generalizes(_gs):
-        _gen_kw = {"max_allowable_offset": round(_offset_m * _DEG_PER_M, 9),
-                   "geometry_precision": 6}
+        _gen_kw = {"max_allowable_offset": round(_offset_m * _DEG_PER_M, 9)}
+        # georest (through 0.6) has no geometry_precision; send it only to one that does
+        if _georest_takes(_gs, "geometry_precision"):
+            _gen_kw["geometry_precision"] = 6
 
     # A 4-tuple is the natural spelling of a bbox in Python, but georest
     # only parses the "xmin,ymin,xmax,ymax" string; a tuple goes out as
