@@ -50,6 +50,46 @@ in the 2026.11.1 notes below.
   options sit closer under Units with a gap above the hint, and the opacity
   slider track is thinner.
 
+### ArcGIS services in Delta
+
+``Map.addEsriMapService``, ``addEsriImageService``, ``addEsriFeatureService``
+and ``addEsriService`` now add the service to a Delta map and fetch nothing
+in Python: the browser draws, queries, legends and charts it, the way the
+ArcGIS JS API does (without it). The original skin, and any layer added with
+``token=``, still fetch in Python as before, so a token never reaches the
+page.
+
+- **Drawn from the service.** Map services are exported tile by tile (cached
+  ones use their own tiles); image services are exported with their
+  rendering rule. Feature layers are fetched for the view as it moves,
+  generalized for the zoom and paged. A layer row says when a view holds more
+  features than the layer draws ("zoom in for the rest") or when the layer is
+  out of its scale range.
+- **The service's own symbology.** Feature layers draw with their renderer:
+  simple, unique value, class breaks, visual variables (color, size,
+  transparency, rotation), heatmap, dot density and pie chart, with marker
+  shapes, dashes, hatches and picture symbols. ``viz_params`` style keys
+  (``strokeColor``, ``fillColor``...) still replace it. A renderer built on
+  an Arcade expression draws with one symbol, and its legend says so.
+- **Legends** come from the service: ``/legend`` swatches for map and image
+  services (one section per sublayer shown), the renderer's classes and
+  ramps for feature layers, "1 dot = N" for dot density.
+- **Query.** Map, tile and image services answer with ``identify``; a
+  time-enabled image service gives its values over time. Feature layers and
+  GeoJSON layers answer by what was clicked (8 pixels for points, 5 for
+  lines, inside for polygons), with every field of the features hit.
+- **Timelapses of time-enabled services.** ``Map.addTimeLapse(url)``, or
+  ``time="all"`` on any ``addEsri*`` method, plays one frame per time step
+  with the same controls as an Earth Engine timelapse. ``time=`` also takes
+  a year, an ISO date or a ``(start, end)`` pair.
+- **Chart area** charts image services with ``computeHistograms`` (class
+  areas, over time for a timelapse, and a Sankey between periods with
+  ``areaChartParams={"sankey": True}``) and feature layers with
+  ``outStatistics`` (features by class, or by ``chartField``). A map with no
+  Earth Engine layers charts without loading Earth Engine.
+- **Elevation without Earth Engine** comes from USGS 3DEP (United States).
+- New example: ``examples/geoViewEsriExample.py``.
+
 ### georest 0.5.2
 
 geeViz now requires ``georest>=0.5.2,<0.6``. georest 0.5.2 files EDW under
