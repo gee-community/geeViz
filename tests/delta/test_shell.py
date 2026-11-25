@@ -382,7 +382,7 @@ def test_drag_right_pane_once_on_release(delta_page):
     # map controls track the right pane when it reaches down to them; the status bar spans the window
     cls = page.evaluate("document.body.className")
     ctl = rect(page, "#mapctl")
-    want_ctl = want + 6 if "right-over-ctl" in cls else 6
+    want_ctl = want if "right-over-ctl" in cls else 0  # the controls sit right on the edge
     assert abs((1500 - ctl["right"]) - want_ctl) <= 1, (cls, ctl)
     assert abs(rect(page, "#status")["right"] - 1500) <= 1, cls
 
@@ -619,7 +619,7 @@ def test_short_panes_leave_status_and_controls_at_the_edges(delta_page):
     m = _reach(page)
     assert m["right"]["bottom"] < m["vh"] - 100, m["right"]
     assert abs(m["status"]["left"]) <= 1 and abs(m["status"]["right"] - m["vw"]) <= 1, m["status"]
-    assert abs(m["ctl"]["right"] - (m["vw"] - 6)) <= 1, m["ctl"]
+    assert abs(m["ctl"]["right"] - m["vw"]) <= 1, m["ctl"]
     # the status bar has its own background so its text reads over any map
     assert m["bg"] not in ("rgba(0, 0, 0, 0)", "transparent"), m["bg"]
 
@@ -636,8 +636,8 @@ def test_tall_right_pane_pushes_controls_and_status(delta_page):
     m = _reach(page)
     # a tall right pane comes down to Google's strip (shortcuts, scale, terms), which stays clear
     assert abs(m["right"]["bottom"] - (m["vh"] - 26 - 14)) <= 1, m["right"]
-    # the map controls sit 6 px from the right pane
-    assert abs(m["ctl"]["right"] - (m["right"]["left"] - 6)) <= 1, (m["ctl"], m["right"])
+    # the map controls sit right against the right pane
+    assert abs(m["ctl"]["right"] - m["right"]["left"]) <= 1, (m["ctl"], m["right"])
     assert abs(m["status"]["right"] - m["vw"]) <= 1 and abs(m["status"]["left"]) <= 1, m["status"]
     # the map itself ends at the status bar, so Google's strip sits above it
     mb = page.evaluate("document.querySelector('#map').getBoundingClientRect().bottom")
@@ -649,7 +649,7 @@ def test_tall_right_pane_pushes_controls_and_status(delta_page):
     page.evaluate("document.querySelector('#tall-test').remove()")
     _settle(page)
     m = _reach(page)
-    assert abs(m["ctl"]["right"] - (m["vw"] - 6)) <= 1, m["ctl"]
+    assert abs(m["ctl"]["right"] - m["vw"]) <= 1, m["ctl"]
     assert abs(m["status"]["right"] - m["vw"]) <= 1, m["status"]
 
 
@@ -744,3 +744,58 @@ def test_phone_tools_tab_shows_the_active_tool(delta_page):
     page.evaluate("__delta.store.set({tool: null})")
     page.wait_for_function("(s) => !document.querySelector(s) || document.querySelector(s).hidden", arg=mark)
     assert page.evaluate("document.querySelector('#mtabs [data-m=tools]').getAttribute('aria-label')") == "Tools"
+
+
+
+def test_map_controls_are_docked_on_the_edge(delta_page):
+    """The zoom, Street View and basemap groups meet the edge squarely, as the
+    tool pane does: no border or rounding on that side."""
+    page = delta_page(SHELL)
+    _settle(page)
+    for sel in ("#mapctl .ctlgrp", "#mapctl .basemaps"):
+        st = page.evaluate("(s) => { const c = getComputedStyle(document.querySelector(s)); return [c.borderRightWidth, c.borderTopRightRadius, c.borderBottomRightRadius]; }", sel)
+        assert st == ["0px", "0px", "0px"], (sel, st)
+
+
+def test_phone_active_tool_mark_is_quiet_and_aligned(delta_page):
+    page = delta_page(SHELL, viewport=PHONE)
+    page.evaluate("__delta.api.addLayer({}, {}, 'A layer')")
+    page.evaluate("__delta.store.set({tool: 'query'})")
+    mark = "#mtabs [data-m=tools] .mtool"
+    page.wait_for_function(SHOWN, arg=mark)
+    bg = page.evaluate("(s) => getComputedStyle(document.querySelector(s)).backgroundColor", mark)
+    assert bg in ("rgba(0, 0, 0, 0)", "transparent"), bg
+    # centered on the Tools icon's line (its box: the stub page has no icon font)
+    ic = page.evaluate("() => document.querySelector('#mtabs [data-m=tools] .mtab-ic').getBoundingClientRect().toJSON()")
+    m = page.evaluate("(s) => document.querySelector(s).getBoundingClientRect().toJSON()", mark)
+    assert abs((m["top"] + m["bottom"]) / 2 - (ic["top"] + ic["bottom"]) / 2) <= 1.5, (m, ic)
+    size = page.evaluate("(s) => getComputedStyle(document.querySelector(s + ' i')).fontSize", mark)
+    assert size == "13px", size  # smaller than the 22 px tab icons
+
+
+def test_phone_output_sheet_is_as_tall_as_its_results(delta_page):
+    page = delta_page(SHELL, viewport=PHONE)
+    page.evaluate("""__delta.store.set({where: 'here', results: [{id: 'a-v', layerId: 'a', title: 'A layer', meta: 'B1',
+        kind: 'value', data: {bands: [{band: 'B1', value: 3, display: '3'}]}, actions: ['copy']}]})""")
+    page.click("#mtabs [data-m=output]")
+    _settle(page)
+    h = page.evaluate("document.querySelector('#pane-right').getBoundingClientRect().height")
+    assert h < PHONE["height"] * 0.4, h
+    # many results still stop at the usual sheet height and scroll
+    page.evaluate("""__delta.store.set({results: Array.from({length: 12}, (_, i) => ({id: 'a' + i + '-v', layerId: 'a' + i,
+        title: 'Layer ' + i, meta: 'B1', kind: 'value', data: {bands: [{band: 'B1', value: i, display: String(i)}]}, actions: ['copy']}))})""")
+    _settle(page)
+    h = page.evaluate("document.querySelector('#pane-right').getBoundingClientRect().height")
+    assert abs(h - PHONE["height"] * 0.62) <= 2, h
+
+
+def test_phone_street_view_uses_the_whole_screen(delta_page):
+    page = delta_page(SHELL, viewport=PHONE)
+    page.evaluate("__delta.shell.setStreetView(true)")
+    _settle(page)
+    b = page.evaluate("document.querySelector('#map').getBoundingClientRect().bottom")
+    assert abs(b - PHONE["height"]) <= 1, b
+    page.evaluate("__delta.shell.setStreetView(false)")
+    _settle(page)
+    b = page.evaluate("document.querySelector('#map').getBoundingClientRect().bottom")
+    assert abs(b - (PHONE["height"] - 64)) <= 1, b

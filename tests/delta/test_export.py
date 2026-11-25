@@ -191,20 +191,23 @@ def test_export_html_delta_assets_resolve_under_mount(tmp_path):
     out = tmp_path / "d.html"
     Map.export_html(str(out))
     html = out.read_text(encoding="utf-8")
-    assert '<base href="%s/">' % ASSET_BASE in html
+    # geoView's files come from the agent's georest.view mount: the page's
+    # base is that mount, so every local reference resolves under it
+    from georest.view import STATIC_DIR
+
+    base = ASSET_BASE + "/geoview/"
+    assert '<base href="%s">' % base in html
     refs = re.findall(r'<(?!base)\w+[^>]*?\s(?:src|href)="([^"]+)"', html)
     local = [r for r in refs if not r.startswith(("http://", "https://", "data:"))]
     assert local, refs
     for r in local:
-        assert r.startswith(ASSET_BASE + "/"), r
-        assert (GEEVIEW / r[len(ASSET_BASE) + 1 :]).is_file(), r
-    # No relative ./ path survived the rewrite (it would resolve against
-    # wherever the host serves the page, not the mount).
-    assert '"./' not in html
-    # The per-map run script loader is gone: the run script is inline, and a
-    # ?run= on a hosted page must not load a file over it.
-    assert "runGeeViz-" not in html and "run-loader" not in html
-    assert html.count("function runGeeViz") == 1, html.count("function runGeeViz")
+        assert not r.startswith("/"), r  # would skip the base
+        rel = r[2:] if r.startswith("./") else r
+        assert (pathlib.Path(STATIC_DIR) / rel).is_file(), r
+    # The map is a document inline in the page; no run script, and no
+    # run-script loader a ?run= on a hosted page could use.
+    assert 'id="geoview-document"' in html
+    assert "runGeeViz-" not in html and "run-loader" not in html and "function runGeeViz" not in html
     for ph in ("__GEEVIZ_TOKEN__", "__GEEVIZ_TOKEN_TIME__", "__GEEVIZ_PROJECT__", "__GEEVIZ_AUTH_PROXY__"):
         assert ph in html, ph
 

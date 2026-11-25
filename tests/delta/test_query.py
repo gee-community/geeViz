@@ -142,7 +142,7 @@ def test_query_values_match_python(page):
     # The card shows the class name as text.
     card = page.locator('#results-mount .card-r[data-rid="%s"]' % lcms["id"])
     assert "Trees" in card.inner_text()
-    assert page.locator("#chips .chip").count() == len(rs)
+    assert page.locator("#chips .chip").count() == 0  # no jump buttons above the results
     empty = by_title(rs, "Empty LCMS")
     assert empty["kind"] == "series" and empty["meta"] == "No data" and "error" not in empty["data"]
     # The only console errors are the empty collection's map service (400); nothing from the query.
