@@ -10,6 +10,9 @@ SHELL = {"delta-test": "shell"}
 VH = 900
 # panes stop above the status bar (26) and Google's strip (24) below the map
 CAP = VH - 26 - 24
+# the right pane reaches Google's 14 px strip (shortcuts, scale, terms); only
+# the left keeps clear of the 24 px Google logo above it
+RIGHT_CAP = VH - 26 - 14
 
 R = "(s) => { const b = document.querySelector(s).getBoundingClientRect(); return {top: b.top, bottom: b.bottom, height: b.height, left: b.left, right: b.right}; }"
 
@@ -90,7 +93,14 @@ def test_right_pane_heights(delta_page):
     page.evaluate(add, 12)
     settle(page)
     capped = r(page, "#pane-right")
-    assert abs(capped["height"] - CAP) <= 1, capped
+    assert abs(capped["height"] - RIGHT_CAP) <= 1, capped
+    # the basemap picker ends on the same line as the pane
+    bm = r(page, ".mapctl")
+    assert abs(bm["bottom"] - capped["bottom"]) <= 1, (bm, capped)
+    # and Google's strip below both is not covered (its top is the pane's bottom)
+    strip = page.evaluate("() => { const els = [...document.querySelectorAll('#map .gm-style-cc, #map .gm-style-cc *')].filter(e => e.offsetWidth); return els.length ? Math.min(...els.map(e => e.getBoundingClientRect().top)) : null; }")
+    if strip is not None:
+        assert capped["bottom"] <= strip + 1, (capped, strip)
     body = page.evaluate("() => document.querySelector('#results-mount').closest('.pane-body') ? '#pane-right .pane-body' : null")
     assert body and scrolls(page, body)
     page.evaluate("(s) => { const m = document.querySelector(s); m.scrollTop = m.scrollHeight; }", body)

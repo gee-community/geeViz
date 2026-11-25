@@ -192,6 +192,8 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
   .pane { bottom: auto; max-height: calc(100% - var(--dz-status-h) - var(--dz-gfoot)); border-bottom: 1px solid var(--dz-line); }
   .pane-left { border-bottom-right-radius: 12px; }
   .pane-right { border-bottom-left-radius: 12px; }
+  /* the right pane reaches Google's strip (shortcuts, scale, terms); the logo it must not cover is at the left */
+  .pane-right { max-height: calc(100% - var(--dz-status-h) - var(--dz-gstrip)); }
   .pane-body { flex: 0 1 auto; min-height: 0; margin-top: 0.5rem; }
   .pane-body { overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--dz-faint) transparent; }
   .pane-body > .scroll { overflow: visible; }
@@ -401,7 +403,7 @@ body.left-hidden .status, body.left-hidden .loadbar { left: 0; }
 .loadbar { position: absolute; z-index: 3; left: var(--lw, var(--dz-left-default)); right: var(--rw, var(--dz-right-default)); top: 0; height: 2px; overflow: hidden; pointer-events: none; }
 .loadbar::after { content: ""; position: absolute; top: 0; bottom: 0; width: 30%; background: linear-gradient(90deg, transparent, var(--dz-teal), transparent); animation: dz-lb 1.4s ease-in-out infinite; }
 @keyframes dz-lb { from { left: -30%; } to { left: 100%; } }
-.mapctl { position: absolute; z-index: 3; right: calc(var(--rw, var(--dz-right-default)) + 12px); bottom: calc(var(--dz-status-h) + var(--dz-gstrip) + 4px); display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.mapctl { position: absolute; z-index: 3; right: calc(var(--rw, var(--dz-right-default)) + 12px); bottom: calc(var(--dz-status-h) + var(--dz-gstrip)); display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
 /* desktop defaults for content-height panes: span the window and hug the right edge;
    the body.right-over-ctl rules above make room for a pane that reaches down */
 @media (min-width: 761px) {

@@ -632,15 +632,16 @@ def test_tall_right_pane_pushes_controls_and_status(delta_page):
                              document.querySelector('#results-mount').appendChild(d); }""")
     _settle(page)
     m = _reach(page)
-    # a tall pane stops above the status bar and Google's strip, which stay clear
-    assert abs(m["right"]["bottom"] - (m["vh"] - GFOOT)) <= 1, m["right"]
+    # a tall right pane comes down to Google's strip (shortcuts, scale, terms), which stays clear
+    assert abs(m["right"]["bottom"] - (m["vh"] - 26 - 14)) <= 1, m["right"]
     assert abs(m["ctl"]["right"] - (m["right"]["left"] - 12)) <= 1, (m["ctl"], m["right"])
     assert abs(m["status"]["right"] - m["vw"]) <= 1 and abs(m["status"]["left"]) <= 1, m["status"]
     # the map itself ends at the status bar, so Google's strip sits above it
     mb = page.evaluate("document.querySelector('#map').getBoundingClientRect().bottom")
     assert abs(mb - m["status"]["top"]) <= 1, (mb, m["status"])
-    # the basemaps sit just above Google's scale bar and shortcuts row (14 px), 4 px clear
-    assert abs((mb - m["ctl"]["bottom"]) - (14 + 4)) <= 1, (mb, m["ctl"])
+    # the basemaps end on the same line, right on top of Google's 14 px strip
+    assert abs((mb - m["ctl"]["bottom"]) - 14) <= 1, (mb, m["ctl"])
+    assert abs(m["ctl"]["bottom"] - m["right"]["bottom"]) <= 1, (m["ctl"], m["right"])
     # and back when the content goes away
     page.evaluate("document.querySelector('#tall-test').remove()")
     _settle(page)
