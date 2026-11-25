@@ -60,6 +60,8 @@ def test_layers_and_commands_become_a_document(m):
     # the viewer writes name then accent (bold) with nothing between: "geeViz Delta"
     assert doc["brand"]["name"] + doc["brand"]["accent"] == "geeViz Delta", doc["brand"]
     assert doc["brand"]["accent"] == "Delta"
+    # geeViz maps keep the geeViz logo; georest's viewer shows its own otherwise
+    assert doc["brand"]["logo"] == "geeviz"
 
 
 @pytest.mark.parametrize("cmd, want", [
