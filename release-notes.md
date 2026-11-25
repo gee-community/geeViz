@@ -87,7 +87,13 @@ page.
   ``areaChartParams={"sankey": True}``) and feature layers with
   ``outStatistics`` (features by class, or by ``chartField``). A map with no
   Earth Engine layers charts without loading Earth Engine.
-- **Elevation without Earth Engine** comes from USGS 3DEP (United States).
+- **Elevation follows the mouse,** read from the AWS open terrain tiles
+  (Terrarium: global, one tile answers every point in it), with Earth
+  Engine's GLO-30 as the fallback. It no longer needs Earth Engine.
+- **Slow services draw sooner.** ArcGIS exports go as one 1024 px image per
+  4 by 4 block of map tiles (a service takes as long for 1024 px as for
+  256), and a service timelapse asks only for the frame shown and the next
+  two.
 - New example: ``examples/geoViewEsriExample.py``.
 
 ### georest 0.5.2
