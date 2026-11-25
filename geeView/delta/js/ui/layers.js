@@ -9,6 +9,7 @@
 // and urlParams.layerOrders.
 import { legendMarkup, swatchColors, gradient, cometGradient, restorePinned, orderFromStored, toStoredOrder, isSymbolLegend, vectorGlyphs } from "./legend.js";
 import { timelapseBlock } from "./timelapse.js";
+import { isTimelapse } from "../util.js";
 
 const LIST_ID = "layer-list";
 // Area-chart-only layers have no row. Select layers are listed (Task 7) but,
@@ -294,7 +295,7 @@ export function mountLayers(store, mountEl, opts = {}) {
     });
     // A timelapse's controls sit between the row and its legend, as the mockup.
     let tl = null;
-    if (layer.kind === "timelapse") {
+    if (isTimelapse(layer)) {
       tl = timelapseBlock(id, (lid) => (opts.timelapse ? opts.timelapse(lid) : null));
       el.insertBefore(tl.el, parts.legendEl);
       el.classList.add("is-tl");

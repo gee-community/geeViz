@@ -16,6 +16,7 @@ import { createTileOverlay, progressOf } from "./tiles.js";
 import { createVectorTileOverlay, tileBounds, flatten } from "./vectortiles.js";
 import { geomKinds } from "../ui/legend.js";
 import { pluginFor } from "../plugins/index.js";
+import { isTimelapse } from "../util.js";
 import { lazyEE } from "./ee.js";
 import { windQueryItem, WIND_UNIT_PROPS } from "./wind.js";
 
@@ -35,7 +36,7 @@ const NOT_QUERYABLE = ["tileMapService", "dynamicMapService"];
 export const isWindViz = (viz) => !!(viz && viz.windParticles);
 
 function layerTypeOf(layer) {
-  if (layer.kind === "timelapse") return "timelapse";
+  if (isTimelapse(layer)) return "timelapse";
   if (layer.kind === "geojson") return "geoJSONVector";
   if (layer.kind === "tile") return "tileMapService";
   if (layer.kind === "dynamic") return "dynamicMapService";
@@ -328,6 +329,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
   const frameHooks = {
     store,
     ee: eeApi,
+    fetch: deps.fetch,
     requestMap,
     initFrames(id, n) {
       const r = recs.get(id);
@@ -335,10 +337,11 @@ export function createLayerEngine(gmap, store, deps = {}) {
       r.frames = Array.from({ length: n }, () => ({ overlay: null, opacity: 0 }));
       sync();
     },
+    // tilesUrl: an Earth Engine URL format, or (coord, zoom) => url
     setFrameUrl(id, i, tilesUrl) {
       const r = recs.get(id);
       if (!r || !r.frames[i]) return;
-      const tileUrl = (coord, zoom) => tilesUrl.replace("{x}", coord.x).replace("{y}", coord.y).replace("{z}", zoom);
+      const tileUrl = typeof tilesUrl === "function" ? tilesUrl : (coord, zoom) => tilesUrl.replace("{x}", coord.x).replace("{y}", coord.y).replace("{z}", zoom);
       // every frame's tiles count toward the timelapse's progress
       const overlay = tileOverlay(r, tileUrl);
       overlay.setOpacity(r.frames[i].opacity);
@@ -387,7 +390,9 @@ export function createLayerEngine(gmap, store, deps = {}) {
     },
   };
 
-  function addTimelapse(layer) {
+  // loader: the frame loader (engine/timelapse.js eeFrameLoader by default;
+  // a time-enabled ArcGIS service's is esri/timelapse.js)
+  function addTimelapse(layer, loader) {
     const r = {
       id: layer.id,
       layerType: "timelapse",
@@ -408,7 +413,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
     };
     recs.set(layer.id, r);
     frameLoading(r);
-    r.tl = createTimelapse(frameHooks, layer);
+    r.tl = createTimelapse(frameHooks, layer, loader ? { loader } : {});
   }
 
   // ---- public ----
@@ -458,7 +463,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
       // loads. Not one that is off, nor one a plug-in starts itself (a
       // timelapse reports its own frames; an area-chart-only layer is never
       // drawn): those would show loading with nothing to load.
-      const shows = layer.visible && !["timelapse", "areaChartOnly"].includes(layer.kind);
+      const shows = layer.visible && !isTimelapse(layer) && layer.kind !== "areaChartOnly";
       if (shows) store.update((s) => ({ ...s, layers: s.layers.map((l) => (l.id === layer.id ? { ...l, loading: true } : l)) }), "layer-loading");
       try {
         await deps.eeLoader.ensure();

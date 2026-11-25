@@ -10,6 +10,7 @@
 // layer.timelapse from the store. Years are written as text.
 
 import { DEFAULT_FPS } from "../engine/timelapse.js";
+import { isTimelapse } from "../util.js";
 
 // Speed slider range and step, as the original's speed slider.
 export const SPEED = { min: 0.5, max: 3, step: 0.5 };
@@ -28,7 +29,7 @@ export function activeTimelapse(state) {
   const byId = new Map(state.layers.map((l) => [l.id, l]));
   for (const id of state.order) {
     const l = byId.get(id);
-    if (l && l.kind === "timelapse" && l.visible && l.timelapse && l.timelapse.loaded) return l;
+    if (isTimelapse(l) && l.visible && l.timelapse && l.timelapse.loaded) return l;
   }
   return null;
 }

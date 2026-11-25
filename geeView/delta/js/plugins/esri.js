@@ -11,6 +11,7 @@ import { identifyMap, identifyImage } from "../esri/identify.js";
 import { createFeatureSource } from "../esri/features.js";
 import { rendererFor } from "../esri/renderers.js";
 import { onSymbolImage } from "../esri/symbols.js";
+import { esriFrameLoader } from "../esri/timelapse.js";
 import { hitTest } from "../engine/hittest.js";
 import { tableResults } from "../engine/query.js";
 
@@ -47,6 +48,12 @@ export const esriPlugin = {
   needsEE: false,
   // the viz is the plug-in's own: no Earth Engine viz preparation
   ownsViz: true,
+  // a time-enabled service played frame by frame (engine/timelapse.js)
+  start(layer, ctx) {
+    if (layer.kind !== "esri.timelapse") return false;
+    ctx.addTimelapse(layer, esriFrameLoader);
+    return true;
+  },
   async draw(r, item, ctx) {
     const url = normalizeUrl(item);
     r.url = url;

@@ -24,6 +24,7 @@
 // cumulative, loaded, nLoaded}.
 import { prepareViz } from "./viz.js";
 import { windQueryItem, WIND_UNIT_PROPS } from "./wind.js";
+import { isTimelapse } from "../util.js";
 
 // port of 4map-manager.js intervalPeriod (666.67 ms) as frames per second
 export const DEFAULT_FPS = 1.5;
@@ -182,12 +183,12 @@ export function createTimelapse(engine, layer, opts = {}) {
   // port of 5chart-manager.js turnOffLayers, as selectFrame calls it.
   function turnOffOtherLayers() {
     if (!store.get().turnOffLayersWhenTimeLapseIsOn) return;
-    const others = (l) => l.id !== id && l.kind !== "timelapse" && ROWLESS.indexOf(l.kind) === -1;
+    const others = (l) => l.id !== id && !isTimelapse(l) && ROWLESS.indexOf(l.kind) === -1;
     if (store.get().layers.some((l) => others(l) && l.visible)) setVisibleIn(others, false, "turnOffLayersWhenTimeLapseIsOn");
   }
   // port of 4map-manager.js turnOffAllNonActiveTimeLapseLayers
   function turnOffOtherTimelapses() {
-    const others = (l) => l.id !== id && l.kind === "timelapse";
+    const others = (l) => l.id !== id && isTimelapse(l);
     if (store.get().layers.some((l) => others(l) && l.visible)) setVisibleIn(others, false, "timelapse-exclusive");
   }
 
@@ -209,7 +210,7 @@ export function createTimelapse(engine, layer, opts = {}) {
   // turnOffTimeLapseCheckboxes): a layer in the list turned on turns a visible
   // timelapse off when the setting is true, so playback does not switch the
   // user's layer straight back off.
-  const listLayer = (l) => l.id !== id && l.kind !== "timelapse" && ROWLESS.indexOf(l.kind) === -1;
+  const listLayer = (l) => l.id !== id && !isTimelapse(l) && ROWLESS.indexOf(l.kind) === -1;
   let prevVisible = new Map(store.get().layers.filter(listLayer).map((l) => [l.id, !!l.visible]));
   const unsubscribe = store.on("change:layers", () => {
     const layers = store.get().layers.filter(listLayer);
@@ -301,6 +302,8 @@ export function createTimelapse(engine, layer, opts = {}) {
     // port of 4map-manager.js addTimeLapseToMap queryObj: the collection is
     // queried as a time series (type geeImageCollection).
     async queryTarget() {
+      // a loader that knows its own target (an ArcGIS service: esri/timelapse.js)
+      if (loader.queryTarget) return loader.queryTarget();
       if (!loader.prepare) return null;
       const p = await loader.prepare();
       if (!p || !p.item) return null;
