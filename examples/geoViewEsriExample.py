@@ -14,7 +14,7 @@
    limitations under the License.
 """
 
-# ArcGIS services in the Delta viewer, drawn by the browser the way the ArcGIS
+# ArcGIS services in geoView, geeViz's default viewer, drawn by the browser the way the ArcGIS
 # JS API draws them, with nothing fetched in Python:
 #   - a dynamic map service (FEMA flood zones) drawn by export, its legend
 #     from the service, and the Query tool asking it with identify
@@ -52,7 +52,7 @@ study_area = {
 ####################################################################################################
 # No Earth Engine
 Map = gv.mapper()
-Map.setSkin("delta")
+Map.setSkin("geoview")
 
 # Every time step of a time-enabled service, one frame per year. Turn it on
 # in the layer list to load it; Chart area charts it over time.
@@ -79,7 +79,7 @@ Map.view()
 ####################################################################################################
 # The same services with an Earth Engine layer
 Map2 = gv.mapper()
-Map2.setSkin("delta")
+Map2.setSkin("geoview")
 Map2.addLayer(ee.Image("USGS/SRTMGL1_003"), {"min": 1500, "max": 4000, "palette": "1a9850,fee08b,d73027"}, "SRTM elevation (Earth Engine)")
 Map2.addLayer(LCMS_CHANGE, {"time": 2020}, "LCMS change 2020")
 Map2.addLayer(MTBS_FIRES, {"where": "year >= 2015"}, "Fires since 2015")

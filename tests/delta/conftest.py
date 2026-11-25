@@ -93,7 +93,7 @@ def delta_page(delta_server, _browser):
 
 @pytest.fixture
 def live_map(_browser):
-    """live_map(build, skin="delta", setup=None, wait_layers=True) -> Page.
+    """live_map(build, skin="geoview", setup=None, wait_layers=True) -> Page.
 
     build(Map) adds layers; needs Earth Engine. setup(context) runs before the
     page opens (to route requests). With wait_layers=False the page is
@@ -103,7 +103,7 @@ def live_map(_browser):
     """
     contexts = []
 
-    def make(build, skin="delta", setup=None, wait_layers=True):
+    def make(build, skin="geoview", setup=None, wait_layers=True):
         import geeViz.geeView as gv
 
         Map = gv.mapper()
@@ -128,7 +128,7 @@ def live_map(_browser):
         page = ctx.new_page()
         _collect_errors(page)
         page.goto(url)
-        if skin != "delta":
+        if skin != "geoview":
             return page
         page.wait_for_function("window.__delta !== undefined && window.__delta.ready === true", timeout=90000)
         if not wait_layers:

@@ -35,7 +35,7 @@ import geeViz.geeView as gv
 
 ee = gv.ee
 Map = gv.mapper()
-Map.setSkin("delta")
+Map.setSkin("geoview")
 
 ####################################################################################################
 # Earth Engine: an object, and an asset id as a string (an image here; an

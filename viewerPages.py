@@ -12,18 +12,22 @@ _here = os.path.dirname(__file__)
 template = os.path.join(_here, "geeView", "index.html")
 
 # Viewer skins. "original" is geeView/index.html, which runs the per-session
-# runGeeViz.js. "delta" is geoView, from the installed georest
+# runGeeViz.js. "geoview" is geoView, from the installed georest
 # (georest.view: its page and files, served at /geoview), which reads the
 # map as a document (mapper._build_document) instead of a script.
-SKINS = ("original", "delta")
+SKINS = ("original", "geoview")
 # The skin a Map starts with when GEEVIZ_SKIN does not name one.
-DEFAULT_SKIN = "delta"
+DEFAULT_SKIN = "geoview"
+# Older names still accepted: geoView was called Delta while it was built,
+# and scripts, GEEVIZ_SKIN settings and saved pages may still say so.
+SKIN_ALIASES = {"delta": "geoview"}
 def _geoview_page():
     from georest.view import STATIC_DIR
     return os.path.join(STATIC_DIR, "geoview.html")
 
 
-delta_template = _geoview_page()
+geoview_template = _geoview_page()
+delta_template = geoview_template  # the old name
 
 
 def _sign_in_script(token_placeholder, token_time_placeholder, project_placeholder, auth_proxy_placeholder):
@@ -40,8 +44,8 @@ def _sign_in_script(token_placeholder, token_time_placeholder, project_placehold
     )
 
 
-def _delta_page(doc, run_js, asset_base, placeholders):
-    """The Delta skin's exported page: georest.view's page (its files under
+def _geoview_page_html(doc, run_js, asset_base, placeholders):
+    """The geoView skin's exported page: georest.view's page (its files under
     ``asset_base + "/geoview"``) with the map document inline, or, for a page
     saved before the document, its run script."""
     from georest.view._page import page_html
@@ -59,8 +63,8 @@ def _export_page(run_js, skin, asset_base, token_placeholder, token_time_placeho
     Shared with :func:`refresh_exported_html`, which rebuilds a page saved
     earlier around the run script it carries, so the two cannot drift apart.
     """
-    if skin == "delta":
-        return _delta_page(doc, None if doc is not None else run_js, asset_base,
+    if skin == "geoview":
+        return _geoview_page_html(doc, None if doc is not None else run_js, asset_base,
                            (token_placeholder, token_time_placeholder, project_placeholder, auth_proxy_placeholder))
     with open(template, "r", encoding="utf-8") as f:
         html = f.read()
@@ -116,7 +120,7 @@ def _export_page(run_js, skin, asset_base, token_placeholder, token_time_placeho
             "<script>" + run_js + "</script>"
         ),
     )
-    # The Delta page's per-map run script loader (Map.view's ?run=<token>)
+    # The geoView page's per-map run script loader (Map.view's ?run=<token>)
     # has nothing to load here: the run script is inline above. Left in, a
     # ?run= on a hosted page would load a stale file over it.
     _rl_start, _rl_end = "<!-- run-loader -->", "<!-- /run-loader -->"
@@ -127,20 +131,25 @@ def _export_page(run_js, skin, asset_base, token_placeholder, token_time_placeho
     # Now rewrite the rest of the ./src/ asset paths
     html = html.replace('href="./src/', 'href="' + asset_base + '/src/')
     html = html.replace('src="./src/', 'src="' + asset_base + '/src/')
-    # Delta skin assets (no-ops for the original page).
+    # assets of the viewer once called Delta (no-ops for the original page)
     html = html.replace('href="./delta/', 'href="' + asset_base + '/delta/')
     html = html.replace('src="./delta/', 'src="' + asset_base + '/delta/')
     return html
 
 
 def _resolve_skin(skin=None):
-    """``skin`` if given, else ``GEEVIZ_SKIN`` when it names one, else ``DEFAULT_SKIN``."""
+    """``skin`` if given, else ``GEEVIZ_SKIN`` when it names one, else
+    ``DEFAULT_SKIN``. Case and spaces are ignored, and an old name
+    (``SKIN_ALIASES``) means the skin it became."""
     if skin is None:
         skin = os.environ.get("GEEVIZ_SKIN", "").strip().lower()
+        skin = SKIN_ALIASES.get(skin, skin)
         return skin if skin in SKINS else DEFAULT_SKIN
-    if skin not in SKINS:
+    name = str(skin).strip().lower()
+    name = SKIN_ALIASES.get(name, name)
+    if name not in SKINS:
         raise ValueError("Unknown skin {!r}; choose one of: {}".format(skin, ", ".join(SKINS)))
-    return skin
+    return name
 
 
 def refresh_exported_html(html: str, skin: str | None = None) -> str:
@@ -161,7 +170,7 @@ def refresh_exported_html(html: str, skin: str | None = None) -> str:
 
     Args:
         html (str): A page written by ``export_html``.
-        skin (str, optional): ``"original"`` or ``"delta"``. Defaults to
+        skin (str, optional): ``"original"`` or ``"geoview"`` (``"delta"``, its old name, still works). Defaults to
             the skin a new ``Map`` starts with (``GEEVIZ_SKIN``, else
             ``DEFAULT_SKIN``).
 
@@ -187,7 +196,7 @@ def refresh_exported_html(html: str, skin: str | None = None) -> str:
     base = _re.search(r'<base href="([^"]*)">', html)
     doc_m = _re.search(r'<script type="application/json" id="geoview-document">(\{.*?)</script>', html, _re.S)
     if not head:
-        # a Delta page with the map document: the sign-in block has no run script after it
+        # a geoView page with the map document: the sign-in block has no run script after it
         head = _re.search(
             r"<script>\(function\(\)\{\s*if\(typeof urlParams==='undefined'\)\{window\.urlParams=\{\};\}\s*"
             r"urlParams\.accessToken='(?P<token>[^']*)';\s*"
@@ -204,8 +213,8 @@ def refresh_exported_html(html: str, skin: str | None = None) -> str:
         asset_base = asset_base[: -len("/geoview")]
     placeholders = (head.group("token"), head.group("time"), head.group("project"), head.group("proxy"))
     if doc_m:
-        if skin != "delta":
-            raise ValueError("This page carries a map document, which only the Delta skin reads.")
+        if skin != "geoview":
+            raise ValueError("This page carries a map document, which only the geoView skin reads.")
         import json as _json
         return _export_page(None, skin, asset_base, *placeholders, doc=_json.loads(doc_m.group(1)))
     end = html.find("</script>", head.end())

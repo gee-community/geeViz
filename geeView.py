@@ -132,14 +132,14 @@ template = os.path.join(py_viz_dir, geeViewFolder, "index.html")
 # without initializing Earth Engine). GEEVIZ_SKIN picks the default;
 # Map.setSkin() overrides.
 from geeViz.viewerPages import (  # noqa: E402
-    SKINS, DEFAULT_SKIN, delta_template, refresh_exported_html,
+    SKINS, DEFAULT_SKIN, SKIN_ALIASES, geoview_template, delta_template, refresh_exported_html,
     _resolve_skin, _export_page,
 )
 import re as _re_cmd  # noqa: E402
 import time as _time_mod  # noqa: E402
-_SKIN_PAGES = {"original": "geeView/", "delta": "geoview/geoview.html"}
+_SKIN_PAGES = {"original": "geeView/", "geoview": "geoview/geoview.html"}
 
-# ---- the Delta skin's map document (georest.view) ----
+# ---- the geoView skin's map document (georest.view) ----
 # Map commands are recorded as JavaScript calls for the original skin's map
 # script; the document carries them as data: [name, *args].
 _CMD_CALL = _re_cmd.compile(r"^(?:(Map|map|areaChart)\.)?(\w+)\((.*)\)$", _re_cmd.S)
@@ -174,8 +174,12 @@ def _command_to_data(cmd):
 
 
 def _write_map_document(run_dir, token, doc_json, now=None):
-    """Write a Delta map's document (map-<token>.json) beside the run scripts,
-    removing documents not rewritten for a week."""
+    """Write a geoView map's document beside the run scripts and return its
+    path, removing documents not rewritten for a week.
+
+    Named map-<token>-<hash of the document>.json: each view of a Map keeps
+    the map it showed (a notebook's earlier outputs do not change when the
+    Map does), and viewing an unchanged map again reuses the file."""
     import glob
     now = _time_mod.time() if now is None else now
     for old in glob.glob(os.path.join(run_dir, "map-*.json")):
@@ -184,13 +188,15 @@ def _write_map_document(run_dir, token, doc_json, now=None):
                 os.remove(old)
         except OSError:
             pass
-    path = os.path.join(run_dir, "map-{}.json".format(token))
+    import hashlib
+    digest = hashlib.sha256(doc_json.encode("utf-8")).hexdigest()[:12]
+    path = os.path.join(run_dir, "map-{}-{}.json".format(token, digest))
     with open(path, "w", encoding="utf-8") as f:
         f.write(doc_json)
     return path
 
 
-# A Delta Map's own run script: runGeeViz-<token>.js beside the shared one.
+# A geoView Map's own run script: runGeeViz-<token>.js beside the shared one.
 # Scripts not rewritten for a week are removed (one per Map object, so a
 # long-lived folder would otherwise collect one per notebook kernel).
 _OWN_RUN_MAX_AGE_S = 7 * 24 * 3600
@@ -730,7 +736,7 @@ class _GeeVizRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().__init__(*args, **kwargs)
 
     def translate_path(self, path):
-        # /geoview/... is the Delta skin's viewer, from the installed georest
+        # /geoview/... is the geoView skin's viewer, from the installed georest
         p = urlparse(path).path
         if p == "/geoview" or p.startswith("/geoview/"):
             from georest.view import STATIC_DIR as _geoview_dir
@@ -1264,7 +1270,7 @@ class mapper:
             all other layers should be turned off when a time lapse is turned
             on. None uses the skin's default: True in the original skin, where
             a time lapse draws above other layers whatever their order, and
-            False in the Delta skin, where a time lapse stacks in layer-list
+            False in the geoView skin, where a time lapse stacks in layer-list
             order like any other layer. Set True or False to choose.
             
         showToolTipModal (bool, default False): Whether to show the tooltip modal when the map is loaded.
@@ -1346,7 +1352,7 @@ class mapper:
         self.idDictList = []
         self.mapCommandList = []
         self.ee_run_name = "runGeeViz"
-        # This Map's own run script name for the Delta skin
+        # This Map's own run script name for the geoView skin
         # (runGeeViz-<token>.js, named in the page url as ?run=<token>), so two
         # notebooks viewing at once never load each other's layers. The shared
         # runGeeViz.js is still written for the original skin and exports.
@@ -1378,7 +1384,7 @@ class mapper:
         self.serviceKeyPath = None
         self.queryWindowMode = "sidePane"
         self.project = ee.data._get_state().cloud_api_user_project
-        # None: the skin's default (True for the original, False for Delta)
+        # None: the skin's default (True for the original, False for geoView)
         self.turnOffLayersWhenTimeLapseIsOn = None
         self.showToolTipModal = False
 
@@ -1428,7 +1434,7 @@ class mapper:
           or the matching ``ee.Reducer``, such as ``ee.Reducer.max()``);
         - a tile URL with ``{z}``, ``{x}`` and ``{y}``. Query shows the color under the click, and the
           ``classLegendDict`` class it matches;
-        - GeoJSON: a URL (``.geojson``, ``.json`` or ``f=geojson``, Delta skin), text, or a dict.
+        - GeoJSON: a URL (``.geojson``, ``.json`` or ``f=geojson``, geoView skin), text, or a dict.
 
         For a time-enabled ArcGIS image or map service, or an image collection, shown as a time lapse (one frame
         per time step), use ``addTimeLapse`` instead.
@@ -1609,7 +1615,7 @@ class mapper:
                                      max_zoom=viz.get("maxZoom", 20), legend=viz.get("classLegendDict"))
         if kind == "geojson_url":
             if self.skin == "original":
-                raise ValueError("GeoJSON by URL needs the Delta skin (Map.setSkin(\"delta\")); or give the GeoJSON itself.")
+                raise ValueError("GeoJSON by URL needs the geoView skin (Map.setSkin(\"geoview\")); or give the GeoJSON itself.")
             image = {"geojsonUrl": value}
         elif kind == "geojson":
             image = value if isinstance(value, dict) else {"type": "FeatureCollection", "features": value}
@@ -1951,8 +1957,8 @@ class mapper:
         self.idDictList.append(idDict)
 
     ######################################################################
-    # ArcGIS services on the Delta skin: drawn, queried, legended and charted
-    # in the browser (geeView/delta/js/plugins/esri.js). Python records the
+    # ArcGIS services on the geoView skin: drawn, queried, legended and charted
+    # in the browser (georest.view: js/plugins/esri.js). Python records the
     # service and its options and fetches nothing. The original skin cannot
     # draw a service itself, so it keeps esriLib's Python fetch, and so does
     # a layer with a token: a token must never reach the page.
@@ -2015,7 +2021,7 @@ class mapper:
 
     def _record_esri(self, method, url_or_result, kind, name=None, visible=True, viz_params=None,
                      time=None, opts=None, call=None):
-        """Record a Delta Esri layer: one Map.addEsriLayer call in the run script."""
+        """Record a geoView Esri layer: one Map.addEsriLayer call in the run script."""
         from geeViz import esriLib as _el
         url = _el._resolve_url(url_or_result).rstrip("/")
         viz_params = dict(viz_params or {})
@@ -2108,9 +2114,9 @@ class mapper:
                 reaches the page).
             time (optional): For a time-enabled service: a year, an ISO
                 date, a ``(start, end)`` pair, or ``"all"`` to play every
-                time step as a timelapse (Delta skin).
+                time step as a timelapse (geoView skin).
 
-        On the Delta skin the service is drawn, queried and charted in the
+        On the geoView skin the service is drawn, queried and charted in the
         browser, and Python fetches nothing; ``viz_params`` may also hold
         ``renderingRule``, ``mosaicRule``, ``bandIds`` and ``canAreaChart``.
 
@@ -2150,9 +2156,9 @@ class mapper:
             visible (bool, optional): Whether the layer starts visible.
             time (optional): For a time-enabled service: a year, an ISO
                 date, a ``(start, end)`` pair, or ``"all"`` for a timelapse
-                (Delta skin).
+                (geoView skin).
 
-        On the Delta skin the service is drawn, queried and legended in the
+        On the geoView skin the service is drawn, queried and legended in the
         browser (``identify`` and ``/legend``), and Python fetches nothing;
         ``viz_params["layers"]`` picks sublayers (``"show:28"``).
 
@@ -2210,7 +2216,7 @@ class mapper:
                 map page, used by ``simplify="auto"``. Default 8 MB.
             time (optional): For a time-enabled layer: a year, an ISO date
                 or a ``(start, end)`` pair; only features in that time are
-                drawn (Delta skin).
+                drawn (geoView skin).
 
         Raises:
             ValueError: If more than ``max_features`` features match.
@@ -2228,7 +2234,7 @@ class mapper:
         reduce in Earth Engine), use
         ``georest.esri.services.queryFeatureService`` and wrap the GeoJSON.
 
-        On the Delta skin the features are fetched by the browser for the
+        On the geoView skin the features are fetched by the browser for the
         view as it moves and drawn with the service's own renderer (style
         keys in ``viz_params`` replace it); Python fetches nothing. There
         ``max_features`` caps the features drawn per map tile (default
@@ -2285,7 +2291,7 @@ class mapper:
                 ``Map.addEsriFeatureService``.
             time (optional): A year, an ISO date, a ``(start, end)`` pair,
                 or ``"all"`` for a timelapse of a time-enabled service
-                (Delta skin); see ``Map.addEsriImageService``.
+                (geoView skin); see ``Map.addEsriImageService``.
 
         Raises:
             ValueError: If the service type cannot be determined.
@@ -2319,7 +2325,7 @@ class mapper:
         Adds a time lapse (one frame per time step) to the mapper object that will then be added as an interactive time lapse in the map user interface with a `view` call.
 
         ``image`` is an ``ee.ImageCollection``, an image collection asset id, or a time-enabled ArcGIS image or
-        map service URL (Delta skin). For an ArcGIS image service, ``viz["reducer"]`` (``"first"``, ``"last"``,
+        map service URL (geoView skin). For an ArcGIS image service, ``viz["reducer"]`` (``"first"``, ``"last"``,
         ``"min"``, ``"max"``, ``"mean"``, ``"sum"``, ``"blend"``, or the matching ``ee.Reducer``) combines the
         rasters within each time step.
 
@@ -2494,9 +2500,9 @@ class mapper:
                 raise ValueError("addTimeLapse takes an ee.ImageCollection, an image collection asset id, or a "
                                  "time-enabled ArcGIS service URL; got {!r}.".format(image))
         if isinstance(image, str) and "/rest/services/" in image:
-            # a time-enabled ArcGIS service: one frame per time step (Delta skin)
+            # a time-enabled ArcGIS service: one frame per time step (geoView skin)
             if self.skin == "original":
-                raise NotImplementedError("A timelapse of an ArcGIS service needs the Delta skin: Map.setSkin(\"delta\")")
+                raise NotImplementedError("A timelapse of an ArcGIS service needs the geoView skin: Map.setSkin(\"geoview\")")
             kind = "esri.image" if image.rstrip("/").lower().endswith("imageserver") else "esri.map"
             method = "addEsriImageService" if kind == "esri.image" else "addEsriMapService"
             return self._record_esri(method, image, kind, name=name, visible=visible, viz_params=viz,
@@ -2714,12 +2720,12 @@ class mapper:
         return _py_default
 
     def _build_document(self, tenant: str = ""):
-        """This map as a georest.view map document (the Delta skin): each
+        """This map as a georest.view map document (the geoView skin): each
         recorded layer as a typed layer, each map command as data."""
         from urllib.parse import quote as _q, parse_qs as _pq
         from georest.view._document import add_layer as _add, new_document, validate
         doc = new_document()
-        doc["brand"] = {"name": "geeViz ", "accent": "Delta", "logo": "geeviz"}  # read as "geeViz Delta"
+        doc["brand"] = {"name": "geeViz ", "accent": "geoView", "logo": "geeviz"}  # read as "geeViz geoView"
         doc["ee"] = {
             "authProxyAPIURL": ("/ee-api/t/" + _q(tenant, safe="")) if tenant else None,
             "workloadTag": self._default_workload_tag(),
@@ -2741,7 +2747,7 @@ class mapper:
             elif d.get("_is_dynamic_esri"):
                 base = d.get("_dyn_base_url_1", "")
                 if "token=" in d.get("_dyn_ending_1", ""):
-                    raise ValueError("A dynamic map service with a token cannot be drawn in the Delta skin yet: "
+                    raise ValueError("A dynamic map service with a token cannot be drawn in the geoView skin yet: "
                                      "use Map.addEsriMapService(url, token=...).")
                 url = _re_cmd.split(r"/export(?:Image)?\?", base)[0]
                 layers = (_pq(base.split("?", 1)[1]).get("layers") or [""])[0] if "?" in base else ""
@@ -2801,13 +2807,13 @@ class mapper:
                 f"'/ee-api/t/{t_enc}';}}catch(e){{}}"
             )
         lines = prefix + "var layerLoadErrorMessages=[];showMessage('Loading',staticTemplates.loadingModal[mode]);function runGeeViz(){"
-        # Delta loads Earth Engine only when a map needs it, after this
+        # geoView loads Earth Engine only when a map needs it, after this
         # script has run, so the script cannot call ``ee.data`` itself: a
         # call made before Earth Engine loads is lost. Its tags travel as
         # data instead: the default through Map.setDefaultWorkloadTag, each
         # layer's in its viz (``workloadTag``), applied by the viewer when it
         # signs in and around each layer's Earth Engine requests.
-        delta = self.skin == "delta"
+        geoview = self.skin == "geoview"
         # If the Python side has a DEFAULT workload tag installed (via
         # ``ee.data.setDefaultWorkloadTag`` — including the sensible
         # one eeCreds installs at proxy start, ``geeviz__<tenant>``),
@@ -2845,7 +2851,7 @@ class mapper:
         # sharing one except with the ``_default`` read above meant a
         # failure here discarded an already-valid default and silently
         # untagged every post-load call.
-        if delta:
+        if geoview:
             # Guarded: the original viewer's Map has no such method, and this
             # script also reaches it (Map.view() rewrites the shared
             # runGeeViz.js; a saved map can be refreshed into the original skin).
@@ -2866,11 +2872,11 @@ class mapper:
         # (no arg) resets CURRENT back to whichever default is now in
         # effect — the Python one we just pushed, or the empty string
         # we just installed above. Either way, no ``viewer-exports``.
-        if not delta:
+        if not geoview:
             lines += "try{ee.data.resetWorkloadTag();}catch(e){}"
         # The original skin cannot draw an ArcGIS service in the page: fetch
         # recorded Esri layers in Python now.
-        _id_dicts = self.idDictList if delta else self._esri_expanded()
+        _id_dicts = self.idDictList if geoview else self._esri_expanded()
         for idDict in _id_dicts:
             # Per-layer workload tag replay. If addLayer was called under
             # eeCreds.setWorkloadTag(<X>), emit an SDK setter here so the
@@ -2890,14 +2896,14 @@ class mapper:
             # Standalone geeViz keeps emitting it — with no proxy to
             # substitute one, this IS the only tagging mechanism.
             _wt = "" if _EE_API_UPSTREAM else idDict.get("workloadTag", "")
-            if delta:
+            if geoview:
                 pass  # the tag goes in the viz, below
             elif _wt:
                 lines += "try{ee.data.setWorkloadTag(" + _js_str(_wt) + ");}catch(e){}"
             else:
                 lines += "try{ee.data.resetWorkloadTag();}catch(e){}"
             if idDict.get("_is_esri"):
-                # An ArcGIS service drawn in the browser (Delta's Esri plug-in).
+                # An ArcGIS service drawn in the browser (geoView's Esri plug-in).
                 lines += (
                     'try{{Map.addEsriLayer({url},{viz},{name},{visible});}}'
                     'catch(e){{layerLoadErrorMessages.push('
@@ -2975,7 +2981,7 @@ class mapper:
                 continue
 
             viz_js = idDict["viz"]
-            if delta and _wt:
+            if geoview and _wt:
                 viz_js = json.dumps({**json.loads(viz_js), "workloadTag": _wt}, sort_keys=False)
             lines += "{}.{}({},{},{},{});".format(
                 idDict["objectName"],
@@ -2992,7 +2998,7 @@ class mapper:
         # rather than inheriting the last layer's tag. Notably: never
         # falls back to the JS viewer's built-in
         # ``${mode}---viewer-exports`` — that was overridden at eeInit.
-        if not delta:
+        if not geoview:
             lines += "try{ee.data.resetWorkloadTag();}catch(e){}"
         lines += 'if(layerLoadErrorMessages.length>0){showMessage("Map.addLayer Error List",layerLoadErrorMessages.join("<br>"));};'
         lines += "setTimeout(function(){if(layerLoadErrorMessages.length===0){$('#close-modal-button').click();}}, 2500);"
@@ -3000,7 +3006,7 @@ class mapper:
             lines += mapCommand + ";"
         lines += 'queryWindowMode = "{}";'.format(self.queryWindowMode)
         # Written only when set: otherwise each skin keeps its own default (the
-        # original turns other layers off; Delta stacks a time lapse in list
+        # original turns other layers off; geoView stacks a time lapse in list
         # order and leaves them on), and the run script stays the same for both.
         if self.turnOffLayersWhenTimeLapseIsOn is not None:
             lines += "Map.turnOffLayersWhenTimeLapseIsOn = {};".format(str(bool(self.turnOffLayersWhenTimeLapseIsOn)).lower())
@@ -3035,23 +3041,20 @@ class mapper:
                 self.accessTokenCreationTime = None
 
     def setSkin(self, name: str) -> None:
-        """Choose the viewer page: ``"original"`` or ``"delta"``.
+        """Choose the viewer page: ``"original"`` or ``"geoview"``.
 
         Affects :meth:`view`, :meth:`export_html` and :meth:`testView`.
         The default comes from the ``GEEVIZ_SKIN`` environment variable
-        when it names a valid skin, else ``"delta"`` (``DEFAULT_SKIN``).
+        when it names a valid skin, else ``"geoview"`` (``DEFAULT_SKIN``).
 
         Args:
-            name (str): One of ``SKINS``.
+            name (str): One of ``SKINS``, in any case. ``"delta"``, geoView's
+                name while it was built, still works and means ``"geoview"``.
 
         Raises:
             ValueError: If ``name`` is not a known skin.
         """
-        if name not in SKINS:
-            raise ValueError(
-                "Unknown skin {!r}; choose one of: {}".format(name, ", ".join(SKINS))
-            )
-        self.skin = name
+        self.skin = _resolve_skin(name)
 
     ######################################################################
     # Standalone HTML export for embedding in chat UIs / cloud-hosted viewers
@@ -3112,7 +3115,7 @@ class mapper:
         html = _export_page(run_js, self.skin, asset_base, token_placeholder,
                             token_time_placeholder, project_placeholder,
                             auth_proxy_placeholder,
-                            doc=self._build_document() if self.skin == "delta" else None)
+                            doc=self._build_document() if self.skin == "geoview" else None)
 
         # Refuse a page that can never be delivered. Checked here, before
         # the write, so an oversized map fails as an error the caller sees
@@ -3317,13 +3320,13 @@ class mapper:
         with open(self.ee_run, "w", encoding="utf-8") as f:
             f.write(run_js)
         run_param = ""
-        if self.skin == "delta":
+        if self.skin == "geoview":
             # the map as a document (georest.view), beside the run scripts; the
             # page (/geoview/geoview.html) reads it by a path relative to itself,
             # so it also works behind a path prefix (Workbench's /proxy/<port>/)
             from georest.view._document import to_json as _doc_json
-            _write_map_document(ee_run_dir, self._run_token, _doc_json(self._build_document(tenant=ee_proxy_tenant or "")))
-            run_param = "&doc=../geeView/src/gee/gee-run/map-" + self._run_token + ".json"
+            _path = _write_map_document(ee_run_dir, self._run_token, _doc_json(self._build_document(tenant=ee_proxy_tenant or "")))
+            run_param = "&doc=../geeView/src/gee/gee-run/" + os.path.basename(_path)
 
         # Detached mode does NOT need the in-process daemon HTTP
         # server — the detached eeAuth proxy serves both ``/geeView/*``

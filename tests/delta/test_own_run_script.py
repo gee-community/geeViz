@@ -1,4 +1,4 @@
-"""Delta: each Map's page reads that Map's own document (?doc=.../map-<token>.json),
+"""Delta: each Map's page reads that Map's own document (?doc=.../map-<token>-<hash>.json),
 so another notebook's Map.view() does not change a page that is open or
 reloaded.
 
@@ -27,7 +27,7 @@ def test_another_maps_view_does_not_replace_this_one(live_map):
     import geeViz.geeView as gv
 
     other = gv.mapper()
-    other.setSkin("delta")
+    other.setSkin("geoview")
     other.addLayer(gv.ee.Image(2), {}, "Theirs")
     opened = []
     orig = gv.webbrowser.open

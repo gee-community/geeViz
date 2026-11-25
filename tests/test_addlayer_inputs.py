@@ -23,7 +23,7 @@ POINT = {"type": "Feature", "properties": {"n": 1}, "geometry": {"type": "Point"
 @pytest.fixture
 def m():
     m = gv.mapper()
-    m.setSkin("delta")
+    m.setSkin("geoview")
     return m
 
 
@@ -106,7 +106,7 @@ def test_an_unknown_string_names_what_is_accepted(m):
 def test_a_geojson_url_needs_the_delta_skin():
     o = gv.mapper()
     o.setSkin("original")
-    with pytest.raises(ValueError, match="Delta"):
+    with pytest.raises(ValueError, match="geoView"):
         o.addLayer(GJ_URL, {}, "Parks")
 
 

@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### The Delta skin is now called geoView
+
+- The default map viewer is `"geoview"`: `Map.setSkin("geoview")`,
+  `GEEVIZ_SKIN=geoview`. It is the same viewer georest ships as
+  `georest.view`. `"delta"`, its name while it was built, still works
+  everywhere a skin is named (`setSkin`, `GEEVIZ_SKIN`,
+  `refresh_exported_html`) and means `"geoview"`.
+- The viewer's title reads "geeViz geoView", with the geeViz logo.
+  georest's own maps show the georest logo.
+- **Each `Map.view()` keeps its own map.** A notebook that views a Map,
+  changes it and views it again no longer finds its earlier outputs showing
+  the latest map: each view writes `map-<token>-<hash>.json`, and viewing
+  an unchanged map reuses the file.
+- `Map.addEsriFeatureService` (and `addLayer` on the original skin) failed
+  with "unexpected keyword argument 'geometry_precision'" on georest 0.6;
+  geeViz now sends that only to a georest that takes it.
+
 ### Delta map viewer
 
 - **Delta now comes from georest.** The viewer moved into georest as

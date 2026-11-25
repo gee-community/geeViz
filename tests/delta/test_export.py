@@ -154,7 +154,7 @@ def _srtm_map(skin):
 
 @pytest.mark.live
 def test_export_html_delta_served_like_the_agent(agent_server, _browser, tmp_path):
-    path = _export(_srtm_map("delta"), tmp_path, "delta")
+    path = _export(_srtm_map("geoview"), tmp_path, "geoview")
     ctx, page = _open(_browser, agent_server + path)
     try:
         page.wait_for_function("window.__delta !== undefined && window.__delta.ready === true", timeout=90000)
@@ -186,7 +186,7 @@ def test_export_html_delta_served_like_the_agent(agent_server, _browser, tmp_pat
 def test_export_html_delta_assets_resolve_under_mount(tmp_path):
     gv = _gv()
     Map = gv.mapper()
-    Map.setSkin("delta")
+    Map.setSkin("geoview")
     Map.addLayer(gv.ee.Image(1), {}, "one")
     out = tmp_path / "d.html"
     Map.export_html(str(out))
@@ -215,7 +215,7 @@ def test_export_html_delta_assets_resolve_under_mount(tmp_path):
 def test_export_html_delta_ten_layers_under_limit(tmp_path):
     gv = _gv()
     sizes = {}
-    for skin in ("original", "delta"):
+    for skin in ("original", "geoview"):
         Map = gv.mapper()
         Map.setSkin(skin)
         for i in range(10):
@@ -224,10 +224,10 @@ def test_export_html_delta_ten_layers_under_limit(tmp_path):
         Map.export_html(str(out))
         sizes[skin] = out.stat().st_size
     limit = gv._export_max_bytes(None)
-    assert 0 < sizes["delta"] < limit, sizes
+    assert 0 < sizes["geoview"] < limit, sizes
     # Delta's page carries no inlined bundle: it is no larger than the
     # original's for the same map.
-    assert sizes["delta"] <= sizes["original"] + 20000, sizes
+    assert sizes["geoview"] <= sizes["original"] + 20000, sizes
 
 
 @pytest.mark.live
@@ -235,7 +235,7 @@ def test_testView_delta_screenshot_no_tile_errors(monkeypatch):
     # Without websocket-client, screenshot_url falls back to a plain headless
     # screenshot with no console capture, and "no tile errors" means nothing.
     pytest.importorskip("websocket")
-    Map = _srtm_map("delta")
+    Map = _srtm_map("geoview")
     monkeypatch.setattr(_gv().webbrowser, "open", lambda *a, **k: True)
     from geeViz.outputLib import charts
 
@@ -341,7 +341,7 @@ def test_export_html_delta_mixed_map_with_wind_served_like_the_agent(agent_serve
     """askterra's chat maps are Delta by default: every layer type loads, and
     the wind layer draws with its ramp-and-particle legend and its two
     opacity sliders."""
-    path = _export(_mixed_map("delta"), tmp_path, "delta_mixed")
+    path = _export(_mixed_map("geoview"), tmp_path, "delta_mixed")
     ctx, page = _open(_browser, agent_server + path)
     try:
         page.wait_for_function("window.__delta !== undefined && window.__delta.ready === true", timeout=90000)

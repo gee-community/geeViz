@@ -41,7 +41,7 @@ def layer_viz(js):
 
 
 def test_delta_run_script_has_no_top_level_ee_calls(tagged_map):
-    js = tagged_map("delta")
+    js = tagged_map("geoview")
     assert "ee.data." not in js
     assert layer_viz(js)["workloadTag"] == "wl_test"
     assert js.count("Map.setDefaultWorkloadTag(") == 1
@@ -56,7 +56,7 @@ def test_original_run_script_is_unchanged(tagged_map):
 
 
 def test_no_layer_tag_under_a_proxy(tagged_map):
-    js = tagged_map("delta", upstream="https://proxy.example/ee-api")
+    js = tagged_map("geoview", upstream="https://proxy.example/ee-api")
     assert "wl_test" not in js
     assert "ee.data." not in js
 
@@ -71,7 +71,7 @@ def test_a_delta_script_still_runs_in_the_original_viewer(tagged_map, tmp_path):
     node = shutil.which("node")
     if not node:
         pytest.skip("node not found")
-    js = tagged_map("delta")
+    js = tagged_map("geoview")
     harness = tmp_path / "run.js"
     harness.write_text(
         "var added = []; var mode = 'geeViz'; var staticTemplates = {loadingModal: {}};"

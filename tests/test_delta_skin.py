@@ -1,4 +1,4 @@
-"""Map.setSkin('delta') picks geoView (georest.view), which reads the map as a
+"""Map.setSkin('geoview') picks geoView (georest.view), which reads the map as a
 document; the original skin keeps its page and run script."""
 import os
 import re
@@ -74,9 +74,9 @@ def _export(m, tmp_path, name):
     return out.read_text(encoding="utf-8")
 
 
-def test_default_skin_is_delta(monkeypatch):
+def test_default_skin_is_geoview(monkeypatch):
     gv, m = _fresh(monkeypatch)
-    assert m.skin == "delta" == gv.DEFAULT_SKIN
+    assert m.skin == "geoview" == gv.DEFAULT_SKIN
     # and the module's own Map, made at import time
     assert gv.Map.skin in gv.SKINS
 
@@ -86,28 +86,28 @@ def test_env_selects_the_skin(monkeypatch):
     assert m.skin == "original"
     _, m = _fresh(monkeypatch, " Original ")
     assert m.skin == "original"
-    _, m = _fresh(monkeypatch, "delta")
-    assert m.skin == "delta"
+    _, m = _fresh(monkeypatch, "geoview")
+    assert m.skin == "geoview"
     _, m = _fresh(monkeypatch, "bogus")
-    assert m.skin == "delta"
+    assert m.skin == "geoview"
 
 
 def test_setSkin_rejects_unknown(monkeypatch):
     _, m = _fresh(monkeypatch)
     with pytest.raises(ValueError) as e:
         m.setSkin("nope")
-    assert "original" in str(e.value) and "delta" in str(e.value)
-    assert m.skin == "delta"
+    assert "original" in str(e.value) and "geoview" in str(e.value)
+    assert m.skin == "geoview"
 
 
-def test_export_html_uses_delta_page(monkeypatch, tmp_path):
+def test_export_html_uses_geoview_page(monkeypatch, tmp_path):
     _, m = _fresh(monkeypatch)
     default = _export(m, tmp_path, "default.html")
     assert '<base href="/base/geoview/">' in default and "./js/main.js" in default
     m.setSkin("original")
     orig = _export(m, tmp_path, "o.html")
     assert "geoview" not in orig
-    m.setSkin("delta")
+    m.setSkin("geoview")
     delta = _export(m, tmp_path, "d.html")
     assert '<base href="/base/geoview/">' in delta
     # the same map: the original's run script and Delta's document
@@ -121,7 +121,7 @@ def test_the_original_run_script_does_not_depend_on_the_skin(monkeypatch):
     m.addLayer(ee.Image(1), {}, "one")
     m.setSkin("original")
     a = m._build_run_js()
-    m.setSkin("delta")
+    m.setSkin("geoview")
     m._build_document()
     m.setSkin("original")
     assert m._build_run_js() == a
@@ -170,7 +170,7 @@ def test_view_url_uses_skin_page_per_branch(monkeypatch, mode):
     _, m = _fresh(monkeypatch)
     m.addLayer(ee.Image(1), {}, "one")
     orig = _spy_view(monkeypatch, m, mode, "original")
-    delta = _spy_view(monkeypatch, m, mode, "delta")
+    delta = _spy_view(monkeypatch, m, mode, "geoview")
     assert "/geoview/geoview.html?" in delta and "doc=" in delta
     assert "geoview" not in orig
     assert "/geeView/" in orig
@@ -205,14 +205,14 @@ def test_view_url_uses_skin_page_in_notebook_hosts(monkeypatch, env):
     _, m = _fresh(monkeypatch)
     m.addLayer(ee.Image(1), {}, "one")
     orig = _spy_iframe_view(monkeypatch, m, env, "original")
-    delta = _spy_iframe_view(monkeypatch, m, env, "delta")
+    delta = _spy_iframe_view(monkeypatch, m, env, "geoview")
     host = "https://colab.example.com/" if env == "colab" else "https://wb.example.com/proxy/"
     assert orig.startswith(host) and delta.startswith(host), (orig, delta)
     assert "/geoview/geoview.html?" in delta
     assert "/geeView/?" in orig and "geoview" not in orig
 
 
-@pytest.mark.parametrize("skin", ["original", "delta"])
+@pytest.mark.parametrize("skin", ["original", "geoview"])
 def test_testView_screenshots_the_page_view_built(monkeypatch, skin):
     import ee
     gv = _gv()
@@ -274,7 +274,7 @@ def test_timelapse_turn_off_default_belongs_to_each_skin(monkeypatch):
 @pytest.mark.parametrize("mode", ["local", "detached"])
 def test_delta_view_loads_its_own_document(monkeypatch, mode):
     """Two notebooks viewing at once each write their own map document
-    (map-<token>.json), so a Delta page keeps its own layers. The original
+    (map-<token>-<hash>.json), so a geoView page keeps its own layers. The original
     skin is unchanged."""
     import ee
     import json
@@ -282,19 +282,42 @@ def test_delta_view_loads_its_own_document(monkeypatch, mode):
     m.addLayer(ee.Image(1), {}, "mine")
     orig = _spy_view(monkeypatch, m, mode, "original")
     assert "doc=" not in orig
-    url = _spy_view(monkeypatch, m, mode, "delta")
-    tok = re.search(r"[?&]doc=\.\./geeView/src/gee/gee-run/map-([0-9a-f]+)\.json(?:&|$)", url).group(1)
-    assert tok == m._run_token
-    own = os.path.join(gv.ee_run_dir, "map-%s.json" % tok)
+    url = _spy_view(monkeypatch, m, mode, "geoview")
+    name = re.search(r"[?&]doc=\.\./geeView/src/gee/gee-run/(map-([0-9a-f]+)-[0-9a-f]+\.json)(?:&|$)", url)
+    assert name.group(2) == m._run_token
+    own = os.path.join(gv.ee_run_dir, name.group(1))
     # another Map (another notebook) viewing afterwards writes its own document
     _, other = _fresh(monkeypatch)
     other.addLayer(ee.Image(2), {}, "theirs")
-    url2 = _spy_view(monkeypatch, other, mode, "delta")
+    url2 = _spy_view(monkeypatch, other, mode, "geoview")
     assert [l["name"] for l in json.load(open(own, encoding="utf-8"))["layers"]] == ["mine"]
-    tok2 = re.search(r"map-([0-9a-f]+)\.json", url2).group(1)
-    assert tok2 != tok
+    name2 = re.search(r"(map-([0-9a-f]+)-[0-9a-f]+\.json)", url2)
+    assert name2.group(2) != name.group(2)
     os.remove(own)
-    os.remove(os.path.join(gv.ee_run_dir, "map-%s.json" % tok2))
+    os.remove(os.path.join(gv.ee_run_dir, name2.group(1)))
+
+
+@pytest.mark.parametrize("mode", ["local", "detached"])
+def test_each_view_keeps_its_own_map(monkeypatch, mode):
+    """A notebook that views one Map, changes it and views it again keeps
+    both maps: the first output still shows the first map. Viewing an
+    unchanged map again reuses its document."""
+    import ee
+    import json
+    gv, m = _fresh(monkeypatch)
+    m.addLayer(ee.Image(1), {}, "first")
+    url1 = _spy_view(monkeypatch, m, mode, "geoview")
+    again = _spy_view(monkeypatch, m, mode, "geoview")
+    m.clearMap()
+    m.addLayer(ee.Image(2), {}, "second")
+    url2 = _spy_view(monkeypatch, m, mode, "geoview")
+    doc = lambda u: os.path.join(gv.ee_run_dir, re.search(r"(map-[0-9a-f]+-[0-9a-f]+\.json)", u).group(1))
+    assert doc(url1) == doc(again)
+    assert doc(url1) != doc(url2)
+    assert [l["name"] for l in json.load(open(doc(url1), encoding="utf-8"))["layers"]] == ["first"]
+    assert [l["name"] for l in json.load(open(doc(url2), encoding="utf-8"))["layers"]] == ["second"]
+    os.remove(doc(url1))
+    os.remove(doc(url2))
 
 def test_old_own_run_scripts_are_removed(tmp_path):
     gv = _gv()
@@ -324,7 +347,7 @@ def test_refresh_moves_a_saved_map_onto_todays_viewer(monkeypatch, tmp_path):
     assert "./js/main.js" in page and '<base href="/base/geoview/">' in page
     # and back, and idempotent
     assert gv.refresh_exported_html(page, "original") == saved
-    assert gv.refresh_exported_html(page, "delta") == page
+    assert gv.refresh_exported_html(page, "geoview") == page
     # GEEVIZ_SKIN picks the default, as for a new Map
     monkeypatch.setenv("GEEVIZ_SKIN", "original")
     assert gv.refresh_exported_html(page) == saved
@@ -332,10 +355,10 @@ def test_refresh_moves_a_saved_map_onto_todays_viewer(monkeypatch, tmp_path):
 
 def test_refresh_keeps_a_delta_maps_document(monkeypatch, tmp_path):
     gv, m = _fresh(monkeypatch)
-    m.setSkin("delta")
+    m.setSkin("geoview")
     now = _export(m, tmp_path, "now.html")
-    assert gv.refresh_exported_html(now, "delta") == now
-    with pytest.raises(ValueError, match="Delta"):
+    assert gv.refresh_exported_html(now, "geoview") == now
+    with pytest.raises(ValueError, match="geoView"):
         gv.refresh_exported_html(now, "original")
 
 
@@ -350,7 +373,7 @@ def test_refresh_keeps_the_run_script_asset_base_and_placeholders(monkeypatch, t
                   token_time_placeholder="0", project_placeholder="PROJ",
                   auth_proxy_placeholder="/proxy")
     saved = out.read_text(encoding="utf-8")
-    page = gv.refresh_exported_html(saved, "delta")
+    page = gv.refresh_exported_html(saved, "geoview")
     assert _run_script(page) == _run_script(saved)
     assert '<base href="/elsewhere/static/geoview/">' in page
     assert "./js/main.js" in page
@@ -381,3 +404,19 @@ def test_rebuilding_a_page_needs_no_earth_engine():
     assert out.returncode == 0, out.stderr
     assert out.stdout.split() == ["[]", "geeViz.viewerPages"], out.stdout
     assert _gv().refresh_exported_html.__module__ == "geeViz.viewerPages"
+
+
+def test_delta_is_the_old_name_for_geoview(monkeypatch):
+    # scripts and saved pages from before the rename still say "delta"
+    gv, m = _fresh(monkeypatch, "delta")
+    assert m.skin == "geoview"
+    m.setSkin("original")
+    m.setSkin("Delta")
+    assert m.skin == "geoview"
+    assert "delta" not in gv.SKINS
+
+
+def test_a_saved_page_refreshes_under_the_old_skin_name(monkeypatch, tmp_path):
+    gv, m = _fresh(monkeypatch)
+    page = _export(m, tmp_path, "saved.html")
+    assert gv.refresh_exported_html(page, "delta") == gv.refresh_exported_html(page, "geoview")

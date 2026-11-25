@@ -33,7 +33,7 @@ def no_fetch(monkeypatch):
 @pytest.fixture
 def delta_map():
     m = gv.mapper()
-    m.setSkin("delta")
+    m.setSkin("geoview")
     return m
 
 

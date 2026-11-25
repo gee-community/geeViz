@@ -23,7 +23,7 @@ SQUARE = {"type": "Feature", "properties": {"n": 1},
 @pytest.fixture
 def m():
     m = gv.mapper()
-    m.setSkin("delta")
+    m.setSkin("geoview")
     return m
 
 
@@ -57,9 +57,9 @@ def test_layers_and_commands_become_a_document(m):
                  ["setGlobal", "yLabelMaxLength", 20], ["setProperty", "canReorderLayers", False],
                  ["setGlobal", "queryWindowMode", "sidePane"]):
         assert want in cmds, (want, cmds)
-    # the viewer writes name then accent (bold) with nothing between: "geeViz Delta"
-    assert doc["brand"]["name"] + doc["brand"]["accent"] == "geeViz Delta", doc["brand"]
-    assert doc["brand"]["accent"] == "Delta"
+    # the viewer writes name then accent (bold) with nothing between: "geeViz geoView"
+    assert doc["brand"]["name"] + doc["brand"]["accent"] == "geeViz geoView", doc["brand"]
+    assert doc["brand"]["accent"] == "geoView"
     # geeViz maps keep the geeViz logo; georest's viewer shows its own otherwise
     assert doc["brand"]["logo"] == "geeviz"
 
