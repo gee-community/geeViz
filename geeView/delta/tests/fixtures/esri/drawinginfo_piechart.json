@@ -1,0 +1,437 @@
+{
+ "request": {
+  "url": "https://services7.arcgis.com/zX8NTiUjIKUVyth8/arcgis/rest/services/Reg_Units_Crop_Centroid/FeatureServer/18",
+  "params": {
+   "f": "json"
+  },
+  "method": "GET"
+ },
+ "response": {
+  "currentVersion": 12,
+  "id": 18,
+  "name": "Reg_Units_Crop_Centroid",
+  "type": "Feature Layer",
+  "serviceItemId": "4ee391991dd44c809ff249ed5b71811d",
+  "cacheMaxAge": 30,
+  "displayField": "NAME_GR",
+  "description": "",
+  "copyrightText": "",
+  "defaultVisibility": true,
+  "editingInfo": {
+   "lastEditDate": 1795374379274,
+   "schemaLastEditDate": 1795374379274,
+   "dataLastEditDate": 1795374379274
+  },
+  "relationships": [],
+  "isDataVersioned": false,
+  "hasContingentValuesDefinition": false,
+  "supportsAppend": true,
+  "supportsCalculate": true,
+  "supportsASyncCalculate": true,
+  "supportsTruncate": true,
+  "supportsAttachmentsByUploadId": true,
+  "supportsAttachmentsResizing": true,
+  "supportsRollbackOnFailureParameter": true,
+  "supportsStatistics": true,
+  "supportsExceedsLimitStatistics": true,
+  "supportsAdvancedQueries": true,
+  "supportsValidateSql": true,
+  "supportsCoordinatesQuantization": true,
+  "supportsLayerOverrides": true,
+  "supportsTilesAndBasicQueriesMode": true,
+  "supportsFieldDescriptionProperty": true,
+  "supportsQuantizationEditMode": true,
+  "supportsColumnStoreIndex": true,
+  "supportsApplyEditsWithGlobalIds": false,
+  "supportsReturningQueryGeometry": true,
+  "enableNullGeometry": false,
+  "advancedQueryCapabilities": {
+   "supportsPagination": true,
+   "supportsPaginationOnAggregatedQueries": true,
+   "supportsQueryRelatedPagination": true,
+   "supportsQueryWithDistance": true,
+   "supportsOutDistance": true,
+   "supportsReturningQueryExtent": true,
+   "supportsStatistics": true,
+   "supportsOrderBy": true,
+   "supportsDistinct": true,
+   "supportsQueryWithResultType": true,
+   "supportsSqlExpression": true,
+   "supportsTimeRelation": true,
+   "supportsAdvancedQueryRelated": true,
+   "supportsCountDistinct": true,
+   "supportsPercentileStatistics": true,
+   "supportsApproxPercentileStatistics": true,
+   "supportsSpatialAggregationStatistics": true,
+   "supportedSpatialAggregationStatistics": [
+    "EnvelopeAggregate",
+    "CentroidAggregate",
+    "ConvexHullAggregate"
+   ],
+   "supportsLod": true,
+   "supportsQueryWithLodSR": false,
+   "supportedLodTypes": [
+    "geohash"
+   ],
+   "supportsReturningGeometryCentroid": false,
+   "supportsReturningGeometryEnvelope": false,
+   "supportsQueryWithDatumTransformation": true,
+   "supportsCurrentUserQueries": true,
+   "supportsHavingClause": true,
+   "supportsOutFieldSQLExpression": true,
+   "supportsMaxRecordCountFactor": true,
+   "supportsTopFeaturesQuery": true,
+   "supportsDisjointSpatialRel": true,
+   "supportsQueryWithCacheHint": true,
+   "supportedOperationsWithCacheHint": [
+    "query",
+    "queryTopFilter",
+    "queryAnalytics",
+    "queryAttachments",
+    "queryRelated",
+    "queryBins",
+    "queryPivot"
+   ],
+   "supportsQueryAnalytic": true,
+   "supportsQueryPivot": true,
+   "supportsQueryBins": true,
+   "supportsDefaultSR": true,
+   "supportsTranslations": false,
+   "supportsAggIds": true,
+   "supportsQueryWithCollation": true,
+   "supportsISODOW": true,
+   "supportsISOWeek": true,
+   "supportsFullTextSearch": true,
+   "fullTextSearchCapabilities": {
+    "supportsAccentSensitivity": true,
+    "supportsStopWords": true,
+    "supportsSearchOperator": true,
+    "supportsOperator": true
+   }
+  },
+  "advancedQueryAnalyticCapabilities": {
+   "supportsLinearRegression": true,
+   "supportsTrendlineRegression": true,
+   "supportsAsync": true,
+   "supportsPercentileAnalytic": true
+  },
+  "queryBinsCapabilities": {
+   "supportsAsync": true,
+   "supportsAutoIntervalBin": true,
+   "supportsFixedIntervalBin": true,
+   "supportsFixedBoundariesBin": true,
+   "supportsDateBin": true,
+   "supportsClassificationBin": true,
+   "supportsStackBy": true,
+   "supportsSplitBy": true,
+   "supportsFirstDayOfWeek": true,
+   "supportsSnapToData": true,
+   "supportsReturnFullIntervalBin": true,
+   "supportsReturnStackValueRange": true,
+   "supportsNormalization": true,
+   "supportedStatisticTypes": [
+    "COUNT",
+    "SUM",
+    "AVG",
+    "VAR",
+    "VAR_SAMP",
+    "VAR_POP",
+    "STDDEV",
+    "STDDEV_SAMP",
+    "STDDEV_POP",
+    "MIN",
+    "MAX",
+    "PERCENTILE_CONT",
+    "PERCENTILE_DISC",
+    "APPROX_PERCENTILE_CONT",
+    "APPROX_PERCENTILE_DISC",
+    "CentroidAggregate",
+    "EnvelopeAggregate",
+    "ConvexHullAggregate"
+   ],
+   "supportedNormalizationTypes": [
+    "boxCox",
+    "field",
+    "inverse",
+    "log",
+    "naturalLog",
+    "percentOfTotal",
+    "squareRoot"
+   ]
+  },
+  "supportedOperationsWithCollation": "query,addField,updateField",
+  "advancedEditingCapabilities": {
+   "supportedSqlFormatsInCalculate": [
+    "standard"
+   ],
+   "supportsAsyncApplyEdits": true,
+   "supportsReturnEditResults": true,
+   "supportsApplyEditsbyUploadID": true,
+   "supportedApplyEditsUploadIDFormats": "JSON,PBF",
+   "supportsTranslation": false,
+   "supportsMaxTranslations": 10
+  },
+  "infoInEstimates": [
+   "extent",
+   "count"
+  ],
+  "useStandardizedQueries": true,
+  "geometryType": "esriGeometryPoint",
+  "minScale": 0,
+  "maxScale": 0,
+  "extent": {
+   "xmin": 2399421.5545941186,
+   "ymin": 4430118.845344616,
+   "xmax": 2542558.194349231,
+   "ymax": 4593587.402824986,
+   "spatialReference": {
+    "wkid": 102100,
+    "latestWkid": 3857
+   }
+  },
+  "spatialReference": {
+   "wkid": 102100,
+   "latestWkid": 3857
+  },
+  "drawingInfo": {
+   "renderer": {
+    "type": "pieChart",
+    "attributes": [
+     {
+      "color": [
+       255,
+       211,
+       127,
+       255
+      ],
+      "field": "Crops_on_Arable",
+      "label": "Crops_on_Arable"
+     },
+     {
+      "color": [
+       171,
+       205,
+       102,
+       255
+      ],
+      "field": "Garden_Vines",
+      "label": "Garden_Vines"
+     },
+     {
+      "color": [
+       12,
+       140,
+       66,
+       255
+      ],
+      "field": "Trees",
+      "label": "Trees"
+     }
+    ],
+    "size": 45
+   },
+   "scaleSymbols": true,
+   "transparency": 0,
+   "labelingInfo": null
+  },
+  "allowGeometryUpdates": true,
+  "hasAttachments": false,
+  "htmlPopupType": "esriServerHTMLPopupTypeAsHTMLText",
+  "hasMetadata": true,
+  "hasM": false,
+  "hasZ": false,
+  "objectIdField": "OBJECTID",
+  "uniqueIdField": {
+   "name": "OBJECTID",
+   "isSystemMaintained": true
+  },
+  "globalIdField": "",
+  "typeIdField": "",
+  "collation": {
+   "locale": "neutral",
+   "caseSensitive": false,
+   "accentSensitive": true
+  },
+  "fields": [
+   {
+    "name": "OBJECTID",
+    "type": "esriFieldTypeOID",
+    "alias": "OBJECTID",
+    "sqlType": "sqlTypeOther",
+    "nullable": false,
+    "editable": false,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "NAME_GR",
+    "type": "esriFieldTypeString",
+    "alias": "NAME_GR",
+    "sqlType": "sqlTypeOther",
+    "length": 95,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "NAME_ENG",
+    "type": "esriFieldTypeString",
+    "alias": "NAME_ENG",
+    "sqlType": "sqlTypeOther",
+    "length": 49,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "area_km2",
+    "type": "esriFieldTypeDouble",
+    "alias": "area_km2",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Code_PE",
+    "type": "esriFieldTypeDouble",
+    "alias": "Code_PE",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Crops_on_Arable",
+    "type": "esriFieldTypeDouble",
+    "alias": "Crops_on_Arable",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Garden_Vines",
+    "type": "esriFieldTypeDouble",
+    "alias": "Garden_Vines",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Trees",
+    "type": "esriFieldTypeDouble",
+    "alias": "Trees",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Total_Crop_Perc",
+    "type": "esriFieldTypeDouble",
+    "alias": "Total_Crop_Perc",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "ORIG_FID",
+    "type": "esriFieldTypeInteger",
+    "alias": "ORIG_FID",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   }
+  ],
+  "indexes": [
+   {
+    "name": "PK__REG_UNIT__F4B70D854456585B",
+    "fields": "OBJECTID",
+    "isAscending": true,
+    "isUnique": true,
+    "description": "",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "user_27606.REG_UNITS_CROP_CENTROID_REG_UNITS_CROP_CENTROID_Shape_sidx",
+    "fields": "Shape",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "",
+    "indexType": "Spatial"
+   }
+  ],
+  "dateFieldsTimeReference": {
+   "timeZone": "UTC",
+   "timeZoneIANA": "Etc/UTC",
+   "respectsDaylightSaving": false
+  },
+  "preferredTimeReference": null,
+  "types": [],
+  "templates": [
+   {
+    "name": "Reg_Units_Crop_Centroid",
+    "description": "",
+    "drawingTool": "esriFeatureEditToolPoint",
+    "prototype": {
+     "attributes": {
+      "Total_Crop_Perc": null,
+      "ORIG_FID": null,
+      "NAME_GR": null,
+      "NAME_ENG": null,
+      "area_km2": null,
+      "Code_PE": null,
+      "Crops_on_Arable": null,
+      "Garden_Vines": null,
+      "Trees": null
+     }
+    }
+   }
+  ],
+  "supportedQueryFormats": "JSON, geoJSON, PBF",
+  "supportedAppendFormats": "sqlite,geoPackage,shapefile,filegdb,featureCollection,geojson,csv,excel,jsonl,featureService,pbf",
+  "supportedAppendSourceFilterFormats": "sqlite,geoPackage,shapefile,filegdb,featureService",
+  "supportedExportFormats": "csv,shapefile,sqlite,geoPackage,filegdb,featureCollection,geojson,kml,excel,parquet",
+  "supportedConvertFileFormats": "JSON,PBF,Parquet",
+  "supportedConvertContentFormats": "LayerEditCollection,FeatureCollection",
+  "supportedSpatialRelationships": [
+   "esriSpatialRelIntersects",
+   "esriSpatialRelContains",
+   "esriSpatialRelCrosses",
+   "esriSpatialRelEnvelopeIntersects",
+   "esriSpatialRelIndexIntersects",
+   "esriSpatialRelOverlaps",
+   "esriSpatialRelTouches",
+   "esriSpatialRelWithin",
+   "esriSpatialRelDisjoint",
+   "esriSpatialRelRelation"
+  ],
+  "guidFormat": "",
+  "supportsContingentValues": true,
+  "supportsEditingContingentValues": true,
+  "supportedContingentValuesFormats": "JSON, PBF",
+  "supportsFieldGroups": true,
+  "supportedSyncDataOptions": 49412,
+  "hasStaticData": false,
+  "maxRecordCount": 2000,
+  "standardMaxRecordCount": 16000,
+  "maxIdsCount": 1000000,
+  "standardMaxRecordCountNoGeometry": 32000,
+  "tileMaxRecordCount": 8000,
+  "maxRecordCountFactor": 1,
+  "capabilities": "Query"
+ }
+}

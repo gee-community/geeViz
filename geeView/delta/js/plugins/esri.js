@@ -65,19 +65,34 @@ export const esriPlugin = {
     } else if (kind === "esri.map" || kind === "esri.image") {
       r.overlay = ctx.tileOverlay(r, (coord, zoom) => exportUrl(url, kind, opts, tile3857(coord.x, coord.y, zoom), 256, info));
     } else {
+      // drawn with the service's renderer (geeViz style keys replace it)
+      r.renderer = rendererFor(info.drawingInfo, r.viz, info.geometryType);
       // features fetched for the view, tile by tile
       const statuses = new Map(); // "z/x/y" -> status, for the zoom shown
+      let legendZoom = null;
       r.source = createFeatureSource(url, info, opts, {
         fetch: ctx.fetch,
+        padPx: r.renderer.padPx,
+        defaultMaxFeatures: r.renderer.maxFeatures,
         onStatus: (s) => {
           for (const k of statuses.keys()) if (statuses.get(k).zoom !== s.zoom) statuses.delete(k);
           statuses.set(s.key, s);
           ctx.setNote(r, noteFor([...statuses.values()]));
+          // "1 dot = N" follows the zoom
+          if (r.renderer.type === "dotDensity" && s.zoom !== legendZoom) {
+            legendZoom = s.zoom;
+            ctx.setLegend(r, r.renderer.legend(r.name, s.zoom));
+          }
         },
       });
-      // drawn with the service's renderer (geeViz style keys replace it)
-      r.renderer = rendererFor(info.drawingInfo, r.viz, info.geometryType);
-      ctx.addFeatureSource(r, r.source, { styleFor: (p, zoom) => r.renderer.styleFor(p.props, zoom) });
+      // drawingInfo.transparency: the service's own layer opacity, under the slider's
+      const alpha = r.renderer.alpha === undefined ? 1 : r.renderer.alpha;
+      const drawTile = r.renderer.drawTile ? (c2d, parts, t) => r.renderer.drawTile(c2d, parts, { ...t, opacity: t.opacity * alpha }) : null;
+      const styleFor = (p, zoom) => {
+        const st = r.renderer.styleFor(p.props, zoom);
+        return st && alpha !== 1 ? { ...st, opacity: (st.opacity === undefined ? 1 : st.opacity) * alpha } : st;
+      };
+      ctx.addFeatureSource(r, r.source, { styleFor, drawTile });
       // a picture symbol draws once its image has loaded
       onSymbolImage(() => r.overlay && r.overlay.redraw && r.overlay.redraw());
       return;

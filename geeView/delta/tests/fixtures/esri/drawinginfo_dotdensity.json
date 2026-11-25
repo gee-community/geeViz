@@ -1,0 +1,603 @@
+{
+ "request": {
+  "url": "https://services1.arcgis.com/0MSEUqKaxRlEPj5g/arcgis/rest/services/South_Florida_Population_Density_Radcliffe/FeatureServer/0",
+  "params": {
+   "f": "json"
+  },
+  "method": "GET"
+ },
+ "response": {
+  "currentVersion": 12,
+  "id": 0,
+  "name": "South Florida Urban",
+  "type": "Feature Layer",
+  "serviceItemId": "de2acfd307c142ec94ee263fc0c70d51",
+  "cacheMaxAge": 30,
+  "displayField": "SouthFlorida_NAME",
+  "description": "",
+  "copyrightText": "",
+  "defaultVisibility": true,
+  "editingInfo": {
+   "lastEditDate": 1763496432802,
+   "schemaLastEditDate": 1763496432802,
+   "dataLastEditDate": 1763496432802
+  },
+  "relationships": [],
+  "isDataVersioned": false,
+  "hasContingentValuesDefinition": false,
+  "supportsAppend": true,
+  "supportsCalculate": true,
+  "supportsASyncCalculate": true,
+  "supportsTruncate": false,
+  "supportsAttachmentsByUploadId": true,
+  "supportsAttachmentsResizing": true,
+  "supportsRollbackOnFailureParameter": true,
+  "supportsStatistics": true,
+  "supportsExceedsLimitStatistics": true,
+  "supportsAdvancedQueries": true,
+  "supportsValidateSql": true,
+  "supportsCoordinatesQuantization": true,
+  "supportsLayerOverrides": true,
+  "supportsTilesAndBasicQueriesMode": true,
+  "supportsFieldDescriptionProperty": true,
+  "supportsQuantizationEditMode": true,
+  "supportsColumnStoreIndex": true,
+  "supportsApplyEditsWithGlobalIds": true,
+  "supportsMultiScaleGeometry": true,
+  "supportsReturningQueryGeometry": true,
+  "enableNullGeometry": false,
+  "hasGeometryProperties": true,
+  "geometryProperties": {
+   "shapeAreaFieldName": "Shape__Area",
+   "shapeLengthFieldName": "Shape__Length",
+   "units": "esriMeters"
+  },
+  "advancedQueryCapabilities": {
+   "supportsPagination": true,
+   "supportsPaginationOnAggregatedQueries": true,
+   "supportsQueryRelatedPagination": true,
+   "supportsQueryWithDistance": true,
+   "supportsOutDistance": true,
+   "supportsReturningQueryExtent": true,
+   "supportsStatistics": true,
+   "supportsOrderBy": true,
+   "supportsDistinct": true,
+   "supportsQueryWithResultType": true,
+   "supportsSqlExpression": true,
+   "supportsTimeRelation": true,
+   "supportsAdvancedQueryRelated": true,
+   "supportsCountDistinct": true,
+   "supportsPercentileStatistics": true,
+   "supportsApproxPercentileStatistics": true,
+   "supportsSpatialAggregationStatistics": true,
+   "supportsTrueCurve": true,
+   "supportedSpatialAggregationStatistics": [
+    "EnvelopeAggregate",
+    "CentroidAggregate",
+    "ConvexHullAggregate"
+   ],
+   "supportsLod": true,
+   "supportsQueryWithLodSR": false,
+   "supportedLodTypes": [
+    "geohash"
+   ],
+   "supportsReturningGeometryCentroid": true,
+   "supportsReturningGeometryEnvelope": true,
+   "supportsReturningGeometryProperties": true,
+   "supportsQueryWithDatumTransformation": true,
+   "supportsCurrentUserQueries": true,
+   "supportsHavingClause": true,
+   "supportsOutFieldSQLExpression": true,
+   "supportsMaxRecordCountFactor": true,
+   "supportsTopFeaturesQuery": true,
+   "supportsDisjointSpatialRel": true,
+   "supportsQueryWithCacheHint": true,
+   "supportedOperationsWithCacheHint": [
+    "query",
+    "queryTopFilter",
+    "queryAnalytics",
+    "queryAttachments",
+    "queryRelated",
+    "queryBins",
+    "queryPivot"
+   ],
+   "supportsQueryAnalytic": true,
+   "supportsQueryPivot": true,
+   "supportsQueryBins": true,
+   "supportsDefaultSR": true,
+   "supportsTranslations": false,
+   "supportsAggIds": true,
+   "supportsQueryWithCollation": true,
+   "supportsISODOW": true,
+   "supportsISOWeek": true,
+   "supportsFullTextSearch": true,
+   "fullTextSearchCapabilities": {
+    "supportsAccentSensitivity": true,
+    "supportsStopWords": true,
+    "supportsSearchOperator": true,
+    "supportsOperator": true
+   }
+  },
+  "advancedQueryAnalyticCapabilities": {
+   "supportsLinearRegression": true,
+   "supportsTrendlineRegression": true,
+   "supportsAsync": true,
+   "supportsPercentileAnalytic": true
+  },
+  "queryBinsCapabilities": {
+   "supportsAsync": true,
+   "supportsAutoIntervalBin": true,
+   "supportsFixedIntervalBin": true,
+   "supportsFixedBoundariesBin": true,
+   "supportsDateBin": true,
+   "supportsClassificationBin": true,
+   "supportsStackBy": true,
+   "supportsSplitBy": true,
+   "supportsFirstDayOfWeek": true,
+   "supportsSnapToData": true,
+   "supportsReturnFullIntervalBin": true,
+   "supportsReturnStackValueRange": true,
+   "supportsNormalization": true,
+   "supportedStatisticTypes": [
+    "COUNT",
+    "SUM",
+    "AVG",
+    "VAR",
+    "VAR_SAMP",
+    "VAR_POP",
+    "STDDEV",
+    "STDDEV_SAMP",
+    "STDDEV_POP",
+    "MIN",
+    "MAX",
+    "PERCENTILE_CONT",
+    "PERCENTILE_DISC",
+    "APPROX_PERCENTILE_CONT",
+    "APPROX_PERCENTILE_DISC",
+    "CentroidAggregate",
+    "EnvelopeAggregate",
+    "ConvexHullAggregate"
+   ],
+   "supportedNormalizationTypes": [
+    "boxCox",
+    "field",
+    "inverse",
+    "log",
+    "naturalLog",
+    "percentOfTotal",
+    "squareRoot"
+   ]
+  },
+  "supportedOperationsWithCollation": "query,addField,updateField",
+  "advancedEditingCapabilities": {
+   "supportedSqlFormatsInCalculate": [
+    "standard"
+   ],
+   "supportsAsyncApplyEdits": true,
+   "supportsReturnEditResults": true,
+   "supportsApplyEditsbyUploadID": true,
+   "supportedApplyEditsUploadIDFormats": "JSON,PBF",
+   "supportsTranslation": false,
+   "supportsMaxTranslations": 10
+  },
+  "infoInEstimates": [
+   "extent",
+   "count"
+  ],
+  "useStandardizedQueries": true,
+  "geometryType": "esriGeometryPolygon",
+  "minScale": 0,
+  "maxScale": 0,
+  "extent": {
+   "xmin": 512849.08999999985,
+   "ymin": 62260.110000000335,
+   "xmax": 793990.7600000016,
+   "ymax": 535703.3099999996,
+   "spatialReference": {
+    "wkt": "PROJCS[\"Albers Conical Equal Area [Florida Geographic Data Library]\",GEOGCS[\"GCS_North_American_1983_HARN\",DATUM[\"D_North_American_1983_HARN\",SPHEROID[\"GRS_1980\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Albers\"],PARAMETER[\"False_Easting\",400000.0],PARAMETER[\"False_Northing\",0.0],PARAMETER[\"Central_Meridian\",-84.0],PARAMETER[\"Standard_Parallel_1\",24.0],PARAMETER[\"Standard_Parallel_2\",31.5],PARAMETER[\"Central_Parallel\",24.0],UNIT[\"Meter\",1.0]]",
+    "wkt2": "PROJCRS[\"Albers Conical Equal Area [Florida Geographic Data Library]\",BASEGEOGCRS[\"GCS_North_American_1983_HARN\",DATUM[\"D_North_American_1983_HARN\",ELLIPSOID[\"GRS_1980\",6378137.0,298.257222101,LENGTHUNIT[\"Meter\",1.0]]],PRIMEM[\"Greenwich\",0.0,ANGLEUNIT[\"Degree\",0.0174532925199433]],CS[ellipsoidal,2],AXIS[\"Latitude (lat)\",north,ORDER[1]],AXIS[\"Longitude (lon)\",east,ORDER[2]],ANGLEUNIT[\"Degree\",0.0174532925199433]],CONVERSION[\"Albers\",METHOD[\"Albers\"],PARAMETER[\"False_Easting\",400000.0,LENGTHUNIT[\"Meter\",1.0]],PARAMETER[\"False_Northing\",0.0,LENGTHUNIT[\"Meter\",1.0]],PARAMETER[\"Central_Meridian\",-84.0,ANGLEUNIT[\"Degree\",0.0174532925199433]],PARAMETER[\"Standard_Parallel_1\",24.0,ANGLEUNIT[\"Degree\",0.0174532925199433]],PARAMETER[\"Standard_Parallel_2\",31.5,ANGLEUNIT[\"Degree\",0.0174532925199433]],PARAMETER[\"Central_Parallel\",24.0,ANGLEUNIT[\"Degree\",0.0174532925199433]]],CS[Cartesian,2],AXIS[\"Easting (X)\",east,ORDER[1]],AXIS[\"Northing (Y)\",north,ORDER[2]],LENGTHUNIT[\"Meter\",1.0]]"
+   }
+  },
+  "spatialReference": {
+   "wkt": "PROJCS[\"Albers Conical Equal Area [Florida Geographic Data Library]\",GEOGCS[\"GCS_North_American_1983_HARN\",DATUM[\"D_North_American_1983_HARN\",SPHEROID[\"GRS_1980\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Albers\"],PARAMETER[\"False_Easting\",400000.0],PARAMETER[\"False_Northing\",0.0],PARAMETER[\"Central_Meridian\",-84.0],PARAMETER[\"Standard_Parallel_1\",24.0],PARAMETER[\"Standard_Parallel_2\",31.5],PARAMETER[\"Central_Parallel\",24.0],UNIT[\"Meter\",1.0]]",
+   "wkt2": "PROJCRS[\"Albers Conical Equal Area [Florida Geographic Data Library]\",BASEGEOGCRS[\"GCS_North_American_1983_HARN\",DATUM[\"D_North_American_1983_HARN\",ELLIPSOID[\"GRS_1980\",6378137.0,298.257222101,LENGTHUNIT[\"Meter\",1.0]]],PRIMEM[\"Greenwich\",0.0,ANGLEUNIT[\"Degree\",0.0174532925199433]],CS[ellipsoidal,2],AXIS[\"Latitude (lat)\",north,ORDER[1]],AXIS[\"Longitude (lon)\",east,ORDER[2]],ANGLEUNIT[\"Degree\",0.0174532925199433]],CONVERSION[\"Albers\",METHOD[\"Albers\"],PARAMETER[\"False_Easting\",400000.0,LENGTHUNIT[\"Meter\",1.0]],PARAMETER[\"False_Northing\",0.0,LENGTHUNIT[\"Meter\",1.0]],PARAMETER[\"Central_Meridian\",-84.0,ANGLEUNIT[\"Degree\",0.0174532925199433]],PARAMETER[\"Standard_Parallel_1\",24.0,ANGLEUNIT[\"Degree\",0.0174532925199433]],PARAMETER[\"Standard_Parallel_2\",31.5,ANGLEUNIT[\"Degree\",0.0174532925199433]],PARAMETER[\"Central_Parallel\",24.0,ANGLEUNIT[\"Degree\",0.0174532925199433]]],CS[Cartesian,2],AXIS[\"Easting (X)\",east,ORDER[1]],AXIS[\"Northing (Y)\",north,ORDER[2]],LENGTHUNIT[\"Meter\",1.0]]",
+   "xyTolerance": 0.001,
+   "zTolerance": 0.001,
+   "mTolerance": 0.001,
+   "falseX": -19550100,
+   "falseY": -7526400,
+   "xyUnits": 10000,
+   "falseZ": -100000,
+   "zUnits": 10000,
+   "falseM": -100000,
+   "mUnits": 10000
+  },
+  "drawingInfo": {
+   "renderer": {
+    "type": "dotDensity",
+    "attributes": [
+     {
+      "field": "Sheet0__Population",
+      "label": "Population",
+      "color": [
+       115,
+       0,
+       0,
+       255
+      ]
+     }
+    ],
+    "backgroundColor": [
+     166,
+     166,
+     166,
+     0
+    ],
+    "outline": {
+     "type": "esriSLS",
+     "style": "esriSLSSolid",
+     "color": [
+      204,
+      204,
+      204,
+      0
+     ],
+     "width": 0.7
+    },
+    "dotValue": 20000,
+    "dotSize": 2,
+    "legendOptions": {
+     "dotLabel": "Dot"
+    }
+   },
+   "scaleSymbols": true,
+   "transparency": 0,
+   "labelingInfo": null
+  },
+  "allowGeometryUpdates": true,
+  "trueCurveSupportMode": "OGC",
+  "supportedCurveTypes": [
+   "esriGeometryCircularArc"
+  ],
+  "supportedTrueCurvePbfFeatureEncodings": [
+   "esriCompressedShapeBuffer",
+   "esriDefault"
+  ],
+  "allowTrueCurvesUpdates": true,
+  "onlyAllowTrueCurveUpdatesByTrueCurveClients": false,
+  "hasAttachments": false,
+  "htmlPopupType": "esriServerHTMLPopupTypeAsHTMLText",
+  "hasMetadata": true,
+  "hasM": false,
+  "hasZ": false,
+  "objectIdField": "OBJECTID",
+  "uniqueIdField": {
+   "name": "OBJECTID",
+   "isSystemMaintained": true
+  },
+  "globalIdField": "GlobalID",
+  "typeIdField": "",
+  "collation": {
+   "locale": "neutral",
+   "caseSensitive": false,
+   "accentSensitive": true
+  },
+  "fields": [
+   {
+    "name": "OBJECTID",
+    "type": "esriFieldTypeOID",
+    "alias": "OBJECTID",
+    "sqlType": "sqlTypeOther",
+    "nullable": false,
+    "editable": false,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "SouthFlorida_OBJECTID",
+    "type": "esriFieldTypeInteger",
+    "alias": "OBJECTID",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "SouthFlorida_NAME",
+    "type": "esriFieldTypeString",
+    "alias": "NAME",
+    "sqlType": "sqlTypeOther",
+    "length": 32,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "SouthFlorida_FGDLCODE",
+    "type": "esriFieldTypeString",
+    "alias": "FGDLCODE",
+    "sqlType": "sqlTypeOther",
+    "length": 32,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "SouthFlorida_FIPS",
+    "type": "esriFieldTypeString",
+    "alias": "FIPS",
+    "sqlType": "sqlTypeOther",
+    "length": 3,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "SouthFlorida_DESCRIPT",
+    "type": "esriFieldTypeString",
+    "alias": "DESCRIPT",
+    "sqlType": "sqlTypeOther",
+    "length": 12,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "SouthFlorida_AUTOID",
+    "type": "esriFieldTypeInteger",
+    "alias": "AUTOID",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "SouthFlorida_CountyName",
+    "type": "esriFieldTypeString",
+    "alias": "CountyName",
+    "sqlType": "sqlTypeOther",
+    "length": 50,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Sheet0__Area",
+    "type": "esriFieldTypeString",
+    "alias": "Area",
+    "sqlType": "sqlTypeOther",
+    "length": 255,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Sheet0__Population",
+    "type": "esriFieldTypeDouble",
+    "alias": "Population",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Sheet0__Housing_Units",
+    "type": "esriFieldTypeDouble",
+    "alias": "Housing_Units",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Sheet0__Total_Area",
+    "type": "esriFieldTypeDouble",
+    "alias": "Total_Area",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Sheet0__Water_Area",
+    "type": "esriFieldTypeDouble",
+    "alias": "Water_Area",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Sheet0__Land_Area",
+    "type": "esriFieldTypeDouble",
+    "alias": "Land_Area",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Sheet0__Pop_Density",
+    "type": "esriFieldTypeDouble",
+    "alias": "Pop_Density",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Sheet0__Housing_Den",
+    "type": "esriFieldTypeDouble",
+    "alias": "Housing_Den",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Sheet0__ObjectID",
+    "type": "esriFieldTypeInteger",
+    "alias": "ObjectID",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "GlobalID",
+    "type": "esriFieldTypeGlobalID",
+    "alias": "GlobalID",
+    "sqlType": "sqlTypeOther",
+    "length": 38,
+    "nullable": false,
+    "editable": false,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Shape__Area",
+    "type": "esriFieldTypeDouble",
+    "alias": "Shape__Area",
+    "sqlType": "sqlTypeDouble",
+    "nullable": true,
+    "editable": false,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Shape__Length",
+    "type": "esriFieldTypeDouble",
+    "alias": "Shape__Length",
+    "sqlType": "sqlTypeDouble",
+    "nullable": true,
+    "editable": false,
+    "domain": null,
+    "defaultValue": null
+   }
+  ],
+  "indexes": [
+   {
+    "name": "PK__SOUTH_FL__F4B70D85961A4996",
+    "fields": "OBJECTID",
+    "isAscending": true,
+    "isUnique": true,
+    "description": "",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "user_2950.SOUTH_FLORIDA_POPULATION_DENSITY_RADCLIFFE_SOUTH_FLORIDA_URBAN_Shape_sidx",
+    "fields": "Shape",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "",
+    "indexType": "Spatial"
+   },
+   {
+    "name": "Shape__Area_Index",
+    "fields": "Shape__Area",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "Shape__Length_Index",
+    "fields": "Shape__Length",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "GlobalID_idx",
+    "fields": "GlobalID",
+    "isAscending": true,
+    "isUnique": true,
+    "description": "",
+    "indexType": "Attribute"
+   }
+  ],
+  "dateFieldsTimeReference": {
+   "timeZone": "UTC",
+   "timeZoneIANA": "Etc/UTC",
+   "respectsDaylightSaving": false
+  },
+  "preferredTimeReference": null,
+  "types": [],
+  "templates": [
+   {
+    "name": "South Florida Urban",
+    "description": "",
+    "drawingTool": "esriFeatureEditToolPolygon",
+    "prototype": {
+     "attributes": {
+      "Sheet0__Housing_Den": null,
+      "Sheet0__ObjectID": null,
+      "SouthFlorida_OBJECTID": null,
+      "SouthFlorida_NAME": null,
+      "SouthFlorida_FGDLCODE": null,
+      "SouthFlorida_FIPS": null,
+      "SouthFlorida_DESCRIPT": null,
+      "SouthFlorida_AUTOID": null,
+      "SouthFlorida_CountyName": null,
+      "Sheet0__Area": null,
+      "Sheet0__Population": null,
+      "Sheet0__Housing_Units": null,
+      "Sheet0__Total_Area": null,
+      "Sheet0__Water_Area": null,
+      "Sheet0__Land_Area": null,
+      "Sheet0__Pop_Density": null
+     }
+    }
+   }
+  ],
+  "supportedQueryFormats": "JSON, geoJSON, PBF",
+  "supportedAppendFormats": "sqlite,geoPackage,shapefile,filegdb,featureCollection,geojson,csv,excel,jsonl,featureService,pbf",
+  "supportedAppendSourceFilterFormats": "sqlite,geoPackage,shapefile,filegdb,featureService",
+  "supportedExportFormats": "csv,shapefile,sqlite,geoPackage,filegdb,featureCollection,geojson,kml,excel,parquet",
+  "supportedConvertFileFormats": "JSON,PBF,Parquet",
+  "supportedConvertContentFormats": "LayerEditCollection,FeatureCollection",
+  "supportedSpatialRelationships": [
+   "esriSpatialRelIntersects",
+   "esriSpatialRelContains",
+   "esriSpatialRelCrosses",
+   "esriSpatialRelEnvelopeIntersects",
+   "esriSpatialRelIndexIntersects",
+   "esriSpatialRelOverlaps",
+   "esriSpatialRelTouches",
+   "esriSpatialRelWithin",
+   "esriSpatialRelDisjoint",
+   "esriSpatialRelRelation"
+  ],
+  "guidFormat": "",
+  "supportsContingentValues": true,
+  "supportsEditingContingentValues": true,
+  "supportedContingentValuesFormats": "JSON, PBF",
+  "supportsFieldGroups": true,
+  "supportedSyncDataOptions": 49412,
+  "hasStaticData": false,
+  "maxRecordCount": 2000,
+  "standardMaxRecordCount": 2000,
+  "maxIdsCount": 1000000,
+  "standardMaxRecordCountNoGeometry": 32000,
+  "tileMaxRecordCount": 4000,
+  "maxRecordCountFactor": 1,
+  "capabilities": "Query,Sync"
+ }
+}

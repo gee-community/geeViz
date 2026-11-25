@@ -135,3 +135,13 @@ test("a source tile counts as loading until its features arrive, then draws", as
   assert.ok(canvas.draws > 0);
   assert.ok(ov.loadedParts().length > 0);
 });
+
+test("a renderer's default cap applies when the layer sets none", async () => {
+  const fetch = fakeFetch([[STATES + "/query", pageRoute]]);
+  const src = createFeatureSource(STATES, response("states_info"), {}, { fetch, defaultMaxFeatures: 7 });
+  await src.partsFor(TILE, 4);
+  assert.equal(fetch.calls[0].params.resultRecordCount, "7");
+  const own = createFeatureSource(STATES, response("states_info"), { maxFeatures: 3 }, { fetch, defaultMaxFeatures: 7 });
+  await own.partsFor(TILE, 4);
+  assert.equal(fetch.calls[fetch.calls.length - 1].params.resultRecordCount, "3");
+});

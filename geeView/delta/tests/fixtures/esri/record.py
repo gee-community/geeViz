@@ -81,6 +81,12 @@ FIXTURES = {
                                 {"f": "json"}, "GET"),
     "drawinginfo_visualvars": ("https://services.arcgis.com/jIL9msH9OI208GCb/arcgis/rest/services/USA_Wildfire_Hazard_Potential/FeatureServer/0",
                                {"f": "json"}, "GET"),
+    "drawinginfo_heatmap": ("https://services1.arcgis.com/0MSEUqKaxRlEPj5g/arcgis/rest/services/Percent_Pop_NY_Tract__Dot_Density__ATD_WFL1/FeatureServer/0",
+                            {"f": "json"}, "GET"),
+    "drawinginfo_dotdensity": ("https://services1.arcgis.com/0MSEUqKaxRlEPj5g/arcgis/rest/services/South_Florida_Population_Density_Radcliffe/FeatureServer/0",
+                               {"f": "json"}, "GET"),
+    "drawinginfo_piechart": ("https://services7.arcgis.com/zX8NTiUjIKUVyth8/arcgis/rest/services/Reg_Units_Crop_Centroid/FeatureServer/18",
+                             {"f": "json"}, "GET"),
     # identify at Fort Collins, in an 800 by 600 view
     # a zone AE on the Cache la Poudre, zoomed in past layer 28's minScale (1:36,111)
     "nfhl_identify": (NFHL + "/identify", {"geometry": ZONE, "geometryType": "esriGeometryPoint", "sr": "4326",

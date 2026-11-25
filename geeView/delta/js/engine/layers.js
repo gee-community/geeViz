@@ -190,6 +190,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
       source,
       style: r.style,
       styleFor: extra.styleFor,
+      drawTile: extra.drawTile,
       opacity: r.opacity,
       opacityRatio: r.viz.opacityRatio,
       name: r.id,

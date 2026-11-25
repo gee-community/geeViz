@@ -46,7 +46,7 @@ export function createFeatureSource(url, info, esriOpts = {}, opts = {}) {
   const o = esriOpts || {};
   const fetch = opts.fetch;
   const onStatus = opts.onStatus || (() => {});
-  const maxFeatures = Number(o.maxFeatures) > 0 ? Number(o.maxFeatures) : 2000;
+  const maxFeatures = Number(o.maxFeatures) > 0 ? Number(o.maxFeatures) : Number(opts.defaultMaxFeatures) > 0 ? Number(opts.defaultMaxFeatures) : 2000;
   const budget = (Number(o.maxLayerMB) > 0 ? Number(o.maxLayerMB) : 64) * 1e6;
   const maxRecord = Number(info.maxRecordCount) > 0 ? Number(info.maxRecordCount) : 1000;
   const paging = !info.advancedQueryCapabilities || info.advancedQueryCapabilities.supportsPagination !== false;
@@ -54,6 +54,13 @@ export function createFeatureSource(url, info, esriOpts = {}, opts = {}) {
   const geojson = /geojson/i.test(String(info.supportedQueryFormats || ""));
   const outFields = o.outFields ? [].concat(o.outFields).join(",") : unique([oid, info.displayField, ...rendererFields(info)].filter(Boolean)).join(",");
   const cache = new Map(); // "z/x/y" -> Promise of parts
+  // a heatmap needs the points around a tile too (its blur radius in pixels)
+  const padPx = Number(opts.padPx) || 0;
+  const padded = (b, zoom) => {
+    if (!padPx) return b;
+    const m = (padPx * (b.xmax - b.xmin)) / 256;
+    return { xmin: b.xmin - m, ymin: b.ymin - m, xmax: b.xmax + m, ymax: b.ymax + m };
+  };
   let bytes = 0;
 
   function featuresOf(out) {
@@ -75,7 +82,7 @@ export function createFeatureSource(url, info, esriOpts = {}, opts = {}) {
 
   async function fetchTile(coord, zoom, key, signal) {
     const params = {
-      geometry: { ...tile3857(coord.x, coord.y, zoom), spatialReference: { wkid: 3857 } },
+      geometry: { ...padded(tile3857(coord.x, coord.y, zoom), zoom), spatialReference: { wkid: 3857 } },
       geometryType: "esriGeometryEnvelope",
       inSR: 3857,
       spatialRel: "esriSpatialRelIntersects",

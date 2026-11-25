@@ -3,6 +3,7 @@
 // value, class breaks), visual variables (color, size, transparency and
 // rotation by a field), and the legend built from the same renderer.
 import { esriColor, glyphFor, toEsriColor } from "./symbols.js";
+import { SURFACES } from "./surfaces.js";
 
 const GEOM = { esriGeometryPoint: "point", esriGeometryMultipoint: "point", esriGeometryPolyline: "line", esriGeometryPolygon: "polygon" };
 
@@ -99,13 +100,13 @@ export function rendererFor(drawingInfo, vizOverride = null, geometryType = null
   const v = vizOverride || {};
   if (STYLE_KEYS.some((k) => v[k] !== undefined)) {
     const symbol = symbolFromViz(v, geom || "polygon");
-    return simple({ type: "simple", symbol }, geom);
+    return { ...simple({ type: "simple", symbol }, geom), alpha: 1 };
   }
   const r = (drawingInfo && drawingInfo.renderer) || { type: "simple", symbol: defaultSymbol(geom) };
-  if (r.type === "uniqueValue") return uniqueValue(r, geom);
-  if (r.type === "classBreaks") return classBreaks(r, geom);
-  if (r.type === "simple") return simple(r, geom);
-  return unknown(r, geom);
+  const out = r.type === "uniqueValue" ? uniqueValue(r, geom) : r.type === "classBreaks" ? classBreaks(r, geom) : r.type === "simple" ? simple(r, geom) : SURFACES[r.type] ? SURFACES[r.type](r, geom) : unknown(r, geom);
+  // drawingInfo.transparency (percent): the layer's own opacity
+  out.alpha = 1 - Math.max(0, Math.min(100, Number(drawingInfo && drawingInfo.transparency) || 0)) / 100;
+  return out;
 }
 
 // a legend from items, the visual variables' ramps and size glyphs, and a note

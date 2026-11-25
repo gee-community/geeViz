@@ -148,6 +148,12 @@ export function createVectorTileOverlay(opts) {
     };
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
+    // a renderer that draws the whole tile (a heatmap, dot density, pie charts)
+    if (opts.drawTile) {
+      opts.drawTile(ctx, parts, { coord, zoom, px, opacity });
+      ctx.globalAlpha = 1;
+      return;
+    }
     for (const p of parts) {
       const [w, s, e, n] = p.bbox;
       if (e < b.west - pad || w > b.east + pad || n < b.south - pad || s > b.north + pad) continue;

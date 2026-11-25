@@ -35,7 +35,8 @@ export function legendMarkup(legend) {
       })
       .join("");
     const note = legend.note ? `<span class="lgnote">${escapeText(legend.note)}</span>` : "";
-    return items + ramps + note;
+    const caption = legend.caption ? `<span class="lgnote lgcap">${escapeText(legend.caption)}</span>` : "";
+    return items + ramps + caption + note;
   }
   if (legend.type === "sections") {
     return (legend.sections || [])
@@ -64,7 +65,10 @@ export function swatchColors(legend) {
   if (legend.type === "outline") return { kind: "outline", colors: [legend.color] };
   if (legend.type === "symbols") {
     const colors = (legend.items || []).slice(0, 4).map((it) => (it.glyph && (it.glyph.fill || it.glyph.stroke)) || "#888888");
-    return colors.length ? { kind: "classes", colors } : null;
+    if (colors.length) return { kind: "classes", colors };
+    // a heatmap: its ramp
+    const ramp = (legend.ramps || [])[0];
+    return ramp && ramp.palette.length ? { kind: "ramp", colors: ramp.palette.slice() } : null;
   }
   if (legend.type === "images" || legend.type === "sections") {
     const srcs = legendImages(legend).slice(0, 4).map((it) => it.src);

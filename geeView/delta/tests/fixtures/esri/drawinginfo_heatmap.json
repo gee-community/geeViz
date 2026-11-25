@@ -1,0 +1,571 @@
+{
+ "request": {
+  "url": "https://services1.arcgis.com/0MSEUqKaxRlEPj5g/arcgis/rest/services/Percent_Pop_NY_Tract__Dot_Density__ATD_WFL1/FeatureServer/0",
+  "params": {
+   "f": "json"
+  },
+  "method": "GET"
+ },
+ "response": {
+  "currentVersion": 12,
+  "id": 0,
+  "name": "TSMC 2014 (HEAT MAP - Radius) ATD",
+  "type": "Feature Layer",
+  "serviceItemId": "cdc56f138d4848f3a0445ad03568fa63",
+  "cacheMaxAge": 30,
+  "displayField": "userId",
+  "description": "",
+  "copyrightText": "",
+  "defaultVisibility": false,
+  "editingInfo": {
+   "lastEditDate": 1686422433719,
+   "schemaLastEditDate": 1686422433719,
+   "dataLastEditDate": 1686422433719
+  },
+  "relationships": [],
+  "isDataVersioned": false,
+  "hasContingentValuesDefinition": false,
+  "supportsAppend": true,
+  "supportsCalculate": true,
+  "supportsASyncCalculate": true,
+  "supportsTruncate": true,
+  "supportsAttachmentsByUploadId": true,
+  "supportsAttachmentsResizing": true,
+  "supportsRollbackOnFailureParameter": true,
+  "supportsStatistics": true,
+  "supportsExceedsLimitStatistics": true,
+  "supportsAdvancedQueries": true,
+  "supportsValidateSql": true,
+  "supportsCoordinatesQuantization": true,
+  "supportsLayerOverrides": true,
+  "supportsTilesAndBasicQueriesMode": true,
+  "supportsFieldDescriptionProperty": true,
+  "supportsQuantizationEditMode": true,
+  "supportsColumnStoreIndex": true,
+  "supportsApplyEditsWithGlobalIds": false,
+  "supportsReturningQueryGeometry": true,
+  "enableNullGeometry": false,
+  "advancedQueryCapabilities": {
+   "supportsPagination": true,
+   "supportsPaginationOnAggregatedQueries": true,
+   "supportsQueryRelatedPagination": true,
+   "supportsQueryWithDistance": true,
+   "supportsOutDistance": true,
+   "supportsReturningQueryExtent": true,
+   "supportsStatistics": true,
+   "supportsOrderBy": true,
+   "supportsDistinct": true,
+   "supportsQueryWithResultType": true,
+   "supportsSqlExpression": true,
+   "supportsTimeRelation": true,
+   "supportsAdvancedQueryRelated": true,
+   "supportsCountDistinct": true,
+   "supportsPercentileStatistics": true,
+   "supportsApproxPercentileStatistics": true,
+   "supportsSpatialAggregationStatistics": true,
+   "supportedSpatialAggregationStatistics": [
+    "EnvelopeAggregate",
+    "CentroidAggregate",
+    "ConvexHullAggregate"
+   ],
+   "supportsLod": true,
+   "supportsQueryWithLodSR": false,
+   "supportedLodTypes": [
+    "geohash"
+   ],
+   "supportsReturningGeometryCentroid": false,
+   "supportsReturningGeometryEnvelope": false,
+   "supportsQueryWithDatumTransformation": true,
+   "supportsCurrentUserQueries": true,
+   "supportsHavingClause": true,
+   "supportsOutFieldSQLExpression": true,
+   "supportsMaxRecordCountFactor": true,
+   "supportsTopFeaturesQuery": true,
+   "supportsDisjointSpatialRel": true,
+   "supportsQueryWithCacheHint": true,
+   "supportedOperationsWithCacheHint": [
+    "query",
+    "queryTopFilter",
+    "queryAnalytics",
+    "queryAttachments",
+    "queryRelated",
+    "queryBins",
+    "queryPivot"
+   ],
+   "supportsQueryAnalytic": true,
+   "supportsQueryPivot": true,
+   "supportsQueryBins": true,
+   "supportsDefaultSR": true,
+   "supportsTranslations": false,
+   "supportsAggIds": true,
+   "supportsQueryWithCollation": true,
+   "supportsISODOW": true,
+   "supportsISOWeek": true,
+   "supportsFullTextSearch": true,
+   "fullTextSearchCapabilities": {
+    "supportsAccentSensitivity": true,
+    "supportsStopWords": true,
+    "supportsSearchOperator": true,
+    "supportsOperator": true
+   }
+  },
+  "advancedQueryAnalyticCapabilities": {
+   "supportsLinearRegression": true,
+   "supportsTrendlineRegression": true,
+   "supportsAsync": true,
+   "supportsPercentileAnalytic": true
+  },
+  "queryBinsCapabilities": {
+   "supportsAsync": true,
+   "supportsAutoIntervalBin": true,
+   "supportsFixedIntervalBin": true,
+   "supportsFixedBoundariesBin": true,
+   "supportsDateBin": true,
+   "supportsClassificationBin": true,
+   "supportsStackBy": true,
+   "supportsSplitBy": true,
+   "supportsFirstDayOfWeek": true,
+   "supportsSnapToData": true,
+   "supportsReturnFullIntervalBin": true,
+   "supportsReturnStackValueRange": true,
+   "supportsNormalization": true,
+   "supportedStatisticTypes": [
+    "COUNT",
+    "SUM",
+    "AVG",
+    "VAR",
+    "VAR_SAMP",
+    "VAR_POP",
+    "STDDEV",
+    "STDDEV_SAMP",
+    "STDDEV_POP",
+    "MIN",
+    "MAX",
+    "PERCENTILE_CONT",
+    "PERCENTILE_DISC",
+    "APPROX_PERCENTILE_CONT",
+    "APPROX_PERCENTILE_DISC",
+    "CentroidAggregate",
+    "EnvelopeAggregate",
+    "ConvexHullAggregate"
+   ],
+   "supportedNormalizationTypes": [
+    "boxCox",
+    "field",
+    "inverse",
+    "log",
+    "naturalLog",
+    "percentOfTotal",
+    "squareRoot"
+   ]
+  },
+  "supportedOperationsWithCollation": "query,addField,updateField",
+  "advancedEditingCapabilities": {
+   "supportedSqlFormatsInCalculate": [
+    "standard"
+   ],
+   "supportsAsyncApplyEdits": true,
+   "supportsReturnEditResults": true,
+   "supportsApplyEditsbyUploadID": true,
+   "supportedApplyEditsUploadIDFormats": "JSON,PBF",
+   "supportsTranslation": false,
+   "supportsMaxTranslations": 10
+  },
+  "infoInEstimates": [
+   "extent",
+   "count"
+  ],
+  "useStandardizedQueries": true,
+  "geometryType": "esriGeometryPoint",
+  "minScale": 0,
+  "maxScale": 0,
+  "extent": {
+   "xmin": -8268229.18,
+   "ymin": 4946316.537699997,
+   "xmax": -8202445.901000001,
+   "ymax": 5010620.747500002,
+   "spatialReference": {
+    "wkid": 102100,
+    "latestWkid": 3857
+   }
+  },
+  "spatialReference": {
+   "wkid": 102100,
+   "latestWkid": 3857
+  },
+  "drawingInfo": {
+   "renderer": {
+    "type": "heatmap",
+    "field": "",
+    "legendOptions": {
+     "minLabel": "Sparse",
+     "maxLabel": "Dense"
+    },
+    "blurRadius": 30,
+    "colorStops": [
+     {
+      "ratio": 0,
+      "color": [
+       133,
+       193,
+       200,
+       0
+      ]
+     },
+     {
+      "ratio": 0.01,
+      "color": [
+       133,
+       193,
+       200,
+       0
+      ]
+     },
+     {
+      "ratio": 0.01,
+      "color": [
+       133,
+       193,
+       200,
+       0
+      ]
+     },
+     {
+      "ratio": 0.01,
+      "color": [
+       133,
+       193,
+       200,
+       0
+      ]
+     },
+     {
+      "ratio": 0.07692308,
+      "color": [
+       133,
+       193,
+       200,
+       255
+      ]
+     },
+     {
+      "ratio": 0.15384615,
+      "color": [
+       144,
+       161,
+       190,
+       255
+      ]
+     },
+     {
+      "ratio": 0.23076923,
+      "color": [
+       156,
+       129,
+       132,
+       255
+      ]
+     },
+     {
+      "ratio": 0.30769231,
+      "color": [
+       167,
+       97,
+       170,
+       255
+      ]
+     },
+     {
+      "ratio": 0.38461538,
+      "color": [
+       175,
+       73,
+       128,
+       255
+      ]
+     },
+     {
+      "ratio": 0.46153846,
+      "color": [
+       184,
+       48,
+       85,
+       255
+      ]
+     },
+     {
+      "ratio": 0.53846154,
+      "color": [
+       192,
+       24,
+       42,
+       255
+      ]
+     },
+     {
+      "ratio": 0.61538462,
+      "color": [
+       200,
+       0,
+       0,
+       255
+      ]
+     },
+     {
+      "ratio": 0.69230769,
+      "color": [
+       211,
+       51,
+       0,
+       255
+      ]
+     },
+     {
+      "ratio": 0.76923077,
+      "color": [
+       222,
+       102,
+       0,
+       255
+      ]
+     },
+     {
+      "ratio": 0.84615385,
+      "color": [
+       233,
+       153,
+       0,
+       255
+      ]
+     },
+     {
+      "ratio": 0.92307692,
+      "color": [
+       244,
+       204,
+       0,
+       255
+      ]
+     },
+     {
+      "ratio": 1.0,
+      "color": [
+       255,
+       255,
+       0,
+       255
+      ]
+     }
+    ],
+    "minPixelIntensity": 0,
+    "maxPixelIntensity": 55.819626562504304
+   },
+   "scaleSymbols": true,
+   "transparency": 22,
+   "labelingInfo": null
+  },
+  "allowGeometryUpdates": true,
+  "hasAttachments": false,
+  "htmlPopupType": "esriServerHTMLPopupTypeAsHTMLText",
+  "hasMetadata": true,
+  "hasM": false,
+  "hasZ": false,
+  "objectIdField": "OBJECTID",
+  "uniqueIdField": {
+   "name": "OBJECTID",
+   "isSystemMaintained": true
+  },
+  "globalIdField": "",
+  "typeIdField": "",
+  "collation": {
+   "locale": "neutral",
+   "caseSensitive": false,
+   "accentSensitive": true
+  },
+  "fields": [
+   {
+    "name": "OBJECTID",
+    "type": "esriFieldTypeOID",
+    "alias": "OBJECTID",
+    "sqlType": "sqlTypeOther",
+    "nullable": false,
+    "editable": false,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "userId",
+    "type": "esriFieldTypeInteger",
+    "alias": "userId",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "venueId",
+    "type": "esriFieldTypeString",
+    "alias": "venueId",
+    "sqlType": "sqlTypeOther",
+    "length": 8000,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "venueCategoryId",
+    "type": "esriFieldTypeString",
+    "alias": "venueCategoryId",
+    "sqlType": "sqlTypeOther",
+    "length": 8000,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "venueCategory",
+    "type": "esriFieldTypeString",
+    "alias": "venueCategory",
+    "sqlType": "sqlTypeOther",
+    "length": 8000,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "latitude",
+    "type": "esriFieldTypeDouble",
+    "alias": "latitude",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "longitude",
+    "type": "esriFieldTypeDouble",
+    "alias": "longitude",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "timezoneOffset",
+    "type": "esriFieldTypeInteger",
+    "alias": "timezoneOffset",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "utcTimestamp",
+    "type": "esriFieldTypeString",
+    "alias": "utcTimestamp",
+    "sqlType": "sqlTypeOther",
+    "length": 8000,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "checkInTime",
+    "type": "esriFieldTypeDate",
+    "alias": "Check In Time",
+    "sqlType": "sqlTypeOther",
+    "length": 8,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "precision": 1
+   }
+  ],
+  "indexes": [
+   {
+    "name": "PK__PERCENT___F4B70D858B74E589",
+    "fields": "OBJECTID",
+    "isAscending": true,
+    "isUnique": true,
+    "description": "",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "user_2950.PERCENT_POP_NY_TRACT__DOT_DENSITY__ATD_WFL1_TSMC_2014__HEAT_MAP___RADIUS__ATD_Shape_sidx",
+    "fields": "Shape",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "",
+    "indexType": "Spatial"
+   }
+  ],
+  "dateFieldsTimeReference": {
+   "timeZone": "UTC",
+   "timeZoneIANA": "Etc/UTC",
+   "respectsDaylightSaving": false
+  },
+  "preferredTimeReference": null,
+  "types": [],
+  "templates": [
+   {
+    "name": "TSMC2014_ATD",
+    "description": "",
+    "drawingTool": "esriFeatureEditToolPoint",
+    "prototype": {
+     "attributes": {
+      "utcTimestamp": null,
+      "userId": null,
+      "venueId": null,
+      "venueCategoryId": null,
+      "venueCategory": null,
+      "latitude": null,
+      "longitude": null,
+      "timezoneOffset": null,
+      "checkInTime": null
+     }
+    }
+   }
+  ],
+  "supportedQueryFormats": "JSON, geoJSON, PBF",
+  "supportedAppendFormats": "sqlite,geoPackage,shapefile,filegdb,featureCollection,geojson,csv,excel,jsonl,featureService,pbf",
+  "supportedAppendSourceFilterFormats": "sqlite,geoPackage,shapefile,filegdb,featureService",
+  "supportedExportFormats": "csv,shapefile,sqlite,geoPackage,filegdb,featureCollection,geojson,kml,excel,parquet",
+  "supportedConvertFileFormats": "JSON,PBF,Parquet",
+  "supportedConvertContentFormats": "LayerEditCollection,FeatureCollection",
+  "supportedSpatialRelationships": [
+   "esriSpatialRelIntersects",
+   "esriSpatialRelContains",
+   "esriSpatialRelCrosses",
+   "esriSpatialRelEnvelopeIntersects",
+   "esriSpatialRelIndexIntersects",
+   "esriSpatialRelOverlaps",
+   "esriSpatialRelTouches",
+   "esriSpatialRelWithin",
+   "esriSpatialRelDisjoint",
+   "esriSpatialRelRelation"
+  ],
+  "guidFormat": "",
+  "supportsContingentValues": true,
+  "supportsEditingContingentValues": true,
+  "supportedContingentValuesFormats": "JSON, PBF",
+  "supportsFieldGroups": true,
+  "supportedSyncDataOptions": 49412,
+  "hasStaticData": false,
+  "maxRecordCount": 2000,
+  "standardMaxRecordCount": 16000,
+  "maxIdsCount": 1000000,
+  "standardMaxRecordCountNoGeometry": 32000,
+  "tileMaxRecordCount": 8000,
+  "maxRecordCountFactor": 1,
+  "capabilities": "Query"
+ }
+}

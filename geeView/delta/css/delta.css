@@ -302,6 +302,7 @@ input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border:
 .legend .ramp.lgr { height: 8px; border-radius: 2px; }
 .legend .ramp-l.lgr { display: flex; justify-content: space-between; font-size: 11px; }
 .legend .lgnote { grid-column: 1 / -1; font-size: 11px; font-style: italic; }
+.legend .lgnote.lgcap { font-style: normal; }
 .layer.off .legend { display: none !important; }
 .layer.off .legbtn { opacity: 0.45; pointer-events: none; }
 .layer.off .spin { display: none; }
