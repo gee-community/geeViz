@@ -9,6 +9,8 @@ import { exportUrl, tileUrl, tile3857, maxTileZoom } from "../esri/draw.js";
 import { serviceLegend } from "../esri/legend.js";
 import { identifyMap, identifyImage } from "../esri/identify.js";
 import { createFeatureSource } from "../esri/features.js";
+import { rendererFor } from "../esri/renderers.js";
+import { onSymbolImage } from "../esri/symbols.js";
 import { hitTest } from "../engine/hittest.js";
 import { tableResults } from "../engine/query.js";
 
@@ -73,7 +75,11 @@ export const esriPlugin = {
           ctx.setNote(r, noteFor([...statuses.values()]));
         },
       });
-      ctx.addFeatureSource(r, r.source);
+      // drawn with the service's renderer (geeViz style keys replace it)
+      r.renderer = rendererFor(info.drawingInfo, r.viz, info.geometryType);
+      ctx.addFeatureSource(r, r.source, { styleFor: (p, zoom) => r.renderer.styleFor(p.props, zoom) });
+      // a picture symbol draws once its image has loaded
+      onSymbolImage(() => r.overlay && r.overlay.redraw && r.overlay.redraw());
       return;
     }
     r.tileType = true;
@@ -93,7 +99,8 @@ export const esriPlugin = {
   },
   // The service's legend (/legend), once it is drawn.
   async legend(r, ctx) {
-    if (!r.info || r.kind === "esri.feature") return null;
+    if (!r.info) return null;
+    if (r.kind === "esri.feature") return r.renderer ? r.renderer.legend(r.name) : null;
     return serviceLegend(r.url, r.info, esriOptsOf(r), { fetch: ctx.fetch, title: r.name });
   },
 };

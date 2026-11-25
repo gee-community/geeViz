@@ -1,0 +1,1010 @@
+{
+ "request": {
+  "url": "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/USA_Wildfires_v1/FeatureServer/0",
+  "params": {
+   "f": "json"
+  },
+  "method": "GET"
+ },
+ "response": {
+  "currentVersion": 12,
+  "id": 0,
+  "name": "Current_Incidents",
+  "inDedicatedHosting": true,
+  "preferredHost": "rhvpkkiftonktxq3.svcs9.arcgis.com",
+  "type": "Feature Layer",
+  "serviceItemId": "d957997ccee7408287a963600a77f61f",
+  "cacheMaxAge": 120,
+  "isView": true,
+  "isUpdatableView": true,
+  "sourceSchemaChangesAllowed": true,
+  "displayField": "IncidentName",
+  "description": "",
+  "copyrightText": "",
+  "defaultVisibility": true,
+  "ownershipBasedAccessControlForFeatures": {
+   "allowOthersToQuery": true,
+   "allowOthersToDelete": true,
+   "allowOthersToUpdate": true,
+   "allowAnonymousToQuery": true,
+   "allowAnonymousToUpdate": true,
+   "allowAnonymousToDelete": true
+  },
+  "editingInfo": {
+   "lastEditDate": 1795565610945,
+   "schemaLastEditDate": 1795565605668,
+   "dataLastEditDate": 1795565610647
+  },
+  "relationships": [],
+  "isDataVersioned": false,
+  "hasContingentValuesDefinition": false,
+  "supportsAppend": true,
+  "supportsCalculate": true,
+  "supportsASyncCalculate": true,
+  "supportsTruncate": false,
+  "supportsAttachmentsByUploadId": true,
+  "supportsAttachmentsResizing": true,
+  "supportsRollbackOnFailureParameter": true,
+  "supportsStatistics": true,
+  "supportsExceedsLimitStatistics": true,
+  "supportsAdvancedQueries": true,
+  "supportsValidateSql": true,
+  "supportsCoordinatesQuantization": true,
+  "supportsLayerOverrides": true,
+  "supportsTilesAndBasicQueriesMode": true,
+  "supportsFieldDescriptionProperty": true,
+  "supportsQuantizationEditMode": true,
+  "supportsColumnStoreIndex": true,
+  "supportsApplyEditsWithGlobalIds": false,
+  "supportsReturningQueryGeometry": true,
+  "enableNullGeometry": false,
+  "supportsOBACForAnonymousUsers": true,
+  "advancedQueryCapabilities": {
+   "supportsPagination": true,
+   "supportsPaginationOnAggregatedQueries": true,
+   "supportsQueryRelatedPagination": true,
+   "supportsQueryWithDistance": true,
+   "supportsOutDistance": true,
+   "supportsReturningQueryExtent": true,
+   "supportsStatistics": true,
+   "supportsOrderBy": true,
+   "supportsDistinct": true,
+   "supportsQueryWithResultType": true,
+   "supportsSqlExpression": true,
+   "supportsTimeRelation": true,
+   "supportsAdvancedQueryRelated": true,
+   "supportsCountDistinct": true,
+   "supportsPercentileStatistics": true,
+   "supportsApproxPercentileStatistics": true,
+   "supportsSpatialAggregationStatistics": true,
+   "supportedSpatialAggregationStatistics": [
+    "EnvelopeAggregate",
+    "CentroidAggregate",
+    "ConvexHullAggregate"
+   ],
+   "supportsLod": true,
+   "supportsQueryWithLodSR": false,
+   "supportedLodTypes": [
+    "geohash"
+   ],
+   "supportsReturningGeometryCentroid": false,
+   "supportsReturningGeometryEnvelope": false,
+   "supportsQueryWithDatumTransformation": true,
+   "supportsCurrentUserQueries": true,
+   "supportsHavingClause": true,
+   "supportsOutFieldSQLExpression": true,
+   "supportsMaxRecordCountFactor": true,
+   "supportsTopFeaturesQuery": true,
+   "supportsDisjointSpatialRel": true,
+   "supportsQueryWithCacheHint": true,
+   "supportedOperationsWithCacheHint": [
+    "query",
+    "queryTopFilter",
+    "queryAnalytics",
+    "queryAttachments",
+    "queryRelated",
+    "queryBins",
+    "queryPivot"
+   ],
+   "supportsQueryAnalytic": true,
+   "supportsQueryPivot": true,
+   "supportsQueryBins": true,
+   "supportsDefaultSR": true,
+   "supportsTranslations": false,
+   "supportsAggIds": true,
+   "supportsQueryWithCollation": true,
+   "supportsISODOW": true,
+   "supportsISOWeek": true,
+   "supportsFullTextSearch": true,
+   "fullTextSearchCapabilities": {
+    "supportsAccentSensitivity": true,
+    "supportsStopWords": true,
+    "supportsSearchOperator": true,
+    "supportsOperator": true
+   }
+  },
+  "advancedQueryAnalyticCapabilities": {
+   "supportsLinearRegression": true,
+   "supportsTrendlineRegression": true,
+   "supportsAsync": true,
+   "supportsPercentileAnalytic": true
+  },
+  "queryBinsCapabilities": {
+   "supportsAsync": true,
+   "supportsAutoIntervalBin": true,
+   "supportsFixedIntervalBin": true,
+   "supportsFixedBoundariesBin": true,
+   "supportsDateBin": true,
+   "supportsClassificationBin": true,
+   "supportsStackBy": true,
+   "supportsSplitBy": true,
+   "supportsFirstDayOfWeek": true,
+   "supportsSnapToData": true,
+   "supportsReturnFullIntervalBin": true,
+   "supportsReturnStackValueRange": true,
+   "supportsNormalization": true,
+   "supportedStatisticTypes": [
+    "COUNT",
+    "SUM",
+    "AVG",
+    "VAR",
+    "VAR_SAMP",
+    "VAR_POP",
+    "STDDEV",
+    "STDDEV_SAMP",
+    "STDDEV_POP",
+    "MIN",
+    "MAX",
+    "PERCENTILE_CONT",
+    "PERCENTILE_DISC",
+    "APPROX_PERCENTILE_CONT",
+    "APPROX_PERCENTILE_DISC",
+    "CentroidAggregate",
+    "EnvelopeAggregate",
+    "ConvexHullAggregate"
+   ],
+   "supportedNormalizationTypes": [
+    "boxCox",
+    "field",
+    "inverse",
+    "log",
+    "naturalLog",
+    "percentOfTotal",
+    "squareRoot"
+   ]
+  },
+  "supportedOperationsWithCollation": "query,addField,updateField",
+  "advancedEditingCapabilities": {
+   "supportedSqlFormatsInCalculate": [
+    "standard"
+   ],
+   "supportsAsyncApplyEdits": true,
+   "supportsReturnEditResults": true,
+   "supportsApplyEditsbyUploadID": true,
+   "supportedApplyEditsUploadIDFormats": "JSON,PBF",
+   "supportsTranslation": false,
+   "supportsMaxTranslations": 10
+  },
+  "infoInEstimates": [
+   "extent",
+   "count"
+  ],
+  "useStandardizedQueries": true,
+  "geometryType": "esriGeometryPoint",
+  "minScale": 0,
+  "maxScale": 0,
+  "extent": {
+   "xmin": -162.75979219965214,
+   "ymin": 17.687719703988495,
+   "xmax": -64.67852482195894,
+   "ymax": 64.97103219579806,
+   "spatialReference": {
+    "wkid": 4326,
+    "latestWkid": 4326
+   }
+  },
+  "spatialReference": {
+   "wkid": 4326,
+   "latestWkid": 4326
+  },
+  "drawingInfo": {
+   "renderer": {
+    "visualVariables": [
+     {
+      "type": "sizeInfo",
+      "field": null,
+      "valueExpression": "var Acres = $feature.DailyAcres\r\nvar Age = $feature.FireDiscoveryAge\r\nvar Type = $feature.IncidentTypeCategory\r\nvar vs = $view.scale\r\n\r\nvar ValueSize = When (\r\n    Type == 'RX', 17, //Prescribed Fire\r\n    Type == 'CX', 18, //Incident Complex\r\n    Age == 0, 19.5, //Past 24-hour\r\n    Acres < 1000, 18, //0-999\r\n\tAcres < 10000, 25, //1,000-9,999\r\n\tAcres < 50000, 33, //10,000-49,999\r\n\tAcres < 300000, 41, //50,000-299,999\r\n47 //300,000 or more\r\n)\r\n\r\nWhen(\r\nvs > 9000000, ValueSize,\r\nvs > 4000000, 1 + ValueSize,\r\nvs > 2000000, 2 + ValueSize,\r\nvs > 1000000, 3 + ValueSize,\r\nvs > 500000, 4 + ValueSize, 5 + ValueSize)",
+      "valueExpressionTitle": "Resize Symbol by Map Scale",
+      "valueUnit": "unknown",
+      "minSize": 12.75,
+      "maxSize": 39,
+      "minDataValue": 17,
+      "maxDataValue": 52,
+      "legendOptions": {
+       "showLegend": false
+      }
+     }
+    ],
+    "authoringInfo": {
+     "visualVariables": [
+      {
+       "type": "sizeInfo",
+       "minSliderValue": 17,
+       "maxSliderValue": 52
+      }
+     ]
+    },
+    "type": "uniqueValue",
+    "valueExpression": "var Acres = $feature.DailyAcres\r\nvar Age = $feature.FireDiscoveryAge\r\nvar Type = $feature.IncidentTypeCategory\r\n\r\nif (Type == 'RX') {\r\n    Return \"Prescribed Fire\"\r\n}\r\nif (Type == 'CX') {\r\n    Return \"Incident Complex\"\r\n}\r\nif (Age == 0) {\r\n    Return \"New (Past 24-hour)\"\r\n}\r\nWhen (\r\nAcres < 1000, \"0-999\",\r\nAcres < 10000, \"1,000-9,999\",\r\nAcres < 50000, \"10,000-49,999\",\r\nAcres < 300000,\"50,000-299,999\",\r\n\"300,000 or more\"\r\n)",
+    "valueExpressionTitle": "USA Wildfire Incidents (Acres)",
+    "defaultSymbol": null,
+    "uniqueValueInfos": [
+     {
+      "value": "300,000 or more",
+      "symbol": {
+       "angle": 0,
+       "xoffset": 0,
+       "yoffset": 0,
+       "type": "esriPMS",
+       "url": "d3e44407-8761-4f8a-a815-081aa473a976",
+       "width": 35.25,
+       "height": 35.25,
+       "imageData": "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",
+       "contentType": "image/png"
+      },
+      "label": "300,000 or more"
+     },
+     {
+      "value": "50,000-299,999",
+      "symbol": {
+       "angle": 0,
+       "xoffset": 0,
+       "yoffset": 0,
+       "type": "esriPMS",
+       "url": "bf793a11-3dbc-4522-8e83-c349a0673178",
+       "width": 30.75,
+       "height": 30.75,
+       "imageData": "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",
+       "contentType": "image/png"
+      },
+      "label": "50,000-299,999"
+     },
+     {
+      "value": "10,000-49,999",
+      "symbol": {
+       "angle": 0,
+       "xoffset": 0,
+       "yoffset": 0,
+       "type": "esriPMS",
+       "url": "48a458ef-5bfd-4deb-8ac0-bc8527768264",
+       "width": 24.75,
+       "height": 24.75,
+       "imageData": "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",
+       "contentType": "image/png"
+      },
+      "label": "10,000-49,999"
+     },
+     {
+      "value": "1,000-9,999",
+      "symbol": {
+       "angle": 0,
+       "xoffset": 0,
+       "yoffset": 0,
+       "type": "esriPMS",
+       "url": "cc9190ee-96d8-429a-8cda-da003d3fccbf",
+       "width": 18.75,
+       "height": 18.75,
+       "imageData": "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",
+       "contentType": "image/png"
+      },
+      "label": "1,000-9,999"
+     },
+     {
+      "value": "0-999",
+      "symbol": {
+       "angle": 0,
+       "xoffset": 0,
+       "yoffset": 0,
+       "type": "esriPMS",
+       "url": "f6afc650-49ef-4c64-b6c5-9a621b0ec9f4",
+       "width": 13.5,
+       "height": 13.5,
+       "imageData": "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",
+       "contentType": "image/png"
+      },
+      "label": "0-999"
+     },
+     {
+      "value": "New (Past 24-hour)",
+      "symbol": {
+       "angle": 0,
+       "xoffset": 0,
+       "yoffset": 0,
+       "type": "esriPMS",
+       "url": "d479a4c3-0a14-4e50-877b-dc928f0f8577",
+       "width": 14.625,
+       "height": 14.625,
+       "imageData": "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",
+       "contentType": "image/png"
+      },
+      "label": "New (Past 24-hour)"
+     },
+     {
+      "value": "Incident Complex",
+      "symbol": {
+       "angle": 0,
+       "xoffset": 0,
+       "yoffset": 0,
+       "type": "esriPMS",
+       "url": "98286610-178e-4edb-82b7-6c09c80fae68",
+       "width": 13.5,
+       "height": 13.5,
+       "imageData": "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",
+       "contentType": "image/png"
+      },
+      "label": "Incident Complex"
+     },
+     {
+      "value": "Prescribed Fire",
+      "symbol": {
+       "angle": 0,
+       "xoffset": 0,
+       "yoffset": 0,
+       "type": "esriPMS",
+       "url": "b43672a3-56e4-47c6-9bf6-63721db279b4",
+       "width": 12.75,
+       "height": 12.75,
+       "imageData": "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",
+       "contentType": "image/png"
+      },
+      "label": "Prescribed Fire"
+     }
+    ]
+   },
+   "labelingInfo": [
+    {
+     "name": "Uppercase Name",
+     "labelExpression": null,
+     "labelExpressionInfo": {
+      "expression": "var Name = Upper($feature.IncidentName)\nvar Type = $feature.IncidentTypeCategory\n\nWhen (Type == 'WF', Name, Type == 'CX', Name, \"\")"
+     },
+     "useCodedValues": true,
+     "maxScale": 0,
+     "minScale": 1390801,
+     "where": null,
+     "labelPlacement": "esriServerPointLabelPlacementBelowCenter",
+     "symbol": {
+      "color": [
+       255,
+       255,
+       255,
+       255
+      ],
+      "type": "esriTS",
+      "backgroundColor": null,
+      "borderLineColor": null,
+      "haloSize": 1.5,
+      "haloColor": [
+       230,
+       12,
+       12,
+       255
+      ],
+      "horizontalAlignment": "center",
+      "rightToLeft": false,
+      "angle": 0,
+      "xoffset": 0,
+      "yoffset": 0,
+      "text": "",
+      "rotated": false,
+      "kerning": true,
+      "font": {
+       "size": 6.75,
+       "style": "normal",
+       "decoration": "none",
+       "weight": "normal",
+       "family": "Arial"
+      }
+     }
+    }
+   ],
+   "transparency": 0
+  },
+  "allowGeometryUpdates": true,
+  "hasAttachments": false,
+  "viewSourceHasAttachments": false,
+  "htmlPopupType": "esriServerHTMLPopupTypeAsHTMLText",
+  "hasMetadata": true,
+  "hasM": false,
+  "hasZ": false,
+  "objectIdField": "OBJECTID",
+  "uniqueIdField": {
+   "name": "OBJECTID",
+   "isSystemMaintained": true
+  },
+  "globalIdField": "",
+  "typeIdField": "",
+  "collation": {
+   "locale": "neutral",
+   "caseSensitive": false,
+   "accentSensitive": true
+  },
+  "fields": [
+   {
+    "name": "OBJECTID",
+    "type": "esriFieldTypeOID",
+    "alias": "OBJECTID",
+    "sqlType": "sqlTypeOther",
+    "nullable": false,
+    "editable": false,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Unique object identifier for the feature record.\",\"fieldValueType\":\"uniqueIdentifier\"}"
+   },
+   {
+    "name": "IncidentName",
+    "type": "esriFieldTypeString",
+    "alias": "Incident Name",
+    "sqlType": "sqlTypeOther",
+    "length": 50,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Name assigned to the wildfire incident.\",\"fieldValueType\":\"nameOrTitle\"}"
+   },
+   {
+    "name": "IncidentTypeCategory",
+    "type": "esriFieldTypeString",
+    "alias": "Incident Type Category",
+    "sqlType": "sqlTypeOther",
+    "length": 50,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"A sub-group of the Event Kind code and description that further breaks down the Event Kind into more specific event categories.\",\"fieldValueType\":\"typeOrCategory\"}"
+   },
+   {
+    "name": "UniqueFireIdentifier",
+    "type": "esriFieldTypeString",
+    "alias": "Unique Fire Identifier",
+    "sqlType": "sqlTypeOther",
+    "length": 22,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Unique identifier assigned to the wildfire incident.\",\"fieldValueType\":\"uniqueIdentifier\"}"
+   },
+   {
+    "name": "DailyAcres",
+    "type": "esriFieldTypeDouble",
+    "alias": "Daily Acres",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Number of acres reported as affected by the fire for the current reporting period.\",\"fieldValueType\":\"measurement\"}"
+   },
+   {
+    "name": "CalculatedAcres",
+    "type": "esriFieldTypeDouble",
+    "alias": "Calculated Acres",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"A measure of acres calculated (i.e., infrared) from a geospatial perimeter of a fire.\",\"fieldValueType\":\"measurement\"}"
+   },
+   {
+    "name": "PercentContained",
+    "type": "esriFieldTypeDouble",
+    "alias": "Percent Contained",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Percentage of the fire perimeter that is contained.\",\"fieldValueType\":\"percentageOrRatio\"}"
+   },
+   {
+    "name": "ICS209ReportDateTime",
+    "type": "esriFieldTypeDate",
+    "alias": "ICS209 Report Date Time",
+    "sqlType": "sqlTypeOther",
+    "length": 8,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Date and time of the latest ICS-209 incident report.\",\"fieldValueType\":\"dateAndTime\"}",
+    "precision": 1
+   },
+   {
+    "name": "FireDiscoveryDateTime",
+    "type": "esriFieldTypeDate",
+    "alias": "Fire Discovery Date Time",
+    "sqlType": "sqlTypeOther",
+    "length": 8,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The date and time a fire was reported as discovered or confirmed to exist. May also be the start date for reporting purposes. \",\"fieldValueType\":\"dateAndTime\"}",
+    "precision": 1
+   },
+   {
+    "name": "DiscoveryAcres",
+    "type": "esriFieldTypeDouble",
+    "alias": "Discovery Acres",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Estimated acreage of the fire when it was discovered.\",\"fieldValueType\":\"measurement\"}"
+   },
+   {
+    "name": "POOCounty",
+    "type": "esriFieldTypeString",
+    "alias": "Point of Origin County",
+    "sqlType": "sqlTypeOther",
+    "length": 100,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The county name identifying the county or equivalent entity at point of origin designated at the time of collection. \",\"fieldValueType\":\"locationOrPlaceName\"}"
+   },
+   {
+    "name": "POOState",
+    "type": "esriFieldTypeString",
+    "alias": "Point of Origin State",
+    "sqlType": "sqlTypeOther",
+    "length": 6,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"State where the fire's point of origin is located.\",\"fieldValueType\":\"locationOrPlaceName\"}"
+   },
+   {
+    "name": "FireCause",
+    "type": "esriFieldTypeString",
+    "alias": "Cause",
+    "sqlType": "sqlTypeOther",
+    "length": 15,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Broad classification of the reason the fire occurred identified as human, natural or undetermined.  \",\"fieldValueType\":\"typeOrCategory\"}"
+   },
+   {
+    "name": "FireCauseGeneral",
+    "type": "esriFieldTypeString",
+    "alias": "Cause General",
+    "sqlType": "sqlTypeOther",
+    "length": 100,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Agency or circumstance which started a fire or set the stage for its occurrence; source of a fire's ignition.\",\"fieldValueType\":\"typeOrCategory\"}"
+   },
+   {
+    "name": "GACC",
+    "type": "esriFieldTypeString",
+    "alias": "Geographic Area Coordination Center",
+    "sqlType": "sqlTypeOther",
+    "length": 50,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"A code that identifies one of the wildland fire geographic area coordination centers that is responsible for the incident area.\",\"fieldValueType\":\"locationOrPlaceName\"}"
+   },
+   {
+    "name": "TotalIncidentPersonnel",
+    "type": "esriFieldTypeSmallInteger",
+    "alias": "Total Incident Personnel",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Total number of personnel assigned to the incident.\",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "IncidentManagementOrganization",
+    "type": "esriFieldTypeString",
+    "alias": "Incident Mgmt Organization",
+    "sqlType": "sqlTypeOther",
+    "length": 255,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Organization responsible for managing the incident.\",\"fieldValueType\":\"typeOrCategory\"}"
+   },
+   {
+    "name": "FireMgmtComplexity",
+    "type": "esriFieldTypeString",
+    "alias": "Mgmt Complexity",
+    "sqlType": "sqlTypeOther",
+    "length": 25,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The highest management level utilized to manage a wildland fire event.\",\"fieldValueType\":\"typeOrCategory\"}"
+   },
+   {
+    "name": "ResidencesDestroyed",
+    "type": "esriFieldTypeInteger",
+    "alias": "Residences Destroyed",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The total number of residences destroyed, or damaged to an extent requiring rebuilding, as a result of a fire.\",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "OtherStructuresDestroyed",
+    "type": "esriFieldTypeInteger",
+    "alias": "Other Structures Destroyed",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Number of non-residential structures destroyed by the fire.\",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "Injuries",
+    "type": "esriFieldTypeSmallInteger",
+    "alias": "Number of Injuries",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The total number of reportable occupational injuries and illnesses that occurred in conjunction with an incident.  \",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "Fatalities",
+    "type": "esriFieldTypeSmallInteger",
+    "alias": "Number of Fatalities",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The total number of fatalities of personnel assigned to an incident.\",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "PredominantFuelGroup",
+    "type": "esriFieldTypeString",
+    "alias": "Predominant Fuel Group",
+    "sqlType": "sqlTypeOther",
+    "length": 100,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The fuel majority fuel model type that best represents fire behavior in the incident area, grouped into one of seven categories.\",\"fieldValueType\":\"typeOrCategory\"}"
+   },
+   {
+    "name": "PredominantFuelModel",
+    "type": "esriFieldTypeString",
+    "alias": "Predominant Fuel Model",
+    "sqlType": "sqlTypeOther",
+    "length": 50,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Describes the type of fuels found within the  majority of the incident area.   \",\"fieldValueType\":\"typeOrCategory\"}"
+   },
+   {
+    "name": "PrimaryFuelModel",
+    "type": "esriFieldTypeString",
+    "alias": "Primary Fuel Model",
+    "sqlType": "sqlTypeOther",
+    "length": 30,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Primary fuel model associated with the fire incident.\",\"fieldValueType\":\"typeOrCategory\"}"
+   },
+   {
+    "name": "ContainmentDateTime",
+    "type": "esriFieldTypeDate",
+    "alias": "Containment Date Time",
+    "sqlType": "sqlTypeOther",
+    "length": 8,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The date and time a wildfire was declared contained.  \",\"fieldValueType\":\"dateAndTime\"}",
+    "precision": 1
+   },
+   {
+    "name": "ControlDateTime",
+    "type": "esriFieldTypeDate",
+    "alias": "Control Date Time",
+    "sqlType": "sqlTypeOther",
+    "length": 8,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The date and time a wildfire was declared under control. \",\"fieldValueType\":\"dateAndTime\"}",
+    "precision": 1
+   },
+   {
+    "name": "FinalAcres",
+    "type": "esriFieldTypeDouble",
+    "alias": "Final Acres",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Final reported acreage of the fire.\",\"fieldValueType\":\"measurement\"}"
+   },
+   {
+    "name": "IsValid",
+    "type": "esriFieldTypeInteger",
+    "alias": "Is Valid",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Indicates whether the incident is active within IRWIN\",\"fieldValueType\":\"binary\"}"
+   },
+   {
+    "name": "FireOutDateTime",
+    "type": "esriFieldTypeDate",
+    "alias": "Fire Out Date Time",
+    "sqlType": "sqlTypeOther",
+    "length": 8,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The date and time when a fire is declared out.  \",\"fieldValueType\":\"dateAndTime\"}",
+    "precision": 1
+   },
+   {
+    "name": "ModifiedOnDateTime",
+    "type": "esriFieldTypeDate",
+    "alias": "Modified On Date Time",
+    "sqlType": "sqlTypeOther",
+    "length": 8,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Date and time the incident record was last modified.\",\"fieldValueType\":\"dateAndTime\"}",
+    "precision": 1
+   },
+   {
+    "name": "IncidentTypeKind",
+    "type": "esriFieldTypeString",
+    "alias": "Incident Type Kind",
+    "sqlType": "sqlTypeOther",
+    "length": 2,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Specific kind or classification of the incident.\",\"fieldValueType\":\"typeOrCategory\"}"
+   },
+   {
+    "name": "IrwinID",
+    "type": "esriFieldTypeString",
+    "alias": "Irwin ID",
+    "sqlType": "sqlTypeOther",
+    "length": 40,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Unique identifier assigned to the incident by IRWIN\",\"fieldValueType\":\"uniqueIdentifier\"}"
+   },
+   {
+    "name": "GlobalID",
+    "type": "esriFieldTypeString",
+    "alias": "Global ID",
+    "sqlType": "sqlTypeOther",
+    "length": 40,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Globally unique identifier for the incident record.\",\"fieldValueType\":\"uniqueIdentifier\"}"
+   },
+   {
+    "name": "ModifiedOnAge",
+    "type": "esriFieldTypeSmallInteger",
+    "alias": "Days Since Modified On Date",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Number of days since the incident record was last modified.\",\"fieldValueType\":\"dateAndTime\"}"
+   },
+   {
+    "name": "FireDiscoveryAge",
+    "type": "esriFieldTypeSmallInteger",
+    "alias": "Days Since Fire Discovery Date",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Number of days since the fire was discovered.\",\"fieldValueType\":\"dateAndTime\"}"
+   },
+   {
+    "name": "MaxAcres",
+    "type": "esriFieldTypeDouble",
+    "alias": "Max Acres",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Maximum value between Daily Acres and Calculated Acres.\",\"fieldValueType\":\"measurement\"}"
+   }
+  ],
+  "indexes": [
+   {
+    "name": "PK__USA_AND___F4B70D85765250A8",
+    "fields": "OBJECTID",
+    "isAscending": true,
+    "isUnique": true,
+    "description": "",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "user_20840.USA_AND_CANADA_WILDFIRES_2026R1_CURRENT_INCIDENTS_Shape_sidx",
+    "fields": "Shape",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "",
+    "indexType": "Spatial"
+   },
+   {
+    "name": "I3FireDiscoveryA",
+    "fields": "FireDiscoveryAge",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "I3ModifiedOnAge",
+    "fields": "ModifiedOnAge",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "UX_USA_AND_CANADA_WILDFIRES_2026R1_CURRENT_INCIDENTS_IrwinID_ASC",
+    "fields": "IrwinID",
+    "isAscending": true,
+    "isUnique": true,
+    "description": "Field properties",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "DailyAcres_Index",
+    "fields": "DailyAcres",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "DailyAcres_Index",
+    "indexType": "Attribute"
+   }
+  ],
+  "dateFieldsTimeReference": {
+   "timeZone": "UTC",
+   "timeZoneIANA": "Etc/UTC",
+   "respectsDaylightSaving": false
+  },
+  "preferredTimeReference": null,
+  "types": [],
+  "templates": [
+   {
+    "name": "Current_Incidents",
+    "description": "",
+    "drawingTool": "esriFeatureEditToolPoint",
+    "prototype": {
+     "attributes": {
+      "FireDiscoveryAge": null,
+      "MaxAcres": null,
+      "IncidentName": null,
+      "IncidentTypeCategory": null,
+      "UniqueFireIdentifier": null,
+      "DailyAcres": null,
+      "CalculatedAcres": null,
+      "PercentContained": null,
+      "ICS209ReportDateTime": null,
+      "FireDiscoveryDateTime": null,
+      "DiscoveryAcres": null,
+      "POOCounty": null,
+      "POOState": null,
+      "FireCause": null,
+      "FireCauseGeneral": null,
+      "GACC": null,
+      "TotalIncidentPersonnel": null,
+      "IncidentManagementOrganization": null,
+      "FireMgmtComplexity": null,
+      "ResidencesDestroyed": null,
+      "OtherStructuresDestroyed": null,
+      "Injuries": null,
+      "Fatalities": null,
+      "PredominantFuelGroup": null,
+      "PredominantFuelModel": null,
+      "PrimaryFuelModel": null,
+      "ContainmentDateTime": null,
+      "ControlDateTime": null,
+      "FinalAcres": null,
+      "IsValid": null,
+      "FireOutDateTime": null,
+      "ModifiedOnDateTime": null,
+      "IncidentTypeKind": null,
+      "IrwinID": null,
+      "GlobalID": null,
+      "ModifiedOnAge": null
+     }
+    }
+   }
+  ],
+  "supportedQueryFormats": "JSON, geoJSON, PBF",
+  "supportedAppendFormats": "sqlite,geoPackage,shapefile,filegdb,featureCollection,geojson,csv,excel,jsonl,featureService,pbf",
+  "supportedAppendSourceFilterFormats": "sqlite,geoPackage,shapefile,filegdb,featureService",
+  "supportedExportFormats": "csv,shapefile,sqlite,geoPackage,filegdb,featureCollection,geojson,kml,excel,parquet",
+  "supportedConvertFileFormats": "JSON,PBF,Parquet",
+  "supportedConvertContentFormats": "LayerEditCollection,FeatureCollection",
+  "supportedSpatialRelationships": [
+   "esriSpatialRelIntersects",
+   "esriSpatialRelContains",
+   "esriSpatialRelCrosses",
+   "esriSpatialRelEnvelopeIntersects",
+   "esriSpatialRelIndexIntersects",
+   "esriSpatialRelOverlaps",
+   "esriSpatialRelTouches",
+   "esriSpatialRelWithin",
+   "esriSpatialRelDisjoint",
+   "esriSpatialRelRelation"
+  ],
+  "guidFormat": "",
+  "supportsContingentValues": true,
+  "supportsEditingContingentValues": true,
+  "supportedContingentValuesFormats": "JSON, PBF",
+  "supportsFieldGroups": true,
+  "supportedSyncDataOptions": 49412,
+  "hasStaticData": true,
+  "maxRecordCount": 16000,
+  "standardMaxRecordCount": 16000,
+  "maxIdsCount": 1000000,
+  "standardMaxRecordCountNoGeometry": 32000,
+  "tileMaxRecordCount": 8000,
+  "maxRecordCountFactor": 1,
+  "capabilities": "Query,Extract",
+  "layerOverrides": [
+   "allowGeometryUpdates",
+   "capabilities"
+  ]
+ }
+}

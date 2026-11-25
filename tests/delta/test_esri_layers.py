@@ -157,3 +157,25 @@ def test_a_feature_layer_draws_for_the_view_and_answers_a_click(live_map):
     # every field, asked for the feature hit
     assert any("objectIds=" in u and ("outFields=*" in u or "outFields=%2A" in u) for u in seen)
     assert ee_requests(seen) == []
+
+
+STATES = "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_States_Generalized_Boundaries/FeatureServer/0"
+
+
+def build_states(Map):
+    Map.addEsriFeatureService(STATES, name="States")
+    Map.setCenter(-105.5, 39.0, 6)
+
+
+def test_a_feature_layer_draws_with_its_service_renderer(live_map):
+    page = live_map(build_states, setup=recorder([]))
+    wait_for(page, "() => { const l = __delta.store.get().layers[0]; return l && l.legend && !l.loading; }", timeout=120)
+    l = layers(page)[0]
+    assert l["error"] is None, l
+    lg = l["legend"]
+    # the service's simple renderer: an orange fill at alpha 59 with a grey outline
+    assert lg["type"] == "symbols" and len(lg["items"]) == 1, lg
+    g = lg["items"][0]["glyph"]
+    assert (g["geom"], g["fill"], g["stroke"]) == ("polygon", "#e38b4f", "#6e6e6e"), g
+    # one symbol: shown in the row, nothing to open
+    assert page.evaluate("(id) => !!document.querySelector(`.layer[data-id='${id}'] .legbtn.symbol svg`)", l["id"])

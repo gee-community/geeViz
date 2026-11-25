@@ -41,11 +41,33 @@ function glyphSvg(g) {
   svg.setAttribute("viewBox", "0 0 14 14");
   svg.dataset.geom = g.geom;
   let el;
-  if (g.geom === "point") {
+  if (g.image) {
+    // an ArcGIS picture symbol
+    el = document.createElementNS(SVGNS, "image");
+    el.setAttribute("href", g.image);
+    el.setAttribute("x", "1");
+    el.setAttribute("y", "1");
+    el.setAttribute("width", "12");
+    el.setAttribute("height", "12");
+    svg.appendChild(el);
+    return svg;
+  }
+  const r = g.size ? Math.max(2, Math.min(6.5, (g.size * 4) / 3 / 2)) : 4;
+  if (g.geom === "point" && g.shape && g.shape !== "circle") {
+    el = document.createElementNS(SVGNS, "path");
+    const d = {
+      square: `M${7 - r} ${7 - r}h${2 * r}v${2 * r}h${-2 * r}z`,
+      diamond: `M7 ${7 - r}L${7 + r} 7L7 ${7 + r}L${7 - r} 7z`,
+      triangle: `M7 ${7 - r}L${7 + r} ${7 + r}L${7 - r} ${7 + r}z`,
+      cross: `M${7 - r} 7H${7 + r}M7 ${7 - r}V${7 + r}`,
+      x: `M${7 - r} ${7 - r}L${7 + r} ${7 + r}M${7 - r} ${7 + r}L${7 + r} ${7 - r}`,
+    }[g.shape];
+    el.setAttribute("d", d || "");
+  } else if (g.geom === "point") {
     el = document.createElementNS(SVGNS, "circle");
     el.setAttribute("cx", "7");
     el.setAttribute("cy", "7");
-    el.setAttribute("r", "4");
+    el.setAttribute("r", String(r));
   } else if (g.geom === "line") {
     el = document.createElementNS(SVGNS, "polyline");
     el.setAttribute("points", "1.5,11.5 5,5 9,9 12.5,2.5");
@@ -154,6 +176,9 @@ export function mountLayers(store, mountEl, opts = {}) {
   function paintLegend(row, legend) {
     const { legendEl, swatch, legbtn } = row.parts;
     legendEl.innerHTML = legendMarkup(legend);
+    // a renderer legend's glyphs and ramps
+    legendEl.querySelectorAll("[data-g]").forEach((el) => el.appendChild(glyphSvg(legend.items[Number(el.dataset.g)].glyph)));
+    legendEl.querySelectorAll("[data-r]").forEach((el) => (el.style.background = gradient(legend.ramps[Number(el.dataset.r)].palette)));
     legendEl.querySelectorAll("[data-c]").forEach((el) => {
       const c = el.dataset.c;
       if (c === "ramp") el.style.background = gradient(legend.palette);

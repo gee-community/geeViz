@@ -1,0 +1,1026 @@
+{
+ "request": {
+  "url": "https://services.arcgis.com/jIL9msH9OI208GCb/arcgis/rest/services/USA_Wildfire_Hazard_Potential/FeatureServer/0",
+  "params": {
+   "f": "json"
+  },
+  "method": "GET"
+ },
+ "response": {
+  "currentVersion": 12,
+  "id": 0,
+  "name": "State",
+  "type": "Feature Layer",
+  "serviceItemId": "ce92e9a37f27439082476c369e2f4254",
+  "cacheMaxAge": 3600,
+  "displayField": "NAME",
+  "description": "",
+  "copyrightText": "",
+  "defaultVisibility": true,
+  "editingInfo": {
+   "lastEditDate": 1779136339299,
+   "schemaLastEditDate": 1779136339299,
+   "dataLastEditDate": 1778363727734
+  },
+  "multiScaleGeometryInfo": {
+   "levels": [
+    1,
+    3,
+    5,
+    7,
+    9
+   ],
+   "maxAllowableVertices": 1000000,
+   "generalizationType": "Quantization",
+   "supportsReturnExceededLimitGeometries": true
+  },
+  "relationships": [],
+  "isDataVersioned": false,
+  "hasContingentValuesDefinition": false,
+  "supportsAppend": true,
+  "supportsCalculate": true,
+  "supportsASyncCalculate": true,
+  "supportsTruncate": true,
+  "supportsAttachmentsByUploadId": true,
+  "supportsAttachmentsResizing": true,
+  "supportsRollbackOnFailureParameter": true,
+  "supportsStatistics": true,
+  "supportsExceedsLimitStatistics": true,
+  "supportsAdvancedQueries": true,
+  "supportsValidateSql": true,
+  "supportsCoordinatesQuantization": true,
+  "supportsLayerOverrides": true,
+  "supportsTilesAndBasicQueriesMode": true,
+  "supportsFieldDescriptionProperty": true,
+  "supportsQuantizationEditMode": true,
+  "supportsColumnStoreIndex": true,
+  "supportsApplyEditsWithGlobalIds": false,
+  "supportsMultiScaleGeometry": true,
+  "supportsReturningQueryGeometry": true,
+  "enableNullGeometry": false,
+  "hasGeometryProperties": true,
+  "geometryProperties": {
+   "shapeAreaFieldName": "Shape__Area",
+   "shapeLengthFieldName": "Shape__Length",
+   "units": "esriMeters"
+  },
+  "advancedQueryCapabilities": {
+   "supportsPagination": true,
+   "supportsPaginationOnAggregatedQueries": true,
+   "supportsQueryRelatedPagination": true,
+   "supportsQueryWithDistance": true,
+   "supportsOutDistance": true,
+   "supportsReturningQueryExtent": true,
+   "supportsStatistics": true,
+   "supportsOrderBy": true,
+   "supportsDistinct": true,
+   "supportsQueryWithResultType": true,
+   "supportsSqlExpression": true,
+   "supportsTimeRelation": true,
+   "supportsAdvancedQueryRelated": true,
+   "supportsCountDistinct": true,
+   "supportsPercentileStatistics": true,
+   "supportsApproxPercentileStatistics": true,
+   "supportsSpatialAggregationStatistics": true,
+   "supportsTrueCurve": true,
+   "supportedSpatialAggregationStatistics": [
+    "EnvelopeAggregate",
+    "CentroidAggregate",
+    "ConvexHullAggregate"
+   ],
+   "supportsLod": true,
+   "supportsQueryWithLodSR": false,
+   "supportedLodTypes": [
+    "geohash"
+   ],
+   "supportsReturningGeometryCentroid": true,
+   "supportsReturningGeometryEnvelope": true,
+   "supportsReturningGeometryProperties": true,
+   "supportsQueryWithDatumTransformation": true,
+   "supportsCurrentUserQueries": true,
+   "supportsHavingClause": true,
+   "supportsOutFieldSQLExpression": true,
+   "supportsMaxRecordCountFactor": true,
+   "supportsTopFeaturesQuery": true,
+   "supportsDisjointSpatialRel": true,
+   "supportsQueryWithCacheHint": true,
+   "supportedOperationsWithCacheHint": [
+    "query",
+    "queryTopFilter",
+    "queryAnalytics",
+    "queryAttachments",
+    "queryRelated",
+    "queryBins",
+    "queryPivot"
+   ],
+   "supportsQueryAnalytic": true,
+   "supportsQueryPivot": true,
+   "supportsQueryBins": true,
+   "supportsDefaultSR": true,
+   "supportsTranslations": false,
+   "supportsAggIds": true,
+   "supportsQueryWithCollation": true,
+   "supportsISODOW": true,
+   "supportsISOWeek": true,
+   "supportsFullTextSearch": true,
+   "fullTextSearchCapabilities": {
+    "supportsAccentSensitivity": true,
+    "supportsStopWords": true,
+    "supportsSearchOperator": true,
+    "supportsOperator": true
+   }
+  },
+  "advancedQueryAnalyticCapabilities": {
+   "supportsLinearRegression": true,
+   "supportsTrendlineRegression": true,
+   "supportsAsync": true,
+   "supportsPercentileAnalytic": true
+  },
+  "queryBinsCapabilities": {
+   "supportsAsync": true,
+   "supportsAutoIntervalBin": true,
+   "supportsFixedIntervalBin": true,
+   "supportsFixedBoundariesBin": true,
+   "supportsDateBin": true,
+   "supportsClassificationBin": true,
+   "supportsStackBy": true,
+   "supportsSplitBy": true,
+   "supportsFirstDayOfWeek": true,
+   "supportsSnapToData": true,
+   "supportsReturnFullIntervalBin": true,
+   "supportsReturnStackValueRange": true,
+   "supportsNormalization": true,
+   "supportedStatisticTypes": [
+    "COUNT",
+    "SUM",
+    "AVG",
+    "VAR",
+    "VAR_SAMP",
+    "VAR_POP",
+    "STDDEV",
+    "STDDEV_SAMP",
+    "STDDEV_POP",
+    "MIN",
+    "MAX",
+    "PERCENTILE_CONT",
+    "PERCENTILE_DISC",
+    "APPROX_PERCENTILE_CONT",
+    "APPROX_PERCENTILE_DISC",
+    "CentroidAggregate",
+    "EnvelopeAggregate",
+    "ConvexHullAggregate"
+   ],
+   "supportedNormalizationTypes": [
+    "boxCox",
+    "field",
+    "inverse",
+    "log",
+    "naturalLog",
+    "percentOfTotal",
+    "squareRoot"
+   ]
+  },
+  "supportedOperationsWithCollation": "query,addField,updateField",
+  "supportsReturnExceededLimitGeometries": true,
+  "advancedEditingCapabilities": {
+   "supportedSqlFormatsInCalculate": [
+    "standard"
+   ],
+   "supportsAsyncApplyEdits": true,
+   "supportsReturnEditResults": true,
+   "supportsApplyEditsbyUploadID": true,
+   "supportedApplyEditsUploadIDFormats": "JSON,PBF",
+   "supportsTranslation": false,
+   "supportsMaxTranslations": 10
+  },
+  "infoInEstimates": [
+   "extent",
+   "count"
+  ],
+  "useStandardizedQueries": true,
+  "geometryType": "esriGeometryPolygon",
+  "minScale": 136869721,
+  "maxScale": 67430036,
+  "extent": {
+   "xmin": -2356112.793299999,
+   "ymin": 268090.7977999998,
+   "xmax": 2258200.438000001,
+   "ymax": 3172567.010199999,
+   "spatialReference": {
+    "wkt": "PROJCS[\"NAD_1983_Albers\",GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Albers\"],PARAMETER[\"False_Easting\",0.0],PARAMETER[\"False_Northing\",0.0],PARAMETER[\"Central_Meridian\",-96.0],PARAMETER[\"Standard_Parallel_1\",29.5],PARAMETER[\"Standard_Parallel_2\",45.5],PARAMETER[\"Latitude_Of_Origin\",23.0],UNIT[\"Meter\",1.0]]"
+   }
+  },
+  "spatialReference": {
+   "wkt": "PROJCS[\"NAD_1983_Albers\",GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Albers\"],PARAMETER[\"False_Easting\",0.0],PARAMETER[\"False_Northing\",0.0],PARAMETER[\"Central_Meridian\",-96.0],PARAMETER[\"Standard_Parallel_1\",29.5],PARAMETER[\"Standard_Parallel_2\",45.5],PARAMETER[\"Latitude_Of_Origin\",23.0],UNIT[\"Meter\",1.0]]"
+  },
+  "drawingInfo": {
+   "renderer": {
+    "visualVariables": [
+     {
+      "type": "colorInfo",
+      "field": "MEAN",
+      "valueExpression": null,
+      "stops": [
+       {
+        "value": 0,
+        "color": [
+         204,
+         204,
+         204,
+         255
+        ],
+        "label": "0"
+       },
+       {
+        "value": 1,
+        "color": [
+         255,
+         244,
+         181,
+         255
+        ],
+        "label": null
+       },
+       {
+        "value": 2.5,
+        "color": [
+         254,
+         153,
+         41,
+         255
+        ],
+        "label": null
+       },
+       {
+        "value": 3.75,
+        "color": [
+         211,
+         84,
+         6,
+         255
+        ],
+        "label": null
+       },
+       {
+        "value": 5,
+        "color": [
+         102,
+         37,
+         6,
+         255
+        ],
+        "label": "5"
+       }
+      ]
+     }
+    ],
+    "authoringInfo": {
+     "visualVariables": [
+      {
+       "type": "colorInfo",
+       "minSliderValue": 0,
+       "maxSliderValue": 5,
+       "theme": "high-to-low"
+      }
+     ]
+    },
+    "type": "classBreaks",
+    "field": "MEAN",
+    "minValue": -9007199254740991,
+    "classBreakInfos": [
+     {
+      "symbol": {
+       "color": [
+        170,
+        170,
+        170,
+        255
+       ],
+       "outline": {
+        "color": null,
+        "width": 0.75,
+        "type": "esriSLS",
+        "style": "esriSLSNull"
+       },
+       "type": "esriSFS",
+       "style": "esriSFSSolid"
+      },
+      "classMaxValue": 9007199254740991
+     }
+    ]
+   },
+   "transparency": 0
+  },
+  "allowGeometryUpdates": true,
+  "trueCurveSupportMode": "OGC",
+  "supportedCurveTypes": [
+   "esriGeometryCircularArc"
+  ],
+  "supportedTrueCurvePbfFeatureEncodings": [
+   "esriCompressedShapeBuffer",
+   "esriDefault"
+  ],
+  "allowTrueCurvesUpdates": true,
+  "onlyAllowTrueCurveUpdatesByTrueCurveClients": false,
+  "hasAttachments": false,
+  "htmlPopupType": "esriServerHTMLPopupTypeAsHTMLText",
+  "hasMetadata": true,
+  "hasM": false,
+  "hasZ": false,
+  "objectIdField": "OBJECTID",
+  "uniqueIdField": {
+   "name": "OBJECTID",
+   "isSystemMaintained": true
+  },
+  "globalIdField": "",
+  "typeIdField": "",
+  "collation": {
+   "locale": "neutral",
+   "caseSensitive": false,
+   "accentSensitive": true
+  },
+  "fields": [
+   {
+    "name": "OBJECTID",
+    "type": "esriFieldTypeOID",
+    "alias": "OBJECTID",
+    "sqlType": "sqlTypeOther",
+    "nullable": false,
+    "editable": false,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "ID",
+    "type": "esriFieldTypeString",
+    "alias": "ID",
+    "sqlType": "sqlTypeOther",
+    "length": 2,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "NAME",
+    "type": "esriFieldTypeString",
+    "alias": "Name",
+    "sqlType": "sqlTypeOther",
+    "length": 20,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"\", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "STATE_NAME",
+    "type": "esriFieldTypeString",
+    "alias": "State Name",
+    "sqlType": "sqlTypeOther",
+    "length": 20,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Common name of the state\",\"fieldValueType\":\"nameOrTitle\"}"
+   },
+   {
+    "name": "ST_ABBREV",
+    "type": "esriFieldTypeString",
+    "alias": "State Abbreviation",
+    "sqlType": "sqlTypeOther",
+    "length": 2,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Two-character state abbreviation\",\"fieldValueType\":\"uniqueIdentifier\"}"
+   },
+   {
+    "name": "TOTPOP_CY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2020 Total Population (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2020 Estimate (#) of the Total Population in the geographic area. Total Population includes population living in households, on active duty in the Armed Forces, and living in group quarters such as correctional facilities, skilled nursing facilities, juvenile facilities, college dorms, and military barracks. \",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "POPDENS_CY",
+    "type": "esriFieldTypeDouble",
+    "alias": "2020 Population Density (Pop per Square Mile) (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2020 Estimate (#) of the Population Density (population per Square Mile) in the geographic area. Population density is computed by dividing the total population within the geographic area by the total land area, measured in square miles. See https://links.esri.com/demographics/updated-demographics for more information on Esri Demographic variables.\",\"fieldValueType\":\"percentageOrRatio\"}"
+   },
+   {
+    "name": "TOTHH_CY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2020 Total Households (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2020 Estimate (#) of the Total Households in the geographic area. A household includes all people who occupy one housing unit (such as a house or apartment) as their usual residence. A household may include related family members, unrelated people, a person living alone, or a group of unrelated people sharing a housing unit, such as partners or roommates. It excludes group quarters. \",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "TOTHU_CY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2020 Total Housing Units (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2020 Estimate (#) of Total Housing Units, occupied or vacant, in the geographic area. A housing unit is a house, an apartment, a mobile home, a group of rooms, or a single room that is occupied (or if vacant, is intended for occupancy) as separate living quarters. Occupants can be individuals, roommates, families who live together, or any other group of related of unrelated people who share living arrangements. \",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "OWNER_CY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2020 Owner Occupied Housing Units (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2020 Estimate (#) of Owner-Occupied Housing Units in the geographic area. A housing unit is owner-occupied if the owner or co-owner lives in the unit. A housing unit is a house, an apartment, a mobile home, a group of rooms, or a single room that is occupied (or if vacant, is intended for occupancy) as separate living quarters. \",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "RENTER_CY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2020 Renter Occupied Housing Units (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2020 Estimate (#) of Renter-Occupied Housing Units in the geographic area. All occupied housing units which are not owner-occupied, whether they are rented or occupied without payment of rent, are classified as renter-occupied. A housing unit is a house, an apartment, a mobile home, a group of rooms, or a single room that is occupied (or if vacant, is intended for occupancy) as separate living quarters. \",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "POPGRW10CY",
+    "type": "esriFieldTypeDouble",
+    "alias": "2010-2020 Population: Annual Growth Rate (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The 2010-2020 Population Compound Annual Growth Rate (CAGR) is an annualized measure describing the direction (either positive or negative) and magnitude of change in the total number of persons between the years 2010 and 2020. Annualized means that the resultant value reflects a rate of change over a twelve-month time period. Annualized growth rate is compounded each year. The CAGR is sometimes referred to as growth rate, annual rate, annualized growth rate, or compound growth rate.\",\"fieldValueType\":\"percentageOrRatio\"}"
+   },
+   {
+    "name": "HAI_CY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2020 Housing Affordability Index (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2020 Housing Affordability Index (HAI) measures the ability of a typical resident to purchase a home in the geographic area. HAI has a base of 100, where the median income is sufficient to qualify for a loan on a median-valued home and not be cost-burdened (greater than 30% of income spent on housing). HAI values >100 indicate increasing affordability; HAI values <100 indicate areas where homes are less affordable and median income might be insufficient to purchase a median-valued home. \",\"fieldValueType\":\"percentageOrRatio\"}"
+   },
+   {
+    "name": "INCMORT_CY",
+    "type": "esriFieldTypeDouble",
+    "alias": "2020 Percent of Income for Mortgage (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2020 Estimate (#) of the Percent of Income for Mortgage (POIFM) in the geographic area. This is the median percentage of household income dedicated to mortgage payments for a home priced at the median value. Esri's Percent of Income for Mortgage (POIFM) measures the percentage of median household income in an area dedicated to mortgage payments on a median valued home in the area. Esri's home value estimates include owner-occupied homes only. \",\"fieldValueType\":\"percentageOrRatio\"}"
+   },
+   {
+    "name": "TSPOP10_CY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2010 Total Population (Esri 2020)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2010 Estimate (#) of the Total Population in the geographic area. Total Population includes population living in households, on active duty in the Armed Forces, and living in group quarters such as correctional facilities, skilled nursing facilities, juvenile facilities, college dorms, and military barracks. \",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "TSHH10_CY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2010 Total Households (Esri 2020)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2010 Estimate (#) of the Total Households in the geographic area. A household includes all people who occupy one housing unit (such as a house or apartment) as their usual residence. A household may include related family members, unrelated people, a person living alone, or a group of unrelated people sharing a housing unit, such as partners or roommates. It excludes group quarters. \",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "TSHU10_CY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2010 Total Housing Units (Esri 2020)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2010 Estimate (#) of Total Housing Units, occupied or vacant, in the geographic area. A housing unit is a house, an apartment, a mobile home, a group of rooms, or a single room that is occupied (or if vacant, is intended for occupancy) as separate living quarters. Occupants can be individuals, roommates, families who live together, or any other group of related of unrelated people who share living arrangements. \",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "MINORITYCY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2020 Minority Population (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"2020 Minority Popluation - The U.S. Census Bureau defines the \\\"minority population\\\" as any population excluding the Non-Hispanic White alone category\",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "DIVINDX_CY",
+    "type": "esriFieldTypeDouble",
+    "alias": "2020 Diversity Index (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2020 estimated Diversity Index in the geographic area. Esri's Diversity Index summarizes racial and ethnic diversity, indicating the likelihood that two individuals, chosen at random from the same area, belong to the same race or ethnic group. The index ranges from 0 (no diversity) to 100 (highest diversity). An area's Diversity Index increases when the population includes more race/ethnic groups. \",\"fieldValueType\":\"percentageOrRatio\"}"
+   },
+   {
+    "name": "MEDHINC_CY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2020 Median Household Income (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2020 Estimate (#) of Median Household Income in the geographic area. Median Household Income is the amount that divides household income (annual income for all household earners age 15+) into two equal groups in a geographic area; half of the population will have income higher than the median and half will have lower income. If the median falls in the upper income interval of $200,000+, it is represented by the value of $200,001. Esri uses the U.S. Census definition of income. \",\"fieldValueType\":\"percentageOrRatio\"}"
+   },
+   {
+    "name": "PCI_CY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2020 Per Capita Income (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2020 Estimate (#) of the Per Capita Income in the geographic area. Per Capita Income is calculated by dividing Aggregate Income by the Total Population for the area. See https://links.esri.com/demographics/updated-demographics for more information on Esri Demographic variables.\",\"fieldValueType\":\"percentageOrRatio\"}"
+   },
+   {
+    "name": "MEDVAL_CY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2020 Median Home Value (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2020 Estimate (#) of the Median Home Value in the geographic area. Median Home Value divides home values into two equal groups; half of the homes will have a value higher than the median, and half lower. If the median is $2,000,000+, it is represented by a value of $2,000,001. See https://links.esri.com/demographics/updated-demographics for more information on Esri Demographic variables.\",\"fieldValueType\":\"percentageOrRatio\"}"
+   },
+   {
+    "name": "AVGVAL_CY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2020 Average Home Value (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2020 Estimate (#) of the Average Home Value for owner-occupied housing units in the geographic area, top coded to $2,250,000. A housing unit is owner-occupied if the owner or co-owner lives in the unit, even if it is mortgaged or not fully paid for. Average Home Value is calculated by dividing the aggregate home value for the area by all owner-occupied housing units in that area with value. \",\"fieldValueType\":\"percentageOrRatio\"}"
+   },
+   {
+    "name": "TOTPOP_FY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2025 Total Population (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2025 Estimate (#) of the Total Population in the geographic area. Total Population includes population living in households, on active duty in the Armed Forces, and living in group quarters such as correctional facilities, skilled nursing facilities, juvenile facilities, college dorms, and military barracks. See https://links.esri.com/demographics/updated-demographics for more information on Esri Demographic variables.\",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "POPDENS_FY",
+    "type": "esriFieldTypeDouble",
+    "alias": "2025 Population Density (Pop per Square Mile) (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2025 Estimate (#) of the Population Density (population per Square Mile) in the geographic area. Population density is computed by dividing the total population within the geographic area by the total land area, measured in square miles. See https://links.esri.com/demographics/updated-demographics for more information on Esri Demographic variables.\",\"fieldValueType\":\"percentageOrRatio\"}"
+   },
+   {
+    "name": "TOTHH_FY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2025 Total Households (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Esri 2025 Estimate (#) of the Total Households in the geographic area. A household includes all people who occupy one housing unit (such as a house or apartment) as their usual residence. A household may include related family members, unrelated people, a person living alone, or a group of unrelated people sharing a housing unit, such as partners or roommates. It excludes group quarters. \",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "TOTHU_FY",
+    "type": "esriFieldTypeInteger",
+    "alias": "2025 Total Housing Units (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"2025 Total Housing Units. Total Housing Units, occupied or vacant, in the geographic area. A housing unit is a house, an apartment, a mobile home, a group of rooms, or a single room that is occupied (or if vacant, is intended for occupancy) as separate living quarters. Occupants can be individuals, roommates, families who live together, or any other group of related of unrelated people who share living arrangements.\",\"fieldValueType\":\"countOrAmount\"}"
+   },
+   {
+    "name": "POPGRWCYFY",
+    "type": "esriFieldTypeDouble",
+    "alias": "2020-2025 Population: Annual Growth Rate (Esri)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Annualized population change projected from 2020 to 2025. Annualized change smooths out the variability in year-over-year changes giving a more realistic view, especially for smaller geographies by converting the rate to an annual rate.\",\"fieldValueType\":\"percentageOrRatio\"}"
+   },
+   {
+    "name": "POPGRW0010",
+    "type": "esriFieldTypeDouble",
+    "alias": "2000-2010 Population: Annual Growth Rate (U.S. Census)",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Annualized population change from 2000 to 2010. Annualized change smooths out the variability in year-over-year changes giving a more realistic view, especially for smaller geographies by converting the rate to an annual rate.\",\"fieldValueType\":\"percentageOrRatio\"}"
+   },
+   {
+    "name": "AnnPopChange2010_2020",
+    "type": "esriFieldTypeDouble",
+    "alias": "Annualized Population Change 2010-2020",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Annualized population change from 2010 to 2020. Annualized change smooths out the variability in year-over-year changes giving a more realistic view, especially for smaller geographies by converting the rate to an annual rate. \", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "PercPopChange2010_2020",
+    "type": "esriFieldTypeDouble",
+    "alias": "% Population Change between 2010-2020",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The percent change of total population from 2010 to 2020. \", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "AnnHUChange2010_2020",
+    "type": "esriFieldTypeDouble",
+    "alias": "Annualized Housing Unit Change 2010-2020",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Annualized housing unit change from 2010 to 2020. Annualized change smooths out the variability in year-over-year changes giving a more realistic view, especially for smaller geographies by converting the rate to an annual rate.\", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "PercHUChange2010_2020",
+    "type": "esriFieldTypeDouble",
+    "alias": "% Housing Unit Change between 2010-2020",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The percent change of total housing units from 2010 to 2020. \", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "AnnHHChange2010_2020",
+    "type": "esriFieldTypeDouble",
+    "alias": "Annualized Household Change 2010-2020",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"Annualized household change from 2010 to 2020. Annualized change smooths out the variability in year-over-year changes giving a more realistic view, especially for smaller geographies by converting the rate to an annual rate.\", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "PercHHChange2010_2020",
+    "type": "esriFieldTypeDouble",
+    "alias": "% Household Change between 2010-2020",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The percent change of total households from 2010 to 2020. \", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "WHPWeightedPop",
+    "type": "esriFieldTypeDouble",
+    "alias": "Population Weighted Wildfire Hazard Potential Score",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"This version of Average Wildfire Hazard Potential is weighted based on a summarization of the hex bin population figures, which weight the WHP values by how many people reside there in order to show the impacted population of an area. \", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "MIN_",
+    "type": "esriFieldTypeInteger",
+    "alias": "Lowest Possible Wildfire Hazard Potential Score",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The smallest value of all cells in the input raster that belong to the same geography zone as the output. It was calculated using Zonal Statistics in ArcGIS Pro.\", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "MAX_",
+    "type": "esriFieldTypeInteger",
+    "alias": "Highest Possible Wildfire Hazard Potential Score",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The largest value of all cells in the input raster that belong to the same geography zone as the output. It was calculated using Zonal Statistics in ArcGIS Pro.\", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "RANGE",
+    "type": "esriFieldTypeInteger",
+    "alias": "Difference between MIN and MAX Wildfire Hazard Potential Scores",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The difference between the largest (MAX) and smallest (MIN) value of all cells in the input raster that belong to the same geography zone as the output. It was calculated using Zonal Statistics in ArcGIS Pro.\", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "MEAN",
+    "type": "esriFieldTypeDouble",
+    "alias": "Average Wildfire Hazard Potential Score",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The average of all cells in the input raster that belong to the same geography zone as the output. It was calculated using Zonal Statistics in ArcGIS Pro.\", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "STD",
+    "type": "esriFieldTypeDouble",
+    "alias": "Standard Deviation of Wildfire Hazard Potential Score",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The standard deviation of all cells in the input raster that belong to the same geography zone as the output. It was calculated using Zonal Statistics in ArcGIS Pro.\", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "SUM_",
+    "type": "esriFieldTypeDouble",
+    "alias": "Sum of all Wildfire Hazard Potential Scores within Area",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The total value of all cells in the input raster that belong to the same geography zone as the output. It was calculated using Zonal Statistics in ArcGIS Pro.\", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "VARIETY",
+    "type": "esriFieldTypeInteger",
+    "alias": "Number of Unique Wildfire Potential Scores",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The number of unique values of all cells in the input raster that belong to the same geography zone as the output. It was calculated using Zonal Statistics in ArcGIS Pro.\", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "MAJORITY",
+    "type": "esriFieldTypeInteger",
+    "alias": "Most Frequently Occurring Wildfire Hazard Potential Score",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The value that occurs most often of all cells in the input raster that belong to the same geography zone as the output. Also known as the mode. It was calculated using Zonal Statistics in ArcGIS Pro.\", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "MINORITY",
+    "type": "esriFieldTypeInteger",
+    "alias": "Least Frequently Occurring Wildfire Hazard Potential Score",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The value that occurs least often of all cells in the input raster that belong to the same geography zone as the output. It was calculated using Zonal Statistics in ArcGIS Pro.\", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "MEDIAN",
+    "type": "esriFieldTypeInteger",
+    "alias": "Median Wildfire Hazard Potential Score",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null,
+    "description": "{\"value\":\"The median value of all cells in the input raster that belong to the same geography zone as the output. It was calculated using Zonal Statistics in ArcGIS Pro.\", \"fieldValueType\":\"\"}"
+   },
+   {
+    "name": "Shape__Area",
+    "type": "esriFieldTypeDouble",
+    "alias": "Shape__Area",
+    "sqlType": "sqlTypeDouble",
+    "nullable": true,
+    "editable": false,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Shape__Length",
+    "type": "esriFieldTypeDouble",
+    "alias": "Shape__Length",
+    "sqlType": "sqlTypeDouble",
+    "nullable": true,
+    "editable": false,
+    "domain": null,
+    "defaultValue": null
+   }
+  ],
+  "indexes": [
+   {
+    "name": "PK__USA_WILD__F4B70D8554110B9B",
+    "fields": "OBJECTID",
+    "isAscending": true,
+    "isUnique": true,
+    "description": "",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "user_63.USA_WILDFIRE_HAZARD_POTENTIAL_STATE_Shape_sidx",
+    "fields": "Shape",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "",
+    "indexType": "Spatial"
+   },
+   {
+    "name": "Shape__Area_Index",
+    "fields": "Shape__Area",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "Shape__Length_Index",
+    "fields": "Shape__Length",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "insights_idx_USA_WILDFIRE_HAZARD_POTENTIAL_STATE_STATE_NAME",
+    "fields": "STATE_NAME",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "Auto created by ArcGIS Insights",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "insights_idx_USA_WILDFIRE_HAZARD_POTENTIAL_STATE_ST_ABBREV",
+    "fields": "ST_ABBREV",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "Auto created by ArcGIS Insights",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "insights_idx_USA_WILDFIRE_HAZARD_POTENTIAL_STATE_NAME",
+    "fields": "NAME",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "Auto created by ArcGIS Insights",
+    "indexType": "Attribute"
+   }
+  ],
+  "dateFieldsTimeReference": {
+   "timeZone": "UTC",
+   "timeZoneIANA": "Etc/UTC",
+   "respectsDaylightSaving": false
+  },
+  "preferredTimeReference": null,
+  "types": [],
+  "templates": [
+   {
+    "name": "State",
+    "description": "",
+    "drawingTool": "esriFeatureEditToolPolygon",
+    "prototype": {
+     "attributes": {
+      "MINORITY": null,
+      "MEDIAN": null,
+      "ID": null,
+      "NAME": null,
+      "STATE_NAME": null,
+      "ST_ABBREV": null,
+      "TOTPOP_CY": null,
+      "POPDENS_CY": null,
+      "TOTHH_CY": null,
+      "TOTHU_CY": null,
+      "OWNER_CY": null,
+      "RENTER_CY": null,
+      "POPGRW10CY": null,
+      "HAI_CY": null,
+      "INCMORT_CY": null,
+      "TSPOP10_CY": null,
+      "TSHH10_CY": null,
+      "TSHU10_CY": null,
+      "MINORITYCY": null,
+      "DIVINDX_CY": null,
+      "MEDHINC_CY": null,
+      "PCI_CY": null,
+      "MEDVAL_CY": null,
+      "AVGVAL_CY": null,
+      "TOTPOP_FY": null,
+      "POPDENS_FY": null,
+      "TOTHH_FY": null,
+      "TOTHU_FY": null,
+      "POPGRWCYFY": null,
+      "POPGRW0010": null,
+      "AnnPopChange2010_2020": null,
+      "PercPopChange2010_2020": null,
+      "AnnHUChange2010_2020": null,
+      "PercHUChange2010_2020": null,
+      "AnnHHChange2010_2020": null,
+      "PercHHChange2010_2020": null,
+      "WHPWeightedPop": null,
+      "MIN_": null,
+      "MAX_": null,
+      "RANGE": null,
+      "MEAN": null,
+      "STD": null,
+      "SUM_": null,
+      "VARIETY": null,
+      "MAJORITY": null
+     }
+    }
+   }
+  ],
+  "supportedQueryFormats": "JSON, geoJSON, PBF",
+  "supportedAppendFormats": "sqlite,geoPackage,shapefile,filegdb,featureCollection,geojson,csv,excel,jsonl,featureService,pbf",
+  "supportedAppendSourceFilterFormats": "sqlite,geoPackage,shapefile,filegdb,featureService",
+  "supportedExportFormats": "csv,shapefile,sqlite,geoPackage,filegdb,featureCollection,geojson,kml,excel,parquet",
+  "supportedConvertFileFormats": "JSON,PBF,Parquet",
+  "supportedConvertContentFormats": "LayerEditCollection,FeatureCollection",
+  "supportedSpatialRelationships": [
+   "esriSpatialRelIntersects",
+   "esriSpatialRelContains",
+   "esriSpatialRelCrosses",
+   "esriSpatialRelEnvelopeIntersects",
+   "esriSpatialRelIndexIntersects",
+   "esriSpatialRelOverlaps",
+   "esriSpatialRelTouches",
+   "esriSpatialRelWithin",
+   "esriSpatialRelDisjoint",
+   "esriSpatialRelRelation"
+  ],
+  "guidFormat": "",
+  "supportsContingentValues": true,
+  "supportsEditingContingentValues": true,
+  "supportedContingentValuesFormats": "JSON, PBF",
+  "supportsFieldGroups": true,
+  "supportedSyncDataOptions": 49412,
+  "hasStaticData": true,
+  "maxRecordCount": 2000,
+  "standardMaxRecordCount": 2000,
+  "maxIdsCount": 1000000,
+  "standardMaxRecordCountNoGeometry": 32000,
+  "tileMaxRecordCount": 4000,
+  "maxRecordCountFactor": 1,
+  "capabilities": "Query,Extract"
+ }
+}

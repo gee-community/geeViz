@@ -8,6 +8,8 @@
 // fillOpacity. The layer's opacity follows the original's slider: the stroke
 // takes the opacity and the fill keeps its ratio (opacityRatio).
 
+import { drawSymbol } from "../esri/symbols.js";
+
 const TILE = 256;
 
 // Web Mercator world pixels at zoom z.
@@ -151,6 +153,11 @@ export function createVectorTileOverlay(opts) {
       if (e < b.west - pad || w > b.east + pad || n < b.south - pad || s > b.north + pad) continue;
       const st = opts.styleFor ? opts.styleFor(p, zoom, style) : style;
       if (!st) continue;
+      if (st.symbol) {
+        // an ArcGIS symbol (esri/symbols.js), at the layer's opacity
+        drawSymbol(ctx, st.symbol, p, px, st, opacity);
+        continue;
+      }
       const weight = st.strokeWeight === undefined ? 3 : st.strokeWeight;
       const strokeOpacity = st.strokeOpacity === undefined ? 1 : st.strokeOpacity;
       if (p.kind === "point") {

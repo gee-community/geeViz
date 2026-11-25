@@ -24,6 +24,19 @@ export function legendMarkup(legend) {
   }
   // a service's own swatches (ArcGIS /legend): images the server drew
   if (legend.type === "images") return imageItems(legend.items);
+  // a renderer's legend (ArcGIS drawingInfo): a glyph per class, ramps for
+  // visual variables, and a note when it is drawn otherwise than it says
+  if (legend.type === "symbols") {
+    const items = (legend.items || []).map((it, i) => `<span class="sw sym" data-g="${i}"></span><span class="lbl">${escapeText(it.label)}</span>`).join("");
+    const ramps = (legend.ramps || [])
+      .map((r, k) => {
+        const labels = (r.labels || []).map((l) => `<span>${escapeText(l)}</span>`).join("");
+        return `<span class="lgsec">${escapeText(r.label || "")}</span><span class="ramp lgr" data-r="${k}"></span><span class="ramp-l mono lgr">${labels}</span>`;
+      })
+      .join("");
+    const note = legend.note ? `<span class="lgnote">${escapeText(legend.note)}</span>` : "";
+    return items + ramps + note;
+  }
   if (legend.type === "sections") {
     return (legend.sections || [])
       .map((s) => `<span class="lgsec">${escapeText(s.title || "")}</span>${imageItems(s.items)}`)
@@ -49,6 +62,10 @@ export function swatchColors(legend) {
   if (legend.type === "classes") return { kind: "classes", colors: legend.items.slice(0, 4).map((it) => it.color) };
   if (legend.type === "ramp") return { kind: "ramp", colors: legend.palette.slice() };
   if (legend.type === "outline") return { kind: "outline", colors: [legend.color] };
+  if (legend.type === "symbols") {
+    const colors = (legend.items || []).slice(0, 4).map((it) => (it.glyph && (it.glyph.fill || it.glyph.stroke)) || "#888888");
+    return colors.length ? { kind: "classes", colors } : null;
+  }
   if (legend.type === "images" || legend.type === "sections") {
     const srcs = legendImages(legend).slice(0, 4).map((it) => it.src);
     return srcs.length ? { kind: "images", srcs, colors: srcs } : null;
@@ -61,7 +78,12 @@ export const gradient = (colors) => `linear-gradient(90deg, ${colors.join(", ")}
 // ---- vector symbols ----
 // A vector layer's legend is its symbol, one glyph per geometry type it holds,
 // drawn as the map draws it, so there is nothing more to open below the row.
-export const isSymbolLegend = (legend) => !!legend && legend.type === "outline";
+// A renderer with one symbol and nothing else to show (a simple renderer)
+// is a symbol too.
+export const isSymbolLegend = (legend) =>
+  !!legend &&
+  (legend.type === "outline" ||
+    (legend.type === "symbols" && (legend.items || []).length === 1 && !(legend.ramps || []).length && !legend.note));
 
 const GEOM_OF = {
   Point: "point", MultiPoint: "point", point: "point",
@@ -93,6 +115,7 @@ export function splitAlpha(c) {
 // vectortiles.js), "paint" (Earth Engine Image.paint: outlines only, points
 // a solid dot) or "style" (FeatureCollection.style: colors carry their alpha).
 export function vectorGlyphs(legend) {
+  if (legend.type === "symbols") return (legend.items || []).slice(0, 1).map((it) => it.glyph);
   const kinds = legend.geoms && legend.geoms.length ? legend.geoms : ["polygon"];
   const st = splitAlpha(legend.color);
   const fl = splitAlpha(legend.fill || legend.color);

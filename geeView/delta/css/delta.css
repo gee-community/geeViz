@@ -294,6 +294,14 @@ input[type="range"].dz.op::-moz-range-thumb { width: 11px; height: 11px; border:
 .legend .lgsec { grid-column: 1 / -1; font-weight: 600; color: var(--dz-ink); margin-top: 4px; }
 .legend .lgsec:first-child { margin-top: 0; }
 .legend:has(.lgimg) { grid-template-columns: 16px 1fr; }
+/* a renderer's legend: glyphs drawn as the map draws them, ramps, a note */
+.legend .sw.sym { box-shadow: none; border-radius: 0; width: 14px; height: 14px; margin-top: 1px; }
+.legend .sw.sym svg { width: 14px; height: 14px; display: block; overflow: visible; }
+.legend:has(.sw.sym) { grid-template-columns: 14px 1fr; }
+.legend .lgr { grid-column: 1 / -1; }
+.legend .ramp.lgr { height: 8px; border-radius: 2px; }
+.legend .ramp-l.lgr { display: flex; justify-content: space-between; font-size: 11px; }
+.legend .lgnote { grid-column: 1 / -1; font-size: 11px; font-style: italic; }
 .layer.off .legend { display: none !important; }
 .layer.off .legbtn { opacity: 0.45; pointer-events: none; }
 .layer.off .spin { display: none; }

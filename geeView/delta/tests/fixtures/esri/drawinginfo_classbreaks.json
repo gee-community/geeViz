@@ -1,0 +1,660 @@
+{
+ "request": {
+  "url": "https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Carbon_Recovery_After_Wildfire/FeatureServer/0",
+  "params": {
+   "f": "json"
+  },
+  "method": "GET"
+ },
+ "response": {
+  "currentVersion": 12,
+  "id": 0,
+  "name": "Carbon Recovery After Wildfire",
+  "type": "Feature Layer",
+  "serviceItemId": "d7935cec957c4126a0a3c1afdd41f307",
+  "cacheMaxAge": 30,
+  "displayField": "Fireshed_N",
+  "description": "&lt;div style=\"text-align:Left;\"&gt;&lt;p&gt;&lt;/p&gt;&lt;p style=\"margin:0in;\"&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black;\"&gt;Estimating the likelihood of tree regeneration after\nwildfire under contemporary climate scenarios can help managers assess if\ncarbon stocks are on a trajectory to recover over time. Probability of tree\nregeneration after wildfire was modeled using a post-wildfire tree regeneration\ndataset containing 10,230 field plots and geospatial datasets capturing\ninformation on post-wildfire seed &lt;/span&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:#262626; background:white;\"&gt;availability,\npost-wildfire climate, wildfire severity, and 30-year mean climate.&lt;/span&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black;\"&gt; Please note that the coarse resolution of the climate data (4-km)\ndoes not capture local and microsite conditions that managers should consider\ngiven their importance for tree regeneration after wildfire.&lt;b&gt; &lt;/b&gt;Models were\ncreated for &lt;/span&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:#262626; background:white;\"&gt;eight widespread conifer species &lt;/span&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black;\"&gt;(&lt;i&gt;&lt;span style=\"background:white;\"&gt;Abies concolor, Abies grandi,\nAbies lasiocarpa, Picea engelmannii, Pinus contorta, Pinus jeffreyi, Pinus\nponderosa, and Pseudotsuga menziesii)&lt;/span&gt;&lt;/i&gt;&lt;/span&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:#262626; background:white;\"&gt;. &lt;/span&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black; background:white;\"&gt;Models for &lt;i&gt;P. ponderosa&lt;/i&gt; and &lt;i&gt;P.\njeffreyi&lt;/i&gt; and for &lt;i&gt;A. concolor&lt;/i&gt; and &lt;i&gt;A. grandis&lt;/i&gt; were combined for\na total of six individual species models, while all models were combined to\ncreate a single all species model. Final models were then used to project &lt;/span&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black;\"&gt;the probability of tree regeneration &lt;span style=\"background:white;\"&gt;under\ndifferent wildfire severity scenarios (low, moderate, and high). &lt;/span&gt;For\nmore information on model development please refer to &lt;/span&gt;&lt;a href=\"https://www.pnas.org/doi/full/10.1073/pnas.2208120120\"&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black;\"&gt;Davis et al. 2023&lt;/span&gt;&lt;/a&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black;\"&gt;.&lt;/span&gt;&lt;/p&gt;\n\n&lt;p style=\"margin:0in;\"&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif;\"&gt;&lt;br /&gt;\n&lt;/span&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black;\"&gt;Forested pixels were assigned a probability of tree regeneration\nafter wildfire by identifying their dominant forest type and most likely\nwildfire severity scenario. Forest type was determined by matching plot IDs in\na gridded &lt;/span&gt;&lt;a href=\"https://www.fs.usda.gov/rds/archive/catalog/RDS-2021-0074\"&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black;\"&gt;tree list&lt;/span&gt;&lt;/a&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black;\"&gt; to corresponding plots in the US\nForest Inventory and Analysis (FIA) program. Wildfire severity was assigned by\nrunning gridded &lt;/span&gt;&lt;a href=\"https://www.fs.usda.gov/rds/archive/catalog/RDS-2021-0074\"&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black;\"&gt;tree&lt;/span&gt;&lt;/a&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black;\"&gt; and &lt;/span&gt;&lt;a href=\"https://www.fs.usda.gov/rds/archive/catalog/RDS-2023-0042\"&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black;\"&gt;fuel lists&lt;/span&gt;&lt;/a&gt;&lt;span&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black;\"&gt; &lt;/span&gt;&lt;/span&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black;\"&gt;through Forest Vegetation Simulator (FVS) at multiple flame\nlengths (no fire, 1 ft, 3 ft, 5 ft, 7 ft, 10 ft, and 20 ft). Using a weighted\naverage of flame length probability under 80th percentile fire weather, basal\narea killed was calculated at each pixel. Pixels were then categorized as low\nseverity wildfire (&amp;lt;25% of basal area killed), moderate severity wildfire\n(25% - 75% of basal area killed), and high severity wildfire (&amp;gt;75% of basal\narea killed). Each pixel was then assigned a forest type and wildfire severity\ncombination (e.g. &lt;i&gt;&lt;span style=\"background:white;\"&gt;P. ponderosa&lt;/span&gt;&lt;/i&gt;&lt;span style=\"background:white;\"&gt;/&lt;i&gt;P. jeffreyi &lt;/i&gt;and low severity wildfire) and\nassigned a regeneration probability projected from the corresponding model. &lt;/span&gt;If\na pixel\u2019s forest type differed from the six individual species models, then the\nregeneration probability generated from the all species model was used. The one\nexception being that California mixed conifer was assigned the maximum\nregeneration probability across &lt;/span&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; letter-spacing:.15pt;\"&gt;the&lt;/span&gt;&lt;i&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black; background:white;\"&gt; A.\nlasiocarpa&lt;/span&gt;&lt;/i&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; letter-spacing:.15pt;\"&gt;, &lt;/span&gt;&lt;i&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black; background:white;\"&gt;P. menziesii&lt;/span&gt;&lt;/i&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black; background:white;\"&gt;, and&lt;i&gt; P. ponderosa&lt;/i&gt;/&lt;i&gt;P. jeffreyi &lt;/i&gt;&lt;/span&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; letter-spacing:.15pt;\"&gt;models.&lt;/span&gt;&lt;/p&gt;\n\n&lt;p style=\"margin:0in;\"&gt;&lt;br /&gt;&lt;/p&gt;\n\n&lt;p style=\"margin:0in;\"&gt;&lt;span style=\"font-size:11.0pt; font-family:&amp;quot;Aptos&amp;quot;,sans-serif; color:black;\"&gt;Pixels were aggregated to the fireshed level by calculating\nthe proportion of forested pixels in a fireshed likely to regenerate trees\nafter wildfire. To determine the threshold above which tree regeneration was\nlikely, two thresholds were calculated for each model using methods that respectively\nmaximized kappa and maximized the sum of specificity and sensitivity. The lower\nthreshold was then used to classify pixels with the corresponding forest type\ninto two groups, with pixels containing probabilities below the threshold being\nclassified \u201cnot likely\u201d and pixels containing probabilities above the threshold\nbeing classified \u201clikely\u201d. The proportion of forested pixels classified as\n\u201clikely\u201d was used to gauge the extent to which a fireshed might regenerate\ntrees after wildfire.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Davis K T et al 2023 Reduced fire severity offers near-term\nbuffer to climate-driven declines in conifer resilience across the western\nUnited States Proc. Natl Acad. Sci. USA 120 2208120120 https://doi.org/10.1073/pnas.2208120120&amp;lt;o:p&amp;gt;&amp;lt;/o:p&amp;gt;&lt;/p&gt;\n\n&lt;p&gt;Peeler J P et al 2023 Identifying opportunity hot spots for\nreducing the risk of wildfire-caused carbon loss in western US conifer forests.\nEnviron. Res. Lett. 18 094040 https://doi.org/10.1088/1748-9326/acf05a&lt;/p&gt;&lt;p&gt;&lt;/p&gt;&lt;/div&gt;",
+  "copyrightText": "Authors: Jamie L Peeler, Lisa McCauley, Kerry L Metlen, Travis Woolley, Kimberley T Davis, Marcos D Robles, Ryan D Haugo, Karin L Riley, Philip E Higuera, Joseph E Fargione, Robert N Addington, Steven Bassett, Kori Blankenship, Michael J Case, Teresa B Chapman, Edward Smith, Randy Swaty and Nathan Welch",
+  "defaultVisibility": true,
+  "editingInfo": {
+   "lastEditDate": 1721337131276,
+   "schemaLastEditDate": 1721337131276,
+   "dataLastEditDate": 1721324102032
+  },
+  "relationships": [],
+  "isDataVersioned": false,
+  "hasContingentValuesDefinition": false,
+  "supportsAppend": true,
+  "supportsCalculate": true,
+  "supportsASyncCalculate": true,
+  "supportsTruncate": true,
+  "supportsAttachmentsByUploadId": true,
+  "supportsAttachmentsResizing": true,
+  "supportsRollbackOnFailureParameter": true,
+  "supportsStatistics": true,
+  "supportsExceedsLimitStatistics": true,
+  "supportsAdvancedQueries": true,
+  "supportsValidateSql": true,
+  "supportsCoordinatesQuantization": true,
+  "supportsLayerOverrides": true,
+  "supportsTilesAndBasicQueriesMode": true,
+  "supportsFieldDescriptionProperty": true,
+  "supportsQuantizationEditMode": true,
+  "supportsColumnStoreIndex": true,
+  "supportsApplyEditsWithGlobalIds": false,
+  "supportsMultiScaleGeometry": true,
+  "supportsReturningQueryGeometry": true,
+  "enableNullGeometry": false,
+  "hasGeometryProperties": true,
+  "geometryProperties": {
+   "shapeAreaFieldName": "Shape__Area",
+   "shapeLengthFieldName": "Shape__Length",
+   "units": "esriMeters"
+  },
+  "advancedQueryCapabilities": {
+   "supportsPagination": true,
+   "supportsPaginationOnAggregatedQueries": true,
+   "supportsQueryRelatedPagination": true,
+   "supportsQueryWithDistance": true,
+   "supportsOutDistance": true,
+   "supportsReturningQueryExtent": true,
+   "supportsStatistics": true,
+   "supportsOrderBy": true,
+   "supportsDistinct": true,
+   "supportsQueryWithResultType": true,
+   "supportsSqlExpression": true,
+   "supportsTimeRelation": true,
+   "supportsAdvancedQueryRelated": true,
+   "supportsCountDistinct": true,
+   "supportsPercentileStatistics": true,
+   "supportsApproxPercentileStatistics": true,
+   "supportsSpatialAggregationStatistics": true,
+   "supportsTrueCurve": true,
+   "supportedSpatialAggregationStatistics": [
+    "EnvelopeAggregate",
+    "CentroidAggregate",
+    "ConvexHullAggregate"
+   ],
+   "supportsLod": true,
+   "supportsQueryWithLodSR": false,
+   "supportedLodTypes": [
+    "geohash"
+   ],
+   "supportsReturningGeometryCentroid": true,
+   "supportsReturningGeometryEnvelope": true,
+   "supportsReturningGeometryProperties": true,
+   "supportsQueryWithDatumTransformation": true,
+   "supportsCurrentUserQueries": true,
+   "supportsHavingClause": true,
+   "supportsOutFieldSQLExpression": true,
+   "supportsMaxRecordCountFactor": true,
+   "supportsTopFeaturesQuery": true,
+   "supportsDisjointSpatialRel": true,
+   "supportsQueryWithCacheHint": true,
+   "supportedOperationsWithCacheHint": [
+    "query",
+    "queryTopFilter",
+    "queryAnalytics",
+    "queryAttachments",
+    "queryRelated",
+    "queryBins",
+    "queryPivot"
+   ],
+   "supportsQueryAnalytic": true,
+   "supportsQueryPivot": true,
+   "supportsQueryBins": true,
+   "supportsDefaultSR": true,
+   "supportsTranslations": false,
+   "supportsAggIds": true,
+   "supportsQueryWithCollation": true,
+   "supportsISODOW": true,
+   "supportsISOWeek": true,
+   "supportsFullTextSearch": true,
+   "fullTextSearchCapabilities": {
+    "supportsAccentSensitivity": true,
+    "supportsStopWords": true,
+    "supportsSearchOperator": true,
+    "supportsOperator": true
+   }
+  },
+  "advancedQueryAnalyticCapabilities": {
+   "supportsLinearRegression": true,
+   "supportsTrendlineRegression": true,
+   "supportsAsync": true,
+   "supportsPercentileAnalytic": true
+  },
+  "queryBinsCapabilities": {
+   "supportsAsync": true,
+   "supportsAutoIntervalBin": true,
+   "supportsFixedIntervalBin": true,
+   "supportsFixedBoundariesBin": true,
+   "supportsDateBin": true,
+   "supportsClassificationBin": true,
+   "supportsStackBy": true,
+   "supportsSplitBy": true,
+   "supportsFirstDayOfWeek": true,
+   "supportsSnapToData": true,
+   "supportsReturnFullIntervalBin": true,
+   "supportsReturnStackValueRange": true,
+   "supportsNormalization": true,
+   "supportedStatisticTypes": [
+    "COUNT",
+    "SUM",
+    "AVG",
+    "VAR",
+    "VAR_SAMP",
+    "VAR_POP",
+    "STDDEV",
+    "STDDEV_SAMP",
+    "STDDEV_POP",
+    "MIN",
+    "MAX",
+    "PERCENTILE_CONT",
+    "PERCENTILE_DISC",
+    "APPROX_PERCENTILE_CONT",
+    "APPROX_PERCENTILE_DISC",
+    "CentroidAggregate",
+    "EnvelopeAggregate",
+    "ConvexHullAggregate"
+   ],
+   "supportedNormalizationTypes": [
+    "boxCox",
+    "field",
+    "inverse",
+    "log",
+    "naturalLog",
+    "percentOfTotal",
+    "squareRoot"
+   ]
+  },
+  "supportedOperationsWithCollation": "query,addField,updateField",
+  "advancedEditingCapabilities": {
+   "supportedSqlFormatsInCalculate": [
+    "standard"
+   ],
+   "supportsAsyncApplyEdits": true,
+   "supportsReturnEditResults": true,
+   "supportsApplyEditsbyUploadID": true,
+   "supportedApplyEditsUploadIDFormats": "JSON,PBF",
+   "supportsTranslation": false,
+   "supportsMaxTranslations": 10
+  },
+  "infoInEstimates": [
+   "extent",
+   "count"
+  ],
+  "useStandardizedQueries": true,
+  "geometryType": "esriGeometryPolygon",
+  "minScale": 0,
+  "maxScale": 0,
+  "extent": {
+   "xmin": -2327946.4399000006,
+   "ymin": 994499.7004000004,
+   "xmax": -288906.4398999991,
+   "ymax": 3157739.7004000014,
+   "spatialReference": {
+    "wkt": "PROJCS[\"Albers_Conic_Equal_Area\",GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Albers\"],PARAMETER[\"false_easting\",0.0],PARAMETER[\"false_northing\",0.0],PARAMETER[\"central_meridian\",-96.0],PARAMETER[\"standard_parallel_1\",29.5],PARAMETER[\"standard_parallel_2\",45.5],PARAMETER[\"latitude_of_origin\",23.0],UNIT[\"Meter\",1.0]]",
+    "wkt2": "PROJCRS[\"Albers_Conic_Equal_Area\",BASEGEOGCRS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",ELLIPSOID[\"GRS_1980\",6378137.0,298.257222101,LENGTHUNIT[\"Meter\",1.0]]],PRIMEM[\"Greenwich\",0.0,ANGLEUNIT[\"Degree\",0.0174532925199433]],CS[ellipsoidal,2],ANGLEUNIT[\"Degree\",0.0174532925199433]],CONVERSION[\"Albers\",METHOD[\"Albers\"],PARAMETER[\"false_easting\",0.0,LENGTHUNIT[\"Meter\",1.0]],PARAMETER[\"false_northing\",0.0,LENGTHUNIT[\"Meter\",1.0]],PARAMETER[\"central_meridian\",-96.0,ANGLEUNIT[\"Degree\",0.0174532925199433]],PARAMETER[\"standard_parallel_1\",29.5,ANGLEUNIT[\"Degree\",0.0174532925199433]],PARAMETER[\"standard_parallel_2\",45.5,ANGLEUNIT[\"Degree\",0.0174532925199433]],PARAMETER[\"latitude_of_origin\",23.0,ANGLEUNIT[\"Degree\",0.0174532925199433]]],CS[Cartesian,2],AXIS[\"Easting (X)\",east,ORDER[1]],AXIS[\"Northing (Y)\",north,ORDER[2]],LENGTHUNIT[\"Meter\",1.0]]"
+   }
+  },
+  "spatialReference": {
+   "wkt": "PROJCS[\"Albers_Conic_Equal_Area\",GEOGCS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",SPHEROID[\"GRS_1980\",6378137.0,298.257222101]],PRIMEM[\"Greenwich\",0.0],UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Albers\"],PARAMETER[\"false_easting\",0.0],PARAMETER[\"false_northing\",0.0],PARAMETER[\"central_meridian\",-96.0],PARAMETER[\"standard_parallel_1\",29.5],PARAMETER[\"standard_parallel_2\",45.5],PARAMETER[\"latitude_of_origin\",23.0],UNIT[\"Meter\",1.0]]",
+   "wkt2": "PROJCRS[\"Albers_Conic_Equal_Area\",BASEGEOGCRS[\"GCS_North_American_1983\",DATUM[\"D_North_American_1983\",ELLIPSOID[\"GRS_1980\",6378137.0,298.257222101,LENGTHUNIT[\"Meter\",1.0]]],PRIMEM[\"Greenwich\",0.0,ANGLEUNIT[\"Degree\",0.0174532925199433]],CS[ellipsoidal,2],ANGLEUNIT[\"Degree\",0.0174532925199433]],CONVERSION[\"Albers\",METHOD[\"Albers\"],PARAMETER[\"false_easting\",0.0,LENGTHUNIT[\"Meter\",1.0]],PARAMETER[\"false_northing\",0.0,LENGTHUNIT[\"Meter\",1.0]],PARAMETER[\"central_meridian\",-96.0,ANGLEUNIT[\"Degree\",0.0174532925199433]],PARAMETER[\"standard_parallel_1\",29.5,ANGLEUNIT[\"Degree\",0.0174532925199433]],PARAMETER[\"standard_parallel_2\",45.5,ANGLEUNIT[\"Degree\",0.0174532925199433]],PARAMETER[\"latitude_of_origin\",23.0,ANGLEUNIT[\"Degree\",0.0174532925199433]]],CS[Cartesian,2],AXIS[\"Easting (X)\",east,ORDER[1]],AXIS[\"Northing (Y)\",north,ORDER[2]],LENGTHUNIT[\"Meter\",1.0]]",
+   "xyTolerance": 0.001,
+   "zTolerance": 0.001,
+   "mTolerance": 0.001,
+   "falseX": -16901100,
+   "falseY": -6972200,
+   "xyUnits": 10000,
+   "falseZ": -100000,
+   "zUnits": 10000,
+   "falseM": -100000,
+   "mUnits": 10000
+  },
+  "drawingInfo": {
+   "renderer": {
+    "type": "classBreaks",
+    "authoringInfo": {
+     "type": "classedColor",
+     "colorRamp": {
+      "type": "multipart",
+      "colorRamps": [
+       {
+        "type": "algorithmic",
+        "algorithm": "esriCIELabAlgorithm",
+        "fromColor": [
+         255,
+         255,
+         204,
+         255
+        ],
+        "toColor": [
+         255,
+         255,
+         204,
+         255
+        ]
+       },
+       {
+        "type": "algorithmic",
+        "algorithm": "esriCIELabAlgorithm",
+        "fromColor": [
+         194,
+         230,
+         154,
+         255
+        ],
+        "toColor": [
+         194,
+         230,
+         154,
+         255
+        ]
+       },
+       {
+        "type": "algorithmic",
+        "algorithm": "esriCIELabAlgorithm",
+        "fromColor": [
+         121,
+         199,
+         124,
+         255
+        ],
+        "toColor": [
+         121,
+         199,
+         124,
+         255
+        ]
+       },
+       {
+        "type": "algorithmic",
+        "algorithm": "esriCIELabAlgorithm",
+        "fromColor": [
+         49,
+         163,
+         83,
+         255
+        ],
+        "toColor": [
+         49,
+         163,
+         83,
+         255
+        ]
+       },
+       {
+        "type": "algorithmic",
+        "algorithm": "esriCIELabAlgorithm",
+        "fromColor": [
+         0,
+         105,
+         56,
+         255
+        ],
+        "toColor": [
+         0,
+         105,
+         56,
+         255
+        ]
+       }
+      ]
+     },
+     "classificationMethod": "esriClassifyQuantile"
+    },
+    "field": "prop_recov",
+    "classificationMethod": "esriClassifyQuantile",
+    "minValue": 0,
+    "classBreakInfos": [
+     {
+      "symbol": {
+       "type": "esriSFS",
+       "style": "esriSFSSolid",
+       "color": [
+        255,
+        255,
+        204,
+        255
+       ],
+       "outline": {
+        "type": "esriSLS",
+        "style": "esriSLSSolid",
+        "color": [
+         110,
+         110,
+         110,
+         255
+        ],
+        "width": 0.7
+       }
+      },
+      "classMaxValue": 0.025080900639295578,
+      "label": "0.000 - 0.025"
+     },
+     {
+      "symbol": {
+       "type": "esriSFS",
+       "style": "esriSFSSolid",
+       "color": [
+        194,
+        230,
+        153,
+        255
+       ],
+       "outline": {
+        "type": "esriSLS",
+        "style": "esriSLSSolid",
+        "color": [
+         110,
+         110,
+         110,
+         255
+        ],
+        "width": 0.7
+       }
+      },
+      "classMaxValue": 0.3114979863166809,
+      "label": "0.026 - 0.311"
+     },
+     {
+      "symbol": {
+       "type": "esriSFS",
+       "style": "esriSFSSolid",
+       "color": [
+        120,
+        198,
+        121,
+        255
+       ],
+       "outline": {
+        "type": "esriSLS",
+        "style": "esriSLSSolid",
+        "color": [
+         110,
+         110,
+         110,
+         255
+        ],
+        "width": 0.7
+       }
+      },
+      "classMaxValue": 0.5963699817657471,
+      "label": "0.312 - 0.596"
+     },
+     {
+      "symbol": {
+       "type": "esriSFS",
+       "style": "esriSFSSolid",
+       "color": [
+        49,
+        163,
+        84,
+        255
+       ],
+       "outline": {
+        "type": "esriSLS",
+        "style": "esriSLSSolid",
+        "color": [
+         110,
+         110,
+         110,
+         255
+        ],
+        "width": 0.7
+       }
+      },
+      "classMaxValue": 0.756712019443512,
+      "label": "0.597 - 0.757"
+     },
+     {
+      "symbol": {
+       "type": "esriSFS",
+       "style": "esriSFSSolid",
+       "color": [
+        0,
+        104,
+        55,
+        255
+       ],
+       "outline": {
+        "type": "esriSLS",
+        "style": "esriSLSSolid",
+        "color": [
+         110,
+         110,
+         110,
+         255
+        ],
+        "width": 0.7
+       }
+      },
+      "classMaxValue": 1,
+      "label": "0.758 - 1.000"
+     }
+    ],
+    "legendOptions": {
+     "order": "ascendingValues"
+    }
+   },
+   "scaleSymbols": true,
+   "transparency": 0,
+   "labelingInfo": null
+  },
+  "allowGeometryUpdates": true,
+  "trueCurveSupportMode": "OGC",
+  "supportedCurveTypes": [
+   "esriGeometryCircularArc"
+  ],
+  "supportedTrueCurvePbfFeatureEncodings": [
+   "esriCompressedShapeBuffer",
+   "esriDefault"
+  ],
+  "allowTrueCurvesUpdates": true,
+  "onlyAllowTrueCurveUpdatesByTrueCurveClients": false,
+  "hasAttachments": false,
+  "htmlPopupType": "esriServerHTMLPopupTypeAsHTMLText",
+  "hasMetadata": true,
+  "hasM": false,
+  "hasZ": false,
+  "objectIdField": "OBJECTID",
+  "uniqueIdField": {
+   "name": "OBJECTID",
+   "isSystemMaintained": true
+  },
+  "globalIdField": "",
+  "typeIdField": "",
+  "collation": {
+   "locale": "neutral",
+   "caseSensitive": false,
+   "accentSensitive": true
+  },
+  "fields": [
+   {
+    "name": "OBJECTID",
+    "type": "esriFieldTypeOID",
+    "alias": "FID",
+    "sqlType": "sqlTypeOther",
+    "nullable": false,
+    "editable": false,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Fireshed_I",
+    "type": "esriFieldTypeInteger",
+    "alias": "Fireshed_I",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Fireshed_N",
+    "type": "esriFieldTypeString",
+    "alias": "Fireshed_N",
+    "sqlType": "sqlTypeOther",
+    "length": 254,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Fireshed_C",
+    "type": "esriFieldTypeString",
+    "alias": "Fireshed_C",
+    "sqlType": "sqlTypeOther",
+    "length": 254,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Fireshed_S",
+    "type": "esriFieldTypeString",
+    "alias": "Fireshed_S",
+    "sqlType": "sqlTypeOther",
+    "length": 2,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "MajRegion",
+    "type": "esriFieldTypeString",
+    "alias": "MajRegion",
+    "sqlType": "sqlTypeOther",
+    "length": 4,
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "prop_recov",
+    "type": "esriFieldTypeSingle",
+    "alias": "Proportion of forest area likely to regenerate trees after wildfire",
+    "sqlType": "sqlTypeOther",
+    "nullable": true,
+    "editable": true,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Shape__Area",
+    "type": "esriFieldTypeDouble",
+    "alias": "Shape__Area",
+    "sqlType": "sqlTypeDouble",
+    "nullable": true,
+    "editable": false,
+    "domain": null,
+    "defaultValue": null
+   },
+   {
+    "name": "Shape__Length",
+    "type": "esriFieldTypeDouble",
+    "alias": "Shape__Length",
+    "sqlType": "sqlTypeDouble",
+    "nullable": true,
+    "editable": false,
+    "domain": null,
+    "defaultValue": null
+   }
+  ],
+  "indexes": [
+   {
+    "name": "PK__CARBON_R__F4B70D8561DF9265",
+    "fields": "OBJECTID",
+    "isAscending": true,
+    "isUnique": true,
+    "description": "",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "user_234.CARBON_RECOVERY_AFTER_WILDFIRE_CARBON_RECOVERY_AFTER_WILDFIRE_Shape_sidx",
+    "fields": "Shape",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "",
+    "indexType": "Spatial"
+   },
+   {
+    "name": "Shape__Area_Index",
+    "fields": "Shape__Area",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "",
+    "indexType": "Attribute"
+   },
+   {
+    "name": "Shape__Length_Index",
+    "fields": "Shape__Length",
+    "isAscending": true,
+    "isUnique": false,
+    "description": "",
+    "indexType": "Attribute"
+   }
+  ],
+  "dateFieldsTimeReference": {
+   "timeZone": "UTC",
+   "timeZoneIANA": "Etc/UTC",
+   "respectsDaylightSaving": false
+  },
+  "preferredTimeReference": null,
+  "types": [],
+  "templates": [
+   {
+    "name": "Carbon Recovery After Wildfire",
+    "description": "",
+    "drawingTool": "esriFeatureEditToolPolygon",
+    "prototype": {
+     "attributes": {
+      "MajRegion": null,
+      "prop_recov": null,
+      "Fireshed_I": null,
+      "Fireshed_N": null,
+      "Fireshed_C": null,
+      "Fireshed_S": null
+     }
+    }
+   }
+  ],
+  "supportedQueryFormats": "JSON, geoJSON, PBF",
+  "supportedAppendFormats": "sqlite,geoPackage,shapefile,filegdb,featureCollection,geojson,csv,excel,jsonl,featureService,pbf",
+  "supportedAppendSourceFilterFormats": "sqlite,geoPackage,shapefile,filegdb,featureService",
+  "supportedExportFormats": "csv,shapefile,sqlite,geoPackage,filegdb,featureCollection,geojson,kml,excel,parquet",
+  "supportedConvertFileFormats": "JSON,PBF,Parquet",
+  "supportedConvertContentFormats": "LayerEditCollection,FeatureCollection",
+  "supportedSpatialRelationships": [
+   "esriSpatialRelIntersects",
+   "esriSpatialRelContains",
+   "esriSpatialRelCrosses",
+   "esriSpatialRelEnvelopeIntersects",
+   "esriSpatialRelIndexIntersects",
+   "esriSpatialRelOverlaps",
+   "esriSpatialRelTouches",
+   "esriSpatialRelWithin",
+   "esriSpatialRelDisjoint",
+   "esriSpatialRelRelation"
+  ],
+  "guidFormat": "",
+  "supportsContingentValues": true,
+  "supportsEditingContingentValues": true,
+  "supportedContingentValuesFormats": "JSON, PBF",
+  "supportsFieldGroups": true,
+  "supportedSyncDataOptions": 49412,
+  "hasStaticData": false,
+  "maxRecordCount": 2000,
+  "standardMaxRecordCount": 2000,
+  "maxIdsCount": 1000000,
+  "standardMaxRecordCountNoGeometry": 32000,
+  "tileMaxRecordCount": 4000,
+  "maxRecordCountFactor": 1,
+  "capabilities": "Query"
+ }
+}

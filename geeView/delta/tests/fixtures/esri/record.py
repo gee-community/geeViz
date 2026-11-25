@@ -72,6 +72,15 @@ FIXTURES = {
                                          "maxAllowableOffset": "0.0005", "geometryPrecision": "6", "f": "json"}, "GET"),
     "mtbs63_attributes": (MTBS63 + "/query", {"where": "fire_name = 'CAMERON PEAK' AND year = 2020", "outFields": "*",
                                               "returnGeometry": "false", "f": "json"}, "GET"),
+    # renderers, as public layers draw them (found by searching ArcGIS Online, 2026-11-24)
+    "drawinginfo_unique": ("https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/USA_Wildfires_v1/FeatureServer/1",
+                           {"f": "json"}, "GET"),
+    "drawinginfo_unique_size": ("https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/USA_Wildfires_v1/FeatureServer/0",
+                                {"f": "json"}, "GET"),
+    "drawinginfo_classbreaks": ("https://services.arcgis.com/F7DSX1DSNSiWmOqh/arcgis/rest/services/Carbon_Recovery_After_Wildfire/FeatureServer/0",
+                                {"f": "json"}, "GET"),
+    "drawinginfo_visualvars": ("https://services.arcgis.com/jIL9msH9OI208GCb/arcgis/rest/services/USA_Wildfire_Hazard_Potential/FeatureServer/0",
+                               {"f": "json"}, "GET"),
     # identify at Fort Collins, in an 800 by 600 view
     # a zone AE on the Cache la Poudre, zoomed in past layer 28's minScale (1:36,111)
     "nfhl_identify": (NFHL + "/identify", {"geometry": ZONE, "geometryType": "esriGeometryPoint", "sr": "4326",
