@@ -48,7 +48,55 @@ export function mountMapControls(engine, shell, status, notify = () => {}) {
   }
 
   // Street View
-  $("#svBtn").addEventListener("click", () => engine.streetViewPick(!engine.isPicking()));
+  // A click toggles pick mode (coverage, then click the map); a drag carries
+  // the man onto the map, as on Google's own map, and drops him where to look.
+  const svBtn = $("#svBtn");
+  let drag = null; // {x, y, id, moved, ghost}
+  let swallowClick = false;
+  svBtn.addEventListener("click", () => {
+    if (swallowClick) {
+      swallowClick = false;
+      return;
+    }
+    engine.streetViewPick(!engine.isPicking());
+  });
+  svBtn.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    drag = { x: e.clientX, y: e.clientY, id: e.pointerId, moved: false, ghost: null };
+    try {
+      svBtn.setPointerCapture(e.pointerId);
+    } catch (err) {
+      /* a synthetic pointer */
+    }
+  });
+  svBtn.addEventListener("pointermove", (e) => {
+    if (!drag) return;
+    if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5) return;
+    if (!drag.moved) {
+      drag.moved = true;
+      engine.streetViewPick(true);
+      drag.ghost = document.createElement("div");
+      drag.ghost.className = "sv-ghost";
+      drag.ghost.innerHTML = '<i class="ti ti-walk"></i>';
+      document.body.appendChild(drag.ghost);
+    }
+    drag.ghost.style.left = e.clientX + "px";
+    drag.ghost.style.top = e.clientY + "px";
+  });
+  const endDrag = (e, cancelled) => {
+    if (!drag) return;
+    const d = drag;
+    drag = null;
+    if (!d.moved) return; // a click: the click handler toggles
+    swallowClick = true;
+    setTimeout(() => (swallowClick = false), 0);
+    d.ghost.remove();
+    const over = !cancelled && document.elementFromPoint(e.clientX, e.clientY);
+    const onMap = over && $("#map").contains(over) && !over.closest(".mapctl");
+    if (!onMap || !engine.streetViewAtPixel(e.clientX, e.clientY)) engine.streetViewPick(false);
+  };
+  svBtn.addEventListener("pointerup", (e) => endDrag(e, false));
+  svBtn.addEventListener("pointercancel", (e) => endDrag(e, true));
   engine.onPick((on) => {
     body.classList.toggle("sv-pick", on);
     $("#svBtn").classList.toggle("on", on);

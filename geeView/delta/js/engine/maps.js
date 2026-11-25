@@ -401,9 +401,9 @@ export function createMap(el, store) {
     coverage.setMap(picking ? gmap : null);
     emit("pick", picking);
   }
-  gmap.addListener("click", (ev) => {
-    if (!picking || !ev.latLng) return;
-    svc.getPanorama({ location: ev.latLng, radius: 80, source: g.StreetViewSource.OUTDOOR }, (data, status) => {
+  // the nearest outdoor panorama to a place, else a notice (pick mode stays)
+  function openStreetViewAt(latLng) {
+    svc.getPanorama({ location: latLng, radius: 80, source: g.StreetViewSource.OUTDOOR }, (data, status) => {
       if (status === g.StreetViewStatus.OK) {
         pano.setPano(data.location.pano);
         pano.setPov({ heading: 0, pitch: 0 });
@@ -413,7 +413,27 @@ export function createMap(el, store) {
         store.update((s) => ({ ...s, notices: [...s.notices, "No Street View imagery here. Click a blue line."] }), "notice");
       }
     });
+  }
+  gmap.addListener("click", (ev) => {
+    if (!picking || !ev.latLng) return;
+    openStreetViewAt(ev.latLng);
   });
+  // The map's pixel projection, for a place dropped at a screen point.
+  const probe = new g.OverlayView();
+  probe.onAdd = () => {};
+  probe.draw = () => {};
+  probe.onRemove = () => {};
+  probe.setMap(gmap);
+  // Street View where the man was dropped (clientX, clientY on the page).
+  function streetViewAtPixel(x, y) {
+    const proj = probe.getProjection();
+    if (!proj) return false;
+    const r = gmap.getDiv().getBoundingClientRect();
+    const ll = proj.fromContainerPixelToLatLng(new g.Point(x - r.left, y - r.top));
+    if (!ll) return false;
+    openStreetViewAt(ll);
+    return true;
+  }
   pano.addListener("visible_changed", () => {
     const v = pano.getVisible();
     if (v) streetViewPick(false);
@@ -437,6 +457,7 @@ export function createMap(el, store) {
     location: () => (here ? { lat: here.marker.getPosition().lat(), lng: here.marker.getPosition().lng(), accuracy: here.circle.getRadius() } : null),
     centerObject,
     synchronousCenterObject,
+    streetViewAtPixel,
     back,
     forward,
     history: () => hist.state(),

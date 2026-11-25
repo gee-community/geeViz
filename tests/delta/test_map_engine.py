@@ -161,6 +161,32 @@ def test_street_view_round_trip(page):
     assert not page.evaluate("document.body.classList.contains('sv-pick')")
 
 
+def test_street_view_by_dragging_the_man_onto_the_map(page):
+    go(page, -111.8910, 40.7608, 17)
+    sv = page.locator("#svBtn").bounding_box()
+    box = page.locator("#map").bounding_box()
+    page.mouse.move(sv["x"] + sv["width"] / 2, sv["y"] + sv["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(sv["x"] - 40, sv["y"] - 40, steps=5)
+    # while dragging: the coverage shows and the man follows the pointer
+    assert page.evaluate("document.body.classList.contains('sv-pick')")
+    assert page.locator(".sv-ghost").is_visible()
+    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2, steps=10)
+    page.mouse.up()
+    page.wait_for_function("__delta.engine.gmap.getStreetView().getVisible()", timeout=20000)
+    assert not page.locator(".sv-ghost").is_visible()
+    page.evaluate("__delta.engine.gmap.getStreetView().setVisible(false)")
+    page.wait_for_function("!document.body.classList.contains('sv')")
+    # dropped back on the controls: nothing opens, pick mode ends
+    page.mouse.move(sv["x"] + sv["width"] / 2, sv["y"] + sv["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(sv["x"] - 30, sv["y"], steps=4)
+    page.mouse.move(sv["x"] + sv["width"] / 2, sv["y"] + sv["height"] / 2, steps=4)
+    page.mouse.up()
+    assert not page.evaluate("document.body.classList.contains('sv-pick')")
+    assert not page.evaluate("__delta.engine.gmap.getStreetView().getVisible()")
+
+
 def test_street_view_on_a_phone(page):
     page.set_viewport_size({"width": 390, "height": 844})
     go(page, -111.8910, 40.7608, 17)

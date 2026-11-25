@@ -403,6 +403,9 @@ body.left-hidden .status, body.left-hidden .loadbar { left: 0; }
 .loadbar { position: absolute; z-index: 3; left: var(--lw, var(--dz-left-default)); right: var(--rw, var(--dz-right-default)); top: 0; height: 2px; overflow: hidden; pointer-events: none; }
 .loadbar::after { content: ""; position: absolute; top: 0; bottom: 0; width: 30%; background: linear-gradient(90deg, transparent, var(--dz-teal), transparent); animation: dz-lb 1.4s ease-in-out infinite; }
 @keyframes dz-lb { from { left: -30%; } to { left: 100%; } }
+/* the Street View man while he is dragged onto the map */
+.sv-ghost { position: fixed; z-index: 50; width: 34px; height: 34px; margin: -30px 0 0 -17px; display: grid; place-items: center; border-radius: 50%; background: #f5b400; color: #1b1716; font-size: 22px; box-shadow: var(--dz-shadow); pointer-events: none; }
+#svBtn { touch-action: none; }
 .mapctl { position: absolute; z-index: 3; right: calc(var(--rw, var(--dz-right-default)) + 6px); bottom: calc(var(--dz-status-h) + var(--dz-gstrip)); display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
 /* desktop defaults for content-height panes: span the window and hug the right edge;
    the body.right-over-ctl rules above make room for a pane that reaches down */
