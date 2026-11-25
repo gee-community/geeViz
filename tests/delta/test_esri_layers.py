@@ -1,7 +1,7 @@
 """ArcGIS services in Delta: drawn, legended and queried in the browser,
-with no Earth Engine and nothing fetched in Python (geeView/delta/js/esri,
+with no Earth Engine and nothing fetched in Python (georest.view js/esri,
 js/plugins/esri.js). Recorded answers are unit-tested in
-geeView/delta/tests/esri_*.test.mjs; these run against the live services.
+georest tests/view/js/esri_*.test.mjs; these run against the live services.
 
 Needs the local eeCreds proxy (it serves the page) and a network.
 """
@@ -20,7 +20,7 @@ LCMS = "https://imagery.geoplatform.gov/iipp/rest/services/Vegetation/USFS_EDW_L
 # a zone AE on the Cache la Poudre in Fort Collins (Flood Hazard Zones draws from zoom 14)
 ZONE = (-105.068, 40.59)
 MAP_CENTER = (750, 437)
-FIXTURES = os.path.join(os.path.dirname(__file__), "..", "..", "geeView", "delta", "tests", "fixtures", "esri")
+FIXTURES = os.path.join(os.path.dirname(__file__), "fixtures")
 
 
 def wait_for(page, js, arg=None, timeout=90):
@@ -115,7 +115,7 @@ def test_query_identifies_each_service(live_map):
 
 
 def test_a_failing_identify_is_one_card(live_map):
-    with open(os.path.join(FIXTURES, "error_body.json"), encoding="utf-8") as f:
+    with open(os.path.join(FIXTURES, "esri_error_body.json"), encoding="utf-8") as f:
         body = json.dumps(json.load(f)["response"])
 
     def fail_identify(route):

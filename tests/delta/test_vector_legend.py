@@ -1,7 +1,7 @@
 """Delta: a vector layer's legend is its symbol, in the row. One glyph per
 geometry type it holds (point, line, polygon), filled and stroked as the map
 draws it, and no legend to open below the row. The glyph rules are
-unit-tested in geeView/delta/tests/vectorlegend.test.mjs; this checks the
+unit-tested in georest tests/view/js/vectorlegend.test.mjs; this checks the
 geometry types found on real layers and the row on a live map.
 
 Needs Earth Engine, the local eeCreds proxy and a network.

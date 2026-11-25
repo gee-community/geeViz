@@ -232,7 +232,7 @@ def test_testView_delta_screenshot_no_tile_errors(monkeypatch):
     monkeypatch.setattr(charts, "screenshot_url", lambda url, **kw: urls.append(url) or shot(url, **kw))
     res = Map.testView(width=1200, height=800, wait_seconds=20)
     assert "error" not in res, res
-    assert len(urls) == 1 and "/geeView/delta.html" in urls[0], urls
+    assert len(urls) == 1 and "/geoview/geoview.html" in urls[0], urls
     p = pathlib.Path(res["screenshot_path"])
     try:
         assert p.is_file() and p.stat().st_size > 10000, res

@@ -11,25 +11,58 @@ import os
 _here = os.path.dirname(__file__)
 template = os.path.join(_here, "geeView", "index.html")
 
-# Viewer skins. "original" is geeView/index.html; "delta" is
-# geeView/delta.html (assets under geeView/delta/). Both load the same
-# per-session runGeeViz.js. A Delta-skin script differs only in carrying
-# Earth Engine workload tags as data (a guarded Map.setDefaultWorkloadTag and
-# a workloadTag in each viz), and still runs in the original viewer.
+# Viewer skins. "original" is geeView/index.html, which runs the per-session
+# runGeeViz.js. "delta" is geoView, from the installed georest
+# (georest.view: its page and files, served at /geoview), which reads the
+# map as a document (mapper._build_document) instead of a script.
 SKINS = ("original", "delta")
 # The skin a Map starts with when GEEVIZ_SKIN does not name one.
 DEFAULT_SKIN = "delta"
-delta_template = os.path.join(_here, "geeView", "delta.html")
+def _geoview_page():
+    from georest.view import STATIC_DIR
+    return os.path.join(STATIC_DIR, "geoview.html")
+
+
+delta_template = _geoview_page()
+
+
+def _sign_in_script(token_placeholder, token_time_placeholder, project_placeholder, auth_proxy_placeholder):
+    """The Earth Engine sign-in settings an exported page carries (the host
+    fills the placeholders when it serves the page)."""
+    return (
+        "<script>(function(){"
+        "  if(typeof urlParams==='undefined'){window.urlParams={};}"
+        "  urlParams.accessToken='" + token_placeholder + "';"
+        "  urlParams.accessTokenCreationTime=" + token_time_placeholder + ";"
+        "  urlParams.projectID='" + project_placeholder + "';"
+        "  urlParams.geeAuthProxyURL='" + auth_proxy_placeholder + "';"
+        "})();</script>\n"
+    )
+
+
+def _delta_page(doc, run_js, asset_base, placeholders):
+    """The Delta skin's exported page: georest.view's page (its files under
+    ``asset_base + "/geoview"``) with the map document inline, or, for a page
+    saved before the document, its run script."""
+    from georest.view._page import page_html
+    extra = _sign_in_script(*placeholders)
+    if run_js:
+        extra += "<script>" + run_js + "</script>"
+    key = os.environ.get("GOOGLE_MAPS_BROWSER_KEY", "").strip() or None
+    return page_html(doc, asset_base.rstrip("/") + "/geoview", key, extra_head_html=extra)
 
 
 def _export_page(run_js, skin, asset_base, token_placeholder, token_time_placeholder,
-                 project_placeholder, auth_proxy_placeholder):
+                 project_placeholder, auth_proxy_placeholder, doc=None):
     """The page :meth:`mapper.export_html` writes, for a run script and a skin.
 
     Shared with :func:`refresh_exported_html`, which rebuilds a page saved
     earlier around the run script it carries, so the two cannot drift apart.
     """
-    with open(delta_template if skin == "delta" else template, "r", encoding="utf-8") as f:
+    if skin == "delta":
+        return _delta_page(doc, None if doc is not None else run_js, asset_base,
+                           (token_placeholder, token_time_placeholder, project_placeholder, auth_proxy_placeholder))
+    with open(template, "r", encoding="utf-8") as f:
         html = f.read()
 
     # The template hard-codes geeViz's own Google Maps key, which is
@@ -152,13 +185,31 @@ def refresh_exported_html(html: str, skin: str | None = None) -> str:
         html,
     )
     base = _re.search(r'<base href="([^"]*)">', html)
+    doc_m = _re.search(r'<script type="application/json" id="geoview-document">(\{.*?)</script>', html, _re.S)
+    if not head:
+        # a Delta page with the map document: the sign-in block has no run script after it
+        head = _re.search(
+            r"<script>\(function\(\)\{\s*if\(typeof urlParams==='undefined'\)\{window\.urlParams=\{\};\}\s*"
+            r"urlParams\.accessToken='(?P<token>[^']*)';\s*"
+            r"urlParams\.accessTokenCreationTime=(?P<time>[^;]*);\s*"
+            r"urlParams\.projectID='(?P<project>[^']*)';\s*"
+            r"urlParams\.geeAuthProxyURL='(?P<proxy>[^']*)';\s*"
+            r"\}\)\(\);</script>",
+            html,
+        )
     if not head or not base:
         raise ValueError("Not a map page written by Map.export_html: its run script or <base> was not found.")
+    asset_base = base.group(1).rstrip("/")
+    if asset_base.endswith("/geoview"):
+        asset_base = asset_base[: -len("/geoview")]
+    placeholders = (head.group("token"), head.group("time"), head.group("project"), head.group("proxy"))
+    if doc_m:
+        if skin != "delta":
+            raise ValueError("This page carries a map document, which only the Delta skin reads.")
+        import json as _json
+        return _export_page(None, skin, asset_base, *placeholders, doc=_json.loads(doc_m.group(1)))
     end = html.find("</script>", head.end())
     run_js = html[head.end():end] if end > -1 else ""
     if "function runGeeViz(" not in run_js:
         raise ValueError("Not a map page written by Map.export_html: it has no runGeeViz script.")
-    return _export_page(
-        run_js, skin, base.group(1).rstrip("/"),
-        head.group("token"), head.group("time"), head.group("project"), head.group("proxy"),
-    )
+    return _export_page(run_js, skin, asset_base, *placeholders)

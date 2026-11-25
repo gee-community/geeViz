@@ -132,6 +132,12 @@ def mount_geeview(app):
 
     pkg_dir = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
     geeview_dir = _os.path.join(pkg_dir, "geeView")
+    # the Delta skin's viewer is geoView, from the installed georest
+    try:
+        from georest.view import STATIC_DIR as _geoview_dir
+        app.mount("/geoview", no_store_static_files_class()(directory=_geoview_dir, html=True), name="geoview-static")
+    except ImportError:
+        pass
     if _os.path.isdir(geeview_dir):
         app.mount("/geeView", no_store_static_files_class()(directory=geeview_dir, html=True), name="geeview-static")
     return app

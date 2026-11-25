@@ -1,5 +1,5 @@
 """GeoJSON layers answer the Query tool by hit test on what is drawn
-(geeView/delta/js/engine/hittest.js), with no Earth Engine: a point within
+(georest.view js/engine/hittest.js), with no Earth Engine: a point within
 8 pixels of its marker, a line within 5 pixels, a polygon when the click is
 inside it.
 

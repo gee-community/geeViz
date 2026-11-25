@@ -1,6 +1,6 @@
 """Delta: a layer's legend opens the first time the layer is on, unless the
 layer has no legend (addToLegend: False). The rule itself is unit-tested in
-geeView/delta/tests/legendopen.test.mjs; this checks the wiring on a live map.
+georest tests/view/js/legendopen.test.mjs; this checks the wiring on a live map.
 
 Needs Earth Engine, the local eeCreds proxy and a network.
 """

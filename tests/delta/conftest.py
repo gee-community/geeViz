@@ -28,7 +28,9 @@ class _Quiet(http.server.SimpleHTTPRequestHandler):
 
 @pytest.fixture(scope="session")
 def delta_server():
-    handler = functools.partial(_Quiet, directory=str(GEEVIEW))
+    # the Delta skin's viewer is geoView, from the installed georest
+    from georest.view import STATIC_DIR
+    handler = functools.partial(_Quiet, directory=str(STATIC_DIR))
     srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
     t = threading.Thread(target=srv.serve_forever, daemon=True)
     t.start()
@@ -80,7 +82,7 @@ def delta_page(delta_server, _browser):
         page = ctx.new_page()
         _collect_errors(page)
         qs = urlencode(url_params or {})
-        page.goto(delta_server + "/delta.html" + ("?" + qs if qs else ""))
+        page.goto(delta_server + "/geoview.html" + ("?" + qs if qs else ""))
         page.wait_for_function("window.__delta !== undefined")
         return page
 

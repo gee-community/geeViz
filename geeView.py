@@ -135,7 +135,60 @@ from geeViz.viewerPages import (  # noqa: E402
     SKINS, DEFAULT_SKIN, delta_template, refresh_exported_html,
     _resolve_skin, _export_page,
 )
-_SKIN_PAGES = {"original": "", "delta": "delta.html"}
+import re as _re_cmd  # noqa: E402
+import time as _time_mod  # noqa: E402
+_SKIN_PAGES = {"original": "geeView/", "delta": "geoview/geoview.html"}
+
+# ---- the Delta skin's map document (georest.view) ----
+# Map commands are recorded as JavaScript calls for the original skin's map
+# script; the document carries them as data: [name, *args].
+_CMD_CALL = _re_cmd.compile(r"^(?:(Map|map|areaChart)\.)?(\w+)\((.*)\)$", _re_cmd.S)
+_CMD_SET = _re_cmd.compile(r"^(?:(Map)\.)?(\w+)\s*=\s*(.+)$", _re_cmd.S)
+
+
+def _command_to_data(cmd):
+    """A recorded map command as document data, [name, *args]; ValueError
+    naming any command that cannot be read."""
+    c = str(cmd).strip().rstrip(";").strip()
+    m = _CMD_CALL.match(c)
+    try:
+        if m:
+            obj, name, args = m.groups()
+            vals = json.loads("[" + args + "]") if args.strip() else []
+            if obj == "map" and name == "setZoom":
+                return ["mapSetZoom", *vals]
+            if obj == "areaChart" and name == "populateChartLayerSelect":
+                return ["populateChartLayerSelect"]
+            if obj is None and name == "synchronousCenterObject":
+                return ["synchronousCenterObject", *vals]
+            if obj == "Map":
+                return [name, *vals]
+        else:
+            m = _CMD_SET.match(c)
+            if m:
+                obj, name, val = m.groups()
+                return ["setProperty" if obj else "setGlobal", name, json.loads(val)]
+    except ValueError:
+        pass
+    raise ValueError("Cannot put the map command {!r} in a map document".format(cmd))
+
+
+def _write_map_document(run_dir, token, doc_json, now=None):
+    """Write a Delta map's document (map-<token>.json) beside the run scripts,
+    removing documents not rewritten for a week."""
+    import glob
+    now = _time_mod.time() if now is None else now
+    for old in glob.glob(os.path.join(run_dir, "map-*.json")):
+        try:
+            if now - os.path.getmtime(old) > _OWN_RUN_MAX_AGE_S:
+                os.remove(old)
+        except OSError:
+            pass
+    path = os.path.join(run_dir, "map-{}.json".format(token))
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(doc_json)
+    return path
+
 
 # A Delta Map's own run script: runGeeViz-<token>.js beside the shared one.
 # Scripts not rewritten for a week are removed (one per Map object, so a
@@ -675,6 +728,19 @@ class _GeeVizRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         kwargs["directory"] = py_viz_dir
         super().__init__(*args, **kwargs)
+
+    def translate_path(self, path):
+        # /geoview/... is the Delta skin's viewer, from the installed georest
+        p = urlparse(path).path
+        if p == "/geoview" or p.startswith("/geoview/"):
+            from georest.view import STATIC_DIR as _geoview_dir
+            here = self.directory
+            try:
+                self.directory = _geoview_dir
+                return super().translate_path(path[len("/geoview"):] or "/")
+            finally:
+                self.directory = here
+        return super().translate_path(path)
 
     def log_message(self, format, *args):  # noqa: A002 - stdlib signature
         """Silence per-request access logs.
@@ -2550,6 +2616,92 @@ class mapper:
     # Build the per-session runGeeViz JavaScript body from the mapper's
     # state. Written by `view()` to `geeView/src/gee/gee-run/<name>.js`,
     # which `index.html` already references via a normal `<script src>`.
+    def _default_workload_tag(self):
+        """The Earth Engine workload tag geeViz has set for this session ("" for none)."""
+        _py_default = ""
+        try:
+            import ee.data as _ee_data
+            _state = _ee_data._get_state().workload_tag
+            _py_default = (_state._default or "").strip()
+        except Exception:
+            return ""
+        if not _EE_API_UPSTREAM:
+            try:
+                _py_cur = (_state._tag or "").strip()
+                if _py_cur and _py_cur != _py_default:
+                    _py_default = _py_cur
+            except Exception:
+                pass
+        return _py_default
+
+    def _build_document(self, tenant: str = ""):
+        """This map as a georest.view map document (the Delta skin): each
+        recorded layer as a typed layer, each map command as data."""
+        from urllib.parse import quote as _q, parse_qs as _pq
+        from georest.view._document import add_layer as _add, new_document, validate
+        doc = new_document()
+        doc["brand"] = {"name": "geeViz", "accent": "Delta"}
+        doc["ee"] = {
+            "authProxyAPIURL": ("/ee-api/t/" + _q(tenant, safe="")) if tenant else None,
+            "workloadTag": self._default_workload_tag(),
+        }
+        _ee_types = {"geeImageCollection": "ee.imageCollection", "geeVectorImage": "ee.vectorImage", "geeVector": "ee.vector"}
+        for d in self.idDictList:
+            name = d.get("name")
+            visible = str(d.get("visible", "true")).lower() == "true"
+            wt = "" if _EE_API_UPSTREAM else d.get("workloadTag", "")
+            if d.get("_is_esri"):
+                viz = json.loads(d["viz"])
+                options = viz.pop("esri", {})
+                kind = viz.pop("esriKind", None)
+                timelapse = viz.pop("timelapse", False)
+                if timelapse and kind:
+                    viz["esriKind"] = kind
+                _add(doc, "esri.timelapse" if timelapse else (kind or "esri.map"), {"url": d["url"], "options": options},
+                     viz=viz, name=name, visible=visible)
+            elif d.get("_is_dynamic_esri"):
+                base = d.get("_dyn_base_url_1", "")
+                if "token=" in d.get("_dyn_ending_1", ""):
+                    raise ValueError("A dynamic map service with a token cannot be drawn in the Delta skin yet: "
+                                     "use Map.addEsriMapService(url, token=...).")
+                url = _re_cmd.split(r"/export(?:Image)?\?", base)[0]
+                layers = (_pq(base.split("?", 1)[1]).get("layers") or [""])[0] if "?" in base else ""
+                _add(doc, "esri.map", {"url": url, "options": {"layers": layers} if layers else {}},
+                     name=name, visible=visible)
+            elif d.get("_is_tile_url"):
+                viz = json.loads(d["viz"])
+                viz.pop("layerType", None)
+                viz.pop("opacity", None)
+                max_zoom = viz.pop("maxZoom", d.get("_tile_max_zoom", 20))
+                _add(doc, "xyz", {"url": d["_tile_url_template"], "maxZoom": int(max_zoom)}, viz=viz, name=name,
+                     visible=visible, opacity=d.get("_tile_opacity"))
+            else:
+                viz = json.loads(d["viz"]) if isinstance(d.get("viz"), str) else dict(d.get("viz") or {})
+                item = d.get("item")
+                item = json.loads(item) if isinstance(item, str) else item
+                fn, obj = d.get("function"), d.get("objectName")
+                if obj == "areaChart":
+                    t, source = "ee.areaChart", {"serialized": item}
+                elif fn == "addSerializedTimeLapse":
+                    t, source = "ee.timelapse", {"serialized": item}
+                elif fn == "addSerializedSelectLayer":
+                    t, source = "ee.select", {"serialized": item}
+                elif fn == "addSerializedLayer":
+                    t, source = _ee_types.get(viz.get("layerType"), "ee.image"), {"serialized": item}
+                elif fn == "addLayer" and viz.get("layerType") == "geoJSONVector":
+                    viz.pop("layerType", None)
+                    t, source = "geojson", {"geojson": item}
+                else:
+                    raise ValueError("Cannot put the layer {!r} ({}) in a map document".format(name, fn))
+                if wt and t.startswith("ee."):
+                    viz["workloadTag"] = wt
+                _add(doc, t, source, viz=viz, name=name, visible=visible)
+        doc["commands"] = [_command_to_data(c) for c in self.mapCommandList]
+        doc["commands"].append(["setGlobal", "queryWindowMode", self.queryWindowMode])
+        if self.turnOffLayersWhenTimeLapseIsOn is not None:
+            doc["commands"].append(["setProperty", "turnOffLayersWhenTimeLapseIsOn", bool(self.turnOffLayersWhenTimeLapseIsOn)])
+        return validate(doc)
+
     def _build_run_js(self, tenant: str = ""):
         # Optional tenant header — runs IMMEDIATELY at script load, before
         # ``eeInit()`` (which is deferred behind a Google Maps load).
@@ -2585,13 +2737,7 @@ class mapper:
         # actual DEFAULT, not ``getWorkloadTag()`` — which returns the
         # CURRENT tag (typically whatever the user last set) and would
         # install the wrong value as the browser fallback.
-        _py_default = ""
-        try:
-            import ee.data as _ee_data
-            _state = _ee_data._get_state().workload_tag
-            _py_default = (_state._default or "").strip()
-        except Exception:
-            _py_default = ""
+        _py_default = self._default_workload_tag()
         # Prefer the CURRENT tag when it's set and differs from the
         # installed default. Rationale: in an agent context, each tool
         # call scopes a per-user attribution tag via
@@ -2619,13 +2765,6 @@ class mapper:
         # sharing one except with the ``_default`` read above meant a
         # failure here discarded an already-valid default and silently
         # untagged every post-load call.
-        if not _EE_API_UPSTREAM:
-            try:
-                _py_cur = (_state._tag or "").strip()
-                if _py_cur and _py_cur != _py_default:
-                    _py_default = _py_cur
-            except Exception:
-                pass
         if delta:
             # Guarded: the original viewer's Map has no such method, and this
             # script also reaches it (Map.view() rewrites the shared
@@ -2892,7 +3031,8 @@ class mapper:
 
         html = _export_page(run_js, self.skin, asset_base, token_placeholder,
                             token_time_placeholder, project_placeholder,
-                            auth_proxy_placeholder)
+                            auth_proxy_placeholder,
+                            doc=self._build_document() if self.skin == "delta" else None)
 
         # Refuse a page that can never be delivered. Checked here, before
         # the write, so an oversized map fails as an error the caller sees
@@ -3098,8 +3238,12 @@ class mapper:
             f.write(run_js)
         run_param = ""
         if self.skin == "delta":
-            _write_own_run_script(ee_run_dir, self._run_token, run_js)
-            run_param = "&run=" + self._run_token
+            # the map as a document (georest.view), beside the run scripts; the
+            # page (/geoview/geoview.html) reads it by a path relative to itself,
+            # so it also works behind a path prefix (Workbench's /proxy/<port>/)
+            from georest.view._document import to_json as _doc_json
+            _write_map_document(ee_run_dir, self._run_token, _doc_json(self._build_document(tenant=ee_proxy_tenant or "")))
+            run_param = "&doc=../geeView/src/gee/gee-run/map-" + self._run_token + ".json"
 
         # Detached mode does NOT need the in-process daemon HTTP
         # server — the detached eeAuth proxy serves both ``/geeView/*``
@@ -3209,7 +3353,7 @@ class mapper:
                     pass
             proxy_js = "google.colab.kernel.proxyPort({})".format(colab_port)
             proxy_url = eval_js(proxy_js)
-            geeView_url = "{}/geeView/{}{}".format(proxy_url, _SKIN_PAGES[self.skin], query)
+            geeView_url = "{}/{}{}".format(proxy_url, _SKIN_PAGES[self.skin], query)
             print("Colab Proxy URL:", geeView_url)
             self.view_url = geeView_url
             self.IFrame = IFrame(src=geeView_url, width="100%", height="{}px".format(iframe_height))
@@ -3219,7 +3363,7 @@ class mapper:
             if self.proxy_url is None:
                 self.proxy_url = _detect_proxy_url()
             self.proxy_url = baseDomain(self.proxy_url)
-            geeView_url = "{}/proxy/{}/geeView/{}{}".format(
+            geeView_url = "{}/proxy/{}/{}{}".format(
                 self.proxy_url, self.port, _SKIN_PAGES[self.skin], query
             )
             print("Proxy URL:", geeView_url)
@@ -3236,7 +3380,7 @@ class mapper:
             base = ee_proxy_url.rstrip("/")
             if base.endswith("/ee-api"):
                 base = base[: -len("/ee-api")]
-            url = f"{base}/geeView/{_SKIN_PAGES[self.skin]}{query}"
+            url = f"{base}/{_SKIN_PAGES[self.skin]}{query}"
             print("geeView URL:", url)
             self.view_url = url
             if want_iframe:
@@ -3256,7 +3400,7 @@ class mapper:
             # first, the http.server only binds IPv4, and naive tools
             # (older Python `requests`, curl without Happy Eyeballs)
             # fail with "connection refused" even though 127.0.0.1 works.
-            url = "http://127.0.0.1:{}/geeView/{}{}".format(self.port, _SKIN_PAGES[self.skin], query)
+            url = "http://127.0.0.1:{}/{}{}".format(self.port, _SKIN_PAGES[self.skin], query)
             print("geeView URL:", url)
             self.view_url = url
             if want_iframe:

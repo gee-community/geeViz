@@ -139,7 +139,7 @@ def test_the_proxy_serves_geeview_with_no_store():
     from geeViz.eeAuth.server import mount_geeview
 
     app = mount_geeview(FastAPI())
-    r = TestClient(app).get("/geeView/delta.html")
+    r = TestClient(app).get("/geoview/geoview.html")
     assert r.status_code == 200
     assert "no-store" in r.headers.get("cache-control", ""), dict(r.headers)
 

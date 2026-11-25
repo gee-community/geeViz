@@ -1,6 +1,6 @@
-"""Delta: each Map's page runs that Map's own script (?run=<token>), so another
-notebook's Map.view() rewriting the shared runGeeViz.js does not change a page
-that is open or reloaded.
+"""Delta: each Map's page reads that Map's own document (?doc=.../map-<token>.json),
+so another notebook's Map.view() does not change a page that is open or
+reloaded.
 
 Needs Earth Engine, the local eeCreds proxy and a network.
 """
@@ -18,7 +18,7 @@ def mine(Map):
 
 def test_another_maps_view_does_not_replace_this_one(live_map):
     page = live_map(mine, wait_layers=False)
-    assert "run=" in page.url
+    assert "doc=" in page.url
     names = "__delta.store.get().layers.map(l => l.name)"
     page.wait_for_function("__delta.store.get().layers.length > 0")
     assert page.evaluate(names) == ["Mine"]

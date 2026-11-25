@@ -1,7 +1,7 @@
 """Delta without Earth Engine: a map with no Earth Engine layers never loads
 the Earth Engine library or signs in; Earth Engine loads when the first Earth
 Engine layer needs it; and an Earth Engine failure leaves the other layers
-drawn. The loader itself is unit-tested in geeView/delta/tests/eeloader.test.mjs.
+drawn. The loader itself is unit-tested in georest tests/view/js/eeloader.test.mjs.
 
 Needs the local eeCreds proxy (the page is served by it) and a network.
 """
