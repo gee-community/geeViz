@@ -161,6 +161,19 @@ def test_street_view_round_trip(page):
     assert not page.evaluate("document.body.classList.contains('sv-pick')")
 
 
+def test_street_view_on_a_phone(page):
+    page.set_viewport_size({"width": 390, "height": 844})
+    go(page, -111.8910, 40.7608, 17)
+    page.click("#svBtn")
+    assert page.evaluate("document.body.classList.contains('sv-pick')")
+    box = page.locator("#map").bounding_box()
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.wait_for_function("__delta.engine.gmap.getStreetView().getVisible()", timeout=20000)
+    page.evaluate("__delta.engine.gmap.getStreetView().setVisible(false)")
+    page.wait_for_function("!document.body.classList.contains('sv')")
+    page.set_viewport_size({"width": 1500, "height": 900})
+
+
 def test_search_coordinates(page):
     box = page.locator("#pane-left [data-role=search]")
     box.fill("40.5, -111.9")

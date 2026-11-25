@@ -705,3 +705,17 @@ def test_phone_output_dot_and_tools_stay_open_on_pick(delta_page):
     page.wait_for_function("!document.querySelector('#pane-right .tool[data-tool=chart]').hidden")
     page.click("#pane-right .tool[data-tool=chart]")
     assert "m-tools" in page.evaluate("document.body.className")
+
+
+def test_phone_has_street_view(delta_page):
+    # zoom and full screen are the phone's own gestures, but Street View has
+    # no gesture: its button stays, under the basemap button
+    page = delta_page(SHELL, viewport=PHONE)
+    page.wait_for_function(SHOWN, arg="#svBtn")
+    for sel in ("[data-act=zoom-in]", "[data-act=fullscreen]"):
+        assert not page.evaluate(SHOWN, sel), sel
+    sv = page.evaluate("() => document.querySelector('#svBtn').getBoundingClientRect().toJSON()")
+    bm = page.evaluate("() => document.querySelector('.basemaps').getBoundingClientRect().toJSON()")
+    assert sv["width"] >= 36 and sv["height"] >= 36, sv  # a thumb-sized target
+    assert abs(sv["right"] - bm["right"]) <= 1 and sv["top"] >= bm["bottom"], (sv, bm)
+    # (picking a place on a real map: test_map_engine.py test_street_view_on_a_phone)
