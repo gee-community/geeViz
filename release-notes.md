@@ -1,5 +1,24 @@
 # geeViz Release Notes
 
+## Unreleased
+
+### Delta map viewer
+
+- **Delta now comes from georest.** The viewer moved into georest as
+  `georest.view` (geoView), so ArcGIS and GeoJSON maps can be drawn without
+  Earth Engine. geeViz needs georest 0.6 (`georest>=0.6,<0.7`).
+- `Map.view()` with the Delta skin opens `/geoview/geoview.html` and writes
+  the map as a document (`map-<token>.json` beside the run scripts) instead of
+  a run script. The original skin is unchanged.
+- **Hosting exported maps:** an exported Delta page loads its files from
+  `asset_base + "/geoview"`, so a server that serves `asset_base` from
+  geeViz's `geeView` folder must also serve georest's viewer
+  (`georest.view.STATIC_DIR`) there. The eeAuth proxy and the askterra agent
+  do. Saved maps with a run script still refresh onto the new page.
+- `Map.addDynamicMapService(token=...)` is refused on the Delta skin, so a
+  token never lands in a map document; use `Map.addEsriMapService(url,
+  token=...)`.
+
 ## 2026.11.2 (November 23, 2026)
 
 2026.11.1 was not uploaded to PyPI, so this release also carries everything
