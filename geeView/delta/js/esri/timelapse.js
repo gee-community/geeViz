@@ -4,7 +4,7 @@
 // engine/timelapse.js's: {prepare(), years(), frame(i), queryTarget()}.
 import { serviceInfo, serviceKind, normalizeUrl, sublayerOf, timeSteps, catalogYears } from "./rest.js";
 import { exportTileUrl } from "./draw.js";
-import { serviceLegend } from "./legend.js";
+import { serviceLegend, withSwatchColors } from "./legend.js";
 
 export function esriFrameLoader(engine, layer) {
   const url = normalizeUrl(layer.item);
@@ -37,7 +37,8 @@ export function esriFrameLoader(engine, layer) {
       const i = sub ? await serviceInfo(drawUrl, req) : await info();
       let legend = null;
       try {
-        legend = await serviceLegend(drawUrl, i, opts, { ...req, title: layer.name });
+        // with its swatch colors, for query and chart colors (as a single-year layer's)
+        legend = await (engine.swatchColors || withSwatchColors)(await serviceLegend(drawUrl, i, opts, { ...req, title: layer.name }));
       } catch (e) {
         legend = null;
       }

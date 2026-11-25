@@ -77,4 +77,7 @@ def test_an_esri_timelapse_plays_with_no_earth_engine(live_map):
     wait_for(page, "() => __delta.store.get().querying === false && __delta.store.get().results.length > 0", timeout=60)
     r = page.evaluate("__delta.store.get().results[0]")
     assert r["kind"] == "series" and r["data"]["x"][0] == "1985", r
+    # the line is colored by class, as an Earth Engine class series is
+    cc = r["data"]["series"][0]["classColors"]
+    assert cc and sum(1 for c in cc if c) >= len(cc) - 2, cc
     assert [u for u in seen if "ee_api_js" in u or "/ee-api/" in u] == []

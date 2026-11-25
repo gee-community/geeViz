@@ -87,3 +87,10 @@ test("a feature layer cannot play as a timelapse yet, and says so", async () => 
   const ld = esriFrameLoader(engineWith(fetch), { ...layer(url), name: "Fires" });
   await assert.rejects(ld.years(), /Fires is a feature layer: a timelapse of its features is not supported yet\. Add it with time= for one period\./);
 });
+
+test("a timelapse's legend carries its swatch colors, as a single-year layer's does", async () => {
+  const fetch = fakeFetch([[LCMS, "lcms_info"], [LCMS + "/legend", "lcms_legend"]]);
+  const ld = esriFrameLoader({ fetch, swatchColors: async (lg) => ({ ...lg, items: lg.items.map((it) => ({ ...it, color: "#123456" })) }) }, layer(LCMS));
+  const p = await ld.prepare();
+  assert.ok(p.legend.items.every((it) => it.color === "#123456"));
+});

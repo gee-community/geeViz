@@ -61,9 +61,11 @@ function classViz(ci, band) {
   const queryDict = {};
   ci.values.forEach((v, i) => (queryDict[v] = ci.names[i]));
   const viz = { queryDict };
-  if (ci.colors.every(Boolean)) {
-    viz.class_values = { [band]: ci.values };
-    viz.class_palette = { [band]: ci.colors };
+  // the classes whose swatch has a color (a class without one draws grey)
+  const known = ci.values.map((v, i) => [v, ci.colors[i]]).filter(([, c]) => !!c);
+  if (known.length) {
+    viz.class_values = { [band]: known.map(([v]) => v) };
+    viz.class_palette = { [band]: known.map(([, c]) => c) };
   }
   return viz;
 }

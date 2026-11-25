@@ -76,7 +76,7 @@ function pixelSizes(info, zoom, lat) {
   return { s, ground: wm ? s * Math.cos((lat * Math.PI) / 180) : s };
 }
 
-const classInfoFor = (ci) => (ci ? { [BAND]: { classValues: ci.values, classNames: ci.names, ...(ci.colors.every(Boolean) ? { classPalette: ci.colors } : {}) } } : {});
+const classInfoFor = (ci) => (ci ? { [BAND]: { classValues: ci.values, classNames: ci.names, ...(ci.colors.some(Boolean) ? { classPalette: ci.colors } : {}) } } : {});
 
 async function catalogItem(url, info, year, opts) {
   const yf = (info.fields || []).find((f) => String(f.name).toLowerCase() === "year");

@@ -118,3 +118,13 @@ test("an identify answer for an old click is dropped", async () => {
   assert.deepEqual(rs, []);
   assert.deepEqual(got, []);
 });
+
+test("the values over time are colored by class, even when a swatch has no color", async () => {
+  const colors = LEGEND.items.map((it, i) => ({ ...it, color: i === 2 ? null : "#" + String(i).padStart(2, "0") + "aa00" }));
+  const fetch = fakeFetch([[LCMS + "/identify", "lcms_identify"]]);
+  const [s] = await identifyImage(LCMS, ZONE, {}, { ...LEGEND, items: colors }, { fetch, info: response("lcms_info"), layer: LAYER });
+  const cc = s.data.series[0].classColors;
+  assert.ok(cc, "class colors on the line");
+  const y = s.data.series[0].y;
+  y.forEach((v, i) => assert.equal(cc[i], v === 3 ? null : colors[v - 1].color, `value ${v}`));
+});
