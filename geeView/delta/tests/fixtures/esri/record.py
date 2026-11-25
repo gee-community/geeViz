@@ -87,6 +87,9 @@ FIXTURES = {
                                {"f": "json"}, "GET"),
     "drawinginfo_piechart": ("https://services7.arcgis.com/zX8NTiUjIKUVyth8/arcgis/rest/services/Reg_Units_Crop_Centroid/FeatureServer/18",
                              {"f": "json"}, "GET"),
+    # elevation at Fort Collins (USGS 3DEP)
+    "3dep_identify": (DEP3 + "/identify", {"geometry": FOCO, "geometryType": "esriGeometryPoint", "returnGeometry": "false",
+                                           "returnCatalogItems": "false", "f": "json"}, "GET"),
     # identify at Fort Collins, in an 800 by 600 view
     # a zone AE on the Cache la Poudre, zoomed in past layer 28's minScale (1:36,111)
     "nfhl_identify": (NFHL + "/identify", {"geometry": ZONE, "geometryType": "esriGeometryPoint", "sr": "4326",

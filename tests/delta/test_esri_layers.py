@@ -179,3 +179,22 @@ def test_a_feature_layer_draws_with_its_service_renderer(live_map):
     assert (g["geom"], g["fill"], g["stroke"]) == ("polygon", "#e38b4f", "#6e6e6e"), g
     # one symbol: shown in the row, nothing to open
     assert page.evaluate("(id) => !!document.querySelector(`.layer[data-id='${id}'] .legbtn.symbol svg`)", l["id"])
+
+
+def test_elevation_without_earth_engine_comes_from_3dep(live_map):
+    seen = []
+    page = live_map(build, setup=recorder(seen))
+    settled(page)
+    # move the mouse over the map until the status bar shows a number
+    deadline = time.time() + 30
+    text = ""
+    while time.time() < deadline:
+        page.mouse.move(MAP_CENTER[0] + 40, MAP_CENTER[1] + 20)
+        page.mouse.move(MAP_CENTER[0] + 41, MAP_CENTER[1] + 21)
+        time.sleep(1.2)
+        text = page.evaluate("() => [...document.querySelectorAll('span')].map(s => s.textContent).find(t => t.startsWith('Elev ')) || ''")
+        if any(ch.isdigit() for ch in text):
+            break
+    assert any(ch.isdigit() for ch in text), text
+    assert any("3DEPElevation/ImageServer/identify" in u for u in seen)
+    assert ee_requests(seen) == []

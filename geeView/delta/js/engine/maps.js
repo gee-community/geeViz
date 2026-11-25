@@ -10,6 +10,8 @@
 // every StyledMapType overlay unstyled (seen in Chrome: the satellite labels
 // lost their white text), so those two basemaps draw their own labels,
 // under the layers, and get no overlay. The other basemaps set no map styles.
+import { esriRequest } from "../esri/rest.js";
+
 export const BASEMAPS = { satellite: "satellite", map: "roadmap-base", terrain: "terrain", darkterrain: "terrain" };
 const NO_LABELS = [{ elementType: "labels", stylers: [{ visibility: "off" }] }];
 export const OWN_LABELS = new Set(["terrain", "darkterrain"]);
@@ -84,6 +86,23 @@ export function elevationValue(ee, lng, lat) {
     .int16()
     .reduceRegion(ee.Reducer.first(), ee.Geometry.Point([lng, lat]), ELEVATION_SCALE)
     .get("b1");
+}
+
+// Without Earth Engine: USGS 3DEP, the United States' elevation service
+// (identify at the point; elsewhere it answers NoData). Meters, rounded.
+export const ELEVATION_3DEP_URL = "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer";
+export async function elevation3DEP(lng, lat, opts = {}) {
+  try {
+    const out = await esriRequest(
+      ELEVATION_3DEP_URL + "/identify",
+      { geometry: { x: lng, y: lat, spatialReference: { wkid: 4326 } }, geometryType: "esriGeometryPoint", returnGeometry: false, returnCatalogItems: false },
+      { fetch: opts.fetch }
+    );
+    const v = Number(out && out.value);
+    return out && out.value !== "NoData" && Number.isFinite(v) ? Math.round(v) : null;
+  } catch (e) {
+    return null;
+  }
 }
 
 // True when two views are the same to within `px` screen pixels at their zoom.
@@ -290,10 +309,11 @@ export function createMap(el, store) {
   let eeReady = false;
   function elevationAt(latLng) {
     return new Promise((resolve) => {
-      if (!eeReady) return resolve(null);
+      const lat = typeof latLng.lat === "function" ? latLng.lat() : latLng.lat;
+      const lng = typeof latLng.lng === "function" ? latLng.lng() : latLng.lng;
+      // a map with no Earth Engine (or before it signs in): 3DEP
+      if (!eeReady) return elevation3DEP(lng, lat).then(resolve);
       try {
-        const lat = typeof latLng.lat === "function" ? latLng.lat() : latLng.lat;
-        const lng = typeof latLng.lng === "function" ? latLng.lng() : latLng.lng;
         elevationValue(ee, lng, lat).evaluate((v) => resolve(v === undefined || v === null ? null : Number(v)));
       } catch (e) {
         resolve(null);
@@ -310,7 +330,7 @@ export function createMap(el, store) {
     const lng = ev.latLng.lng();
     emit("cursor", lat, lng, undefined);
     const now = Date.now();
-    if (eeReady && !elevationBusy && now - lastElevationAt > 1000) {
+    if (!elevationBusy && now - lastElevationAt > 1000) {
       lastElevationAt = now;
       elevationBusy = true;
       elevationAt(ev.latLng).then((m) => {
