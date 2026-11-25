@@ -719,3 +719,26 @@ def test_phone_has_street_view(delta_page):
     assert sv["width"] >= 36 and sv["height"] >= 36, sv  # a thumb-sized target
     assert abs(sv["right"] - bm["right"]) <= 1 and sv["top"] >= bm["bottom"], (sv, bm)
     # (picking a place on a real map: test_map_engine.py test_street_view_on_a_phone)
+
+
+def test_phone_tools_tab_shows_the_active_tool(delta_page):
+    page = delta_page(SHELL, viewport=PHONE)
+    mark = "#mtabs [data-m=tools] .mtool"
+    page.wait_for_function(SHOWN, arg="#mtabs [data-m=tools]")
+    assert not page.evaluate(SHOWN, mark)
+    # Query and Chart area are offered once the map has a layer
+    page.evaluate("__delta.api.addLayer({}, {canAreaChart: true}, 'A layer')")
+    for tool, icon, name in (("query", "ti-crosshair", "Query"), ("area", "ti-ruler-measure", "Measure"), ("chart", "ti-chart-area-line", "Chart area")):
+        page.evaluate("(t) => __delta.store.set({tool: t})", tool)
+        page.wait_for_function(SHOWN, arg=mark)
+        got = page.evaluate("(s) => [document.querySelector(s + ' i').className, document.querySelector('#mtabs [data-m=tools]').getAttribute('aria-label')]", mark)
+        assert icon in got[0], got
+        assert got[1] == "Tools: " + name + " is on", got
+        # beside the Tools icon, inside the tab
+        tab = page.evaluate("() => document.querySelector('#mtabs [data-m=tools]').getBoundingClientRect().toJSON()")
+        ic = page.evaluate("() => document.querySelector('#mtabs [data-m=tools] .ti-tools').getBoundingClientRect().toJSON()")
+        m = page.evaluate("(s) => document.querySelector(s).getBoundingClientRect().toJSON()", mark)
+        assert m["left"] >= ic["right"] - 6 and m["right"] <= tab["right"], (m, ic, tab)
+    page.evaluate("__delta.store.set({tool: null})")
+    page.wait_for_function("(s) => !document.querySelector(s) || document.querySelector(s).hidden", arg=mark)
+    assert page.evaluate("document.querySelector('#mtabs [data-m=tools]').getAttribute('aria-label')") == "Tools"

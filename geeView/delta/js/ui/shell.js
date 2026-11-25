@@ -387,6 +387,20 @@ export function mountShell(store, { mapEl } = {}) {
     if (!(v || []).length) outputDot(false);
   });
   $$("#mtabs [data-m]").forEach((b) => b.addEventListener("click", () => openSheet(b.dataset.m)));
+  // The active tool beside the Tools tab's icon (its own tool icon), so a
+  // phone shows what a tap on the map will do with the sheet closed.
+  function toolMark(tool) {
+    const tab = $("#mtabs [data-m=tools]");
+    const mark = tab && tab.querySelector(".mtool");
+    if (!mark) return;
+    const btn = tool ? $$(".tools .tool").find((b) => b.dataset.tool === tool || (b.dataset.tools || "").split(" ").includes(tool)) : null;
+    const icon = btn && btn.querySelector("i");
+    mark.hidden = !icon;
+    tab.setAttribute("aria-label", icon ? "Tools: " + btn.textContent.trim() + " is on" : "Tools");
+    if (icon) mark.querySelector("i").className = icon.className;
+  }
+  store.on("change:tool", toolMark);
+  toolMark(store.get().tool);
   $$(".pane").forEach((p) =>
     p.addEventListener("click", (e) => {
       if (isPhone() && e.clientY - p.getBoundingClientRect().top < 16) body.classList.toggle("m-full");

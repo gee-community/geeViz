@@ -457,6 +457,10 @@ body.left-hidden .floating-hb { display: inline-grid; }
   .mtab-ic { position: relative; display: inline-flex; }
   .mdot { position: absolute; top: -1px; right: -5px; width: 8px; height: 8px; border-radius: 50%; background: var(--dz-orange); box-shadow: 0 0 0 2px var(--dz-panel); }
   .mdot[hidden] { display: none; }
+  /* the active tool, beside the Tools icon */
+  .mtool { position: absolute; top: -5px; left: calc(100% + 1px); width: 17px; height: 17px; display: grid; place-items: center; border-radius: 50%; background: var(--dz-teal); color: var(--dz-on-accent); box-shadow: 0 0 0 2px var(--dz-panel); }
+  .mtool .ti { font-size: 11px; }
+  .mtool[hidden] { display: none; }
   body.left-hidden .pane-left { transform: translateY(calc(100% + 70px)); }
   body.m-full .pane { height: calc(100vh - 140px); }
   .tools { padding-top: 4px; }
