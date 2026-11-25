@@ -1831,7 +1831,7 @@ class mapper:
     # a layer with a token: a token must never reach the page.
     _ESRI_VIZ_KEYS = ("strokeColor", "fillColor", "fillOpacity", "strokeWeight", "strokeOpacity",
                       "opacity", "canAreaChart", "chartField", "chartStatistic", "chartValueField",
-                      "legendTitle", "pointRadius")
+                      "legendTitle", "pointRadius", "areaChartParams")
     _ESRI_OPT_KEYS = ("layers", "renderingRule", "mosaicRule", "bandIds", "outFields")
 
     @staticmethod

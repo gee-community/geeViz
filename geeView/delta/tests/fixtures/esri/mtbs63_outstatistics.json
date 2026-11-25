@@ -1,0 +1,51 @@
+{
+ "request": {
+  "url": "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/63/query",
+  "params": {
+   "geometry": "{\"rings\": [[[-109.05, 37], [-109.05, 41], [-102.05, 41], [-102.05, 37], [-109.05, 37]]], \"spatialReference\": {\"wkid\": 4326}}",
+   "geometryType": "esriGeometryPolygon",
+   "inSR": "4326",
+   "spatialRel": "esriSpatialRelIntersects",
+   "where": "year >= 2018",
+   "groupByFieldsForStatistics": "fire_type",
+   "outStatistics": "[{\"statisticType\": \"count\", \"onStatisticField\": \"objectid\", \"outStatisticFieldName\": \"v\"}]",
+   "returnGeometry": "false",
+   "f": "json"
+  },
+  "method": "GET"
+ },
+ "response": {
+  "displayFieldName": "",
+  "fieldAliases": {
+   "fire_type": "fire_type",
+   "v": "v"
+  },
+  "fields": [
+   {
+    "name": "fire_type",
+    "type": "esriFieldTypeString",
+    "alias": "fire_type",
+    "length": 254
+   },
+   {
+    "name": "v",
+    "type": "esriFieldTypeBigInteger",
+    "alias": "v"
+   }
+  ],
+  "features": [
+   {
+    "attributes": {
+     "fire_type": "Prescribed Fire",
+     "v": 8
+    }
+   },
+   {
+    "attributes": {
+     "fire_type": "Wildfire",
+     "v": 119
+    }
+   }
+  ]
+ }
+}

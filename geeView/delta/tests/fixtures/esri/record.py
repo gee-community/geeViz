@@ -90,6 +90,27 @@ FIXTURES = {
     # elevation at Fort Collins (USGS 3DEP)
     "3dep_identify": (DEP3 + "/identify", {"geometry": FOCO, "geometryType": "esriGeometryPoint", "returnGeometry": "false",
                                            "returnCatalogItems": "false", "f": "json"}, "GET"),
+    # area charts over the square near Cameron Peak
+    "lcms_histograms_2021": (LCMS + "/computeHistograms", {"geometry": SQUARE, "geometryType": "esriGeometryPolygon",
+                                                           "pixelSize": {"x": 30, "y": 30, "spatialReference": {"wkid": 102100}},
+                                                           "time": "1609459200000,1640995199999", "f": "json"}, "GET"),
+    "lcms_catalog_1990": (LCMS + "/query", {"where": "year = 1990", "outFields": "objectid,year", "returnGeometry": "false", "f": "json"}, "GET"),
+    "lcms_catalog_1998": (LCMS + "/query", {"where": "year = 1998", "outFields": "objectid,year", "returnGeometry": "false", "f": "json"}, "GET"),
+    # class transitions 1990 to 1998: each pixel's 1990 class times 17 plus its 1998 class
+    "lcms_transition_1990_1998": (LCMS + "/computeHistograms", {
+        "geometry": SQUARE, "geometryType": "esriGeometryPolygon",
+        "pixelSize": {"x": 30, "y": 30, "spatialReference": {"wkid": 102100}},
+        "renderingRule": {"rasterFunction": "Arithmetic", "rasterFunctionArguments": {
+            "Raster": {"rasterFunction": "Arithmetic", "rasterFunctionArguments": {"Raster": "$46", "Raster2": 17, "Operation": 3}},
+            "Raster2": "$54", "Operation": 1}, "outputPixelType": "U16"},
+        "f": "json"}, "GET"),
+    "mtbs63_outstatistics": (MTBS63 + "/query", {"geometry": {"rings": [[[-109.05, 37], [-109.05, 41], [-102.05, 41], [-102.05, 37], [-109.05, 37]]],
+                                                              "spatialReference": {"wkid": 4326}},
+                                                 "geometryType": "esriGeometryPolygon", "inSR": "4326",
+                                                 "spatialRel": "esriSpatialRelIntersects", "where": "year >= 2018",
+                                                 "groupByFieldsForStatistics": "fire_type",
+                                                 "outStatistics": [{"statisticType": "count", "onStatisticField": "objectid", "outStatisticFieldName": "v"}],
+                                                 "returnGeometry": "false", "f": "json"}, "GET"),
     # identify at Fort Collins, in an 800 by 600 view
     # a zone AE on the Cache la Poudre, zoomed in past layer 28's minScale (1:36,111)
     "nfhl_identify": (NFHL + "/identify", {"geometry": ZONE, "geometryType": "esriGeometryPoint", "sr": "4326",

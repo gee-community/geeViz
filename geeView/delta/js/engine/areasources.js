@@ -193,8 +193,14 @@ export function createAreaSources(engine, store, charter, opts = {}) {
   }
 
   // area.geometry may be a function that makes it: called once Earth Engine is ready.
+  // With no Earth Engine layer charting, the area goes as its outline only:
+  // no Earth Engine wait, no Earth Engine geometry.
   function run(area) {
     if (!area) return null;
+    if (charter.needsEE && !charter.needsEE()) {
+      last = { ...area };
+      return charter.chartArea(area.geometry, area.label, area.extra);
+    }
     const go = () => {
       const geometry = typeof area.geometry === "function" ? area.geometry() : area.geometry;
       last = { ...area, geometry };
@@ -226,7 +232,8 @@ export function createAreaSources(engine, store, charter, opts = {}) {
     const areaM2 = spherical() ? paths.reduce((a, p) => a + spherical().computeArea(p), 0) : null;
     const geometry = () => (rings.length === 1 ? ee.Geometry.Polygon([rings[0]]) : ee.Geometry.MultiPolygon(rings.map((r) => [r])));
     const label = rings.length === 1 ? "Drawn area" : "Drawn areas (" + rings.length + ")";
-    return run({ geometry, label, extra: { source: "draw", areaM2, rings } });
+    const geojson = rings.length === 1 ? { type: "Polygon", coordinates: [rings[0]] } : { type: "MultiPolygon", coordinates: rings.map((r) => [r]) };
+    return run({ geometry, label, extra: { source: "draw", areaM2, rings, geojson } });
   }
   let drawnRun = null;
   function drawnChanged(why) {
@@ -284,7 +291,12 @@ export function createAreaSources(engine, store, charter, opts = {}) {
     return {
       geometry: () => ee.Geometry.Rectangle([j.west, j.south, j.east, j.north], null, false),
       label: viewLabel(bounds),
-      extra: { source: "view", bounds, areaM2: spherical() ? spherical().computeArea(corners) : null },
+      extra: {
+        source: "view",
+        bounds,
+        areaM2: spherical() ? spherical().computeArea(corners) : null,
+        geojson: { type: "Polygon", coordinates: [[[j.west, j.south], [j.east, j.south], [j.east, j.north], [j.west, j.north], [j.west, j.south]]] },
+      },
     };
   }
   function chartView() {
@@ -384,7 +396,7 @@ export function createAreaSources(engine, store, charter, opts = {}) {
     if (!still()) return null;
     const name = file.name.replace(/\.[^.]*$/, "");
     const areaM2 = features.reduce((a, f) => a + featureArea(f), 0);
-    return run({ geometry: fc, label: name, extra: { source: "upload", areaM2, features } });
+    return run({ geometry: fc, label: name, extra: { source: "upload", areaM2, features, geojson: { type: "FeatureCollection", features } } });
   }
 
   // ---- Select ----

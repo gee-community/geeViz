@@ -12,6 +12,8 @@ import { createFeatureSource } from "../esri/features.js";
 import { rendererFor } from "../esri/renderers.js";
 import { onSymbolImage } from "../esri/symbols.js";
 import { esriFrameLoader } from "../esri/timelapse.js";
+import { imageChart, featureChart, serviceYears } from "../esri/charts.js";
+import { withSwatchColors } from "../esri/legend.js";
 import { hitTest } from "../engine/hittest.js";
 import { tableResults } from "../engine/query.js";
 
@@ -119,10 +121,23 @@ export const esriPlugin = {
     if (/\/ImageServer$/i.test(url)) return identifyImage(url, point, opts, layer.legend, common);
     return identifyMap(url, point, qctx.view || viewAround(point), opts, common);
   },
-  // The service's legend (/legend), once it is drawn.
+  // The service's legend (/legend), once it is drawn; its swatches' colors
+  // are read for charts and query cards.
   async legend(r, ctx) {
     if (!r.info) return null;
     if (r.kind === "esri.feature") return r.renderer ? r.renderer.legend(r.name) : null;
-    return serviceLegend(r.url, r.info, esriOptsOf(r), { fetch: ctx.fetch, title: r.name });
+    return withSwatchColors(await serviceLegend(r.url, r.info, esriOptsOf(r), { fetch: ctx.fetch, title: r.name }));
   },
+  // Chart area: an image service's class areas (computeHistograms), a
+  // feature layer's or map service's features by class (outStatistics).
+  async chart(layer, area, cctx) {
+    const url = normalizeUrl(layer.item);
+    const info = await serviceInfo(url, { fetch: cctx.fetch });
+    const kind = serviceKind(url, info, esriOptsOf(layer));
+    if (/\/ImageServer$/i.test(url)) return imageChart(layer, area, cctx);
+    if (kind === "esri.feature" || kind === "esri.map" || kind === "esri.tile") return featureChart(layer, area, cctx);
+    throw new Error(`${layer.name} cannot be charted.`);
+  },
+  // the first and last years, for the Sankey periods
+  years: (layer, cctx) => serviceYears(layer, cctx),
 };

@@ -13,6 +13,7 @@ import { SANKEY_MIN_PERCENTAGE, buildSankeyFromHistogram, ensureHexColor, format
 import { evaluateAsync, getObjType } from "./viz.js";
 import { smartToFixed, tokenSource } from "../util.js";
 import { lazyEE } from "./ee.js";
+import { pluginFor } from "../plugins/index.js";
 
 // port of 2templates.js addTransitionRow's two default rows (activeStartYear
 // 1985, activeEndYear 2024, two-year periods)
@@ -517,8 +518,22 @@ export function eeCompute(ee) {
 // eeCompute(ee)), item(layer) -> Earth Engine object, zoom() -> map zoom,
 // key(geometry) -> area key (default: hash of the serialized geometry),
 // notify(msg).
+// A chart job's layer is charted by Earth Engine, or by its plug-in's chart().
+const pluginOf = (kind) => {
+  try {
+    return pluginFor(kind);
+  } catch (e) {
+    return null;
+  }
+};
+
 export function createAreaCharter(store, deps = {}) {
   const ee = deps.ee || lazyEE;
+  const plugin = deps.plugin || pluginOf;
+  const isEE = (layer) => {
+    const p = plugin(layer.kind);
+    return !p || p.needsEE !== false;
+  };
   const compute = deps.compute || eeCompute(ee);
   const itemOf = deps.item || makeItemOf(ee);
   const zoom = deps.zoom || (() => 11);
@@ -565,6 +580,8 @@ export function createAreaCharter(store, deps = {}) {
       transform: d.inputs.transform,
       precision: s.query && s.query.precision,
     };
+    // a plug-in's chart builds its own results (units and Show as apply)
+    if (d.entry && typeof d.entry.results === "function") return d.entry.results(ctx);
     if (d.job.kind !== "sankey") return [lineResult(d.job.layer, d.job.params, d.entry, ctx)];
     const bands = d.entry.bands || [{ band: d.entry.band, raw: d.entry.raw }];
     return bands.map((b) => sankeyResult(d.job.layer, d.job.params, { ...d.entry, band: b.band, raw: b.raw }, ctx));
@@ -590,15 +607,17 @@ export function createAreaCharter(store, deps = {}) {
   // has not applied follow the range (single years at its ends).
   function yearsOf(layer) {
     if (!years.has(layer.id)) {
+      const p = plugin(layer.kind);
       const pr = Promise.resolve()
-        .then(() => (compute.years ? compute.years(itemOf(layer), chartParams(layer)) : null))
+        .then(() => (!isEE(layer) ? (p && p.years ? p.years(layer, { fetch: deps.fetch }) : null) : compute.years ? compute.years(itemOf(layer), chartParams(layer)) : null))
         .catch(() => null);
       years.set(layer.id, pr);
     }
     return years.get(layer.id);
   }
   async function loadYears(layers = sankeyLayers(store.get())) {
-    if (ready() && !(await eeReady())) return;
+    // Earth Engine only for Earth Engine layers
+    if (layers.some(isEE) && ready() && !(await eeReady())) return;
     const ys = await Promise.all(layers.map((l) => yearsOf(l).then((y) => [l.id, y])));
     const known = { ...(store.get().chartYears || {}) };
     let changed = false;
@@ -633,17 +652,27 @@ export function createAreaCharter(store, deps = {}) {
   store.on("change:order", () => store.get().tool === "chart" && syncDefaults());
   store.on("change:chartPeriodsGiven", () => syncDefaults());
 
+  // True when a layer that charts now needs Earth Engine (the area's Earth
+  // Engine geometry, and Earth Engine signed in).
+  const needsEE = () => chartJobs(store.get()).some((j) => isEE(j.layer));
+
+  // geometry: the Earth Engine geometry, or a function that makes it (called
+  // only when an Earth Engine layer charts); extra.geojson: the area's
+  // outline, for the layers other plug-ins chart.
   async function chartArea(geometry, label, extra = {}) {
     const token = tokens();
-    if (ready()) {
+    const { geojson = null, ...kept } = extra || {};
+    const withEE = needsEE();
+    if (withEE && ready()) {
       if (!(await eeReady()) || !token.isCurrent()) return;
     }
+    if (withEE && typeof geometry === "function") geometry = geometry();
     const s = store.get();
-    const areaKey = keyOf(geometry);
+    const areaKey = withEE && geometry ? keyOf(geometry) : hashString(JSON.stringify(geojson));
     const z = zoom();
     const jobs = chartJobs(s);
     current = { token, label, areaKey, done: [] };
-    store.set({ results: [], where: label, charting: jobs.length > 0, chartArea: { label, key: areaKey, ...extra } }, "chart-start");
+    store.set({ results: [], where: label, charting: jobs.length > 0, chartArea: { label, key: areaKey, ...kept } }, "chart-start");
 
     let shared = null;
     const sharedJobs = jobs.filter((j) => j.kind === "sankey" && !j.params.sankeyTransitionPeriods);
@@ -659,6 +688,7 @@ export function createAreaCharter(store, deps = {}) {
 
     const tasks = jobs.map((job, index) => {
       const p = job.params;
+      if (!isEE(job.layer)) return chartByPlugin(job, index, { geojson, label }, areaKey, z, shared, token);
       const inputs = areaChartInputs({ scale: p.scale, transform: p.transform, crs: p.crs, minZoomSpecifiedScale: p.minZoomSpecifiedScale }, z);
       let periods = null;
       if (job.kind === "sankey") {
@@ -696,6 +726,42 @@ export function createAreaCharter(store, deps = {}) {
     if (token.isCurrent()) store.set({ charting: false }, "chart-done");
   }
 
+  // A layer another plug-in charts (an ArcGIS service): its chart(), cached
+  // like a reduction by layer, kind, area, zoom (pixel size) and periods.
+  function chartByPlugin(job, index, area, areaKey, z, shared, token) {
+    const pl = plugin(job.layer.kind);
+    if (!pl || typeof pl.chart !== "function") return null;
+    const periods = job.kind === "sankey" ? job.params.sankeyTransitionPeriods || shared : null;
+    if (job.kind === "sankey" && !periods) return null;
+    const ck = [job.layer.id, job.kind, areaKey, z, periods ? JSON.stringify(periods) : ""].join("|");
+    let pr = cache.get(ck);
+    if (pr) {
+      cache.delete(ck);
+      cache.set(ck, pr);
+    } else {
+      try {
+        pr = Promise.resolve(pl.chart(job.layer, area, { fetch: deps.fetch, zoom: z, kind: job.kind, params: job.params, periods }));
+      } catch (e) {
+        pr = Promise.reject(e);
+      }
+      cache.set(ck, pr);
+      while (cache.size > cacheMax) cache.delete(cache.keys().next().value);
+      pr.catch(() => cache.get(ck) === pr && cache.delete(ck));
+    }
+    const inputs = { nominalScale: null, crs: null, transform: null };
+    return pr.then(
+      (entry) => {
+        if (!token.isCurrent()) return;
+        current.done.push({ index, job, entry, inputs, label: area.label, areaKey });
+        publish("chart-result");
+      },
+      (e) => {
+        if (!token.isCurrent()) return;
+        notify(`Charting ${job.layer.name} failed: ${e && e.message ? e.message : e}`);
+      }
+    );
+  }
+
   function cancel() {
     tokens();
     current = null;
@@ -708,7 +774,7 @@ export function createAreaCharter(store, deps = {}) {
   store.on("change:query", rerender);
   store.on("change:tool", (tool) => tool !== "chart" && cancel());
 
-  return { chartArea, rerender, cancel, loadYears, cacheSize: () => cache.size, current: () => current };
+  return { chartArea, rerender, cancel, loadYears, needsEE, cacheSize: () => cache.size, current: () => current };
 }
 
 // chartArea(engine, store, geometry, sourceLabel): the Chart area entry point.

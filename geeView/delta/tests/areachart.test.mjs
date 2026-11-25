@@ -561,3 +561,41 @@ test("charter: charting waits for Earth Engine to be ready instead of failing", 
   assert.deepEqual(order, ["ready", "compute"]);
   assert.deepEqual(store.get().results.map((r) => r.title), ["NLCD"]);
 });
+
+test("charter: a map with no Earth Engine layers charts by plug-in, without Earth Engine", async () => {
+  const store = createStore();
+  const api = createMapApi(store, {});
+  api.addEsriLayer("https://x/arcgis/rest/services/a/ImageServer", { canAreaChart: true, esriKind: "esri.image" }, "Classes", true);
+  const G = { type: "Polygon", coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]] };
+  const asked = [];
+  const plugin = {
+    needsEE: false,
+    chart: (layer, area, cctx) => {
+      asked.push({ layer: layer.name, area, kind: cctx.kind, zoom: cctx.zoom });
+      return Promise.resolve({ results: (ctx) => [{ id: layer.id + ":chart", layerId: layer.id, title: layer.name, kind: "chart", data: { units: ctx.units } }] });
+    },
+  };
+  const charter = createAreaCharter(store, {
+    plugin: () => plugin,
+    ready: () => {
+      throw new Error("Earth Engine was asked for");
+    },
+    key: () => {
+      throw new Error("an Earth Engine key was made");
+    },
+    zoom: () => 9,
+  });
+  store.set({ tool: "chart" });
+  await charter.chartArea(() => {
+    throw new Error("the Earth Engine geometry was made");
+  }, "Drawn area", { source: "draw", geojson: G });
+  assert.deepEqual(asked, [{ layer: "Classes", area: { geojson: G, label: "Drawn area" }, kind: "line", zoom: 9 }]);
+  assert.deepEqual(store.get().results.map((r) => r.title), ["Classes"]);
+  assert.equal(charter.needsEE(), false);
+  // units change: the plug-in's results are built again, not asked again
+  store.set({ units: "imperial" });
+  assert.equal(store.get().results[0].data.units, "imperial");
+  assert.equal(asked.length, 1);
+  // the area kept in the store carries no outline
+  assert.equal(store.get().chartArea.geojson, undefined);
+});
