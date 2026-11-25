@@ -722,6 +722,9 @@ ee.initialize(authProxyAPIURL, null, onReady, onError);</pre>
           - ``tenants``                — list of tenant names currently
                                          registered (mainly for human
                                          debugging via curl)
+          - ``features``               — routes this proxy serves
+                                         (``eeCreds.PROXY_FEATURES``); a
+                                         client replaces a proxy missing one
           - ``pid``                    — process id of the proxy
           - ``started_at``             — ISO timestamp of process start
         """
@@ -742,9 +745,11 @@ ee.initialize(authProxyAPIURL, null, onReady, onError);</pre>
             names = []
         names.sort()
         fp = hashlib.sha256(",".join(names).encode("utf-8")).hexdigest()[:16]
+        from .eeCreds import PROXY_FEATURES
         return {
             "ok": True,
             "version": _ver,
+            "features": list(PROXY_FEATURES),
             "tenant_fingerprint": fp,
             "tenants": names,
             "pid": os.getpid(),

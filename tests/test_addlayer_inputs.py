@@ -120,3 +120,15 @@ def test_addLayer_keeps_visible_for_every_service_kind(m):
     for url in (NFHL, FS, LANDSAT, XYZ, GJ_URL):
         m.addLayer(url, {}, url[-12:], visible=False)
     assert [l["visible"] for l in doc(m)["layers"]] == [False] * 5
+
+
+def test_search_results_and_query_strings_name_the_service(m):
+    m.addLayer({"title": "NFHL", "type": "Map Service", "url": NFHL + "/"}, {"layers": "show:28"}, "Flood")
+    m.addLayer(FS + "?f=json", {"where": "S='CO'"}, "Fires")
+    flood, fires = doc(m)["layers"]
+    assert flood["type"] == "esri.map" and flood["source"]["url"] == NFHL
+    assert fires["type"] == "esri.feature" and fires["source"]["url"] == FS
+    assert fires["source"]["options"]["where"] == "S='CO'"
+    with pytest.raises(ValueError, match="token="):
+        m.addLayer(LANDSAT + "?token=SECRET", {}, "L")
+    assert "SECRET" not in json.dumps(m._build_document())

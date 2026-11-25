@@ -101,6 +101,17 @@ _TOKEN_TTL_SEC = 50 * 60
 # collisions when both are in the same process.
 _DEFAULT_PROXY_PORT = 8889
 
+# Routes a detached proxy must serve, listed by its /health. A proxy left
+# running from an older geeViz can share this version number (development
+# builds do not bump it) yet lack one, so a missing feature makes it stale.
+PROXY_FEATURES = ("geoview",)
+
+
+def _missing_features(health: dict) -> list:
+    """The PROXY_FEATURES a detached proxy's /health does not list."""
+    have = set((health or {}).get("features") or [])
+    return [f for f in PROXY_FEATURES if f not in have]
+
 
 def _gcloud_default_project() -> str:
     """Return ``gcloud config get-value project`` or ``""`` on any
@@ -1771,6 +1782,10 @@ class EECreds:
                     stale_reason = (
                         f"version mismatch (proxy={health.get('version')!r} "
                         f"client={_our_version!r})"
+                    )
+                elif _missing_features(health):
+                    stale_reason = (
+                        f"proxy lacks {', '.join(_missing_features(health))}"
                     )
                 elif health.get("tenant_fingerprint") != expected_fp:
                     stale_reason = (
