@@ -1248,8 +1248,9 @@ from geeViz import llmUsage as _lu
 # from a map that never appeared, which the person had never seen.
 #
 # Layers carrying a serialized expression can be rebuilt and exported.
-# A GeoJSON layer (an ArcGIS Feature Service from addEsriFeatureService,
-# or a GeoJSON dict given to addLayer) carries its features instead, and
+# A GeoJSON layer (GeoJSON given to addLayer, or an ArcGIS Feature Service
+# fetched in Python: one with a token, or on the original skin) carries its
+# features instead, and
 # downloads as a file with no Earth Engine involved. Tile layers are
 # listed with an empty ``item`` so the panel can say why they cannot be.
 _MAP_LAYERS_FIELD = "_map_layers"
@@ -3190,7 +3191,8 @@ def _esri_off_map_calls(code: str) -> list[str]:
             f"BLOCKED: esriLib {fn}() without target_map draws on a "
             f"different map than this session's `Map`, so the layer never "
             f"appears in the viewer or the export. Call "
-            f"Map.{fn}(...) with the same arguments instead."
+            f"Map.addLayer(url, viz, name) instead (where, maxFeatures "
+            f"and time go in viz), or Map.{fn}(...) with the same arguments."
         )
     return out
 
@@ -3372,8 +3374,8 @@ def _check_code_patterns(code: str) -> list[str]:
     # → try httpx → try pandas.read_json" thrash cycle when a bare
     # "blocked" message isn't enough of a nudge.
     _BLOCKED_MODULE_HINTS = {
-        "requests":   "HTTP libraries are unavailable in the sandbox. Use the domain wrapper: Map.addEsriFeatureService(url) (draw) or georest.esri (search / metadata / query) for ArcGIS / AGOL / .arcgis.com URLs, edwLib for USFS EDW, sal.* for census/counties/parks, ee.FeatureCollection.runBigQuery(sql, geometryColumn='geom') for BigQuery. Do NOT retry with urllib / httpx / aiohttp / pandas.read_json — same block.",
-        "urllib":     "HTTP libraries are unavailable in the sandbox. See georest / Map.addEsri* / edwLib / sal / ee.FeatureCollection.runBigQuery. Trying a different HTTP library will not work — the block is intentional.",
+        "requests":   "HTTP libraries are unavailable in the sandbox. Use the domain wrapper: Map.addLayer(url) (draw) or georest.esri (search / metadata / query) for ArcGIS / AGOL / .arcgis.com URLs, edwLib for USFS EDW, sal.* for census/counties/parks, ee.FeatureCollection.runBigQuery(sql, geometryColumn='geom') for BigQuery. Do NOT retry with urllib / httpx / aiohttp / pandas.read_json: same block.",
+        "urllib":     "HTTP libraries are unavailable in the sandbox. See georest / Map.addLayer(url) / edwLib / sal / ee.FeatureCollection.runBigQuery. Trying a different HTTP library will not work: the block is intentional.",
         "httpx":      "HTTP libraries are unavailable in the sandbox. Use the domain wrapper for the data source (georest, edwLib, sal, ee.FeatureCollection.runBigQuery).",
         "aiohttp":    "HTTP libraries are unavailable in the sandbox. Use the domain wrapper for the data source (georest, edwLib, sal, ee.FeatureCollection.runBigQuery).",
         "os":         "os is blocked. Use save_file(path, bytes) for output, and let geeViz/EE handle any filesystem or environment access.",
@@ -6146,8 +6148,8 @@ def map_control(action: str = "view", open_browser: bool = True, filename: str =
       fetching it returns fresh tile URLs for every layer so dashboards
       survive after EE map IDs expire. Handles all the same input
       types as ``addLayer`` (Image, ImageCollection, Geometry, Feature,
-      FeatureCollection) plus tile-URL layers added via
-      ``Map.addTileLayer``.
+      FeatureCollection) plus tile-URL layers (an XYZ URL given to
+      ``Map.addLayer``).
 
     Args:
         action: One of the values listed above.
@@ -6414,15 +6416,16 @@ def _map_control_inner(Map, act, sess, open_browser, filename, _mc_stdout):
                     if "Vector" in lt or "vector" in lt:
                         desc_parts.append("vector")
                     if lt == "tileMapService":
-                        # Includes Map.addTileLayer + esriLib.addEsri{Map,Image}Service
-                        # (cached tile path). Show the tile source so the user knows
+                        # An XYZ URL given to Map.addLayer (Map.addTileLayer), or a
+                        # cached ArcGIS service fetched in Python (token / original
+                        # skin). Show the tile source so the user knows
                         # it's an external XYZ layer, not an EE image.
                         _tpl = idDict.get("_tile_url_template", "")
                         _host = _tpl.split("/")[2] if "://" in _tpl else _tpl[:40]
                         desc_parts.append(f"tile ({_host})")
                     if lt == "dynamicMapService":
-                        # Map.addDynamicMapService (also the esriLib fallback for
-                        # dynamic MapServers like FEMA NFHL). Uses per-viewport
+                        # Map.addDynamicMapService (also esriLib's path for a dynamic
+                        # MapServer like FEMA NFHL fetched in Python). Uses per-viewport
                         # ArcGIS /export?f=image — cartography preserved from source.
                         _bu = idDict.get("_dyn_base_url_1", "")
                         _host = _bu.split("/")[2] if "://" in _bu else _bu[:40]

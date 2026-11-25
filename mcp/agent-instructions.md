@@ -355,32 +355,15 @@ Map.addLayer(mask, {'autoViz': True, 'canAreaChart': True}, 'Vegetation Mask')
 
 Default to **Case A** when the user says "where X > Y" or "above/below". Use **B** only when they explicitly want both shown.
 
-**Case A REQUIRES `areaChartParams: {'shouldUnmask': True, 'unmaskValue': 0}` in the viz dict.** This is not optional. `.selfMask()` produces an image with values `[1 or masked]`; without `shouldUnmask` the area-chart denominator is "pixels that survived the mask", so the chart always reads 100% of the one class no matter how small the actual footprint. Real incident (session c51828dd, 2026-07-30): impervious-increase chart said 100% because the viz dict was `{'autoViz': True, 'canAreaChart': True}` — no `areaChartParams`. The correct call is shown in the Case A example above; the `areaChartParams` line must be present verbatim. Same rule for `cl.summarize_and_chart()` — pass `include_masked_area=True`.
+**Case A REQUIRES `areaChartParams: {'shouldUnmask': True, 'unmaskValue': 0}` in the viz dict.** This is not optional. `.selfMask()` produces an image with values `[1 or masked]`; without `shouldUnmask` the area-chart denominator is "pixels that survived the mask", so the chart always reads 100% of the one class no matter how small the actual footprint. Real incident (session c51828dd, 2026-07-30): impervious-increase chart said 100% because the viz dict was `{'autoViz': True, 'canAreaChart': True}`, with no `areaChartParams`.
 
-### Null-value handling for masked outputs — REQUIRED for area charts / sankey
+### Null-value handling for masked outputs: REQUIRED for area charts / sankey
 
-Any layer that is **thresholded, masked, or self-masked** and has `canAreaChart: True` MUST include `shouldUnmask: True` and `unmaskValue: 0` inside `areaChartParams`. Without these, the map viewer computes percentages against only the visible (non-null) pixels — which inflates every result and misleads the user. `.selfMask()`, `.updateMask(...)`, and any `.gt() / .lt() / .eq()` output that isn't `.unmask(0)`-ed all fall into this category.
-
-```python
-# WRONG — nulls are ignored, "above threshold" percentages look artificially high
-Map.addLayer(above, {
-    'autoViz': True,
-    'canAreaChart': True,
-}, 'NDVI > 0.5')
-
-# CORRECT — shouldUnmask puts nulls back into the denominator as class 0
-Map.addLayer(above, {
-    'autoViz': True,
-    'canAreaChart': True,
-    'areaChartParams': {'shouldUnmask': True, 'unmaskValue': 0},
-}, 'NDVI > 0.5')
-```
-
-This applies to **every** area-chart-enabled masked layer including the sankey pattern below. For Python-side `cl.summarize_and_chart()` the equivalent flag is `include_masked_area=True`.
+Any layer that is **thresholded, masked, or self-masked** (`.selfMask()`, `.updateMask(...)`, any `.gt() / .lt() / .eq()` output not `.unmask(0)`-ed) and has `canAreaChart: True` MUST include `'areaChartParams': {'shouldUnmask': True, 'unmaskValue': 0}`, as in Case A, sankey layers included. Without it the viewer computes percentages against only the visible (non-null) pixels, which inflates every result. For Python-side `cl.summarize_and_chart()` the equivalent flag is `include_masked_area=True`.
 
 ### In-map sankey — thematic ImageCollections with a time dimension
 
-When the user adds a **thematic ImageCollection that spans years** (LCMS, NLCD, MapBiomas, Dynamic World, MTBS, MODIS LC, etc.) to the map, enable in-viewer transition analysis by passing `sankey: True` inside `areaChartParams`. The user can then draw a polygon in the map viewer and get an interactive sankey diagram of the class transitions inside their AOI — no separate `cl.summarize_and_chart` call needed for that follow-up analysis.
+When the user adds a **thematic ImageCollection that spans years** (LCMS, NLCD, MapBiomas, Dynamic World, MTBS, MODIS LC, etc.) to the map, enable in-viewer transition analysis by passing `sankey: True` inside `areaChartParams`. The user can then draw a polygon in the map viewer and get an interactive sankey diagram of the class transitions inside their AOI, with no separate `cl.summarize_and_chart` call.
 
 ```python
 # Land-cover transitions available in-viewer when the user draws a polygon
@@ -394,33 +377,19 @@ Map.addLayer(lcms.select(['Land_Cover']), {
         # [[1985, 1985], [2000, 2000], [2024, 2024]] internally.
         # Omit to let the viewer pick from the full time range.
         'sankeyTransitionPeriods': [1985, 2000, 2024],
-        # 'line': True,   # add a stacked-area time series alongside
+        # 'line': True,   # keep the line chart too (sankey alone turns it off)
         # 'sankeyMinPercentage': 0.1,   # hide flows smaller than 0.1%
     },
 }, 'LCMS Land Cover')
 
-# If the ImageCollection is masked (e.g. LCMS filtered to change pixels only,
-# or a change-magnitude collection thresholded via .gt() + .selfMask()),
-# add shouldUnmask + unmaskValue so sankey transitions include the "no
-# change / below threshold" class — otherwise the flows only cover
-# already-classified pixels and the percentages look wrong.
-Map.addLayer(change_only.select(['Change']), {
-    'autoViz': True,
-    'canAreaChart': True,
-    'areaChartParams': {
-        'sankey': True,
-        'sankeyTransitionPeriods': [1985, 2024],
-        'shouldUnmask': True,
-        'unmaskValue': 0,
-    },
-}, 'LCMS Change (thresholded)')
+# A masked collection (LCMS change pixels only, a .gt().selfMask() threshold)
+# also needs 'shouldUnmask': True, 'unmaskValue': 0, or the flows leave out
+# the 'no change / below threshold' class.
 ```
-
-Same pattern works with `Map.addTimeLapse` — the `areaChartParams` block sits inside the same viz-params dict passed as the second argument.
 
 **When to use in-map sankey vs `cl.summarize_and_chart(chart_type='sankey', ...)`:**
 
-- **In-map sankey (this pattern).** The user gets an INTERACTIVE tool inside the map: draw a polygon, see the transitions, redraw, compare. Preferred when the user says "show LCMS on the map" or "let me explore transitions" — one layer add, no static file. Works for `addLayer(ImageCollection)` and `addTimeLapse(ImageCollection)`.
+- **In-map sankey (this pattern).** The user gets an INTERACTIVE tool inside the map: draw a polygon, see the transitions, redraw, compare. Preferred when the user says "show LCMS on the map" or "let me explore transitions": one layer add, no static file. Works for `addLayer(ImageCollection)`, `addTimeLapse(ImageCollection)` and time-enabled ArcGIS image services.
 - **Static sankey HTML** (`cl.summarize_and_chart` + `cl.save_chart_html`). Preferred when the user asks for a specific fixed AOI and specific years and wants a file / report artifact. One shot, saveable, embeddable.
 
 If the user asks for both a map AND a sankey chart of the same data, add the layer with `areaChartParams: {'sankey': True, ...}` (they get interactive exploration for free) AND produce the static HTML for the specified AOI (they get the artifact they asked for). Don't skip either.
@@ -650,18 +619,10 @@ Tiles re-mint on every page load. Files stay valid as long as the agent server i
 
 **Change over time is a time lapse, by default.** To map change, growth or loss across years, add one `ee.ImageCollection` (frames with `system:time_start`) with `Map.addTimeLapse` and autoViz without waiting to be asked, not separate single-year layers. A summary layer (year of first appearance, net change) can go alongside it, not instead of it. For a long record, pick evenly spaced years to stay within the frame limit below.
 
-**`addTimeLapse` vs `addLayer` vs `addTileLayer`:**
-- Use `Map.addTimeLapse(ic, viz, 'name')` for temporal change (slider with multiple frames). Accepts ONLY `ee.ImageCollection`. If the IC has more than ~40 images, do NOT use `addTimeLapse` — it's too slow. Use `Map.addLayer(ic, viz, 'name')` which reduces what's shown but retains all time steps for area/pixel charting.
-- Use `Map.addLayer()` for everything else. Accepts `ee.Image`, `ee.ImageCollection`, `ee.Geometry`, `ee.Feature`, `ee.FeatureCollection`.
-- Use `Map.addTileLayer(url_template, name)` to overlay an **external XYZ tile service** (third-party basemap, ArcGIS MapServer, partner tile endpoint) WITHOUT leaving geeViz for Leaflet. The URL must use the standard XYZ tile syntax — curly braces around the lowercase letters z, x, and y for the zoom and tile coordinates (see the `addTileLayer` docstring via `search_codebase` for the literal form). Optional kwargs: `visible=True`, `opacity=1.0`, `max_zoom=20`. Example (angle brackets shown here for documentation only — substitute curly braces in the real URL):
-  ```python
-  Map.addTileLayer(
-      "https://viz-assets.ctrees.org/sfi/basemaps/agb_100m/<z>/<x>/<y>.png",  # use curly braces in real URLs
-      name="CTrees AGB (100m)",
-      opacity=0.7,
-  )
-  ```
-  Prefer this over generating Leaflet HTML for tile overlays — state persists across turns and the layer integrates with the geeViz layer list / opacity controls / area charting.
+**One call per layer: `Map.addLayer(obj, viz, 'name')`; one per time lapse: `Map.addTimeLapse(obj, viz, 'name')`.**
+- `addLayer` takes any of: an `ee.Image`, `ImageCollection`, `Geometry`, `Feature` or `FeatureCollection`; an Earth Engine asset id string; an ArcGIS `.../FeatureServer/<n>`, `.../MapServer[/<n>]` or `.../ImageServer` URL, or a `georest.esri.portal.searchPortal` result; an XYZ tile URL (curly-brace z, x, y; angle brackets here only for the prompt parser), e.g. `Map.addLayer("https://viz-assets.ctrees.org/sfi/basemaps/agb_100m/<z>/<x>/<y>.png", {'opacity': 0.7}, "CTrees AGB")`; or GeoJSON (a URL, text or dict). For an ArcGIS service `viz` also takes `where`, `maxFeatures`, `time` (one period: a year, ISO date or `(start, end)`), `layers` (`"show:2,3"`), `renderingRule`, `mosaicRule`, `bandIds`, `reducer` (`"max"`, `"mean"`, `"first"`...: how an image service combines overlapping rasters) and style keys (`strokeColor`, `fillColor`, `fillOpacity`, `strokeWeight`, `pointRadius`); for a tile URL, `classLegendDict` gives it a legend.
+- `addTimeLapse` takes an `ee.ImageCollection`, an image collection asset id, or a time-enabled ArcGIS ImageServer or MapServer URL (one frame per time step; `viz['reducer']` combines an image service's rasters within a step). Past ~40 frames it is too slow: thin the collection, or use `Map.addLayer(ic, ...)`, which shows one reduced image but keeps every time step for charting and query.
+- You don't need `Map.addEsri*`, `Map.addTileLayer` or `Map.addDynamicMapService`, except for a secured ArcGIS service: `Map.addEsriService(url, token=...)` (`addLayer` has no token argument and refuses a URL carrying `token=`).
 
 **Time-lapse date formatting** (non-annual data only):
 - Hourly (GFS, ERA5): `{'dateFormat': 'YY-MM-dd HH', 'advanceInterval': 'hour', ...}`
@@ -671,7 +632,12 @@ Tiles re-mint on every page load. Files stay valid as long as the agent server i
 
 For continuous data with units, add `'legendLabelLeftAfter': 'C'` etc. for unit labels.
 
-**Area charting:** Add `'canAreaChart': True` to viz params to enable polygon area summaries in the viewer. Works with both `addLayer` and `addTimeLapse`.
+**Inspector and area charting.** The inspector (on by default) queries visible layers at a click: Earth Engine pixels (class names with `autoViz`), ArcGIS features and image values. A layer with `'canAreaChart': True` in its `addLayer` or `addTimeLapse` viz is also summarized over an area, and `map_control` then starts the map in auto area charting (the view, redone on each pan or zoom). To start otherwise, call `Map.turnOnUserDefinedAreaCharting()` (the user draws an area), `Map.turnOnSelectionAreaCharting()` with `Map.addSelectLayer(fc, {'selectLayerNameProperty': 'NAME'}, 'Counties')` (the user clicks features), or `Map.turnOnInspector()`. `Map.addAreaChartLayer(img, params, 'name')` plus `Map.populateAreaChartLayerSelect()` charts data without drawing it. Charted:
+- Earth Engine: % area by class (thematic) or the mean (continuous), over time for an ImageCollection.
+- ArcGIS image services: class areas, over time for a time-enabled service (`addTimeLapse`), and Sankey class transitions.
+- ArcGIS feature layers and a map service's classed sublayers: feature counts by the renderer's classes or by `'chartField': 'FIELD'`, or sums with `'chartStatistic': 'sum', 'chartValueField': 'ACRES'` (top-level viz keys).
+
+`areaChartParams` (a dict in viz, all keys optional): `chartType` (`'line'`, the default for a collection, `'stacked-line'`, `'bar'`, `'stacked-bar'`; a single image always charts as bars), `sankey: True` (class transitions; turns the line chart off unless you also pass `line: True`), `sankeyTransitionPeriods`, `sankeyMinPercentage` (default 0.5), `shouldUnmask` / `unmaskValue` (required for masked layers: Null-value handling, above), `reducer`, `scale` / `crs` / `transform`, `bandNames`, `thematic`, `xAxisLabel` / `yAxisLabel`, `palette`. Full list: `search_codebase(name="addLayer")`.
 
 **Map.clearMap() — always first.** Run `Map.clearMap()` as the FIRST line of ANY `run_code` that adds layers. Old layers persist across calls otherwise. Only exception: user explicitly says "add to the existing map".
 
@@ -851,29 +817,27 @@ EE has logical operators that clash with Python keywords. The method name is **c
 ### Vector data — pick the right source
 Vector features do NOT come from `search_datasets` (which finds raster/EE-catalog datasets and BigQuery public datasets). Route by the kind of source:
 
-- **ArcGIS / ESRI hosted services (`arcgis.com`, `.arcgis.com/rest/services/…`, any URL with `/FeatureServer/<n>`, `/MapServer/<n>`, or `/ImageServer`):** `georest` + `Map.addEsri*` on the FIRST attempt. This includes city / county / state open-data portals (Austin AGOL, HIFLD, FEMA NFHL, USFS EDW, most state GIS clearinghouses) — every one of them is an ArcGIS Feature Service under the hood, and this is the ONLY path that produces a usable `ee.FeatureCollection`. **Do NOT try any of these first** — every one WILL fail or waste turns:
+- **ArcGIS / ESRI hosted services (`arcgis.com`, `.arcgis.com/rest/services/…`, any URL with `/FeatureServer/<n>`, `/MapServer/<n>`, or `/ImageServer`):** `georest` to find and query, `Map.addLayer(url)` to draw, on the FIRST attempt. This includes city / county / state open-data portals (Austin AGOL, HIFLD, FEMA NFHL, USFS EDW, most state GIS clearinghouses): every one of them is an ArcGIS Feature Service under the hood, and this is the ONLY path that produces a usable `ee.FeatureCollection`. **Do NOT try any of these first**; every one WILL fail or waste turns:
   - `import requests` / `import urllib.request` / `import httpx` / `import aiohttp` — **all HTTP client libraries are sandbox-blocked**. The block is intentional and unconditional; retrying with a different HTTP library produces the same `BLOCKED: import of 'X' is not allowed` error. Real incident (session c84fabd2, 2026-08): agent burned ~8 turns cycling `requests → urllib → pandas.read_json` before reaching the Esri helpers.
   - `pd.read_json(esri_url)` — pandas can technically fetch the URL, but ESRI JSON's `{features: [{attributes, geometry}, ...]}` shape does NOT map to `ee.FeatureCollection` — you'd have to manually convert every geometry (with a `.getInfo()`-in-a-loop that trips another sandbox rule).
   - `ee.FeatureCollection('https://...')` — EE only accepts asset IDs, not URLs.
   - `ee.FeatureCollection.loadBigQueryTable(url)` — that helper is for `bigquery-public-data.*` paths, not ArcGIS URLs.
 
-  Right path — `georest` (RCR's Esri REST client, already loaded in `run_code` as `georest`) to find and inspect, `Map.addEsri*` to draw:
+  Right path: `georest` (RCR's Esri REST client, already loaded in `run_code` as `georest`) to find and inspect, `Map.addLayer` to draw:
   ```python
   from georest.esri.portal import searchPortal, getServiceMetadata
   # Discover services by keyword across a portal (ArcGIS Online, HIFLD, etc.):
   hits = searchPortal("critical facilities", portal="agol")
   # Inspect an unknown URL before loading (fields, layers, maxRecordCount):
   meta = getServiceMetadata(url)
-  # Draw it — a URL or a searchPortal hit:
-  Map.addEsriFeatureService("https://services.arcgis.com/.../FeatureServer/0", name="Ownership")
+  # Draw it: a URL or a searchPortal hit
+  Map.addLayer("https://services.arcgis.com/.../FeatureServer/0", {'where': "OWNER = 'USFS'"}, "Ownership")
   ```
-  There is also `Map.addEsriMapService`, `Map.addEsriImageService`, and a generic `Map.addEsriService(url)` that auto-detects the type. For the features themselves (to filter, join or reduce in EE rather than draw), `georest.esri.services.queryFeatureService(url, where=..., geometry=...)` returns GeoJSON — wrap it as `ee.FeatureCollection(gj)`. It does **not** page: past `max_features` (default 1000) it raises `ValueError` naming the matched count, and there is no `*_with_pagination` variant — narrow it with `where` and a bbox, or raise `max_features`. Pass the spatial filter as a bbox string, `geometry="xmin,ymin,xmax,ymax"` (from an EE geometry: `ee.List(geom.bounds().coordinates().get(0))`, read its min/max lon/lat), never an `ee.Geometry` object. To count first: `queryFeatureServiceCount(url, where=...)`. Look up signatures with `search_codebase(module="georest.esri.portal")` / `(module="georest.esri.services")`.
+  The same call draws a MapServer or ImageServer, cached or dynamic (FEMA NFHL, NAIP), in its own symbology; the viewer queries, legends and charts it. The browser fetches a feature layer's features for the view as it moves (`maxFeatures` caps them per tile, default 2000). For NAIP over a mixed area use `NAIP_plus`; a per-year service such as `NAIP2023_CONUS` covers only the states flown that year. For the features themselves (to filter, join or reduce in EE rather than draw), `georest.esri.services.queryFeatureService(url, where=..., geometry=...)` returns GeoJSON; wrap it as `ee.FeatureCollection(gj)`. It does **not** page: past `max_features` (default 1000) it raises `ValueError` naming the matched count, and there is no `*_with_pagination` variant: narrow it with `where` and a bbox, or raise `max_features`. Pass the spatial filter as a bbox string, `geometry="xmin,ymin,xmax,ymax"` (from an EE geometry: `ee.List(geom.bounds().coordinates().get(0))`, read its min/max lon/lat), never an `ee.Geometry` object. To count first: `queryFeatureServiceCount(url, where=...)`. Look up signatures with `search_codebase(module="georest.esri.portal")` / `(module="georest.esri.services")`.
 
-  **Do not import `geeViz.esriLib`.** It is deprecated: its `searchPortal` / `getServiceMetadata` now just delegate to georest, and it will be removed. Its layer functions live on `Map` (above). Private, loopback and link-local addresses are refused from `run_code` whichever path you use.
+  **Do not import `geeViz.esriLib`.** It is deprecated: its `searchPortal` / `getServiceMetadata` now just delegate to georest, and it will be removed. Draw with `Map.addLayer`. Private, loopback and link-local addresses are refused from `run_code` whichever path you use.
 
-  **`addEsriMapService` and `addEsriImageService` handle both cached and uncached services.** Cached ones go through the tile path; uncached ones — dynamic MapServers (FEMA NFHL, USFS Forest Roads, most authoritative government services) and most ImageServers (every NAIP service on IIPP) — auto-fall-back to `Map.addDynamicMapService`, a per-viewport `/export` (MapServer) or `/exportImage` (ImageServer) overlay in the viewer. For NAIP over a mixed area use `NAIP_plus` (newest imagery for every state); a per-year service such as `NAIP2023_CONUS` covers only the states flown that year and draws nothing elsewhere. Cartography (styles, legends, labels) is preserved as-is. If you want VECTOR access instead — for queries, joins, EE operations — use `Map.addEsriFeatureService('.../MapServer/<layer_id>')` on a specific sub-layer (use `getServiceMetadata(url)` to see the layer list).
-
-  **Common URL-prefix mistake.** ESRI REST services live under `/arcgis/rest/services/…` on almost every deployment. If the URL you were given uses `/gis/…/rest/services/…` (or any custom prefix), verify it responds with `?f=json` before adding — a 404 preflight now prints a warning and falls through to the tile path, which will silently produce a broken map. Example: FEMA NFHL is at `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer` (not `/gis/nfhl/…`, a common wrong guess).
+  **Common URL-prefix mistake.** ArcGIS REST services live under `/arcgis/rest/services/…` on almost every deployment. If a URL uses `/gis/…/rest/services/…` or another custom prefix, check it with `getServiceMetadata(url)` before adding; `map_control` fails a layer whose service does not answer. FEMA NFHL is at `https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer` (not `/gis/nfhl/…`, a common wrong guess). For a MapServer's features in Earth Engine, `queryFeatureService` a sublayer (`.../MapServer/<n>`; `getServiceMetadata(url)` lists them).
 
 - **EDW (USFS Enterprise Data Warehouse):** for USFS-authoritative layers — timber sales, trails, roads, wilderness areas, critical habitat, districts, forests, etc. Prefer EDW over generic ArcGIS layers when the user's question is USFS-specific. (A named fire's perimeter is not an EDW search: use the `fire` skill.)
   ```python
