@@ -105,3 +105,20 @@ test("draw: a service that fails says why on the layer", async () => {
   assert.equal(ctx.calls.fails.length, 1);
   assert.match(ctx.calls.fails[0], /Invalid URL/);
 });
+
+test("exports go as 1024 px blocks of 4 by 4 map tiles (from zoom 2)", async () => {
+  const { exportTileUrl } = await import("../js/esri/draw.js");
+  const f = exportTileUrl(NFHL, "esri.map", {}, null);
+  const t = f({ x: 6, y: 13 }, 5);
+  assert.deepEqual(t.block, { size: 1024, x: 512, y: 256 });
+  const p = params(t.url);
+  assert.equal(p.size, "1024,1024");
+  const b = tile3857(1, 3, 3);
+  assert.equal(p.bbox, [b.xmin, b.ymin, b.xmax, b.ymax].join(","));
+  // the 16 tiles of a block share its URL
+  assert.equal(f({ x: 7, y: 15 }, 5).url, t.url);
+  // the world at zoom 0 and 1: one image per tile
+  assert.equal(typeof f({ x: 0, y: 0 }, 1), "string");
+  // a service that limits image size to under 1024 px: tile by tile
+  assert.equal(typeof exportTileUrl(NFHL, "esri.map", {}, { maxImageWidth: 800, maxImageHeight: 800 })({ x: 6, y: 13 }, 5), "string");
+});

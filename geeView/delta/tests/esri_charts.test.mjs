@@ -149,3 +149,12 @@ test("a timelapse's histograms go a few at a time, and a refused one is asked ag
   assert.ok(most <= 5, `at most 4 histograms (plus metadata) at once, saw ${most}`);
   assert.equal(fetch.calls.filter((c) => c.base.endsWith("/computeHistograms")).length, years + 1);
 });
+
+test("charting before the layer's legend has arrived still names the classes", async () => {
+  const { esriPlugin } = await import("../js/plugins/esri.js");
+  const fetch = fakeFetch([[LCMS, "lcms_info"], [LCMS + "/legend", "lcms_legend"], [LCMS + "/computeHistograms", "lcms_histograms_2021"]]);
+  const layer = { id: "l", name: "LCMS 2021", kind: "esri.image", item: LCMS, legend: null, viz: { esri: { time: [1609459200000, 1640995199999] } } };
+  const entry = await esriPlugin.chart(layer, { geojson: SQUARE }, { fetch, zoom: 12, kind: "line", params: chartParams(layer) });
+  const [r] = entry.results(CTX);
+  assert.ok(r.data.columns.includes("Stable"), r.data.columns.join(","));
+});

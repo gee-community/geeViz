@@ -29,7 +29,7 @@ test("each frame draws its own time step", async () => {
   await ld.years();
   const urlFor = await ld.frame(0);
   assert.equal(typeof urlFor, "function");
-  const u = new URL(urlFor({ x: 6, y: 12 }, 5));
+  const u = new URL(urlFor({ x: 6, y: 12 }, 5).url);
   assert.ok(u.pathname.endsWith("/ImageServer/exportImage"), u.pathname);
   assert.equal(u.searchParams.get("time"), `${Date.UTC(1985, 0, 1)},${Date.UTC(1986, 0, 1) - 1}`);
   assert.deepEqual(JSON.parse(u.searchParams.get("renderingRule")), { rasterFunction: "None" });

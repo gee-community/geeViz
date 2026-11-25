@@ -108,7 +108,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
   // follows it.
   function slotsFor(r) {
     if (isWindViz(r.viz)) return r.timelapse ? r.frames.map(() => null) : [null];
-    if (r.timelapse) return r.frames.map((f) => (r.framesShown && f.overlay ? f.overlay : null));
+    if (r.timelapse) return r.frames.map((f, i) => (r.framesShown && f.overlay && (!r.warm || r.warm.has(i)) ? f.overlay : null));
     return [r.visible && r.overlay ? r.overlay : null];
   }
   function sync() {
@@ -338,6 +338,16 @@ export function createLayerEngine(gmap, store, deps = {}) {
       if (!r) return;
       r.frames = Array.from({ length: n }, () => ({ overlay: null, opacity: 0 }));
       sync();
+    },
+    // frames to have on the map (a timelapse with a prefetch window); once
+    // there, a frame stays
+    warmFrames(id, idx) {
+      const r = recs.get(id);
+      if (!r) return;
+      if (!r.warm) r.warm = new Set();
+      const before = r.warm.size;
+      idx.forEach((i) => r.warm.add(i));
+      if (r.warm.size !== before) sync();
     },
     // tilesUrl: an Earth Engine URL format, or (coord, zoom) => url
     setFrameUrl(id, i, tilesUrl) {

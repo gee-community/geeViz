@@ -164,9 +164,21 @@ export function createTimelapse(engine, layer, opts = {}) {
   const setVisibleIn = (pred, v, reason) =>
     store.update((s) => ({ ...s, layers: s.layers.map((l) => (pred(l) && l.visible !== v ? { ...l, visible: v } : l)) }), reason);
 
+  // A loader with a prefetch window (a slow service: esri/timelapse.js) has
+  // only the frame shown, the next `prefetch` frames and, in cumulative mode,
+  // the frames before it on the map; frames once there stay. Earth Engine
+  // timelapses have every frame on the map, as the original.
+  function windowOf(frame) {
+    const n = st.years.length;
+    const out = new Set();
+    for (let k = 0; k <= loader.prefetch && k < n; k++) out.add(wrapFrame(frame + k, n));
+    if (st.cumulative) for (let k = 0; k < frame; k++) out.add(k);
+    return [...out];
+  }
   function render() {
     const l = current();
     if (!st.loaded || !visible || !l) return;
+    if (loader.prefetch !== undefined && engine.warmFrames) engine.warmFrames(id, windowOf(st.frame));
     shown = true;
     engine.showFrames(id, frameOpacities(st.years.length, st.frame, st.cumulative, l.opacity));
   }

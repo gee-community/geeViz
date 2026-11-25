@@ -3,7 +3,7 @@
 // each drawn with the service's time= parameter. The frame loader contract is
 // engine/timelapse.js's: {prepare(), years(), frame(i), queryTarget()}.
 import { serviceInfo, serviceKind, normalizeUrl, sublayerOf, timeSteps, catalogYears } from "./rest.js";
-import { exportUrl, tile3857 } from "./draw.js";
+import { exportTileUrl } from "./draw.js";
 import { serviceLegend } from "./legend.js";
 
 export function esriFrameLoader(engine, layer) {
@@ -31,6 +31,8 @@ export function esriFrameLoader(engine, layer) {
   const kindOf = (i) => (sub ? "esri.map" : serviceKind(url, i, { ...opts, time: [0, 1] }) === "esri.image" ? "esri.image" : "esri.map");
 
   return {
+    // an ArcGIS export is slow: the frame shown and the next two are asked for
+    prefetch: 2,
     async prepare() {
       const i = sub ? await serviceInfo(drawUrl, req) : await info();
       let legend = null;
@@ -49,7 +51,7 @@ export function esriFrameLoader(engine, layer) {
       const st = (await stepsOf())[n];
       const kind = kindOf(i);
       const frameOpts = { ...opts, time: st.time };
-      return (coord, zoom) => exportUrl(drawUrl, kind, frameOpts, tile3857(coord.x, coord.y, zoom), 256, i);
+      return exportTileUrl(drawUrl, kind, frameOpts, i);
     },
     // the Query tool: the service's values over time at the point
     async queryTarget() {

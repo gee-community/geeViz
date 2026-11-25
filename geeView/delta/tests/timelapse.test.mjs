@@ -313,3 +313,39 @@ test("refresh jitters the zoom; controls do nothing before load", async () => {
   s.ctl.refresh();
   assert.equal(s.calls.jitter, 1);
 });
+
+test("a loader with a prefetch window: only the frame shown and the next ones are on the map", async () => {
+  const store = createStore();
+  const tl = { id: "tl-1", name: "TL", kind: "esri.timelapse", visible: false, opacity: 1, timelapse: {}, legendOpen: false, error: null };
+  store.set({ layers: [tl], order: ["tl-1"] });
+  const warm = [];
+  const engine = {
+    store,
+    initFrames: () => {},
+    setFrameUrl: () => {},
+    framesReady: () => {},
+    showFrames: () => {},
+    warmFrames: (id, idx) => warm.push(idx.slice().sort((a, b) => a - b)),
+    jitter: () => {},
+    fail: () => {},
+  };
+  const fl = fakeLoader();
+  const loader = (e, l) => ({ ...fl.loader(e, l), prefetch: 2 });
+  const ctl = createTimelapse(engine, tl, { timers: fakeTimers(), loader });
+  fl.resolveYears();
+  await flush();
+  fl.resolveAll();
+  await flush();
+  await flush();
+  assert.deepEqual(warm, [], "nothing asked for while off");
+  ctl.setVisible(true);
+  assert.deepEqual(warm[warm.length - 1], [0, 1, 2]);
+  ctl.setFrame(8);
+  assert.deepEqual(warm[warm.length - 1], [0, 1, 8], "the last frame wraps to the first two");
+  // an Earth Engine timelapse has no window: every frame, as before
+  const s = setup();
+  s.calls.warm = [];
+  await loaded(s);
+  s.on();
+  assert.equal(s.calls.warm.length, 0);
+});

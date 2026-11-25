@@ -64,7 +64,25 @@ export function createTileOverlay(opts) {
     else setTimeout(run, 0);
   }
 
+  // a failed request: tried again with backoff, then once more late, then failed
+  function retryOrFail(t) {
+    if (t.released) return;
+    if (t.tries < delays.length) {
+      const wait = delays[t.tries] * (0.75 + random() * 0.5);
+      t.tries++;
+      t.timer = setTimeout(() => !t.released && load(t), wait);
+    } else if (!t.late) {
+      // the backoff ran out: one more try after a pause, once per tile
+      t.late = true;
+      t.timer = setTimeout(() => !t.released && load(t), autoRetry);
+    } else {
+      t.state = "failed";
+      report();
+    }
+  }
+
   function load(t) {
+    if (t.block) return loadBlock(t);
     const img = t.div.ownerDocument.createElement("img");
     img.alt = "";
     img.draggable = false;
@@ -77,23 +95,62 @@ export function createTileOverlay(opts) {
       t.div.replaceChildren(img);
       report();
     };
-    img.onerror = () => {
-      if (t.released) return;
-      if (t.tries < delays.length) {
-        const wait = delays[t.tries] * (0.75 + random() * 0.5);
-        t.tries++;
-        t.timer = setTimeout(() => !t.released && load(t), wait);
-      } else if (!t.late) {
-        // the backoff ran out: one more try after a pause, once per tile
-        t.late = true;
-        t.timer = setTimeout(() => !t.released && load(t), autoRetry);
-      } else {
-        t.state = "failed";
-        report();
-      }
-    };
+    img.onerror = () => retryOrFail(t);
     if (opts.onRequest) opts.onRequest();
     img.src = t.url;
+  }
+
+  // Block tiles: urlFor may give {url, block: {size, x, y}}, one image for a
+  // block of map tiles (a service that answers each request slowly whatever
+  // its size: an ArcGIS export). The block is asked for once; each tile shows
+  // its piece of it.
+  const blocks = new Map(); // url -> {state, waiters}
+  function showPiece(t) {
+    if (t.released) return;
+    const img = t.div.ownerDocument.createElement("img");
+    img.alt = "";
+    img.draggable = false;
+    const st = img.style;
+    st.position = "absolute";
+    st.left = -t.block.x + "px";
+    st.top = -t.block.y + "px";
+    st.width = t.block.size + "px";
+    st.height = t.block.size + "px";
+    st.maxWidth = "none";
+    st.border = "0";
+    st.pointerEvents = "none";
+    img.src = t.url;
+    t.div.style.position = "relative";
+    t.div.style.overflow = "hidden";
+    t.state = "loaded";
+    t.div.replaceChildren(img);
+    report();
+  }
+  function loadBlock(t) {
+    let b = blocks.get(t.url);
+    if (!b || b.state === "failed") {
+      const img = t.div.ownerDocument.createElement("img");
+      b = { state: "loading", waiters: new Set() };
+      blocks.set(t.url, b);
+      while (blocks.size > 256) blocks.delete(blocks.keys().next().value);
+      const block = b;
+      img.onload = () => {
+        block.state = "loaded";
+        const ws = [...block.waiters];
+        block.waiters.clear();
+        ws.forEach(showPiece);
+      };
+      img.onerror = () => {
+        block.state = "failed";
+        const ws = [...block.waiters];
+        block.waiters.clear();
+        ws.forEach(retryOrFail);
+      };
+      if (opts.onRequest) opts.onRequest();
+      img.src = t.url;
+    }
+    if (b.state === "loaded") return showPiece(t);
+    b.waiters.add(t);
   }
 
   const overlay = {
@@ -105,9 +162,10 @@ export function createTileOverlay(opts) {
       const div = doc.createElement("div");
       div.style.cssText = `width:${size}px;height:${size}px;opacity:${opacity}`;
       const c = wrapTile(coord, zoom);
-      const url = c ? opts.urlFor(c, zoom) : null;
+      const u = c ? opts.urlFor(c, zoom) : null;
+      const url = u && typeof u === "object" ? u.url : u;
       if (!url) return div; // nothing to load: not counted
-      const t = { div, url, state: "loading", tries: 0, late: false, timer: 0, released: false };
+      const t = { div, url, block: u && typeof u === "object" ? u.block || null : null, state: "loading", tries: 0, late: false, timer: 0, released: false };
       tiles.set(div, t);
       load(t);
       report();

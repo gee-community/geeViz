@@ -45,6 +45,27 @@ export function exportUrl(url, kind, esriOpts = {}, b, size = 256, info = null) 
   return `${url}/${kind === "esri.image" ? "exportImage" : "export"}?${p.toString()}`;
 }
 
+// The URL for each map tile of an export: from zoom 2, one 1024 px image per
+// block of 4 by 4 map tiles, each tile showing its piece (engine/tiles.js
+// block tiles). An ArcGIS export takes as long for 1024 px as for 256, so
+// this is 16 times fewer slow requests. Below zoom 2, or for a service that
+// limits images to under 1024 px, one image per tile.
+export const BLOCK = 4;
+export function exportTileUrl(url, kind, esriOpts, info) {
+  const maxW = Number(info && info.maxImageWidth) || 4096;
+  const maxH = Number(info && info.maxImageHeight) || 4096;
+  const blocks = maxW >= 256 * BLOCK && maxH >= 256 * BLOCK;
+  return (coord, zoom) => {
+    if (!blocks || zoom < 2) return exportUrl(url, kind, esriOpts, tile3857(coord.x, coord.y, zoom), 256, info);
+    const bx = Math.floor(coord.x / BLOCK);
+    const by = Math.floor(coord.y / BLOCK);
+    return {
+      url: exportUrl(url, kind, esriOpts, tile3857(bx, by, zoom - 2), 256 * BLOCK, info),
+      block: { size: 256 * BLOCK, x: (coord.x - bx * BLOCK) * 256, y: (coord.y - by * BLOCK) * 256 },
+    };
+  };
+}
+
 // The deepest zoom a cached service has tiles for.
 export function maxTileZoom(info) {
   const lods = (info && info.tileInfo && info.tileInfo.lods) || [];

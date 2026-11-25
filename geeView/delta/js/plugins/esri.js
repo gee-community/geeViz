@@ -5,7 +5,7 @@
 // maxFeatures, simplify, maxLayerMB). The kind given is a first guess: the
 // service's metadata decides (a cached map service draws as tiles).
 import { serviceInfo, serviceKind, normalizeUrl, sublayerOf } from "../esri/rest.js";
-import { exportUrl, tileUrl, tile3857, maxTileZoom } from "../esri/draw.js";
+import { exportTileUrl, tileUrl, maxTileZoom } from "../esri/draw.js";
 import { serviceLegend } from "../esri/legend.js";
 import { identifyMap, identifyImage } from "../esri/identify.js";
 import { createFeatureSource } from "../esri/features.js";
@@ -72,7 +72,7 @@ export const esriPlugin = {
     if (kind === "esri.tile") {
       r.overlay = ctx.tileOverlay(r, tileUrl(url), { maxZoom: maxTileZoom(info) });
     } else if (kind === "esri.map" || kind === "esri.image") {
-      r.overlay = ctx.tileOverlay(r, (coord, zoom) => exportUrl(url, kind, opts, tile3857(coord.x, coord.y, zoom), 256, info));
+      r.overlay = ctx.tileOverlay(r, exportTileUrl(url, kind, opts, info));
     } else {
       // drawn with the service's renderer (geeViz style keys replace it)
       r.renderer = rendererFor(info.drawingInfo, r.viz, info.geometryType);
@@ -161,7 +161,12 @@ export const esriPlugin = {
     const url = normalizeUrl(layer.item);
     const info = await serviceInfo(url, { fetch: cctx.fetch });
     const kind = serviceKind(url, info, esriOptsOf(layer));
-    if (/\/ImageServer$/i.test(url)) return imageChart(layer, area, cctx);
+    if (/\/ImageServer$/i.test(url)) {
+      // the classes come from the legend: ask for it if the layer has none yet
+      let legend = layer.legend && layer.legend.type ? layer.legend : null;
+      if (!legend) legend = await withSwatchColors(await serviceLegend(url, info, esriOptsOf(layer), { fetch: cctx.fetch, title: layer.name }).catch(() => null));
+      return imageChart({ ...layer, legend }, area, cctx);
+    }
     if (kind === "esri.feature" || kind === "esri.map" || kind === "esri.tile") return featureChart(layer, area, cctx);
     throw new Error(`${layer.name} cannot be charted.`);
   },

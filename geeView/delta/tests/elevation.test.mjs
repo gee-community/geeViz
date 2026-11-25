@@ -14,22 +14,37 @@ test("elevation reads the mosaic at 30 m, not its 1 degree default", () => {
   assert.equal(ELEVATION_SCALE, 30);
 });
 
-// Without Earth Engine, elevation comes from USGS 3DEP (identify).
-import { fakeFetch, response } from "./esrifake.mjs";
-import { elevation3DEP, ELEVATION_3DEP_URL } from "../js/engine/maps.js";
+// Elevation from the AWS open terrain tiles (Terrarium PNGs): global and
+// fast, one tile fetched for every point inside it.
+import { terrariumMeters, terrainPixel, createTerrainElevation } from "../js/engine/maps.js";
 
-test("3DEP elevation at a point, in whole meters", async () => {
-  const fetch = fakeFetch([[ELEVATION_3DEP_URL + "/identify", "3dep_identify"]]);
-  const m = await elevation3DEP(-105.08, 40.58, { fetch });
-  assert.equal(m, Math.round(Number(response("3dep_identify").value)));
-  const p = fetch.calls[0].params;
-  assert.deepEqual(JSON.parse(p.geometry), { x: -105.08, y: 40.58, spatialReference: { wkid: 4326 } });
-  assert.equal(p.returnCatalogItems, "false");
-  assert.equal(p.returnGeometry, "false");
+test("Terrarium pixels decode to meters", () => {
+  assert.equal(terrariumMeters(128, 0, 0), 0);
+  assert.equal(terrariumMeters(133, 243, 128), 1523.5);
 });
 
-test("3DEP: NoData or a failure is no elevation", async () => {
-  assert.equal(await elevation3DEP(0, 0, { fetch: fakeFetch([[() => true, { value: "NoData" }]]) }), null);
-  assert.equal(await elevation3DEP(0, 0, { fetch: fakeFetch([[() => true, () => new TypeError("Failed to fetch")]]) }), null);
-  assert.equal(await elevation3DEP(0, 0, { fetch: fakeFetch([[() => true, "error_body"]]) }), null);
+test("a point's terrain tile and pixel", () => {
+  const p = terrainPixel(-105.08, 40.58, 12);
+  assert.deepEqual([p.x, p.y, p.z], [852, 1542, 12]);
+  assert.ok(p.px >= 0 && p.px < 256 && p.py >= 0 && p.py < 256);
+});
+
+test("one tile load answers every point in it; a failed tile is no elevation", async () => {
+  const loads = [];
+  const px = new Uint8ClampedArray(256 * 256 * 4).fill(0);
+  for (let i = 0; i < px.length; i += 4) {
+    px[i] = 133;
+    px[i + 1] = 243;
+    px[i + 2] = 128;
+    px[i + 3] = 255;
+  }
+  const elev = createTerrainElevation({ loadPixels: (z, x, y) => (loads.push(`${z}/${x}/${y}`), Promise.resolve(px)) });
+  assert.equal(await elev(-105.08, 40.57, 12), 1524);
+  assert.equal(await elev(-105.0805, 40.5705, 12), 1524);
+  assert.deepEqual(loads, ["12/852/1542"]);
+  // deeper than the tiles go: the deepest zoom
+  await elev(-105.08, 40.58, 20);
+  assert.equal(loads[1].split("/")[0], "14");
+  const failing = createTerrainElevation({ loadPixels: () => Promise.reject(new Error("offline")) });
+  assert.equal(await failing(0, 0, 10), null);
 });

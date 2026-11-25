@@ -136,3 +136,37 @@ test("the row: fills while tiles load, shows failures, nothing for hidden layers
   assert.deepEqual(progressView({ visible: false, progress: { total: 8, loaded: 2, failed: 0 } }), { show: false, pct: 0, failed: 0 });
   assert.deepEqual(progressView({ visible: true, progress: null }), { show: false, pct: 0, failed: 0 });
 });
+
+test("block tiles: one request per block, each tile showing its piece", async () => {
+  let requests = 0;
+  const o = createTileOverlay({
+    google,
+    // a 1024 px image for each 4 by 4 block of map tiles
+    urlFor: (c, z) => ({ url: `b/${z}/${c.x >> 2}/${c.y >> 2}`, block: { size: 1024, x: (c.x & 3) * 256, y: (c.y & 3) * 256 } }),
+    delays: [10],
+    autoRetry: 30,
+    random: () => 0.5,
+    onRequest: () => requests++,
+  });
+  const doc = fakeDoc();
+  const divs = [0, 1, 2, 3].map((x) => o.getTile({ x, y: 1 }, 5, doc));
+  assert.equal(requests, 1, "four tiles in one block: one request");
+  assert.equal(doc.imgs.length, 1);
+  doc.imgs[0].onload();
+  await tick();
+  assert.deepEqual(o.stats(), { total: 4, loaded: 4, failed: 0 });
+  const shown = divs[2].children[0];
+  assert.equal(shown.src, "b/5/0/0");
+  assert.equal(shown.style.width, "1024px");
+  assert.equal(shown.style.left, "-512px");
+  assert.equal(shown.style.top, "-256px");
+  assert.equal(divs[2].style.overflow, "hidden");
+  // a block that fails is asked again for its tiles, once per block
+  const more = [0, 1].map((x) => o.getTile({ x: x + 4, y: 0 }, 5, doc));
+  const blockImg = doc.imgs[doc.imgs.length - 1];
+  assert.equal(requests, 2);
+  blockImg.onerror();
+  await tick(20);
+  assert.equal(requests, 3);
+  void more;
+});

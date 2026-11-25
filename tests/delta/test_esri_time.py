@@ -49,6 +49,11 @@ def test_an_esri_timelapse_plays_with_no_earth_engine(live_map):
     # timelapses start off; turning one on loads its frames
     page.evaluate("(id) => __delta.store.update(s => ({...s, layers: s.layers.map(x => x.id === id ? {...x, visible: true} : x)}), 'test')", l["id"])
     wait_for(page, "() => { const l = __delta.store.get().layers[0]; return l.timelapse && l.timelapse.loaded; }")
+    time.sleep(2)
+    # only the year shown and the next two are asked for, as 1024 px blocks
+    first = {u.split("time=")[1].split("&")[0] for u in seen if "/exportImage?" in u and "time=" in u}
+    assert 1 <= len(first) <= 3, sorted(first)
+    assert all("size=1024%2C1024" in u for u in seen if "/exportImage?" in u), [u for u in seen if "/exportImage?" in u][:2]
     l = layer(page)
     assert l["error"] is None, l
     years = l["timelapse"]["years"]

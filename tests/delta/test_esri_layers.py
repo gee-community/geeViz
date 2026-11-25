@@ -181,7 +181,7 @@ def test_a_feature_layer_draws_with_its_service_renderer(live_map):
     assert page.evaluate("(id) => !!document.querySelector(`.layer[data-id='${id}'] .legbtn.symbol svg`)", l["id"])
 
 
-def test_elevation_without_earth_engine_comes_from_3dep(live_map):
+def test_elevation_without_earth_engine_comes_from_terrain_tiles(live_map):
     seen = []
     page = live_map(build, setup=recorder(seen))
     settled(page)
@@ -196,7 +196,8 @@ def test_elevation_without_earth_engine_comes_from_3dep(live_map):
         if any(ch.isdigit() for ch in text):
             break
     assert any(ch.isdigit() for ch in text), text
-    assert any("3DEPElevation/ImageServer/identify" in u for u in seen)
+    assert any("elevation-tiles-prod/terrarium/" in u for u in seen)
+    assert not any("3DEPElevation" in u for u in seen)
     assert ee_requests(seen) == []
 
 

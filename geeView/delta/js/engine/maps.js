@@ -10,8 +10,6 @@
 // every StyledMapType overlay unstyled (seen in Chrome: the satellite labels
 // lost their white text), so those two basemaps draw their own labels,
 // under the layers, and get no overlay. The other basemaps set no map styles.
-import { esriRequest } from "../esri/rest.js";
-
 export const BASEMAPS = { satellite: "satellite", map: "roadmap-base", terrain: "terrain", darkterrain: "terrain" };
 const NO_LABELS = [{ elementType: "labels", stylers: [{ visibility: "off" }] }];
 export const OWN_LABELS = new Set(["terrain", "darkterrain"]);
@@ -88,21 +86,60 @@ export function elevationValue(ee, lng, lat) {
     .get("b1");
 }
 
-// Without Earth Engine: USGS 3DEP, the United States' elevation service
-// (identify at the point; elsewhere it answers NoData). Meters, rounded.
-export const ELEVATION_3DEP_URL = "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer";
-export async function elevation3DEP(lng, lat, opts = {}) {
-  try {
-    const out = await esriRequest(
-      ELEVATION_3DEP_URL + "/identify",
-      { geometry: { x: lng, y: lat, spatialReference: { wkid: 4326 } }, geometryType: "esriGeometryPoint", returnGeometry: false, returnCatalogItems: false },
-      { fetch: opts.fetch }
-    );
-    const v = Number(out && out.value);
-    return out && out.value !== "NoData" && Number.isFinite(v) ? Math.round(v) : null;
-  } catch (e) {
-    return null;
-  }
+// Elevation from the AWS open terrain tiles (Terrarium PNGs: global, served
+// from a CDN): one tile, fetched once, answers every point inside it, so the
+// readout follows the mouse. Earth Engine's GLO-30 is the fallback.
+export const TERRAIN_URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png";
+export const TERRAIN_MAX_ZOOM = 14;
+export const terrariumMeters = (r, g, b) => r * 256 + g + b / 256 - 32768;
+
+// The terrain tile at a zoom holding a point, and the point's pixel in it.
+export function terrainPixel(lng, lat, zoom) {
+  const z = Math.max(0, Math.min(TERRAIN_MAX_ZOOM, Math.round(zoom)));
+  const n = Math.pow(2, z);
+  const s = Math.min(Math.max(Math.sin((lat * Math.PI) / 180), -0.9999), 0.9999);
+  const X = ((lng + 180) / 360) * n;
+  const Y = (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n;
+  const x = Math.floor(X);
+  const y = Math.min(n - 1, Math.max(0, Math.floor(Y)));
+  return { z, x: ((x % n) + n) % n, y, px: Math.min(255, Math.floor((X - x) * 256)), py: Math.min(255, Math.floor((Y - Math.floor(Y)) * 256)) };
+}
+
+async function loadTerrainPixels(z, x, y) {
+  const res = await fetch(TERRAIN_URL.replace("{z}", z).replace("{x}", x).replace("{y}", y));
+  if (!res.ok) throw new Error("terrain tile " + res.status);
+  const bmp = await createImageBitmap(await res.blob());
+  const c = typeof OffscreenCanvas === "function" ? new OffscreenCanvas(256, 256) : Object.assign(document.createElement("canvas"), { width: 256, height: 256 });
+  const ctx = c.getContext("2d");
+  ctx.drawImage(bmp, 0, 0);
+  return ctx.getImageData(0, 0, 256, 256).data;
+}
+
+// createTerrainElevation({loadPixels, keep}) -> (lng, lat, zoom) => Promise<meters | null>
+export function createTerrainElevation(opts = {}) {
+  const load = opts.loadPixels || loadTerrainPixels;
+  const keep = opts.keep || 64;
+  const tiles = new Map(); // "z/x/y" -> Promise of pixels, least recently used first
+  return async (lng, lat, zoom) => {
+    const p = terrainPixel(lng, lat, zoom);
+    const key = `${p.z}/${p.x}/${p.y}`;
+    let pr = tiles.get(key);
+    if (pr) tiles.delete(key);
+    else {
+      pr = Promise.resolve().then(() => load(p.z, p.x, p.y));
+      pr.catch(() => tiles.get(key) === pr && tiles.delete(key));
+    }
+    tiles.set(key, pr);
+    while (tiles.size > keep) tiles.delete(tiles.keys().next().value);
+    try {
+      const px = await pr;
+      const i = (p.py * 256 + p.px) * 4;
+      if (!px[i + 3]) return null;
+      return Math.round(terrariumMeters(px[i], px[i + 1], px[i + 2]));
+    } catch (e) {
+      return null;
+    }
+  };
 }
 
 // True when two views are the same to within `px` screen pixels at their zoom.
@@ -305,19 +342,23 @@ export function createMap(el, store) {
   const forward = () => apply(hist.forward());
 
   // ---- elevation ----
+  const terrainElevation = createTerrainElevation();
   // port of 4map-manager.js getElevation (GLO-30 mosaic, first value at a point)
   let eeReady = false;
   function elevationAt(latLng) {
     return new Promise((resolve) => {
       const lat = typeof latLng.lat === "function" ? latLng.lat() : latLng.lat;
       const lng = typeof latLng.lng === "function" ? latLng.lng() : latLng.lng;
-      // a map with no Earth Engine (or before it signs in): 3DEP
-      if (!eeReady) return elevation3DEP(lng, lat).then(resolve);
-      try {
-        elevationValue(ee, lng, lat).evaluate((v) => resolve(v === undefined || v === null ? null : Number(v)));
-      } catch (e) {
-        resolve(null);
-      }
+      // the terrain tiles first (fast, global); Earth Engine's GLO-30 if
+      // a tile cannot load and Earth Engine is signed in
+      terrainElevation(lng, lat, gmap.getZoom()).then((m) => {
+        if (m !== null || !eeReady) return resolve(m);
+        try {
+          elevationValue(ee, lng, lat).evaluate((v) => resolve(v === undefined || v === null ? null : Number(v)));
+        } catch (e) {
+          resolve(null);
+        }
+      });
     });
   }
 
