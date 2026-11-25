@@ -27,6 +27,8 @@
 # Engine; its elevation readout comes from USGS 3DEP. The second adds an
 # Earth Engine layer to the same services. examples/addLayerInputsExample.py
 # shows every kind of input addLayer takes.
+# Without geeViz or Earth Engine, georest.view's Map takes the same calls
+# (pip install georest; see georest's examples/view_example.py).
 ####################################################################################################
 import os, sys
 

@@ -87,7 +87,7 @@ Map.addLayer(
 ####################################################################################################
 # GeoJSON: a URL (loaded by the viewer), text, or a dict
 Map.addLayer("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojson",
-             {"strokeColor": "d62728", "pointRadius": 6}, "Earthquakes this week (GeoJSON URL)", False)
+             {"strokeColor": "d62728", "strokeWeight": 4}, "Earthquakes this week (GeoJSON URL)", False)
 
 study_area = {
     "type": "Feature",
