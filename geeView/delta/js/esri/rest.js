@@ -53,16 +53,22 @@ export async function esriRequest(url, params = {}, opts = {}) {
     throw e;
   }
   if (!res.ok) throw new EsriError(`The service answered HTTP ${res.status}.`, res.status);
+  // the answer's size as received (opts.onSize), for a layer's size budget
   let body;
   try {
-    body = await res.json();
+    if (typeof res.text === "function") {
+      const text = await res.text();
+      if (opts.onSize) opts.onSize(text.length);
+      body = JSON.parse(text);
+    } else body = await res.json();
   } catch (e) {
     throw new EsriError("The service did not answer with JSON.");
   }
   if (body && body.error) {
     const err = body.error;
     const details = (err.details || []).filter((d) => d && d !== err.message);
-    const msg = [err.message || "The service reported an error."].concat(details).join("; ");
+    const parts = (err.message ? [err.message] : []).concat(details);
+    const msg = parts.length ? parts.join("; ") : "The service reported an error.";
     throw new EsriError(msg, err.code === undefined ? null : err.code, err.details || []);
   }
   return body;
@@ -95,6 +101,12 @@ export function serviceKind(url, info, opts = {}) {
   if (/\/ImageServer$/i.test(u)) return cached(info) && !opts.renderingRule && !opts.time ? "esri.tile" : "esri.image";
   if (/\/MapServer$/i.test(u)) return cached(info) ? "esri.tile" : "esri.map";
   return "esri.map";
+}
+
+// A map service sublayer (".../MapServer/3"): its map service and id; else null.
+export function sublayerOf(url) {
+  const m = /^(.*\/MapServer)\/(\d+)$/i.exec(normalizeUrl(url));
+  return m ? { parent: m[1], id: Number(m[2]) } : null;
 }
 
 export function normalizeUrl(url) {

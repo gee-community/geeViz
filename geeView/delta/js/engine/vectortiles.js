@@ -215,15 +215,20 @@ export function createVectorTileOverlay(opts) {
           draw(canvas, t.coord, t.zoom, t.parts);
           report();
         },
-        () => {
+        (e) => {
           if (tiles.get(canvas) !== t) return;
           t.failed = true;
+          // the service's own message, for the layer row
+          lastError = e;
+          if (opts.onError) opts.onError(e);
           report();
         }
       );
   }
 
   const redraw = () => tiles.forEach((t, canvas) => t.parts && draw(canvas, t.coord, t.zoom, t.parts));
+  let lastError = null;
+  const keyOf = (t) => `${t.zoom}/${t.coord.x}/${t.coord.y}`;
 
   return {
     tileSize: new g.Size(TILE, TILE),
@@ -245,10 +250,18 @@ export function createVectorTileOverlay(opts) {
     },
     releaseTile(canvas) {
       const t = tiles.get(canvas);
-      if (t && t.ctrl && !t.parts) t.ctrl.abort();
       tiles.delete(canvas);
+      if (t) {
+        // a tile shown twice (the world repeated at low zoom) keeps its request
+        const shown = [...tiles.values()].some((o) => keyOf(o) === keyOf(t));
+        if (t.ctrl && !t.parts && !shown) t.ctrl.abort();
+        if (!shown && opts.onRelease) opts.onRelease(t.coord, t.zoom);
+      }
       report();
     },
+    // the tiles shown, as "z/x/y"
+    liveKeys: () => new Set([...tiles.values()].map(keyOf)),
+    lastError: () => lastError,
     // the opacity slider: redraw with the stroke at the opacity, the fill at its ratio
     setOpacity(a, touched = true) {
       opacity = a;

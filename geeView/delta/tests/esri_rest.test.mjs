@@ -154,3 +154,8 @@ test("catalogYears reads the distinct catalog years", async () => {
   assert.equal(fetch.calls[0].params.returnDistinctValues, "true");
   assert.equal(await catalogYears(STATES, {}, { fetch }), null);
 });
+
+test("an error with details and no message reads as its details", async () => {
+  const fetch = fakeFetch([[() => true, { error: { code: 400, message: "", details: ["'Invalid field: X' parameter is invalid"] } }]]);
+  await assert.rejects(esriRequest(STATES + "/query", {}, { fetch }), (e) => e.message === "'Invalid field: X' parameter is invalid");
+});

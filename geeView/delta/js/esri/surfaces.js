@@ -4,6 +4,7 @@
 // with their legends, as the ArcGIS JS API draws them.
 import { esriColor, glyphFor, ptToPx, drawSymbol } from "./symbols.js";
 import { scaleAt } from "./features.js";
+import { tileBounds } from "../engine/vectortiles.js";
 
 const num = (v) => (v === null || v === undefined || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
 const fmtInt = (v) => Math.round(v).toLocaleString("en-US");
@@ -165,6 +166,21 @@ export function dotCount(exact, seed) {
   return whole + (mulberry32(seed)() < n - whole ? 1 : 0);
 }
 
+// m points drawn uniformly in a box [w, s, e, n], the ones inside the
+// polygon kept, the same for the same seed.
+export function sampleIn(rings, box, m, seed) {
+  const rand = mulberry32(seed);
+  const out = [];
+  for (let k = 0; k < m; k++) {
+    const x = box[0] + rand() * (box[2] - box[0]);
+    const y = box[1] + rand() * (box[3] - box[1]);
+    if (insideRings(x, y, rings)) out.push([x, y]);
+  }
+  return out;
+}
+// a polygon's area: its outer ring less its holes
+const polygonArea = (rings) => Math.max(0, rings.reduce((a, r, i) => a + (i === 0 ? 1 : -1) * ringArea(r), 0));
+
 const ringArea = (ring) => Math.abs(ring.reduce((a, [x, y], i) => {
   const [x2, y2] = ring[(i + 1) % ring.length];
   return a + (x * y2 - x2 * y);
@@ -189,18 +205,28 @@ function dotDensity(r) {
       // a feature's dots are shared among its polygons by area
       const total = new Map();
       parts.forEach((p) => p.kind === "polygon" && total.set(p.fid, (total.get(p.fid) || 0) + ringArea(p.coords[0])));
+      // only this tile's dots: sampled in the tile's part of the polygon's
+      // bounds, as many as the polygon's density gives that box, the ones
+      // inside the polygon kept (expected: the dots of the polygon in the tile)
+      const tb = tileBounds(t.coord.x, t.coord.y, t.zoom);
+      const tileKey = `${t.zoom}/${t.coord.x}/${t.coord.y}`;
       parts.forEach((p) => {
         if (p.kind !== "polygon") return;
         drawSymbol(ctx, background, p, t.px, {}, t.opacity);
+        const box = [Math.max(tb.west, p.bbox[0]), Math.max(tb.south, p.bbox[1]), Math.min(tb.east, p.bbox[2]), Math.min(tb.north, p.bbox[3])];
+        if (box[0] >= box[2] || box[1] >= box[3]) return;
+        const area = polygonArea(p.coords);
+        if (!area) return;
+        const boxArea = (box[2] - box[0]) * (box[3] - box[1]);
         const share = total.get(p.fid) ? ringArea(p.coords[0]) / total.get(p.fid) : 1;
         attrs.forEach((a, i) => {
           const v = num(p.props[a.field]);
           if (!v || v <= 0) return;
-          const base = `${p.fid}|${i}|${p.bbox.join(",")}`;
-          const n = dotCount((v * share) / dv, hashOf(base + "|n"));
-          const key = `${base}|${n}`;
+          const base = `${tileKey}|${p.fid}|${i}|${p.bbox.join(",")}`;
+          const m = dotCount((((v * share) / dv) * boxArea) / area, hashOf(base + "|n"));
+          const key = `${base}|${m}`;
           if (!cache.has(key)) {
-            cache.set(key, dotsIn(p.coords, n, hashOf(key)));
+            cache.set(key, sampleIn(p.coords, box, m, hashOf(key)));
             if (cache.size > 20000) cache.delete(cache.keys().next().value);
           }
           const c = esriColor(a.color) || { color: "#000", alpha: 1 };

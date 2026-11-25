@@ -41,7 +41,10 @@ const DEG_PER_M = 1 / 111320;
 // esriOpts: where, outFields, bbox [w, s, e, n], time [start, end],
 // maxFeatures (per tile, default 2000), simplify (false: exact geometry; a
 // number: tolerance in meters), maxLayerMB (what the layer may fetch,
-// default 64). onStatus({key, zoom, capped, shown, outOfScale}) after each tile.
+// default 64: the most the layer keeps; the tiles used longest ago are
+// dropped to stay within it, and fetched again if shown again).
+// onStatus({key, zoom, capped, shown, outOfScale}) each time a tile is asked
+// for, cached or not. Caps are per map tile.
 export function createFeatureSource(url, info, esriOpts = {}, opts = {}) {
   const o = esriOpts || {};
   const fetch = opts.fetch;
@@ -53,7 +56,8 @@ export function createFeatureSource(url, info, esriOpts = {}, opts = {}) {
   const oid = oidField(info);
   const geojson = /geojson/i.test(String(info.supportedQueryFormats || ""));
   const outFields = o.outFields ? [].concat(o.outFields).join(",") : unique([oid, info.displayField, ...rendererFields(info)].filter(Boolean)).join(",");
-  const cache = new Map(); // "z/x/y" -> Promise of parts
+  const cacheTiles = Number(opts.cacheTiles) > 0 ? Number(opts.cacheTiles) : 512;
+  const cache = new Map(); // "z/x/y" -> {promise, bytes, status}, least recently used first
   // a heatmap needs the points around a tile too (its blur radius in pixels)
   const padPx = Number(opts.padPx) || 0;
   const padded = (b, zoom) => {
@@ -61,7 +65,14 @@ export function createFeatureSource(url, info, esriOpts = {}, opts = {}) {
     const m = (padPx * (b.xmax - b.xmin)) / 256;
     return { xmin: b.xmin - m, ymin: b.ymin - m, xmax: b.xmax + m, ymax: b.ymax + m };
   };
-  let bytes = 0;
+  const heldBytes = () => [...cache.values()].reduce((n, e) => n + (e.bytes || 0), 0);
+  // drop the tiles used longest ago until the layer is within its budget (never `keep`)
+  function trim(keep) {
+    for (const [k, e] of cache) {
+      if (heldBytes() <= budget && cache.size <= cacheTiles) break;
+      if (k !== keep && e.done) cache.delete(k);
+    }
+  }
 
   function featuresOf(out) {
     if (geojson) {
@@ -80,7 +91,7 @@ export function createFeatureSource(url, info, esriOpts = {}, opts = {}) {
     }));
   }
 
-  async function fetchTile(coord, zoom, key, signal) {
+  async function fetchTile(coord, zoom, key, signal, entry) {
     const params = {
       geometry: { ...padded(tile3857(coord.x, coord.y, zoom), zoom), spatialReference: { wkid: 3857 } },
       geometryType: "esriGeometryEnvelope",
@@ -103,8 +114,7 @@ export function createFeatureSource(url, info, esriOpts = {}, opts = {}) {
     for (;;) {
       if (paging) params.resultRecordCount = Math.min(maxRecord, maxFeatures - feats.length);
       if (offset) params.resultOffset = offset;
-      const out = await esriRequest(url + "/query", params, { fetch, signal });
-      bytes += JSON.stringify(out).length;
+      const out = await esriRequest(url + "/query", params, { fetch, signal, onSize: (n) => (entry.bytes += n) });
       let got = featuresOf(out);
       const more = !!(out.exceededTransferLimit || (out.properties && out.properties.exceededTransferLimit));
       if (feats.length + got.length >= maxFeatures) {
@@ -120,7 +130,10 @@ export function createFeatureSource(url, info, esriOpts = {}, opts = {}) {
       offset += got.length;
     }
     const parts = flatten({ type: "FeatureCollection", features: feats });
-    onStatus({ key, zoom, capped, shown: feats.length, outOfScale: false });
+    entry.status = { key, zoom, capped, shown: feats.length, outOfScale: false };
+    entry.done = true;
+    onStatus(entry.status);
+    trim(key);
     return parts;
   }
 
@@ -136,20 +149,20 @@ export function createFeatureSource(url, info, esriOpts = {}, opts = {}) {
       if (b.east < w || b.west > e || b.north < s || b.south > n) return Promise.resolve([]);
     }
     if (cache.has(key)) {
-      const pr = cache.get(key);
+      const e = cache.get(key);
       cache.delete(key); // most recently used last
-      cache.set(key, pr);
-      return pr;
+      cache.set(key, e);
+      // the tile's status again: the row's note follows what is shown
+      return e.promise.then((parts) => {
+        if (e.status) onStatus(e.status);
+        return parts;
+      });
     }
-    if (bytes > budget) {
-      onStatus({ key, zoom, capped: true, shown: 0, outOfScale: false });
-      return Promise.resolve([]);
-    }
-    const pr = fetchTile(coord, zoom, key, signal);
-    cache.set(key, pr);
-    while (cache.size > 512) cache.delete(cache.keys().next().value);
-    pr.catch(() => cache.get(key) === pr && cache.delete(key));
-    return pr;
+    const entry = { promise: null, bytes: 0, status: null, done: false };
+    entry.promise = fetchTile(coord, zoom, key, signal, entry);
+    cache.set(key, entry);
+    entry.promise.catch(() => cache.get(key) === entry && cache.delete(key));
+    return entry.promise;
   }
 
   // Every field of the features a click hit, by object id: {fid: attributes}.
@@ -165,5 +178,5 @@ export function createFeatureSource(url, info, esriOpts = {}, opts = {}) {
     return by;
   }
 
-  return { partsFor, attributes, oid };
+  return { partsFor, attributes, oid, heldBytes };
 }

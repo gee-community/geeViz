@@ -4,7 +4,7 @@
 // (layers, renderingRule, mosaicRule, bandIds, time, where, outFields, bbox,
 // maxFeatures, simplify, maxLayerMB). The kind given is a first guess: the
 // service's metadata decides (a cached map service draws as tiles).
-import { serviceInfo, serviceKind, normalizeUrl } from "../esri/rest.js";
+import { serviceInfo, serviceKind, normalizeUrl, sublayerOf } from "../esri/rest.js";
 import { exportUrl, tileUrl, tile3857, maxTileZoom } from "../esri/draw.js";
 import { serviceLegend } from "../esri/legend.js";
 import { identifyMap, identifyImage } from "../esri/identify.js";
@@ -77,7 +77,12 @@ export const esriPlugin = {
       // drawn with the service's renderer (geeViz style keys replace it)
       r.renderer = rendererFor(info.drawingInfo, r.viz, info.geometryType);
       // features fetched for the view, tile by tile
-      const statuses = new Map(); // "z/x/y" -> status, for the zoom shown
+      const statuses = new Map(); // "z/x/y" -> status, for the tiles shown
+      // the note from the tiles on the map now (none until the overlay exists)
+      const renote = () => {
+        const live = r.overlay && r.overlay.liveKeys ? r.overlay.liveKeys() : null;
+        ctx.setNote(r, noteFor([...statuses.values()].filter((s) => !live || live.has(s.key))));
+      };
       let legendZoom = null;
       r.source = createFeatureSource(url, info, opts, {
         fetch: ctx.fetch,
@@ -86,7 +91,12 @@ export const esriPlugin = {
         onStatus: (s) => {
           for (const k of statuses.keys()) if (statuses.get(k).zoom !== s.zoom) statuses.delete(k);
           statuses.set(s.key, s);
-          ctx.setNote(r, noteFor([...statuses.values()]));
+          renote();
+          // a tile that loads clears a failure the row was showing
+          if (r.failed) {
+            r.failed = false;
+            ctx.patch(r.id, { error: null }, "layer-error");
+          }
           // "1 dot = N" follows the zoom
           if (r.renderer.type === "dotDensity" && s.zoom !== legendZoom) {
             legendZoom = s.zoom;
@@ -101,7 +111,18 @@ export const esriPlugin = {
         const st = r.renderer.styleFor(p.props, zoom);
         return st && alpha !== 1 ? { ...st, opacity: (st.opacity === undefined ? 1 : st.opacity) * alpha } : st;
       };
-      ctx.addFeatureSource(r, r.source, { styleFor, drawTile });
+      // a tile that leaves the map leaves the note; when every tile shown
+      // fails, the row says the service's own message
+      const onRelease = (c, z) => {
+        statuses.delete(`${z}/${c.x}/${c.y}`);
+        renote();
+      };
+      const onError = (e) =>
+        setTimeout(() => {
+          const st = r.overlay && r.overlay.stats ? r.overlay.stats() : null;
+          if (st && st.total > 0 && st.failed === st.total) ctx.fail(r, e);
+        }, 0);
+      ctx.addFeatureSource(r, r.source, { styleFor, drawTile, onRelease, onError });
       // a picture symbol draws once its image has loaded
       onSymbolImage(() => r.overlay && r.overlay.redraw && r.overlay.redraw());
       return;
@@ -113,9 +134,15 @@ export const esriPlugin = {
   // The Query tool: identify on the service (a tile service asks the
   // service behind its tiles).
   async query(target, layer, point, qctx) {
-    const url = normalizeUrl(layer.item);
+    let url = normalizeUrl(layer.item);
+    let opts = esriOptsOf(layer);
+    // a sublayer timelapse is drawn, and so asked, by its map service
+    const sub = layer.kind === "esri.timelapse" ? sublayerOf(url) : null;
+    if (sub) {
+      url = sub.parent;
+      opts = { ...opts, layers: `show:${sub.id}` };
+    }
     const info = await serviceInfo(url, { fetch: qctx.fetch });
-    const opts = esriOptsOf(layer);
     const common = { fetch: qctx.fetch, info, layer, precision: qctx.query && qctx.query.precision };
     if (serviceKind(url, info, opts) === "esri.feature") return queryFeatures(target, layer, point, qctx, common);
     if (/\/ImageServer$/i.test(url)) return identifyImage(url, point, opts, layer.legend, common);

@@ -1896,6 +1896,10 @@ class mapper:
         esri = {k: viz_params[k] for k in self._ESRI_OPT_KEYS if k in viz_params}
         esri.update({k: v for k, v in (opts or {}).items() if v is not None})
         if isinstance(time, str) and time.strip().lower() == "all":
+            if _re_mod.search(r"/FeatureServer(/\d+)?$", url, _re_mod.I):
+                raise ValueError(
+                    "%s is a feature layer: a timelapse of its features is not supported yet. "
+                    "Add it with time= for one period." % (name or self._esri_default_name(url)))
             js_viz["timelapse"] = True
         elif time is not None:
             esri["time"] = self._esri_time_span(time)
@@ -2097,10 +2101,12 @@ class mapper:
         On the Delta skin the features are fetched by the browser for the
         view as it moves and drawn with the service's own renderer (style
         keys in ``viz_params`` replace it); Python fetches nothing. There
-        ``max_features`` caps the features drawn per view (default 2000),
+        ``max_features`` caps the features drawn per map tile (default
+        2000; the layer row says when a tile in view is capped),
         ``simplify`` generalizes for the zoom (``False`` for exact geometry,
-        or a tolerance in meters), and ``max_layer_mb`` caps what the
-        layer fetches. ``time`` filters a time-enabled layer.
+        or a tolerance in meters), and ``max_layer_mb`` caps how much of
+        the layer the viewer keeps (default 64 MB; tiles used longest ago
+        are dropped first). ``time`` filters a time-enabled layer.
         """
         if not self._esri_in_python(token):
             if isinstance(bbox, str):

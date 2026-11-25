@@ -65,3 +65,25 @@ test("the plug-in starts an Esri timelapse with the Esri frame loader", () => {
   assert.equal(calls[0], esriFrameLoader);
   assert.equal(pluginFor("esri.image").start({ kind: "esri.image" }, { addTimelapse: () => calls.push("no") }), false);
 });
+
+const YEARLY = { type: "Feature Layer", timeInfo: { timeExtent: [Date.UTC(2000, 0, 1), Date.UTC(2002, 11, 31)], defaultTimeInterval: 1, defaultTimeIntervalUnits: "esriTimeUnitsYears" } };
+
+test("a map service sublayer plays from its map service, that sublayer only", async () => {
+  const sub = "https://example.com/arcgis/rest/services/fires/MapServer/3";
+  const fetch = fakeFetch([[sub, YEARLY], [sub.replace(/\/3$/, ""), { layers: [{ id: 3, defaultVisibility: true }] }], [sub.replace(/\/3$/, "") + "/legend", { layers: [] }]]);
+  const ld = esriFrameLoader(engineWith(fetch), { ...layer(sub), name: "Fires" });
+  assert.deepEqual(await ld.years(), ["2000", "2001", "2002"]);
+  const u = new URL((await ld.frame(1))({ x: 0, y: 0 }, 1));
+  assert.ok(u.pathname.endsWith("/fires/MapServer/export"), u.pathname);
+  assert.equal(u.searchParams.get("layers"), "show:3");
+  assert.equal(u.searchParams.get("time"), `${Date.UTC(2001, 0, 1)},${Date.UTC(2002, 0, 1) - 1}`);
+  const t = await ld.queryTarget();
+  assert.equal(t.type, "esri.map");
+});
+
+test("a feature layer cannot play as a timelapse yet, and says so", async () => {
+  const url = "https://example.com/arcgis/rest/services/fires/FeatureServer/0";
+  const fetch = fakeFetch([[url, YEARLY]]);
+  const ld = esriFrameLoader(engineWith(fetch), { ...layer(url), name: "Fires" });
+  await assert.rejects(ld.years(), /Fires is a feature layer: a timelapse of its features is not supported yet\. Add it with time= for one period\./);
+});

@@ -132,3 +132,14 @@ def test_export_layer_json_lists_the_service(no_fetch, delta_map, tmp_path):
     data = json.loads((tmp_path / "layers.json").read_text()) if (tmp_path / "layers.json").exists() else out
     text = json.dumps(data)
     assert NFHL in text and "esri.map" in text
+
+
+def test_a_feature_layer_timelapse_is_refused_with_a_reason(no_fetch, delta_map):
+    fs = "https://services.arcgis.com/x/arcgis/rest/services/fires/FeatureServer/0"
+    with pytest.raises(ValueError, match="feature layer: a timelapse of its features is not supported yet"):
+        delta_map.addEsriFeatureService(fs, time="all")
+    with pytest.raises(ValueError, match="time= for one period"):
+        delta_map.addTimeLapse(fs)
+    # a map service sublayer can: it is drawn by its map service
+    delta_map.addTimeLapse(MTBS63)
+    assert esri_calls(delta_map._build_run_js())[0][1]["timelapse"] is True

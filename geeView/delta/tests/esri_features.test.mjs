@@ -54,16 +54,39 @@ test("maxFeatures caps a tile and says so", async () => {
   assert.deepEqual({ capped: status[0].capped, shown: status[0].shown }, { capped: true, shown: 3 });
 });
 
-test("maxLayerMB stops new tiles once the layer has fetched that much", async () => {
+test("maxLayerMB caps what the layer keeps: old tiles are dropped, new ones still load", async () => {
   const fetch = fakeFetch([[STATES + "/query", pageRoute]]);
   const status = [];
   const src = createFeatureSource(STATES, response("states_info"), { maxLayerMB: 0.001 }, { fetch, onStatus: (s) => status.push(s) });
   await src.partsFor(TILE, 4);
   const before = fetch.calls.length;
   const parts = await src.partsFor({ x: 2, y: 6 }, 4);
-  assert.equal(fetch.calls.length, before, "no request past the budget");
-  assert.deepEqual(parts, []);
-  assert.equal(status[status.length - 1].capped, true);
+  assert.ok(fetch.calls.length > before, "a new tile still loads past the budget");
+  assert.ok(parts.length > 0);
+  assert.equal(status[status.length - 1].capped, false);
+  // the first tile was dropped to stay within the budget: asked again when shown again
+  const again = fetch.calls.length;
+  await src.partsFor(TILE, 4);
+  assert.ok(fetch.calls.length > again);
+  assert.ok(src.heldBytes() > 0);
+});
+
+test("bytes are counted from the answer as received, not serialized again", async () => {
+  const fetch = fakeFetch([[STATES + "/query", pageRoute]]);
+  const src = createFeatureSource(STATES, response("states_info"), {}, { fetch });
+  await src.partsFor(TILE, 4);
+  const want = ["states_query_z4", "states_query_z4_page2"].reduce((n, f) => n + JSON.stringify(response(f)).length, 0) + JSON.stringify({ type: "FeatureCollection", features: [] }).length;
+  assert.equal(src.heldBytes(), want);
+});
+
+test("a tile shown again from the cache says its status again", async () => {
+  const fetch = fakeFetch([[STATES + "/query", pageRoute]]);
+  const status = [];
+  const src = createFeatureSource(STATES, response("states_info"), { maxFeatures: 3 }, { fetch, onStatus: (s) => status.push(s) });
+  await src.partsFor(TILE, 4);
+  await src.partsFor(TILE, 4);
+  assert.equal(status.length, 2);
+  assert.deepEqual([status[1].key, status[1].capped, status[1].shown], ["4/3/6", true, 3]);
 });
 
 test("outside the layer's scale range nothing is fetched", async () => {
@@ -144,4 +167,55 @@ test("a renderer's default cap applies when the layer sets none", async () => {
   const own = createFeatureSource(STATES, response("states_info"), { maxFeatures: 3 }, { fetch, defaultMaxFeatures: 7 });
   await own.partsFor(TILE, 4);
   assert.equal(fetch.calls[fetch.calls.length - 1].params.resultRecordCount, "3");
+});
+
+test("the row note counts the tiles in view only", async () => {
+  const { noteFor } = await import("../js/plugins/esri.js");
+  const st = (key, capped, shown) => ({ key, zoom: 4, capped, shown, outOfScale: false });
+  assert.equal(noteFor([st("4/1/1", false, 10)]), null);
+  assert.equal(noteFor([st("4/1/1", true, 2000), st("4/2/1", false, 5)]), "Showing the first 2,005 features in view; zoom in for the rest.");
+});
+
+test("a released tile leaves the note; the overlay says which tiles are shown", async () => {
+  const fetch = fakeFetch([[STATES + "/query", pageRoute]]);
+  const source = createFeatureSource(STATES, response("states_info"), {}, { fetch });
+  const released = [];
+  const ov = createVectorTileOverlay({ google: fakeGoogle, source, style: {}, onRelease: (c, z) => released.push(`${z}/${c.x}/${c.y}`) });
+  const doc = fakeDoc();
+  const a = ov.getTile(TILE, 4, doc);
+  ov.getTile({ x: 2, y: 6 }, 4, doc);
+  assert.deepEqual([...ov.liveKeys()].sort(), ["4/2/6", "4/3/6"]);
+  ov.releaseTile(a);
+  assert.deepEqual(released, ["4/3/6"]);
+  assert.deepEqual([...ov.liveKeys()], ["4/2/6"]);
+});
+
+test("a failing tile passes the service's message up", async () => {
+  const fetch = fakeFetch([[STATES + "/query", "error_body"]]);
+  const source = createFeatureSource(STATES, response("states_info"), {}, { fetch });
+  const errors = [];
+  const ov = createVectorTileOverlay({ google: fakeGoogle, source, style: {}, onError: (e) => errors.push(e.message) });
+  ov.getTile(TILE, 4, fakeDoc());
+  await new Promise((r) => setTimeout(r, 20));
+  assert.deepEqual(ov.stats(), { total: 1, loaded: 0, failed: 1 });
+  assert.match(errors[0], /Invalid URL/);
+  assert.match(ov.lastError().message, /Invalid URL/);
+});
+
+test("the world shown twice (low zoom): releasing one copy does not fail the other", async () => {
+  let resolve;
+  let aborted = 0;
+  const source = {
+    partsFor: (c, z, signal) => {
+      if (signal) signal.addEventListener("abort", () => aborted++);
+      return new Promise((r) => (resolve = r));
+    },
+  };
+  const ov = createVectorTileOverlay({ google: fakeGoogle, source, style: {} });
+  const doc = fakeDoc();
+  const left = ov.getTile({ x: 0, y: 0 }, 1, doc);
+  ov.getTile({ x: 2, y: 0 }, 1, doc); // the same tile, one world to the east
+  await new Promise((r) => setTimeout(r, 0));
+  ov.releaseTile(left);
+  assert.equal(aborted, 0, "the copy still shown keeps its request");
 });

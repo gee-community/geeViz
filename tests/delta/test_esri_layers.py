@@ -198,3 +198,16 @@ def test_elevation_without_earth_engine_comes_from_3dep(live_map):
     assert any(ch.isdigit() for ch in text), text
     assert any("3DEPElevation/ImageServer/identify" in u for u in seen)
     assert ee_requests(seen) == []
+
+
+def build_bad_where(Map):
+    Map.addEsriFeatureService(STATES, name="Bad where", where="NO_SUCH_FIELD = 1")
+    Map.setCenter(-105.5, 39.0, 6)
+
+
+def test_a_feature_layer_that_fails_shows_the_service_message(live_map):
+    page = live_map(build_bad_where, setup=recorder([]), wait_layers=False)
+    wait_for(page, "() => { const l = __delta.store.get().layers[0]; return l && l.error; }", timeout=60)
+    err = layers(page)[0]["error"]
+    assert "does not allow" not in err and len(err) > 10, err
+    print(err)

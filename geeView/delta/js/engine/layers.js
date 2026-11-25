@@ -192,6 +192,8 @@ export function createLayerEngine(gmap, store, deps = {}) {
       style: r.style,
       styleFor: extra.styleFor,
       drawTile: extra.drawTile,
+      onRelease: extra.onRelease,
+      onError: extra.onError,
       opacity: r.opacity,
       opacityRatio: r.viz.opacityRatio,
       name: r.id,

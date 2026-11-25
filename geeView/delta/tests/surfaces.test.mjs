@@ -7,6 +7,7 @@ import { heatGrid, heatColor, dotValueAt, dotsIn, pieSlices, interiorPoint } fro
 import { rendererFor } from "../js/esri/renderers.js";
 import { scaleAt } from "../js/esri/features.js";
 import { legendMarkup } from "../js/ui/legend.js";
+import { flatten } from "../js/engine/vectortiles.js";
 
 const di = (n) => response(n).drawingInfo;
 const SQUARE = [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]]];
@@ -110,4 +111,25 @@ test("a layer's drawingInfo transparency is its opacity; a heatmap fetches more 
   assert.equal(heat.maxFeatures, 20000);
   assert.equal(rendererFor(di("drawinginfo_dotdensity"), null, "esriGeometryPolygon").alpha, 1);
   assert.equal(rendererFor({ renderer: { type: "simple" }, transparency: 50 }).alpha, 0.5);
+});
+
+test("dot density draws only a tile's own dots: zoomed in, a big polygon stays fast", () => {
+  const ring = Array.from({ length: 500 }, (_, k) => [Math.cos((k / 500) * 2 * Math.PI), Math.sin((k / 500) * 2 * Math.PI)]);
+  ring.push(ring[0]);
+  const fc = { type: "FeatureCollection", features: [{ type: "Feature", id: 1, properties: { v: 1e6 }, geometry: { type: "Polygon", coordinates: [ring] } }] };
+  const r = rendererFor({ renderer: { type: "dotDensity", attributes: [{ field: "v", color: [0, 0, 0, 255] }], dotValue: 1000, dotSize: 1, referenceScale: scaleAt(10) } }, null, "esriGeometryPolygon");
+  let rects = 0;
+  const ctx = new Proxy({}, { get: (t, k) => (k === "fillRect" ? () => rects++ : t[k] !== undefined ? t[k] : () => {}), set: (t, k, v) => ((t[k] = v), true) });
+  const z = 14;
+  const n = 1 << z;
+  const coord = { x: Math.floor(((0.1 + 180) / 360) * n), y: Math.floor(n / 2) - 6 };
+  const parts = flatten(fc);
+  const t0 = Date.now();
+  r.drawTile(ctx, parts, { coord, zoom: z, px: () => [0, 0], opacity: 1 });
+  const ms = Date.now() - t0;
+  assert.ok(ms < 300, `${ms} ms`);
+  // about the polygon's dots times the tile's share of its area
+  const tileDeg = 360 / n;
+  const expect = (1e6 / dotValueAt({ dotValue: 1000, referenceScale: scaleAt(10) }, z)) * ((tileDeg * tileDeg) / Math.PI);
+  assert.ok(rects > expect * 0.3 && rects < expect * 3, `${rects} dots, about ${expect.toFixed(1)} expected`);
 });
