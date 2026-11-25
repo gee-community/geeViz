@@ -225,6 +225,7 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
   --op-w-inline: 180px; --op-w-stack: clamp(110px, calc(100cqw - 120px), 240px); }
 .layer.off .lname { color: var(--dz-mute); }
 .layer.err .lname { color: var(--dz-orange); }
+.lnote { margin: 2px calc(var(--leg-w) + var(--lrow-gap)) 0 calc(var(--op-indent) + var(--tl-pad)); font-size: 11px; color: var(--dz-mute); }
 /* the progress bar runs --tl-pad past the slider on the right; the same room on the left of the toggle */
 .lrow { position: relative; isolation: isolate; display: flex; align-items: center; gap: var(--lrow-gap); border-radius: 6px; padding-left: var(--tl-pad); }
 /* tiles loading: the name row fills left to right with the share of on-screen

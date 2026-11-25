@@ -223,6 +223,7 @@ export function mountLayers(store, mountEl, opts = {}) {
       swatch: el.querySelector(".lsw"),
       legendEl: el.querySelector(".legend"),
       tileErr: el.querySelector(".tile-err"),
+      note: el.querySelector(".lnote"),
     };
     const id = layer.id;
     parts.tileErr.addEventListener("click", () => opts.retryTiles && opts.retryTiles(id));
@@ -292,6 +293,11 @@ export function mountLayers(store, mountEl, opts = {}) {
     el.classList.toggle("is-select", l.kind === "select");
     el.classList.toggle("err", !!l.error);
     el.title = l.error ? "Layer failed to load: " + l.error : "";
+    // a note on what is drawn (a feature layer capped or out of scale)
+    if (parts.note) {
+      parts.note.hidden = !l.note || !l.visible;
+      if (parts.note.textContent !== (l.note || "")) parts.note.textContent = l.note || "";
+    }
     // Loading shows in the name row's background, never as an element that
     // takes room (a spinner pushed the slider to a new line and back): the
     // share of tiles in for tile layers, an animated fill for the rest.

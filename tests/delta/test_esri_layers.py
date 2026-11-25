@@ -15,6 +15,7 @@ pytestmark = pytest.mark.live
 
 NFHL = "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer"
 TOPO = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer"
+MTBS63 = "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_MTBS_01/MapServer/63"
 LCMS = "https://imagery.geoplatform.gov/iipp/rest/services/Vegetation/USFS_EDW_LCMS_AnnualChange_CONUS/ImageServer"
 # a zone AE on the Cache la Poudre in Fort Collins (Flood Hazard Zones draws from zoom 14)
 ZONE = (-105.068, 40.59)
@@ -129,3 +130,30 @@ def test_a_failing_identify_is_one_card(live_map):
     assert len(flood) == 1 and flood[0]["meta"] == "Query failed", flood
     assert "Invalid URL" in flood[0]["data"]["error"]
     assert any(r["title"] == "LCMS 2021" and r["meta"] != "Query failed" for r in rs)
+
+
+def build_fires(Map):
+    Map.addEsriFeatureService(MTBS63, name="Fires", where="year = 2020", viz_params={"strokeColor": "d62728"})
+    # the Cameron Peak fire, 2020, west of Fort Collins
+    Map.setCenter(-105.62, 40.62, 11)
+    Map.turnOnInspector()
+
+
+def test_a_feature_layer_draws_for_the_view_and_answers_a_click(live_map):
+    seen = []
+    page = live_map(build_fires, setup=recorder(seen))
+    wait_for(page, "() => { const l = __delta.store.get().layers[0]; return l && l.kind === 'esri.feature' && !l.loading && (l.progress || {}).loaded > 0; }", timeout=120)
+    l = layers(page)[0]
+    assert l["error"] is None, l
+    queries = [u for u in seen if "/MapServer/63/query" in u]
+    assert queries and all("maxAllowableOffset" in u for u in queries), queries[:2]
+    assert page.evaluate("(id) => __delta.engine.layers.stats(id).onMap", l["id"])
+    page.evaluate("() => __delta.store.set({results: []}, 'test')")
+    page.mouse.dblclick(*MAP_CENTER)
+    wait_for(page, "() => __delta.store.get().querying === false && __delta.store.get().results.length >= 1", timeout=60)
+    rs = page.evaluate("__delta.store.get().results")
+    names = [dict(r["data"]["rows"]).get("fire_name") for r in rs]
+    assert "CAMERON PEAK" in names, rs
+    # every field, asked for the feature hit
+    assert any("objectIds=" in u and ("outFields=*" in u or "outFields=%2A" in u) for u in seen)
+    assert ee_requests(seen) == []

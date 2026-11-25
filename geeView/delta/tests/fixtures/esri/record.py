@@ -28,6 +28,11 @@ DEP3 = "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/Ima
 # Fort Collins, Colorado, and a square around Cameron Peak
 FOCO = {"x": -105.08, "y": 40.58, "spatialReference": {"wkid": 4326}}
 ZONE = {"x": -105.068, "y": 40.59, "spatialReference": {"wkid": 4326}}
+# the Web Mercator bounds of map tile z 4, x 3, y 6
+_H = 20037508.342789244
+_S = 2 * _H / 16
+Z4_TILE = {"xmin": -_H + 3 * _S, "ymin": _H - 7 * _S, "xmax": -_H + 4 * _S, "ymax": _H - 6 * _S,
+           "spatialReference": {"wkid": 3857}}
 SQUARE = {"rings": [[[-105.7, 40.55], [-105.7, 40.65], [-105.6, 40.65], [-105.6, 40.55], [-105.7, 40.55]]],
           "spatialReference": {"wkid": 4326}}
 
@@ -49,6 +54,24 @@ FIXTURES = {
                                           "outSR": "4326", "maxAllowableOffset": "0.01", "f": "json"}, "GET"),
     "esri_polygon": (STATES + "/query", {"where": "STATE_ABBR='HI'", "outFields": "STATE_NAME",
                                          "outSR": "4326", "maxAllowableOffset": "0.05", "f": "json"}, "GET"),
+    # feature tiles: the zoom 4 tile x 3, y 6 (the West), small pages to page through
+    "states_query_z4": (STATES + "/query", {"geometry": Z4_TILE, "geometryType": "esriGeometryEnvelope", "inSR": "3857",
+                                            "spatialRel": "esriSpatialRelIntersects", "outSR": "4326",
+                                            "outFields": "OBJECTID,STATE_NAME", "where": "1=1",
+                                            "maxAllowableOffset": "0.088", "geometryPrecision": "6",
+                                            "resultRecordCount": "5", "f": "geojson"}, "GET"),
+    "states_query_z4_page2": (STATES + "/query", {"geometry": Z4_TILE, "geometryType": "esriGeometryEnvelope", "inSR": "3857",
+                                                  "spatialRel": "esriSpatialRelIntersects", "outSR": "4326",
+                                                  "outFields": "OBJECTID,STATE_NAME", "where": "1=1",
+                                                  "maxAllowableOffset": "0.088", "geometryPrecision": "6",
+                                                  "resultRecordCount": "5", "resultOffset": "5", "f": "geojson"}, "GET"),
+    "mtbs63_query": (MTBS63 + "/query", {"geometry": {"xmin": -105.7, "ymin": 40.55, "xmax": -105.6, "ymax": 40.65,
+                                                      "spatialReference": {"wkid": 4326}},
+                                         "geometryType": "esriGeometryEnvelope", "spatialRel": "esriSpatialRelIntersects",
+                                         "outSR": "4326", "outFields": "objectid,fire_name", "where": "year = 2020",
+                                         "maxAllowableOffset": "0.0005", "geometryPrecision": "6", "f": "json"}, "GET"),
+    "mtbs63_attributes": (MTBS63 + "/query", {"where": "fire_name = 'CAMERON PEAK' AND year = 2020", "outFields": "*",
+                                              "returnGeometry": "false", "f": "json"}, "GET"),
     # identify at Fort Collins, in an 800 by 600 view
     # a zone AE on the Cache la Poudre, zoomed in past layer 28's minScale (1:36,111)
     "nfhl_identify": (NFHL + "/identify", {"geometry": ZONE, "geometryType": "esriGeometryPoint", "sr": "4326",

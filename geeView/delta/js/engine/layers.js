@@ -25,7 +25,8 @@ const VIZ_KEYS = ["bands", "min", "max", "gain", "bias", "gamma", "palette", "fo
 // the original's possibleVizKeys
 const POSSIBLE_VIZ_KEYS = ["bands", "min", "max", "gain", "bias", "gamma", "palette", "color"];
 // Select layers draw like any vector (port of 4map-manager.js addSelectLayerToMap).
-const NOT_QUERYABLE = ["geoJSONVector", "tileMapService", "dynamicMapService"];
+// GeoJSON is queried by hit test (plugins/geojson.js).
+const NOT_QUERYABLE = ["tileMapService", "dynamicMapService"];
 
 // A wind layer (geeViz.weather addWindLayer / addWindTimeLapse): its tiles
 // are u/v encoded as RGB, decoded and drawn by wind-particles.js through
@@ -177,6 +178,28 @@ export function createLayerEngine(gmap, store, deps = {}) {
     r.requests++;
     sync();
     setLoading(r, false);
+  }
+
+  // A vector layer whose features a source fetches tile by tile as the map
+  // shows them (an ArcGIS feature layer: esri/features.js). The overlay
+  // counts a tile as loading until its features arrive.
+  function addFeatureSource(r, source, extra = {}) {
+    r.style = extra.style || normVecStyle(r.viz);
+    r.overlay = createVectorTileOverlay({
+      google: g,
+      source,
+      style: r.style,
+      styleFor: extra.styleFor,
+      opacity: r.opacity,
+      opacityRatio: r.viz.opacityRatio,
+      name: r.id,
+      onProgress: () => reportProgress(r),
+    });
+    if (r.opacity !== 1) r.overlay.setOpacity(r.opacity);
+    r.tileType = true;
+    r.dataType = false;
+    r.requests++;
+    sync();
   }
 
   // ---- tile layers ----
@@ -398,6 +421,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
     tileOverlay,
     eeTileLayer,
     addGeoJson,
+    addFeatureSource,
     addTimelapse,
     setLoading,
     sync,
@@ -410,6 +434,11 @@ export function createLayerEngine(gmap, store, deps = {}) {
       r.kind = kind;
       r.layerType = kind;
       patch(r.id, { kind }, "layer-kind");
+    },
+    setNote(r, note) {
+      if (!recs.has(r.id) || r.note === note) return;
+      r.note = note;
+      patch(r.id, { note }, "layer-note");
     },
     setLegend(r, legend) {
       if (!recs.has(r.id)) return;
@@ -480,7 +509,7 @@ export function createLayerEngine(gmap, store, deps = {}) {
       // A wind layer is queried on its speed/direction image, not its tiles.
       const windItem = windQueryItem(r.viz, eeApi);
       const qType = r.layerType || r.viz.layerType;
-      const target = { type: qType, item: windItem || queryItem, viz: r.viz };
+      const target = { type: qType, item: windItem || queryItem, viz: r.viz, overlay: () => r.overlay, source: () => r.source };
       if (windItem) target.unitProps = WIND_UNIT_PROPS;
       resolveTarget(NOT_QUERYABLE.indexOf(qType) > -1 ? null : target);
       if (!r.layerType) {
