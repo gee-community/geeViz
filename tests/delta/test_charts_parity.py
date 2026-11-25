@@ -77,7 +77,7 @@ def page(live_map):
 def js_zonal(page, key):
     return page.evaluate(
         """async ({poly, crs, transform, scale}) => {
-          const c = await import('./delta/js/engine/charts.js');
+          const c = await import('./js/engine/charts.js');
           const obj = %s;
           const geom = ee.Geometry.Polygon(poly);
           const r = await c.zonalStats(obj, geom, {scale, crs, transform});
@@ -154,7 +154,7 @@ def test_lcms_sankey_matches_charts_py(page):
 
     js = page.evaluate(
         """async ({poly, crs, transform, scale, periods}) => {
-          const s = await import('./delta/js/engine/sankey.js');
+          const s = await import('./js/engine/sankey.js');
           const ic = %s;
           const r = await s.sankeyForCollection(ic, ee.Geometry.Polygon(poly), periods,
               {scale, crs, transform, minPercentage: 0.5});

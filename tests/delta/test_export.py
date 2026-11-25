@@ -79,9 +79,18 @@ class _AgentLike(http.server.BaseHTTPRequestHandler):
         if path in self.maps:
             html = pathlib.Path(self.maps[path]).read_text(encoding="utf-8")
             return self._send(200, _patch_auth(html, self.project).encode("utf-8"), "text/html; charset=utf-8")
-        if path.startswith(ASSET_BASE + "/"):
-            f = (GEEVIEW / path[len(ASSET_BASE) + 1 :]).resolve()
-            if GEEVIEW in f.parents and f.is_file():
+        # the agent mounts georest.view at ASSET_BASE + "/geoview", ahead of
+        # geeViz's own files at ASSET_BASE (geeViz_agent run_ui.py)
+        root, rel = GEEVIEW, None
+        if path.startswith(ASSET_BASE + "/geoview/"):
+            from georest.view import STATIC_DIR
+
+            root, rel = pathlib.Path(STATIC_DIR).resolve(), path[len(ASSET_BASE + "/geoview/") :]
+        elif path.startswith(ASSET_BASE + "/"):
+            rel = path[len(ASSET_BASE) + 1 :]
+        if rel is not None:
+            f = (root / rel).resolve()
+            if root in f.parents and f.is_file():
                 import mimetypes
 
                 ctype = mimetypes.guess_type(str(f))[0] or "application/octet-stream"

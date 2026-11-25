@@ -248,8 +248,10 @@ def test_theme_applied_before_module_runs(delta_server, _browser):
     ctx.route("**/*", lambda r: r.continue_() if r.request.url.startswith(delta_server) else r.abort())
     page = ctx.new_page()
     # block the module so only the inline head script can set the theme
-    page.route("**/delta/js/main.js", lambda r: r.abort())
+    blocked = []
+    page.route("**/js/main.js", lambda r: (blocked.append(r.request.url), r.abort()))
     page.goto(delta_server + "/geoview.html?delta-test=shell")
+    assert blocked, "main.js was not blocked, so the theme could have come from the module"
     assert theme(page) == "dark"
     ctx.close()
 

@@ -50,8 +50,8 @@ def expected(page, tool):
     """The card text computed in the page from the drawn vertices."""
     return page.evaluate(
         """async ([tool, units]) => {
-          const u = await import('./delta/js/util.js');
-          const m = await import('./delta/js/engine/measure.js');
+          const u = await import('./js/util.js');
+          const m = await import('./js/engine/measure.js');
           const path = __delta.measure.path();
           const sph = google.maps.geometry.spherical;
           if (tool === 'distance') return [['Distance', u.formatLength(sph.computeLength(path), units)], path.length];
@@ -224,7 +224,7 @@ def test_area_second_polygon_after_double_click_and_total(page):
     lines = page.evaluate("__delta.store.get().results[0].data.lines")
     assert [l[0] for l in lines] == ["Total area", "Polygon 1", "Polygon 2"]
     exp = page.evaluate(
-        """async (units) => { const u = await import('./delta/js/util.js');
+        """async (units) => { const u = await import('./js/util.js');
           const a = __delta.measure.paths().map(p => google.maps.geometry.spherical.computeArea(p));
           return [u.formatArea(a[0] + a[1], units), u.formatArea(a[0], units), u.formatArea(a[1], units)]; }""",
         page.evaluate("__delta.store.get().units"),
