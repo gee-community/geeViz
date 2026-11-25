@@ -260,3 +260,32 @@ test("a Delta map script sets its workload tag through the page's Map", () => {
   installApi(ctx, store);
   assert.equal(store.get().eeWorkloadTag, "geeviz__t");
 });
+
+test("addEsriLayer: an ArcGIS service layer; a time-enabled one is a timelapse that starts off", () => {
+  const store = createStore();
+  const api = createMapApi(store);
+  const LCMS = "https://imagery.geoplatform.gov/iipp/rest/services/Vegetation/USFS_EDW_LCMS_AnnualChange_CONUS/ImageServer";
+  const NFHL = "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer";
+  api.addEsriLayer(NFHL, {}, "Flood", true);
+  api.addEsriLayer(LCMS, { timelapse: true, canAreaChart: true }, "Change", true);
+  api.addEsriLayer(LCMS, { esriKind: "esri.image", esri: { time: [1, 2] } }, "2021", false);
+  const [flood, change, y2021] = store.get().layers;
+  assert.equal(flood.kind, "esri.map");
+  assert.equal(flood.item, NFHL);
+  assert.equal(flood.queryable, true);
+  assert.equal(flood.visible, true);
+  assert.equal(change.kind, "esri.timelapse");
+  assert.equal(change.visible, false);
+  assert.deepEqual(change.timelapse, {});
+  assert.equal(change.chartable, true);
+  assert.equal(y2021.kind, "esri.image");
+  assert.equal(y2021.visible, false);
+});
+
+test("the run script can call Map.addEsriLayer", () => {
+  const { ctx } = makeContext();
+  vm.runInContext('Map.addEsriLayer("https://x/arcgis/rest/services/a/MapServer",{},"A",true);', ctx);
+  const store = createStore();
+  installApi(ctx, store);
+  assert.deepEqual(store.get().layers.map((l) => [l.name, l.kind]), [["A", "esri.map"]]);
+});

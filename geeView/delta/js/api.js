@@ -8,6 +8,7 @@
 // hideSpinner, populateChartLayerSelect, ...). Missing hooks are ignored.
 
 import { particleOpacityFor } from "./engine/viz.js";
+import { isTimelapseKind } from "./util.js";
 
 const UNSUPPORTED = ["addExport", "addPlot", "addFeatureView", "addREST", "addMBSankey", "addSelectLayerGroup"];
 
@@ -58,14 +59,14 @@ export function createMapApi(store, engine = {}) {
       viz,
       // port of 4map-manager.js addTimeLapseToMap: "Force time lapses to be
       // turned off on load to speed up loading" (visible = false).
-      visible: kind === "timelapse" ? false : visible === undefined || visible === null ? true : !!visible,
+      visible: isTimelapseKind(kind) ? false : visible === undefined || visible === null ? true : !!visible,
       opacity: typeof viz.opacity === "number" ? viz.opacity : 1,
       legendOpen: false,
       pinned: false,
       loading: false,
       error: null,
       legend: null,
-      timelapse: kind === "timelapse" ? {} : null,
+      timelapse: isTimelapseKind(kind) ? {} : null,
       chartable: !!viz.canAreaChart,
       // a grouped wind layer's second slider (see particleOpacityFor)
       ...(particleOpacityFor(viz) === undefined ? {} : { particleOpacity: particleOpacityFor(viz) }),
@@ -110,6 +111,14 @@ export function createMapApi(store, engine = {}) {
   api.addSerializedLayer = (item, viz, name, visible) => {
     viz = serialize(viz);
     push(makeLayer(kindFor(item, viz), item, viz, name, visible));
+  };
+  // An ArcGIS service (Delta's Esri plug-in draws it in the browser). The
+  // kind is a first guess, from geeViz (viz.esriKind); the service's
+  // metadata decides. viz.timelapse: a time-enabled service, frame by frame.
+  api.addEsriLayer = (url, viz, name, visible) => {
+    viz = viz || {};
+    const kind = viz.timelapse ? "esri.timelapse" : viz.esriKind || "esri.map";
+    push(makeLayer(kind, String(url), viz, name, visible));
   };
   api.addTimeLapse = (item, viz, name, visible) => {
     push(makeLayer("timelapse", item, viz || {}, name, visible));

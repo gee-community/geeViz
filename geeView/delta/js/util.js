@@ -2,6 +2,11 @@
 
 const ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 
+// A layer drawn frame by frame: an Earth Engine timelapse, or a
+// time-enabled ArcGIS service.
+export const isTimelapseKind = (kind) => kind === "timelapse" || kind === "esri.timelapse";
+export const isTimelapse = (layer) => !!layer && isTimelapseKind(layer.kind);
+
 export function escapeText(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ESCAPES[c]);
 }

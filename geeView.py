@@ -1824,6 +1824,129 @@ class mapper:
         self.idDictList.append(idDict)
 
     ######################################################################
+    # ArcGIS services on the Delta skin: drawn, queried, legended and charted
+    # in the browser (geeView/delta/js/plugins/esri.js). Python records the
+    # service and its options and fetches nothing. The original skin cannot
+    # draw a service itself, so it keeps esriLib's Python fetch, and so does
+    # a layer with a token: a token must never reach the page.
+    _ESRI_VIZ_KEYS = ("strokeColor", "fillColor", "fillOpacity", "strokeWeight", "strokeOpacity",
+                      "opacity", "canAreaChart", "chartField", "chartStatistic", "chartValueField",
+                      "legendTitle", "pointRadius")
+    _ESRI_OPT_KEYS = ("layers", "renderingRule", "mosaicRule", "bandIds", "outFields")
+
+    @staticmethod
+    def _esri_time_span(t):
+        """A time span [start, end] in milliseconds (UTC) for ``time=``: a year,
+        an ISO date, a date or datetime, or a (start, end) pair of any of those
+        (end inclusive: the whole year or day). None for None."""
+        import calendar as _cal
+
+        def ms(d):
+            return _cal.timegm(d.timetuple()) * 1000
+
+        def span(v):
+            if isinstance(v, datetime.datetime):
+                return ms(v), ms(v)
+            if isinstance(v, datetime.date):
+                d = datetime.datetime(v.year, v.month, v.day)
+                return ms(d), ms(d + datetime.timedelta(days=1)) - 1
+            s = str(v).strip()
+            if _re_mod.fullmatch(r"\d{4}", s):
+                y = int(s)
+                return ms(datetime.datetime(y, 1, 1)), ms(datetime.datetime(y + 1, 1, 1)) - 1
+            if _re_mod.fullmatch(r"\d{4}-\d{2}", s):
+                y, m = map(int, s.split("-"))
+                nxt = datetime.datetime(y + (m == 12), m % 12 + 1, 1)
+                return ms(datetime.datetime(y, m, 1)), ms(nxt) - 1
+            try:
+                d = datetime.datetime.fromisoformat(s)
+            except ValueError:
+                raise ValueError("time must be a year, an ISO date, a (start, end) pair or 'all'; got %r" % (v,))
+            if len(s) <= 10:
+                return span(d.date())
+            return ms(d), ms(d)
+
+        if t is None:
+            return None
+        if isinstance(t, (list, tuple)):
+            if len(t) != 2:
+                raise ValueError("time as a range is (start, end); got %r" % (t,))
+            return [span(t[0])[0], span(t[1])[1]]
+        return list(span(t))
+
+    @staticmethod
+    def _esri_default_name(url):
+        """A layer name from a service URL: the service, and its sublayer."""
+        path = url.split("/rest/services/", 1)[-1].strip("/")
+        parts = path.split("/")
+        for i, p in enumerate(parts):
+            if p in ("MapServer", "FeatureServer", "ImageServer"):
+                svc = parts[i - 1] if i else p
+                sub = parts[i + 1] if i + 1 < len(parts) else None
+                return "%s %s" % (svc, sub) if sub is not None else svc
+        return parts[-1] if parts else url
+
+    def _record_esri(self, method, url_or_result, kind, name=None, visible=True, viz_params=None,
+                     time=None, opts=None, call=None):
+        """Record a Delta Esri layer: one Map.addEsriLayer call in the run script."""
+        from geeViz import esriLib as _el
+        url = _el._resolve_url(url_or_result).rstrip("/")
+        viz_params = dict(viz_params or {})
+        js_viz = {k: viz_params[k] for k in self._ESRI_VIZ_KEYS if k in viz_params}
+        esri = {k: viz_params[k] for k in self._ESRI_OPT_KEYS if k in viz_params}
+        esri.update({k: v for k, v in (opts or {}).items() if v is not None})
+        if isinstance(time, str) and time.strip().lower() == "all":
+            js_viz["timelapse"] = True
+        elif time is not None:
+            esri["time"] = self._esri_time_span(time)
+        if kind:
+            js_viz["esriKind"] = kind
+        js_viz["esri"] = esri
+        if "visible" in viz_params and visible is None:
+            visible = viz_params["visible"]
+        visible = True if visible is None else bool(visible)
+        name = name or self._esri_default_name(url)
+        idDict = {
+            "_is_esri": True,
+            "objectName": "Map",
+            "function": "addEsriLayer",
+            "name": name,
+            "visible": str(visible).lower(),
+            "url": url,
+            "item": "",
+            "viz": json.dumps(js_viz),
+            # how to fetch it in Python, if the map is shown in the original skin
+            "_esri_method": method,
+            "_esri_call": (url_or_result, dict(call or {}, name=name)),
+        }
+        print("Adding layer: " + name)
+        self.idDictList.append(idDict)
+
+    def _esri_in_python(self, token):
+        """True when this layer must be fetched in Python (esriLib)."""
+        return bool(token) or self.skin == "original"
+
+    def _esri_expanded(self):
+        """The layer list with each recorded Esri layer fetched through esriLib
+        (for the original skin, which cannot draw a service in the page)."""
+        from geeViz import esriLib as _el
+        out = []
+        for d in list(self.idDictList):
+            if not d.get("_is_esri"):
+                out.append(d)
+                continue
+            print("Fetching %s in Python: the original skin cannot draw ArcGIS services in the page" % d["name"])
+            saved = self.idDictList
+            self.idDictList = []
+            try:
+                url_or_result, kw = d["_esri_call"]
+                getattr(_el, d["_esri_method"])(url_or_result, **dict(kw, target_map=self))
+                out.extend(self.idDictList)
+            finally:
+                self.idDictList = saved
+        return out
+
+    ######################################################################
     # Pass-through wrappers so ``Map.addEsri*`` mirrors ``esriLib.addEsri*``.
     # Ergonomic win: the agent already uses ``Map.addLayer`` /
     # ``Map.addTileLayer`` — having the ArcGIS helpers on the same object
@@ -1831,7 +1954,7 @@ class mapper:
     # "how do I put a layer on the map" surface. The heavy lifting stays
     # in ``esriLib`` (URL parsing, portal search, metadata preflight,
     # feature count guardrails); this just delegates.
-    def addEsriImageService(self, url_or_result, viz_params=None, name=None, token=None):
+    def addEsriImageService(self, url_or_result, viz_params=None, name=None, token=None, time=None):
         """Add an ArcGIS Image Service to this map.
 
         A cached service (its metadata reports ``tileInfo``) is drawn as
@@ -1846,7 +1969,16 @@ class mapper:
                 ``opacity`` (float) and ``max_zoom`` (int) apply to a cached
                 service only and are ignored on the ``/exportImage`` path.
             name (str, optional): Layer name. Defaults to the service name.
-            token (str, optional): ArcGIS token for secured services.
+            token (str, optional): ArcGIS token for secured services. A
+                layer with a token is fetched in Python (the token never
+                reaches the page).
+            time (optional): For a time-enabled service: a year, an ISO
+                date, a ``(start, end)`` pair, or ``"all"`` to play every
+                time step as a timelapse (Delta skin).
+
+        On the Delta skin the service is drawn, queried and charted in the
+        browser, and Python fetches nothing; ``viz_params`` may also hold
+        ``renderingRule``, ``mosaicRule``, ``bandIds`` and ``canAreaChart``.
 
         Example::
 
@@ -1854,12 +1986,16 @@ class mapper:
                 "https://naip.services.arcgis.com/.../ImageServer",
                 name="NAIP")
         """
+        if not self._esri_in_python(token):
+            return self._record_esri("addEsriImageService", url_or_result, "esri.image", name=name,
+                                     visible=None, viz_params=viz_params, time=time,
+                                     call={"viz_params": viz_params})
         from geeViz import esriLib as _el
         # LOCAL PATCH (2026-08-28): pass self, or the layer lands on gv.Map.
         return _el.addEsriImageService(url_or_result, viz_params=viz_params, name=name, token=token, target_map=self)
 
     def addEsriMapService(self, url_or_result, name=None, token=None, viz_params=None,
-                          visible=None):
+                          visible=None, time=None):
         """Add an ArcGIS Map Service to this map.
 
         A cached service is drawn as tiles. A dynamic one (FEMA NFHL, most
@@ -1878,6 +2014,13 @@ class mapper:
             viz_params (dict, optional): ``visible`` always; ``opacity`` and
                 ``max_zoom`` apply to a cached service only.
             visible (bool, optional): Whether the layer starts visible.
+            time (optional): For a time-enabled service: a year, an ISO
+                date, a ``(start, end)`` pair, or ``"all"`` for a timelapse
+                (Delta skin).
+
+        On the Delta skin the service is drawn, queried and legended in the
+        browser (``identify`` and ``/legend``), and Python fetches nothing;
+        ``viz_params["layers"]`` picks sublayers (``"show:28"``).
 
         Example::
 
@@ -1885,13 +2028,17 @@ class mapper:
                 "https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer",
                 name="FEMA flood hazard")
         """
+        if not self._esri_in_python(token):
+            return self._record_esri("addEsriMapService", url_or_result, "esri.map", name=name,
+                                     visible=visible, viz_params=viz_params, time=time,
+                                     call={"viz_params": viz_params, "visible": visible})
         from geeViz import esriLib as _el
         # LOCAL PATCH (2026-08-28): pass self, or the layer lands on gv.Map.
         return _el.addEsriMapService(url_or_result, name=name, token=token, viz_params=viz_params, target_map=self, visible=visible)
 
     def addEsriFeatureService(self, url_or_result, viz_params=None, name=None,
-                              max_features=1000, where="1=1", token=None,
-                              bbox=None, simplify="auto", max_layer_mb=None):
+                              max_features=None, where="1=1", token=None,
+                              bbox=None, simplify="auto", max_layer_mb=None, time=None):
         """Fetch an ArcGIS Feature Service layer and add it to this map as vectors.
 
         Counts the matching features first (with the same ``where`` and
@@ -1927,6 +2074,9 @@ class mapper:
                 ``False`` keeps exact geometry.
             max_layer_mb (float, optional): Size budget for this layer in the
                 map page, used by ``simplify="auto"``. Default 8 MB.
+            time (optional): For a time-enabled layer: a year, an ISO date
+                or a ``(start, end)`` pair; only features in that time are
+                drawn (Delta skin).
 
         Raises:
             ValueError: If more than ``max_features`` features match.
@@ -1943,16 +2093,39 @@ class mapper:
         For the features as an ``ee.FeatureCollection`` (to filter, join or
         reduce in Earth Engine), use
         ``georest.esri.services.queryFeatureService`` and wrap the GeoJSON.
+
+        On the Delta skin the features are fetched by the browser for the
+        view as it moves and drawn with the service's own renderer (style
+        keys in ``viz_params`` replace it); Python fetches nothing. There
+        ``max_features`` caps the features drawn per view (default 2000),
+        ``simplify`` generalizes for the zoom (``False`` for exact geometry,
+        or a tolerance in meters), and ``max_layer_mb`` caps what the
+        layer fetches. ``time`` filters a time-enabled layer.
         """
+        if not self._esri_in_python(token):
+            if isinstance(bbox, str):
+                bbox = [float(v) for v in bbox.split(",")]
+            opts = {
+                "where": None if where in (None, "", "1=1") else where,
+                "bbox": list(bbox) if bbox is not None else None,
+                "maxFeatures": max_features,
+                "simplify": None if simplify == "auto" else simplify,
+                "maxLayerMB": max_layer_mb,
+            }
+            return self._record_esri("addEsriFeatureService", url_or_result, "esri.feature", name=name,
+                                     visible=None, viz_params=viz_params, time=time, opts=opts,
+                                     call={"viz_params": viz_params, "max_features": max_features or 1000,
+                                           "where": where, "bbox": bbox, "simplify": simplify,
+                                           "max_layer_mb": max_layer_mb})
         from geeViz import esriLib as _el
         # LOCAL PATCH (2026-08-28): pass self, or the layer lands on gv.Map.
         return _el.addEsriFeatureService(url_or_result, viz_params=viz_params, name=name,
-                                          max_features=max_features, where=where, token=token,
+                                          max_features=max_features or 1000, where=where, token=token,
                                           target_map=self, bbox=bbox,
                                           simplify=simplify, max_layer_mb=max_layer_mb)
 
     def addEsriService(self, url_or_result, viz_params=None, name=None, token=None,
-                       max_features=1000, where="1=1", bbox=None, simplify="auto"):
+                       max_features=None, where="1=1", bbox=None, simplify="auto", time=None):
         """Add any ArcGIS service to this map, choosing the method by its type.
 
         Reads the type from the URL (or the service metadata) and calls
@@ -1974,6 +2147,9 @@ class mapper:
                 ``"xmin,ymin,xmax,ymax"`` in WGS84 degrees.
             simplify (optional): Feature Services only; see
                 ``Map.addEsriFeatureService``.
+            time (optional): A year, an ISO date, a ``(start, end)`` pair,
+                or ``"all"`` for a timelapse of a time-enabled service
+                (Delta skin); see ``Map.addEsriImageService``.
 
         Raises:
             ValueError: If the service type cannot be determined.
@@ -1984,10 +2160,20 @@ class mapper:
             for r in portal.searchPortal("naip", limit=3):
                 Map.addEsriService(r)
         """
+        if not self._esri_in_python(token):
+            from geeViz import esriLib as _el
+            u = _el._resolve_url(url_or_result).rstrip("/")
+            if u.lower().endswith("imageserver"):
+                return self.addEsriImageService(url_or_result, viz_params=viz_params, name=name, time=time)
+            if _re_mod.search(r"/(FeatureServer|MapServer)/\d+$", u) or u.lower().endswith("featureserver"):
+                return self.addEsriFeatureService(url_or_result, viz_params=viz_params, name=name,
+                                                  max_features=max_features, where=where, bbox=bbox,
+                                                  simplify=simplify, time=time)
+            return self.addEsriMapService(url_or_result, name=name, viz_params=viz_params, time=time)
         from geeViz import esriLib as _el
         # LOCAL PATCH (2026-08-28): pass self, or the layer lands on gv.Map.
         return _el.addEsriService(url_or_result, viz_params=viz_params, name=name, token=token,
-                                   max_features=max_features, where=where, target_map=self,
+                                   max_features=max_features or 1000, where=where, target_map=self,
                                    bbox=bbox, simplify=simplify)
 
     ######################################################################
@@ -2156,6 +2342,14 @@ class mapper:
 
 
         """
+        if isinstance(image, str) and "/rest/services/" in image:
+            # a time-enabled ArcGIS service: one frame per time step (Delta skin)
+            if self.skin == "original":
+                raise NotImplementedError("A timelapse of an ArcGIS service needs the Delta skin: Map.setSkin(\"delta\")")
+            kind = "esri.image" if image.rstrip("/").lower().endswith("imageserver") else "esri.map"
+            method = "addEsriImageService" if kind == "esri.image" else "addEsriMapService"
+            return self._record_esri(method, image, kind, name=name, visible=visible, viz_params=viz,
+                                     time="all", call={"viz_params": viz})
         if _is_wind_timelapse_viz(viz):
             print("Wind viz keys given to addTimeLapse; drawing it with addWindTimeLapse")
             from geeViz.weather import addWindTimeLapse as _addWindTimeLapse
@@ -2449,7 +2643,10 @@ class mapper:
         # we just installed above. Either way, no ``viewer-exports``.
         if not delta:
             lines += "try{ee.data.resetWorkloadTag();}catch(e){}"
-        for idDict in self.idDictList:
+        # The original skin cannot draw an ArcGIS service in the page: fetch
+        # recorded Esri layers in Python now.
+        _id_dicts = self.idDictList if delta else self._esri_expanded()
+        for idDict in _id_dicts:
             # Per-layer workload tag replay. If addLayer was called under
             # eeCreds.setWorkloadTag(<X>), emit an SDK setter here so the
             # subsequent addSerializedLayer's synchronous getMapId call
@@ -2474,6 +2671,19 @@ class mapper:
                 lines += "try{ee.data.setWorkloadTag(" + _js_str(_wt) + ");}catch(e){}"
             else:
                 lines += "try{ee.data.resetWorkloadTag();}catch(e){}"
+            if idDict.get("_is_esri"):
+                # An ArcGIS service drawn in the browser (Delta's Esri plug-in).
+                lines += (
+                    'try{{Map.addEsriLayer({url},{viz},{name},{visible});}}'
+                    'catch(e){{layerLoadErrorMessages.push('
+                    '"ArcGIS layer \\""+{name}+"\\" failed: "+e.message);}}'
+                ).format(
+                    url=_js_str(idDict["url"]),
+                    viz=idDict["viz"],
+                    name=_js_str(idDict["name"]),
+                    visible=str(idDict["visible"]).lower(),
+                )
+                continue
             if idDict.get("_is_dynamic_esri"):
                 # Dynamic (non-cached) ArcGIS MapServer / ImageServer
                 # overlay, re-exported for the viewport on each pan/zoom.
@@ -3450,6 +3660,15 @@ class mapper:
                 }
                 continue
 
+            # ArcGIS services drawn in the browser: the service and its options.
+            if idDict.get("_is_esri"):
+                _ev = json.loads(idDict["viz"])
+                layers[_unique_name(name)] = {
+                    "esri": {"url": idDict["url"], "kind": _ev.get("esriKind"), "options": _ev},
+                    "visible": idDict.get("visible", "true") == "true",
+                }
+                continue
+
             ee_obj = idDict.get("_ee_obj")
             viz = idDict.get("_viz", {}) or {}
             visible = idDict.get("visible", "true") == "true"
@@ -3769,10 +3988,10 @@ class mapper:
                     return {"name": name, "status": "error",
                             "error": f"tile URL unreachable: {_te}"}
                 return {"name": name, "status": "ok", "error": None}
-            if idDict.get("_is_dynamic_esri"):
-                # Dynamic Esri MapServer: probe the service metadata
-                # endpoint (strip the ``/export?...bbox=`` we appended).
-                _bu = idDict.get("_dyn_base_url_1", "")
+            if idDict.get("_is_dynamic_esri") or idDict.get("_is_esri"):
+                # Esri service: probe the service metadata endpoint (for a
+                # dynamic layer, strip the ``/export?...bbox=`` we appended).
+                _bu = idDict.get("url") or idDict.get("_dyn_base_url_1", "")
                 import re as _re
                 _svc = _re.split(r"/export(?:Image)?\?", _bu)[0]
                 try:
