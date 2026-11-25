@@ -57,7 +57,9 @@ def test_layers_and_commands_become_a_document(m):
                  ["setGlobal", "yLabelMaxLength", 20], ["setProperty", "canReorderLayers", False],
                  ["setGlobal", "queryWindowMode", "sidePane"]):
         assert want in cmds, (want, cmds)
-    assert doc["brand"] == {"name": "geeViz", "accent": "Delta"}
+    # the viewer writes name then accent (bold) with nothing between: "geeViz Delta"
+    assert doc["brand"]["name"] + doc["brand"]["accent"] == "geeViz Delta", doc["brand"]
+    assert doc["brand"]["accent"] == "Delta"
 
 
 @pytest.mark.parametrize("cmd, want", [

@@ -2719,7 +2719,7 @@ class mapper:
         from urllib.parse import quote as _q, parse_qs as _pq
         from georest.view._document import add_layer as _add, new_document, validate
         doc = new_document()
-        doc["brand"] = {"name": "geeViz", "accent": "Delta"}
+        doc["brand"] = {"name": "geeViz ", "accent": "Delta"}  # read as "geeViz Delta"
         doc["ee"] = {
             "authProxyAPIURL": ("/ee-api/t/" + _q(tenant, safe="")) if tenant else None,
             "workloadTag": self._default_workload_tag(),
