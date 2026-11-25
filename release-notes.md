@@ -15,6 +15,19 @@
   geeViz's `geeView` folder must also serve georest's viewer
   (`georest.view.STATIC_DIR`) there. The eeAuth proxy and the askterra agent
   do. Saved maps with a run script still refresh onto the new page.
+- **`Map.addLayer` takes anything.** Besides Earth Engine objects: an Earth
+  Engine asset id as a plain string (added as the image, image collection or
+  table it is), an ArcGIS service URL (feature layer, map service or image
+  service; options such as `where`, `layers` and `time` go in the viz), a
+  tile URL with `{z}`, `{x}` and `{y}`, a GeoJSON URL (Delta skin), or
+  GeoJSON text. `Map.addTimeLapse` takes an image collection asset id or a
+  time-enabled ArcGIS service. `examples/addLayerInputsExample.py` shows
+  each. `addEsriFeatureService`, `addTileLayer` and the rest still work.
+- **A reducer for ArcGIS image services.** `viz["reducer"]` (`"min"`,
+  `"max"`, `"mean"`, `"first"`, `"last"`, `"sum"`, `"blend"`, or the matching
+  `ee.Reducer`) combines every raster in the time window per pixel.
+- **Query on tile layers.** The Query tool shows the color under the click
+  with a swatch, and the `classLegendDict` class it matches.
 - `Map.addDynamicMapService(token=...)` is refused on the Delta skin, so a
   token never lands in a map document; use `Map.addEsriMapService(url,
   token=...)`.

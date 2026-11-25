@@ -50,19 +50,34 @@ _PREV_GEEVIEW = None
 import geeViz.esriLib as el  # noqa: E402  (no module-level geeView import)
 
 
+_NO_ATTR = object()
+_PREV_ATTR = _NO_ATTR
+
+
 def setup_module(module):
-    global _PREV_GEEVIEW
+    # Both places ``import geeViz.geeView as gv`` can find the module: once a
+    # test earlier in the run has imported the real geeView, the package
+    # attribute ``geeViz.geeView`` is set, and that import reads it.
+    global _PREV_GEEVIEW, _PREV_ATTR
+    import geeViz
     _PREV_GEEVIEW = sys.modules.get("geeViz.geeView", None)
+    _PREV_ATTR = getattr(geeViz, "geeView", _NO_ATTR)
     sys.modules["geeViz.geeView"] = _mock_gv
+    geeViz.geeView = _mock_gv
 
 
 def teardown_module(module):
-    """Undo the ``sys.modules`` stub, so it never reaches whatever
-    imports ``geeViz.geeView`` next."""
+    """Undo the stub, so it never reaches whatever imports
+    ``geeViz.geeView`` next."""
+    import geeViz
     if _PREV_GEEVIEW is not None:
         sys.modules["geeViz.geeView"] = _PREV_GEEVIEW
     else:
         sys.modules.pop("geeViz.geeView", None)
+    if _PREV_ATTR is not _NO_ATTR:
+        geeViz.geeView = _PREV_ATTR
+    elif getattr(geeViz, "geeView", None) is _mock_gv:
+        del geeViz.geeView
 
 
 # ---------------------------------------------------------------------------

@@ -25,7 +25,8 @@
 #   - a GeoJSON layer, queryable by clicking it
 # The first map has no Earth Engine layers, so the viewer never loads Earth
 # Engine; its elevation readout comes from USGS 3DEP. The second adds an
-# Earth Engine layer to the same services.
+# Earth Engine layer to the same services. examples/addLayerInputsExample.py
+# shows every kind of input addLayer takes.
 ####################################################################################################
 import os, sys
 
@@ -55,16 +56,16 @@ Map.setSkin("delta")
 # in the layer list to load it; Chart area charts it over time.
 Map.addTimeLapse(LCMS_CHANGE, {"canAreaChart": True, "areaChartParams": {"line": True, "sankey": True}}, "LCMS annual change")
 
-# One year of the same service
-Map.addEsriImageService(LCMS_CHANGE, name="LCMS change 2020", time=2020, viz_params={"canAreaChart": True})
+# One year of the same service. addLayer tells an image service, a map
+# service and a feature layer apart by the URL; their options go in viz.
+Map.addLayer(LCMS_CHANGE, {"time": 2020, "canAreaChart": True}, "LCMS change 2020")
 
 # Fire perimeters since 2015, drawn with the service's renderer; Chart area
 # counts them by fire type
-Map.addEsriFeatureService(MTBS_FIRES, name="Fires since 2015", where="year >= 2015",
-                          viz_params={"canAreaChart": True, "chartField": "fire_type"})
+Map.addLayer(MTBS_FIRES, {"where": "year >= 2015", "canAreaChart": True, "chartField": "fire_type"}, "Fires since 2015")
 
 # Flood hazard zones only (sublayer 28); they draw from zoom 14 in
-Map.addEsriMapService(FEMA_FLOOD, name="FEMA flood hazard zones", viz_params={"layers": "show:28"})
+Map.addLayer(FEMA_FLOOD, {"layers": "show:28"}, "FEMA flood hazard zones")
 
 Map.addLayer(study_area, {"strokeColor": "ffffff", "strokeWeight": 2}, "Study area")
 
@@ -78,8 +79,8 @@ Map.view()
 Map2 = gv.mapper()
 Map2.setSkin("delta")
 Map2.addLayer(ee.Image("USGS/SRTMGL1_003"), {"min": 1500, "max": 4000, "palette": "1a9850,fee08b,d73027"}, "SRTM elevation (Earth Engine)")
-Map2.addEsriImageService(LCMS_CHANGE, name="LCMS change 2020", time=2020)
-Map2.addEsriFeatureService(MTBS_FIRES, name="Fires since 2015", where="year >= 2015")
+Map2.addLayer(LCMS_CHANGE, {"time": 2020}, "LCMS change 2020")
+Map2.addLayer(MTBS_FIRES, {"where": "year >= 2015"}, "Fires since 2015")
 Map2.addLayer(study_area, {"strokeColor": "ffffff", "strokeWeight": 2}, "Study area")
 Map2.setCenter(-105.65, 40.62, 11)
 Map2.turnOnInspector()

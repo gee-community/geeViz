@@ -1413,9 +1413,25 @@ class mapper:
 
     ######################################################################
     # Function for adding a layer to the map
-    def addLayer(self, image: ee.Image | ee.ImageCollection | ee.Geometry | ee.Feature | ee.FeatureCollection, viz: dict = {}, name: str | None = None, visible: bool = True, opacity: float | None = None):
+    def addLayer(self, image: ee.Image | ee.ImageCollection | ee.Geometry | ee.Feature | ee.FeatureCollection | str | dict, viz: dict = {}, name: str | None = None, visible: bool = True, opacity: float | None = None):
         """
-        Adds GEE object to the mapper object that will then be added to the map user interface with a `view` call.
+        Adds a layer to the mapper object that will then be added to the map user interface with a `view` call.
+
+        ``image`` can be any of these; geeViz works out which:
+
+        - an Earth Engine object (``ee.Image``, ``ee.ImageCollection``, ``ee.FeatureCollection``, ...);
+        - an Earth Engine asset id (``"USGS/SRTMGL1_003"``), added as the image, image collection or table it is;
+        - an ArcGIS service URL (``.../FeatureServer/0``, ``.../MapServer``, ``.../ImageServer``) or a portal
+          search result. ``viz`` carries its options too: ``layers``, ``where``, ``maxFeatures``, ``time`` (one
+          period), ``renderingRule``, ``mosaicRule``, ``bandIds``, and ``reducer`` (how an image service combines
+          overlapping rasters: ``"first"``, ``"last"``, ``"min"``, ``"max"``, ``"mean"``, ``"sum"``, ``"blend"``,
+          or the matching ``ee.Reducer``, such as ``ee.Reducer.max()``);
+        - a tile URL with ``{z}``, ``{x}`` and ``{y}``. Query shows the color under the click, and the
+          ``classLegendDict`` class it matches;
+        - GeoJSON: a URL (``.geojson``, ``.json`` or ``f=geojson``, Delta skin), text, or a dict.
+
+        For a time-enabled ArcGIS image or map service, or an image collection, shown as a time lapse (one frame
+        per time step), use ``addTimeLapse`` instead.
 
         Args:
             image (ImageCollection, Image, Feature, FeatureCollection, Geometry): ee object to add to the map UI.
@@ -1573,6 +1589,33 @@ class mapper:
 
 
         """
+        # A string or a search result: work out what it is (as georest.view does)
+        from georest.view._inputs import classify as _classify
+        kind, value = _classify(image)
+        if kind == "esri":
+            viz = dict(viz)
+            if opacity is not None:
+                viz["opacity"] = opacity
+            time = viz.pop("time", None)
+            where = viz.pop("where", "1=1")
+            max_features = viz.pop("maxFeatures", None)
+            viz["visible"] = visible
+            return self.addEsriService(value, viz_params=viz, name=name, max_features=max_features, where=where,
+                                       time=time)
+        if kind == "xyz":
+            viz = dict(viz)
+            return self.addTileLayer(value, name=name or "Tile Layer", visible=visible,
+                                     opacity=opacity if opacity is not None else viz.get("opacity", 1.0),
+                                     max_zoom=viz.get("maxZoom", 20), legend=viz.get("classLegendDict"))
+        if kind == "geojson_url":
+            if self.skin == "original":
+                raise ValueError("GeoJSON by URL needs the Delta skin (Map.setSkin(\"delta\")); or give the GeoJSON itself.")
+            image = {"geojsonUrl": value}
+        elif kind == "geojson":
+            image = value if isinstance(value, dict) else {"type": "FeatureCollection", "features": value}
+        elif kind == "asset":
+            image = self._ee_from_asset(value)
+
         if name == None:
             name = f"Layer {self.layerNumber}"
             self.layerNumber += 1
@@ -1689,6 +1732,24 @@ class mapper:
 
         idDict["workloadTag"] = self._capture_workload_tag()
         self.idDictList.append(idDict)
+
+    @staticmethod
+    def _ee_from_asset(asset_id, collection_only=False):
+        """The Earth Engine object an asset id names: its image, image
+        collection or table (ValueError for anything else)."""
+        try:
+            t = ee.data.getAsset(asset_id).get("type")
+        except Exception as e:
+            raise ValueError("The Earth Engine asset {!r} could not be read: {}".format(asset_id, e)) from None
+        if t == "IMAGE_COLLECTION":
+            return ee.ImageCollection(asset_id)
+        if collection_only:
+            raise ValueError("{!r} is an Earth Engine {}: a time lapse needs an image collection.".format(asset_id, t))
+        if t == "IMAGE":
+            return ee.Image(asset_id)
+        if t in ("TABLE", "FEATURE_COLLECTION"):
+            return ee.FeatureCollection(asset_id)
+        raise ValueError("{!r} is an Earth Engine {}, not an image, image collection or table.".format(asset_id, t))
 
     ######################################################################
     # Function for adding an external XYZ tile service to the map
@@ -1960,6 +2021,9 @@ class mapper:
         viz_params = dict(viz_params or {})
         js_viz = {k: viz_params[k] for k in self._ESRI_VIZ_KEYS if k in viz_params}
         esri = {k: viz_params[k] for k in self._ESRI_OPT_KEYS if k in viz_params}
+        if viz_params.get("reducer") is not None and "mosaicRule" not in esri:
+            from georest.view._inputs import mosaic_rule as _mosaic_rule
+            esri["mosaicRule"] = _mosaic_rule(viz_params["reducer"])
         esri.update({k: v for k, v in (opts or {}).items() if v is not None})
         if isinstance(time, str) and time.strip().lower() == "all":
             if _re_mod.search(r"/FeatureServer(/\d+)?$", url, _re_mod.I):
@@ -2250,9 +2314,14 @@ class mapper:
 
     ######################################################################
     # Function for adding a layer to the map
-    def addTimeLapse(self, image: ee.ImageCollection, viz: dict = {}, name: str | None = None, visible: bool = True):
+    def addTimeLapse(self, image: ee.ImageCollection | str, viz: dict = {}, name: str | None = None, visible: bool = True):
         """
-        Adds GEE ImageCollection object to the mapper object that will then be added as an interactive time lapse in the map user interface with a `view` call.
+        Adds a time lapse (one frame per time step) to the mapper object that will then be added as an interactive time lapse in the map user interface with a `view` call.
+
+        ``image`` is an ``ee.ImageCollection``, an image collection asset id, or a time-enabled ArcGIS image or
+        map service URL (Delta skin). For an ArcGIS image service, ``viz["reducer"]`` (``"first"``, ``"last"``,
+        ``"min"``, ``"max"``, ``"mean"``, ``"sum"``, ``"blend"``, or the matching ``ee.Reducer``) combines the
+        rasters within each time step.
 
         Args:
             image (ImageCollection): ee ImageCollecion object to add to the map UI.
@@ -2414,6 +2483,16 @@ class mapper:
 
 
         """
+        if isinstance(image, str):
+            from georest.view._inputs import classify as _classify
+            kind, value = _classify(image)
+            if kind == "asset":
+                image = self._ee_from_asset(value, collection_only=True)
+            elif kind == "esri":
+                image = value
+            else:
+                raise ValueError("addTimeLapse takes an ee.ImageCollection, an image collection asset id, or a "
+                                 "time-enabled ArcGIS service URL; got {!r}.".format(image))
         if isinstance(image, str) and "/rest/services/" in image:
             # a time-enabled ArcGIS service: one frame per time step (Delta skin)
             if self.skin == "original":
@@ -2690,7 +2769,8 @@ class mapper:
                     t, source = _ee_types.get(viz.get("layerType"), "ee.image"), {"serialized": item}
                 elif fn == "addLayer" and viz.get("layerType") == "geoJSONVector":
                     viz.pop("layerType", None)
-                    t, source = "geojson", {"geojson": item}
+                    by_url = isinstance(item, dict) and set(item) == {"geojsonUrl"}
+                    t, source = "geojson", ({"url": item["geojsonUrl"]} if by_url else {"geojson": item})
                 else:
                     raise ValueError("Cannot put the layer {!r} ({}) in a map document".format(name, fn))
                 if wt and t.startswith("ee."):
