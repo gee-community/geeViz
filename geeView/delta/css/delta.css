@@ -214,8 +214,8 @@ table.kv tr + tr { border-top: 1px solid var(--dz-line); }
   /* Panes are as tall as their content, so the map controls only make room for a
      pane that actually reaches down to them (shell.js sets the class). The status bar
      always spans the window, below the map. */
-  body.right-over-ctl .mapctl { right: calc(var(--rw, var(--dz-right-default)) + 12px); }
-  body.no-tool.right-over-ctl .mapctl { right: calc(var(--dz-right-folded) + 12px); }
+  body.right-over-ctl .mapctl { right: calc(var(--rw, var(--dz-right-default)) + 6px); }
+  body.no-tool.right-over-ctl .mapctl { right: calc(var(--dz-right-folded) + 6px); }
   .pane-right { transition: width 0.2s ease; }
 }
 
@@ -403,12 +403,12 @@ body.left-hidden .status, body.left-hidden .loadbar { left: 0; }
 .loadbar { position: absolute; z-index: 3; left: var(--lw, var(--dz-left-default)); right: var(--rw, var(--dz-right-default)); top: 0; height: 2px; overflow: hidden; pointer-events: none; }
 .loadbar::after { content: ""; position: absolute; top: 0; bottom: 0; width: 30%; background: linear-gradient(90deg, transparent, var(--dz-teal), transparent); animation: dz-lb 1.4s ease-in-out infinite; }
 @keyframes dz-lb { from { left: -30%; } to { left: 100%; } }
-.mapctl { position: absolute; z-index: 3; right: calc(var(--rw, var(--dz-right-default)) + 12px); bottom: calc(var(--dz-status-h) + var(--dz-gstrip)); display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.mapctl { position: absolute; z-index: 3; right: calc(var(--rw, var(--dz-right-default)) + 6px); bottom: calc(var(--dz-status-h) + var(--dz-gstrip)); display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
 /* desktop defaults for content-height panes: span the window and hug the right edge;
    the body.right-over-ctl rules above make room for a pane that reaches down */
 @media (min-width: 761px) {
   .status { left: 0; right: 0; }
-  .mapctl { right: 12px; }
+  .mapctl { right: 6px; }
 }
 .ctlgrp { display: flex; flex-direction: column; background: var(--dz-panel); backdrop-filter: blur(10px); border: 1px solid var(--dz-line); border-radius: 10px; overflow: hidden; box-shadow: var(--dz-shadow); }
 .ctlgrp .ib { border-radius: 0; color: var(--dz-ink); }

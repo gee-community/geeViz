@@ -380,7 +380,7 @@ def test_drag_right_pane_once_on_release(delta_page):
     # map controls track the right pane when it reaches down to them; the status bar spans the window
     cls = page.evaluate("document.body.className")
     ctl = rect(page, "#mapctl")
-    want_ctl = want + 12 if "right-over-ctl" in cls else 12
+    want_ctl = want + 6 if "right-over-ctl" in cls else 6
     assert abs((1500 - ctl["right"]) - want_ctl) <= 1, (cls, ctl)
     assert abs(rect(page, "#status")["right"] - 1500) <= 1, cls
 
@@ -617,7 +617,7 @@ def test_short_panes_leave_status_and_controls_at_the_edges(delta_page):
     m = _reach(page)
     assert m["right"]["bottom"] < m["vh"] - 100, m["right"]
     assert abs(m["status"]["left"]) <= 1 and abs(m["status"]["right"] - m["vw"]) <= 1, m["status"]
-    assert abs(m["ctl"]["right"] - (m["vw"] - 12)) <= 1, m["ctl"]
+    assert abs(m["ctl"]["right"] - (m["vw"] - 6)) <= 1, m["ctl"]
     # the status bar has its own background so its text reads over any map
     assert m["bg"] not in ("rgba(0, 0, 0, 0)", "transparent"), m["bg"]
 
@@ -634,7 +634,8 @@ def test_tall_right_pane_pushes_controls_and_status(delta_page):
     m = _reach(page)
     # a tall right pane comes down to Google's strip (shortcuts, scale, terms), which stays clear
     assert abs(m["right"]["bottom"] - (m["vh"] - 26 - 14)) <= 1, m["right"]
-    assert abs(m["ctl"]["right"] - (m["right"]["left"] - 12)) <= 1, (m["ctl"], m["right"])
+    # the map controls sit 6 px from the right pane
+    assert abs(m["ctl"]["right"] - (m["right"]["left"] - 6)) <= 1, (m["ctl"], m["right"])
     assert abs(m["status"]["right"] - m["vw"]) <= 1 and abs(m["status"]["left"]) <= 1, m["status"]
     # the map itself ends at the status bar, so Google's strip sits above it
     mb = page.evaluate("document.querySelector('#map').getBoundingClientRect().bottom")
@@ -646,7 +647,7 @@ def test_tall_right_pane_pushes_controls_and_status(delta_page):
     page.evaluate("document.querySelector('#tall-test').remove()")
     _settle(page)
     m = _reach(page)
-    assert abs(m["ctl"]["right"] - (m["vw"] - 12)) <= 1, m["ctl"]
+    assert abs(m["ctl"]["right"] - (m["vw"] - 6)) <= 1, m["ctl"]
     assert abs(m["status"]["right"] - m["vw"]) <= 1, m["status"]
 
 
