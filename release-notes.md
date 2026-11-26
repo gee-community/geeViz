@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Examples
+
+- `fsInsights_examples.ipynb` is gone: FIA and LCMS live in georest, and its
+  examples are on georest.io (`usfs_examples`, `guide_forest_inventory`).
+  `geeViz.fsInsights` itself still works.
+- `esri_integration.ipynb` is shorter. It finds its services with georest's
+  portal and EDW search and draws them with `Map.addLayer` and
+  `Map.addTimeLapse` beside an Earth Engine layer, instead of teaching
+  `geeViz.esriLib`. Searching and service metadata are georest's examples now.
+- The example notebooks have short titles, and their section headings are
+  no longer numbered.
+
 ### The Delta skin is now called geoView
 
 - The default map viewer is `"geoview"`: `Map.setSkin("geoview")`,
