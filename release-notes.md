@@ -1,6 +1,6 @@
 # geeViz Release Notes
 
-## Unreleased
+## 2026.11.2 (November 26, 2026)
 
 ### Fixed
 
@@ -38,7 +38,7 @@
   with "unexpected keyword argument 'geometry_precision'" on georest 0.6;
   geeViz now sends that only to a georest that takes it.
 
-### Delta map viewer
+### geoView comes from georest
 
 - **Delta now comes from georest.** The viewer moved into georest as
   `georest.view` (geoView), so ArcGIS and GeoJSON maps can be drawn without
@@ -70,12 +70,10 @@
   token never lands in a map document; use `Map.addEsriMapService(url,
   token=...)`.
 
-## 2026.11.2 (November 23, 2026)
-
 2026.11.1 was not uploaded to PyPI, so this release also carries everything
 in the 2026.11.1 notes below.
 
-### Delta map viewer
+### geoView tools
 
 - **One Measure tool.** Distance and Area are one tool button, with a
   Distance | Area switch in its options. The button reopens whichever you
@@ -120,7 +118,7 @@ in the 2026.11.1 notes below.
   options sit closer under Units with a gap above the hint, and the opacity
   slider track is thinner.
 
-### ArcGIS services in Delta
+### ArcGIS services in geoView
 
 ``Map.addEsriMapService``, ``addEsriImageService``, ``addEsriFeatureService``
 and ``addEsriService`` now add the service to a Delta map and fetch nothing
