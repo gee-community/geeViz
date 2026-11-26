@@ -35,7 +35,9 @@
 
 - **Delta now comes from georest.** The viewer moved into georest as
   `georest.view` (geoView), so ArcGIS and GeoJSON maps can be drawn without
-  Earth Engine. geeViz needs georest 0.6 (`georest>=0.6,<0.7`).
+  Earth Engine. geeViz needs georest 0.6.2 (`georest>=0.6.2,<0.7`): 0.6.1 shows
+  the geeViz logo, and 0.6.2 queries on a single click with hover names for
+  vector features, and charts tile layers.
 - `Map.view()` with the Delta skin opens `/geoview/geoview.html` and writes
   the map as a document (`map-<token>.json` beside the run scripts) instead of
   a run script. The original skin is unchanged.

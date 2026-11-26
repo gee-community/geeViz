@@ -167,7 +167,7 @@ def test_wind_layer_query_reports_speed_and_direction(live_map):
     import geeViz.weather as wx
 
     page = live_map(build_layer)
-    page.mouse.dblclick(*MAP_CENTER)
+    page.mouse.click(*MAP_CENTER)  # geoView queries on a single click
     r = wait_results(page, "Wind")
     assert r["kind"] == "value", r
     bands = {b["band"]: b for b in r["data"]["bands"]}
@@ -195,7 +195,7 @@ def test_wind_timelapse_query_is_a_speed_and_direction_series(live_map):
     page = live_map(build_lapse)
     wait_for(page, "(n) => { const l = __delta.store.get().layers.find(x => x.name === n); return l && l.timelapse && l.timelapse.loaded; }", "Wind TL")
     page.click(row_sel(page, "Wind TL") + " .tgl")
-    page.mouse.dblclick(*MAP_CENTER)
+    page.mouse.click(*MAP_CENTER)  # geoView queries on a single click
     r = wait_results(page, "Wind TL")
     assert r["kind"] == "series", r
     names = [s["name"] for s in r["data"]["series"]]

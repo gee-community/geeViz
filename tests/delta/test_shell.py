@@ -798,4 +798,4 @@ def test_phone_street_view_uses_the_whole_screen(delta_page):
     page.evaluate("__delta.shell.setStreetView(false)")
     _settle(page)
     b = page.evaluate("document.querySelector('#map').getBoundingClientRect().bottom")
-    assert abs(b - (PHONE["height"] - 64)) <= 1, b
+    assert abs(b - (PHONE["height"] - 48)) <= 1, b  # the 3rem tab bar
