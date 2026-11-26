@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixed
+
+- The original skin's map failed to load hammer.js: the copy on
+  hammerjs.github.io changed, its integrity hash no longer matched, and the
+  browser blocked it ("Hammer is not defined"). It now loads hammer.js 2.0.8
+  from cdnjs with that file's hash.
+
 ### Examples
 
 - `fsInsights_examples.ipynb` is gone: FIA and LCMS live in georest, and its
