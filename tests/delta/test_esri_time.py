@@ -73,7 +73,7 @@ def test_an_esri_timelapse_plays_with_no_earth_engine(live_map):
     assert len({u.split("time=")[1].split("&")[0] for u in stamps}) >= 2, stamps[:3]
     # the values over time at a point
     page.evaluate("() => __delta.store.set({results: []}, 'test')")
-    page.mouse.dblclick(*MAP_CENTER)
+    page.mouse.click(*MAP_CENTER)
     wait_for(page, "() => __delta.store.get().querying === false && __delta.store.get().results.length > 0", timeout=60)
     r = page.evaluate("__delta.store.get().results[0]")
     assert r["kind"] == "series" and r["data"]["x"][0] == "1985", r

@@ -72,7 +72,7 @@ def settled(page):
 
 def query_center(page):
     page.evaluate("() => __delta.store.set({results: []}, 'test')")
-    page.mouse.dblclick(*MAP_CENTER)
+    page.mouse.click(*MAP_CENTER)
     wait_for(page, "() => __delta.store.get().querying === false && __delta.store.get().results.length >= 3", timeout=90)
     return page.evaluate("__delta.store.get().results")
 
@@ -149,7 +149,7 @@ def test_a_feature_layer_draws_for_the_view_and_answers_a_click(live_map):
     assert queries and all("maxAllowableOffset" in u for u in queries), queries[:2]
     assert page.evaluate("(id) => __delta.engine.layers.stats(id).onMap", l["id"])
     page.evaluate("() => __delta.store.set({results: []}, 'test')")
-    page.mouse.dblclick(*MAP_CENTER)
+    page.mouse.click(*MAP_CENTER)
     wait_for(page, "() => __delta.store.get().querying === false && __delta.store.get().results.length >= 1", timeout=60)
     rs = page.evaluate("__delta.store.get().results")
     names = [dict(r["data"]["rows"]).get("fire_name") for r in rs]

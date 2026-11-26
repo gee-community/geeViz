@@ -1,6 +1,6 @@
 """Delta Query tool and select layers.
 
-Double-click queries every visible layer at a point (values must equal the
+A click queries every visible layer at a point (values must equal the
 Python earthengine-api for the same inputs), stale answers are dropped,
 select layers draw and list, and clicking the active tool folds the pane.
 
@@ -85,8 +85,8 @@ def wait_query_done(page):
     wait_for(page, "__delta.store.get().querying === false && __delta.store.get().results.length > 0")
 
 
-def dblclick_center(page, dx=0, dy=0):
-    page.mouse.dblclick(MAP_CENTER[0] + dx, MAP_CENTER[1] + dy)
+def click_center(page, dx=0, dy=0):
+    page.mouse.click(MAP_CENTER[0] + dx, MAP_CENTER[1] + dy)
 
 
 def by_title(rs, title):
@@ -110,7 +110,7 @@ def py_first(img, pt, q):
 
 def test_query_values_match_python(page):
     go(page, *POINT)
-    dblclick_center(page)
+    click_center(page)
     wait_query_done(page)
     wait_for(page, "__delta.store.get().results.length >= 2")
     rs = results(page)
@@ -155,7 +155,7 @@ def test_query_respects_scale_and_crs(page):
     # the crs is checked too.
     page.evaluate("__delta.api.setQueryCRS('EPSG:3857')")
     go(page, *POINT)
-    dblclick_center(page)
+    click_center(page)
     wait_query_done(page)
     srtm = by_title(results(page), "SRTM")
     p = srtm["data"]["point"]
@@ -172,9 +172,9 @@ def test_query_respects_scale_and_crs(page):
 
 def test_stale_query_results_are_dropped(page):
     go(page, *POINT)
-    dblclick_center(page)
-    page.wait_for_timeout(50)
-    dblclick_center(page, dx=120)
+    click_center(page)
+    page.wait_for_timeout(400)  # past the 300 ms double-click wait: the first query starts
+    click_center(page, dx=120)
     wait_query_done(page)
     wait_for(page, "__delta.store.get().results.length >= 2")
     page.wait_for_timeout(3000)  # let any answer to the first query arrive
@@ -239,21 +239,21 @@ def test_select_layers_are_not_queried(page):
     page.click('#layer-list .layer[data-id="%s"] .tgl' % units["id"])
     wait_for(page, "(id) => __delta.engine.layers.stats(id).onMap", units["id"])
     go(page, *unit_center(1))  # inside a select polygon
-    dblclick_center(page)
+    click_center(page)
     wait_query_done(page)
     wait_for(page, "__delta.store.get().results.length >= 2")
     page.wait_for_timeout(2000)
     rs = results(page)
     assert {r["title"] for r in rs} >= {"SRTM", "LCMS Land Cover"}
     assert [r for r in rs if r["layerId"] == units["id"]] == []
-    # and a double-click query does not edit the selection
+    # and a query click does not edit the selection
     assert page.evaluate("__delta.store.get().selections") == []
 
 
 def test_tool_toggle_off_folds_pane(page):
     assert page.evaluate("__delta.store.get().tool") == "query"
     hint = page.inner_text("#tool-options")
-    assert "Double-click the map to query every visible layer at that point." in hint
+    assert "Click the map to query every visible layer at that point." in hint
     w = page.evaluate("document.querySelector('#pane-right').getBoundingClientRect().width")
     assert w > 200
     page.click("#pane-right .tool[data-tool=query]")
@@ -262,7 +262,7 @@ def test_tool_toggle_off_folds_pane(page):
     w = page.evaluate("document.querySelector('#pane-right').getBoundingClientRect().width")
     assert w == 64
     go(page, *POINT)
-    dblclick_center(page)
+    click_center(page)
     page.wait_for_timeout(1500)
     assert results(page) == []
     assert page.evaluate("__delta.store.get().querying") is False

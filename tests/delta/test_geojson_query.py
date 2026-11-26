@@ -47,7 +47,7 @@ def wait_for(page, js, timeout=60):
 
 def query(page, dx, dy=0):
     page.evaluate("() => __delta.store.set({results: []}, 'test')")
-    page.mouse.dblclick(MAP_CENTER[0] + dx, MAP_CENTER[1] + dy)
+    page.mouse.click(MAP_CENTER[0] + dx, MAP_CENTER[1] + dy)
     wait_for(page, "() => __delta.store.get().querying === false && __delta.store.get().results.length >= 3")
     return {r["title"]: r for r in page.evaluate("__delta.store.get().results")}
 

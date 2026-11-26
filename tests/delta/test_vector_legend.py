@@ -122,7 +122,7 @@ def test_a_point_is_found_a_few_pixels_from_the_click(live_map):
     page.evaluate("__delta.store.set({tool: 'query'}, 'test')")
     time.sleep(1.5)
     cx, cy = page.evaluate("(() => { const r = document.querySelector('#map').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()")
-    page.mouse.dblclick(cx + 5, cy - 4)
+    page.mouse.click(cx + 5, cy - 4)
     wait_for(page, "__delta.store.get().querying === false && __delta.store.get().results.length > 0", timeout=60)
     r = [x for x in page.evaluate("__delta.store.get().results") if x["title"] == "EE points"]
     assert r, page.evaluate("__delta.store.get().results")
