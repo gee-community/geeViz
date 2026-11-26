@@ -1,5 +1,11 @@
 # geeViz Release Notes
 
+## 2026.11.3 (November 26, 2026)
+
+- The release notes in the package are the published ones: 2026.11.2 shipped
+  them under "Unreleased" and split across two 2026.11.2 headings. No code
+  changes; everything else is as in 2026.11.2 below.
+
 ## 2026.11.2 (November 26, 2026)
 
 ### Fixed
