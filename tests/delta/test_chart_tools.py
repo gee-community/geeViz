@@ -365,3 +365,15 @@ def test_a_long_card_subtitle_never_crushes_the_title(page):
     lines, width = words
     assert lines <= 2, words
     assert width > 150, words
+
+
+def test_mixed_periods_from_the_script_show_as_years_and_ranges(page):
+    add(page, "__delta.api.addLayer({}, {canAreaChart: true, areaChartParams: {sankey: true, sankeyTransitionPeriods: [[1985, 1988], 1990, 2000, [2021, 2023]]}}, 'LCMS', true);")
+    page.evaluate("() => { const id = __delta.store.get().layers.find(l => l.name === 'LCMS').id; __delta.store.set({chartYears: {[id]: [1985, 2024]}}, 'test'); }")
+    page.evaluate("__delta.store.set({tool: 'chart'}, 'test')")
+    settle(page)
+    page.click("#tool-options [data-act=chart-settings]")
+    settle(page)
+    texts = page.evaluate("() => Array.from(document.querySelectorAll('#tool-options .cset-year')).map(i => i.value)")
+    assert texts == ["1985-1988", "1990", "2000", "2021-2023"]
+    assert errors(page) == []

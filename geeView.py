@@ -484,6 +484,30 @@ _EE_VIZ_KEYS = ("bands", "min", "max", "gain", "bias", "gamma", "palette",
                 "opacity", "format")
 
 
+def _transition_periods(periods):
+    """Sankey transition periods as ``[start, end]`` pairs.
+
+    Each entry is a year (``1990``, the simple way: a period of that one
+    year) or a list of years taken as a range (``[1985, 1988]``: the first to
+    the last; a range charts its years' most common class). Lists mix both:
+    ``[[1985, 1988], 1990, 2000, [2021, 2023]]``.
+    """
+    out = []
+    for p in periods:
+        if isinstance(p, (list, tuple)):
+            if not p:
+                raise TypeError("A sankeyTransitionPeriods entry is an empty list: give a year or [start, end].")
+            out.append([int(p[0]), int(p[-1])])
+        elif isinstance(p, (int, float, str)) and not isinstance(p, bool):
+            out.append([int(p), int(p)])
+        else:
+            raise TypeError(
+                f"sankeyTransitionPeriods entries are years (e.g. 1985) or [start, end] lists "
+                f"(e.g. [1985, 1987]), got {type(p).__name__}"
+            )
+    return out
+
+
 def _hand_styled_class_warning(viz: dict) -> str | None:
     """A one-class layer drawn with a hand-picked color instead of autoViz.
 
@@ -1525,8 +1549,9 @@ class mapper:
 
                         **Sankey-specific:**
 
-                        * ``"sankeyTransitionPeriods"`` (list of lists): Years for sankey
-                          transitions (e.g. ``[[1985,1987],[2000,2002],[2020,2022]]``).
+                        * ``"sankeyTransitionPeriods"`` (list): The Sankey's periods, in order. Each is a year
+                          (``[1985, 2000, 2023]``) or a ``[start, end]`` range of years, whose most
+                          common class is charted (``[[1985, 1988], 2000, [2021, 2023]]``).
                         * ``"sankeyMinPercentage"`` (float, default 0.5): Min class % to
                           include in sankey.
 
@@ -1653,20 +1678,9 @@ class mapper:
                     except Exception as e:  # Most likely it's already serialized
                         e = e
 
-        # Coerce sankeyTransitionPeriods from flat list to nested pairs
-        if "areaChartParams" in viz:
-            stp = viz["areaChartParams"].get("sankeyTransitionPeriods")
-            if stp and len(stp) > 0:
-                first = stp[0]
-                if isinstance(first, (list, tuple)):
-                    pass  # already nested pairs
-                elif isinstance(first, (int, float)):
-                    viz["areaChartParams"]["sankeyTransitionPeriods"] = [[y, y] for y in stp]
-                else:
-                    raise TypeError(
-                        f"sankeyTransitionPeriods entries must be lists (e.g. [[1985,1985],[2024,2024]]) "
-                        f"or ints (e.g. [1985, 2024]), got {type(first).__name__}"
-                    )
+        # Sankey transition periods as [start, end] pairs: a year, or a range
+        if "areaChartParams" in viz and viz["areaChartParams"].get("sankeyTransitionPeriods"):
+            viz["areaChartParams"]["sankeyTransitionPeriods"] = _transition_periods(viz["areaChartParams"]["sankeyTransitionPeriods"])
 
         # Get the id and populate dictionarye
         idDict = {}
@@ -2418,8 +2432,9 @@ class mapper:
 
                         **Sankey-specific:**
 
-                        * ``"sankeyTransitionPeriods"`` (list of lists): Years for sankey
-                          transitions (e.g. ``[[1985,1987],[2000,2002],[2020,2022]]``).
+                        * ``"sankeyTransitionPeriods"`` (list): The Sankey's periods, in order. Each is a year
+                          (``[1985, 2000, 2023]``) or a ``[start, end]`` range of years, whose most
+                          common class is charted (``[[1985, 1988], 2000, [2021, 2023]]``).
                         * ``"sankeyMinPercentage"`` (float, default 0.5): Min class % to
                           include in sankey.
 
@@ -2538,20 +2553,9 @@ class mapper:
                         viz["areaChartParams"]["reducer"] = eval(viz["areaChartParams"]["reducer"]).serialize()
                     except Exception as e:  # Most likely it's already serialized
                         e = e
-        # Coerce sankeyTransitionPeriods from flat list to nested pairs
-        if "areaChartParams" in viz:
-            stp = viz["areaChartParams"].get("sankeyTransitionPeriods")
-            if stp and len(stp) > 0:
-                first = stp[0]
-                if isinstance(first, (list, tuple)):
-                    pass  # already nested pairs
-                elif isinstance(first, (int, float)):
-                    viz["areaChartParams"]["sankeyTransitionPeriods"] = [[y, y] for y in stp]
-                else:
-                    raise TypeError(
-                        f"sankeyTransitionPeriods entries must be lists (e.g. [[1985,1985],[2024,2024]]) "
-                        f"or ints (e.g. [1985, 2024]), got {type(first).__name__}"
-                    )
+        # Sankey transition periods as [start, end] pairs: a year, or a range
+        if "areaChartParams" in viz and viz["areaChartParams"].get("sankeyTransitionPeriods"):
+            viz["areaChartParams"]["sankeyTransitionPeriods"] = _transition_periods(viz["areaChartParams"]["sankeyTransitionPeriods"])
 
         viz["layerType"] = "ImageCollection"
         # Get the id and populate dictionary

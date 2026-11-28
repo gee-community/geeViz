@@ -2,8 +2,21 @@
 
 ## Unreleased
 
+### Changed
+
+- `areaChartParams["sankeyTransitionPeriods"]` takes years (the simple way:
+  `[1985, 2000, 2023]`), `[start, end]` ranges, or both mixed:
+  `[[1985, 1988], 1990, 2000, [2021, 2023]]`. A range charts its years' most
+  common class. Only the first entry used to be checked, so a mixed list
+  kept its bare years, or had its ranges duplicated.
+- Every example notebook has Colab and GitHub links, and installs geeViz
+  when it is missing, so the Colab link runs.
+
 ### Fixed
 
+- The original skin's scripts and styles are stamped with the package
+  version again (`?v=2026.11.3`): 2026.11.2 and 2026.11.3 shipped them still
+  stamped 2026.11.1, so a browser could keep using cached older copies.
 - Several Sankey charts in one notebook all draw, with each flow fading from
   its source class color to its target class color. Each chart's elements
   now have ids of their own: before, every chart after the first drew into
