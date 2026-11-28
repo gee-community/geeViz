@@ -197,8 +197,10 @@ def open_editor(page, years=(2015, 2023)):
 
 
 def rows(page):
+    # a row reads "2015" (one year) or "2015-2016" (a range, the older way)
     return page.evaluate("""() => Array.from(document.querySelectorAll('#tool-options .cset-periods .cset-prow')).map(r =>
-      { const i = r.querySelector('input.cset-year'); const v = i.value === '' ? null : Number(i.value); return [v, v]; })""")
+      { const t = r.querySelector('input.cset-year').value.trim(); if (t === '') return [null, null];
+        const p = t.split('-').map(Number); return [p[0], p[p.length - 1]]; })""")
 
 
 def errors(page):
@@ -210,11 +212,27 @@ def click(page, act):
     settle(page)
 
 
+def test_transition_years_only_with_a_sankey_layer(page):
+    add(page, CHARTABLE)
+    page.evaluate("__delta.store.set({tool: 'chart'}, 'test')")
+    settle(page)
+    page.click("#tool-options [data-act=chart-settings]")
+    settle(page)
+    assert page.locator("#tool-options .cset").count() == 1
+    assert page.locator("#tool-options [data-role=periods]").count() == 0
+    title = page.get_attribute("#tool-options [data-act=chart-settings]", "title")
+    assert "Sankey" not in title
+    # a Sankey layer arrives: the editor shows in the open panel
+    add(page, SANKEY)
+    assert page.locator("#tool-options [data-role=periods]").count() == 1
+    assert "Sankey" in page.get_attribute("#tool-options [data-act=chart-settings]", "title")
+
+
 def test_periods_default_to_single_years_at_the_range_ends(page):
     open_editor(page)
     assert rows(page) == [[2015, 2015], [2023, 2023]]
-    attrs = page.evaluate("() => { const i = document.querySelector('#tool-options .cset-year'); return [i.min, i.max, i.title]; }")
-    assert attrs == ["2015", "2023", "Enter a year within the valid range (2015 - 2023)"]
+    attrs = page.evaluate("() => { const i = document.querySelector('#tool-options .cset-year'); return [i.type, i.title]; }")
+    assert attrs == ["text", "Enter a year (or a range, such as 2015-2017) within the valid range (2015-2023)"]
     assert errors(page) == []
 
 
@@ -224,8 +242,23 @@ def test_periods_never_default_outside_the_range(page):
     page.reload()
     page.wait_for_function("window.__delta !== undefined")
     open_editor(page)
-    # one year per row: a range from the url shows as its start year
-    assert rows(page) == [[2015, 2015], [2020, 2020]]
+    # a range from the url shows as that range
+    assert rows(page) == [[2015, 2016], [2020, 2023]]
+    assert page.input_value("#tool-options .cset-prow[data-i='0'] input.cset-year") == "2015-2016"
+
+
+def test_a_range_row_applies_as_a_range(page):
+    open_editor(page)
+    page.fill("#tool-options .cset-prow[data-i='0'] input.cset-year", "2015-2017")
+    page.fill("#tool-options .cset-prow[data-i='1'] input.cset-year", "2021-2023")
+    settle(page)
+    assert errors(page) == []
+    click(page, "apply-periods")
+    assert st(page, "chartPeriods") == [[2015, 2017], [2021, 2023]]
+    # a range the wrong way round is an error, not reordered
+    page.fill("#tool-options .cset-prow[data-i='0'] input.cset-year", "2017-2015")
+    settle(page)
+    assert "One or more rows have a first year that is greater than the last year." in errors(page)
 
 
 def test_plus_inserts_in_the_middle_minus_and_x_remove(page):
@@ -314,3 +347,21 @@ def test_rows_drag_to_reorder(delta_page, delta_server):
     got = rows(page)
     assert got != [[2015, 2015], [2019, 2019], [2023, 2023]] and sorted(got) == [[2015, 2015], [2019, 2019], [2023, 2023]], got
     assert any("do not overlap" in e for e in errors(page))
+
+
+def test_a_long_card_subtitle_never_crushes_the_title(page):
+    # a narrow right pane: the subtitle moves under the title instead of
+    # squeezing it to a word per line (or splitting a word)
+    page.set_viewport_size({"width": 1100, "height": 800})
+    add(page, CHARTABLE)
+    page.evaluate("__delta.store.set({tool: 'chart'}, 'test')")
+    page.evaluate("""__delta.store.set({where: 'Map view', results: [{id: 'r', title: 'LCMS Land Cover transitions',
+      meta: '1985-1987 to 2020-2022, 1920 m', kind: 'measure', data: {lines: [['Distance', '1 km']], text: ''}, actions: []}]}, 'test')""")
+    settle(page)
+    words = page.evaluate("""() => { const b = document.querySelector('#results-mount .card-r .h b');
+      const r = document.createRange(); r.selectNodeContents(b);
+      const lh = parseFloat(getComputedStyle(b).lineHeight) || 20;
+      return [Math.round(b.getBoundingClientRect().height / lh), b.getBoundingClientRect().width]; }""")
+    lines, width = words
+    assert lines <= 2, words
+    assert width > 150, words

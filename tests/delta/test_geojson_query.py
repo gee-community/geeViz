@@ -47,6 +47,9 @@ def wait_for(page, js, timeout=60):
 
 def query(page, dx, dy=0):
     page.evaluate("() => __delta.store.set({results: []}, 'test')")
+    # Google Maps drops a click that follows the last one within about
+    # 300 ms, wherever it lands; these queries answer faster than that
+    page.wait_for_timeout(400)
     page.mouse.click(MAP_CENTER[0] + dx, MAP_CENTER[1] + dy)
     wait_for(page, "() => __delta.store.get().querying === false && __delta.store.get().results.length >= 3")
     return {r["title"]: r for r in page.evaluate("__delta.store.get().results")}

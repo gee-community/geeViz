@@ -48,6 +48,8 @@ See :func:`summarize_and_chart` for the full API and more examples.
 
 import math
 import os
+import re
+import uuid
 import ee
 import pandas
 import plotly.graph_objects as go
@@ -1150,7 +1152,7 @@ def _sankey_plotly_fig_to_d3(fig, theme=None, hide_toolbar=False):
             '<div id="toolbar">',
             '<div id="toolbar" style="display:none">',
         )
-    return result
+    return SankeyHTML(_unique_sankey_ids(result))
 
 
 def _expand_thematic_reduce_regions(df, band_names, class_info, area_format, scale, split_str):
@@ -3552,7 +3554,43 @@ def chart_sankey_d3(
             '<div id="toolbar">',
             '<div id="toolbar" style="display:none">',
         )
-    return result
+    return SankeyHTML(_unique_sankey_ids(result))
+
+
+_SANKEY_IDS = re.compile(r"""(#|id="|getElementById\(')(title|toolbar|btn-png|sankey|tooltip)\b""")
+
+
+def _unique_sankey_ids(html):
+    """Give one Sankey chart's element ids a suffix of its own.
+
+    VS Code (and other front ends) show a notebook's HTML outputs in one
+    page. With fixed ids, a second chart's script found the first chart's
+    ``#sankey`` and drew there (leaving only its own title), and the link
+    gradients that fade each flow from its source to its target color
+    resolved to another chart's.
+    """
+    uid = uuid.uuid4().hex[:8]
+    html = _SANKEY_IDS.sub(lambda m: f"{m.group(1)}{m.group(2)}-{uid}", html)
+    return html.replace("link-grad-'", f"link-grad-{uid}-'")
+
+
+class SankeyHTML(str):
+    """A D3 Sankey chart's HTML that draws itself in a notebook.
+
+    It is the full HTML document, as a ``str``: save it, write it to a file
+    or edit it as before. In Jupyter, ``display(chart)`` (or a cell ending in
+    ``chart``) shows the chart, through :func:`sankey_iframe`, instead of
+    printing the HTML source.
+
+    Example:
+        >>> result = cl.summarize_and_chart(lcms, area, chart_type="sankey")
+        >>> display(result["chart"])
+    """
+
+    __slots__ = ()
+
+    def _repr_html_(self):
+        return sankey_iframe(str(self))
 
 
 def sankey_iframe(sankey_html, width=None, height=None):
@@ -3784,8 +3822,8 @@ def summarize_and_chart(
 
         * **Standard (single geometry):** ``{"df": DataFrame, "chart": Figure}``
         * **Sankey:** ``{"df": sankey_df, "chart": sankey_html, "matrix": matrix_dict}``
-          where ``sankey_html`` is a D3 HTML string (display with
-          ``display(HTML(cl.sankey_iframe(sankey_html)))``),
+          where ``sankey_html`` is the D3 chart's HTML, a :class:`SankeyHTML` string that
+          draws itself in a notebook (``display(sankey_html)``),
           and ``matrix_dict`` is ``{period_label: DataFrame}``
         * **Multi-feature + ee.Image (bar/pie/donut):** ``{"df": DataFrame, "chart": Figure}``
         * **Multi-feature + ee.ImageCollection:** ``{"df": dict, "chart": Figure}``
@@ -3823,7 +3861,7 @@ def summarize_and_chart(
         ...     sankey_band_name='Land_Use',
         ...     min_percentage=0.5,
         ... )
-        >>> # In notebooks: display(HTML(cl.sankey_iframe(result["chart"])))
+        >>> # In notebooks: display(result["chart"])
         >>> # Save to file:
         >>> cl.save_chart_html(result["chart"], "land_use_transitions.html")
 

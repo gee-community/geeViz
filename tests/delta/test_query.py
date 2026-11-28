@@ -170,10 +170,26 @@ def test_query_respects_scale_and_crs(page):
     assert {b["band"]: b["value"] for b in srtm["data"]["bands"]} == expected
 
 
+def test_double_click_never_zooms_and_a_click_queries_at_once(page):
+    go(page, *POINT)
+    for tool in [None, "query", "distance", "area", "chart"]:
+        page.evaluate("(t) => __delta.store.set({tool: t}, 'test')", tool)
+        page.wait_for_timeout(50)
+        assert page.evaluate("__delta.engine.gmap.get('disableDoubleClickZoom')") is True, tool
+    page.evaluate("__delta.store.set({tool: 'query'}, 'test')")
+    zoom = page.evaluate("__delta.engine.gmap.getZoom()")
+    page.mouse.dblclick(*MAP_CENTER)
+    # no wait for a second click: the query is under way at once
+    assert page.evaluate("__delta.store.get().querying") is True
+    page.wait_for_timeout(600)
+    assert page.evaluate("__delta.engine.gmap.getZoom()") == zoom
+    wait_query_done(page)
+
+
 def test_stale_query_results_are_dropped(page):
     go(page, *POINT)
     click_center(page)
-    page.wait_for_timeout(400)  # past the 300 ms double-click wait: the first query starts
+    page.wait_for_timeout(400)  # the first query is under way; two clicks closer than this are a double-click to Google
     click_center(page, dx=120)
     wait_query_done(page)
     wait_for(page, "__delta.store.get().results.length >= 2")

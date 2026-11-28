@@ -1,5 +1,19 @@
 # geeViz Release Notes
 
+## Unreleased
+
+### Fixed
+
+- Several Sankey charts in one notebook all draw, with each flow fading from
+  its source class color to its target class color. Each chart's elements
+  now have ids of their own: before, every chart after the first drew into
+  the first one (VS Code shows a notebook's HTML outputs in one page),
+  leaving only its title, and the first chart's flows were drawn over.
+- A Sankey chart from `summarize_and_chart(chart_type="sankey")` or
+  `chart_sankey_d3` draws in a notebook with `display(chart)`, instead of
+  printing its HTML source. It is still the chart's HTML as a `str` (now a
+  `SankeyHTML`), so saving and editing it work as before.
+
 ## 2026.11.3 (November 26, 2026)
 
 - The release notes in the package are the published ones: 2026.11.2 shipped
